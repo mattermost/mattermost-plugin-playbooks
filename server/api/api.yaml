@@ -12,7 +12,7 @@ paths:
   /incidents:
     get:
       summary: List all incidents
-      description: Retrieve a paged list of incidents, filtered by team, status, commander, name and/or members, and sorted by ID, name, status, creation date, end date, team or commander ID.
+      description: Retrieve a paged list of incidents, filtered by team, status, owner, name and/or members, and sorted by ID, name, status, creation date, end date, team or owner ID.
       operationId: listIncidents
       security:
         - BearerAuth: []
@@ -59,7 +59,7 @@ paths:
               - create_at
               - end_at
               - team_id
-              - commander_user_id
+              - owner_user_id
         - name: direction
           in: query
           description: Direction (ascending or descending) followed by the sorting of the incidents.
@@ -84,7 +84,7 @@ paths:
               - Active
               - Resolved
               - Archived
-        - name: commander_user_id
+        - name: owner_user_id
           in: query
           description: The returned list will contain only the incidents commanded by this user.
           required: false
@@ -125,7 +125,7 @@ paths:
           $ref: "#/components/schemas/500"
     post:
       summary: Create a new incident
-      description: Create a new incident in a team, using a playbook as template, with a specific name and a specific commander.
+      description: Create a new incident in a team, using a playbook as template, with a specific name and a specific owner.
       operationId: createIncidentFromPost
       security:
         - BearerAuth: []
@@ -139,7 +139,7 @@ paths:
               type: object
               required:
                 - name
-                - commander_user_id
+                - owner_user_id
                 - team_id
                 - playbook_id
               properties:
@@ -151,7 +151,7 @@ paths:
                   type: string
                   description: The description of the incident.
                   example: There is one server in the EU cluster that is not responding since April 12.
-                commander_user_id:
+                owner_user_id:
                   type: string
                   description: The identifier of the user who is commanding the incident.
                   example: bqnbdf8uc0a8yz4i39qrpgkvtg
@@ -173,7 +173,7 @@ paths:
             curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
-            -d '{"name": "Server down in EU cluster", "description": "There is one server in the EU cluster that is not responding since April 12.", "commander_user_id": "bqnbdf8uc0a8yz4i39qrpgkvtg", "team_id": "61ji2mpflefup3cnuif80r5rde", "playbook_id": "0y4a0ntte97cxvfont8y84wa7x"}'
+            -d '{"name": "Server down in EU cluster", "description": "There is one server in the EU cluster that is not responding since April 12.", "owner_user_id": "bqnbdf8uc0a8yz4i39qrpgkvtg", "team_id": "61ji2mpflefup3cnuif80r5rde", "playbook_id": "0y4a0ntte97cxvfont8y84wa7x"}'
       responses:
         201:
           description: Created incident.
@@ -272,11 +272,11 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/commanders:
+  /incidents/owners:
     get:
-      summary: Get all commanders
-      description: Get the commanders of all incidents, filtered by team.
-      operationId: getCommanders
+      summary: Get all owners
+      description: Get the owners of all incidents, filtered by team.
+      operationId: getOwners
       security:
         - BearerAuth: []
       tags:
@@ -292,17 +292,17 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/commanders?team_id=ni8duypfe7bamprxqeffd563gy' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/owners?team_id=ni8duypfe7bamprxqeffd563gy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: A list of commanders.
+          description: A list of owners.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/CommanderInfo"
+                  $ref: "#/components/schemas/OwnerInfo"
         400:
           $ref: "#/components/schemas/400"
         403:
@@ -313,7 +313,7 @@ paths:
   /incidents/channels:
     get:
       summary: Get incident channels
-      description: Get all channels associated with an incident, filtered by team, status, commander, name and/or members, and sorted by ID, name, status, creation date, end date, team, or commander ID.
+      description: Get all channels associated with an incident, filtered by team, status, owner, name and/or members, and sorted by ID, name, status, creation date, end date, team, or owner ID.
       operationId: getChannels
       security:
         - BearerAuth: []
@@ -341,7 +341,7 @@ paths:
               - create_at
               - end_at
               - team_id
-              - commander_user_id
+              - owner_user_id
         - name: direction
           in: query
           description: Direction (ascending or descending) followed by the sorting of the incidents associated to the channels.
@@ -365,7 +365,7 @@ paths:
               - all
               - active
               - ended
-        - name: commander_user_id
+        - name: owner_user_id
           in: query
           description: The returned list will contain only the channels whose incident is commanded by this user.
           required: false
@@ -716,7 +716,7 @@ paths:
                   example: Starting to investigate.
                 reminder:
                   type: number
-                  description: The number of seconds until the system will send a reminder to the commander to update the status. No reminder will be scheduled if reminder is 0 or omitted.
+                  description: The number of seconds until the system will send a reminder to the owner to update the status. No reminder will be scheduled if reminder is 0 or omitted.
                   example: 600
               required:
                 - status
@@ -738,10 +738,10 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/commander:
+  /incidents/{id}/owner:
     post:
-      summary: Update incident commander
-      operationId: changeCommander
+      summary: Update incident owner
+      operationId: changeOwner
       security:
         - BearerAuth: []
       tags:
@@ -750,32 +750,32 @@ paths:
         - name: id
           in: path
           required: true
-          description: ID of the incident whose commander will be changed.
+          description: ID of the incident whose owner will be changed.
           schema:
             type: string
             example: 1igmynxs77ywmcbwbsujzktter
       requestBody:
-        description: Payload to change the incident's commander.
+        description: Payload to change the incident's owner.
         content:
           application/json:
             schema:
               type: object
               properties:
-                commander_id:
+                owner_id:
                   type: string
-                  description: The user ID of the new commander.
+                  description: The user ID of the new owner.
                   example: hx7fqtqxp7nn8129t7e505ls6s
               required:
-                - commander_id
+                - owner_id
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/commander' \
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/owner' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
-            -d '{"commander_id": "hx7fqtqxp7nn8129t7e505ls6s"}'
+            -d '{"owner_id": "hx7fqtqxp7nn8129t7e505ls6s"}'
       responses:
         200:
-          description: Commander successfully changed.
+          description: Owner successfully changed.
         400:
           $ref: "#/components/schemas/400"
         403:
@@ -1443,12 +1443,12 @@ paths:
                   description: Boolean that indicates whether the members declared in invited_user_ids will be automatically invited.
                   type: boolean
                   example: true
-                default_commander_id:
-                  description: User ID of the member that will be automatically assigned as commander as soon as the incident is created. If the member is not part of the incident's channel or is not included in the invited_user_ids list, they will be automatically invited to the channel.
+                default_owner_id:
+                  description: User ID of the member that will be automatically assigned as owner as soon as the incident is created. If the member is not part of the incident's channel or is not included in the invited_user_ids list, they will be automatically invited to the channel.
                   type: string
                   example: 9dtruav6d9ce3oqnc5pwhtqtfq
-                default_commander_enabled:
-                  description: Boolean that indicates whether the member declared in default_commander_id will be automatically assigned as commander.
+                default_owner_enabled:
+                  description: Boolean that indicates whether the member declared in default_owner_id will be automatically assigned as owner.
                   type: string
                   example: true
                 announcement_channel_id:
@@ -1683,7 +1683,7 @@ components:
           type: boolean
           description: True if the incident is ongoing; false if the incident is ended.
           example: false
-        commander_user_id:
+        owner_user_id:
           type: string
           description: The identifier of the user that is commanding the incident.
           example: bqnbdf8uc0a8yz4i39qrpgkvtg
@@ -1778,7 +1778,7 @@ components:
           description: The incidents in this page.
           items:
             $ref: "#/components/schemas/Incident"
-    CommanderInfo:
+    OwnerInfo:
       type: object
       required:
         - user_id
@@ -1786,11 +1786,11 @@ components:
       properties:
         user_id:
           type: string
-          description: A unique, 26 characters long, alphanumeric identifier for the commander.
+          description: A unique, 26 characters long, alphanumeric identifier for the owner.
           example: ahz0s61gh275i7z2ag4g1ntvjm
         username:
           type: string
-          description: Commander's username.
+          description: Owner's username.
           example: aaron.medina
     TriggerIdReturn:
       type: object

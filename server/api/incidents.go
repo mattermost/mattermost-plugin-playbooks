@@ -53,7 +53,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 
 	incidentsRouter.HandleFunc("/dialog", handler.createIncidentFromDialog).Methods(http.MethodPost)
 	incidentsRouter.HandleFunc("/add-to-timeline-dialog", handler.addToTimelineDialog).Methods(http.MethodPost)
-	incidentsRouter.HandleFunc("/commanders", handler.getCommanders).Methods(http.MethodGet)
+	incidentsRouter.HandleFunc("/owners", handler.getOwners).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/channels", handler.getChannels).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/checklist-autocomplete", handler.getChecklistAutocomplete).Methods(http.MethodGet)
 	incidentsRouter.HandleFunc("/checklist-autocomplete-item", handler.getChecklistAutocompleteItem).Methods(http.MethodGet)
@@ -65,7 +65,7 @@ func NewIncidentHandler(router *mux.Router, incidentService incident.Service, pl
 	incidentRouterAuthorized := incidentRouter.PathPrefix("").Subrouter()
 	incidentRouterAuthorized.Use(handler.checkEditPermissions)
 	incidentRouterAuthorized.HandleFunc("", handler.updateIncident).Methods(http.MethodPatch)
-	incidentRouterAuthorized.HandleFunc("/commander", handler.changeCommander).Methods(http.MethodPost)
+	incidentRouterAuthorized.HandleFunc("/owner", handler.changeOwner).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/status", handler.status).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 	incidentRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
@@ -138,12 +138,12 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 	}
 
 	payloadIncident := incident.Incident{
-		CommanderUserID: incidentCreateOptions.CommanderUserID,
-		TeamID:          incidentCreateOptions.TeamID,
-		Name:            incidentCreateOptions.Name,
-		Description:     incidentCreateOptions.Description,
-		PostID:          incidentCreateOptions.PostID,
-		PlaybookID:      incidentCreateOptions.PlaybookID,
+		OwnerUserID: incidentCreateOptions.OwnerUserID,
+		TeamID:      incidentCreateOptions.TeamID,
+		Name:        incidentCreateOptions.Name,
+		Description: incidentCreateOptions.Description,
+		PostID:      incidentCreateOptions.PostID,
+		PlaybookID:  incidentCreateOptions.PlaybookID,
 	}
 
 	newIncident, err := h.createIncident(payloadIncident, userID)
@@ -231,11 +231,11 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	payloadIncident := incident.Incident{
-		CommanderUserID: request.UserId,
-		TeamID:          request.TeamId,
-		Name:            name,
-		PostID:          state.PostID,
-		PlaybookID:      playbookID,
+		OwnerUserID: request.UserId,
+		TeamID:      request.TeamId,
+		Name:        name,
+		PostID:      state.PostID,
+		PlaybookID:  playbookID,
 	}
 
 	newIncident, err := h.createIncident(payloadIncident, request.UserId)
@@ -347,17 +347,17 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		return nil, errors.Wrap(incident.ErrMalformedIncident, "missing team id of incident")
 	}
 
-	if newIncident.CommanderUserID == "" {
-		return nil, errors.Wrap(incident.ErrMalformedIncident, "missing commander user id of incident")
+	if newIncident.OwnerUserID == "" {
+		return nil, errors.Wrap(incident.ErrMalformedIncident, "missing owner user id of incident")
 	}
 
 	if newIncident.Name == "" {
 		return nil, errors.Wrap(incident.ErrMalformedIncident, "missing name of incident")
 	}
 
-	// Commander should have permission to the team
-	if !permissions.CanViewTeam(newIncident.CommanderUserID, newIncident.TeamID, h.pluginAPI) {
-		return nil, errors.Wrap(incident.ErrPermission, "commander user does not have permissions for the team")
+	// Owner should have permission to the team
+	if !permissions.CanViewTeam(newIncident.OwnerUserID, newIncident.TeamID, h.pluginAPI) {
+		return nil, errors.Wrap(incident.ErrPermission, "owner user does not have permissions for the team")
 	}
 
 	public := true
@@ -387,8 +387,8 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 			newIncident.InvitedGroupIDs = pb.InvitedGroupIDs
 		}
 
-		if pb.DefaultCommanderEnabled {
-			newIncident.DefaultCommanderID = pb.DefaultCommanderID
+		if pb.DefaultOwnerEnabled {
+			newIncident.DefaultOwnerID = pb.DefaultOwnerID
 		}
 
 		if pb.AnnouncementChannelEnabled {
@@ -556,8 +556,8 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 	ReturnJSON(w, incidentToGet, http.StatusOK)
 }
 
-// getCommanders handles the /incidents/commanders api endpoint.
-func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) {
+// getOwners handles the /incidents/owners api endpoint.
+func (h *IncidentHandler) getOwners(w http.ResponseWriter, r *http.Request) {
 	teamID := r.URL.Query().Get("team_id")
 	if teamID == "" {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
@@ -583,17 +583,17 @@ func (h *IncidentHandler) getCommanders(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	commanders, err := h.incidentService.GetCommanders(requesterInfo, options)
+	owners, err := h.incidentService.GetOwners(requesterInfo, options)
 	if err != nil {
-		h.HandleError(w, errors.Wrapf(err, "failed to get commanders"))
+		h.HandleError(w, errors.Wrapf(err, "failed to get owners"))
 		return
 	}
 
-	if commanders == nil {
-		commanders = []incident.CommanderInfo{}
+	if owners == nil {
+		owners = []incident.OwnerInfo{}
 	}
 
-	ReturnJSON(w, commanders, http.StatusOK)
+	ReturnJSON(w, owners, http.StatusOK)
 }
 
 func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
@@ -621,7 +621,7 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 
 	incidents, err := h.incidentService.GetIncidents(requesterInfo, *filterOptions)
 	if err != nil {
-		h.HandleError(w, errors.Wrapf(err, "failed to get commanders"))
+		h.HandleError(w, errors.Wrapf(err, "failed to get owners"))
 		return
 	}
 
@@ -633,13 +633,13 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 	ReturnJSON(w, channelIds, http.StatusOK)
 }
 
-// changeCommander handles the /incidents/{id}/change-commander api endpoint.
-func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request) {
+// changeOwner handles the /incidents/{id}/change-owner api endpoint.
+func (h *IncidentHandler) changeOwner(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var params struct {
-		CommanderID string `json:"commander_id"`
+		OwnerID string `json:"owner_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "could not decode request body", err)
@@ -652,18 +652,18 @@ func (h *IncidentHandler) changeCommander(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Check if the target user (params.CommanderID) has permissions
-	if err := permissions.EditIncident(params.CommanderID, incdnt.ChannelID, h.pluginAPI); err != nil {
+	// Check if the target user (params.OwnerID) has permissions
+	if err := permissions.EditIncident(params.OwnerID, incdnt.ChannelID, h.pluginAPI); err != nil {
 		if errors.Is(err, permissions.ErrNoPermissions) {
 			h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
-				errors.Errorf("userid: %s does not have permissions to incident channel; cannot be made commander", params.CommanderID))
+				errors.Errorf("userid: %s does not have permissions to incident channel; cannot be made owner", params.OwnerID))
 			return
 		}
 		h.HandleError(w, err)
 		return
 	}
 
-	if err := h.incidentService.ChangeCommander(vars["id"], userID, params.CommanderID); err != nil {
+	if err := h.incidentService.ChangeOwner(vars["id"], userID, params.OwnerID); err != nil {
 		h.HandleError(w, err)
 		return
 	}
@@ -1241,7 +1241,7 @@ func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, 
 	post := &model.Post{
 		Message: fmt.Sprintf("Incident %s started in ~%s", incdnt.Name, channel.Name),
 	}
-	h.poster.EphemeralPost(incdnt.CommanderUserID, channelID, post)
+	h.poster.EphemeralPost(incdnt.OwnerUserID, channelID, post)
 
 	return nil
 }
@@ -1320,7 +1320,7 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.FilterOptions, error) {
 
 	status := u.Query().Get("status")
 
-	commanderID := u.Query().Get("commander_user_id")
+	ownerID := u.Query().Get("owner_user_id")
 	searchTerm := u.Query().Get("search_term")
 
 	memberID := u.Query().Get("member_id")
@@ -1328,16 +1328,16 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.FilterOptions, error) {
 	playbookID := u.Query().Get("playbook_id")
 
 	return &incident.FilterOptions{
-		TeamID:      teamID,
-		Page:        page,
-		PerPage:     perPage,
-		Sort:        sort,
-		Direction:   direction,
-		Status:      status,
-		CommanderID: commanderID,
-		SearchTerm:  searchTerm,
-		MemberID:    memberID,
-		PlaybookID:  playbookID,
+		TeamID:     teamID,
+		Page:       page,
+		PerPage:    perPage,
+		Sort:       sort,
+		Direction:  direction,
+		Status:     status,
+		OwnerID:    ownerID,
+		SearchTerm: searchTerm,
+		MemberID:   memberID,
+		PlaybookID: playbookID,
 	}, nil
 }
 

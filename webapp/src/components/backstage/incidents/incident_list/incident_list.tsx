@@ -27,7 +27,7 @@ import ProfileSelector from 'src/components/profile/profile_selector';
 import {PaginationRow} from 'src/components/pagination_row';
 import {FetchIncidentsParams, Incident, incidentIsActive, incidentCurrentStatus} from 'src/types/incident';
 import {
-    fetchCommandersInTeam,
+    fetchOwnersInTeam,
     fetchIncidents,
 } from 'src/client';
 import Profile from 'src/components/profile/profile';
@@ -53,7 +53,7 @@ const ControlComponent = (ownProps: ControlProps<any>) => (
                 className='IncidentFilter-reset'
                 onClick={ownProps.selectProps.onCustomReset}
             >
-                {'Reset to all commanders'}
+                {'Reset to all owners'}
             </a>
         )}
     </div>
@@ -252,13 +252,13 @@ const BackstageIncidentList = () => {
         setFetchParams({...fetchParams, sort: colName, direction: newDirection});
     }
 
-    async function fetchCommanders() {
-        const commanders = await fetchCommandersInTeam(currentTeam.id);
-        return commanders.map((c) => selectUser(c.user_id) || {id: c.user_id} as UserProfile);
+    async function fetchOwners() {
+        const owners = await fetchOwnersInTeam(currentTeam.id);
+        return owners.map((c) => selectUser(c.user_id) || {id: c.user_id} as UserProfile);
     }
 
-    function setCommanderId(userId?: string) {
-        setFetchParams({...fetchParams, commander_user_id: userId, page: 0});
+    function setOwnerId(userId?: string) {
+        setFetchParams({...fetchParams, owner_user_id: userId, page: 0});
     }
 
     function openIncidentDetails(incident: Incident) {
@@ -267,8 +267,8 @@ const BackstageIncidentList = () => {
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
 
-    const resetCommander = () => {
-        setCommanderId();
+    const resetOwner = () => {
+        setOwnerId();
         setProfileSelectorToggle(!profileSelectorToggle);
     };
 
@@ -315,19 +315,19 @@ const BackstageIncidentList = () => {
                         onSearch={debounce(setSearchTerm, debounceDelay)}
                     />
                     <ProfileSelector
-                        testId={'commander-filter'}
-                        selectedUserId={fetchParams.commander_user_id}
-                        placeholder={'Commander'}
+                        testId={'owner-filter'}
+                        selectedUserId={fetchParams.owner_user_id}
+                        placeholder={'Owner'}
                         enableEdit={true}
                         isClearable={true}
                         customControl={ControlComponent}
                         customControlProps={{
-                            showCustomReset: Boolean(fetchParams.commander_user_id),
-                            onCustomReset: resetCommander,
+                            showCustomReset: Boolean(fetchParams.owner_user_id),
+                            onCustomReset: resetOwner,
                         }}
                         controlledOpenToggle={profileSelectorToggle}
-                        getUsers={fetchCommanders}
-                        onSelectedChange={setCommanderId}
+                        getUsers={fetchOwners}
+                        onSelectedChange={setOwnerId}
                     />
                     <StatusFilter
                         options={statusOptions}
@@ -369,7 +369,7 @@ const BackstageIncidentList = () => {
                                 onClick={() => colHeaderClicked('end_at')}
                             />
                         </div>
-                        <div className='col-sm-3'> {'Commander'} </div>
+                        <div className='col-sm-3'> {'Owner'} </div>
                     </div>
                 </BackstageListHeader>
 
@@ -408,7 +408,7 @@ const BackstageIncidentList = () => {
                             }
                         </div>
                         <div className='col-sm-3'>
-                            <Profile userId={incident.commander_user_id}/>
+                            <Profile userId={incident.owner_user_id}/>
                         </div>
                     </div>
                 ))}

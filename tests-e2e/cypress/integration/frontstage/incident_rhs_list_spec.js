@@ -152,7 +152,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             }).then((incident) => {
                 cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -213,7 +213,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -222,7 +222,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -248,7 +248,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -295,7 +295,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -346,7 +346,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -383,7 +383,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -432,7 +432,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName: incidentName1,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName1);
 
@@ -465,7 +465,7 @@ describe('rhs incident list', () => {
                 teamId: teamId2,
                 playbookId: playbookIdTeam2,
                 incidentName: incidentName2,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId2, incidentName2);
 
@@ -519,7 +519,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -560,7 +560,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -616,7 +616,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -627,7 +627,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName: secondIncidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, secondIncidentName);
 
@@ -684,7 +684,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -694,7 +694,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName: secondIncidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, secondIncidentName);
 
@@ -745,7 +745,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -807,7 +807,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -879,7 +879,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbook2Id: playbookId2,
                 incidentName,
-                commanderUserId: user2Id
+                ownerUserId: user2Id
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -912,7 +912,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -966,7 +966,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbook2Id: playbookId2,
                 incidentName,
-                commanderUserId: user2Id
+                ownerUserId: user2Id
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -1006,7 +1006,7 @@ describe('rhs incident list', () => {
             const now = Date.now();
             const incidentName = 'Incident (' + now + ')';
             const incidentChannelName = 'incident-' + now;
-            cy.apiStartIncident({teamId, playbookId, incidentName, commanderUserId: userId});
+            cy.apiStartIncident({teamId, playbookId, incidentName, ownerUserId: userId});
             cy.verifyIncidentActive(teamId, incidentName);
 
             // # Open the incident channel from the LHS.
@@ -1075,7 +1075,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbook2Id: playbookId2,
                 incidentName,
-                commanderUserId: user2Id
+                ownerUserId: user2Id
             }).then((incident) => {
                 incidentId = incident.id;
             });
@@ -1131,7 +1131,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             }).then((incident) => {
                 incidentId = incident.id;
                 cy.verifyIncidentActive(teamId1, incidentName);
@@ -1203,7 +1203,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbook2Id: playbookId2,
                 incidentName,
-                commanderUserId: user2Id
+                ownerUserId: user2Id
             }).then((incident) => {
                 const incidentId = incident.id;
                 cy.verifyIncidentActive(teamId1, incidentName);
@@ -1266,7 +1266,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -1391,7 +1391,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             });
             cy.verifyIncidentActive(teamId1, incidentName);
 
@@ -1456,7 +1456,7 @@ describe('rhs incident list', () => {
                 teamId: teamId1,
                 playbookId: playbookId1,
                 incidentName,
-                commanderUserId: userId
+                ownerUserId: userId
             })
                 .then((incident) => {
                     const incidentId = incident.id;

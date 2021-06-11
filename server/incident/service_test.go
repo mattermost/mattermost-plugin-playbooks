@@ -101,9 +101,9 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Name:            "###",
-			TeamID:          teamID,
-			CommanderUserID: "user_id",
+			Name:        "###",
+			TeamID:      teamID,
+			OwnerUserID: "user_id",
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -150,9 +150,9 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Name:            "###",
-			TeamID:          teamID,
-			CommanderUserID: "user_id",
+			Name:        "###",
+			TeamID:      teamID,
+			OwnerUserID: "user_id",
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -181,9 +181,9 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Name:            "###",
-			TeamID:          teamID,
-			CommanderUserID: "user_id",
+			Name:        "###",
+			TeamID:      teamID,
+			OwnerUserID: "user_id",
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -197,7 +197,7 @@ func TestCreateIncident(t *testing.T) {
 		pluginAPI.On("CreateTeamMember", "team_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("AddChannelMember", "channel_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)).Return(nil, &model.AppError{Id: "api.channel.update_channel_member_roles.scheme_role.app_error"})
-		pluginAPI.On("LogWarn", "failed to promote commander to admin", "ChannelID", "channel_id", "CommanderUserID", "user_id", "err", ": , ")
+		pluginAPI.On("LogWarn", "failed to promote owner to admin", "ChannelID", "channel_id", "OwnerUserID", "user_id", "err", ": , ")
 		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
@@ -224,9 +224,9 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Name:            "ททททท",
-			TeamID:          teamID,
-			CommanderUserID: "user_id",
+			Name:        "ททททท",
+			TeamID:      teamID,
+			OwnerUserID: "user_id",
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -292,7 +292,7 @@ func TestCreateIncident(t *testing.T) {
 			ID:                   "incidentID",
 			Name:                 "Incident Name",
 			TeamID:               teamID,
-			CommanderUserID:      "user_id",
+			OwnerUserID:          "user_id",
 			WebhookOnCreationURL: server.URL,
 		}
 
@@ -382,7 +382,7 @@ func TestUpdateStatus(t *testing.T) {
 			TeamID:                   teamID,
 			ChannelID:                "channel_id",
 			BroadcastChannelID:       "broadcast_channel_id",
-			CommanderUserID:          "user_id",
+			OwnerUserID:              "user_id",
 			CurrentStatus:            incident.StatusReported,
 			CreateAt:                 1620018358404,
 			WebhookOnStatusUpdateURL: server.URL,
@@ -443,7 +443,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 
 	type args struct {
 		teamID      string
-		commanderID string
+		ownerID     string
 		triggerID   string
 		postID      string
 		clientID    string
@@ -460,7 +460,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			name: "successful webapp invocation without SiteURL",
 			args: args{
 				teamID:      "teamID",
-				commanderID: "commanderID",
+				ownerID:     "ownerID",
 				triggerID:   "triggerID",
 				postID:      "postID",
 				clientID:    "clientID",
@@ -470,8 +470,8 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			prepMocks: func(t *testing.T, store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API, configService *mock_config.MockService) {
 				api.On("GetTeam", "teamID").
 					Return(&model.Team{Id: "teamID", Name: "Team"}, nil)
-				api.On("GetUser", "commanderID").
-					Return(&model.User{Id: "commanderID", Username: "User"}, nil)
+				api.On("GetUser", "ownerID").
+					Return(&model.User{Id: "ownerID", Username: "User"}, nil)
 				api.On("GetConfig").
 					Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: model.NewString("")}})
 				configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "pluginId"}).Times(2)
@@ -486,7 +486,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			name: "successful webapp invocation",
 			args: args{
 				teamID:      "teamID",
-				commanderID: "commanderID",
+				ownerID:     "ownerID",
 				triggerID:   "triggerID",
 				postID:      "postID",
 				clientID:    "clientID",
@@ -496,8 +496,8 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			prepMocks: func(t *testing.T, store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API, configService *mock_config.MockService) {
 				api.On("GetTeam", "teamID").
 					Return(&model.Team{Id: "teamID", Name: "Team"}, nil)
-				api.On("GetUser", "commanderID").
-					Return(&model.User{Id: "commanderID", Username: "User"}, nil)
+				api.On("GetUser", "ownerID").
+					Return(&model.User{Id: "ownerID", Username: "User"}, nil)
 				api.On("GetConfig").
 					Return(&model.Config{
 						ServiceSettings: model.ServiceSettings{
@@ -516,7 +516,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			name: "successful mobile app invocation",
 			args: args{
 				teamID:      "teamID",
-				commanderID: "commanderID",
+				ownerID:     "ownerID",
 				triggerID:   "triggerID",
 				postID:      "postID",
 				clientID:    "clientID",
@@ -526,8 +526,8 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			prepMocks: func(t *testing.T, store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API, configService *mock_config.MockService) {
 				api.On("GetTeam", "teamID").
 					Return(&model.Team{Id: "teamID", Name: "Team"}, nil)
-				api.On("GetUser", "commanderID").
-					Return(&model.User{Id: "commanderID", Username: "User"}, nil)
+				api.On("GetUser", "ownerID").
+					Return(&model.User{Id: "ownerID", Username: "User"}, nil)
 				api.On("GetConfig").
 					Return(&model.Config{
 						ServiceSettings: model.ServiceSettings{
@@ -558,7 +558,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 
 			tt.prepMocks(t, store, poster, api, configService)
 
-			err := service.OpenCreateIncidentDialog(tt.args.teamID, tt.args.commanderID, tt.args.triggerID, tt.args.postID, tt.args.clientID, tt.args.playbooks, tt.args.isMobileApp)
+			err := service.OpenCreateIncidentDialog(tt.args.teamID, tt.args.ownerID, tt.args.triggerID, tt.args.postID, tt.args.clientID, tt.args.playbooks, tt.args.isMobileApp)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("OpenCreateIncidentDialog() error = %v, wantErr %v", err, tt.wantErr)
 				return

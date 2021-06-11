@@ -58,7 +58,7 @@ describe('slash command > info', () => {
                         teamId,
                         playbookId,
                         incidentName,
-                        commanderUserId: userId,
+                        ownerUserId: userId,
                     }).then((incident) => {
                         incidentId = incident.id;
                     });
@@ -74,8 +74,8 @@ describe('slash command > info', () => {
         // # Login as user-1
         cy.apiLogin('user-1');
 
-        // # Reset the commander to test-1 as necessary.
-        cy.apiChangeIncidentCommander(incidentId, userId);
+        // # Reset the owner to test-1 as necessary.
+        cy.apiChangeIncidentOwner(incidentId, userId);
     });
 
     describe('/incident info', () => {

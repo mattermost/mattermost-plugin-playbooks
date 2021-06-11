@@ -55,7 +55,7 @@ describe('incident rhs > latest update', () => {
             teamId,
             playbookId,
             incidentName: name,
-            commanderUserId: userId,
+            ownerUserId: userId,
         }).then((incident) => {
             incidentChannelId = incident.channel_id;
             incidentName = name;
@@ -98,7 +98,7 @@ describe('incident rhs > latest update', () => {
                             teamId,
                             playbookId: playbook.id,
                             incidentName: name,
-                            commanderUserId: userId,
+                            ownerUserId: userId,
                         });
 
                         // # Navigate to the incident channel
@@ -136,7 +136,7 @@ describe('incident rhs > latest update', () => {
                             teamId,
                             playbookId: playbook.id,
                             incidentName: name,
-                            commanderUserId: userId,
+                            ownerUserId: userId,
                         });
 
                         // # Navigate to the incident channel
@@ -175,7 +175,7 @@ describe('incident rhs > latest update', () => {
                             teamId,
                             playbookId: playbook.id,
                             incidentName: name,
-                            commanderUserId: userId,
+                            ownerUserId: userId,
                         });
 
                         // # Navigate to the incident channel
@@ -209,7 +209,7 @@ describe('incident rhs > latest update', () => {
                     teamId,
                     playbookId: playbook.id,
                     incidentName: name,
-                    commanderUserId: userId,
+                    ownerUserId: userId,
                 });
 
                 // # Navigate to the incident channel

@@ -539,7 +539,7 @@ describe('backstage playbook details', () => {
                 });
             });
 
-            describe('assign commander setting', () => {
+            describe('assign owner setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
                     cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
@@ -548,7 +548,7 @@ describe('backstage playbook details', () => {
                     cy.get('#root').findByText('Automation').click();
 
                     // * Verify that the toggle is unchecked
-                    cy.get('#assign-commander label input').should('not.be.checked');
+                    cy.get('#assign-owner label input').should('not.be.checked');
                 });
 
                 it('can be enabled', () => {
@@ -558,7 +558,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Automation tab
                     cy.get('#root').findByText('Automation').click();
 
-                    cy.get('#assign-commander').within(() => {
+                    cy.get('#assign-owner').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -570,7 +570,7 @@ describe('backstage playbook details', () => {
                     });
                 });
 
-                it('does not let add a commander when disabled', () => {
+                it('does not let add a owner when disabled', () => {
                     // # Visit the selected playbook
                     cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
 
@@ -578,11 +578,11 @@ describe('backstage playbook details', () => {
                     cy.get('#root').findByText('Automation').click();
 
                     // * Verify that the toggle is unchecked
-                    cy.get('#assign-commander label input').should('not.be.checked');
+                    cy.get('#assign-owner label input').should('not.be.checked');
 
                     // * Verify that the mwsenu is disabled
-                    cy.get('#assign-commander').within(() => {
-                        cy.getStyledComponent('StyledReactSelect').should('have.class', 'assign-commander-selector--is-disabled');
+                    cy.get('#assign-owner').within(() => {
+                        cy.getStyledComponent('StyledReactSelect').should('have.class', 'assign-owner-selector--is-disabled');
                     });
                 });
 
@@ -593,7 +593,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Automation tab
                     cy.get('#root').findByText('Automation').click();
 
-                    cy.get('#assign-commander').within(() => {
+                    cy.get('#assign-owner').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -603,25 +603,25 @@ describe('backstage playbook details', () => {
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
 
-                        // # Open the commander selector
+                        // # Open the owner selector
                         cy.openSelector();
 
-                        // # Select a commander
-                        cy.selectCommander('aaron.medina');
+                        // # Select a owner
+                        cy.selectOwner('aaron.medina');
 
-                        // * Verify that the control shows the selected commander
-                        cy.get('.assign-commander-selector__control').contains('aaron.medina');
+                        // * Verify that the control shows the selected owner
+                        cy.get('.assign-owner-selector__control').contains('aaron.medina');
                     });
                 });
 
-                it('allows changing the commander', () => {
+                it('allows changing the owner', () => {
                     // # Visit the selected playbook
                     cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
 
                     // # Switch to Automation tab
                     cy.get('#root').findByText('Automation').click();
 
-                    cy.get('#assign-commander').within(() => {
+                    cy.get('#assign-owner').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -631,34 +631,34 @@ describe('backstage playbook details', () => {
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
 
-                        // # Open the commander selector
+                        // # Open the owner selector
                         cy.openSelector();
 
-                        // # Select a commander
-                        cy.selectCommander('aaron.medina');
+                        // # Select a owner
+                        cy.selectOwner('aaron.medina');
 
-                        // * Verify that the control shows the selected commander
-                        cy.get('.assign-commander-selector__control').contains('aaron.medina');
+                        // * Verify that the control shows the selected owner
+                        cy.get('.assign-owner-selector__control').contains('aaron.medina');
 
-                        // # Open the commander selector
-                        cy.get('.assign-commander-selector__control').click({force: true});
+                        // # Open the owner selector
+                        cy.get('.assign-owner-selector__control').click({force: true});
 
-                        // # Select a new commander
-                        cy.selectCommander('alice.johnston');
+                        // # Select a new owner
+                        cy.selectOwner('alice.johnston');
 
-                        // * Verify that the control shows the selected commander
-                        cy.get('.assign-commander-selector__control').contains('alice.johnston');
+                        // * Verify that the control shows the selected owner
+                        cy.get('.assign-owner-selector__control').contains('alice.johnston');
                     });
                 });
 
-                it('persists the assign commander even if the toggle is off', () => {
+                it('persists the assign owner even if the toggle is off', () => {
                     // # Visit the selected playbook
                     cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
 
                     // # Switch to Automation tab
                     cy.get('#root').findByText('Automation').click();
 
-                    cy.get('#assign-commander').within(() => {
+                    cy.get('#assign-owner').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -668,14 +668,14 @@ describe('backstage playbook details', () => {
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
 
-                        // # Open the commander selector
+                        // # Open the owner selector
                         cy.openSelector();
 
-                        // # Select a commander
-                        cy.selectCommander('aaron.medina');
+                        // # Select a owner
+                        cy.selectOwner('aaron.medina');
 
-                        // * Verify that the control shows the selected commander
-                        cy.get('.assign-commander-selector__control').contains('aaron.medina');
+                        // * Verify that the control shows the selected owner
+                        cy.get('.assign-owner-selector__control').contains('aaron.medina');
 
                         // # Click on the toggle to disable the setting
                         cy.get('label input').click({force: true});
@@ -693,7 +693,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Automation tab
                     cy.get('#root').findByText('Automation').click();
 
-                    cy.get('#assign-commander').within(() => {
+                    cy.get('#assign-owner').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -703,12 +703,12 @@ describe('backstage playbook details', () => {
                         // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
 
-                        // * Verify that the control shows the selected commander
-                        cy.get('.assign-commander-selector__control').contains('aaron.medina');
+                        // * Verify that the control shows the selected owner
+                        cy.get('.assign-owner-selector__control').contains('aaron.medina');
                     });
                 });
 
-                it('removes the commander and disables the setting if the user is no longer in the team', () => {
+                it('removes the owner and disables the setting if the user is no longer in the team', () => {
                     let userToRemove;
 
                     // # Create a playbook with a user that is later removed from the team
@@ -721,14 +721,14 @@ describe('backstage playbook details', () => {
                             cy.apiAddUserToTeam(teamId, userToRemove.id);
 
                             // # Create a playbook with the user that will be removed from the team as
-                            // the default commander
+                            // the default owner
                             cy.apiCreatePlaybook({
                                 teamId,
                                 title: 'Playbook (' + Date.now() + ')',
                                 createPublicIncident: true,
                                 memberIDs: [userId],
-                                defaultCommanderId: userToRemove.id,
-                                defaultCommanderEnabled: true,
+                                defaultOwnerId: userToRemove.id,
+                                defaultOwnerEnabled: true,
                             }).then((playbook) => {
                                 playbookId = playbook.id;
                             });
@@ -757,15 +757,15 @@ describe('backstage playbook details', () => {
                         // # Switch to Automation tab
                         cy.get('#root').findByText('Automation').click();
 
-                        cy.get('#assign-commander').within(() => {
+                        cy.get('#assign-owner').within(() => {
                             // * Verify that the toggle is unchecked
                             cy.get('label input').should('not.be.checked');
 
                             // # Click on the toggle to enable the setting
                             cy.get('label input').click({force: true});
 
-                            // * Verify that the control shows the selected commander
-                            cy.get('.assign-commander-selector__control').within(() => {
+                            // * Verify that the control shows the selected owner
+                            cy.get('.assign-owner-selector__control').within(() => {
                                 cy.findByText('Search for member');
                             });
                         });
@@ -843,7 +843,7 @@ describe('backstage playbook details', () => {
                         // # Select a channel
                         cy.selectChannel('Town Square');
 
-                        // * Verify that the control shows the selected commander
+                        // * Verify that the control shows the selected owner
                         cy.get('.channel-selector__control').contains('Town Square');
                     });
                 });

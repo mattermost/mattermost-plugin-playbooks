@@ -232,10 +232,10 @@ func doPlaybookModificationChecks(pbook *playbook.Playbook, userID string, plugi
 	}
 	pbook.InvitedGroupIDs = filteredGroups
 
-	if pbook.DefaultCommanderID != "" && !permissions.IsMemberOfTeamID(pbook.DefaultCommanderID, pbook.TeamID, pluginAPI) {
-		pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
-		pbook.DefaultCommanderID = ""
-		pbook.DefaultCommanderEnabled = false
+	if pbook.DefaultOwnerID != "" && !permissions.IsMemberOfTeamID(pbook.DefaultOwnerID, pbook.TeamID, pluginAPI) {
+		pluginAPI.Log.Warn("owner is not a member of the playbook's team, disabling default owner", "teamID", pbook.TeamID, "userID", pbook.DefaultOwnerID)
+		pbook.DefaultOwnerID = ""
+		pbook.DefaultOwnerEnabled = false
 	}
 
 	if pbook.AnnouncementChannelID != "" &&

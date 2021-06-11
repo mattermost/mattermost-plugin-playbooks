@@ -67,9 +67,9 @@ func (s *ServiceImpl) handleStatusUpdateReminder(incidentID string) {
 		return
 	}
 
-	commander, err := s.pluginAPI.User.Get(incidentToModify.CommanderUserID)
+	owner, err := s.pluginAPI.User.Get(incidentToModify.OwnerUserID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get commander for id: %s", incidentToModify.CommanderUserID).Error())
+		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get owner for id: %s", incidentToModify.OwnerUserID).Error())
 		return
 	}
 
@@ -99,7 +99,7 @@ func (s *ServiceImpl) handleStatusUpdateReminder(incidentID string) {
 	}
 
 	post, err := s.poster.PostMessageWithAttachments(incidentToModify.ChannelID, attachments,
-		"@%s, please provide an update on this incident's progress.", commander.Username)
+		"@%s, please provide an update on this incident's progress.", owner.Username)
 	if err != nil {
 		s.logger.Errorf(errors.Wrap(err, "HandleReminder error posting reminder message").Error())
 		return
@@ -111,7 +111,7 @@ func (s *ServiceImpl) handleStatusUpdateReminder(incidentID string) {
 	}
 }
 
-// SetReminder sets a reminder. After timeInMinutes in the future, the commander will be
+// SetReminder sets a reminder. After timeInMinutes in the future, the owner will be
 // reminded to update the incident's status.
 func (s *ServiceImpl) SetReminder(incidentID string, fromNow time.Duration) error {
 	if _, err := s.scheduler.ScheduleOnce(incidentID, time.Now().Add(fromNow)); err != nil {

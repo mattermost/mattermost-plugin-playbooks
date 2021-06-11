@@ -44,16 +44,16 @@ interface Props {
 const Participants = (props: Props) => {
     const profilesInChannel = useProfilesInChannel(props.incident.channel_id);
 
-    const profilesExceptTwoMains = profilesInChannel.filter((u) => u.id !== props.incident.commander_user_id && u.id !== props.incident.reporter_user_id);
+    const profilesExceptTwoMains = profilesInChannel.filter((u) => u.id !== props.incident.owner_user_id && u.id !== props.incident.reporter_user_id);
 
     return (
         <TabPageContainer>
             <Title>{`Participants (${profilesInChannel.length})`}</Title>
             <StyledContent>
-                <Heading>{'Commander'}</Heading>
+                <Heading>{'Owner'}</Heading>
                 <Participant
-                    userId={props.incident.commander_user_id}
-                    isCommander={true}
+                    userId={props.incident.owner_user_id}
+                    isOwner={true}
                 />
                 <Heading>{'Reporter'}</Heading>
                 <Participant userId={props.incident.reporter_user_id}/>
@@ -76,15 +76,15 @@ const Participants = (props: Props) => {
 
 export default Participants;
 
-function Participant(props: { userId: string, isCommander?: boolean }) {
-    const [showMessage, setShowMessage] = useState(Boolean(props.isCommander));
+function Participant(props: { userId: string, isOwner?: boolean }) {
+    const [showMessage, setShowMessage] = useState(Boolean(props.isOwner));
     const team = useSelector(getCurrentTeam);
     const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, props.userId));
 
     return (
         <ParticipantRow
             onMouseEnter={() => setShowMessage(true)}
-            onMouseLeave={() => !props.isCommander && setShowMessage(false)}
+            onMouseLeave={() => !props.isOwner && setShowMessage(false)}
         >
             <ProfileWithPosition userId={props.userId}/>
             {showMessage && (

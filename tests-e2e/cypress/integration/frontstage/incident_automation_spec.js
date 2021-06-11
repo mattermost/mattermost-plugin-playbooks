@@ -61,7 +61,7 @@ describe('incident automation', () => {
                     teamId,
                     playbookId,
                     incidentName,
-                    commanderUserId: userId,
+                    ownerUserId: userId,
                 });
 
                 // # Navigate to the incident channel
@@ -100,7 +100,7 @@ describe('incident automation', () => {
                         teamId,
                         playbookId: playbook.id,
                         incidentName,
-                        commanderUserId: userId,
+                        ownerUserId: userId,
                     });
 
                     // # Navigate to the incident channel
@@ -144,7 +144,7 @@ describe('incident automation', () => {
                         teamId,
                         playbookId: playbook.id,
                         incidentName,
-                        commanderUserId: userId,
+                        ownerUserId: userId,
                     });
 
                     // # Navigate to the incident channel
@@ -198,7 +198,7 @@ describe('incident automation', () => {
                         teamId,
                         playbookId: playbook.id,
                         incidentName,
-                        commanderUserId: userId,
+                        ownerUserId: userId,
                     });
 
                     // # Navigate to the incident channel
@@ -213,20 +213,20 @@ describe('incident automation', () => {
             });
         });
 
-        describe('default commander setting', () => {
-            it('defaults to the creator when no commander is specified', () => {
+        describe('default owner setting', () => {
+            it('defaults to the creator when no owner is specified', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
                 let playbookId;
 
-                // # Create a playbook with the default commander setting set to false
-                // and no commander specified
+                // # Create a playbook with the default owner setting set to false
+                // and no owner specified
                 cy.apiCreatePlaybook({
                     teamId,
                     title: playbookName,
                     createPublicIncident: true,
                     memberIDs: [userId],
-                    defaultCommanderId: '',
-                    defaultCommanderEnabled: false,
+                    defaultOwnerId: '',
+                    defaultOwnerEnabled: false,
                 }).then((playbook) => {
                     playbookId = playbook.id;
                 });
@@ -239,33 +239,33 @@ describe('incident automation', () => {
                     teamId,
                     playbookId,
                     incidentName,
-                    commanderUserId: userId,
+                    ownerUserId: userId,
                 });
 
                 // # Navigate to the incident channel
                 cy.visit(`/ad-1/channels/${incidentChannelName}`);
 
-                // * Verify that the RHS shows the commander being the creator
+                // * Verify that the RHS shows the owner being the creator
                 cy.get('#rhsContainer').within(() => {
-                    cy.findByText('Commander').parent().within(() => {
+                    cy.findByText('Owner').parent().within(() => {
                         cy.findByText('@user-1');
                     });
                 });
             });
 
-            it('defaults to the creator when no commander is specified, even if the setting is enabled', () => {
+            it('defaults to the creator when no owner is specified, even if the setting is enabled', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
                 let playbookId;
 
-                // # Create a playbook with the default commander setting set to false
-                // and no commander specified
+                // # Create a playbook with the default owner setting set to false
+                // and no owner specified
                 cy.apiCreatePlaybook({
                     teamId,
                     title: playbookName,
                     createPublicIncident: true,
                     memberIDs: [userId],
-                    defaultCommanderId: '',
-                    defaultCommanderEnabled: true,
+                    defaultOwnerId: '',
+                    defaultOwnerEnabled: true,
                 }).then((playbook) => {
                     playbookId = playbook.id;
                 });
@@ -278,24 +278,24 @@ describe('incident automation', () => {
                     teamId,
                     playbookId,
                     incidentName,
-                    commanderUserId: userId,
+                    ownerUserId: userId,
                 });
 
                 // # Navigate to the incident channel
                 cy.visit(`/ad-1/channels/${incidentChannelName}`);
 
-                // * Verify that the RHS shows the commander being the creator
+                // * Verify that the RHS shows the owner being the creator
                 cy.get('#rhsContainer').within(() => {
-                    cy.findByText('Commander').parent().within(() => {
+                    cy.findByText('Owner').parent().within(() => {
                         cy.findByText('@user-1');
                     });
                 });
             });
 
-            it('assigns the commander when they are part of the invited members list', () => {
+            it('assigns the owner when they are part of the invited members list', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
-                // # Create a playbook with the commander being part of the invited users
+                // # Create a playbook with the owner being part of the invited users
                 cy.apiGetUsers(['alice.johnston']).then((res) => {
                     const userIds = res.body.map((user) => user.id);
 
@@ -306,8 +306,8 @@ describe('incident automation', () => {
                         memberIDs: [userId],
                         invitedUserIds: userIds,
                         inviteUsersEnabled: true,
-                        defaultCommanderId: userIds[0],
-                        defaultCommanderEnabled: true,
+                        defaultOwnerId: userIds[0],
+                        defaultOwnerEnabled: true,
                     });
                 }).then((playbook) => {
                     // # Create a new incident with that playbook
@@ -319,25 +319,25 @@ describe('incident automation', () => {
                         teamId,
                         playbookId: playbook.id,
                         incidentName,
-                        commanderUserId: userId,
+                        ownerUserId: userId,
                     });
 
                     // # Navigate to the incident channel
                     cy.visit(`/ad-1/channels/${incidentChannelName}`);
 
-                    // * Verify that the RHS shows the commander being the invited user
+                    // * Verify that the RHS shows the owner being the invited user
                     cy.get('#rhsContainer').within(() => {
-                        cy.findByText('Commander').parent().within(() => {
+                        cy.findByText('Owner').parent().within(() => {
                             cy.findByText('@alice.johnston');
                         });
                     });
                 });
             });
 
-            it('assigns the commander even if they are not invited', () => {
+            it('assigns the owner even if they are not invited', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
-                // # Create a playbook with the commander being part of the invited users
+                // # Create a playbook with the owner being part of the invited users
                 cy.apiGetUsers(['alice.johnston']).then((res) => {
                     const userIds = res.body.map((user) => user.id);
 
@@ -348,8 +348,8 @@ describe('incident automation', () => {
                         memberIDs: [userId],
                         invitedUserIds: [],
                         inviteUsersEnabled: false,
-                        defaultCommanderId: userIds[0],
-                        defaultCommanderEnabled: true,
+                        defaultOwnerId: userIds[0],
+                        defaultOwnerEnabled: true,
                     });
                 }).then((playbook) => {
                     // # Create a new incident with that playbook
@@ -361,34 +361,34 @@ describe('incident automation', () => {
                         teamId,
                         playbookId: playbook.id,
                         incidentName,
-                        commanderUserId: userId,
+                        ownerUserId: userId,
                     });
 
                     // # Navigate to the incident channel
                     cy.visit(`/ad-1/channels/${incidentChannelName}`);
 
-                    // * Verify that the RHS shows the commander being the invited user
+                    // * Verify that the RHS shows the owner being the invited user
                     cy.get('#rhsContainer').within(() => {
-                        cy.findByText('Commander').parent().within(() => {
+                        cy.findByText('Owner').parent().within(() => {
                             cy.findByText('@alice.johnston');
                         });
                     });
                 });
             });
 
-            it('assigns the commander when they and the creator are the same', () => {
+            it('assigns the owner when they and the creator are the same', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
                 let playbookId;
 
-                // # Create a playbook with the default commander setting set to false
-                // and no commander specified
+                // # Create a playbook with the default owner setting set to false
+                // and no owner specified
                 cy.apiCreatePlaybook({
                     teamId,
                     title: playbookName,
                     createPublicIncident: true,
                     memberIDs: [userId],
-                    defaultCommanderId: userId,
-                    defaultCommanderEnabled: true,
+                    defaultOwnerId: userId,
+                    defaultOwnerEnabled: true,
                 }).then((playbook) => {
                     playbookId = playbook.id;
                 });
@@ -401,15 +401,15 @@ describe('incident automation', () => {
                     teamId,
                     playbookId,
                     incidentName,
-                    commanderUserId: userId,
+                    ownerUserId: userId,
                 });
 
                 // # Navigate to the incident channel
                 cy.visit(`/ad-1/channels/${incidentChannelName}`);
 
-                // * Verify that the RHS shows the commander being the creator
+                // * Verify that the RHS shows the owner being the creator
                 cy.get('#rhsContainer').within(() => {
-                    cy.findByText('Commander').parent().within(() => {
+                    cy.findByText('Owner').parent().within(() => {
                         cy.findByText('@user-1');
                     });
                 });
@@ -440,7 +440,7 @@ describe('incident automation', () => {
                         teamId,
                         playbookId: playbook.id,
                         incidentName,
-                        commanderUserId: userId,
+                        ownerUserId: userId,
                     });
 
                     // # Navigate to the incident channel.
@@ -458,7 +458,7 @@ describe('incident automation', () => {
 
                     cy.getLastPostId().then((lastPostId) => {
                         cy.get(`#postMessageText_${lastPostId}`).contains(`New Incident: ~${incidentName}`);
-                        cy.get(`#postMessageText_${lastPostId}`).contains('Commander: @user-1');
+                        cy.get(`#postMessageText_${lastPostId}`).contains('Owner: @user-1');
                     });
                 });
             });
@@ -486,7 +486,7 @@ describe('incident automation', () => {
                         teamId,
                         playbookId: playbook.id,
                         incidentName,
-                        commanderUserId: userId,
+                        ownerUserId: userId,
                     });
 
                     // # Navigate to the incident channel
@@ -543,7 +543,7 @@ describe('incident automation', () => {
                         teamId,
                         playbookId,
                         incidentName,
-                        commanderUserId: userId,
+                        ownerUserId: userId,
                     });
 
                     // # Navigate to the incident channel
@@ -580,7 +580,7 @@ describe('incident automation', () => {
                         teamId,
                         playbookId: playbook.id,
                         incidentName,
-                        commanderUserId: userId,
+                        ownerUserId: userId,
                         description: 'Incident description.',
                     });
 
@@ -615,7 +615,7 @@ describe('incident automation', () => {
                         teamId,
                         playbookId: playbook.id,
                         incidentName,
-                        commanderUserId: userId,
+                        ownerUserId: userId,
                         description: 'Incident description.',
                     });
 

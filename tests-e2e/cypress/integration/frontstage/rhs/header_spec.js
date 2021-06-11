@@ -51,7 +51,7 @@ describe('incident rhs > header', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             });
 
             // # Navigate directly to the application and the incident channel
@@ -72,7 +72,7 @@ describe('incident rhs > header', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             });
 
             // # Navigate directly to the application and the incident channel
@@ -108,7 +108,7 @@ describe('incident rhs > header', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             });
 
             // # Navigate directly to the application and the incident channel
@@ -129,7 +129,7 @@ describe('incident rhs > header', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             }).then((incident) => {
                 // # End the incident
                 cy.apiUpdateStatus({
@@ -160,7 +160,7 @@ describe('incident rhs > header', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             }).then((incident) => {
                 // # End the incident
                 cy.apiUpdateStatus({
@@ -191,7 +191,7 @@ describe('incident rhs > header', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             });
 
             // # Navigate directly to the application and the incident channel

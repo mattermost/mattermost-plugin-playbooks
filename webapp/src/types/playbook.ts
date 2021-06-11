@@ -15,8 +15,8 @@ export interface Playbook {
     invited_user_ids: string[];
     invited_group_ids: string[];
     invite_users_enabled: boolean;
-    default_commander_id: string;
-    default_commander_enabled: boolean;
+    default_owner_id: string;
+    default_owner_enabled: boolean;
     announcement_channel_id: string;
     announcement_channel_enabled: boolean;
     webhook_on_creation_url: string;
@@ -94,8 +94,8 @@ export function emptyPlaybook(): Playbook {
         invited_user_ids: [],
         invited_group_ids: [],
         invite_users_enabled: false,
-        default_commander_id: '',
-        default_commander_enabled: false,
+        default_owner_id: '',
+        default_owner_enabled: false,
         announcement_channel_id: '',
         announcement_channel_enabled: false,
         webhook_on_creation_url: '',
@@ -149,8 +149,8 @@ export function isPlaybook(arg: any): arg is Playbook {
         arg.invited_user_ids && Array.isArray(arg.invited_user_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
         arg.invited_group_ids && Array.isArray(arg.invited_group_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
         typeof arg.invite_users_enabled === 'boolean' &&
-        typeof arg.default_commander_id === 'string' &&
-        typeof arg.default_commander_enabled === 'boolean' &&
+        typeof arg.default_owner_id === 'string' &&
+        typeof arg.default_owner_enabled === 'boolean' &&
         typeof arg.announcement_channel_id === 'string' &&
         typeof arg.announcement_channel_enabled === 'boolean' &&
         typeof arg.webhook_on_creation_url === 'string' &&
@@ -182,7 +182,7 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
         typeof arg.command_last_run === 'number';
 }
 
-export const defaultMessageOnJoin = 'Welcome. This channel was automatically created by an Incident Collaboration playbook. To view information about this incident, such as the commander\'s name and list of tasks, select the shield icon in the channel header. You can also use the `/incident info` slash command.\n' +
+export const defaultMessageOnJoin = 'Welcome. This channel was automatically created by an Incident Collaboration playbook. To view information about this incident, such as the owner\'s name and list of tasks, select the shield icon in the channel header. You can also use the `/incident info` slash command.\n' +
     '\n' +
     'You may find the following resources helpful:\n' +
     '\n' +
