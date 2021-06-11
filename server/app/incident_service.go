@@ -94,20 +94,20 @@ func (s *IncidentServiceImpl) GetIncidents(requesterInfo RequesterInfo, options 
 	return s.store.GetIncidents(requesterInfo, options)
 }
 
-func (s *IncidentServiceImpl) broadcastIncidentCreation(theIncident *Incident, owner *model.User) error {
-	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+func (s *IncidentServiceImpl) broadcastIncidentCreation(incident *Incident, owner *model.User) error {
+	incidentChannel, err := s.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
 		return err
 	}
 
-	if err := IsChannelActiveInTeam(theIncident.AnnouncementChannelID, theIncident.TeamID, s.pluginAPI); err != nil {
+	if err := IsChannelActiveInTeam(incident.AnnouncementChannelID, incident.TeamID, s.pluginAPI); err != nil {
 		return err
 	}
 
 	announcementMsg := fmt.Sprintf("#### New Incident: ~%s\n", incidentChannel.Name)
 	announcementMsg += fmt.Sprintf("**Owner**: @%s\n", owner.Username)
 
-	if _, err := s.poster.PostMessage(theIncident.AnnouncementChannelID, announcementMsg); err != nil {
+	if _, err := s.poster.PostMessage(incident.AnnouncementChannelID, announcementMsg); err != nil {
 		return err
 	}
 
@@ -116,33 +116,33 @@ func (s *IncidentServiceImpl) broadcastIncidentCreation(theIncident *Incident, o
 
 // sendWebhookOnCreation sends a POST request to the creation webhook URL.
 // It blocks until a response is received.
-func (s *IncidentServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
+func (s *IncidentServiceImpl) sendWebhookOnCreation(incident Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on creation, please set siteURL")
 		return errors.New("Could not send webhook, please set siteURL")
 	}
 
-	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	team, err := s.pluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		return err
 	}
 
-	channel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	channel, err := s.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
 		return err
 	}
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, theIncident.ID)
+	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, incident.ID)
 
 	payload := struct {
 		Incident
 		ChannelURL string `json:"channel_url"`
 		DetailsURL string `json:"details_url"`
 	}{
-		Incident:   theIncident,
+		Incident:   incident,
 		ChannelURL: channelURL,
 		DetailsURL: detailsURL,
 	}
@@ -152,7 +152,7 @@ func (s *IncidentServiceImpl) sendWebhookOnCreation(theIncident Incident) error 
 		return err
 	}
 
-	req, err := http.NewRequest("POST", theIncident.WebhookOnCreationURL, bytes.NewReader(body))
+	req, err := http.NewRequest("POST", incident.WebhookOnCreationURL, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -575,13 +575,13 @@ func (s *IncidentServiceImpl) RemoveTimelineEvent(incidentID, userID, eventID st
 	return nil
 }
 
-func (s *IncidentServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *Incident, authorID, originalPostID string) error {
-	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+func (s *IncidentServiceImpl) broadcastStatusUpdate(statusUpdate string, incident *Incident, authorID, originalPostID string) error {
+	incidentChannel, err := s.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
 		return err
 	}
 
-	incidentTeam, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	incidentTeam, err := s.pluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		return err
 	}
@@ -591,14 +591,14 @@ func (s *IncidentServiceImpl) broadcastStatusUpdate(statusUpdate string, theInci
 		return err
 	}
 
-	duration := timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())
+	duration := timeutils.DurationString(timeutils.GetTimeForMillis(incident.CreateAt), time.Now())
 
 	broadcastedMsg := fmt.Sprintf("# Incident Update: [%s](/%s/pl/%s)\n", incidentChannel.DisplayName, incidentTeam.Name, originalPostID)
-	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, theIncident.CurrentStatus)
+	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, incident.CurrentStatus)
 	broadcastedMsg += "***\n"
 	broadcastedMsg += statusUpdate
 
-	if _, err := s.poster.PostMessage(theIncident.BroadcastChannelID, broadcastedMsg); err != nil {
+	if _, err := s.poster.PostMessage(incident.BroadcastChannelID, broadcastedMsg); err != nil {
 		return err
 	}
 
@@ -607,33 +607,33 @@ func (s *IncidentServiceImpl) broadcastStatusUpdate(statusUpdate string, theInci
 
 // sendWebhookOnUpdateStatus sends a POST request to the status update webhook URL.
 // It blocks until a response is received.
-func (s *IncidentServiceImpl) sendWebhookOnUpdateStatus(theIncident Incident) error {
+func (s *IncidentServiceImpl) sendWebhookOnUpdateStatus(incident Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on update, please set siteURL")
 		return errors.New("siteURL not set")
 	}
 
-	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	team, err := s.pluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		return err
 	}
 
-	channel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	channel, err := s.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
 		return err
 	}
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, theIncident.ID)
+	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, incident.ID)
 
 	payload := struct {
 		Incident
 		ChannelURL string `json:"channel_url"`
 		DetailsURL string `json:"details_url"`
 	}{
-		Incident:   theIncident,
+		Incident:   incident,
 		ChannelURL: channelURL,
 		DetailsURL: detailsURL,
 	}
@@ -643,7 +643,7 @@ func (s *IncidentServiceImpl) sendWebhookOnUpdateStatus(theIncident Incident) er
 		return err
 	}
 
-	req, err := http.NewRequest("POST", theIncident.WebhookOnStatusUpdateURL, bytes.NewReader(body))
+	req, err := http.NewRequest("POST", incident.WebhookOnStatusUpdateURL, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -1255,14 +1255,14 @@ func (s *IncidentServiceImpl) MoveChecklistItem(incidentID, userID string, check
 
 // GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
 func (s *IncidentServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
-	theIncident, err := s.store.GetIncident(incidentID)
+	incident, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve incident")
 	}
 
 	ret := make([]model.AutocompleteListItem, 0)
 
-	for i, checklist := range theIncident.Checklists {
+	for i, checklist := range incident.Checklists {
 		ret = append(ret, model.AutocompleteListItem{
 			Item: fmt.Sprintf("%d", i),
 			Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(checklist.Title)),
@@ -1274,14 +1274,14 @@ func (s *IncidentServiceImpl) GetChecklistAutocomplete(incidentID string) ([]mod
 
 // GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
 func (s *IncidentServiceImpl) GetChecklistItemAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
-	theIncident, err := s.store.GetIncident(incidentID)
+	incident, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve incident")
 	}
 
 	ret := make([]model.AutocompleteListItem, 0)
 
-	for i, checklist := range theIncident.Checklists {
+	for i, checklist := range incident.Checklists {
 		for j, item := range checklist.Items {
 			ret = append(ret, model.AutocompleteListItem{
 				Item: fmt.Sprintf("%d %d", i, j),
@@ -1401,7 +1401,7 @@ func (s *IncidentServiceImpl) UserHasJoinedChannel(userID, channelID, actorID st
 }
 
 // CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
-// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.
+// incident.MessageOnJoin if it exists. Returns true if the message was sent.
 func (s *IncidentServiceImpl) CheckAndSendMessageOnJoin(userID, givenIncidentID, channelID string) bool {
 	hasViewed := s.store.HasViewedChannel(userID, channelID)
 
@@ -1420,7 +1420,7 @@ func (s *IncidentServiceImpl) CheckAndSendMessageOnJoin(userID, givenIncidentID,
 		return false
 	}
 
-	theIncident, err := s.store.GetIncident(incidentID)
+	incident, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		s.logger.Errorf("failed to resolve incident for incidentID: %s; error: %s", incidentID, err.Error())
 		return false
@@ -1431,9 +1431,9 @@ func (s *IncidentServiceImpl) CheckAndSendMessageOnJoin(userID, givenIncidentID,
 		return errors.Is(err, ErrDuplicateEntry)
 	}
 
-	if theIncident.MessageOnJoin != "" {
+	if incident.MessageOnJoin != "" {
 		s.poster.EphemeralPost(userID, channelID, &model.Post{
-			Message: theIncident.MessageOnJoin,
+			Message: incident.MessageOnJoin,
 		})
 	}
 

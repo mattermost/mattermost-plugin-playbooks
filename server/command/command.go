@@ -530,23 +530,23 @@ func (r *Runner) actionList() {
 
 	now := time.Now()
 	attachments := make([]*model.SlackAttachment, len(result.Items))
-	for i, theIncident := range result.Items {
-		owner, err := r.pluginAPI.User.Get(theIncident.OwnerUserID)
+	for i, incident := range result.Items {
+		owner, err := r.pluginAPI.User.Get(incident.OwnerUserID)
 		if err != nil {
-			r.warnUserAndLogErrorf("Error retrieving owner of incident '%s': %v", theIncident.Name, err)
+			r.warnUserAndLogErrorf("Error retrieving owner of incident '%s': %v", incident.Name, err)
 			return
 		}
 
-		channel, err := r.pluginAPI.Channel.Get(theIncident.ChannelID)
+		channel, err := r.pluginAPI.Channel.Get(incident.ChannelID)
 		if err != nil {
-			r.warnUserAndLogErrorf("Error retrieving channel of incident '%s': %v", theIncident.Name, err)
+			r.warnUserAndLogErrorf("Error retrieving channel of incident '%s': %v", incident.Name, err)
 			return
 		}
 
 		attachments[i] = &model.SlackAttachment{
 			Pretext: fmt.Sprintf("### ~%s", channel.Name),
 			Fields: []*model.SlackAttachmentField{
-				{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), now)},
+				{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(incident.CreateAt), now)},
 				{Title: "Owner:", Value: fmt.Sprintf("@%s", owner.Username)},
 			},
 		}
@@ -583,20 +583,20 @@ func (r *Runner) actionInfo() {
 		return
 	}
 
-	theIncident, err := r.incidentService.GetIncident(incidentID)
+	incident, err := r.incidentService.GetIncident(incidentID)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
-	owner, err := r.pluginAPI.User.Get(theIncident.OwnerUserID)
+	owner, err := r.pluginAPI.User.Get(incident.OwnerUserID)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving owner user: %v", err)
 		return
 	}
 
 	tasks := ""
-	for _, checklist := range theIncident.Checklists {
+	for _, checklist := range incident.Checklists {
 		for _, item := range checklist.Items {
 			icon := ":white_large_square: "
 			timestamp := ""
@@ -610,8 +610,8 @@ func (r *Runner) actionInfo() {
 	}
 	attachment := &model.SlackAttachment{
 		Fields: []*model.SlackAttachmentField{
-			{Title: "Incident Name:", Value: fmt.Sprintf("**%s**", strings.Trim(theIncident.Name, " "))},
-			{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())},
+			{Title: "Incident Name:", Value: fmt.Sprintf("**%s**", strings.Trim(incident.Name, " "))},
+			{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(incident.CreateAt), time.Now())},
 			{Title: "Owner:", Value: fmt.Sprintf("@%s", owner.Username)},
 			{Title: "Tasks:", Value: tasks},
 		},
@@ -1091,7 +1091,7 @@ func (r *Runner) actionTestCreate(params []string) {
 
 	incidentName := strings.Join(params[2:], " ")
 
-	theIncident := &app.Incident{
+	incident := &app.Incident{
 		Name:        incidentName,
 		OwnerUserID: r.args.UserId,
 		TeamID:      r.args.TeamId,
@@ -1099,7 +1099,7 @@ func (r *Runner) actionTestCreate(params []string) {
 		Checklists:  thePlaybook.Checklists,
 	}
 
-	newIncident, err := r.incidentService.CreateIncident(theIncident, &thePlaybook, r.args.UserId, true)
+	newIncident, err := r.incidentService.CreateIncident(incident, &thePlaybook, r.args.UserId, true)
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to create incident: %v", err)
 		return
@@ -1319,7 +1319,7 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 			incidentName = fmt.Sprintf("[%s] %s", companyName, incidentName)
 		}
 
-		theIncident := &app.Incident{
+		incident := &app.Incident{
 			Name:        incidentName,
 			OwnerUserID: r.args.UserId,
 			TeamID:      r.args.TeamId,
@@ -1327,7 +1327,7 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 			Checklists:  thePlaybook.Checklists,
 		}
 
-		newIncident, err := r.incidentService.CreateIncident(theIncident, &thePlaybook, r.args.UserId, true)
+		newIncident, err := r.incidentService.CreateIncident(incident, &thePlaybook, r.args.UserId, true)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error creating incident: %v", err)
 			return

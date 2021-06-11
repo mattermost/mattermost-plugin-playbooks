@@ -365,7 +365,7 @@ type IncidentService interface {
 	CancelRetrospective(incidentID, userID string) error
 
 	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
-	// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.
+	// incident.MessageOnJoin if it exists. Returns true if the message was sent.
 	CheckAndSendMessageOnJoin(userID, incidentID, channelID string) bool
 }
 
