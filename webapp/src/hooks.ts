@@ -285,3 +285,30 @@ export function useEnsureProfiles(userIds: string[]) {
         dispatch(getProfilesByIds(userIds));
     }
 }
+
+export function useOpenCloudModal() {
+    const dispatch = useDispatch();
+
+    // @ts-ignore
+    const {openModal, ModalIdentifiers} = window.WebappUtils.modals;
+
+    // @ts-ignore
+    const PurchaseModal = window.Components.PurchaseModal;
+
+    if (!openModal || !ModalIdentifiers?.CLOUD_PURCHASE || !PurchaseModal) {
+        // eslint-disable-next-line no-process-env
+        if (process.env.NODE_ENV !== 'production') {
+            // eslint-disable-next-line no-console
+            console.error('unable to open cloud modal', openModal, ModalIdentifiers, PurchaseModal);
+        }
+
+        return () => { /*do nothing*/ };
+    }
+
+    return () => {
+        dispatch(openModal({
+            modalId: ModalIdentifiers.CLOUD_PURCHASE,
+            dialogType: PurchaseModal,
+        }));
+    };
+}
