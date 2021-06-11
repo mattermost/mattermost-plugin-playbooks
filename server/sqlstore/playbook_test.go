@@ -632,7 +632,6 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			requesterInfo: playbook.RequesterInfo{
 				UserID:          lucia.ID,
 				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
-				MemberOnly:      true,
 			},
 			options: playbook.Options{
 				Sort: playbook.SortByTitle,
@@ -827,25 +826,6 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PageCount:  1,
 				HasMore:    false,
 				Items:      []playbook.Playbook{pb07, pb08},
-			},
-			expectedErr: nil,
-		},
-		{
-			name:   "team3 from Admin, memberOnly",
-			teamID: team3id,
-			requesterInfo: playbook.RequesterInfo{
-				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
-				MemberOnly:      true,
-			},
-			options: playbook.Options{
-				Sort: playbook.SortByTitle,
-			},
-			expected: playbook.GetPlaybooksResults{
-				TotalCount: 1,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []playbook.Playbook{pb08},
 			},
 			expectedErr: nil,
 		},*/

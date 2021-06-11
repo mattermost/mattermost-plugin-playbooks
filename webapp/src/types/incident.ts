@@ -158,5 +158,4 @@ export interface FetchPlaybooksParams {
     per_page?: number;
     sort?: string;
     direction?: string;
-    member_only?: boolean;
 }

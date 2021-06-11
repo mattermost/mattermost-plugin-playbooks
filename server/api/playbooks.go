@@ -281,7 +281,6 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, fmt.Sprintf("failed to get playbooks: %s", err.Error()), nil)
 		return
 	}
-	memberOnly, _ := strconv.ParseBool(params.Get("member_only"))
 
 	if teamID == "" {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "Provide a team ID", nil)
@@ -314,7 +313,6 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		UserID:          userID,
 		TeamID:          teamID,
 		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
-		MemberOnly:      memberOnly,
 	}
 
 	playbookResults, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, opts)
@@ -340,7 +338,6 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 		UserID:          userID,
 		TeamID:          teamID,
 		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
-		MemberOnly:      true,
 	}
 
 	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, playbook.Options{})

@@ -963,7 +963,6 @@ func TestPlaybooks(t *testing.T) {
 					UserID:          "testuserid",
 					TeamID:          "testteamid",
 					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
-					MemberOnly:      true,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -975,9 +974,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{
-			MemberOnly: true,
-		})
+		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{})
 		require.NoError(t, err)
 
 		expectedList := &icClient.GetPlaybooksResults{
