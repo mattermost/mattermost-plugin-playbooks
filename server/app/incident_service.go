@@ -174,20 +174,20 @@ func (s *IncidentServiceImpl) sendWebhookOnCreation(incident Incident) error {
 }
 
 // CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
-func (s *IncidentServiceImpl) CreateIncident(incdnt *Incident, pb *Playbook, userID string, public bool) (*Incident, error) {
-	if incdnt.DefaultOwnerID != "" {
+func (s *IncidentServiceImpl) CreateIncident(incident *Incident, pb *Playbook, userID string, public bool) (*Incident, error) {
+	if incident.DefaultOwnerID != "" {
 		// Check if the user is a member of the incident's team
-		if !IsMemberOfTeamID(incdnt.DefaultOwnerID, incdnt.TeamID, s.pluginAPI) {
-			s.pluginAPI.Log.Warn("default owner specified, but it is not a member of the incident's team", "userID", incdnt.DefaultOwnerID, "teamID", incdnt.TeamID)
+		if !IsMemberOfTeamID(incident.DefaultOwnerID, incident.TeamID, s.pluginAPI) {
+			s.pluginAPI.Log.Warn("default owner specified, but it is not a member of the incident's team", "userID", incident.DefaultOwnerID, "teamID", incident.TeamID)
 		} else {
-			incdnt.OwnerUserID = incdnt.DefaultOwnerID
+			incident.OwnerUserID = incident.DefaultOwnerID
 		}
 	}
 
-	incdnt.ReporterUserID = userID
-	incdnt.ID = model.NewId()
+	incident.ReporterUserID = userID
+	incident.ID = model.NewId()
 
-	team, err := s.pluginAPI.Team.Get(incdnt.TeamID)
+	team, err := s.pluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch team")
 	}
@@ -201,25 +201,25 @@ func (s *IncidentServiceImpl) CreateIncident(incdnt *Incident, pb *Playbook, use
 
 	header := "This is an incident channel. To view more information, select the shield icon then select *Tasks* or *Overview*."
 	if siteURL != "" && pb != nil {
-		overviewURL = fmt.Sprintf("%s/%s/%s/incidents/%s", siteURL, team.Name, s.configService.GetManifest().Id, incdnt.ID)
+		overviewURL = fmt.Sprintf("%s/%s/%s/incidents/%s", siteURL, team.Name, s.configService.GetManifest().Id, incident.ID)
 		playbookURL = fmt.Sprintf("%s/%s/%s/playbooks/%s", siteURL, team.Name, s.configService.GetManifest().Id, pb.ID)
 		header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
 			pb.Title, playbookURL, overviewURL)
 	}
 
 	// Try to create the channel first
-	channel, err := s.createIncidentChannel(incdnt, header, public)
+	channel, err := s.createIncidentChannel(incident, header, public)
 	if err != nil {
 		return nil, err
 	}
 
-	incdnt.ChannelID = channel.Id
-	incdnt.CreateAt = model.GetMillis()
-	incdnt.CurrentStatus = StatusReported
+	incident.ChannelID = channel.Id
+	incident.CreateAt = model.GetMillis()
+	incident.CurrentStatus = StatusReported
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
-	if incdnt.PlaybookID == "" {
-		incdnt.Checklists = []Checklist{
+	if incident.PlaybookID == "" {
+		incident.Checklists = []Checklist{
 			{
 				Title: "Checklist",
 				Items: []ChecklistItem{},
@@ -227,16 +227,16 @@ func (s *IncidentServiceImpl) CreateIncident(incdnt *Incident, pb *Playbook, use
 		}
 	}
 
-	incdnt, err = s.store.CreateIncident(incdnt)
+	incident, err = s.store.CreateIncident(incident)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create incident")
 	}
 
-	s.telemetry.CreateIncident(incdnt, userID, public)
+	s.telemetry.CreateIncident(incident, userID, public)
 
-	invitedUserIDs := incdnt.InvitedUserIDs
+	invitedUserIDs := incident.InvitedUserIDs
 
-	for _, groupID := range incdnt.InvitedGroupIDs {
+	for _, groupID := range incident.InvitedGroupIDs {
 		var group *model.Group
 		group, err = s.pluginAPI.Group.Get(groupID)
 		if err != nil {
@@ -270,13 +270,13 @@ func (s *IncidentServiceImpl) CreateIncident(incdnt *Incident, pb *Playbook, use
 	usersFailedToInvite := []string{}
 	for _, userID := range invitedUserIDs {
 		// Check if the user is a member of the incident's team
-		_, err = s.pluginAPI.Team.GetMember(incdnt.TeamID, userID)
+		_, err = s.pluginAPI.Team.GetMember(incident.TeamID, userID)
 		if err != nil {
 			usersFailedToInvite = append(usersFailedToInvite, userID)
 			continue
 		}
 
-		_, err = s.pluginAPI.Channel.AddUser(incdnt.ChannelID, userID, s.configService.GetConfiguration().BotUserID)
+		_, err = s.pluginAPI.Channel.AddUser(incident.ChannelID, userID, s.configService.GetConfiguration().BotUserID)
 		if err != nil {
 			usersFailedToInvite = append(usersFailedToInvite, userID)
 			continue
@@ -307,18 +307,18 @@ func (s *IncidentServiceImpl) CreateIncident(incdnt *Incident, pb *Playbook, use
 		}
 	}
 
-	reporter, err := s.pluginAPI.User.Get(incdnt.ReporterUserID)
+	reporter, err := s.pluginAPI.User.Get(incident.ReporterUserID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.ReporterUserID)
+		return nil, errors.Wrapf(err, "failed to resolve user %s", incident.ReporterUserID)
 	}
 
-	owner, err := s.pluginAPI.User.Get(incdnt.OwnerUserID)
+	owner, err := s.pluginAPI.User.Get(incident.OwnerUserID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.OwnerUserID)
+		return nil, errors.Wrapf(err, "failed to resolve user %s", incident.OwnerUserID)
 	}
 
 	startMessage := fmt.Sprintf("This incident has been started and is commanded by @%s.", reporter.Username)
-	if incdnt.OwnerUserID != incdnt.ReporterUserID {
+	if incident.OwnerUserID != incident.ReporterUserID {
 		startMessage = fmt.Sprintf("This incident has been started by @%s and is commanded by @%s.", reporter.Username, owner.Username)
 	}
 
@@ -327,9 +327,9 @@ func (s *IncidentServiceImpl) CreateIncident(incdnt *Incident, pb *Playbook, use
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
 	}
 
-	if incdnt.AnnouncementChannelID != "" {
-		if err2 := s.broadcastIncidentCreation(incdnt, owner); err2 != nil {
-			s.pluginAPI.Log.Warn("failed to broadcast the incident creation to channel", "ChannelID", incdnt.AnnouncementChannelID)
+	if incident.AnnouncementChannelID != "" {
+		if err2 := s.broadcastIncidentCreation(incident, owner); err2 != nil {
+			s.pluginAPI.Log.Warn("failed to broadcast the incident creation to channel", "ChannelID", incident.AnnouncementChannelID)
 
 			if _, err = s.poster.PostMessage(channel.Id, "Failed to announce the creation of this incident in the configured channel."); err != nil {
 				return nil, errors.Wrapf(err, "failed to post to incident channel")
@@ -338,39 +338,39 @@ func (s *IncidentServiceImpl) CreateIncident(incdnt *Incident, pb *Playbook, use
 	}
 
 	event := &TimelineEvent{
-		IncidentID:    incdnt.ID,
-		CreateAt:      incdnt.CreateAt,
-		EventAt:       incdnt.CreateAt,
+		IncidentID:    incident.ID,
+		CreateAt:      incident.CreateAt,
+		EventAt:       incident.CreateAt,
 		EventType:     IncidentCreated,
 		PostID:        newPost.Id,
-		SubjectUserID: incdnt.ReporterUserID,
+		SubjectUserID: incident.ReporterUserID,
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		return incdnt, errors.Wrap(err, "failed to create timeline event")
+		return incident, errors.Wrap(err, "failed to create timeline event")
 	}
-	incdnt.TimelineEvents = append(incdnt.TimelineEvents, *event)
+	incident.TimelineEvents = append(incident.TimelineEvents, *event)
 
-	if incdnt.WebhookOnCreationURL != "" {
+	if incident.WebhookOnCreationURL != "" {
 		go func() {
-			if err = s.sendWebhookOnCreation(*incdnt); err != nil {
-				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incdnt.WebhookOnCreationURL, "error", err)
+			if err = s.sendWebhookOnCreation(*incident); err != nil {
+				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incident.WebhookOnCreationURL, "error", err)
 				_, _ = s.poster.PostMessage(channel.Id, "Incident creation announcement through the outgoing webhook failed. Contact your System Admin for more information.")
 			}
 		}()
 	}
 
-	if incdnt.PostID == "" {
-		return incdnt, nil
+	if incident.PostID == "" {
+		return incident, nil
 	}
 
 	// Post the content and link of the original post
-	post, err := s.pluginAPI.Post.GetPost(incdnt.PostID)
+	post, err := s.pluginAPI.Post.GetPost(incident.PostID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get incident original post")
 	}
 
-	postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, incdnt.PostID)
+	postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, incident.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
 	_, err = s.poster.PostMessage(channel.Id, postMessage)
@@ -378,7 +378,7 @@ func (s *IncidentServiceImpl) CreateIncident(incdnt *Incident, pb *Playbook, use
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
 	}
 
-	return incdnt, nil
+	return incident, nil
 }
 
 // OpenCreateIncidentDialog opens a interactive dialog to start a new incident.
@@ -871,11 +871,11 @@ func (s *IncidentServiceImpl) GetOwners(requesterInfo RequesterInfo, options Inc
 
 // IsOwner returns true if the userID is the owner for incidentID.
 func (s *IncidentServiceImpl) IsOwner(incidentID, userID string) bool {
-	incdnt, err := s.store.GetIncident(incidentID)
+	incident, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return false
 	}
-	return incdnt.OwnerUserID == userID
+	return incident.OwnerUserID == userID
 }
 
 // ChangeOwner processes a request from userID to change the owner for incidentID
@@ -1498,17 +1498,17 @@ func (s *IncidentServiceImpl) hasPermissionToModifyIncident(incident *Incident, 
 	return s.pluginAPI.User.HasPermissionToChannel(userID, incident.ChannelID, model.PERMISSION_READ_CHANNEL)
 }
 
-func (s *IncidentServiceImpl) createIncidentChannel(incdnt *Incident, header string, public bool) (*model.Channel, error) {
+func (s *IncidentServiceImpl) createIncidentChannel(incident *Incident, header string, public bool) (*model.Channel, error) {
 	channelType := model.CHANNEL_PRIVATE
 	if public {
 		channelType = model.CHANNEL_OPEN
 	}
 
 	channel := &model.Channel{
-		TeamId:      incdnt.TeamID,
+		TeamId:      incident.TeamID,
 		Type:        channelType,
-		DisplayName: incdnt.Name,
-		Name:        cleanChannelName(incdnt.Name),
+		DisplayName: incident.Name,
+		Name:        cleanChannelName(incident.Name),
 		Header:      header,
 	}
 
@@ -1547,18 +1547,18 @@ func (s *IncidentServiceImpl) createIncidentChannel(incdnt *Incident, header str
 		return nil, errors.Wrapf(err, "failed to add bot to the channel")
 	}
 
-	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incident.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 		return nil, errors.Wrapf(err, "failed to add reporter to the channel")
 	}
 
-	if incdnt.OwnerUserID != incdnt.ReporterUserID {
-		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.OwnerUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+	if incident.OwnerUserID != incident.ReporterUserID {
+		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incident.OwnerUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 			return nil, errors.Wrapf(err, "failed to add owner to channel")
 		}
 	}
 
-	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, incdnt.OwnerUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
-		s.pluginAPI.Log.Warn("failed to promote owner to admin", "ChannelID", channel.Id, "OwnerUserID", incdnt.OwnerUserID, "err", err.Error())
+	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, incident.OwnerUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
+		s.pluginAPI.Log.Warn("failed to promote owner to admin", "ChannelID", channel.Id, "OwnerUserID", incident.OwnerUserID, "err", err.Error())
 	}
 
 	return channel, nil

@@ -51,13 +51,13 @@ func (h *TelemetryHandler) checkViewPermissions(next http.Handler) http.Handler 
 		vars := mux.Vars(r)
 		userID := r.Header.Get("Mattermost-User-ID")
 
-		incdnt, err := h.incidentService.GetIncident(vars["id"])
+		incident, err := h.incidentService.GetIncident(vars["id"])
 		if err != nil {
 			h.HandleError(w, err)
 			return
 		}
 
-		if err := app.ViewIncidentFromChannelID(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
+		if err := app.ViewIncidentFromChannelID(userID, incident.ChannelID, h.pluginAPI); err != nil {
 			if errors.Is(err, app.ErrNoPermissions) {
 				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
@@ -92,13 +92,13 @@ func (h *TelemetryHandler) telemetryForIncident(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	incdnt, err := h.incidentService.GetIncident(id)
+	incident, err := h.incidentService.GetIncident(id)
 	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
 
-	h.incidentTelemetry.FrontendTelemetryForIncident(incdnt, userID, params.Action)
+	h.incidentTelemetry.FrontendTelemetryForIncident(incident, userID, params.Action)
 
 	w.WriteHeader(http.StatusNoContent)
 }

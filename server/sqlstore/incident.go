@@ -861,8 +861,8 @@ func addStatusPostsToIncidents(statusIDs incidentStatusPosts, incidents []app.In
 	for _, p := range statusIDs {
 		iToPosts[p.IncidentID] = append(iToPosts[p.IncidentID], p.StatusPost)
 	}
-	for i, incdnt := range incidents {
-		incidents[i].StatusPosts = iToPosts[incdnt.ID]
+	for i, incident := range incidents {
+		incidents[i].StatusPosts = iToPosts[incident.ID]
 	}
 }
 
@@ -871,7 +871,7 @@ func addTimelineEventsToIncidents(timelineEvents []app.TimelineEvent, incidents 
 	for _, te := range timelineEvents {
 		iToTe[te.IncidentID] = append(iToTe[te.IncidentID], te)
 	}
-	for i, incdnt := range incidents {
-		incidents[i].TimelineEvents = iToTe[incdnt.ID]
+	for i, incident := range incidents {
+		incidents[i].TimelineEvents = iToTe[incident.ID]
 	}
 }

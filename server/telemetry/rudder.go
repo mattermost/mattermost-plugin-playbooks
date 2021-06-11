@@ -116,86 +116,86 @@ func (t *RudderTelemetry) track(event string, properties map[string]interface{})
 	})
 }
 
-func incidentProperties(incdnt *app.Incident, userID string) map[string]interface{} {
+func incidentProperties(incident *app.Incident, userID string) map[string]interface{} {
 	totalChecklistItems := 0
-	for _, checklist := range incdnt.Checklists {
+	for _, checklist := range incident.Checklists {
 		totalChecklistItems += len(checklist.Items)
 	}
 
 	return map[string]interface{}{
 		"UserActualID":        userID,
-		"IncidentID":          incdnt.ID,
-		"HasDescription":      incdnt.Description != "",
-		"CommanderUserID":     incdnt.OwnerUserID,
-		"ReporterUserID":      incdnt.ReporterUserID,
-		"TeamID":              incdnt.TeamID,
-		"ChannelID":           incdnt.ChannelID,
-		"CreateAt":            incdnt.CreateAt,
-		"EndAt":               incdnt.EndAt,
-		"DeleteAt":            incdnt.DeleteAt,
-		"PostID":              incdnt.PostID,
-		"PlaybookID":          incdnt.PlaybookID,
-		"NumChecklists":       len(incdnt.Checklists),
+		"IncidentID":          incident.ID,
+		"HasDescription":      incident.Description != "",
+		"CommanderUserID":     incident.OwnerUserID,
+		"ReporterUserID":      incident.ReporterUserID,
+		"TeamID":              incident.TeamID,
+		"ChannelID":           incident.ChannelID,
+		"CreateAt":            incident.CreateAt,
+		"EndAt":               incident.EndAt,
+		"DeleteAt":            incident.DeleteAt,
+		"PostID":              incident.PostID,
+		"PlaybookID":          incident.PlaybookID,
+		"NumChecklists":       len(incident.Checklists),
 		"TotalChecklistItems": totalChecklistItems,
-		"NumStatusPosts":      len(incdnt.StatusPosts),
-		"CurrentStatus":       incdnt.CurrentStatus,
-		"PreviousReminder":    incdnt.PreviousReminder,
-		"NumTimelineEvents":   len(incdnt.TimelineEvents),
+		"NumStatusPosts":      len(incident.StatusPosts),
+		"CurrentStatus":       incident.CurrentStatus,
+		"PreviousReminder":    incident.PreviousReminder,
+		"NumTimelineEvents":   len(incident.TimelineEvents),
 	}
 }
 
 // CreateIncident tracks the creation of the incident passed.
-func (t *RudderTelemetry) CreateIncident(incdnt *app.Incident, userID string, public bool) {
-	properties := incidentProperties(incdnt, userID)
+func (t *RudderTelemetry) CreateIncident(incident *app.Incident, userID string, public bool) {
+	properties := incidentProperties(incident, userID)
 	properties["Action"] = actionCreate
 	properties["Public"] = public
 	t.track(eventIncident, properties)
 }
 
 // EndIncident tracks the end of the incident passed.
-func (t *RudderTelemetry) EndIncident(incdnt *app.Incident, userID string) {
-	properties := incidentProperties(incdnt, userID)
+func (t *RudderTelemetry) EndIncident(incident *app.Incident, userID string) {
+	properties := incidentProperties(incident, userID)
 	properties["Action"] = actionEnd
 	t.track(eventIncident, properties)
 }
 
 // RestartIncident tracks the restart of the incident.
-func (t *RudderTelemetry) RestartIncident(incdnt *app.Incident, userID string) {
-	properties := incidentProperties(incdnt, userID)
+func (t *RudderTelemetry) RestartIncident(incident *app.Incident, userID string) {
+	properties := incidentProperties(incident, userID)
 	properties["Action"] = actionRestart
 	t.track(eventIncident, properties)
 }
 
 // ChangeOwner tracks changes in owner
-func (t *RudderTelemetry) ChangeOwner(incdnt *app.Incident, userID string) {
-	properties := incidentProperties(incdnt, userID)
+func (t *RudderTelemetry) ChangeOwner(incident *app.Incident, userID string) {
+	properties := incidentProperties(incident, userID)
 	properties["Action"] = actionChangeOwner
 	t.track(eventIncident, properties)
 }
 
-func (t *RudderTelemetry) UpdateStatus(incdnt *app.Incident, userID string) {
-	properties := incidentProperties(incdnt, userID)
+func (t *RudderTelemetry) UpdateStatus(incident *app.Incident, userID string) {
+	properties := incidentProperties(incident, userID)
 	properties["Action"] = actionUpdateStatus
-	properties["ReminderTimerSeconds"] = int(incdnt.PreviousReminder)
+	properties["ReminderTimerSeconds"] = int(incident.PreviousReminder)
 	t.track(eventIncident, properties)
 }
 
-func (t *RudderTelemetry) FrontendTelemetryForIncident(incdnt *app.Incident, userID, action string) {
-	properties := incidentProperties(incdnt, userID)
+func (t *RudderTelemetry) FrontendTelemetryForIncident(incident *app.Incident, userID, action string) {
+	properties := incidentProperties(incident, userID)
 	properties["Action"] = action
 	t.track(eventFrontend, properties)
 }
 
 // AddPostToTimeline tracks userID creating a timeline event from a post.
-func (t *RudderTelemetry) AddPostToTimeline(incdnt *app.Incident, userID string) {
-	properties := incidentProperties(incdnt, userID)
+func (t *RudderTelemetry) AddPostToTimeline(incident *app.Incident, userID string) {
+	properties := incidentProperties(incident, userID)
 	properties["Action"] = actionAddTimelineEventFromPost
 	t.track(eventIncident, properties)
 }
 
 // RemoveTimelineEvent tracks userID removing a timeline event.
-func (t *RudderTelemetry) RemoveTimelineEvent(incdnt *app.Incident, userID string) {
-	properties := incidentProperties(incdnt, userID)
+func (t *RudderTelemetry) RemoveTimelineEvent(incident *app.Incident, userID string) {
+	properties := incidentProperties(incident, userID)
 	properties["Action"] = actionRemoveTimelineEvent
 	t.track(eventIncident, properties)
 }

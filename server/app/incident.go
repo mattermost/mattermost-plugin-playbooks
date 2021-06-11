@@ -253,7 +253,7 @@ type IncidentService interface {
 	GetIncidents(requesterInfo RequesterInfo, options IncidentFilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
-	CreateIncident(incdnt *Incident, playbook *Playbook, userID string, public bool) (*Incident, error)
+	CreateIncident(incident *Incident, playbook *Playbook, userID string, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
 	OpenCreateIncidentDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error
@@ -374,11 +374,11 @@ type IncidentStore interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
 	GetIncidents(requesterInfo RequesterInfo, options IncidentFilterOptions) (*GetIncidentsResults, error)
 
-	// CreateIncident creates a new incident. If incdnt has an ID, that ID will be used.
-	CreateIncident(incdnt *Incident) (*Incident, error)
+	// CreateIncident creates a new incident. If incident has an ID, that ID will be used.
+	CreateIncident(incident *Incident) (*Incident, error)
 
 	// UpdateIncident updates an incident.
-	UpdateIncident(incdnt *Incident) error
+	UpdateIncident(incident *Incident) error
 
 	// UpdateStatus updates the status of an incident.
 	UpdateStatus(statusPost *SQLStatusPost) error
@@ -439,13 +439,13 @@ type IncidentTelemetry interface {
 	UpdateStatus(incident *Incident, userID string)
 
 	// FrontendTelemetryForIncident tracks an event originating from the frontend
-	FrontendTelemetryForIncident(incdnt *Incident, userID, action string)
+	FrontendTelemetryForIncident(incident *Incident, userID, action string)
 
 	// AddPostToTimeline tracks userID creating a timeline event from a post.
-	AddPostToTimeline(incdnt *Incident, userID string)
+	AddPostToTimeline(incident *Incident, userID string)
 
 	// RemoveTimelineEvent tracks userID removing a timeline event.
-	RemoveTimelineEvent(incdnt *Incident, userID string)
+	RemoveTimelineEvent(incident *Incident, userID string)
 
 	// ModifyCheckedState tracks the checking and unchecking of items.
 	ModifyCheckedState(incidentID, userID string, task ChecklistItem, wasOwner bool)

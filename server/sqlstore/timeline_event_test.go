@@ -27,13 +27,13 @@ func TestIncidentStore_CreateTimelineEvent(t *testing.T) {
 				WithChecklists([]int{8}).
 				ToIncident()
 
-			incdnt, err := iStore.CreateIncident(inc01)
+			incident, err := iStore.CreateIncident(inc01)
 			require.NoError(t, err)
 
 			createIncidentChannel(t, store, inc01)
 
 			event1 := &app.TimelineEvent{
-				IncidentID:    incdnt.ID,
+				IncidentID:    incident.ID,
 				CreateAt:      createAt,
 				EventAt:       1234,
 				EventType:     app.IncidentCreated,
@@ -47,7 +47,7 @@ func TestIncidentStore_CreateTimelineEvent(t *testing.T) {
 			require.NoError(t, err)
 
 			event2 := &app.TimelineEvent{
-				IncidentID:    incdnt.ID,
+				IncidentID:    incident.ID,
 				CreateAt:      createAt + 1,
 				EventAt:       1235,
 				EventType:     app.AssigneeChanged,
@@ -61,7 +61,7 @@ func TestIncidentStore_CreateTimelineEvent(t *testing.T) {
 			require.NoError(t, err)
 
 			event3 := &app.TimelineEvent{
-				IncidentID:    incdnt.ID,
+				IncidentID:    incident.ID,
 				CreateAt:      createAt + 2,
 				EventAt:       1236,
 				EventType:     app.StatusUpdated,
@@ -75,7 +75,7 @@ func TestIncidentStore_CreateTimelineEvent(t *testing.T) {
 			require.NoError(t, err)
 
 			event4 := &app.TimelineEvent{
-				IncidentID:    incdnt.ID,
+				IncidentID:    incident.ID,
 				CreateAt:      createAt + 3,
 				EventAt:       123734,
 				EventType:     app.StatusUpdated,
@@ -88,7 +88,7 @@ func TestIncidentStore_CreateTimelineEvent(t *testing.T) {
 			_, err = iStore.CreateTimelineEvent(event4)
 			require.NoError(t, err)
 
-			retIncident, err := iStore.GetIncident(incdnt.ID)
+			retIncident, err := iStore.GetIncident(incident.ID)
 			require.NoError(t, err)
 
 			require.Len(t, retIncident.TimelineEvents, 4)
@@ -116,13 +116,13 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 				WithChecklists([]int{8}).
 				ToIncident()
 
-			incdnt, err := iStore.CreateIncident(inc01)
+			incident, err := iStore.CreateIncident(inc01)
 			require.NoError(t, err)
 
 			createIncidentChannel(t, store, inc01)
 
 			event1 := &app.TimelineEvent{
-				IncidentID:    incdnt.ID,
+				IncidentID:    incident.ID,
 				CreateAt:      createAt,
 				EventAt:       createAt,
 				EventType:     app.IncidentCreated,
@@ -133,7 +133,7 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			require.NoError(t, err)
 
 			event2 := &app.TimelineEvent{
-				IncidentID:    incdnt.ID,
+				IncidentID:    incident.ID,
 				CreateAt:      createAt + 1,
 				EventAt:       createAt + 1,
 				EventType:     app.AssigneeChanged,
@@ -144,7 +144,7 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			require.NoError(t, err)
 
 			event3 := &app.TimelineEvent{
-				IncidentID:    incdnt.ID,
+				IncidentID:    incident.ID,
 				CreateAt:      createAt + 2,
 				EventAt:       createAt + 2,
 				EventType:     app.StatusUpdated,
@@ -158,7 +158,7 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			require.NoError(t, err)
 
 			event4 := &app.TimelineEvent{
-				IncidentID:    incdnt.ID,
+				IncidentID:    incident.ID,
 				CreateAt:      createAt + 3,
 				EventAt:       createAt + 3,
 				EventType:     app.StatusUpdated,
@@ -168,7 +168,7 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			_, err = iStore.CreateTimelineEvent(event4)
 			require.NoError(t, err)
 
-			retIncident, err := iStore.GetIncident(incdnt.ID)
+			retIncident, err := iStore.GetIncident(incident.ID)
 			require.NoError(t, err)
 
 			require.Len(t, retIncident.TimelineEvents, 4)
@@ -191,7 +191,7 @@ func TestIncidentStore_UpdateTimelineEvent(t *testing.T) {
 			err = iStore.UpdateTimelineEvent(event4)
 			require.NoError(t, err)
 
-			retIncident, err = iStore.GetIncident(incdnt.ID)
+			retIncident, err = iStore.GetIncident(incident.ID)
 			require.NoError(t, err)
 
 			require.Len(t, retIncident.TimelineEvents, 2)

@@ -101,13 +101,13 @@ func (h *IncidentHandler) checkEditPermissions(next http.Handler) http.Handler {
 		vars := mux.Vars(r)
 		userID := r.Header.Get("Mattermost-User-ID")
 
-		incdnt, err := h.incidentService.GetIncident(vars["id"])
+		incident, err := h.incidentService.GetIncident(vars["id"])
 		if err != nil {
 			h.HandleError(w, err)
 			return
 		}
 
-		if err := app.EditIncident(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
+		if err := app.EditIncident(userID, incident.ChannelID, h.pluginAPI); err != nil {
 			if errors.Is(err, app.ErrNoPermissions) {
 				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
@@ -303,13 +303,13 @@ func (h *IncidentHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Req
 		summary = rawSummary
 	}
 
-	incdnt, incErr := h.incidentService.GetIncident(incidentID)
+	incident, incErr := h.incidentService.GetIncident(incidentID)
 	if incErr != nil {
 		h.HandleError(w, incErr)
 		return
 	}
 
-	if err := app.EditIncident(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
+	if err := app.EditIncident(userID, incident.ChannelID, h.pluginAPI); err != nil {
 		return
 	}
 
@@ -644,14 +644,14 @@ func (h *IncidentHandler) changeOwner(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	incdnt, err := h.incidentService.GetIncident(vars["id"])
+	incident, err := h.incidentService.GetIncident(vars["id"])
 	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
 
 	// Check if the target user (params.OwnerID) has permissions
-	if err := app.EditIncident(params.OwnerID, incdnt.ChannelID, h.pluginAPI); err != nil {
+	if err := app.EditIncident(params.OwnerID, incident.ChannelID, h.pluginAPI); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
 			h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
 				errors.Errorf("userid: %s does not have permissions to incident channel; cannot be made owner", params.OwnerID))
@@ -1230,16 +1230,16 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *app.Incident, channelID string) error {
-	channel, err := h.pluginAPI.Channel.Get(incdnt.ChannelID)
+func (h *IncidentHandler) postIncidentCreatedMessage(incident *app.Incident, channelID string) error {
+	channel, err := h.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
 		return err
 	}
 
 	post := &model.Post{
-		Message: fmt.Sprintf("Incident %s started in ~%s", incdnt.Name, channel.Name),
+		Message: fmt.Sprintf("Incident %s started in ~%s", incident.Name, channel.Name),
 	}
-	h.poster.EphemeralPost(incdnt.OwnerUserID, channelID, post)
+	h.poster.EphemeralPost(incident.OwnerUserID, channelID, post)
 
 	return nil
 }
