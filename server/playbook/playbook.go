@@ -140,9 +140,9 @@ func (r GetPlaybooksResults) MarshalJSON() ([]byte, error) {
 
 // RequesterInfo holds the userID and permissions for the user making the request
 type RequesterInfo struct {
-	UserID          string
-	TeamID          string
-	UserIDtoIsAdmin map[string]bool
+	UserID  string
+	TeamID  string
+	IsAdmin bool
 }
 
 // Service is the playbook service for managing playbooks
