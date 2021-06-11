@@ -283,10 +283,10 @@ func (t *RudderTelemetry) PublishRetrospective(incident *app.Incident, userID st
 	t.track(eventTasks, properties)
 }
 
-func playbookProperties(pbook app.Playbook, userID string) map[string]interface{} {
+func playbookProperties(playbook app.Playbook, userID string) map[string]interface{} {
 	totalChecklistItems := 0
 	totalChecklistItemsWithCommands := 0
-	for _, checklist := range pbook.Checklists {
+	for _, checklist := range playbook.Checklists {
 		totalChecklistItems += len(checklist.Items)
 		for _, item := range checklist.Items {
 			if item.Command != "" {
@@ -297,48 +297,48 @@ func playbookProperties(pbook app.Playbook, userID string) map[string]interface{
 
 	return map[string]interface{}{
 		"UserActualID":                userID,
-		"PlaybookID":                  pbook.ID,
-		"HasDescription":              pbook.Description != "",
-		"TeamID":                      pbook.TeamID,
-		"IsPublic":                    pbook.CreatePublicIncident,
-		"CreateAt":                    pbook.CreateAt,
-		"DeleteAt":                    pbook.DeleteAt,
-		"NumChecklists":               len(pbook.Checklists),
+		"PlaybookID":                  playbook.ID,
+		"HasDescription":              playbook.Description != "",
+		"TeamID":                      playbook.TeamID,
+		"IsPublic":                    playbook.CreatePublicIncident,
+		"CreateAt":                    playbook.CreateAt,
+		"DeleteAt":                    playbook.DeleteAt,
+		"NumChecklists":               len(playbook.Checklists),
 		"TotalChecklistItems":         totalChecklistItems,
 		"NumSlashCommands":            totalChecklistItemsWithCommands,
-		"NumMembers":                  len(pbook.MemberIDs),
-		"BroadcastChannelID":          pbook.BroadcastChannelID,
-		"UsesReminderMessageTemplate": pbook.ReminderMessageTemplate != "",
-		"ReminderTimerDefaultSeconds": pbook.ReminderTimerDefaultSeconds,
-		"NumInvitedUserIDs":           len(pbook.InvitedUserIDs),
-		"NumInvitedGroupIDs":          len(pbook.InvitedGroupIDs),
-		"InviteUsersEnabled":          pbook.InviteUsersEnabled,
-		"DefaultCommanderID":          pbook.DefaultOwnerID,
-		"DefaultCommanderEnabled":     pbook.DefaultOwnerEnabled,
-		"AnnouncementChannelID":       pbook.AnnouncementChannelID,
-		"AnnouncementChannelEnabled":  pbook.AnnouncementChannelEnabled,
-		"NumWebhookOnCreationURLs":    len(strings.Split(pbook.WebhookOnCreationURL, "\n")),
-		"WebhookOnCreationEnabled":    pbook.WebhookOnCreationEnabled,
+		"NumMembers":                  len(playbook.MemberIDs),
+		"BroadcastChannelID":          playbook.BroadcastChannelID,
+		"UsesReminderMessageTemplate": playbook.ReminderMessageTemplate != "",
+		"ReminderTimerDefaultSeconds": playbook.ReminderTimerDefaultSeconds,
+		"NumInvitedUserIDs":           len(playbook.InvitedUserIDs),
+		"NumInvitedGroupIDs":          len(playbook.InvitedGroupIDs),
+		"InviteUsersEnabled":          playbook.InviteUsersEnabled,
+		"DefaultCommanderID":          playbook.DefaultOwnerID,
+		"DefaultCommanderEnabled":     playbook.DefaultOwnerEnabled,
+		"AnnouncementChannelID":       playbook.AnnouncementChannelID,
+		"AnnouncementChannelEnabled":  playbook.AnnouncementChannelEnabled,
+		"NumWebhookOnCreationURLs":    len(strings.Split(playbook.WebhookOnCreationURL, "\n")),
+		"WebhookOnCreationEnabled":    playbook.WebhookOnCreationEnabled,
 	}
 }
 
 // CreatePlaybook tracks the creation of a playbook.
-func (t *RudderTelemetry) CreatePlaybook(pbook app.Playbook, userID string) {
-	properties := playbookProperties(pbook, userID)
+func (t *RudderTelemetry) CreatePlaybook(playbook app.Playbook, userID string) {
+	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionCreate
 	t.track(eventPlaybook, properties)
 }
 
 // UpdatePlaybook tracks the update of a playbook.
-func (t *RudderTelemetry) UpdatePlaybook(pbook app.Playbook, userID string) {
-	properties := playbookProperties(pbook, userID)
+func (t *RudderTelemetry) UpdatePlaybook(playbook app.Playbook, userID string) {
+	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionUpdate
 	t.track(eventPlaybook, properties)
 }
 
 // DeletePlaybook tracks the deletion of a playbook.
-func (t *RudderTelemetry) DeletePlaybook(pbook app.Playbook, userID string) {
-	properties := playbookProperties(pbook, userID)
+func (t *RudderTelemetry) DeletePlaybook(playbook app.Playbook, userID string) {
+	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionDelete
 	t.track(eventPlaybook, properties)
 }

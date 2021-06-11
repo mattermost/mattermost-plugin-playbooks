@@ -26,8 +26,8 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
-func jsonPlaybookReader(pbook app.Playbook) io.Reader {
-	jsonBytes, err := json.Marshal(pbook)
+func jsonPlaybookReader(playbook app.Playbook) io.Reader {
+	jsonBytes, err := json.Marshal(playbook)
 	if err != nil {
 		panic(err)
 	}
@@ -647,7 +647,7 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("create playbook with invited users and groups", func(t *testing.T) {
 		reset(t)
 
-		pbook := app.Playbook{
+		playbook := app.Playbook{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: []app.Checklist{
@@ -667,7 +667,7 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		playbookService.EXPECT().
-			Create(pbook, "testuserid").
+			Create(playbook, "testuserid").
 			Return(model.NewId(), nil).
 			Times(1)
 
@@ -715,7 +715,7 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("create playbook with invited users and groups, invite disabled", func(t *testing.T) {
 		reset(t)
 
-		pbook := app.Playbook{
+		playbook := app.Playbook{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: []app.Checklist{
@@ -735,7 +735,7 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		playbookService.EXPECT().
-			Create(pbook, "testuserid").
+			Create(playbook, "testuserid").
 			Return(model.NewId(), nil).
 			Times(1)
 
@@ -784,7 +784,7 @@ func TestPlaybooks(t *testing.T) {
 		reset(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		pbook := app.Playbook{
+		playbook := app.Playbook{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: []app.Checklist{
@@ -804,7 +804,7 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		playbookService.EXPECT().
-			Create(pbook, "testuserid").
+			Create(playbook, "testuserid").
 			Return(model.NewId(), nil).
 			Times(1)
 
@@ -1051,7 +1051,7 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("update playbook with invited users and groups", func(t *testing.T) {
 		reset(t)
 
-		pbook := app.Playbook{
+		playbook := app.Playbook{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: []app.Checklist{
@@ -1072,18 +1072,18 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(pbook))
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(playbook))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
-			Return(pbook, nil).
+			Return(playbook, nil).
 			Times(1)
 
-		pbook.ID = "testplaybookid"
+		playbook.ID = "testplaybookid"
 		playbookService.EXPECT().
-			Update(pbook, "testuserid").
+			Update(playbook, "testuserid").
 			Return(nil).
 			Times(1)
 
@@ -1108,7 +1108,7 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("update playbook with invited users and groups, invite disabled", func(t *testing.T) {
 		reset(t)
 
-		pbook := app.Playbook{
+		playbook := app.Playbook{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: []app.Checklist{
@@ -1129,18 +1129,18 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(pbook))
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(playbook))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
-			Return(pbook, nil).
+			Return(playbook, nil).
 			Times(1)
 
-		pbook.ID = "testplaybookid"
+		playbook.ID = "testplaybookid"
 		playbookService.EXPECT().
-			Update(pbook, "testuserid").
+			Update(playbook, "testuserid").
 			Return(nil).
 			Times(1)
 
@@ -1166,7 +1166,7 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("update playbook with invited users and groups, group disallowing mention", func(t *testing.T) {
 		reset(t)
 
-		pbook := app.Playbook{
+		playbook := app.Playbook{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: []app.Checklist{
@@ -1187,20 +1187,20 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(pbook))
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(playbook))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
-			Return(pbook, nil).
+			Return(playbook, nil).
 			Times(1)
 
-		pbook.ID = "testplaybookid"
-		pbook.InvitedGroupIDs = []string{"testInvitedGroupID1"}
+		playbook.ID = "testplaybookid"
+		playbook.InvitedGroupIDs = []string{"testInvitedGroupID1"}
 
 		playbookService.EXPECT().
-			Update(pbook, "testuserid").
+			Update(playbook, "testuserid").
 			Return(nil).
 			Times(1)
 

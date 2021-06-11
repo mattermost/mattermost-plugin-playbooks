@@ -126,7 +126,7 @@ func TestGetPlaybook(t *testing.T) {
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
 		ToPlaybook()
 
-	pb := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
+	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
 
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
@@ -152,7 +152,7 @@ func TestGetPlaybook(t *testing.T) {
 
 		t.Run(driverName+" - create and retrieve all playbooks", func(t *testing.T) {
 			var inserted []app.Playbook
-			for _, p := range pb {
+			for _, p := range playbooks {
 				id, err := playbookStore.Create(p)
 				require.NoError(t, err)
 
@@ -166,7 +166,7 @@ func TestGetPlaybook(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, p, got)
 			}
-			require.Equal(t, len(pb), len(inserted))
+			require.Equal(t, len(playbooks), len(inserted))
 		})
 
 		t.Run(driverName+" - create but retrieve non-existing playbook", func(t *testing.T) {
@@ -296,7 +296,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
 		ToPlaybook()
 
-	pb := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
+	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
 
 	tests := []struct {
 		name        string
@@ -305,7 +305,7 @@ func TestGetPlaybooks(t *testing.T) {
 	}{
 		{
 			name:        "get all playbooks",
-			expected:    pb,
+			expected:    playbooks,
 			expectedErr: nil,
 		},
 	}
@@ -326,7 +326,7 @@ func TestGetPlaybooks(t *testing.T) {
 		require.Equal(t, 0, len(all))
 
 		var inserted []app.Playbook
-		for _, p := range pb {
+		for _, p := range playbooks {
 			id, err := playbookStore.Create(p)
 			require.NoError(t, err)
 
@@ -340,7 +340,7 @@ func TestGetPlaybooks(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, p, got)
 		}
-		require.Equal(t, len(pb), len(inserted))
+		require.Equal(t, len(playbooks), len(inserted))
 
 		for _, testCase := range tests {
 			t.Run(driverName+" - "+testCase.name, func(t *testing.T) {
@@ -497,12 +497,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithMembers([]userInfo{}).
 		ToPlaybook()
 
-	pb := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09}
+	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09}
 
 	createPlaybooks := func(store app.PlaybookStore) {
 		t.Helper()
 
-		for _, p := range pb {
+		for _, p := range playbooks {
 			_, err := store.Create(p)
 			require.NoError(t, err)
 		}

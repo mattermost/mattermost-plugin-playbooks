@@ -361,7 +361,7 @@ func (h *IncidentHandler) createIncident(incident app.Incident, userID string) (
 	}
 
 	public := true
-	var thePlaybook *app.Playbook
+	var playbook *app.Playbook
 	if incident.PlaybookID != "" {
 		pb, err := h.playbookService.Get(incident.PlaybookID)
 		if err != nil {
@@ -410,7 +410,7 @@ func (h *IncidentHandler) createIncident(incident app.Incident, userID string) (
 		incident.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
 		incident.Retrospective = pb.RetrospectiveTemplate
 
-		thePlaybook = &pb
+		playbook = &pb
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
@@ -432,7 +432,7 @@ func (h *IncidentHandler) createIncident(incident app.Incident, userID string) (
 			return nil, errors.New("user is not a member of the channel containing the incident's original post")
 		}
 	}
-	return h.incidentService.CreateIncident(&incident, thePlaybook, userID, public)
+	return h.incidentService.CreateIncident(&incident, playbook, userID, public)
 }
 
 func (h *IncidentHandler) getRequesterInfo(userID string) (app.RequesterInfo, error) {

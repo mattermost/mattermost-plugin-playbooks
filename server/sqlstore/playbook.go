@@ -119,13 +119,13 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 }
 
 // Create creates a new playbook
-func (p *playbookStore) Create(pbook app.Playbook) (id string, err error) {
-	if pbook.ID != "" {
+func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
+	if playbook.ID != "" {
 		return "", errors.New("ID should be empty")
 	}
-	pbook.ID = model.NewId()
+	playbook.ID = model.NewId()
 
-	rawPlaybook, err := toSQLPlaybook(pbook)
+	rawPlaybook, err := toSQLPlaybook(playbook)
 	if err != nil {
 		return "", err
 	}
@@ -184,14 +184,14 @@ func (p *playbookStore) Create(pbook app.Playbook) (id string, err error) {
 }
 
 // Get retrieves a playbook
-func (p *playbookStore) Get(id string) (out app.Playbook, err error) {
+func (p *playbookStore) Get(id string) (app.Playbook, error) {
 	if id == "" {
-		return out, errors.New("ID cannot be empty")
+		return app.Playbook{}, errors.New("ID cannot be empty")
 	}
 
 	tx, err := p.store.db.Beginx()
 	if err != nil {
-		return out, errors.Wrap(err, "could not begin transaction")
+		return app.Playbook{}, errors.Wrap(err, "could not begin transaction")
 	}
 	defer p.store.finalizeTransaction(tx)
 
@@ -202,30 +202,31 @@ func (p *playbookStore) Get(id string) (out app.Playbook, err error) {
 	var rawPlaybook sqlPlaybook
 	err = p.store.getBuilder(tx, &rawPlaybook, withChecklistsSelect.Where(sq.Eq{"ID": id}))
 	if err == sql.ErrNoRows {
-		return out, errors.Wrapf(app.ErrNotFound, "playbook does not exist for id '%s'", id)
+		return app.Playbook{}, errors.Wrapf(app.ErrNotFound, "playbook does not exist for id '%s'", id)
 	} else if err != nil {
-		return out, errors.Wrapf(err, "failed to get playbook by id '%s'", id)
+		return app.Playbook{}, errors.Wrapf(err, "failed to get playbook by id '%s'", id)
 	}
 
-	if out, err = toPlaybook(rawPlaybook); err != nil {
-		return out, err
+	playbook, err := toPlaybook(rawPlaybook)
+	if err != nil {
+		return app.Playbook{}, err
 	}
 
 	var memberIDs playbookMembers
 	err = p.store.selectBuilder(tx, &memberIDs, p.memberIDsSelect.Where(sq.Eq{"PlaybookID": id}))
 	if err != nil && err != sql.ErrNoRows {
-		return out, errors.Wrapf(err, "failed to get memberIDs for playbook with id '%s'", id)
+		return app.Playbook{}, errors.Wrapf(err, "failed to get memberIDs for playbook with id '%s'", id)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return out, errors.Wrap(err, "could not commit transaction")
+		return app.Playbook{}, errors.Wrap(err, "could not commit transaction")
 	}
 
 	for _, m := range memberIDs {
-		out.MemberIDs = append(out.MemberIDs, m.MemberID)
+		playbook.MemberIDs = append(playbook.MemberIDs, m.MemberID)
 	}
 
-	return out, nil
+	return playbook, nil
 }
 
 // GetPlaybooks retrieves all playbooks that are not deleted.
@@ -236,8 +237,8 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 	}
 	defer p.store.finalizeTransaction(tx)
 
-	var out []app.Playbook
-	err = p.store.selectBuilder(tx, &out, p.store.builder.
+	var playbooks []app.Playbook
+	err = p.store.selectBuilder(tx, &playbooks, p.store.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
 			"DeleteAt", "NumStages", "NumSteps").
 		From("IR_Playbook AS p").
@@ -259,9 +260,9 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 		return nil, errors.Wrap(err, "could not commit transaction")
 	}
 
-	addMembersToPlaybooks(memberIDs, out)
+	addMembersToPlaybooks(memberIDs, playbooks)
 
-	return out, nil
+	return playbooks, nil
 }
 
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options.
@@ -339,12 +340,12 @@ func (p *playbookStore) GetNumPlaybooksForTeam(teamID string) (int, error) {
 }
 
 // Update updates a playbook
-func (p *playbookStore) Update(updated app.Playbook) (err error) {
-	if updated.ID == "" {
+func (p *playbookStore) Update(playbook app.Playbook) (err error) {
+	if playbook.ID == "" {
 		return errors.New("id should not be empty")
 	}
 
-	rawPlaybook, err := toSQLPlaybook(updated)
+	rawPlaybook, err := toSQLPlaybook(playbook)
 	if err != nil {
 		return err
 	}
@@ -421,16 +422,16 @@ func (p *playbookStore) Delete(id string) error {
 }
 
 // replacePlaybookMembers replaces the members of a playbook
-func (p *playbookStore) replacePlaybookMembers(q queryExecer, pbook app.Playbook) error {
-	// Delete existing members who are not in the new pbook.MemberIDs list
+func (p *playbookStore) replacePlaybookMembers(q queryExecer, playbook app.Playbook) error {
+	// Delete existing members who are not in the new playbook.MemberIDs list
 	delBuilder := sq.Delete("IR_PlaybookMember").
-		Where(sq.Eq{"PlaybookID": pbook.ID}).
-		Where(sq.NotEq{"MemberID": pbook.MemberIDs})
+		Where(sq.Eq{"PlaybookID": playbook.ID}).
+		Where(sq.NotEq{"MemberID": playbook.MemberIDs})
 	if _, err := p.store.execBuilder(q, delBuilder); err != nil {
 		return err
 	}
 
-	if len(pbook.MemberIDs) == 0 {
+	if len(playbook.MemberIDs) == 0 {
 		return nil
 	}
 
@@ -451,9 +452,9 @@ INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
     );`
 	}
 
-	for _, m := range pbook.MemberIDs {
+	for _, m := range playbook.MemberIDs {
 		rawInsert := sq.Expr(insertExpr,
-			pbook.ID, m, pbook.ID, m)
+			playbook.ID, m, playbook.ID, m)
 
 		if _, err := p.store.execBuilder(q, rawInsert); err != nil {
 			return err
@@ -463,36 +464,36 @@ INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
 	return nil
 }
 
-func addMembersToPlaybooks(memberIDs playbookMembers, out []app.Playbook) {
+func addMembersToPlaybooks(memberIDs playbookMembers, playbook []app.Playbook) {
 	pToM := make(map[string][]string)
 	for _, m := range memberIDs {
 		pToM[m.PlaybookID] = append(pToM[m.PlaybookID], m.MemberID)
 	}
-	for i, p := range out {
-		out[i].MemberIDs = pToM[p.ID]
+	for i, p := range playbook {
+		playbook[i].MemberIDs = pToM[p.ID]
 	}
 }
 
-func getSteps(pbook app.Playbook) int {
+func getSteps(playbook app.Playbook) int {
 	steps := 0
-	for _, p := range pbook.Checklists {
+	for _, p := range playbook.Checklists {
 		steps += len(p.Items)
 	}
 
 	return steps
 }
 
-func toSQLPlaybook(origPlaybook app.Playbook) (*sqlPlaybook, error) {
-	checklistsJSON, err := json.Marshal(origPlaybook.Checklists)
+func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
+	checklistsJSON, err := json.Marshal(playbook.Checklists)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origPlaybook.ID)
+		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", playbook.ID)
 	}
 
 	return &sqlPlaybook{
-		Playbook:                    origPlaybook,
+		Playbook:                    playbook,
 		ChecklistsJSON:              checklistsJSON,
-		ConcatenatedInvitedUserIDs:  strings.Join(origPlaybook.InvitedUserIDs, ","),
-		ConcatenatedInvitedGroupIDs: strings.Join(origPlaybook.InvitedGroupIDs, ","),
+		ConcatenatedInvitedUserIDs:  strings.Join(playbook.InvitedUserIDs, ","),
+		ConcatenatedInvitedGroupIDs: strings.Join(playbook.InvitedGroupIDs, ","),
 	}, nil
 }
 
