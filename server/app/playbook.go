@@ -148,7 +148,7 @@ type PlaybookService interface {
 	GetPlaybooks() ([]Playbook, error)
 
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
-	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookOptions) (GetPlaybooksResults, error)
+	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
 
 	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
 	GetNumPlaybooksForTeam(teamID string) (int, error)
@@ -171,7 +171,7 @@ type PlaybookStore interface {
 	GetPlaybooks() ([]Playbook, error)
 
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
-	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookOptions) (GetPlaybooksResults, error)
+	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
 
 	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
 	GetNumPlaybooksForTeam(teamID string) (int, error)
@@ -212,8 +212,8 @@ func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int
 	return checklists != nil && checklistNum >= 0 && itemNum >= 0 && checklistNum < len(checklists) && itemNum < len(checklists[checklistNum].Items)
 }
 
-// PlaybookOptions specifies the parameters when getting playbooks.
-type PlaybookOptions struct {
+// PlaybookFilterOptions specifies the parameters when getting playbooks.
+type PlaybookFilterOptions struct {
 	Sort      SortField
 	Direction SortDirection
 
@@ -222,7 +222,7 @@ type PlaybookOptions struct {
 	PerPage int
 }
 
-func (options *PlaybookOptions) IsValid() error {
+func (options *PlaybookFilterOptions) IsValid() error {
 	switch options.Sort {
 	case SortByTitle:
 	case SortByStages:

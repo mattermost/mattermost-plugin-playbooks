@@ -339,7 +339,7 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 		IsAdmin: app.IsAdmin(userID, h.pluginAPI),
 	}
 
-	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, app.PlaybookOptions{
+	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, app.PlaybookFilterOptions{
 		Page:    0,
 		PerPage: 15,
 	})
@@ -383,7 +383,7 @@ func (h *PlaybookHandler) getPlaybookCount(w http.ResponseWriter, r *http.Reques
 	ReturnJSON(w, countStruct, http.StatusOK)
 }
 
-func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookOptions, error) {
+func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 	params := u.Query()
 
 	var sortField app.SortField
@@ -396,7 +396,7 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookOptions, error) {
 	case "steps":
 		sortField = app.SortBySteps
 	default:
-		return app.PlaybookOptions{}, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages' or 'steps'", param)
+		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages' or 'steps'", param)
 	}
 
 	var sortDirection app.SortDirection
@@ -407,7 +407,7 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookOptions, error) {
 	case "desc":
 		sortDirection = app.DirectionDesc
 	default:
-		return app.PlaybookOptions{}, errors.Errorf("bad parameter 'direction' (%s): it should be empty or one of 'asc' or 'desc'", param)
+		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'direction' (%s): it should be empty or one of 'asc' or 'desc'", param)
 	}
 
 	pageParam := params.Get("page")
@@ -416,10 +416,10 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookOptions, error) {
 	}
 	page, err := strconv.Atoi(pageParam)
 	if err != nil {
-		return app.PlaybookOptions{}, errors.Wrapf(err, "bad parameter 'page': it should be a number")
+		return app.PlaybookFilterOptions{}, errors.Wrapf(err, "bad parameter 'page': it should be a number")
 	}
 	if page < 0 {
-		return app.PlaybookOptions{}, errors.Errorf("bad parameter 'page': it should be a positive number")
+		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'page': it should be a positive number")
 	}
 
 	perPageParam := params.Get("per_page")
@@ -428,13 +428,13 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookOptions, error) {
 	}
 	perPage, err := strconv.Atoi(perPageParam)
 	if err != nil {
-		return app.PlaybookOptions{}, errors.Wrapf(err, "bad parameter 'per_page': it should be a number")
+		return app.PlaybookFilterOptions{}, errors.Wrapf(err, "bad parameter 'per_page': it should be a number")
 	}
 	if perPage < 0 {
-		return app.PlaybookOptions{}, errors.Errorf("bad parameter 'per_page': it should be a positive number")
+		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'per_page': it should be a positive number")
 	}
 
-	return app.PlaybookOptions{
+	return app.PlaybookFilterOptions{
 		Sort:      sortField,
 		Direction: sortDirection,
 		Page:      page,

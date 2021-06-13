@@ -39,7 +39,7 @@ type playbookMembers []struct {
 	MemberID   string
 }
 
-func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.PlaybookOptions) (sq.SelectBuilder, error) {
+func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.PlaybookFilterOptions) (sq.SelectBuilder, error) {
 	var sort string
 	switch options.Sort {
 	case app.SortByTitle:
@@ -266,7 +266,7 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 }
 
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options.
-func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, teamID string, opts app.PlaybookOptions) (app.GetPlaybooksResults, error) {
+func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, teamID string, opts app.PlaybookFilterOptions) (app.GetPlaybooksResults, error) {
 	// Check that you are a playbook member or there are no restrictions.
 	permissionsAndFilter := sq.Expr(`(
 			EXISTS(SELECT 1

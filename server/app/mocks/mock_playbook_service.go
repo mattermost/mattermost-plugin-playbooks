@@ -5,9 +5,10 @@
 package mock_app
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	app "github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	reflect "reflect"
 )
 
 // MockPlaybookService is a mock of PlaybookService interface
@@ -108,7 +109,7 @@ func (mr *MockPlaybookServiceMockRecorder) GetPlaybooks() *gomock.Call {
 }
 
 // GetPlaybooksForTeam mocks base method
-func (m *MockPlaybookService) GetPlaybooksForTeam(arg0 app.RequesterInfo, arg1 string, arg2 app.PlaybookOptions) (app.GetPlaybooksResults, error) {
+func (m *MockPlaybookService) GetPlaybooksForTeam(arg0 app.RequesterInfo, arg1 string, arg2 app.PlaybookFilterOptions) (app.GetPlaybooksResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPlaybooksForTeam", arg0, arg1, arg2)
 	ret0, _ := ret[0].(app.GetPlaybooksResults)

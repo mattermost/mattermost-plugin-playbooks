@@ -215,7 +215,7 @@ func (r *Runner) actionStart(args []string) {
 	}
 
 	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
-		app.PlaybookOptions{
+		app.PlaybookFilterOptions{
 			Sort:      app.SortByTitle,
 			Direction: app.DirectionAsc,
 			Page:      0,
@@ -1282,7 +1282,7 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
 	}
 
-	playbooksResult, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId, app.PlaybookOptions{
+	playbooksResult, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId, app.PlaybookFilterOptions{
 		Page:    0,
 		PerPage: app.PerPageDefault,
 	})

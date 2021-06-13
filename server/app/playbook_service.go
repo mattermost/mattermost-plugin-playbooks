@@ -53,7 +53,7 @@ func (s *playbookService) GetPlaybooks() ([]Playbook, error) {
 	return s.store.GetPlaybooks()
 }
 
-func (s *playbookService) GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookOptions) (GetPlaybooksResults, error) {
+func (s *playbookService) GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error) {
 	return s.store.GetPlaybooksForTeam(requesterInfo, teamID, opts)
 }
 
