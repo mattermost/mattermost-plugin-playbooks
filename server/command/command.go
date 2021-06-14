@@ -1091,26 +1091,29 @@ func (r *Runner) actionTestCreate(params []string) {
 
 	incidentName := strings.Join(params[2:], " ")
 
-	incident := &app.Incident{
-		Name:        incidentName,
-		OwnerUserID: r.args.UserId,
-		TeamID:      r.args.TeamId,
-		PlaybookID:  playbookID,
-		Checklists:  playbook.Checklists,
-	}
-
-	newIncident, err := r.incidentService.CreateIncident(incident, &playbook, r.args.UserId, true)
+	incident, err := r.incidentService.CreateIncident(
+		&app.Incident{
+			Name:        incidentName,
+			OwnerUserID: r.args.UserId,
+			TeamID:      r.args.TeamId,
+			PlaybookID:  playbookID,
+			Checklists:  playbook.Checklists,
+		},
+		&playbook,
+		r.args.UserId,
+		true,
+	)
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to create incident: %v", err)
 		return
 	}
 
-	if err = r.incidentService.ChangeCreationDate(newIncident.ID, creationTimestamp); err != nil {
+	if err = r.incidentService.ChangeCreationDate(incident.ID, creationTimestamp); err != nil {
 		r.warnUserAndLogErrorf("unable to change date of recently created incident: %v", err)
 		return
 	}
 
-	channel, err := r.pluginAPI.Channel.Get(newIncident.ChannelID)
+	channel, err := r.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to retrieve information of incident's channel: %v", err)
 		return
@@ -1319,28 +1322,31 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 			incidentName = fmt.Sprintf("[%s] %s", companyName, incidentName)
 		}
 
-		incident := &app.Incident{
-			Name:        incidentName,
-			OwnerUserID: r.args.UserId,
-			TeamID:      r.args.TeamId,
-			PlaybookID:  playbook.ID,
-			Checklists:  playbook.Checklists,
-		}
-
-		newIncident, err := r.incidentService.CreateIncident(incident, &playbook, r.args.UserId, true)
+		incident, err := r.incidentService.CreateIncident(
+			&app.Incident{
+				Name:        incidentName,
+				OwnerUserID: r.args.UserId,
+				TeamID:      r.args.TeamId,
+				PlaybookID:  playbook.ID,
+				Checklists:  playbook.Checklists,
+			},
+			&playbook,
+			r.args.UserId,
+			true,
+		)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error creating incident: %v", err)
 			return
 		}
 
 		createAt := timeutils.GetTimeForMillis(timestamps[i])
-		err = r.incidentService.ChangeCreationDate(newIncident.ID, createAt)
+		err = r.incidentService.ChangeCreationDate(incident.ID, createAt)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error changing creation date: %v", err)
 			return
 		}
 
-		channel, err := r.pluginAPI.Channel.Get(newIncident.ChannelID)
+		channel, err := r.pluginAPI.Channel.Get(incident.ChannelID)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error retrieveing incident's channel: %v", err)
 			return
@@ -1352,7 +1358,7 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 		}
 		tableMsg += fmt.Sprintf("|~%s|%s|%s|\n", channel.Name, createAt.Format("2006-01-02"), status)
 
-		incidents = append(incidents, newIncident)
+		incidents = append(incidents, incident)
 	}
 
 	for i := 0; i < numEndedIncidents; i++ {
