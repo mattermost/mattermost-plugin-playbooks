@@ -15,7 +15,7 @@ const CloudModal = () => {
 
     if (!PurchaseModal) {
         // eslint-disable-next-line no-console
-        console.error('unable to mount cloud modal');
+        console.error('unable to mount PurchaseModal component');
 
         return null;
     }

@@ -1,10 +1,8 @@
 import React from 'react';
-import {useDispatch} from 'react-redux';
 
 import styled from 'styled-components';
 
 import {Post} from 'mattermost-redux/types/posts';
-import {Theme} from 'mattermost-redux/types/preferences';
 
 import UpgradeIllustrationSvg from 'src/components/assets/upgrade_illustration_svg';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -25,8 +23,8 @@ export const CloudUpgradePost = (props: Props) => {
     const attachments = props.post.props.attachments[0];
 
     // Remove the footer (which starts with the Upgrade now link),
-    // that is the fallback for mobile
-    const text = attachments.text.split('[Upgrade now]')[0];
+    // and the separator, both used as fallback for mobile
+    const text = attachments.text.split('[Upgrade now]')[0].replace(/---/g, '');
 
     return (
         <>
