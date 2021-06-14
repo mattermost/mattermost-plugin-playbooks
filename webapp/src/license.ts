@@ -40,7 +40,3 @@ export const isCloud = (state: GlobalState): boolean => {
 
     return license?.Cloud === 'true';
 };
-
-export const isPricingPlanDifferentiationEnabled = (state: GlobalState): boolean => {
-    return !isCloud(state);
-};

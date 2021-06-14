@@ -19,6 +19,8 @@ import ConvertEnterpriseNotice from 'src/components/backstage/convert_enterprise
 import {requestTrialLicense, postMessageToAdmins} from 'src/client';
 
 import {AdminNotificationType} from 'src/constants';
+import {isCloud} from 'src/license';
+import {useOpenCloudModal} from 'src/hooks';
 
 enum ActionState {
     Uninitialized,
@@ -30,6 +32,8 @@ enum ActionState {
 type HandlerType = undefined | (() => (Promise<void> | void));
 
 const TimelineUpgradePlaceholder = () => {
+    const isServerCloud = useSelector(isCloud);
+    const openCloudModal = useOpenCloudModal();
     const currentUser = useSelector(getCurrentUser);
     const isCurrentUserAdmin = isSystemAdmin(currentUser.roles);
     const [actionState, setActionState] = useState(ActionState.Uninitialized);
@@ -38,7 +42,7 @@ const TimelineUpgradePlaceholder = () => {
     const analytics = useSelector(getAdminAnalytics);
     const serverTotalUsers = analytics?.TOTAL_USERS || 0;
 
-    const notifyAdmins = async () => {
+    const endUserMainAction = async () => {
         if (actionState === ActionState.Loading) {
             return;
         }
@@ -53,7 +57,7 @@ const TimelineUpgradePlaceholder = () => {
         }
     };
 
-    const requestLicense = async () => {
+    const requestLicenseSelfHosted = async () => {
         if (actionState === ActionState.Loading) {
             return;
         }
@@ -68,6 +72,19 @@ const TimelineUpgradePlaceholder = () => {
             setActionState(ActionState.Success);
         }
     };
+
+    const openUpgradeModal = async () => {
+        if (actionState === ActionState.Loading) {
+            return;
+        }
+
+        openCloudModal();
+    };
+
+    let adminMainAction = requestLicenseSelfHosted;
+    if (isServerCloud) {
+        adminMainAction = openUpgradeModal;
+    }
 
     let illustration = <UpgradeTimelineSvg/>;
     let titleText = 'Keep all your incident events in one place';
@@ -106,10 +123,11 @@ const TimelineUpgradePlaceholder = () => {
                     actionState={actionState}
                     isCurrentUserAdmin={isCurrentUserAdmin}
                     isServerTeamEdition={isServerTeamEdition}
-                    notifyAdmins={notifyAdmins}
-                    requestLicense={requestLicense}
+                    endUserMainAction={endUserMainAction}
+                    adminMainAction={adminMainAction}
+                    isCloud={isServerCloud}
                 />
-                {isCurrentUserAdmin && !isServerTeamEdition && actionState === ActionState.Uninitialized && <Footer/> }
+                {!isServerCloud && isCurrentUserAdmin && !isServerTeamEdition && actionState === ActionState.Uninitialized && <Footer/> }
             </UpgradeContent>
         </UpgradeWrapper>
     );
@@ -138,8 +156,9 @@ interface ButtonProps {
     actionState: ActionState;
     isCurrentUserAdmin: boolean;
     isServerTeamEdition: boolean;
-    notifyAdmins: HandlerType;
-    requestLicense: HandlerType;
+    endUserMainAction: HandlerType;
+    adminMainAction: HandlerType;
+    isCloud: boolean;
 }
 
 const Button = (props: ButtonProps) => {
@@ -169,11 +188,11 @@ const Button = (props: ButtonProps) => {
     }
 
     let buttonText = 'Notify System Admin';
-    let handleClick : HandlerType = props.notifyAdmins;
+    let handleClick : HandlerType = props.endUserMainAction;
 
     if (props.isCurrentUserAdmin) {
-        handleClick = props.requestLicense;
-        buttonText = 'Start trial';
+        handleClick = props.adminMainAction;
+        buttonText = props.isCloud ? 'Upgrade now' : 'Start trial';
     }
 
     return (

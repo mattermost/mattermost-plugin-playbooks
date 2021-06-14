@@ -117,12 +117,23 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		return fmt.Errorf("no admins found")
 	}
 
-	var message, title, text string
+	var postType, footer string
 
-	footer := "[Learn more](https://mattermost.com/pricing-self-managed/).\n\nWhen you select **Start 30-day trial**, you agree to the [Mattermost Software Evaluation Agreement](https://mattermost.com/software-evaluation-agreement/), [Privacy Policy](https://mattermost.com/privacy-policy/), and receiving product emails."
-	if isTeamEdition {
-		footer = "[Learn more](https://mattermost.com/pricing-self-managed/).\n\n[Convert to Mattermost Starter](https://docs.mattermost.com/install/ee-install.html#converting-team-edition-to-enterprise-edition) to unlock this feature. Then, start a trial or upgrade to Mattermost Professional or Enterprise."
+	isCloud := b.configService.IsCloud()
+
+	separator := "\n\n---\n\n"
+	if isCloud {
+		postType = "custom_cloud_upgrade"
+		footer = separator + "[Upgrade now](https://customers.mattermost.com)."
+	} else {
+		footer = "[Learn more](https://mattermost.com/pricing).\n\nWhen you select **Start 30-day trial**, you agree to the [Mattermost Software Evaluation Agreement](https://mattermost.com/software-evaluation-agreement/), [Privacy Policy](https://mattermost.com/privacy-policy/), and receiving product emails."
+
+		if isTeamEdition {
+			footer = "[Learn more](https://mattermost.com/pricing).\n\n[Convert to Mattermost Starter](https://docs.mattermost.com/install/ee-install.html#converting-team-edition-to-enterprise-edition) to unlock this feature. Then, start a trial or upgrade to Mattermost Professional or Enterprise."
+		}
 	}
+
+	var message, title, text string
 
 	switch messageType {
 	case "start_trial_to_create_playbook":
@@ -163,24 +174,27 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		},
 	}
 
-	if isTeamEdition {
+	if isTeamEdition || isCloud {
 		actions = []*model.PostAction{}
 	}
 
 	attachments := []*model.SlackAttachment{
 		{
 			Title:   title,
-			Text:    text,
+			Text:    separator + text,
 			Actions: actions,
 		},
 	}
 
 	for _, admin := range admins {
 		go func(adminID string) {
-			post := &model.Post{Message: message}
-			model.ParseSlackAttachment(post, attachments)
+			channel, err := b.pluginAPI.Channel.GetDirect(adminID, b.botUserID)
+			if err != nil {
+				b.pluginAPI.Log.Warn("failed to get Direct Message channel between user and bot", "user ID", adminID, "bot ID", b.botUserID, "error", err)
+				return
+			}
 
-			if err := b.dm(adminID, post); err != nil {
+			if _, err := b.PostCustomMessageWithAttachments(channel.Id, postType, attachments, message); err != nil {
 				b.pluginAPI.Log.Warn("failed to send a DM to user", "user ID", adminID, "error", err)
 			}
 		}(admin.Id)
