@@ -68,6 +68,8 @@ func applyIncidentFilterOptionsSort(builder sq.SelectBuilder, options app.Incide
 		sort = "EndAt"
 	case app.SortByStatus:
 		sort = "CurrentStatus"
+	case SortByLastUpdateAt:
+		options.Sort = "LastUpdateAt"
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
@@ -111,7 +113,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	// When adding an Incident column #1: add to this select
 	incidentSelect := sqlStore.builder.
 		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
-			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
+			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
@@ -256,7 +258,7 @@ func (s *incidentStore) GetIncidents(requesterInfo app.RequesterInfo, options ap
 	}
 	hasMore := options.Page+1 < pageCount
 
-	incidents := make([]app.Incident, 0, len(rawIncidents))
+	incidents := make([]incident.Incident, 0, len(rawIncidents))
 	incidentIDs := make([]string, 0, len(rawIncidents))
 	for _, rawIncident := range rawIncidents {
 		var incident *app.Incident
@@ -336,6 +338,7 @@ func (s *incidentStore) CreateIncident(incident *app.Incident) (*app.Incident, e
 			"BroadcastChannelID":                   rawIncident.BroadcastChannelID,
 			"ReminderMessageTemplate":              rawIncident.ReminderMessageTemplate,
 			"CurrentStatus":                        rawIncident.CurrentStatus,
+			"LastUpdateAt":                         rawIncident.LastUpdateAt,
 			"ConcatenatedInvitedUserIDs":           rawIncident.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":          rawIncident.ConcatenatedInvitedGroupIDs,
 			"DefaultCommanderID":                   rawIncident.DefaultOwnerID,
@@ -382,6 +385,7 @@ func (s *incidentStore) UpdateIncident(incident *app.Incident) error {
 			"Name":                                 "",
 			"Description":                          rawIncident.Description,
 			"CommanderUserID":                      rawIncident.OwnerUserID,
+			"LastUpdateAt":                         rawIncident.LastUpdateAt,
 			"ChecklistsJSON":                       rawIncident.ChecklistsJSON,
 			"ReminderPostID":                       rawIncident.ReminderPostID,
 			"PreviousReminder":                     rawIncident.PreviousReminder,

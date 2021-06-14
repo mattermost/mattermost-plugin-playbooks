@@ -213,8 +213,10 @@ func (s *IncidentServiceImpl) CreateIncident(incident *Incident, pb *Playbook, u
 		return nil, err
 	}
 
+	now := model.GetMillis()
 	incident.ChannelID = channel.Id
-	incident.CreateAt = model.GetMillis()
+	incident.CreateAt = now
+	incident.LastUpdateAt = now
 	incident.CurrentStatus = StatusReported
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
@@ -693,6 +695,7 @@ func (s *IncidentServiceImpl) UpdateStatus(incidentID, userID string, options St
 
 	incidentToModify.PreviousReminder = options.Reminder
 	incidentToModify.Description = options.Description
+	incidentToModify.LastUpdateAt = post.CreateAt
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrap(err, "failed to update incident")

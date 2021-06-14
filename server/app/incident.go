@@ -40,6 +40,7 @@ type Incident struct {
 	Checklists                           []Checklist     `json:"checklists"`
 	StatusPosts                          []StatusPost    `json:"status_posts"`
 	CurrentStatus                        string          `json:"current_status"`
+	LastUpdateAt                         int64           `json:"last_update_at"`
 	ReminderPostID                       string          `json:"reminder_post_id"`
 	PreviousReminder                     time.Duration   `json:"previous_reminder"`
 	BroadcastChannelID                   string          `json:"broadcast_channel_id"`

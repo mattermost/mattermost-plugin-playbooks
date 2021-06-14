@@ -83,7 +83,7 @@ const IncidentList = (props: Props) => {
             team_id: currentTeam.id,
             page: 0,
             per_page: BACKSTAGE_LIST_PER_PAGE,
-            sort: 'create_at',
+            sort: 'last_update_at',
             direction: 'desc',
             playbook_id: props.playbook?.id,
         },
@@ -214,8 +214,8 @@ const IncidentList = (props: Props) => {
                             <SortableColHeader
                                 name={'Status / Last update'}
                                 direction={fetchParams.direction ? fetchParams.direction : 'desc'}
-                                active={fetchParams.sort ? fetchParams.sort === 'status' : false}
-                                onClick={() => colHeaderClicked('status')}
+                                active={fetchParams.sort ? fetchParams.sort === 'last_update_at' : false}
+                                onClick={() => colHeaderClicked('last_update_at')}
                             />
                         </div>
                         <div className='col-sm-2'>
