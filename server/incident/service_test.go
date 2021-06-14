@@ -101,9 +101,9 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Name:            "###",
-			TeamID:          teamID,
-			CommanderUserID: "user_id",
+			Name:        "###",
+			TeamID:      teamID,
+			OwnerUserID: "user_id",
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -150,9 +150,9 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Name:            "###",
-			TeamID:          teamID,
-			CommanderUserID: "user_id",
+			Name:        "###",
+			TeamID:      teamID,
+			OwnerUserID: "user_id",
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -181,9 +181,9 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Name:            "###",
-			TeamID:          teamID,
-			CommanderUserID: "user_id",
+			Name:        "###",
+			TeamID:      teamID,
+			OwnerUserID: "user_id",
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -197,7 +197,7 @@ func TestCreateIncident(t *testing.T) {
 		pluginAPI.On("CreateTeamMember", "team_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("AddChannelMember", "channel_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)).Return(nil, &model.AppError{Id: "api.channel.update_channel_member_roles.scheme_role.app_error"})
-		pluginAPI.On("LogWarn", "failed to promote commander to admin", "ChannelID", "channel_id", "CommanderUserID", "user_id", "err", ": , ")
+		pluginAPI.On("LogWarn", "failed to promote owner to admin", "ChannelID", "channel_id", "OwnerUserID", "user_id", "err", ": , ")
 		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 		store.EXPECT().UpdateIncident(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), "channel_id")
@@ -224,9 +224,9 @@ func TestCreateIncident(t *testing.T) {
 
 		teamID := model.NewId()
 		incdnt := &incident.Incident{
-			Name:            "ททททท",
-			TeamID:          teamID,
-			CommanderUserID: "user_id",
+			Name:        "ททททท",
+			TeamID:      teamID,
+			OwnerUserID: "user_id",
 		}
 
 		store.EXPECT().CreateIncident(gomock.Any()).Return(incdnt, nil)
@@ -257,7 +257,7 @@ func TestCreateIncident(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("webhook is sent", func(t *testing.T) {
+	t.Run("webhook is sent on incident create", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
 		client := pluginapi.NewClient(pluginAPI)
@@ -292,7 +292,7 @@ func TestCreateIncident(t *testing.T) {
 			ID:                   "incidentID",
 			Name:                 "Incident Name",
 			TeamID:               teamID,
-			CommanderUserID:      "user_id",
+			OwnerUserID:          "user_id",
 			WebhookOnCreationURL: server.URL,
 		}
 
@@ -343,12 +343,107 @@ func TestCreateIncident(t *testing.T) {
 	})
 }
 
+func TestUpdateStatus(t *testing.T) {
+	t.Run("webhook is sent on incident status update", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI)
+		store := mock_incident.NewMockStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_incident.NewMockJobOnceScheduler(controller)
+
+		type webhookPayload struct {
+			incident.Incident
+			ChannelURL   string                       `json:"channel_url"`
+			DetailsURL   string                       `json:"details_url"`
+			StatusUpdate incident.StatusUpdateOptions `json:"status_update"`
+		}
+
+		webhookChan := make(chan webhookPayload)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			body, err := ioutil.ReadAll(r.Body)
+			require.NoError(t, err)
+
+			var p webhookPayload
+			err = json.Unmarshal(body, &p)
+			require.NoError(t, err)
+
+			webhookChan <- p
+		}))
+
+		teamID := model.NewId()
+		incdnt := &incident.Incident{
+			ID:                       "incident_id",
+			Name:                     "Incident Name",
+			TeamID:                   teamID,
+			ChannelID:                "channel_id",
+			BroadcastChannelID:       "broadcast_channel_id",
+			OwnerUserID:              "user_id",
+			CurrentStatus:            incident.StatusReported,
+			CreateAt:                 1620018358404,
+			WebhookOnStatusUpdateURL: server.URL,
+		}
+		statusUpdateOptions := incident.StatusUpdateOptions{
+			Status:      incident.StatusActive,
+			Description: "latest-description",
+			Message:     "latest-message",
+			Reminder:    0,
+		}
+		siteURL := "http://example.com"
+		channelID := "channel_id"
+
+		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&incident.TimelineEvent{}))
+		store.EXPECT().UpdateIncident(gomock.AssignableToTypeOf(&incident.Incident{})).Return(nil)
+		store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&incident.SQLStatusPost{})).Return(nil)
+		store.EXPECT().GetIncident(gomock.Any()).Return(incdnt, nil).Times(2)
+
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
+
+		poster.EXPECT().PublishWebsocketEventToChannel("incident_updated", gomock.Any(), channelID)
+		poster.EXPECT().PostMessage("broadcast_channel_id", gomock.Any()).Return(&model.Post{}, nil)
+
+		scheduler.EXPECT().Cancel(incdnt.ID)
+
+		mattermostConfig := &model.Config{}
+		mattermostConfig.SetDefaults()
+		mattermostConfig.ServiceSettings.SiteURL = &siteURL
+		pluginAPI.On("CreatePost", mock.Anything).Return(&model.Post{}, nil)
+		pluginAPI.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Name: "channel_name"}, nil)
+		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "team_name"}, nil)
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
+		pluginAPI.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
+
+		s := incident.NewService(client, store, poster, logger, configService, scheduler, telemetryService)
+
+		err := s.UpdateStatus(incdnt.ID, "user_id", statusUpdateOptions)
+		require.NoError(t, err)
+
+		select {
+		case payload := <-webhookChan:
+			require.Equal(t, *incdnt, payload.Incident)
+			require.Equal(t,
+				"http://example.com/team_name/channels/channel_name",
+				payload.ChannelURL)
+			require.Equal(t,
+				"http://example.com/team_name/com.mattermost.plugin-incident-management/incidents/incident_id",
+				payload.DetailsURL)
+
+		case <-time.After(time.Second * 5):
+			require.Fail(t, "did not receive webhook on status update")
+		}
+	})
+}
+
 func TestOpenCreateIncidentDialog(t *testing.T) {
 	siteURL := "https://mattermost.example.com"
 
 	type args struct {
 		teamID      string
-		commanderID string
+		ownerID     string
 		triggerID   string
 		postID      string
 		clientID    string
@@ -365,7 +460,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			name: "successful webapp invocation without SiteURL",
 			args: args{
 				teamID:      "teamID",
-				commanderID: "commanderID",
+				ownerID:     "ownerID",
 				triggerID:   "triggerID",
 				postID:      "postID",
 				clientID:    "clientID",
@@ -375,8 +470,8 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			prepMocks: func(t *testing.T, store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API, configService *mock_config.MockService) {
 				api.On("GetTeam", "teamID").
 					Return(&model.Team{Id: "teamID", Name: "Team"}, nil)
-				api.On("GetUser", "commanderID").
-					Return(&model.User{Id: "commanderID", Username: "User"}, nil)
+				api.On("GetUser", "ownerID").
+					Return(&model.User{Id: "ownerID", Username: "User"}, nil)
 				api.On("GetConfig").
 					Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: model.NewString("")}})
 				configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "pluginId"}).Times(2)
@@ -391,7 +486,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			name: "successful webapp invocation",
 			args: args{
 				teamID:      "teamID",
-				commanderID: "commanderID",
+				ownerID:     "ownerID",
 				triggerID:   "triggerID",
 				postID:      "postID",
 				clientID:    "clientID",
@@ -401,8 +496,8 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			prepMocks: func(t *testing.T, store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API, configService *mock_config.MockService) {
 				api.On("GetTeam", "teamID").
 					Return(&model.Team{Id: "teamID", Name: "Team"}, nil)
-				api.On("GetUser", "commanderID").
-					Return(&model.User{Id: "commanderID", Username: "User"}, nil)
+				api.On("GetUser", "ownerID").
+					Return(&model.User{Id: "ownerID", Username: "User"}, nil)
 				api.On("GetConfig").
 					Return(&model.Config{
 						ServiceSettings: model.ServiceSettings{
@@ -421,7 +516,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			name: "successful mobile app invocation",
 			args: args{
 				teamID:      "teamID",
-				commanderID: "commanderID",
+				ownerID:     "ownerID",
 				triggerID:   "triggerID",
 				postID:      "postID",
 				clientID:    "clientID",
@@ -431,8 +526,8 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 			prepMocks: func(t *testing.T, store *mock_incident.MockStore, poster *mock_bot.MockPoster, api *plugintest.API, configService *mock_config.MockService) {
 				api.On("GetTeam", "teamID").
 					Return(&model.Team{Id: "teamID", Name: "Team"}, nil)
-				api.On("GetUser", "commanderID").
-					Return(&model.User{Id: "commanderID", Username: "User"}, nil)
+				api.On("GetUser", "ownerID").
+					Return(&model.User{Id: "ownerID", Username: "User"}, nil)
 				api.On("GetConfig").
 					Return(&model.Config{
 						ServiceSettings: model.ServiceSettings{
@@ -463,7 +558,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 
 			tt.prepMocks(t, store, poster, api, configService)
 
-			err := service.OpenCreateIncidentDialog(tt.args.teamID, tt.args.commanderID, tt.args.triggerID, tt.args.postID, tt.args.clientID, tt.args.playbooks, tt.args.isMobileApp)
+			err := service.OpenCreateIncidentDialog(tt.args.teamID, tt.args.ownerID, tt.args.triggerID, tt.args.postID, tt.args.clientID, tt.args.playbooks, tt.args.isMobileApp)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("OpenCreateIncidentDialog() error = %v, wantErr %v", err, tt.wantErr)
 				return

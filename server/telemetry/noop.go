@@ -82,8 +82,8 @@ func (t *NoopTelemetry) UpdatePlaybook(playbook.Playbook, string) {
 func (t *NoopTelemetry) DeletePlaybook(playbook.Playbook, string) {
 }
 
-// ChangeCommander does nothing
-func (t *NoopTelemetry) ChangeCommander(*incident.Incident, string) {
+// ChangeOwner does nothing
+func (t *NoopTelemetry) ChangeOwner(*incident.Incident, string) {
 }
 
 // RunTaskSlashCommand does nothing

@@ -31,8 +31,8 @@ type FilterOptions struct {
 	// Statuses filters by all statuses in the list (inclusive)
 	Statuses []string
 
-	// CommanderID filters by commander's Mattermost user ID. Defaults to blank (no filter).
-	CommanderID string `url:"commander_user_id,omitempty"`
+	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter).
+	OwnerID string `url:"owner_user_id,omitempty"`
 
 	// MemberID filters incidents that have this member. Defaults to blank (no filter).
 	MemberID string `url:"member_id,omitempty"`
@@ -41,16 +41,20 @@ type FilterOptions struct {
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
 	// not returned in relevance order).
 	SearchTerm string `url:"search_term,omitempty"`
+
+	// PlaybookID filters incidents that are derived from this playbook id.
+	// Defaults to blank (no filter).
+	PlaybookID string `url:"playbook_id,omitempty"`
 }
 
 const (
-	SortByCreateAt        = "create_at"
-	SortByID              = "id"
-	SortByName            = "name"
-	SortByCommanderUserID = "commander_user_id"
-	SortByTeamID          = "team_id"
-	SortByEndAt           = "end_at"
-	SortByStatus          = "status"
+	SortByCreateAt    = "create_at"
+	SortByID          = "id"
+	SortByName        = "name"
+	SortByOwnerUserID = "owner_user_id"
+	SortByTeamID      = "team_id"
+	SortByEndAt       = "end_at"
+	SortByStatus      = "status"
 
 	DirectionAsc  = "asc"
 	DirectionDesc = "desc"
@@ -61,7 +65,7 @@ func IsValidSortBy(sortBy string) bool {
 	case SortByCreateAt,
 		SortByID,
 		SortByName,
-		SortByCommanderUserID,
+		SortByOwnerUserID,
 		SortByTeamID,
 		SortByEndAt:
 		return true
@@ -91,8 +95,8 @@ func ValidateOptions(options *FilterOptions) error {
 		options.Sort = "ID"
 	case SortByName:
 		options.Sort = "Name"
-	case SortByCommanderUserID:
-		options.Sort = "CommanderUserID"
+	case SortByOwnerUserID:
+		options.Sort = "OwnerUserID"
 	case SortByTeamID:
 		options.Sort = "TeamID"
 	case SortByEndAt:
@@ -113,8 +117,8 @@ func ValidateOptions(options *FilterOptions) error {
 		return errors.New("bad parameter 'direction'")
 	}
 
-	if options.CommanderID != "" && !model.IsValidId(options.CommanderID) {
-		return errors.New("bad parameter 'commander_id': must be 26 characters or blank")
+	if options.OwnerID != "" && !model.IsValidId(options.OwnerID) {
+		return errors.New("bad parameter 'owner_id': must be 26 characters or blank")
 	}
 
 	if options.MemberID != "" && !model.IsValidId(options.MemberID) {

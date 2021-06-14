@@ -6,10 +6,10 @@ import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
 import {useDispatch} from 'react-redux';
 
-import {setCommander} from 'src/client';
+import {setOwner} from 'src/client';
 import {Incident} from 'src/types/incident';
 import ProfileSelector from 'src/components/profile/profile_selector';
-import Duration from '../duration';
+
 import './incident_details.scss';
 import {
     renderThumbHorizontal,
@@ -20,6 +20,8 @@ import PostCard from 'src/components/rhs/post_card';
 import {useLatestUpdate, useProfilesInCurrentChannel} from 'src/hooks';
 import PostText from 'src/components/post_text';
 import {updateStatus} from 'src/actions';
+
+import Duration from '../duration';
 
 const Description = styled.div`
     padding: 0 0 14px 0;
@@ -62,7 +64,7 @@ const RHSAbout = (props: Props) => {
         if (!userId) {
             return;
         }
-        const response = await setCommander(props.incident.id, userId);
+        const response = await setOwner(props.incident.id, userId);
         if (response.error) {
             // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console
@@ -89,10 +91,10 @@ const RHSAbout = (props: Props) => {
                 <Row>
                     <div className='side-by-side'>
                         <div className='inner-container first-container'>
-                            <div className='first-title'>{'Commander'}</div>
+                            <div className='first-title'>{'Owner'}</div>
                             <ProfileSelector
-                                selectedUserId={props.incident.commander_user_id}
-                                placeholder={'Assign Commander'}
+                                selectedUserId={props.incident.owner_user_id}
+                                placeholder={'Assign the owner role'}
                                 placeholderButtonClass={'NoAssignee-button'}
                                 profileButtonClass={'Assigned-button'}
                                 enableEdit={true}

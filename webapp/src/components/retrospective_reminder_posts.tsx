@@ -21,41 +21,14 @@ import {pluginId} from 'src/manifest';
 
 import {noRetrospective} from 'src/client';
 
+import {CustomPostContainer, CustomPostContent, CustomPostHeader, CustomPostButtonRow} from 'src/components/custom_post_styles';
+
 import {PrimaryButton, TertiaryButton} from './assets/buttons';
 import {renderDuration} from './duration';
 
-const MessageContainer = styled.div`
-    max-width: 640px;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
-    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
-    border-radius: 4px;
-    display: flex;
-    flex-direction: row;
-`;
-
-const Content = styled.div`
-    display: flex;
-    flex-grow: 1;
-    flex-direction: column;
-    padding: 12px;
-    padding-left: 16px;
-`;
-
-const Header = styled.div`
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
-`;
-
-const ButtonRow = styled.div`
-    display: flex;
-    flex-direction: row;
-    padding-top: 12px;
-    padding-bottom: 12px;
-`;
-
 const Divider = styled.div`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    margin-top: 12px;
     margin-bottom: 12px;
 `;
 
@@ -100,12 +73,12 @@ const ReminderCommon = (props: ReminderCommonProps) => {
     }
 
     return (
-        <MessageContainer>
-            <Content>
-                <Header>
+        <CustomPostContainer>
+            <CustomPostContent>
+                <CustomPostHeader>
                     {props.header}
-                </Header>
-                <ButtonRow>
+                </CustomPostHeader>
+                <CustomPostButtonRow>
                     <PrimaryButton
                         onClick={() => navigateToUrl(`/${currentTeam.name}/${pluginId}/incidents/${incident?.id}/retrospective`)}
                         disabled={disableButtons}
@@ -118,14 +91,14 @@ const ReminderCommon = (props: ReminderCommonProps) => {
                     >
                         {props.secondary}
                     </StyledTertiaryButton>
-                </ButtonRow>
+                </CustomPostButtonRow>
                 <Divider/>
                 <ReminderText>
                     {reminderText}
                 </ReminderText>
-            </Content>
+            </CustomPostContent>
             <Image/>
-        </MessageContainer>
+        </CustomPostContainer>
     );
 };
 

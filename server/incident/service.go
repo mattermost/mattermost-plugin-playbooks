@@ -96,7 +96,7 @@ func (s *ServiceImpl) GetIncidents(requesterInfo permissions.RequesterInfo, opti
 	return s.store.GetIncidents(requesterInfo, options)
 }
 
-func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander *model.User) error {
+func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, owner *model.User) error {
 	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
 	if err != nil {
 		return err
@@ -107,7 +107,7 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 	}
 
 	announcementMsg := fmt.Sprintf("#### New Incident: ~%s\n", incidentChannel.Name)
-	announcementMsg += fmt.Sprintf("**Commander**: @%s\n", commander.Username)
+	announcementMsg += fmt.Sprintf("**Owner**: @%s\n", owner.Username)
 
 	if _, err := s.poster.PostMessage(theIncident.AnnouncementChannelID, announcementMsg); err != nil {
 		return err
@@ -120,6 +120,10 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, commander
 // It blocks until a response is received.
 func (s *ServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		s.pluginAPI.Log.Warn("cannot send webhook on creation, please set siteURL")
+		return errors.New("Could not send webhook, please set siteURL")
+	}
 
 	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
 	if err != nil {
@@ -131,18 +135,9 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
 		return err
 	}
 
-	channelURL := fmt.Sprintf("%s/%s/channels/%s",
-		*siteURL,
-		team.Name,
-		channel.Name,
-	)
+	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := fmt.Sprintf("%s/%s/%s/incidents/%s",
-		*siteURL,
-		team.Name,
-		s.configService.GetManifest().Id,
-		theIncident.ID,
-	)
+	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, theIncident.ID)
 
 	payload := struct {
 		Incident
@@ -182,12 +177,12 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
 
 // CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
 func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, userID string, public bool) (*Incident, error) {
-	if incdnt.DefaultCommanderID != "" {
+	if incdnt.DefaultOwnerID != "" {
 		// Check if the user is a member of the incident's team
-		if !permissions.IsMemberOfTeamID(incdnt.DefaultCommanderID, incdnt.TeamID, s.pluginAPI) {
-			s.pluginAPI.Log.Warn("default commander specified, but it is not a member of the incident's team", "userID", incdnt.DefaultCommanderID, "teamID", incdnt.TeamID)
+		if !permissions.IsMemberOfTeamID(incdnt.DefaultOwnerID, incdnt.TeamID, s.pluginAPI) {
+			s.pluginAPI.Log.Warn("default owner specified, but it is not a member of the incident's team", "userID", incdnt.DefaultOwnerID, "teamID", incdnt.TeamID)
 		} else {
-			incdnt.CommanderUserID = incdnt.DefaultCommanderID
+			incdnt.OwnerUserID = incdnt.DefaultOwnerID
 		}
 	}
 
@@ -319,14 +314,14 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.ReporterUserID)
 	}
 
-	commander, err := s.pluginAPI.User.Get(incdnt.CommanderUserID)
+	owner, err := s.pluginAPI.User.Get(incdnt.OwnerUserID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.CommanderUserID)
+		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.OwnerUserID)
 	}
 
 	startMessage := fmt.Sprintf("This incident has been started and is commanded by @%s.", reporter.Username)
-	if incdnt.CommanderUserID != incdnt.ReporterUserID {
-		startMessage = fmt.Sprintf("This incident has been started by @%s and is commanded by @%s.", reporter.Username, commander.Username)
+	if incdnt.OwnerUserID != incdnt.ReporterUserID {
+		startMessage = fmt.Sprintf("This incident has been started by @%s and is commanded by @%s.", reporter.Username, owner.Username)
 	}
 
 	newPost, err := s.poster.PostMessage(channel.Id, startMessage)
@@ -335,7 +330,7 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 	}
 
 	if incdnt.AnnouncementChannelID != "" {
-		if err2 := s.broadcastIncidentCreation(incdnt, commander); err2 != nil {
+		if err2 := s.broadcastIncidentCreation(incdnt, owner); err2 != nil {
 			s.pluginAPI.Log.Warn("failed to broadcast the incident creation to channel", "ChannelID", incdnt.AnnouncementChannelID)
 
 			if _, err = s.poster.PostMessage(channel.Id, "Failed to announce the creation of this incident in the configured channel."); err != nil {
@@ -389,8 +384,8 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 }
 
 // OpenCreateIncidentDialog opens a interactive dialog to start a new incident.
-func (s *ServiceImpl) OpenCreateIncidentDialog(teamID, commanderID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error {
-	dialog, err := s.newIncidentDialog(teamID, commanderID, postID, clientID, playbooks, isMobileApp)
+func (s *ServiceImpl) OpenCreateIncidentDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error {
+	dialog, err := s.newIncidentDialog(teamID, ownerID, postID, clientID, playbooks, isMobileApp)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new incident dialog")
 	}
@@ -610,6 +605,64 @@ func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *In
 	return nil
 }
 
+// sendWebhookOnUpdateStatus sends a POST request to the status update webhook URL.
+// It blocks until a response is received.
+func (s *ServiceImpl) sendWebhookOnUpdateStatus(theIncident Incident) error {
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		s.pluginAPI.Log.Warn("cannot send webhook on update, please set siteURL")
+		return errors.New("siteURL not set")
+	}
+
+	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	if err != nil {
+		return err
+	}
+
+	channel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
+
+	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, theIncident.ID)
+
+	payload := struct {
+		Incident
+		ChannelURL string `json:"channel_url"`
+		DetailsURL string `json:"details_url"`
+	}{
+		Incident:   theIncident,
+		ChannelURL: channelURL,
+		DetailsURL: detailsURL,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", theIncident.WebhookOnStatusUpdateURL, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
+	}
+
+	return nil
+}
+
 // UpdateStatus updates an incident's status.
 func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
@@ -713,6 +766,15 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 		return err
 	}
 
+	if incidentToModify.WebhookOnStatusUpdateURL != "" {
+		go func() {
+			if err := s.sendWebhookOnUpdateStatus(*incidentToModify); err != nil {
+				s.pluginAPI.Log.Warn("failed to send a POST request to the update status webhook URL", "webhook URL", incidentToModify.WebhookOnStatusUpdateURL, "error", err)
+				_, _ = s.poster.PostMessage(incidentToModify.ChannelID, "Incident update announcement through the outgoing webhook failed. Contact your System Admin for more information.")
+			}
+		}()
+	}
+
 	return nil
 }
 
@@ -802,49 +864,49 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 	return incidentID, nil
 }
 
-// GetCommanders returns all the commanders of the incidents selected by options
-func (s *ServiceImpl) GetCommanders(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]CommanderInfo, error) {
-	return s.store.GetCommanders(requesterInfo, options)
+// GetOwners returns all the owners of the incidents selected by options
+func (s *ServiceImpl) GetOwners(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]OwnerInfo, error) {
+	return s.store.GetOwners(requesterInfo, options)
 }
 
-// IsCommander returns true if the userID is the commander for incidentID.
-func (s *ServiceImpl) IsCommander(incidentID, userID string) bool {
+// IsOwner returns true if the userID is the owner for incidentID.
+func (s *ServiceImpl) IsOwner(incidentID, userID string) bool {
 	incdnt, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return false
 	}
-	return incdnt.CommanderUserID == userID
+	return incdnt.OwnerUserID == userID
 }
 
-// ChangeCommander processes a request from userID to change the commander for incidentID
-// to commanderID. Changing to the same commanderID is a no-op.
-func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) error {
+// ChangeOwner processes a request from userID to change the owner for incidentID
+// to ownerID. Changing to the same ownerID is a no-op.
+func (s *ServiceImpl) ChangeOwner(incidentID, userID, ownerID string) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return err
 	}
 
-	if incidentToModify.CommanderUserID == commanderID {
+	if incidentToModify.OwnerUserID == ownerID {
 		return nil
 	}
 
-	oldCommander, err := s.pluginAPI.User.Get(incidentToModify.CommanderUserID)
+	oldOwner, err := s.pluginAPI.User.Get(incidentToModify.OwnerUserID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to to resolve user %s", incidentToModify.CommanderUserID)
+		return errors.Wrapf(err, "failed to to resolve user %s", incidentToModify.OwnerUserID)
 	}
-	newCommander, err := s.pluginAPI.User.Get(commanderID)
+	newOwner, err := s.pluginAPI.User.Get(ownerID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to to resolve user %s", commanderID)
+		return errors.Wrapf(err, "failed to to resolve user %s", ownerID)
 	}
 
-	incidentToModify.CommanderUserID = commanderID
+	incidentToModify.OwnerUserID = ownerID
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrapf(err, "failed to update incident")
 	}
 
 	mainChannelID := incidentToModify.ChannelID
-	modifyMessage := fmt.Sprintf("changed the incident commander from **@%s** to **@%s**.",
-		oldCommander.Username, newCommander.Username)
+	modifyMessage := fmt.Sprintf("changed the incident owner from **@%s** to **@%s**.",
+		oldOwner.Username, newOwner.Username)
 	post, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
 		return err
@@ -854,8 +916,8 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 		IncidentID:    incidentID,
 		CreateAt:      post.CreateAt,
 		EventAt:       post.CreateAt,
-		EventType:     CommanderChanged,
-		Summary:       fmt.Sprintf("@%s to @%s", oldCommander.Username, newCommander.Username),
+		EventType:     OwnerChanged,
+		Summary:       fmt.Sprintf("@%s to @%s", oldOwner.Username, newOwner.Username),
 		PostID:        post.Id,
 		SubjectUserID: userID,
 	}
@@ -864,7 +926,7 @@ func (s *ServiceImpl) ChangeCommander(incidentID, userID, commanderID string) er
 		return errors.Wrap(err, "failed to create timeline event")
 	}
 
-	s.telemetry.ChangeCommander(incidentToModify, userID)
+	s.telemetry.ChangeOwner(incidentToModify, userID)
 
 	if err = s.sendIncidentToClient(incidentID); err != nil {
 		return err
@@ -911,7 +973,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 		return errors.Wrapf(err, "failed to update incident, is now in inconsistent state")
 	}
 
-	s.telemetry.ModifyCheckedState(incidentID, userID, itemToCheck, incidentToModify.CommanderUserID == userID)
+	s.telemetry.ModifyCheckedState(incidentID, userID, itemToCheck, incidentToModify.OwnerUserID == userID)
 
 	event := &TimelineEvent{
 		IncidentID:    incidentID,
@@ -1489,28 +1551,28 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, header string, pub
 		return nil, errors.Wrapf(err, "failed to add reporter to the channel")
 	}
 
-	if incdnt.CommanderUserID != incdnt.ReporterUserID {
-		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.CommanderUserID, s.configService.GetConfiguration().BotUserID); err != nil {
-			return nil, errors.Wrapf(err, "failed to add commander to channel")
+	if incdnt.OwnerUserID != incdnt.ReporterUserID {
+		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.OwnerUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+			return nil, errors.Wrapf(err, "failed to add owner to channel")
 		}
 	}
 
-	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, incdnt.CommanderUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
-		s.pluginAPI.Log.Warn("failed to promote commander to admin", "ChannelID", channel.Id, "CommanderUserID", incdnt.CommanderUserID, "err", err.Error())
+	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, incdnt.OwnerUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
+		s.pluginAPI.Log.Warn("failed to promote owner to admin", "ChannelID", channel.Id, "OwnerUserID", incdnt.OwnerUserID, "err", err.Error())
 	}
 
 	return channel, nil
 }
 
-func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) (*model.Dialog, error) {
+func (s *ServiceImpl) newIncidentDialog(teamID, ownerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) (*model.Dialog, error) {
 	team, err := s.pluginAPI.Team.Get(teamID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch team")
 	}
 
-	user, err := s.pluginAPI.User.Get(commanderID)
+	user, err := s.pluginAPI.User.Get(ownerID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch commander user")
+		return nil, errors.Wrapf(err, "failed to fetch owner user")
 	}
 
 	state, err := json.Marshal(DialogState{
@@ -1539,7 +1601,7 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 		newPlaybookMarkdown = fmt.Sprintf(" [Create a playbook.](%s)", url)
 	}
 
-	introText := fmt.Sprintf("**Commander:** %v\n\nPlaybooks are necessary to start an incident.%s", getUserDisplayName(user), newPlaybookMarkdown)
+	introText := fmt.Sprintf("**Owner:** %v\n\nPlaybooks are necessary to start an incident.%s", getUserDisplayName(user), newPlaybookMarkdown)
 
 	return &model.Dialog{
 		Title:            "Incident Details",
@@ -1874,6 +1936,23 @@ func getUserDisplayName(user *model.User) string {
 	}
 
 	return fmt.Sprintf("@%s", user.Username)
+}
+
+func getChannelURL(siteURL string, teamName string, channelName string) string {
+	return fmt.Sprintf("%s/%s/channels/%s",
+		siteURL,
+		teamName,
+		channelName,
+	)
+}
+
+func getDetailsURL(siteURL string, teamName string, manifestID string, incidentID string) string {
+	return fmt.Sprintf("%s/%s/%s/incidents/%s",
+		siteURL,
+		teamName,
+		manifestID,
+		incidentID,
+	)
 }
 
 func cleanChannelName(channelName string) string {

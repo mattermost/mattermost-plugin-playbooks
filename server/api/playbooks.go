@@ -89,6 +89,20 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	if pbook.WebhookOnStatusUpdateEnabled {
+		url, err := url.ParseRequestURI(pbook.WebhookOnStatusUpdateURL)
+		if err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
+			return
+		}
+
+		if url.Scheme != "http" && url.Scheme != "https" {
+			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
+	}
+
 	id, err := h.playbookService.Create(pbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -164,6 +178,20 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	if pbook.WebhookOnStatusUpdateEnabled {
+		url, err2 := url.ParseRequestURI(pbook.WebhookOnStatusUpdateURL)
+		if err2 != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err2)
+			return
+		}
+
+		if url.Scheme != "http" && url.Scheme != "https" {
+			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
+	}
+
 	err = h.playbookService.Update(pbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -204,10 +232,10 @@ func doPlaybookModificationChecks(pbook *playbook.Playbook, userID string, plugi
 	}
 	pbook.InvitedGroupIDs = filteredGroups
 
-	if pbook.DefaultCommanderID != "" && !permissions.IsMemberOfTeamID(pbook.DefaultCommanderID, pbook.TeamID, pluginAPI) {
-		pluginAPI.Log.Warn("commander is not a member of the playbook's team, disabling default commander", "teamID", pbook.TeamID, "userID", pbook.DefaultCommanderID)
-		pbook.DefaultCommanderID = ""
-		pbook.DefaultCommanderEnabled = false
+	if pbook.DefaultOwnerID != "" && !permissions.IsMemberOfTeamID(pbook.DefaultOwnerID, pbook.TeamID, pluginAPI) {
+		pluginAPI.Log.Warn("owner is not a member of the playbook's team, disabling default owner", "teamID", pbook.TeamID, "userID", pbook.DefaultOwnerID)
+		pbook.DefaultOwnerID = ""
+		pbook.DefaultOwnerEnabled = false
 	}
 
 	if pbook.AnnouncementChannelID != "" &&
@@ -253,7 +281,6 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, fmt.Sprintf("failed to get playbooks: %s", err.Error()), nil)
 		return
 	}
-	memberOnly, _ := strconv.ParseBool(params.Get("member_only"))
 
 	if teamID == "" {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "Provide a team ID", nil)
@@ -283,10 +310,9 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	requesterInfo := playbook.RequesterInfo{
-		UserID:          userID,
-		TeamID:          teamID,
-		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
-		MemberOnly:      memberOnly,
+		UserID:  userID,
+		TeamID:  teamID,
+		IsAdmin: permissions.IsAdmin(userID, h.pluginAPI),
 	}
 
 	playbookResults, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, opts)
@@ -309,10 +335,9 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 	}
 
 	requesterInfo := playbook.RequesterInfo{
-		UserID:          userID,
-		TeamID:          teamID,
-		UserIDtoIsAdmin: map[string]bool{userID: permissions.IsAdmin(userID, h.pluginAPI)},
-		MemberOnly:      true,
+		UserID:  userID,
+		TeamID:  teamID,
+		IsAdmin: permissions.IsAdmin(userID, h.pluginAPI),
 	}
 
 	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, playbook.Options{})

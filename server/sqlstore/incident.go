@@ -23,6 +23,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	legacyEventTypeCommanderChanged = "commander_changed"
+)
+
 type sqlIncident struct {
 	incident.Incident
 	ChecklistsJSON              json.RawMessage
@@ -53,11 +57,12 @@ type incidentStatusPosts []struct {
 func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
 	// When adding an Incident column #1: add to this select
 	incidentSelect := sqlStore.builder.
-		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID", "i.TeamID", "i.ChannelID",
+		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
-			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID",
-			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds", "RetrospectiveWasCanceled").
+			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
+			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
+			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
@@ -67,9 +72,30 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		Join("Posts as p ON sp.PostID = p.Id")
 
 	timelineEventsSelect := sqlStore.builder.
-		Select("te.ID", "te.IncidentID", "te.CreateAt", "te.DeleteAt", "te.EventAt",
-			"te.EventType", "te.Summary", "te.Details", "te.PostID", "te.SubjectUserID",
-			"te.CreatorUserID").
+		Select(
+			"te.ID",
+			"te.IncidentID",
+			"te.CreateAt",
+			"te.DeleteAt",
+			"te.EventAt",
+		).
+		// Map "commander_changed" to "owner_changed", preserving database compatibility
+		// without complicating the code.
+		Column(
+			sq.Alias(
+				sq.Case().
+					When(sq.Eq{"te.EventType": legacyEventTypeCommanderChanged}, sq.Expr("?", incident.OwnerChanged)).
+					Else("te.EventType"),
+				"EventType",
+			),
+		).
+		Columns(
+			"te.Summary",
+			"te.Details",
+			"te.PostID",
+			"te.SubjectUserID",
+			"te.CreatorUserID",
+		).
 		From("IR_TimelineEvent as te")
 
 	return &incidentStore{
@@ -118,9 +144,9 @@ func (s *incidentStore) GetIncidents(requesterInfo permissions.RequesterInfo, op
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
 	}
 
-	if options.CommanderID != "" {
-		queryForResults = queryForResults.Where(sq.Eq{"i.CommanderUserID": options.CommanderID})
-		queryForTotal = queryForTotal.Where(sq.Eq{"i.CommanderUserID": options.CommanderID})
+	if options.OwnerID != "" {
+		queryForResults = queryForResults.Where(sq.Eq{"i.CommanderUserID": options.OwnerID})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.CommanderUserID": options.OwnerID})
 	}
 
 	if options.MemberID != "" {
@@ -134,6 +160,11 @@ func (s *incidentStore) GetIncidents(requesterInfo permissions.RequesterInfo, op
 
 		queryForResults = queryForResults.Where(membershipClause)
 		queryForTotal = queryForTotal.Where(membershipClause)
+	}
+
+	if options.PlaybookID != "" {
+		queryForResults = queryForResults.Where(sq.Eq{"i.PlaybookID": options.PlaybookID})
+		queryForTotal = queryForTotal.Where(sq.Eq{"i.PlaybookID": options.PlaybookID})
 	}
 
 	// TODO: do we need to sanitize (replace any '%'s in the search term)?
@@ -238,7 +269,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"ID":                                   rawIncident.ID,
 			"Name":                                 rawIncident.Name,
 			"Description":                          rawIncident.Description,
-			"CommanderUserID":                      rawIncident.CommanderUserID,
+			"CommanderUserID":                      rawIncident.OwnerUserID,
 			"ReporterUserID":                       rawIncident.ReporterUserID,
 			"TeamID":                               rawIncident.TeamID,
 			"ChannelID":                            rawIncident.ChannelID,
@@ -254,7 +285,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"CurrentStatus":                        rawIncident.CurrentStatus,
 			"ConcatenatedInvitedUserIDs":           rawIncident.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":          rawIncident.ConcatenatedInvitedGroupIDs,
-			"DefaultCommanderID":                   rawIncident.DefaultCommanderID,
+			"DefaultCommanderID":                   rawIncident.DefaultOwnerID,
 			"AnnouncementChannelID":                rawIncident.AnnouncementChannelID,
 			"WebhookOnCreationURL":                 rawIncident.WebhookOnCreationURL,
 			"Retrospective":                        rawIncident.Retrospective,
@@ -262,6 +293,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"MessageOnJoin":                        rawIncident.MessageOnJoin,
 			"RetrospectiveReminderIntervalSeconds": rawIncident.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":             rawIncident.RetrospectiveWasCanceled,
+			"WebhookOnStatusUpdateURL":             rawIncident.WebhookOnStatusUpdateURL,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -296,7 +328,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 		SetMap(map[string]interface{}{
 			"Name":                                 "",
 			"Description":                          rawIncident.Description,
-			"CommanderUserID":                      rawIncident.CommanderUserID,
+			"CommanderUserID":                      rawIncident.OwnerUserID,
 			"ChecklistsJSON":                       rawIncident.ChecklistsJSON,
 			"ReminderPostID":                       rawIncident.ReminderPostID,
 			"PreviousReminder":                     rawIncident.PreviousReminder,
@@ -304,7 +336,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"EndAt":                                rawIncident.ResolvedAt(),
 			"ConcatenatedInvitedUserIDs":           rawIncident.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":          rawIncident.ConcatenatedInvitedGroupIDs,
-			"DefaultCommanderID":                   rawIncident.DefaultCommanderID,
+			"DefaultCommanderID":                   rawIncident.DefaultOwnerID,
 			"AnnouncementChannelID":                rawIncident.AnnouncementChannelID,
 			"WebhookOnCreationURL":                 rawIncident.WebhookOnCreationURL,
 			"Retrospective":                        rawIncident.Retrospective,
@@ -312,6 +344,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"MessageOnJoin":                        rawIncident.MessageOnJoin,
 			"RetrospectiveReminderIntervalSeconds": rawIncident.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":             rawIncident.RetrospectiveWasCanceled,
+			"WebhookOnStatusUpdateURL":             rawIncident.WebhookOnStatusUpdateURL,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 
@@ -359,7 +392,7 @@ func (s *incidentStore) UpdateStatus(statusPost *incident.SQLStatusPost) error {
 	return nil
 }
 
-// UpdateTimelineEvent updates (or inserts) the timeline event
+// CreateTimelineEvent creates the timeline event
 func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*incident.TimelineEvent, error) {
 	if event.IncidentID == "" {
 		return nil, errors.New("needs incident ID")
@@ -372,6 +405,11 @@ func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*inc
 	}
 	event.ID = model.NewId()
 
+	eventType := string(event.EventType)
+	if event.EventType == incident.OwnerChanged {
+		eventType = legacyEventTypeCommanderChanged
+	}
+
 	_, err := s.store.execBuilder(s.store.db, sq.
 		Insert("IR_TimelineEvent").
 		SetMap(map[string]interface{}{
@@ -380,7 +418,7 @@ func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*inc
 			"CreateAt":      event.CreateAt,
 			"DeleteAt":      event.DeleteAt,
 			"EventAt":       event.EventAt,
-			"EventType":     event.EventType,
+			"EventType":     eventType,
 			"Summary":       event.Summary,
 			"Details":       event.Details,
 			"PostID":        event.PostID,
@@ -395,6 +433,7 @@ func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*inc
 	return event, nil
 }
 
+// UpdateTimelineEvent updates (or inserts) the timeline event
 func (s *incidentStore) UpdateTimelineEvent(event *incident.TimelineEvent) error {
 	if event.ID == "" {
 		return errors.New("needs event ID")
@@ -406,6 +445,11 @@ func (s *incidentStore) UpdateTimelineEvent(event *incident.TimelineEvent) error
 		return errors.New("needs event type")
 	}
 
+	eventType := string(event.EventType)
+	if event.EventType == incident.OwnerChanged {
+		eventType = legacyEventTypeCommanderChanged
+	}
+
 	_, err := s.store.execBuilder(s.store.db, sq.
 		Update("IR_TimelineEvent").
 		SetMap(map[string]interface{}{
@@ -413,7 +457,7 @@ func (s *incidentStore) UpdateTimelineEvent(event *incident.TimelineEvent) error
 			"CreateAt":      event.CreateAt,
 			"DeleteAt":      event.DeleteAt,
 			"EventAt":       event.EventAt,
-			"EventType":     event.EventType,
+			"EventType":     eventType,
 			"Summary":       event.Summary,
 			"Details":       event.Details,
 			"PostID":        event.PostID,
@@ -550,8 +594,8 @@ func (s *incidentStore) GetAllIncidentMembersCount(channelID string) (int64, err
 	return numMembers, nil
 }
 
-// GetCommanders returns the commanders of the incidents selected by options
-func (s *incidentStore) GetCommanders(requesterInfo permissions.RequesterInfo, options incident.FilterOptions) ([]incident.CommanderInfo, error) {
+// GetOwners returns the owners of the incidents selected by options
+func (s *incidentStore) GetOwners(requesterInfo permissions.RequesterInfo, options incident.FilterOptions) ([]incident.OwnerInfo, error) {
 	if err := incident.ValidateOptions(&options); err != nil {
 		return nil, err
 	}
@@ -566,13 +610,13 @@ func (s *incidentStore) GetCommanders(requesterInfo permissions.RequesterInfo, o
 		Where(sq.Eq{"i.TeamID": options.TeamID}).
 		Where(permissionsExpr)
 
-	var commanders []incident.CommanderInfo
-	err := s.store.selectBuilder(s.store.db, &commanders, query)
+	var owners []incident.OwnerInfo
+	err := s.store.selectBuilder(s.store.db, &owners, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query database")
 	}
 
-	return commanders, nil
+	return owners, nil
 }
 
 // NukeDB removes all incident related data.

@@ -50,6 +50,7 @@ import {isE20LicensedOrDevelopment} from './license';
 import SystemConsoleEnabledTeams from './system_console_enabled_teams';
 import {makeUpdateMainMenu} from './make_update_main_menu';
 import {fetchGlobalSettings} from './client';
+import {CloudUpgradePost} from './components/cloud_upgrade_post';
 
 export default class Plugin {
     removeMainMenuSub?: Unsubscribe;
@@ -113,6 +114,7 @@ export default class Plugin {
 
             r.registerPostTypeComponent('custom_retro_rem_first', RetrospectiveFirstReminder);
             r.registerPostTypeComponent('custom_retro_rem', RetrospectiveReminder);
+            r.registerPostTypeComponent('custom_cloud_upgrade', CloudUpgradePost);
 
             return r.unregister;
         };

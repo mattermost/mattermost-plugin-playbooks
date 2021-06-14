@@ -90,6 +90,20 @@ func (mr *MockServiceMockRecorder) IsAtLeastE20Licensed() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAtLeastE20Licensed", reflect.TypeOf((*MockService)(nil).IsAtLeastE20Licensed))
 }
 
+// IsCloud mocks base method
+func (m *MockService) IsCloud() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsCloud")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsCloud indicates an expected call of IsCloud
+func (mr *MockServiceMockRecorder) IsCloud() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCloud", reflect.TypeOf((*MockService)(nil).IsCloud))
+}
+
 // IsConfiguredForDevelopmentAndTesting mocks base method
 func (m *MockService) IsConfiguredForDevelopmentAndTesting() bool {
 	m.ctrl.T.Helper()

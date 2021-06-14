@@ -36,4 +36,7 @@ type Service interface {
 
 	// IsAtLeastE10Licensed returns true when the server either has at least an E10 license or is configured for development.
 	IsAtLeastE10Licensed() bool
+
+	// IsCloud returns true when the server has a Cloud license.
+	IsCloud() bool
 }

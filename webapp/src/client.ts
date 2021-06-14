@@ -13,7 +13,7 @@ import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
 import {setTriggerId} from 'src/actions';
-import {CommanderInfo} from 'src/types/backstage';
+import {OwnerInfo} from 'src/types/backstage';
 import {
     FetchIncidentsParams,
     FetchPlaybooksParams,
@@ -33,7 +33,7 @@ import {
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 
-import {Stats} from 'src/types/stats';
+import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
@@ -145,7 +145,6 @@ const clientHasPlaybooks = async (teamID: string): Promise<boolean> => {
     const result = await clientFetchPlaybooks(teamID, {
         page: 0,
         per_page: 1,
-        member_only: true,
     }) as FetchPlaybooksNoChecklistReturn;
 
     return result.items?.length > 0;
@@ -170,11 +169,11 @@ export async function savePlaybook(playbook: Playbook) {
         return data;
     }
 
-    const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbook.id}`, {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbook.id}`, {
         method: 'PUT',
         body: JSON.stringify(playbook),
     });
-    return data;
+    return {id: playbook.id};
 }
 
 export async function deletePlaybook(playbook: PlaybookNoChecklist) {
@@ -192,20 +191,20 @@ export async function fetchUsersInTeam(teamId: string): Promise<UserProfile[]> {
     return Client4.getProfilesInTeam(teamId, 0, 200);
 }
 
-export async function fetchCommandersInTeam(teamId: string): Promise<CommanderInfo[]> {
+export async function fetchOwnersInTeam(teamId: string): Promise<OwnerInfo[]> {
     const queryParams = qs.stringify({team_id: teamId}, {addQueryPrefix: true});
 
-    let data = await doGet(`${apiUrl}/incidents/commanders${queryParams}`);
+    let data = await doGet(`${apiUrl}/incidents/owners${queryParams}`);
     if (!data) {
         data = [];
     }
-    return data as CommanderInfo[];
+    return data as OwnerInfo[];
 }
 
-export async function setCommander(incidentId: string, commanderId: string) {
-    const body = `{"commander_id": "${commanderId}"}`;
+export async function setOwner(incidentId: string, ownerId: string) {
+    const body = `{"owner_id": "${ownerId}"}`;
     try {
-        const data = await doPost(`${apiUrl}/incidents/${incidentId}/commander`, body);
+        const data = await doPost(`${apiUrl}/incidents/${incidentId}/owner`, body);
         return data;
     } catch (error) {
         return {error};
@@ -286,6 +285,15 @@ export async function fetchStats(teamID: string): Promise<Stats | null> {
     }
 
     return data as Stats;
+}
+
+export async function fetchPlaybookStats(playbookID: string): Promise<PlaybookStats> {
+    const data = await doGet(`${apiUrl}/stats/playbook?playbook_id=${playbookID}`);
+    if (!data) {
+        return EmptyPlaybookStats;
+    }
+
+    return data as PlaybookStats;
 }
 
 export async function telemetryEventForIncident(incidentID: string, action: string) {

@@ -28,8 +28,8 @@ type Playbook struct {
 	InvitedUserIDs                       []string    `json:"invited_user_ids"`
 	InvitedGroupIDs                      []string    `json:"invited_group_ids"`
 	InviteUsersEnabled                   bool        `json:"invite_users_enabled"`
-	DefaultCommanderID                   string      `json:"default_commander_id"`
-	DefaultCommanderEnabled              bool        `json:"default_commander_enabled"`
+	DefaultOwnerID                       string      `json:"default_owner_id"`
+	DefaultOwnerEnabled                  bool        `json:"default_owner_enabled"`
 	AnnouncementChannelID                string      `json:"announcement_channel_id"`
 	AnnouncementChannelEnabled           bool        `json:"announcement_channel_enabled"`
 	WebhookOnCreationURL                 string      `json:"webhook_on_creation_url"`
@@ -38,6 +38,8 @@ type Playbook struct {
 	MessageOnJoinEnabled                 bool        `json:"message_on_join_enabled"`
 	RetrospectiveReminderIntervalSeconds int64       `json:"retrospective_reminder_interval_seconds"`
 	RetrospectiveTemplate                string      `json:"retrospective_template"`
+	WebhookOnStatusUpdateURL             string      `json:"webhook_on_status_update_url"`
+	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
 }
 
 func (p Playbook) Clone() Playbook {
@@ -138,12 +140,9 @@ func (r GetPlaybooksResults) MarshalJSON() ([]byte, error) {
 
 // RequesterInfo holds the userID and permissions for the user making the request
 type RequesterInfo struct {
-	UserID          string
-	TeamID          string
-	UserIDtoIsAdmin map[string]bool
-
-	// MemberOnly filters playbooks to those for which UserId is a member
-	MemberOnly bool
+	UserID  string
+	TeamID  string
+	IsAdmin bool
 }
 
 // Service is the playbook service for managing playbooks

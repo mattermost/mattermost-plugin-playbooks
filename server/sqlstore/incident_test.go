@@ -25,21 +25,21 @@ func TestGetIncidents(t *testing.T) {
 	team2id := model.NewId()
 	team3id := model.NewId()
 
-	commander1 := incident.CommanderInfo{
+	owner1 := incident.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 1",
+		Username: "Owner 1",
 	}
-	commander2 := incident.CommanderInfo{
+	owner2 := incident.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 2",
+		Username: "Owner 2",
 	}
-	commander3 := incident.CommanderInfo{
+	owner3 := incident.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 3",
+		Username: "Owner 3",
 	}
-	commander4 := incident.CommanderInfo{
+	owner4 := incident.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 4",
+		Username: "Owner 4",
 	}
 
 	lucy := userInfo{
@@ -86,35 +86,38 @@ func TestGetIncidents(t *testing.T) {
 		WithName("incident 1 - wheel cat aliens wheelbarrow").
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithChannel(&channel01). // public
-		WithCommanderUserID(commander1.UserID).
+		WithOwnerUserID(owner1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(123).
 		WithChecklists([]int{8}).
+		WithPlaybookID("playbook1").
 		ToIncident()
 
 	inc02 := *NewBuilder(nil).
 		WithName("incident 2 - horse staple battery aliens shotgun mouse shotput").
 		WithChannel(&channel02). // public
-		WithCommanderUserID(commander2.UserID).
+		WithOwnerUserID(owner2.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(199).
 		WithChecklists([]int{7}).
+		WithPlaybookID("playbook1").
 		ToIncident()
 
 	inc03 := *NewBuilder(nil).
 		WithName("incident 3 - Horse stapler battery shotgun mouse shotput").
 		WithChannel(&channel03). // public
-		WithCommanderUserID(commander1.UserID).
+		WithOwnerUserID(owner1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(222).
 		WithChecklists([]int{6}).
 		WithCurrentStatus("Archived").
+		WithPlaybookID("playbook2").
 		ToIncident()
 
 	inc04 := *NewBuilder(nil).
 		WithName("incident 4 - titanic terminatoraliens").
 		WithChannel(&channel04). // private
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(333).
 		WithChecklists([]int{5}).
@@ -124,7 +127,7 @@ func TestGetIncidents(t *testing.T) {
 	inc05 := *NewBuilder(nil).
 		WithName("incident 5 - titanic terminator aliens mouse").
 		WithChannel(&channel05). // private
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(400).
 		WithChecklists([]int{1}).
@@ -133,7 +136,7 @@ func TestGetIncidents(t *testing.T) {
 	inc06 := *NewBuilder(nil).
 		WithName("incident 6 - ubik high castle electric sheep").
 		WithChannel(&channel06). // public
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(444).
 		WithChecklists([]int{4}).
@@ -142,7 +145,7 @@ func TestGetIncidents(t *testing.T) {
 	inc07 := *NewBuilder(nil).
 		WithName("incident 7 - ubik high castle electric sheep").
 		WithChannel(&channel07). // private
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(555).
 		WithChecklists([]int{4}).
@@ -151,7 +154,7 @@ func TestGetIncidents(t *testing.T) {
 	inc08 := *NewBuilder(nil).
 		WithName("incident 8 - ziggürat!").
 		WithChannel(&channel08). // private
-		WithCommanderUserID(commander4.UserID).
+		WithOwnerUserID(owner4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(555).
 		WithChecklists([]int{3}).
@@ -160,14 +163,13 @@ func TestGetIncidents(t *testing.T) {
 	inc09 := *NewBuilder(nil).
 		WithName("incident 9 - Ziggürat!").
 		WithChannel(&channel09). // private
-		WithCommanderUserID(commander4.UserID).
+		WithOwnerUserID(owner4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(556).
 		WithChecklists([]int{2}).
 		ToIncident()
 
 	incidents := []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
-	finishedIncidentNum := []int{2, 3}
 
 	createIncidents := func(store *SQLStore, incidentStore incident.Store) {
 		t.Helper()
@@ -179,15 +181,6 @@ func TestGetIncidents(t *testing.T) {
 			require.NoError(t, err)
 
 			createdIncidents[i] = *createdIncident
-		}
-
-		for _, i := range finishedIncidentNum {
-			err := incidentStore.UpdateStatus(&incident.SQLStatusPost{
-				IncidentID: createdIncidents[i].ID,
-				PostID:     model.NewId(),
-				Status:     incident.StatusArchived,
-			})
-			require.NoError(t, err)
 		}
 	}
 
@@ -477,16 +470,16 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - active, commander3, desc - admin ",
+			Name: "team1 - active, owner3, desc - admin ",
 			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
-				TeamID:      team1id,
-				Status:      incident.StatusReported,
-				CommanderID: commander3.UserID,
-				Direction:   "desc",
+				TeamID:    team1id,
+				Status:    incident.StatusReported,
+				OwnerID:   owner3.UserID,
+				Direction: "desc",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 1,
@@ -515,15 +508,15 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - search for aliens & commander3 - admin",
+			Name: "team1 - search for aliens & owner3 - admin",
 			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
-				TeamID:      team1id,
-				CommanderID: commander3.UserID,
-				SearchTerm:  "aliens",
+				TeamID:     team1id,
+				OwnerID:    owner3.UserID,
+				SearchTerm: "aliens",
 			},
 			Want: incident.GetIncidentsResults{
 				TotalCount: 2,
@@ -627,17 +620,17 @@ func TestGetIncidents(t *testing.T) {
 			ExpectedErr: errors.New("bad parameter 'direction'"),
 		},
 		{
-			Name: "bad commander id",
+			Name: "bad owner id",
 			RequesterInfo: permissions.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
 			Options: incident.FilterOptions{
-				TeamID:      team2id,
-				CommanderID: "invalid ID",
+				TeamID:  team2id,
+				OwnerID: "invalid ID",
 			},
 			Want:        incident.GetIncidentsResults{},
-			ExpectedErr: errors.New("bad parameter 'commander_id': must be 26 characters or blank"),
+			ExpectedErr: errors.New("bad parameter 'owner_id': must be 26 characters or blank"),
 		},
 		{
 			Name: "team1 - desc - Bob (in all channels)",
@@ -771,6 +764,44 @@ func TestGetIncidents(t *testing.T) {
 				PageCount:  1,
 				HasMore:    false,
 				Items:      []incident.Incident{inc03, inc04, inc05},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - playbook1 - desc - admin",
+			RequesterInfo: permissions.RequesterInfo{
+				UserID:  lucy.ID,
+				IsAdmin: true,
+			},
+			Options: incident.FilterOptions{
+				TeamID:     team1id,
+				PlaybookID: "playbook1",
+				Direction:  "desc",
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc02, inc01},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - playbook2 - desc - admin",
+			RequesterInfo: permissions.RequesterInfo{
+				UserID:  lucy.ID,
+				IsAdmin: true,
+			},
+			Options: incident.FilterOptions{
+				TeamID:     team1id,
+				PlaybookID: "playbook2",
+				Direction:  "desc",
+			},
+			Want: incident.GetIncidentsResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []incident.Incident{inc03},
 			},
 			ExpectedErr: nil,
 		},
@@ -1260,29 +1291,29 @@ func TestGetIncidentIDForChannel(t *testing.T) {
 	}
 }
 
-func TestGetCommanders(t *testing.T) {
+func TestGetOwners(t *testing.T) {
 	team1id := model.NewId()
 	team2id := model.NewId()
 	team3id := model.NewId()
 
-	commander1 := incident.CommanderInfo{
+	owner1 := incident.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 1",
+		Username: "Owner 1",
 	}
-	commander2 := incident.CommanderInfo{
+	owner2 := incident.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 2",
+		Username: "Owner 2",
 	}
-	commander3 := incident.CommanderInfo{
+	owner3 := incident.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 3",
+		Username: "Owner 3",
 	}
-	commander4 := incident.CommanderInfo{
+	owner4 := incident.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 4",
+		Username: "Owner 4",
 	}
 
-	commanders := []incident.CommanderInfo{commander1, commander2, commander3, commander4}
+	owners := []incident.OwnerInfo{owner1, owner2, owner3, owner4}
 
 	lucy := userInfo{
 		ID:   model.NewId(),
@@ -1320,7 +1351,7 @@ func TestGetCommanders(t *testing.T) {
 		WithName("incident 1 - wheel cat aliens wheelbarrow").
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithChannel(&channel01). // public
-		WithCommanderUserID(commander1.UserID).
+		WithOwnerUserID(owner1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(123).
 		WithChecklists([]int{8}).
@@ -1329,7 +1360,7 @@ func TestGetCommanders(t *testing.T) {
 	inc02 := *NewBuilder(nil).
 		WithName("incident 2 - horse staple battery aliens shotgun mouse shotputmouse").
 		WithChannel(&channel02). // public
-		WithCommanderUserID(commander2.UserID).
+		WithOwnerUserID(owner2.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(199).
 		WithChecklists([]int{7}).
@@ -1338,7 +1369,7 @@ func TestGetCommanders(t *testing.T) {
 	inc03 := *NewBuilder(nil).
 		WithName("incident 3 - Horse stapler battery shotgun mouse shotputmouse").
 		WithChannel(&channel03). // public
-		WithCommanderUserID(commander1.UserID).
+		WithOwnerUserID(owner1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(222).
 		WithChecklists([]int{6}).
@@ -1347,7 +1378,7 @@ func TestGetCommanders(t *testing.T) {
 	inc04 := *NewBuilder(nil).
 		WithName("incident 4 - titanic terminatoraliens").
 		WithChannel(&channel04). // private
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(333).
 		WithChecklists([]int{5}).
@@ -1356,7 +1387,7 @@ func TestGetCommanders(t *testing.T) {
 	inc05 := *NewBuilder(nil).
 		WithName("incident 5 - titanic terminator aliens mouse").
 		WithChannel(&channel05). // private
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(400).
 		WithChecklists([]int{1}).
@@ -1365,7 +1396,7 @@ func TestGetCommanders(t *testing.T) {
 	inc06 := *NewBuilder(nil).
 		WithName("incident 6 - ubik high castle electric sheep").
 		WithChannel(&channel06). // public
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(444).
 		WithChecklists([]int{4}).
@@ -1374,7 +1405,7 @@ func TestGetCommanders(t *testing.T) {
 	inc07 := *NewBuilder(nil).
 		WithName("incident 7 - ubik high castle electric sheep").
 		WithChannel(&channel07). // private
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(555).
 		WithChecklists([]int{4}).
@@ -1383,7 +1414,7 @@ func TestGetCommanders(t *testing.T) {
 	inc08 := *NewBuilder(nil).
 		WithName("incident 8 - ziggürat!").
 		WithChannel(&channel08). // private
-		WithCommanderUserID(commander4.UserID).
+		WithOwnerUserID(owner4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(555).
 		WithChecklists([]int{3}).
@@ -1392,7 +1423,7 @@ func TestGetCommanders(t *testing.T) {
 	inc09 := *NewBuilder(nil).
 		WithName("incident 9 - Ziggürat!").
 		WithChannel(&channel09). // private
-		WithCommanderUserID(commander4.UserID).
+		WithOwnerUserID(owner4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(556).
 		WithChecklists([]int{2}).
@@ -1404,7 +1435,7 @@ func TestGetCommanders(t *testing.T) {
 		Name          string
 		RequesterInfo permissions.RequesterInfo
 		Options       incident.FilterOptions
-		Expected      []incident.CommanderInfo
+		Expected      []incident.OwnerInfo
 		ExpectedErr   error
 	}{
 		{
@@ -1416,7 +1447,7 @@ func TestGetCommanders(t *testing.T) {
 			Options: incident.FilterOptions{
 				TeamID: team1id,
 			},
-			Expected:    []incident.CommanderInfo{commander1, commander2, commander3},
+			Expected:    []incident.OwnerInfo{owner1, owner2, owner3},
 			ExpectedErr: nil,
 		},
 		{
@@ -1428,7 +1459,7 @@ func TestGetCommanders(t *testing.T) {
 			Options: incident.FilterOptions{
 				TeamID: team2id,
 			},
-			Expected:    []incident.CommanderInfo{commander3},
+			Expected:    []incident.OwnerInfo{owner3},
 			ExpectedErr: nil,
 		},
 		{
@@ -1440,7 +1471,7 @@ func TestGetCommanders(t *testing.T) {
 			Options: incident.FilterOptions{
 				TeamID: team3id,
 			},
-			Expected:    []incident.CommanderInfo{commander4},
+			Expected:    []incident.OwnerInfo{owner4},
 			ExpectedErr: nil,
 		},
 		{
@@ -1451,7 +1482,7 @@ func TestGetCommanders(t *testing.T) {
 			Options: incident.FilterOptions{
 				TeamID: team1id,
 			},
-			Expected:    []incident.CommanderInfo{commander1, commander2},
+			Expected:    []incident.OwnerInfo{owner1, owner2},
 			ExpectedErr: nil,
 		},
 		{
@@ -1462,7 +1493,7 @@ func TestGetCommanders(t *testing.T) {
 			Options: incident.FilterOptions{
 				TeamID: team2id,
 			},
-			Expected:    []incident.CommanderInfo{commander3},
+			Expected:    []incident.OwnerInfo{owner3},
 			ExpectedErr: nil,
 		},
 		{
@@ -1499,12 +1530,12 @@ func TestGetCommanders(t *testing.T) {
 			queryBuilder = queryBuilder.PlaceholderFormat(sq.Dollar)
 		}
 
-		insertCommander := queryBuilder.Insert("Users").Columns("ID", "Username")
-		for _, commander := range commanders {
-			insertCommander = insertCommander.Values(commander.UserID, commander.Username)
+		insertOwner := queryBuilder.Insert("Users").Columns("ID", "Username")
+		for _, owner := range owners {
+			insertOwner = insertOwner.Values(owner.UserID, owner.Username)
 		}
 
-		query, args, err := insertCommander.ToSql()
+		query, args, err := insertOwner.ToSql()
 		require.NoError(t, err)
 		_, err = db.Exec(query, args...)
 		require.NoError(t, err)
@@ -1518,7 +1549,7 @@ func TestGetCommanders(t *testing.T) {
 
 		for _, testCase := range cases {
 			t.Run(testCase.Name, func(t *testing.T) {
-				actual, actualErr := incidentStore.GetCommanders(testCase.RequesterInfo, testCase.Options)
+				actual, actualErr := incidentStore.GetOwners(testCase.RequesterInfo, testCase.Options)
 
 				if testCase.ExpectedErr != nil {
 					require.NotNil(t, actualErr)
@@ -1708,16 +1739,16 @@ func NewBuilder(t testing.TB) *IncidentBuilder {
 	return &IncidentBuilder{
 		t: t,
 		i: &incident.Incident{
-			Name:            "base incident",
-			CommanderUserID: model.NewId(),
-			TeamID:          model.NewId(),
-			ChannelID:       model.NewId(),
-			CreateAt:        model.GetMillis(),
-			DeleteAt:        0,
-			PostID:          model.NewId(),
-			PlaybookID:      model.NewId(),
-			Checklists:      nil,
-			CurrentStatus:   "Reported",
+			Name:          "base incident",
+			OwnerUserID:   model.NewId(),
+			TeamID:        model.NewId(),
+			ChannelID:     model.NewId(),
+			CreateAt:      model.GetMillis(),
+			DeleteAt:      0,
+			PostID:        model.NewId(),
+			PlaybookID:    model.NewId(),
+			Checklists:    nil,
+			CurrentStatus: "Reported",
 		},
 	}
 }
@@ -1778,8 +1809,8 @@ func (ib *IncidentBuilder) WithChecklists(itemsPerChecklist []int) *IncidentBuil
 	return ib
 }
 
-func (ib *IncidentBuilder) WithCommanderUserID(id string) *IncidentBuilder {
-	ib.i.CommanderUserID = id
+func (ib *IncidentBuilder) WithOwnerUserID(id string) *IncidentBuilder {
+	ib.i.OwnerUserID = id
 
 	return ib
 }
@@ -1793,6 +1824,10 @@ func (ib *IncidentBuilder) WithTeamID(id string) *IncidentBuilder {
 func (ib *IncidentBuilder) WithCurrentStatus(status string) *IncidentBuilder {
 	ib.i.CurrentStatus = status
 
+	if status == "Resolved" || status == "Archived" {
+		ib.i.EndAt = ib.i.CreateAt + 100
+	}
+
 	return ib
 }
 
@@ -1801,6 +1836,12 @@ func (ib *IncidentBuilder) WithChannel(channel *model.Channel) *IncidentBuilder 
 
 	// Consider the incident name as authoritative.
 	channel.DisplayName = ib.i.Name
+
+	return ib
+}
+
+func (ib *IncidentBuilder) WithPlaybookID(id string) *IncidentBuilder {
+	ib.i.PlaybookID = id
 
 	return ib
 }

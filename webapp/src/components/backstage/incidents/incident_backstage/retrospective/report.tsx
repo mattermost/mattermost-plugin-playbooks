@@ -6,7 +6,6 @@ import styled from 'styled-components';
 
 import {StyledTextarea} from 'src/components/backstage/styles';
 import {
-    TabPageContainer,
     Title,
     SecondaryButton,
 } from 'src/components/backstage/incidents/shared';
@@ -23,8 +22,8 @@ const Header = styled.div`
 const ReportTextarea = styled(StyledTextarea)`
     margin: 8px 0 0 0;
     min-height: 200px;
-    resize: vertical;
     font-size: 12px;
+    flex-grow: 1;
 `;
 
 const CustomPrimaryButton = styled(PrimaryButton)`
@@ -42,10 +41,21 @@ const HeaderButtonsRight = styled.div`
 `;
 
 const PostTextContainer = styled.div`
+    background: var(--center-channel-bg);
     margin: 8px 0 0 0;
     padding: 10px 25px 0 16px;
     border: 1px solid var(--center-channel-color-08);
     border-radius: 8px;
+    flex-grow: 1;
+`;
+
+const ReportContainer = styled.div`
+    font-size: 12px;
+    font-weight: normal;
+    margin-bottom: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 `;
 
 interface ReportProps {
@@ -81,7 +91,7 @@ const Report = (props: ReportProps) => {
     }
 
     return (
-        <TabPageContainer>
+        <ReportContainer>
             <Header>
                 <Title>{'Report'}</Title>
                 <HeaderButtonsRight>
@@ -110,7 +120,7 @@ const Report = (props: ReportProps) => {
                     <PostText text={report}/>
                 </PostTextContainer>
             }
-        </TabPageContainer>
+        </ReportContainer>
     );
 };
 

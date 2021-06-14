@@ -46,12 +46,14 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds",
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "InviteUsersEnabled",
-			"DefaultCommanderID", "DefaultCommanderEnabled",
+			"DefaultCommanderID AS DefaultOwnerID", "DefaultCommanderEnabled AS DefaultOwnerEnabled",
 			"AnnouncementChannelID", "AnnouncementChannelEnabled",
 			"WebhookOnCreationURL", "WebhookOnCreationEnabled",
 			"MessageOnJoin", "MessageOnJoinEnabled",
 			"RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveTemplate").
+			"RetrospectiveTemplate",
+			"WebhookOnStatusUpdateURL",
+			"WebhookOnStatusUpdateEnabled").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -106,8 +108,8 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"ConcatenatedInvitedUserIDs":           rawPlaybook.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":          rawPlaybook.ConcatenatedInvitedGroupIDs,
 			"InviteUsersEnabled":                   rawPlaybook.InviteUsersEnabled,
-			"DefaultCommanderID":                   rawPlaybook.DefaultCommanderID,
-			"DefaultCommanderEnabled":              rawPlaybook.DefaultCommanderEnabled,
+			"DefaultCommanderID":                   rawPlaybook.DefaultOwnerID,
+			"DefaultCommanderEnabled":              rawPlaybook.DefaultOwnerEnabled,
 			"AnnouncementChannelID":                rawPlaybook.AnnouncementChannelID,
 			"AnnouncementChannelEnabled":           rawPlaybook.AnnouncementChannelEnabled,
 			"WebhookOnCreationURL":                 rawPlaybook.WebhookOnCreationURL,
@@ -116,6 +118,8 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"MessageOnJoinEnabled":                 rawPlaybook.MessageOnJoinEnabled,
 			"RetrospectiveReminderIntervalSeconds": rawPlaybook.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
+			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
+			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -323,8 +327,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"ConcatenatedInvitedUserIDs":           rawPlaybook.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":          rawPlaybook.ConcatenatedInvitedGroupIDs,
 			"InviteUsersEnabled":                   rawPlaybook.InviteUsersEnabled,
-			"DefaultCommanderID":                   rawPlaybook.DefaultCommanderID,
-			"DefaultCommanderEnabled":              rawPlaybook.DefaultCommanderEnabled,
+			"DefaultCommanderID":                   rawPlaybook.DefaultOwnerID,
+			"DefaultCommanderEnabled":              rawPlaybook.DefaultOwnerEnabled,
 			"AnnouncementChannelID":                rawPlaybook.AnnouncementChannelID,
 			"AnnouncementChannelEnabled":           rawPlaybook.AnnouncementChannelEnabled,
 			"WebhookOnCreationURL":                 rawPlaybook.WebhookOnCreationURL,
@@ -333,6 +337,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"MessageOnJoinEnabled":                 rawPlaybook.MessageOnJoinEnabled,
 			"RetrospectiveReminderIntervalSeconds": rawPlaybook.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
+			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
+			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('slash command > commander', () => {
+describe('slash command > owner', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
     let userId;
@@ -58,7 +58,7 @@ describe('slash command > commander', () => {
                         teamId,
                         playbookId,
                         incidentName,
-                        commanderUserId: userId,
+                        ownerUserId: userId,
                     }).then((incident) => {
                         incidentId = incident.id;
                     });
@@ -74,44 +74,44 @@ describe('slash command > commander', () => {
         // # Login as user-1
         cy.apiLogin('user-1');
 
-        // # Reset the commander to test-1 as necessary.
-        cy.apiChangeIncidentCommander(incidentId, userId);
+        // # Reset the owner to test-1 as necessary.
+        cy.apiChangeIncidentOwner(incidentId, userId);
     });
 
-    describe('/incident commander', () => {
+    describe('/incident owner', () => {
         it('should show an error when not in an incident channel', () => {
             // # Navigate to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
-            // # Run a slash command to show the current commander
-            cy.executeSlashCommand('/incident commander');
+            // # Run a slash command to show the current owner
+            cy.executeSlashCommand('/incident owner');
 
             // * Verify the expected error message.
-            cy.verifyEphemeralMessage('You can only see the commander from within the incident\'s channel.');
+            cy.verifyEphemeralMessage('You can only see the owner from within the incident\'s channel.');
         });
 
-        it('should show the current commander', () => {
+        it('should show the current owner', () => {
             // # Navigate directly to the application and the incident channel
             cy.visit('/ad-1/channels/' + incidentChannelName);
 
-            // # Run a slash command to show the current commander
-            cy.executeSlashCommand('/incident commander');
+            // # Run a slash command to show the current owner
+            cy.executeSlashCommand('/incident owner');
 
-            // * Verify the expected commander.
-            cy.verifyEphemeralMessage('@user-1 is the current commander for this incident.');
+            // * Verify the expected owner.
+            cy.verifyEphemeralMessage('@user-1 is the current owner for this incident.');
         });
     });
 
-    describe('/incident commander @username', () => {
+    describe('/incident owner @username', () => {
         it('should show an error when not in an incident channel', () => {
             // # Navigate to a non-incident channel
             cy.visit('/ad-1/channels/town-square');
 
-            // # Run a slash command to change the current commander
-            cy.executeSlashCommand('/incident commander user-2');
+            // # Run a slash command to change the current owner
+            cy.executeSlashCommand('/incident owner user-2');
 
             // * Verify the expected error message.
-            cy.verifyEphemeralMessage('You can only change the commander from within the incident\'s channel.');
+            cy.verifyEphemeralMessage('You can only change the owner from within the incident\'s channel.');
         });
 
         describe('should show an error when the user is not found', () => {
@@ -121,16 +121,16 @@ describe('slash command > commander', () => {
             });
 
             it('when the username has no @-prefix', () => {
-                // # Run a slash command to change the current commander
-                cy.executeSlashCommand('/incident commander unknown');
+                // # Run a slash command to change the current owner
+                cy.executeSlashCommand('/incident owner unknown');
 
                 // * Verify the expected error message.
                 cy.verifyEphemeralMessage('Unable to find user @unknown');
             });
 
             it('when the username has an @-prefix', () => {
-                // # Run a slash command to change the current commander
-                cy.executeSlashCommand('/incident commander @unknown');
+                // # Run a slash command to change the current owner
+                cy.executeSlashCommand('/incident owner @unknown');
 
                 // * Verify the expected error message.
                 cy.verifyEphemeralMessage('Unable to find user @unknown');
@@ -147,46 +147,46 @@ describe('slash command > commander', () => {
             });
 
             it('when the username has no @-prefix', () => {
-                // # Run a slash command to change the current commander
-                cy.executeSlashCommand('/incident commander sysadmin');
+                // # Run a slash command to change the current owner
+                cy.executeSlashCommand('/incident owner sysadmin');
 
                 // * Verify the expected error message.
-                cy.verifyEphemeralMessage('User @sysadmin must be part of this channel to make them commander.');
+                cy.verifyEphemeralMessage('User @sysadmin must be part of this channel to make them owner.');
             });
 
             it('when the username has an @-prefix', () => {
-                // # Run a slash command to change the current commander
-                cy.executeSlashCommand('/incident commander @sysadmin');
+                // # Run a slash command to change the current owner
+                cy.executeSlashCommand('/incident owner @sysadmin');
 
                 // * Verify the expected error message.
-                cy.verifyEphemeralMessage('User @sysadmin must be part of this channel to make them commander.');
+                cy.verifyEphemeralMessage('User @sysadmin must be part of this channel to make them owner.');
             });
         });
 
-        describe('should show a message when the user is already the commander', () => {
+        describe('should show a message when the user is already the owner', () => {
             beforeEach(() => {
                 // # Navigate directly to the application and the incident channel
                 cy.visit('/ad-1/channels/' + incidentChannelName);
             });
 
             it('when the username has no @-prefix', () => {
-                // # Run a slash command to change the current commander
-                cy.executeSlashCommand('/incident commander user-1');
+                // # Run a slash command to change the current owner
+                cy.executeSlashCommand('/incident owner user-1');
 
                 // * Verify the expected error message.
-                cy.verifyEphemeralMessage('User @user-1 is already commander of this incident.');
+                cy.verifyEphemeralMessage('User @user-1 is already owner of this incident.');
             });
 
             it('when the username has an @-prefix', () => {
-                // # Run a slash command to change the current commander
-                cy.executeSlashCommand('/incident commander @user-1');
+                // # Run a slash command to change the current owner
+                cy.executeSlashCommand('/incident owner @user-1');
 
                 // * Verify the expected error message.
-                cy.verifyEphemeralMessage('User @user-1 is already commander of this incident.');
+                cy.verifyEphemeralMessage('User @user-1 is already owner of this incident.');
             });
         });
 
-        describe('should change the current commander', () => {
+        describe('should change the current owner', () => {
             beforeEach(() => {
                 // # Navigate directly to the application and the incident channel
                 cy.visit('/ad-1/channels/' + incidentChannelName);
@@ -196,19 +196,19 @@ describe('slash command > commander', () => {
             });
 
             it('when the username has no @-prefix', () => {
-                // # Run a slash command to change the current commander
-                cy.executeSlashCommand('/incident commander sysadmin');
+                // # Run a slash command to change the current owner
+                cy.executeSlashCommand('/incident owner sysadmin');
 
-                // # Verify the commander has changed.
-                cy.verifyPostedMessage('user-1 changed the incident commander from @user-1 to @sysadmin.');
+                // # Verify the owner has changed.
+                cy.verifyPostedMessage('user-1 changed the incident owner from @user-1 to @sysadmin.');
             });
 
             it('when the username has an @-prefix', () => {
-                // # Run a slash command to change the current commander
-                cy.executeSlashCommand('/incident commander @sysadmin');
+                // # Run a slash command to change the current owner
+                cy.executeSlashCommand('/incident owner @sysadmin');
 
-                // # Verify the commander has changed.
-                cy.verifyPostedMessage('user-1 changed the incident commander from @user-1 to @sysadmin.');
+                // # Verify the owner has changed.
+                cy.verifyPostedMessage('user-1 changed the incident owner from @user-1 to @sysadmin.');
             });
         });
 
@@ -217,10 +217,10 @@ describe('slash command > commander', () => {
             cy.visit('/ad-1/channels/' + incidentChannelName);
 
             // # Run a slash command with too many parameters
-            cy.executeSlashCommand('/incident commander user-1 sysadmin');
+            cy.executeSlashCommand('/incident owner user-1 sysadmin');
 
             // * Verify the expected error message.
-            cy.verifyEphemeralMessage('/incident commander expects at most one argument.');
+            cy.verifyEphemeralMessage('/incident owner expects at most one argument.');
         });
     });
 });

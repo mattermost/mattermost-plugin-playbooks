@@ -14,8 +14,10 @@ import Profile from 'src/components/profile/profile';
 import Duration from 'src/components/duration';
 import {Incident, incidentCurrentStatus} from 'src/types/incident';
 import {lastUpdatedByIncidentId} from 'src/selectors';
-import StatusBadge from '../backstage/incidents/status_badge';
+
 import {SmallerProfile} from 'src/components/rhs/rhs_shared';
+
+import StatusBadge from '../backstage/incidents/status_badge';
 
 const IncidentContainer = styled.div<IncidentContainerProps>`
     display: flex;
@@ -119,9 +121,9 @@ const RHSListIncident = (props: Props) => {
                 </Col2>
             </Row>
             <Row>
-                <Col1>{'Commander:'}</Col1>
+                <Col1>{'Owner:'}</Col1>
                 <Col2>
-                    <SmallerProfile userId={props.incident.commander_user_id}/>
+                    <SmallerProfile userId={props.incident.owner_user_id}/>
                 </Col2>
             </Row>
             <Button
