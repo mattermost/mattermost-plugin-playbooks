@@ -965,7 +965,7 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	createdIncident, err := r.incidentService.CreateIncident(&app.Incident{
+	incident, err := r.incidentService.CreateIncident(&app.Incident{
 		Name:               "Cloud Incident 4739",
 		TeamID:             r.args.TeamId,
 		OwnerUserID:        r.args.UserId,
@@ -978,21 +978,21 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, app.ChecklistItem{
+	if err := r.incidentService.AddChecklistItem(incident.ID, r.args.UserId, 0, app.ChecklistItem{
 		Title: "I should be checked and second",
 	}); err != nil {
 		r.postCommandResponse("Unable to add checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, app.ChecklistItem{
+	if err := r.incidentService.AddChecklistItem(incident.ID, r.args.UserId, 0, app.ChecklistItem{
 		Title: "I should be deleted",
 	}); err != nil {
 		r.postCommandResponse("Unable to add checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, app.ChecklistItem{
+	if err := r.incidentService.AddChecklistItem(incident.ID, r.args.UserId, 0, app.ChecklistItem{
 		Title: "I should not say this.",
 		State: app.ChecklistItemStateClosed,
 	}); err != nil {
@@ -1000,28 +1000,28 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, app.ChecklistItemStateClosed, 0, 0); err != nil {
+	if err := r.incidentService.ModifyCheckedState(incident.ID, r.args.UserId, app.ChecklistItemStateClosed, 0, 0); err != nil {
 		r.postCommandResponse("Unable to modify checked state: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, app.ChecklistItemStateOpen, 0, 2); err != nil {
+	if err := r.incidentService.ModifyCheckedState(incident.ID, r.args.UserId, app.ChecklistItemStateOpen, 0, 2); err != nil {
 		r.postCommandResponse("Unable to modify checked state: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.RemoveChecklistItem(createdIncident.ID, r.args.UserId, 0, 1); err != nil {
+	if err := r.incidentService.RemoveChecklistItem(incident.ID, r.args.UserId, 0, 1); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.EditChecklistItem(createdIncident.ID, r.args.UserId, 0, 1,
+	if err := r.incidentService.EditChecklistItem(incident.ID, r.args.UserId, 0, 1,
 		"I should say this! and be unchecked and first!", "", ""); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.MoveChecklistItem(createdIncident.ID, r.args.UserId, 0, 0, 1); err != nil {
+	if err := r.incidentService.MoveChecklistItem(incident.ID, r.args.UserId, 0, 0, 1); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
