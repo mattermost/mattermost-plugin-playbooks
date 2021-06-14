@@ -25,7 +25,7 @@ import {
     incidentIsActive,
 } from 'src/types/incident';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
-import {fetchCommandersInTeam, fetchIncidents} from 'src/client';
+import {fetchOwnersInTeam, fetchIncidents} from 'src/client';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector';
@@ -48,7 +48,7 @@ const ControlComponent = (ownProps: ControlProps<any>) => (
                 className='IncidentFilter-reset'
                 onClick={ownProps.selectProps.onCustomReset}
             >
-                {'Reset to all commanders'}
+                {'Reset to all owners'}
             </a>
         )}
     </div>
@@ -145,13 +145,13 @@ const IncidentList = (props: Props) => {
         setFetchParams({...fetchParams, sort: colName, direction: newDirection});
     }
 
-    async function fetchCommanders() {
-        const commanders = await fetchCommandersInTeam(currentTeam.id);
-        return commanders.map((c) => selectUser(c.user_id) || {id: c.user_id} as UserProfile);
+    async function fetchOwners() {
+        const owners = await fetchOwnersInTeam(currentTeam.id);
+        return owners.map((c) => selectUser(c.user_id) || {id: c.user_id} as UserProfile);
     }
 
-    function setCommanderId(userId?: string) {
-        setFetchParams({...fetchParams, commander_user_id: userId, page: 0});
+    function setOwnerId(userId?: string) {
+        setFetchParams({...fetchParams, owner_user_id: userId, page: 0});
     }
 
     function openIncidentDetails(incident: Incident) {
@@ -160,8 +160,8 @@ const IncidentList = (props: Props) => {
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
 
-    const resetCommander = () => {
-        setCommanderId();
+    const resetOwner = () => {
+        setOwnerId();
         setProfileSelectorToggle(!profileSelectorToggle);
     };
 
@@ -182,19 +182,19 @@ const IncidentList = (props: Props) => {
                         onSearch={debounce(setSearchTerm, debounceDelay)}
                     />
                     <ProfileSelector
-                        testId={'commander-filter'}
-                        selectedUserId={fetchParams.commander_user_id}
-                        placeholder={'Commander'}
+                        testId={'owner-filter'}
+                        selectedUserId={fetchParams.owner_user_id}
+                        placeholder={'Owner'}
                         enableEdit={true}
                         isClearable={true}
                         customControl={ControlComponent}
                         customControlProps={{
-                            showCustomReset: Boolean(fetchParams.commander_user_id),
-                            onCustomReset: resetCommander,
+                            showCustomReset: Boolean(fetchParams.owner_user_id),
+                            onCustomReset: resetOwner,
                         }}
                         controlledOpenToggle={profileSelectorToggle}
-                        getUsers={fetchCommanders}
-                        onSelectedChange={setCommanderId}
+                        getUsers={fetchOwners}
+                        onSelectedChange={setOwnerId}
                     />
                     <StatusFilter
                         options={statusOptions}
@@ -236,7 +236,7 @@ const IncidentList = (props: Props) => {
                                 onClick={() => colHeaderClicked('end_at')}
                             />
                         </div>
-                        <div className='col-sm-3'> {'Commander'} </div>
+                        <div className='col-sm-3'> {'Owner'} </div>
                     </div>
                 </BackstageListHeader>
 
@@ -273,7 +273,7 @@ const IncidentList = (props: Props) => {
                             }
                         </div>
                         <div className='col-sm-3'>
-                            <Profile userId={incident.commander_user_id}/>
+                            <Profile userId={incident.owner_user_id}/>
                         </div>
                     </div>
                 ))}

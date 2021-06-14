@@ -67,7 +67,7 @@ const Learnings = (props: {incident: Incident}) => {
                     <Line/>
                     <Line/>
 
-                    <Cell><ProfileVertical userId={props.incident.commander_user_id}/></Cell>
+                    <Cell><ProfileVertical userId={props.incident.owner_user_id}/></Cell>
                     <Line/>
                     <Cell>{'Sed venenatis massa laoreet ex tristique, quis suscipit ante aliquam. Nulla dignissim, justo vel finibus malesuada, turpis dui hendrerit elit, at ultrices libero libero faucibus odio.'}</Cell>
                     <Line/>
@@ -82,7 +82,7 @@ const Learnings = (props: {incident: Incident}) => {
                     <Line/>
                     <Line/>
 
-                    <Cell><ProfileVertical userId={props.incident.commander_user_id}/></Cell>
+                    <Cell><ProfileVertical userId={props.incident.owner_user_id}/></Cell>
                     <Line/>
                     <Cell>{'In viverra eros sit amet est tincidunt malesuada.'}</Cell>
                     <Line/>
@@ -97,7 +97,7 @@ const Learnings = (props: {incident: Incident}) => {
                     <Line/>
                     <Line/>
 
-                    <Cell><ProfileVertical userId={props.incident.commander_user_id}/></Cell>
+                    <Cell><ProfileVertical userId={props.incident.owner_user_id}/></Cell>
                     <Line/>
                     <Cell>{'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed mauris dui, imperdiet quis rutrum eget, lobortis a mauris.'}</Cell>
                     <Line/>

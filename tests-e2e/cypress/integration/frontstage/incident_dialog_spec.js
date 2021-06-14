@@ -73,7 +73,7 @@ describe('incident creation dialog', () => {
 
     it('shows expected metadata', () => {
         cy.get('#interactiveDialogModal').within(() => {
-            // * Shows current user as commander.
+            // * Shows current user as owner.
             cy.findByText('Victor Welch').should('exist');
 
             // * Verify playbook dropdown prompt

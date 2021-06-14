@@ -9,7 +9,7 @@ import {ActionFunc} from 'mattermost-redux/types/actions';
 
 import Profile from 'src/components/profile/profile';
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
-import AssignCommanderSelector from 'src/components/backstage/automation/assign_commander_selector';
+import AssignOwnerSelector from 'src/components/backstage/automation/assign_owner_selector';
 import {Toggle} from 'src/components/backstage/automation/toggle';
 import {fetchUsersInTeam} from 'src/client';
 
@@ -18,12 +18,12 @@ interface Props {
     onToggle: () => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
-    commanderID: string;
-    onAssignCommander: (userId: string | undefined) => void;
+    ownerID: string;
+    onAssignOwner: (userId: string | undefined) => void;
     teamID: string;
 }
 
-export const AutoAssignCommander = (props: Props) => {
+export const AutoAssignOwner = (props: Props) => {
     return (
         <>
             <AutomationHeader>
@@ -32,12 +32,12 @@ export const AutoAssignCommander = (props: Props) => {
                         isChecked={props.enabled}
                         onChange={props.onToggle}
                     />
-                    <div>{'Assign commander'}</div>
+                    <div>{'Assign the owner role'}</div>
                 </AutomationTitle>
                 <SelectorWrapper>
-                    <AssignCommanderSelector
-                        commanderID={props.commanderID}
-                        onAddUser={props.onAssignCommander}
+                    <AssignOwnerSelector
+                        ownerID={props.ownerID}
+                        onAddUser={props.onAssignOwner}
                         searchProfiles={props.searchProfiles}
                         getProfiles={props.getProfiles}
                         isDisabled={!props.enabled}

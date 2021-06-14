@@ -109,7 +109,7 @@ describe('backstage incident list', () => {
             teamId: newTeamWithNoActiveIncidents.id,
             playbookId,
             incidentName,
-            commanderUserId: userId,
+            ownerUserId: userId,
         });
 
         // # Navigate to a filtered incident list on a team with no active incidents.
@@ -148,7 +148,7 @@ describe('backstage incident list', () => {
             teamId,
             playbookId,
             incidentName,
-            commanderUserId: userId,
+            ownerUserId: userId,
         });
 
         // # Open backstage
@@ -170,7 +170,7 @@ describe('backstage incident list', () => {
             teamId,
             playbookId,
             incidentName,
-            commanderUserId: userId,
+            ownerUserId: userId,
         });
 
         // # Open backstage
@@ -202,7 +202,7 @@ describe('backstage incident list', () => {
                     teamId,
                     playbookId,
                     incidentName: 'Incident (' + now + ')',
-                    commanderUserId: userId,
+                    ownerUserId: userId,
                 });
                 incidentTimestamps.push(now);
             }
@@ -236,11 +236,11 @@ describe('backstage incident list', () => {
             cy.findByText('Previous').should('not.exist');
         });
 
-        it('by commander', () => {
-            // # Expose the commander list
-            cy.findByTestId('commander-filter').click();
+        it('by owner', () => {
+            // # Expose the owner list
+            cy.findByTestId('owner-filter').click();
 
-            // # Find the list and chose the first commander in the list
+            // # Find the list and chose the first owner in the list
             cy.get('.incident-user-select__container')
                 .find('.IncidentProfile').first().parent().click({force: true});
 

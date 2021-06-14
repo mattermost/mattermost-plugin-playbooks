@@ -878,9 +878,9 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
 				playbook.RequesterInfo{
-					UserID:          "testuserid",
-					TeamID:          "testteamid",
-					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: true,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -923,9 +923,9 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
 				playbook.RequesterInfo{
-					UserID:          "testuserid",
-					TeamID:          "testteamid",
-					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: true,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -960,10 +960,9 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
 				playbook.RequesterInfo{
-					UserID:          "testuserid",
-					TeamID:          "testteamid",
-					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
-					MemberOnly:      true,
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: true,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -975,9 +974,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{
-			MemberOnly: true,
-		})
+		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{})
 		require.NoError(t, err)
 
 		expectedList := &icClient.GetPlaybooksResults{
@@ -1469,9 +1466,9 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
 				playbook.RequesterInfo{
-					UserID:          "testuserid",
-					TeamID:          "testteamid",
-					UserIDtoIsAdmin: map[string]bool{"testuserid": false},
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: false,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -1729,9 +1726,9 @@ func TestSortingPlaybooks(t *testing.T) {
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(
 					playbook.RequesterInfo{
-						UserID:          "testuserid",
-						TeamID:          "testteamid",
-						UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+						UserID:  "testuserid",
+						TeamID:  "testteamid",
+						IsAdmin: true,
 					},
 					"testteamid",
 					gomock.Any(),
@@ -1964,9 +1961,9 @@ func TestPagingPlaybooks(t *testing.T) {
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(
 					playbook.RequesterInfo{
-						UserID:          "testuserid",
-						TeamID:          "testteamid",
-						UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+						UserID:  "testuserid",
+						TeamID:  "testteamid",
+						IsAdmin: true,
 					},
 					"testteamid",
 					gomock.Any(),
