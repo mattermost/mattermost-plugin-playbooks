@@ -196,6 +196,7 @@ func TestIncidentFilterOptions_Clone(t *testing.T) {
 
 	var unmarshalledOptions IncidentFilterOptions
 	err = json.Unmarshal(marshalledOptions, &unmarshalledOptions)
+	require.NoError(t, err)
 	require.Equal(t, options, unmarshalledOptions)
 }
 
