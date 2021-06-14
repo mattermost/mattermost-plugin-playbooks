@@ -218,6 +218,9 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 	incdnt.ChannelID = channel.Id
 	incdnt.CreateAt = model.GetMillis()
 	incdnt.CurrentStatus = StatusReported
+	if pb != nil {
+		incdnt.ExportChannelOnArchiveEnabled = pb.ExportChannelOnArchiveEnabled
+	}
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
 	if incdnt.PlaybookID == "" {
