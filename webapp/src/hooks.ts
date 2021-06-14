@@ -290,17 +290,18 @@ export function useOpenCloudModal() {
     const dispatch = useDispatch();
 
     // @ts-ignore
+    if (!window.WebappUtils?.modals?.openModal || !window.WebappUtils?.modals?.ModalIdentifiers?.CLOUD_PURCHASE || !window.Components?.PurchaseModal) {
+        // eslint-disable-next-line no-console
+        console.error('unable to open cloud modal');
+
+        return () => { /*do nothing*/ };
+    }
+
+    // @ts-ignore
     const {openModal, ModalIdentifiers} = window.WebappUtils.modals;
 
     // @ts-ignore
     const PurchaseModal = window.Components.PurchaseModal;
-
-    if (!openModal || !ModalIdentifiers?.CLOUD_PURCHASE || !PurchaseModal) {
-        // eslint-disable-next-line no-console
-        console.error('unable to open cloud modal', openModal, ModalIdentifiers, PurchaseModal);
-
-        return () => { /*do nothing*/ };
-    }
 
     return () => {
         dispatch(openModal({
