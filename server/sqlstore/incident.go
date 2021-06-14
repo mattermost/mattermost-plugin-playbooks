@@ -62,7 +62,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL").
+			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL", "ExportChannelOnArchiveEnabled").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
@@ -294,6 +294,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"RetrospectiveReminderIntervalSeconds": rawIncident.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":             rawIncident.RetrospectiveWasCanceled,
 			"WebhookOnStatusUpdateURL":             rawIncident.WebhookOnStatusUpdateURL,
+			"ExportChannelOnArchiveEnabled":        rawIncident.ExportChannelOnArchiveEnabled,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -345,6 +346,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"RetrospectiveReminderIntervalSeconds": rawIncident.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":             rawIncident.RetrospectiveWasCanceled,
 			"WebhookOnStatusUpdateURL":             rawIncident.WebhookOnStatusUpdateURL,
+			"ExportChannelOnArchiveEnabled":        rawIncident.ExportChannelOnArchiveEnabled,
 		}).
 		Where(sq.Eq{"ID": rawIncident.ID}))
 

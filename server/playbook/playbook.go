@@ -40,6 +40,7 @@ type Playbook struct {
 	RetrospectiveTemplate                string      `json:"retrospective_template"`
 	WebhookOnStatusUpdateURL             string      `json:"webhook_on_status_update_url"`
 	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
+	ExportChannelOnArchiveEnabled        bool        `json:"export_channel_on_archive_enabled"`
 }
 
 func (p Playbook) Clone() Playbook {

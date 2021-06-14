@@ -58,6 +58,7 @@ type Incident struct {
 	RetrospectiveWasCanceled             bool                 `json:"retrospective_was_canceled"`
 	RetrospectiveReminderIntervalSeconds int64                `json:"retrospective_reminder_interval_seconds"`
 	MessageOnJoin                        string               `json:"message_on_join"`
+	ExportChannelOnArchiveEnabled        bool                 `json:"export_channel_on_archive_enabled"`
 }
 
 func (i *Incident) Clone() *Incident {

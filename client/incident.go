@@ -4,29 +4,30 @@ import "time"
 
 // Incident represents an incident.
 type Incident struct {
-	ID                      string          `json:"id"`
-	Name                    string          `json:"name"`
-	Description             string          `json:"description"`
-	OwnerUserID             string          `json:"owner_user_id"`
-	ReporterUserID          string          `json:"reporter_user_id"`
-	TeamID                  string          `json:"team_id"`
-	ChannelID               string          `json:"channel_id"`
-	CreateAt                int64           `json:"create_at"`
-	EndAt                   int64           `json:"end_at"`
-	DeleteAt                int64           `json:"delete_at"`
-	ActiveStage             int             `json:"active_stage"`
-	ActiveStageTitle        string          `json:"active_stage_title"`
-	PostID                  string          `json:"post_id"`
-	PlaybookID              string          `json:"playbook_id"`
-	Checklists              []Checklist     `json:"checklists"`
-	StatusPosts             []StatusPost    `json:"status_posts"`
-	ReminderPostID          string          `json:"reminder_post_id"`
-	PreviousReminder        time.Duration   `json:"previous_reminder"`
-	BroadcastChannelID      string          `json:"broadcast_channel_id"`
-	ReminderMessageTemplate string          `json:"reminder_message_template"`
-	InvitedUserIDs          []string        `json:"invited_user_ids"`
-	InvitedGroupIDs         []string        `json:"invited_group_ids"`
-	TimelineEvents          []TimelineEvent `json:"timeline_events"`
+	ID                            string          `json:"id"`
+	Name                          string          `json:"name"`
+	Description                   string          `json:"description"`
+	OwnerUserID                   string          `json:"owner_user_id"`
+	ReporterUserID                string          `json:"reporter_user_id"`
+	TeamID                        string          `json:"team_id"`
+	ChannelID                     string          `json:"channel_id"`
+	CreateAt                      int64           `json:"create_at"`
+	EndAt                         int64           `json:"end_at"`
+	DeleteAt                      int64           `json:"delete_at"`
+	ActiveStage                   int             `json:"active_stage"`
+	ActiveStageTitle              string          `json:"active_stage_title"`
+	PostID                        string          `json:"post_id"`
+	PlaybookID                    string          `json:"playbook_id"`
+	Checklists                    []Checklist     `json:"checklists"`
+	StatusPosts                   []StatusPost    `json:"status_posts"`
+	ReminderPostID                string          `json:"reminder_post_id"`
+	PreviousReminder              time.Duration   `json:"previous_reminder"`
+	BroadcastChannelID            string          `json:"broadcast_channel_id"`
+	ReminderMessageTemplate       string          `json:"reminder_message_template"`
+	InvitedUserIDs                []string        `json:"invited_user_ids"`
+	InvitedGroupIDs               []string        `json:"invited_group_ids"`
+	TimelineEvents                []TimelineEvent `json:"timeline_events"`
+	ExportChannelOnArchiveEnabled bool            `json:"export_channel_on_archive_enabled"`
 }
 
 // StatusPost is information added to the incident when selecting from the db and sent to the
