@@ -1,4 +1,4 @@
-import React, {FC, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 import ReactSelect, {
     GroupType,
@@ -26,7 +26,7 @@ interface Props {
     isDisabled: boolean;
 }
 
-const InviteUsersSelector: FC<Props> = (props: Props) => {
+const InviteUsersSelector = (props: Props) => {
     const [searchTerm, setSearchTerm] = useState('');
     const invitedUsers = useSelector<GlobalState, UserProfile[]>((state: GlobalState) => props.userIds.map((id) => getUser(state, id)));
     const [searchedUsers, setSearchedUsers] = useState<UserProfile[]>([]);
@@ -133,7 +133,7 @@ interface UserLabelProps {
     invitedUsers: OptionsType<UserProfile>;
 }
 
-const UserLabel: FC<UserLabelProps> = (props: UserLabelProps) => {
+const UserLabel = (props: UserLabelProps) => {
     let icon = <PlusIcon/>;
     if (props.invitedUsers.find((user: UserProfile) => user.id === props.id)) {
         icon = <Remove onClick={props.onRemove}>{'Remove'}</Remove>;

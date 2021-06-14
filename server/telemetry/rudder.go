@@ -28,7 +28,7 @@ const (
 	actionCreate                   = "create"
 	actionEnd                      = "end"
 	actionRestart                  = "restart"
-	actionChangeCommander          = "change_commander"
+	actionChangeOwner              = "change_commander"
 	actionUpdateStatus             = "update_status"
 	actionAddTimelineEventFromPost = "add_timeline_event_from_post"
 	actionUpdateRetrospective      = "update_retrospective"
@@ -126,7 +126,7 @@ func incidentProperties(incdnt *incident.Incident, userID string) map[string]int
 		"UserActualID":        userID,
 		"IncidentID":          incdnt.ID,
 		"HasDescription":      incdnt.Description != "",
-		"CommanderUserID":     incdnt.CommanderUserID,
+		"CommanderUserID":     incdnt.OwnerUserID,
 		"ReporterUserID":      incdnt.ReporterUserID,
 		"TeamID":              incdnt.TeamID,
 		"ChannelID":           incdnt.ChannelID,
@@ -166,10 +166,10 @@ func (t *RudderTelemetry) RestartIncident(incdnt *incident.Incident, userID stri
 	t.track(eventIncident, properties)
 }
 
-// ChangeCommander tracks changes in commander
-func (t *RudderTelemetry) ChangeCommander(incdnt *incident.Incident, userID string) {
+// ChangeOwner tracks changes in owner
+func (t *RudderTelemetry) ChangeOwner(incdnt *incident.Incident, userID string) {
 	properties := incidentProperties(incdnt, userID)
-	properties["Action"] = actionChangeCommander
+	properties["Action"] = actionChangeOwner
 	t.track(eventIncident, properties)
 }
 
@@ -239,11 +239,11 @@ func (t *RudderTelemetry) RenameTask(incidentID, userID string, task playbook.Ch
 
 // ModifyCheckedState tracks the checking and unchecking of items by the user
 // identified by userID in the incident identified by incidentID.
-func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID string, task playbook.ChecklistItem, wasCommander bool) {
+func (t *RudderTelemetry) ModifyCheckedState(incidentID, userID string, task playbook.ChecklistItem, wasOwner bool) {
 	properties := taskProperties(incidentID, userID, task)
 	properties["Action"] = actionModifyTaskState
 	properties["NewState"] = task.State
-	properties["WasCommander"] = wasCommander
+	properties["WasCommander"] = wasOwner
 	properties["WasAssignee"] = task.AssigneeID == userID
 	t.track(eventTasks, properties)
 }
@@ -313,8 +313,8 @@ func playbookProperties(pbook playbook.Playbook, userID string) map[string]inter
 		"NumInvitedUserIDs":           len(pbook.InvitedUserIDs),
 		"NumInvitedGroupIDs":          len(pbook.InvitedGroupIDs),
 		"InviteUsersEnabled":          pbook.InviteUsersEnabled,
-		"DefaultCommanderID":          pbook.DefaultCommanderID,
-		"DefaultCommanderEnabled":     pbook.DefaultCommanderEnabled,
+		"DefaultCommanderID":          pbook.DefaultOwnerID,
+		"DefaultCommanderEnabled":     pbook.DefaultOwnerEnabled,
 		"AnnouncementChannelID":       pbook.AnnouncementChannelID,
 		"AnnouncementChannelEnabled":  pbook.AnnouncementChannelEnabled,
 		"NumWebhookOnCreationURLs":    len(strings.Split(pbook.WebhookOnCreationURL, "\n")),

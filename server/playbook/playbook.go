@@ -11,31 +11,35 @@ var ErrNotFound = errors.New("not found")
 
 // Playbook represents the planning before an incident type is initiated.
 type Playbook struct {
-	ID                          string      `json:"id"`
-	Title                       string      `json:"title"`
-	Description                 string      `json:"description"`
-	TeamID                      string      `json:"team_id"`
-	CreatePublicIncident        bool        `json:"create_public_incident"`
-	CreateAt                    int64       `json:"create_at"`
-	DeleteAt                    int64       `json:"delete_at"`
-	NumStages                   int64       `json:"num_stages"`
-	NumSteps                    int64       `json:"num_steps"`
-	Checklists                  []Checklist `json:"checklists"`
-	MemberIDs                   []string    `json:"member_ids"`
-	BroadcastChannelID          string      `json:"broadcast_channel_id"`
-	ReminderMessageTemplate     string      `json:"reminder_message_template"`
-	ReminderTimerDefaultSeconds int64       `json:"reminder_timer_default_seconds"`
-	InvitedUserIDs              []string    `json:"invited_user_ids"`
-	InvitedGroupIDs             []string    `json:"invited_group_ids"`
-	InviteUsersEnabled          bool        `json:"invite_users_enabled"`
-	DefaultCommanderID          string      `json:"default_commander_id"`
-	DefaultCommanderEnabled     bool        `json:"default_commander_enabled"`
-	AnnouncementChannelID       string      `json:"announcement_channel_id"`
-	AnnouncementChannelEnabled  bool        `json:"announcement_channel_enabled"`
-	WebhookOnCreationURL        string      `json:"webhook_on_creation_url"`
-	WebhookOnCreationEnabled    bool        `json:"webhook_on_creation_enabled"`
-	MessageOnJoin               string      `json:"message_on_join"`
-	MessageOnJoinEnabled        bool        `json:"message_on_join_enabled"`
+	ID                                   string      `json:"id"`
+	Title                                string      `json:"title"`
+	Description                          string      `json:"description"`
+	TeamID                               string      `json:"team_id"`
+	CreatePublicIncident                 bool        `json:"create_public_incident"`
+	CreateAt                             int64       `json:"create_at"`
+	DeleteAt                             int64       `json:"delete_at"`
+	NumStages                            int64       `json:"num_stages"`
+	NumSteps                             int64       `json:"num_steps"`
+	Checklists                           []Checklist `json:"checklists"`
+	MemberIDs                            []string    `json:"member_ids"`
+	BroadcastChannelID                   string      `json:"broadcast_channel_id"`
+	ReminderMessageTemplate              string      `json:"reminder_message_template"`
+	ReminderTimerDefaultSeconds          int64       `json:"reminder_timer_default_seconds"`
+	InvitedUserIDs                       []string    `json:"invited_user_ids"`
+	InvitedGroupIDs                      []string    `json:"invited_group_ids"`
+	InviteUsersEnabled                   bool        `json:"invite_users_enabled"`
+	DefaultOwnerID                       string      `json:"default_owner_id"`
+	DefaultOwnerEnabled                  bool        `json:"default_owner_enabled"`
+	AnnouncementChannelID                string      `json:"announcement_channel_id"`
+	AnnouncementChannelEnabled           bool        `json:"announcement_channel_enabled"`
+	WebhookOnCreationURL                 string      `json:"webhook_on_creation_url"`
+	WebhookOnCreationEnabled             bool        `json:"webhook_on_creation_enabled"`
+	MessageOnJoin                        string      `json:"message_on_join"`
+	MessageOnJoinEnabled                 bool        `json:"message_on_join_enabled"`
+	RetrospectiveReminderIntervalSeconds int64       `json:"retrospective_reminder_interval_seconds"`
+	RetrospectiveTemplate                string      `json:"retrospective_template"`
+	WebhookOnStatusUpdateURL             string      `json:"webhook_on_status_update_url"`
+	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
 }
 
 func (p Playbook) Clone() Playbook {
@@ -136,12 +140,9 @@ func (r GetPlaybooksResults) MarshalJSON() ([]byte, error) {
 
 // RequesterInfo holds the userID and permissions for the user making the request
 type RequesterInfo struct {
-	UserID          string
-	TeamID          string
-	UserIDtoIsAdmin map[string]bool
-
-	// MemberOnly filters playbooks to those for which UserId is a member
-	MemberOnly bool
+	UserID  string
+	TeamID  string
+	IsAdmin bool
 }
 
 // Service is the playbook service for managing playbooks

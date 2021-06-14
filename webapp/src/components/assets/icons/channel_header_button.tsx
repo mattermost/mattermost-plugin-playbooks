@@ -16,7 +16,7 @@ const DisabledStyle = createGlobalStyle`
     }
 `;
 
-const ChannelHeaderButton: FC = () => {
+const ChannelHeaderButton = () => {
     const myRef = useRef<IncidentIconRef>(null);
     const isRHSOpen = useSelector(isIncidentRHSOpen);
     const disabled = useSelector(isDisabledOnCurrentTeam);

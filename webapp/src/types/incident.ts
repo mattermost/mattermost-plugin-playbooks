@@ -9,7 +9,7 @@ export interface Incident {
     id: string;
     name: string;
     description: string;
-    commander_user_id: string;
+    owner_user_id: string;
     reporter_user_id: string;
     team_id: string;
     channel_id: string;
@@ -28,6 +28,8 @@ export interface Incident {
     timeline_events: TimelineEvent[];
     retrospective: string;
     retrospective_published_at: number;
+    retrospective_was_canceled: boolean;
+    retrospective_reminder_interval_seconds: number;
 }
 
 export interface StatusPost {
@@ -67,7 +69,7 @@ export function isIncident(arg: any): arg is Incident {
         arg.id && typeof arg.id === 'string' &&
         arg.name && typeof arg.name === 'string' &&
         typeof arg.description === 'string' &&
-        arg.commander_user_id && typeof arg.commander_user_id === 'string' &&
+        arg.owner_user_id && typeof arg.owner_user_id === 'string' &&
         arg.reporter_user_id && typeof arg.reporter_user_id === 'string' &&
         arg.team_id && typeof arg.team_id === 'string' &&
         arg.channel_id && typeof arg.channel_id === 'string' &&
@@ -143,10 +145,11 @@ export interface FetchIncidentsParams {
     sort?: string;
     direction?: string;
     status?: string;
-    commander_user_id?: string;
+    owner_user_id?: string;
     search_term?: string;
     member_id?: string;
     disabled?: boolean;
+    playbook_id?: string;
 }
 
 export interface FetchPlaybooksParams {
@@ -155,5 +158,4 @@ export interface FetchPlaybooksParams {
     per_page?: number;
     sort?: string;
     direction?: string;
-    member_only?: boolean;
 }

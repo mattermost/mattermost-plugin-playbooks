@@ -5,11 +5,12 @@
 package mock_incident
 
 import (
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	permissions "github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
-	reflect "reflect"
-	time "time"
 )
 
 // MockStore is a mock of Store interface
@@ -94,19 +95,19 @@ func (mr *MockStoreMockRecorder) GetAllIncidentMembersCount(arg0 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllIncidentMembersCount", reflect.TypeOf((*MockStore)(nil).GetAllIncidentMembersCount), arg0)
 }
 
-// GetCommanders mocks base method
-func (m *MockStore) GetCommanders(arg0 permissions.RequesterInfo, arg1 incident.FilterOptions) ([]incident.CommanderInfo, error) {
+// GetOwners mocks base method
+func (m *MockStore) GetOwners(arg0 permissions.RequesterInfo, arg1 incident.FilterOptions) ([]incident.OwnerInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCommanders", arg0, arg1)
-	ret0, _ := ret[0].([]incident.CommanderInfo)
+	ret := m.ctrl.Call(m, "GetOwners", arg0, arg1)
+	ret0, _ := ret[0].([]incident.OwnerInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetCommanders indicates an expected call of GetCommanders
-func (mr *MockStoreMockRecorder) GetCommanders(arg0, arg1 interface{}) *gomock.Call {
+// GetOwners indicates an expected call of GetOwners
+func (mr *MockStoreMockRecorder) GetOwners(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommanders", reflect.TypeOf((*MockStore)(nil).GetCommanders), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOwners", reflect.TypeOf((*MockStore)(nil).GetOwners), arg0, arg1)
 }
 
 // GetIncident mocks base method

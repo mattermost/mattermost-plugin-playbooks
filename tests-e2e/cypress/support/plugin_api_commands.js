@@ -84,14 +84,14 @@ Cypress.Commands.add('apiGetIncident', (incidentId) => {
 /**
  * Start an incident directly via API.
  */
-Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, commanderUserId, description = ''}) => {
+Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, ownerUserId, description = ''}) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: incidentsEndpoint,
         method: 'POST',
         body: {
             name: incidentName,
-            commander_user_id: commanderUserId,
+            owner_user_id: ownerUserId,
             team_id: teamId,
             playbook_id: playbookId,
             description,
@@ -151,18 +151,18 @@ Cypress.Commands.add('apiRestartIncident', (incidentId) => {
 });
 
 /**
- * Change the commander of an incident directly via API
+ * Change the owner of an incident directly via API
  * @param {String} incidentId
  * @param {String} userId
  * All parameters required
  */
-Cypress.Commands.add('apiChangeIncidentCommander', (incidentId, userId) => {
+Cypress.Commands.add('apiChangeIncidentOwner', (incidentId, userId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: incidentsEndpoint + '/' + incidentId + '/commander',
+        url: incidentsEndpoint + '/' + incidentId + '/owner',
         method: 'POST',
         body: {
-            commander_id: userId,
+            owner_id: userId,
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -211,12 +211,14 @@ Cypress.Commands.add('apiCreatePlaybook', ({
     reminderTimerDefaultSeconds,
     invitedUserIds,
     inviteUsersEnabled,
-    defaultCommanderId,
-    defaultCommanderEnabled,
+    defaultOwnerId,
+    defaultOwnerEnabled,
     announcementChannelId,
     announcementChannelEnabled,
     webhookOnCreationURL,
     webhookOnCreationEnabled,
+    webhookOnStatusUpdateURL,
+    webhookOnStatusUpdateEnabled,
     messageOnJoin,
     messageOnJoinEnabled,
 }) => {
@@ -235,12 +237,14 @@ Cypress.Commands.add('apiCreatePlaybook', ({
             reminder_timer_default_seconds: reminderTimerDefaultSeconds,
             invited_user_ids: invitedUserIds,
             invite_users_enabled: inviteUsersEnabled,
-            default_commander_id: defaultCommanderId,
-            default_commander_enabled: defaultCommanderEnabled,
+            default_owner_id: defaultOwnerId,
+            default_owner_enabled: defaultOwnerEnabled,
             announcement_channel_id: announcementChannelId,
             announcement_channel_enabled: announcementChannelEnabled,
             webhook_on_creation_url: webhookOnCreationURL,
             webhook_on_creation_enabled: webhookOnCreationEnabled,
+            webhook_on_status_update_url: webhookOnStatusUpdateURL,
+            webhook_on_status_update_enabled: webhookOnStatusUpdateEnabled,
             message_on_join: messageOnJoin,
             message_on_join_enabled: messageOnJoinEnabled,
         },

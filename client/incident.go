@@ -7,7 +7,7 @@ type Incident struct {
 	ID                      string          `json:"id"`
 	Name                    string          `json:"name"`
 	Description             string          `json:"description"`
-	CommanderUserID         string          `json:"commander_user_id"`
+	OwnerUserID             string          `json:"owner_user_id"`
 	ReporterUserID          string          `json:"reporter_user_id"`
 	TeamID                  string          `json:"team_id"`
 	ChannelID               string          `json:"channel_id"`
@@ -53,7 +53,7 @@ const (
 	IncidentCreated   TimelineEventType = "incident_created"
 	TaskStateModified TimelineEventType = "task_state_modified"
 	StatusUpdated     TimelineEventType = "status_updated"
-	CommanderChanged  TimelineEventType = "commander_changed"
+	OwnerChanged      TimelineEventType = "owner_changed"
 	AssigneeChanged   TimelineEventType = "assignee_changed"
 	RanSlashCommand   TimelineEventType = "ran_slash_command"
 )
@@ -75,12 +75,12 @@ type TimelineEvent struct {
 
 // IncidentCreateOptions specifies the parameters for IncidentsService.Create method.
 type IncidentCreateOptions struct {
-	Name            string `json:"name"`
-	CommanderUserID string `json:"commander_user_id"`
-	TeamID          string `json:"team_id"`
-	Description     string `json:"description"`
-	PostID          string `json:"post_id"`
-	PlaybookID      string `json:"playbook_id"`
+	Name        string `json:"name"`
+	OwnerUserID string `json:"owner_user_id"`
+	TeamID      string `json:"team_id"`
+	Description string `json:"description"`
+	PostID      string `json:"post_id"`
+	PlaybookID  string `json:"playbook_id"`
 }
 
 // Sort enumerates the available fields we can sort on.
@@ -96,8 +96,8 @@ const (
 	// SortByName sorts by the "name" field.
 	SortByName Sort = "name"
 
-	// SortByCommanderUserID sorts by the "commander_user_id" field.
-	SortByCommanderUserID Sort = "commander_user_id"
+	// SortByOwnerUserID sorts by the "owner_user_id" field.
+	SortByOwnerUserID Sort = "owner_user_id"
 
 	// SortByTeamID sorts by the "team_id" field.
 	SortByTeamID Sort = "team_id"
@@ -138,8 +138,8 @@ type IncidentListOptions struct {
 	// Status filters by All, Ongoing, or Ended; defaults to All.
 	Status Status `url:"status,omitempty"`
 
-	// CommanderID filters by commander's Mattermost user ID. Defaults to blank (no filter).
-	CommanderID string `url:"commander_user_id,omitempty"`
+	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter).
+	OwnerID string `url:"owner_user_id,omitempty"`
 
 	// MemberID filters incidents that have this member. Defaults to blank (no filter).
 	MemberID string `url:"member_id,omitempty"`
@@ -148,6 +148,10 @@ type IncidentListOptions struct {
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
 	// not returned in relevance order).
 	SearchTerm string `url:"search_term,omitempty"`
+
+	// PlaybookID filters incidents that are derived from this playbook id.
+	// Defaults to blank (no filter).
+	PlaybookID string `url:"playbook_id,omitempty"`
 }
 
 // IncidentList contains the paginated result.

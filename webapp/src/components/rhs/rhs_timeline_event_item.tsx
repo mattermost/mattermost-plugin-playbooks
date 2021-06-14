@@ -136,10 +136,10 @@ const RHSTimelineEventItem = (props: Props) => {
         }
         testid = TimelineEventType.StatusUpdated;
         break;
-    case TimelineEventType.CommanderChanged:
+    case TimelineEventType.OwnerChanged:
         iconClass = 'icon icon-pencil-outline';
-        summaryTitle = 'Commander changed from ' + props.event.summary;
-        testid = TimelineEventType.CommanderChanged;
+        summaryTitle = 'Owner changed from ' + props.event.summary;
+        testid = TimelineEventType.OwnerChanged;
         break;
     case TimelineEventType.TaskStateModified:
         iconClass = 'icon icon-format-list-bulleted';
@@ -174,6 +174,11 @@ const RHSTimelineEventItem = (props: Props) => {
         iconClass = 'icon icon-pencil-outline';
         summaryTitle = 'Retrospective published by ' + props.event.subject_display_name;
         testid = TimelineEventType.PublishedRetrospective;
+        break;
+    case TimelineEventType.CanceledRetrospective:
+        iconClass = 'icon icon-cancel';
+        summaryTitle = 'Retrospective canceled by ' + props.event.subject_display_name;
+        testid = TimelineEventType.CanceledRetrospective;
         break;
     }
 

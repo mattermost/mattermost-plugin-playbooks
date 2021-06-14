@@ -1,4 +1,4 @@
-import React, {FC, useState, useRef} from 'react';
+import React, {useState, useRef} from 'react';
 import styled from 'styled-components';
 
 export interface EditableTextProps {
@@ -35,21 +35,21 @@ const Input = styled.input`
     box-shadow: 0 2px 0 var(--button-bg);
     border: none;
     margin-top: -2px;
-    max-width: 450px;
+    max-width: 650px;
     padding: 0 0 2px;
 `;
 
 const Text = styled.span`
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 450px;
+    max-width: 650px;
     white-space: nowrap;
 `;
 
 const Placeholder = styled.span`
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 450px;
+    max-width: 650px;
     white-space: nowrap;
     font-style: italic;
 `;
@@ -58,7 +58,7 @@ const ClickableI = styled.i`
     cursor: pointer;
 `;
 
-const EditableText: FC<EditableTextProps> = (props: EditableTextProps) => {
+const EditableText = (props: EditableTextProps) => {
     const [editMode, setEditMode] = useState(false);
     const [text, setText] = useState(props.text);
     const textElement = useRef<HTMLInputElement>(null);

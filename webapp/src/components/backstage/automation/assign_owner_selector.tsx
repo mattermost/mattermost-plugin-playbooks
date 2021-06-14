@@ -1,4 +1,4 @@
-import React, {FC, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 
 import ReactSelect, {ControlProps, MenuListComponentProps} from 'react-select';
@@ -12,21 +12,22 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import Profile from 'src/components/profile/profile';
+import ClearIcon from 'src/components/assets/icons/clear_icon';
 
 interface Props {
-    commanderID: string;
+    ownerID: string;
     onAddUser: (userid: string) => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
     isDisabled: boolean;
 }
 
-const AssignCommanderSelector: FC<Props> = (props: Props) => {
+const AssignOwnerSelector = (props: Props) => {
     const [options, setOptions] = useState<UserProfile[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const commanderUser = useSelector<GlobalState, UserProfile>((state: GlobalState) => getUser(state, props.commanderID));
+    const ownerUser = useSelector<GlobalState, UserProfile>((state: GlobalState) => getUser(state, props.ownerID));
 
-    // Update the options whenever the commander ID or the search term are updated
+    // Update the options whenever the owner ID or the search term are updated
     useEffect(() => {
         const updateOptions = async (term: string) => {
             let profiles;
@@ -38,7 +39,7 @@ const AssignCommanderSelector: FC<Props> = (props: Props) => {
 
             //@ts-ignore
             profiles.then(({data}: { data: UserProfile[] }) => {
-                setOptions(data.filter((user: UserProfile) => user.id !== props.commanderID));
+                setOptions(data.filter((user: UserProfile) => user.id !== props.ownerID));
             }).catch(() => {
                 // eslint-disable-next-line no-console
                 console.error('Error searching user profiles in custom attribute settings dropdown.');
@@ -46,7 +47,15 @@ const AssignCommanderSelector: FC<Props> = (props: Props) => {
         };
 
         updateOptions(searchTerm);
-    }, [props.commanderID, searchTerm]);
+    }, [props.ownerID, searchTerm]);
+
+    const handleSelectionChange = (userAdded: UserProfile | null, {action}: {action: string}) => {
+        if (action === 'clear') {
+            props.onAddUser('');
+        } else if (userAdded) {
+            props.onAddUser(userAdded.id);
+        }
+    };
 
     return (
         <StyledReactSelect
@@ -56,31 +65,31 @@ const AssignCommanderSelector: FC<Props> = (props: Props) => {
             filterOption={() => true}
             isDisabled={props.isDisabled}
             isMulti={false}
-            value={commanderUser}
+            value={ownerUser}
             controlShouldRenderValue={!props.isDisabled}
-            onChange={(userAdded: UserProfile) => props.onAddUser(userAdded.id)}
+            onChange={handleSelectionChange}
             getOptionValue={(user: UserProfile) => user.id}
             formatOptionLabel={(user: UserProfile) => (
                 <StyledProfile userId={user.id}/>
             )}
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
-            isClearable={false}
+            isClearable={true}
             placeholder={'Search for member'}
-            components={{DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
+            components={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
             styles={{
                 control: (provided: ControlProps<UserProfile>) => ({
                     ...provided,
                     minHeight: 34,
                 }),
             }}
-            classNamePrefix='assign-commander-selector'
+            classNamePrefix='assign-owner-selector'
             captureMenuScroll={false}
         />
     );
 };
 
-export default AssignCommanderSelector;
+export default AssignOwnerSelector;
 
 const StyledProfile = styled(Profile)`
     color: var(--center-channel-color);
@@ -95,17 +104,17 @@ const StyledReactSelect = styled(ReactSelect)`
     flex-grow: 1;
     background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
 
-    .assign-commander-selector__input {
+    .assign-owner-selector__input {
         color: var(--center-channel-color);
     }
 
-    .assign-commander-selector__menu {
+    .assign-owner-selector__menu {
         background-color: transparent;
         box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
     }
 
 
-    .assign-commander-selector__option {
+    .assign-owner-selector__option {
         height: 36px;
         padding: 6px 21px 6px 12px;
         display: flex;
@@ -114,16 +123,16 @@ const StyledReactSelect = styled(ReactSelect)`
         align-items: center;
     }
 
-    .assign-commander-selector__option--is-selected {
+    .assign-owner-selector__option--is-selected {
         background-color: var(--center-channel-bg);
         color: var(--center-channel-color);
     }
 
-    .assign-commander-selector__option--is-focused {
+    .assign-owner-selector__option--is-focused {
         background-color: rgba(var(--button-bg-rgb), 0.04);
     }
 
-    .assign-commander-selector__control {
+    .assign-owner-selector__control {
         -webkit-transition: all 0.15s ease;
         -webkit-transition-delay: 0s;
         -moz-transition: all 0.15s ease;
@@ -157,13 +166,13 @@ const StyledReactSelect = styled(ReactSelect)`
         }
     }
 
-    .assign-commander-selector__option {
+    .assign-owner-selector__option {
         &:active {
             background-color: var(--center-channel-color-08);
         }
     }
 
-    .assign-commander-selector__group-heading {
+    .assign-owner-selector__group-heading {
         height: 32px;
         padding: 8px 12px 8px;
         font-size: 12px;
@@ -208,7 +217,7 @@ const ThumbVertical = styled.div`
 const MenuList = (props: MenuListComponentProps<UserProfile>) => {
     return (
         <MenuListWrapper>
-            <MenuHeader>{'Assign Commander'}</MenuHeader>
+            <MenuHeader>{'Assign Owner'}</MenuHeader>
             <StyledScrollbars
                 autoHeight={true}
                 renderThumbVertical={({style, ...thumbProps}) => <ThumbVertical {...thumbProps}/>}
@@ -216,5 +225,13 @@ const MenuList = (props: MenuListComponentProps<UserProfile>) => {
                 {props.children}
             </StyledScrollbars>
         </MenuListWrapper>
+    );
+};
+
+const ClearIndicator = ({clearValue}: {clearValue: () => void}) => {
+    return (
+        <div onClick={clearValue}>
+            <ClearIcon/>
+        </div>
     );
 };

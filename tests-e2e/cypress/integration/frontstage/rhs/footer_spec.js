@@ -51,7 +51,7 @@ describe('incident rhs > footer', () => {
                     teamId,
                     playbookId,
                     incidentName,
-                    commanderUserId: userId,
+                    ownerUserId: userId,
                 });
 
                 // # Navigate directly to the application and the incident channel

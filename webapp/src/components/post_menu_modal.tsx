@@ -12,7 +12,7 @@ import UpgradeModal from 'src/components/backstage/upgrade_modal';
 
 import {AdminNotificationType} from 'src/constants';
 
-const PostMenuModal: FC = () => {
+const PostMenuModal = () => {
     const dispatch = useDispatch();
     const show = useSelector(isPostMenuModalVisible);
 

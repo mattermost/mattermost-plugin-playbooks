@@ -5,6 +5,7 @@ package incident
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -15,17 +16,60 @@ type Reminder struct {
 	IncidentID string `json:"incident_id"`
 }
 
+const RetrospectivePrefix = "retro_"
+
 // HandleReminder is the handler for all reminder events.
 func (s *ServiceImpl) HandleReminder(key string) {
-	incidentToModify, err := s.GetIncident(key)
+	if strings.HasPrefix(key, RetrospectivePrefix) {
+		s.handleReminderToFillRetro(strings.TrimPrefix(key, RetrospectivePrefix))
+	} else {
+		s.handleStatusUpdateReminder(key)
+	}
+}
+
+func (s *ServiceImpl) handleReminderToFillRetro(incidentID string) {
+	incidentToRemind, err := s.GetIncident(incidentID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get incident id: %s", key).Error())
+		s.logger.Errorf(errors.Wrapf(err, "handleReminderToFillRetro failed to get incident id: %s", incidentID).Error())
 		return
 	}
 
-	commander, err := s.pluginAPI.User.Get(incidentToModify.CommanderUserID)
+	// In the meantime we did publish a retrospective, so no reminder.
+	if incidentToRemind.RetrospectivePublishedAt != 0 {
+		return
+	}
+
+	// If we are not in the resolved state then don't remind
+	if incidentToRemind.CurrentStatus != StatusResolved &&
+		incidentToRemind.CurrentStatus != StatusArchived {
+		return
+	}
+
+	if err = s.postRetrospectiveReminder(incidentToRemind, false); err != nil {
+		s.logger.Errorf(errors.Wrapf(err, "couldn't post incident reminder").Error())
+		return
+	}
+
+	// Jobs can't be rescheduled within themselves with the same key. As a temporary workaround do it in a delayed goroutine
+	go func() {
+		time.Sleep(time.Second * 2)
+		if err = s.SetReminder(RetrospectivePrefix+incidentID, time.Duration(incidentToRemind.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
+			s.logger.Errorf(errors.Wrap(err, "failed to reocurr retrospective reminder").Error())
+			return
+		}
+	}()
+}
+
+func (s *ServiceImpl) handleStatusUpdateReminder(incidentID string) {
+	incidentToModify, err := s.GetIncident(incidentID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get commander for id: %s", incidentToModify.CommanderUserID).Error())
+		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get incident id: %s", incidentID).Error())
+		return
+	}
+
+	owner, err := s.pluginAPI.User.Get(incidentToModify.OwnerUserID)
+	if err != nil {
+		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get owner for id: %s", incidentToModify.OwnerUserID).Error())
 		return
 	}
 
@@ -55,7 +99,7 @@ func (s *ServiceImpl) HandleReminder(key string) {
 	}
 
 	post, err := s.poster.PostMessageWithAttachments(incidentToModify.ChannelID, attachments,
-		"@%s, please provide an update on this incident's progress.", commander.Username)
+		"@%s, please provide an update on this incident's progress.", owner.Username)
 	if err != nil {
 		s.logger.Errorf(errors.Wrap(err, "HandleReminder error posting reminder message").Error())
 		return
@@ -67,7 +111,7 @@ func (s *ServiceImpl) HandleReminder(key string) {
 	}
 }
 
-// SetReminder sets a reminder. After timeInMinutes in the future, the commander will be
+// SetReminder sets a reminder. After timeInMinutes in the future, the owner will be
 // reminded to update the incident's status.
 func (s *ServiceImpl) SetReminder(incidentID string, fromNow time.Duration) error {
 	if _, err := s.scheduler.ScheduleOnce(incidentID, time.Now().Add(fromNow)); err != nil {

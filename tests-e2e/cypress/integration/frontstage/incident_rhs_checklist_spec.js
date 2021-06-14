@@ -78,7 +78,7 @@ describe('incident rhs checklist', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             });
 
             cy.apiGetChannelByName('ad-1', incidentChannelName).then(({channel}) => {

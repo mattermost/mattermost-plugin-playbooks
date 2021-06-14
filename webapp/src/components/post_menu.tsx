@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 
 import styled from 'styled-components';
@@ -23,7 +23,7 @@ interface Props {
     postId: string;
 }
 
-export const StartIncidentPostMenu: FC<Props> = (props: Props) => {
+export const StartIncidentPostMenu = (props: Props) => {
     const dispatch = useDispatch();
     const post = useSelector<GlobalState, Post>((state) => getPost(state, props.postId));
     if (!post || isSystemMessage(post)) {
@@ -54,7 +54,7 @@ export const StartIncidentPostMenu: FC<Props> = (props: Props) => {
     );
 };
 
-export const AttachToIncidentPostMenu: FC<Props> = (props: Props) => {
+export const AttachToIncidentPostMenu = (props: Props) => {
     const dispatch = useDispatch();
     const allowMessage = useAllowAddMessageToTimelineInCurrentTeam();
 

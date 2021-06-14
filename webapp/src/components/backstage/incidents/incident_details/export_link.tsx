@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 import styled from 'styled-components';
@@ -35,7 +35,7 @@ const SecondaryButtonDisabled = styled(SecondaryButtonWithSpace)`
     }
 `;
 
-const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
+const ExportLink = (props: ExportLinkProps) => {
     //@ts-ignore plugins state is a thing
     const exportAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
     const exportLicensed = useSelector<GlobalState, boolean>(isExportLicensed);
@@ -92,7 +92,7 @@ const ExportLink: FC<ExportLinkProps> = (props: ExportLinkProps) => {
     } else if (!exportLicensed) {
         tooltip = (
             <Tooltip id='exportUnlicensed'>
-                {'Exporting an incident channel requires a Mattermost Enterprise E20 license'}
+                {'Exporting an incident channel requires a Mattermost Enterprise license'}
             </Tooltip>
         );
     }

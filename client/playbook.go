@@ -19,8 +19,8 @@ type Playbook struct {
 	InvitedUserIDs              []string    `json:"invited_user_ids"`
 	InvitedGroupIDs             []string    `json:"invited_group_ids"`
 	InvitedUsersEnabled         bool        `json:"invited_users_enabled"`
-	DefaultCommanderID          string      `json:"default_commander_id"`
-	DefaultCommanderEnabled     bool        `json:"default_commander_enabled"`
+	DefaultOwnerID              string      `json:"default_owner_id"`
+	DefaultOwnerEnabled         bool        `json:"default_owner_enabled"`
 	AnnouncementChannelID       string      `json:"announcement_channel_id"`
 	AnnouncementChannelEnabled  bool        `json:"announcement_channel_enabled"`
 }
@@ -61,8 +61,8 @@ type PlaybookCreateOptions struct {
 	InvitedUserIDs              []string    `json:"invited_user_ids"`
 	InvitedGroupIDs             []string    `json:"invited_group_ids"`
 	InviteUsersEnabled          bool        `json:"invite_users_enabled"`
-	DefaultCommanderID          string      `json:"default_commander_id"`
-	DefaultCommanderEnabled     bool        `json:"default_commander_enabled"`
+	DefaultOwnerID              string      `json:"default_owner_id"`
+	DefaultOwnerEnabled         bool        `json:"default_owner_enabled"`
 	AnnouncementChannelID       string      `json:"announcement_channel_id"`
 	AnnouncementChannelEnabled  bool        `json:"announcement_channel_enabled"`
 }
@@ -70,9 +70,6 @@ type PlaybookCreateOptions struct {
 // PlaybookListOptions specifies the optional parameters to the
 // PlaybooksService.List method.
 type PlaybookListOptions struct {
-	// MemberOnly filters playbooks to those for which the current user is a member.
-	MemberOnly bool `url:"member_only,omitempty"`
-
 	Sort      Sort          `url:"sort,omitempty"`
 	Direction SortDirection `url:"direction,omitempty"`
 }
