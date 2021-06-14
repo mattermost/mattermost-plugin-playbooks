@@ -1340,7 +1340,7 @@ func parseIncidentsFilterOptions(u *url.URL) (*app.IncidentFilterOptions, error)
 		PlaybookID: playbookID,
 	}
 
-	err = options.IsValid()
+	options, err = options.Validate()
 	if err != nil {
 		return nil, err
 	}

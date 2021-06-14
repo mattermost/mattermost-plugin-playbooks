@@ -14,25 +14,25 @@ const (
 	SortBySteps SortField = "steps"
 
 	// SortByCreateAt sorts by the created time of an incident or playbook.
-	SortByCreateAt = "create_at"
+	SortByCreateAt SortField = "create_at"
 
 	// SortByID sorts by the primary key of an incident or playbook.
-	SortByID = "id"
+	SortByID SortField = "id"
 
 	// SortByName sorts by the name of an incident.
-	SortByName = "name"
+	SortByName SortField = "name"
 
 	// SortByOwnerUserID sorts by the user id of the owner of an incident.
-	SortByOwnerUserID = "owner_user_id"
+	SortByOwnerUserID SortField = "owner_user_id"
 
 	// SortByTeamID sorts by the team id of an incident or playbook.
-	SortByTeamID = "team_id"
+	SortByTeamID SortField = "team_id"
 
 	// SortByEndAt sorts by the end time of an incident.
-	SortByEndAt = "end_at"
+	SortByEndAt SortField = "end_at"
 
 	// SortByStatus sorts by the status of an incident.
-	SortByStatus = "status"
+	SortByStatus SortField = "status"
 )
 
 // SortDirection is the type used to specify the ascending or descending order of returned results.

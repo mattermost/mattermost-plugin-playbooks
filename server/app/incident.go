@@ -524,9 +524,19 @@ type IncidentFilterOptions struct {
 	PlaybookID string `url:"playbook_id,omitempty"`
 }
 
-// IsValid either makes the given filter options valid, or returns an error if invalid.
-func (options *IncidentFilterOptions) IsValid() error {
-	if options.PerPage == 0 {
+// Clone duplicates the given options.
+func (o *IncidentFilterOptions) Clone() IncidentFilterOptions {
+	newIncidentFilterOptions := *o
+	newIncidentFilterOptions.Statuses = append([]string{}, o.Statuses...)
+
+	return newIncidentFilterOptions
+}
+
+// Validate returns a new, validated filter options or returns an error if invalid.
+func (o IncidentFilterOptions) Validate() (IncidentFilterOptions, error) {
+	options := o.Clone()
+
+	if options.PerPage <= 0 {
 		options.PerPage = PerPageDefault
 	}
 
@@ -542,7 +552,7 @@ func (options *IncidentFilterOptions) IsValid() error {
 	case "": // default
 		options.Sort = SortByCreateAt
 	default:
-		return errors.Errorf("unsupported sort '%s'", options.Sort)
+		return IncidentFilterOptions{}, errors.Errorf("unsupported sort '%s'", options.Sort)
 	}
 
 	options.Direction = SortDirection(strings.ToUpper(string(options.Direction)))
@@ -552,16 +562,24 @@ func (options *IncidentFilterOptions) IsValid() error {
 	case "": //default
 		options.Direction = DirectionAsc
 	default:
-		return errors.Errorf("unsupported direction '%s'", options.Direction)
+		return IncidentFilterOptions{}, errors.Errorf("unsupported direction '%s'", options.Direction)
+	}
+
+	if options.TeamID != "" && !model.IsValidId(options.TeamID) {
+		return IncidentFilterOptions{}, errors.New("bad parameter 'team_id': must be 26 characters or blank")
 	}
 
 	if options.OwnerID != "" && !model.IsValidId(options.OwnerID) {
-		return errors.New("bad parameter 'owner_id': must be 26 characters or blank")
+		return IncidentFilterOptions{}, errors.New("bad parameter 'owner_id': must be 26 characters or blank")
 	}
 
 	if options.MemberID != "" && !model.IsValidId(options.MemberID) {
-		return errors.New("bad parameter 'member_id': must be 26 characters or blank")
+		return IncidentFilterOptions{}, errors.New("bad parameter 'member_id': must be 26 characters or blank")
 	}
 
-	return nil
+	if options.PlaybookID != "" && !model.IsValidId(options.PlaybookID) {
+		return IncidentFilterOptions{}, errors.New("bad parameter 'playbook_id': must be 26 characters or blank")
+	}
+
+	return options, nil
 }

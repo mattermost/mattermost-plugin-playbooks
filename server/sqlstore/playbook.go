@@ -42,6 +42,8 @@ type playbookMembers []struct {
 func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.PlaybookFilterOptions) (sq.SelectBuilder, error) {
 	var sort string
 	switch options.Sort {
+	case app.SortByID:
+		sort = "ID"
 	case app.SortByTitle:
 		sort = "Title"
 	case app.SortByStages:

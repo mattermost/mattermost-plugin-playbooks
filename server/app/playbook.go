@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -222,14 +223,40 @@ type PlaybookFilterOptions struct {
 	PerPage int
 }
 
-func (options *PlaybookFilterOptions) IsValid() error {
+// Clone duplicates the given options.
+func (o *PlaybookFilterOptions) Clone() PlaybookFilterOptions {
+	return *o
+}
+
+// Validate returns a new, validated filter options or returns an error if invalid.
+func (o PlaybookFilterOptions) Validate() (PlaybookFilterOptions, error) {
+	options := o.Clone()
+
+	if options.PerPage <= 0 {
+		options.PerPage = PerPageDefault
+	}
+
+	options.Sort = SortField(strings.ToLower(string(options.Sort)))
 	switch options.Sort {
+	case SortByID:
 	case SortByTitle:
 	case SortByStages:
 	case SortBySteps:
+	case "": // default
+		options.Sort = SortByID
 	default:
-		return errors.New("bad parameter 'sort'")
+		return PlaybookFilterOptions{}, errors.Errorf("unsupported sort '%s'", options.Sort)
 	}
 
-	return nil
+	options.Direction = SortDirection(strings.ToUpper(string(options.Direction)))
+	switch options.Direction {
+	case DirectionAsc:
+	case DirectionDesc:
+	case "": //default
+		options.Direction = DirectionAsc
+	default:
+		return PlaybookFilterOptions{}, errors.Errorf("unsupported direction '%s'", options.Direction)
+	}
+
+	return options, nil
 }
