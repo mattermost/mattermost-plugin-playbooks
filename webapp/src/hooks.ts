@@ -296,11 +296,8 @@ export function useOpenCloudModal() {
     const PurchaseModal = window.Components.PurchaseModal;
 
     if (!openModal || !ModalIdentifiers?.CLOUD_PURCHASE || !PurchaseModal) {
-        // eslint-disable-next-line no-process-env
-        if (process.env.NODE_ENV !== 'production') {
-            // eslint-disable-next-line no-console
-            console.error('unable to open cloud modal', openModal, ModalIdentifiers, PurchaseModal);
-        }
+        // eslint-disable-next-line no-console
+        console.error('unable to open cloud modal', openModal, ModalIdentifiers, PurchaseModal);
 
         return () => { /*do nothing*/ };
     }

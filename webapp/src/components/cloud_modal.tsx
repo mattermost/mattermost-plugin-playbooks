@@ -13,6 +13,13 @@ const CloudModal = () => {
     // @ts-ignore
     const PurchaseModal = window.Components.PurchaseModal;
 
+    if (!PurchaseModal) {
+        // eslint-disable-next-line no-console
+        console.error('unable to mount cloud modal');
+
+        return null;
+    }
+
     return <PurchaseModal/>;
 };
 
