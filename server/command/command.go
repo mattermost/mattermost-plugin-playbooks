@@ -1077,7 +1077,7 @@ func (r *Runner) actionTestCreate(params []string) {
 		r.postCommandResponse("The first parameter, <playbook_id>, must be a valid ID.")
 		return
 	}
-	thePlaybook, err := r.playbookService.Get(playbookID)
+	playbook, err := r.playbookService.Get(playbookID)
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("The playbook with ID '%s' does not exist.", playbookID))
 		return
@@ -1096,10 +1096,10 @@ func (r *Runner) actionTestCreate(params []string) {
 		OwnerUserID: r.args.UserId,
 		TeamID:      r.args.TeamId,
 		PlaybookID:  playbookID,
-		Checklists:  thePlaybook.Checklists,
+		Checklists:  playbook.Checklists,
 	}
 
-	newIncident, err := r.incidentService.CreateIncident(incident, &thePlaybook, r.args.UserId, true)
+	newIncident, err := r.incidentService.CreateIncident(incident, &playbook, r.args.UserId, true)
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to create incident: %v", err)
 		return
@@ -1297,8 +1297,8 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 	}
 
 	playbooks := make([]app.Playbook, 0, len(playbooksResult.Items))
-	for _, thePlaybook := range playbooksResult.Items {
-		wholePlaybook, err := r.playbookService.Get(thePlaybook.ID)
+	for _, playbook := range playbooksResult.Items {
+		wholePlaybook, err := r.playbookService.Get(playbook.ID)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error getting playbook: %v", err)
 			return
@@ -1310,7 +1310,7 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 	tableMsg := "| Incident name | Created at | Status |\n|-	|-	|-	|\n"
 	incidents := make([]*app.Incident, 0, numIncidents)
 	for i := 0; i < numIncidents; i++ {
-		thePlaybook := playbooks[rand.Intn(len(playbooks))]
+		playbook := playbooks[rand.Intn(len(playbooks))]
 
 		incidentName := incidentNames[rand.Intn(len(incidentNames))]
 		// Give a company name to 1/3 of the incidents created
@@ -1323,11 +1323,11 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 			Name:        incidentName,
 			OwnerUserID: r.args.UserId,
 			TeamID:      r.args.TeamId,
-			PlaybookID:  thePlaybook.ID,
-			Checklists:  thePlaybook.Checklists,
+			PlaybookID:  playbook.ID,
+			Checklists:  playbook.Checklists,
 		}
 
-		newIncident, err := r.incidentService.CreateIncident(incident, &thePlaybook, r.args.UserId, true)
+		newIncident, err := r.incidentService.CreateIncident(incident, &playbook, r.args.UserId, true)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error creating incident: %v", err)
 			return

@@ -350,10 +350,10 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 
 	list := make([]model.AutocompleteListItem, 0)
 
-	for _, thePlaybook := range playbooksResult.Items {
+	for _, playbook := range playbooksResult.Items {
 		list = append(list, model.AutocompleteListItem{
-			Item:     thePlaybook.ID,
-			HelpText: thePlaybook.Title,
+			Item:     playbook.ID,
+			HelpText: playbook.Title,
 		})
 	}
 
