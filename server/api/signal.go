@@ -16,26 +16,26 @@ import (
 
 type SignalHandler struct {
 	*ErrorHandler
-	api             *pluginapi.Client
-	incidentService incident.Service
-	playbookService playbook.Service
-	keywordsIgnorer playbook.KeywordsIgnorer
+	api                   *pluginapi.Client
+	incidentService       incident.Service
+	playbookService       playbook.Service
+	keywordsThreadIgnorer playbook.KeywordsThreadIgnorer
 }
 
-func NewSignalHandler(router *mux.Router, api *pluginapi.Client, logger bot.Logger, incidentService incident.Service, playbookService playbook.Service, keywordsIgnorer playbook.KeywordsIgnorer) *SignalHandler {
+func NewSignalHandler(router *mux.Router, api *pluginapi.Client, logger bot.Logger, incidentService incident.Service, playbookService playbook.Service, keywordsThreadIgnorer playbook.KeywordsThreadIgnorer) *SignalHandler {
 	handler := &SignalHandler{
-		ErrorHandler:    &ErrorHandler{log: logger},
-		api:             api,
-		incidentService: incidentService,
-		playbookService: playbookService,
-		keywordsIgnorer: keywordsIgnorer,
+		ErrorHandler:          &ErrorHandler{log: logger},
+		api:                   api,
+		incidentService:       incidentService,
+		playbookService:       playbookService,
+		keywordsThreadIgnorer: keywordsThreadIgnorer,
 	}
 
 	signalRouter := router.PathPrefix("/signal").Subrouter()
 
 	keywordsRouter := signalRouter.PathPrefix("/keywords").Subrouter()
 	keywordsRouter.HandleFunc("/run-playbook", handler.playbookRun).Methods(http.MethodPost)
-	keywordsRouter.HandleFunc("/ignore", handler.ignoreKeywords).Methods(http.MethodPost)
+	keywordsRouter.HandleFunc("/ignore-thread", handler.ignoreKeywords).Methods(http.MethodPost)
 
 	return handler
 }
@@ -73,8 +73,10 @@ func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d := map[string]string{"ephemeral_text": fmt.Sprintf("You selected %v", pbook.Title)}
-	ReturnJSON(w, &d, http.StatusOK)
+	resp := model.PostActionIntegrationResponse{
+		EphemeralText: fmt.Sprintf("You selected %v", pbook.Title),
+	}
+	ReturnJSON(w, &resp, http.StatusOK)
 }
 
 func (h *SignalHandler) ignoreKeywords(w http.ResponseWriter, r *http.Request) {
@@ -93,19 +95,19 @@ func (h *SignalHandler) ignoreKeywords(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.keywordsIgnorer.Ignore(postID, post.UserId)
+	h.keywordsThreadIgnorer.Ignore(postID, post.UserId)
 	if post.RootId != "" {
-		h.keywordsIgnorer.Ignore(post.RootId, post.UserId)
+		h.keywordsThreadIgnorer.Ignore(post.RootId, post.UserId)
 	}
-
-	d := map[string]string{"ephemeral_text": "This thread will be ignored"}
-	ReturnJSON(w, &d, http.StatusOK)
+	// Not returning a confirmation to the user, since ignore is fuzzy.
 }
 
 func (h *SignalHandler) returnError(returnMessage string, err error, w http.ResponseWriter) {
-	d := map[string]string{"ephemeral_text": returnMessage}
+	resp := model.PostActionIntegrationResponse{
+		EphemeralText: fmt.Sprintf("Error: %s", returnMessage),
+	}
 	h.log.Errorf(err.Error())
-	ReturnJSON(w, &d, http.StatusOK)
+	ReturnJSON(w, &resp, http.StatusOK)
 }
 
 func getStringField(field string, context map[string]interface{}, w http.ResponseWriter) (string, error) {

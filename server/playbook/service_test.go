@@ -473,7 +473,7 @@ func TestMessageHasBeenPosted(t *testing.T) {
 		poster := mock_bot.NewMockPoster(controller)
 		telemetryService := &telemetry.NoopTelemetry{}
 		configService := mock_config.NewMockService(controller)
-		keywordsIgnorer := mock_playbook.NewMockKeywordsIgnorer(controller)
+		keywordsIgnorer := mock_playbook.NewMockKeywordsThreadIgnorer(controller)
 		s := playbook.NewService(store, poster, telemetryService, client, configService, keywordsIgnorer)
 
 		sessionID := model.NewId()
@@ -525,7 +525,7 @@ func TestMessageHasBeenPosted(t *testing.T) {
 	})
 }
 
-func getMockPlaybookService(t *testing.T) (playbook.Service, *mock_playbook.MockStore, *plugintest.API, *mock_playbook.MockKeywordsIgnorer) {
+func getMockPlaybookService(t *testing.T) (playbook.Service, *mock_playbook.MockStore, *plugintest.API, *mock_playbook.MockKeywordsThreadIgnorer) {
 	controller := gomock.NewController(t)
 	pluginAPI := &plugintest.API{}
 	client := pluginapi.NewClient(pluginAPI)
@@ -533,6 +533,6 @@ func getMockPlaybookService(t *testing.T) (playbook.Service, *mock_playbook.Mock
 	poster := mock_bot.NewMockPoster(controller)
 	telemetryService := &telemetry.NoopTelemetry{}
 	configService := mock_config.NewMockService(controller)
-	keywordsIgnorer := mock_playbook.NewMockKeywordsIgnorer(controller)
+	keywordsIgnorer := mock_playbook.NewMockKeywordsThreadIgnorer(controller)
 	return playbook.NewService(store, poster, telemetryService, client, configService, keywordsIgnorer), store, pluginAPI, keywordsIgnorer
 }

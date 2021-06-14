@@ -18,25 +18,25 @@ const (
 )
 
 type service struct {
-	store           Store
-	poster          bot.Poster
-	keywordsCacher  KeywordsCacher
-	keywordsIgnorer KeywordsIgnorer
-	telemetry       Telemetry
-	api             *pluginapi.Client
-	configService   config.Service
+	store                 Store
+	poster                bot.Poster
+	keywordsCacher        KeywordsCacher
+	keywordsThreadIgnorer KeywordsThreadIgnorer
+	telemetry             Telemetry
+	api                   *pluginapi.Client
+	configService         config.Service
 }
 
 // NewService returns a new playbook service
-func NewService(store Store, poster bot.Poster, telemetry Telemetry, api *pluginapi.Client, configService config.Service, keywordsIgnorer KeywordsIgnorer) Service {
+func NewService(store Store, poster bot.Poster, telemetry Telemetry, api *pluginapi.Client, configService config.Service, keywordsThreadIgnorer KeywordsThreadIgnorer) Service {
 	return &service{
-		store:           store,
-		poster:          poster,
-		keywordsCacher:  NewPlaybookKeywordsCacher(store, api.Log),
-		keywordsIgnorer: keywordsIgnorer,
-		telemetry:       telemetry,
-		api:             api,
-		configService:   configService,
+		store:                 store,
+		poster:                poster,
+		keywordsCacher:        NewPlaybookKeywordsCacher(store, api.Log),
+		keywordsThreadIgnorer: keywordsThreadIgnorer,
+		telemetry:             telemetry,
+		api:                   api,
+		configService:         configService,
 	}
 }
 
@@ -105,7 +105,7 @@ func (s *service) Delete(playbook Playbook, userID string) error {
 }
 
 func (s *service) MessageHasBeenPosted(sessionID string, post *model.Post) {
-	if s.keywordsIgnorer.IsIgnored(post.RootId, post.UserId) {
+	if s.keywordsThreadIgnorer.IsIgnored(post.RootId, post.UserId) {
 		return
 	}
 
@@ -152,11 +152,7 @@ func (s *service) getPlaybookSuggestionsMessage(suggestedPlaybooks []*CachedPlay
 	if len(triggers) == 1 {
 		triggerMessage = fmt.Sprintf("`%s` is a trigger", triggers[0])
 	} else {
-		triggerIter := ""
-		for _, trigger := range triggers {
-			triggerIter = triggerIter + fmt.Sprintf("`%s`, ", trigger)
-		}
-		triggerMessage = fmt.Sprintf("%s are triggers", triggerIter[:len(triggerIter)-2])
+		triggerMessage = fmt.Sprintf("`%s` are triggers", strings.Join(triggers, "`, `"))
 	}
 
 	if len(suggestedPlaybooks) == 1 {
@@ -177,7 +173,7 @@ func (s *service) getPlaybookSuggestionsSlackAttachment(playbooks []*CachedPlayb
 		Name: "No, ignore",
 		Type: model.POST_ACTION_TYPE_BUTTON,
 		Integration: &model.PostActionIntegration{
-			URL: fmt.Sprintf("/plugins/%s/api/v0/signal/keywords/ignore", pluginID),
+			URL: fmt.Sprintf("/plugins/%s/api/v0/signal/keywords/ignore-thread", pluginID),
 			Context: map[string]interface{}{
 				"postID": postID,
 			},
@@ -199,7 +195,7 @@ func (s *service) getPlaybookSuggestionsSlackAttachment(playbooks []*CachedPlayb
 			},
 		}
 
-		url := fmt.Sprintf("%s/%s/2", playbooksURL, playbooks[0].ID) // automation tab
+		url := fmt.Sprintf("%s/%s/automation", playbooksURL, playbooks[0].ID) // automation tab
 
 		attachment := &model.SlackAttachment{
 			Actions: []*model.PostAction{yesButton, ignoreButton},
@@ -264,39 +260,33 @@ func (s *service) GetSuggestedPlaybooks(teamID, userID, message string) ([]*Cach
 
 	// return early if no triggered playbooks
 	if len(triggeredPlaybooks) == 0 {
-		return []*CachedPlaybook{}, []string{}
+		return nil, nil
 	}
 
-	filteredPlaybooks := s.filterPlaybooksByAccess(triggeredPlaybooks, userID, teamID)
-
-	resultedPlaybooks := make([]*CachedPlaybook, 0, len(filteredPlaybooks))
-	resultedTriggers := []string{}
-
-	for _, fPlaybook := range filteredPlaybooks {
-		resultedPlaybooks = append(resultedPlaybooks, fPlaybook.playbook)
-		resultedTriggers = append(resultedTriggers, fPlaybook.triggers...)
-	}
-	return resultedPlaybooks, removeDuplicates(resultedTriggers)
+	return s.getPlaybooksAndTriggersByAccess(triggeredPlaybooks, userID, teamID)
 }
 
-// filters out playbooks user has no access to
-func (s *service) filterPlaybooksByAccess(triggeredPlaybooks []cachedPlaybookTriggers, userID, teamID string) []cachedPlaybookTriggers {
-	filteredPlaybooks := []cachedPlaybookTriggers{}
+// filters out playbooks user has no access to and returns playbooks with
+func (s *service) getPlaybooksAndTriggersByAccess(triggeredPlaybooks []cachedPlaybookTriggers, userID, teamID string) ([]*CachedPlaybook, []string) {
+	resultPlaybooks := []*CachedPlaybook{}
+	resultTriggers := []string{}
+
 	playbookIDs, err := s.store.GetPlaybookIDsForUser(userID, teamID)
 	if err != nil {
 		s.api.Log.Error("can't get playbookIDs", "userID", userID, "err", err.Error())
-		return filteredPlaybooks
+		return nil, nil
 	}
 
 	playbookIDsMap := sliceToMap(playbookIDs)
 
 	for i := range triggeredPlaybooks {
 		if ok := playbookIDsMap[triggeredPlaybooks[i].playbook.ID]; ok {
-			filteredPlaybooks = append(filteredPlaybooks, triggeredPlaybooks[i])
+			resultPlaybooks = append(resultPlaybooks, triggeredPlaybooks[i].playbook)
+			resultTriggers = append(resultTriggers, triggeredPlaybooks[i].triggers...)
 		}
 	}
 
-	return filteredPlaybooks
+	return resultPlaybooks, removeDuplicates(resultTriggers)
 }
 
 func getPlaybookTriggersForAMessage(playbook *CachedPlaybook, message string) []string {

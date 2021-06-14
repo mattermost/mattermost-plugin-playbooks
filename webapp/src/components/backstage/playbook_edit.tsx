@@ -154,6 +154,13 @@ const timerOptions = [
     {value: 86400, label: '24hr'},
 ];
 
+const tabInfo = [
+    {id: 'tasks', name: 'Tasks'},
+    {id: 'preferences', name: 'Preferences'},
+    {id: 'automation', name: 'Automation'},
+    {id: 'permissions', name: 'Permissions'},
+];
+
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
@@ -176,9 +183,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     let tab = 0;
     if (urlParams.tabId) {
-        const parsedTab = parseInt(urlParams.tabId, 10);
-        if (!isNaN(parsedTab)) {
-            tab = parsedTab;
+        for (let i = 0; i < tabInfo.length; i++) {
+            if (urlParams.tabId === tabInfo[i].id) {
+                tab = i;
+            }
         }
     }
 
@@ -460,10 +468,9 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                             currentTab={currentTab}
                             setCurrentTab={setCurrentTab}
                         >
-                            {'Tasks'}
-                            {'Preferences'}
-                            {'Automation'}
-                            {'Permissions'}
+                            {tabInfo.map((item) => {
+                                return (item.name);
+                            })}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>

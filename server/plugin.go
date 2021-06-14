@@ -156,9 +156,9 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
 	}
 
-	keywordsIgnorer := playbook.NewKeywordsIgnorer()
+	keywordsThreadIgnorer := playbook.NewKeywordsThreadIgnorer()
 
-	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient, pluginAPIClient, p.config, keywordsIgnorer)
+	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
@@ -179,7 +179,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.config)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config)
 	api.NewTelemetryHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot, telemetryClient, telemetryClient, p.config)
-	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.incidentService, p.playbookService, keywordsIgnorer)
+	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.incidentService, p.playbookService, keywordsThreadIgnorer)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
