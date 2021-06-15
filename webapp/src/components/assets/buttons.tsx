@@ -32,7 +32,7 @@ export const PrimaryButton = styled.button`
         opacity: 0;
     }
 
-    &:hover {
+    &:hover:enabled {
         &:before {
             opacity: 1;
         }
@@ -43,7 +43,8 @@ export const PrimaryButton = styled.button`
     }
 
     &:disabled {
-        background: rgba(var(--button-bg-rgb), 0.4);
+        color: rgba(var(--center-channel-color-rgb), 0.32);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     i {
@@ -66,7 +67,7 @@ export const TertiaryButton = styled.button`
     padding: 0 20px;
     transition: all 0.15s ease-out;
 
-    &:hover {
+    &:hover:enabled {
         background: rgba(var(--button-bg-rgb), 0.08);
     }
 
@@ -75,7 +76,7 @@ export const TertiaryButton = styled.button`
     }
 
     &:disabled {
-        color: rgba(var(--button-bg-rgb), 0.4);
+        color: rgba(var(--center-channel-color-rgb), 0.32);
     }
 
     i {
