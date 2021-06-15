@@ -37,6 +37,7 @@ const helpText = "###### Mattermost Incident Collaboration Plugin - Slash Comman
 	""
 
 const confirmPrompt = "CONFIRM"
+const maxIncidentsToList = 10
 
 // Register is a function that allows the runner to register commands with the mattermost server.
 type Register func(*model.Command) error
@@ -511,7 +512,7 @@ func (r *Runner) actionList() {
 		TeamID:    r.args.TeamId,
 		MemberID:  r.args.UserId,
 		Page:      0,
-		PerPage:   10,
+		PerPage:   maxIncidentsToList,
 		Sort:      app.SortByCreateAt,
 		Direction: app.DirectionDesc,
 		Statuses:  []string{app.StatusReported, app.StatusActive, app.StatusResolved},

@@ -28,6 +28,7 @@ type PlaybookHandler struct {
 }
 
 const SettingsKey = "global_settings"
+const maxPlaybooksToAutocomplete = 15
 
 // NewPlaybookHandler returns a new playbook api handler
 func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, api *pluginapi.Client, log bot.Logger, configService config.Service) *PlaybookHandler {
@@ -341,7 +342,7 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 
 	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, app.PlaybookFilterOptions{
 		Page:    0,
-		PerPage: 15,
+		PerPage: maxPlaybooksToAutocomplete,
 	})
 	if err != nil {
 		h.HandleError(w, err)

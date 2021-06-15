@@ -8,6 +8,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const maxAdminsToQueryForNotification = 1000
+
 // PostMessage posts a message to a specified channel.
 func (b *Bot) PostMessage(channelID, format string, args ...interface{}) (*model.Post, error) {
 	post := &model.Post{
@@ -106,7 +108,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 	admins, err := b.pluginAPI.User.List(&model.UserGetOptions{
 		Role:    string(model.SYSTEM_ADMIN_ROLE_ID),
 		Page:    0,
-		PerPage: 1000,
+		PerPage: maxAdminsToQueryForNotification,
 	})
 
 	if err != nil {
