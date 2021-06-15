@@ -62,10 +62,33 @@ const LeftArrow = styled.button`
     }
 `;
 
+const VerticalBlock = styled.div`
+    display: flex;
+    flex-direction: column;
+    font-weight: 400;
+    padding: 0 16px 0 24px;
+`;
+
+const HorizontalBlock = styled.div`
+    display: flex;
+    flex-direction: row;
+    color: var(--center-channel-color-64);
+
+    > i {
+        font-size: 12px;
+        margin-left: -3px;
+    }
+`;
+
 const Title = styled.div`
     font-size: 20px;
-    padding: 0 16px 0 24px;
+    line-height: 28px;
     color: var(--center-channel-color);
+`;
+
+const SubTitle = styled.div`
+    font-size: 11px;
+    line-height: 16px;
 `;
 
 const PrimaryButtonLargerRight = styled(PrimaryButtonRight)`
@@ -237,6 +260,16 @@ const PlaybookBackstage = () => {
         navigateToUrl(location.pathname + '/edit');
     };
 
+    let subTitle = 'Everyone can access this playbook';
+    let accessIconClass = 'icon-globe';
+    if (playbook.member_ids.length === 1) {
+        subTitle = 'Only you can access this playbook';
+        accessIconClass = 'icon-lock-outline';
+    } else if (playbook.member_ids.length > 1) {
+        subTitle = `${playbook.member_ids.length} people can access this playbook`;
+        accessIconClass = 'icon-lock-outline';
+    }
+
     return (
         <OuterContainer>
             <TopContainer>
@@ -245,7 +278,13 @@ const PlaybookBackstage = () => {
                         className='icon-arrow-left'
                         onClick={goToPlaybooks}
                     />
-                    <Title>{playbook.title}</Title>
+                    <VerticalBlock>
+                        <Title>{playbook.title}</Title>
+                        <HorizontalBlock>
+                            <i className={'icon ' + accessIconClass}/>
+                            <SubTitle>{subTitle}</SubTitle>
+                        </HorizontalBlock>
+                    </VerticalBlock>
                     <PrimaryButtonLargerRight onClick={goToEdit}>
                         <i className={'icon icon-pencil-outline'}/>
                         {'Edit Playbook'}
