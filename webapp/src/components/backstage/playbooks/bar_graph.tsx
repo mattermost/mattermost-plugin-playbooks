@@ -47,7 +47,11 @@ const BarGraph = (props: BarGraphProps) => {
                                 fontColor: centerChannelFontColor,
                             },
                             ticks: {
+                                callback: (val: any, index: number) => {
+                                    return (index % 2) === 0 ? val : '';
+                                },
                                 fontColor: centerChannelFontColor,
+                                maxRotation: 0,
                             },
                         }],
                     },

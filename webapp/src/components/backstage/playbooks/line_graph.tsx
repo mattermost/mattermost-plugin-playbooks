@@ -34,6 +34,9 @@ const LineGraph = (props: LineGraphProps) => {
                     scales: {
                         yAxes: [{
                             ticks: {
+                                callback: (val: any) => {
+                                    return (val % 1 === 0) ? val : null;
+                                },
                                 beginAtZero: true,
                                 fontColor: centerChannelFontColor,
                             },
@@ -45,7 +48,11 @@ const LineGraph = (props: LineGraphProps) => {
                                 fontColor: centerChannelFontColor,
                             },
                             ticks: {
+                                callback: (val: any, index: number) => {
+                                    return (index % 2) === 0 ? val : '';
+                                },
                                 fontColor: centerChannelFontColor,
+                                maxRotation: 0,
                             },
                         }],
                     },
