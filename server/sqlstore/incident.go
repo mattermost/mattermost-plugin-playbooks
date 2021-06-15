@@ -57,7 +57,8 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID",
-			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds", "RetrospectiveWasCanceled").
+			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds", "RetrospectiveWasCanceled",
+			"CategorizeChannelEnabled").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 

@@ -379,6 +379,7 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		newIncident.Description = pb.Description
 		newIncident.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		newIncident.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
+		newIncident.CategorizeChannelEnabled = pb.CategorizeChannelEnabled
 
 		newIncident.InvitedUserIDs = []string{}
 		newIncident.InvitedGroupIDs = []string{}
