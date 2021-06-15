@@ -21,13 +21,11 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
+	mock_app "github.com/mattermost/mattermost-plugin-incident-collaboration/server/app/mocks"
 	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	mock_incident "github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
-	mock_playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook/mocks"
 )
 
 func TestIncidents(t *testing.T) {
@@ -36,8 +34,8 @@ func TestIncidents(t *testing.T) {
 	var poster *mock_poster.MockPoster
 	var logger *mock_poster.MockLogger
 	var configService *mock_config.MockService
-	var playbookService *mock_playbook.MockService
-	var incidentService *mock_incident.MockService
+	var playbookService *mock_app.MockPlaybookService
+	var incidentService *mock_app.MockIncidentService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
 
@@ -65,8 +63,8 @@ func TestIncidents(t *testing.T) {
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
-		incidentService = mock_incident.NewMockService(mockCtrl)
+		playbookService = mock_app.NewMockPlaybookService(mockCtrl)
+		incidentService = mock_app.NewMockIncidentService(mockCtrl)
 		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, configService)
 	}
 
@@ -96,17 +94,18 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		withid := playbook.Playbook{
+		teamID := model.NewId()
+		withid := app.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
-			TeamID:               "testTeamID",
+			TeamID:               teamID,
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
 		}
 
-		testIncident := incident.Incident{
+		testIncident := app.Incident{
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			PlaybookID:  withid.ID,
 			Checklists:  withid.Checklists,
@@ -130,10 +129,11 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		withid := playbook.Playbook{
+		teamID := model.NewId()
+		withid := app.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
-			TeamID:               "testTeamID",
+			TeamID:               teamID,
 			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
@@ -143,12 +143,12 @@ func TestIncidents(t *testing.T) {
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
-			TeamId: "testTeamID",
+			TeamId: teamID,
 			UserId: "testUserID",
 			State:  "{}",
 			Submission: map[string]interface{}{
-				incident.DialogFieldPlaybookIDKey: "playbookid1",
-				incident.DialogFieldNameKey:       "incidentName",
+				app.DialogFieldPlaybookIDKey: "playbookid1",
+				app.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
@@ -157,7 +157,7 @@ func TestIncidents(t *testing.T) {
 			Return(withid, nil).
 			Times(1)
 
-		i := incident.Incident{
+		i := app.Incident{
 			OwnerUserID:     dialogRequest.UserId,
 			TeamID:          dialogRequest.TeamId,
 			Name:            "incidentName",
@@ -169,8 +169,8 @@ func TestIncidents(t *testing.T) {
 		retI := i.Clone()
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
 		incidentService.EXPECT().CreateIncident(&i, &withid, "testUserID", true).Return(retI, nil)
@@ -190,10 +190,11 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		withid := playbook.Playbook{
+		teamID := model.NewId()
+		withid := app.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
-			TeamID:               "testTeamID",
+			TeamID:               teamID,
 			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
@@ -203,12 +204,12 @@ func TestIncidents(t *testing.T) {
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
-			TeamId: "testTeamID",
+			TeamId: teamID,
 			UserId: "testUserID",
 			State:  "{}",
 			Submission: map[string]interface{}{
-				incident.DialogFieldPlaybookIDKey: "playbookid1",
-				incident.DialogFieldNameKey:       "incidentName",
+				app.DialogFieldPlaybookIDKey: "playbookid1",
+				app.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
@@ -217,7 +218,7 @@ func TestIncidents(t *testing.T) {
 			Return(withid, nil).
 			Times(1)
 
-		i := incident.Incident{
+		i := app.Incident{
 			OwnerUserID:     dialogRequest.UserId,
 			TeamID:          dialogRequest.TeamId,
 			Name:            "incidentName",
@@ -230,8 +231,8 @@ func TestIncidents(t *testing.T) {
 		retI := i
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
 		incidentService.EXPECT().CreateIncident(&i, &withid, "testUserID", true).Return(&retI, nil)
@@ -251,10 +252,11 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		withid := playbook.Playbook{
+		teamID := model.NewId()
+		withid := app.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
-			TeamID:               "testTeamID",
+			TeamID:               teamID,
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
 			InviteUsersEnabled:   false,
@@ -263,12 +265,12 @@ func TestIncidents(t *testing.T) {
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
-			TeamId: "testTeamID",
+			TeamId: teamID,
 			UserId: "testUserID",
 			State:  "{}",
 			Submission: map[string]interface{}{
-				incident.DialogFieldPlaybookIDKey: "playbookid1",
-				incident.DialogFieldNameKey:       "incidentName",
+				app.DialogFieldPlaybookIDKey: "playbookid1",
+				app.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
@@ -277,7 +279,7 @@ func TestIncidents(t *testing.T) {
 			Return(withid, nil).
 			Times(1)
 
-		i := incident.Incident{
+		i := app.Incident{
 			OwnerUserID: dialogRequest.UserId,
 			TeamID:      dialogRequest.TeamId,
 			Name:        "incidentName",
@@ -287,8 +289,8 @@ func TestIncidents(t *testing.T) {
 		retI := i
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(false)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -317,10 +319,11 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		withid := playbook.Playbook{
+		teamID := model.NewId()
+		withid := app.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
-			TeamID:               "testTeamID",
+			TeamID:               teamID,
 			CreatePublicIncident: false,
 			MemberIDs:            []string{"testUserID"},
 			InviteUsersEnabled:   false,
@@ -329,12 +332,12 @@ func TestIncidents(t *testing.T) {
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
-			TeamId: "testTeamID",
+			TeamId: teamID,
 			UserId: "testUserID",
 			State:  "{}",
 			Submission: map[string]interface{}{
-				incident.DialogFieldPlaybookIDKey: "playbookid1",
-				incident.DialogFieldNameKey:       "incidentName",
+				app.DialogFieldPlaybookIDKey: "playbookid1",
+				app.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
@@ -343,7 +346,7 @@ func TestIncidents(t *testing.T) {
 			Return(withid, nil).
 			Times(1)
 
-		i := incident.Incident{
+		i := app.Incident{
 			OwnerUserID: dialogRequest.UserId,
 			TeamID:      dialogRequest.TeamId,
 			Name:        "incidentName",
@@ -353,8 +356,8 @@ func TestIncidents(t *testing.T) {
 		retI := i
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PRIVATE_CHANNEL).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PRIVATE_CHANNEL).Return(false)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -384,10 +387,11 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		withid := playbook.Playbook{
+		teamID := model.NewId()
+		withid := app.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
-			TeamID:               "testTeamID",
+			TeamID:               teamID,
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
 			InviteUsersEnabled:   false,
@@ -396,12 +400,12 @@ func TestIncidents(t *testing.T) {
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
-			TeamId: "testTeamID",
+			TeamId: teamID,
 			UserId: "fakeUserID",
 			State:  "{}",
 			Submission: map[string]interface{}{
-				incident.DialogFieldPlaybookIDKey: "playbookid1",
-				incident.DialogFieldNameKey:       "incidentName",
+				app.DialogFieldPlaybookIDKey: "playbookid1",
+				app.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
@@ -410,7 +414,7 @@ func TestIncidents(t *testing.T) {
 			Return(withid, nil).
 			Times(1)
 
-		i := incident.Incident{
+		i := app.Incident{
 			OwnerUserID: dialogRequest.UserId,
 			TeamID:      dialogRequest.TeamId,
 			Name:        "incidentName",
@@ -441,25 +445,26 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
+		teamID := model.NewId()
 		dialogRequest := model.SubmitDialogRequest{
-			TeamId: "testTeamID",
+			TeamId: teamID,
 			UserId: "testUserID",
 			State:  "{}",
 			Submission: map[string]interface{}{
-				incident.DialogFieldPlaybookIDKey: "playbookid1",
-				incident.DialogFieldNameKey:       "incidentName",
+				app.DialogFieldPlaybookIDKey: "playbookid1",
+				app.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
 		playbookService.EXPECT().
 			Get("playbookid1").
 			Return(
-				playbook.Playbook{},
-				errors.Wrap(playbook.ErrNotFound, "playbook does not exist for id 'playbookid1'"),
+				app.Playbook{},
+				errors.Wrap(app.ErrNotFound, "playbook does not exist for id 'playbookid1'"),
 			).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/incidents/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -477,10 +482,11 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		withid := playbook.Playbook{
+		teamID := model.NewId()
+		withid := app.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
-			TeamID:               "testTeamID",
+			TeamID:               teamID,
 			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
@@ -490,12 +496,12 @@ func TestIncidents(t *testing.T) {
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
-			TeamId: "testTeamID",
+			TeamId: teamID,
 			UserId: "testUserID",
 			State:  `{"post_id": "privatePostID"}`,
 			Submission: map[string]interface{}{
-				incident.DialogFieldPlaybookIDKey: "playbookid1",
-				incident.DialogFieldNameKey:       "incidentName",
+				app.DialogFieldPlaybookIDKey: "playbookid1",
+				app.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
@@ -505,8 +511,8 @@ func TestIncidents(t *testing.T) {
 			Times(1)
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("GetPost", "privatePostID").Return(&model.Post{ChannelId: "privateChannelId"}, nil)
 		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PERMISSION_READ_CHANNEL).Return(false)
 
@@ -526,10 +532,11 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		withid := playbook.Playbook{
+		teamID := model.NewId()
+		withid := app.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
-			TeamID:               "testTeamID",
+			TeamID:               teamID,
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"some_other_id"},
 			InviteUsersEnabled:   false,
@@ -538,12 +545,12 @@ func TestIncidents(t *testing.T) {
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
-			TeamId: "testTeamID",
+			TeamId: teamID,
 			UserId: "testUserID",
 			State:  "{}",
 			Submission: map[string]interface{}{
-				incident.DialogFieldPlaybookIDKey: "playbookid1",
-				incident.DialogFieldNameKey:       "incidentName",
+				app.DialogFieldPlaybookIDKey: "playbookid1",
+				app.DialogFieldNameKey:       "incidentName",
 			},
 		}
 
@@ -553,8 +560,8 @@ func TestIncidents(t *testing.T) {
 			Times(1)
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
 		pluginAPI.On("GetPost", "privatePostID").Return(&model.Post{ChannelId: "privateChannelId"}, nil)
 		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PERMISSION_READ_CHANNEL).Return(false)
 
@@ -573,10 +580,11 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testPlaybook := playbook.Playbook{
+		teamID := model.NewId()
+		testPlaybook := app.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
-			TeamID:               "testTeamID",
+			TeamID:               teamID,
 			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
@@ -585,9 +593,9 @@ func TestIncidents(t *testing.T) {
 			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
-		testIncident := incident.Incident{
+		testIncident := app.Incident{
 			OwnerUserID:     "testUserID",
-			TeamID:          "testTeamID",
+			TeamID:          teamID,
 			Name:            "incidentName",
 			Description:     "description",
 			PlaybookID:      testPlaybook.ID,
@@ -605,8 +613,8 @@ func TestIncidents(t *testing.T) {
 		retI.ID = "incidentID"
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
 		incidentService.EXPECT().CreateIncident(&testIncident, &testPlaybook, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
@@ -628,10 +636,11 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testPlaybook := playbook.Playbook{
+		teamID := model.NewId()
+		testPlaybook := app.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
-			TeamID:               "testTeamID",
+			TeamID:               teamID,
 			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
@@ -640,9 +649,9 @@ func TestIncidents(t *testing.T) {
 			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
-		testIncident := incident.Incident{
+		testIncident := app.Incident{
 			OwnerUserID:     "testUserID",
-			TeamID:          "testTeamID",
+			TeamID:          teamID,
 			Name:            "incidentName",
 			Description:     "description",
 			PlaybookID:      testPlaybook.ID,
@@ -660,8 +669,8 @@ func TestIncidents(t *testing.T) {
 		retI.ID = "incidentID"
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
 		incidentService.EXPECT().CreateIncident(&testIncident, &testPlaybook, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
@@ -683,9 +692,10 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 		}
 
@@ -693,8 +703,8 @@ func TestIncidents(t *testing.T) {
 		retI.ID = "incidentID"
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
 		incidentService.EXPECT().CreateIncident(&testIncident, nil, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
@@ -715,14 +725,15 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		testIncident := incident.Incident{
-			TeamID: "testTeamID",
+		teamID := model.NewId()
+		testIncident := app.Incident{
+			TeamID: teamID,
 			Name:   "incidentName",
 		}
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
 
 		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
 			Name:   testIncident.Name,
@@ -737,7 +748,7 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		testIncident := incident.Incident{
+		testIncident := app.Incident{
 			OwnerUserID: "testUserID",
 			Name:        "incidentName",
 		}
@@ -757,14 +768,15 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 		}
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
 
 		resultIncident, err := c.Incidents.Create(context.TODO(), icClient.IncidentCreateOptions{
 			Name:        "",
@@ -783,8 +795,8 @@ func TestIncidents(t *testing.T) {
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
-		incidentService = mock_incident.NewMockService(mockCtrl)
+		playbookService = mock_app.NewMockPlaybookService(mockCtrl)
+		incidentService = mock_app.NewMockIncidentService(mockCtrl)
 		NewIncidentHandler(handler.APIRouter, incidentService, playbookService, client, poster, logger, configService)
 
 		configService.EXPECT().
@@ -797,10 +809,11 @@ func TestIncidents(t *testing.T) {
 				EnabledTeams: []string{},
 			})
 
-		testPlaybook := playbook.Playbook{
+		teamID := model.NewId()
+		testPlaybook := app.Playbook{
 			ID:                   "playbookid1",
 			Title:                "My Playbook",
-			TeamID:               "testTeamID",
+			TeamID:               teamID,
 			Description:          "description",
 			CreatePublicIncident: true,
 			MemberIDs:            []string{"testUserID"},
@@ -809,9 +822,9 @@ func TestIncidents(t *testing.T) {
 			InvitedGroupIDs:      []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
-		testIncident := incident.Incident{
+		testIncident := app.Incident{
 			OwnerUserID:     "testUserID",
-			TeamID:          "testTeamID",
+			TeamID:          teamID,
 			Name:            "incidentName",
 			Description:     "description",
 			PlaybookID:      testPlaybook.ID,
@@ -829,8 +842,8 @@ func TestIncidents(t *testing.T) {
 		retI.ID = "incidentID"
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", "testTeamID", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
 		incidentService.EXPECT().CreateIncident(&testIncident, &testPlaybook, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
@@ -852,17 +865,18 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:              "incidentID",
 			OwnerUserID:     "testUserID",
-			TeamID:          "testTeamID",
+			TeamID:          teamID,
 			Name:            "incidentName",
 			ChannelID:       "channelID",
-			Checklists:      []playbook.Checklist{},
-			StatusPosts:     []incident.StatusPost{},
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
 			InvitedUserIDs:  []string{},
 			InvitedGroupIDs: []string{},
-			TimelineEvents:  []incident.TimelineEvent{},
+			TimelineEvents:  []app.TimelineEvent{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
@@ -883,10 +897,11 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 		userID := "testUserID"
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 		}
@@ -895,7 +910,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 
-		incidentService.EXPECT().GetIncidentIDForChannel("channelID").Return("", incident.ErrNotFound)
+		incidentService.EXPECT().GetIncidentIDForChannel("channelID").Return("", app.ErrNotFound)
 		logger.EXPECT().Warnf("User %s does not have permissions to get incident for channel %s", userID, testIncident.ChannelID)
 
 		resultIncident, err := c.Incidents.GetByChannelID(context.TODO(), testIncident.ChannelID)
@@ -908,10 +923,11 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 		}
@@ -933,10 +949,11 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 			PostID:      "",
@@ -965,19 +982,20 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:              "incidentID",
 			OwnerUserID:     "testUserID",
-			TeamID:          "testTeamID",
+			TeamID:          teamID,
 			Name:            "incidentName",
 			ChannelID:       "channelID",
 			PostID:          "",
 			PlaybookID:      "",
-			Checklists:      []playbook.Checklist{},
-			StatusPosts:     []incident.StatusPost{},
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
 			InvitedUserIDs:  []string{},
 			InvitedGroupIDs: []string{},
-			TimelineEvents:  []incident.TimelineEvent{},
+			TimelineEvents:  []app.TimelineEvent{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -1001,10 +1019,11 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:              "incidentID",
 			OwnerUserID:     "testUserID",
-			TeamID:          "testTeamID",
+			TeamID:          teamID,
 			Name:            "incidentName",
 			ChannelID:       "channelID",
 			PostID:          "",
@@ -1037,19 +1056,20 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:              "incidentID",
 			OwnerUserID:     "testUserID",
-			TeamID:          "testTeamID",
+			TeamID:          teamID,
 			Name:            "incidentName",
 			ChannelID:       "channelID",
 			PostID:          "",
 			PlaybookID:      "",
-			Checklists:      []playbook.Checklist{},
-			StatusPosts:     []incident.StatusPost{},
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
 			InvitedUserIDs:  []string{},
 			InvitedGroupIDs: []string{},
-			TimelineEvents:  []incident.TimelineEvent{},
+			TimelineEvents:  []app.TimelineEvent{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -1075,19 +1095,20 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:              "incidentID",
 			OwnerUserID:     "testUserID",
-			TeamID:          "testTeamID",
+			TeamID:          teamID,
 			Name:            "incidentName",
 			ChannelID:       "channelID",
 			PostID:          "",
 			PlaybookID:      "",
-			Checklists:      []playbook.Checklist{},
-			StatusPosts:     []incident.StatusPost{},
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
 			InvitedUserIDs:  []string{},
 			InvitedGroupIDs: []string{},
-			TimelineEvents:  []incident.TimelineEvent{},
+			TimelineEvents:  []app.TimelineEvent{},
 		}
 
 		pluginAPI.On("GetChannel", testIncident.ChannelID).
@@ -1111,10 +1132,11 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 			PostID:      "",
@@ -1143,18 +1165,19 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 			PostID:      "",
 			PlaybookID:  "",
-			Checklists:  []playbook.Checklist{},
+			Checklists:  []app.Checklist{},
 		}
 
-		testIncidentMetadata := incident.Metadata{
+		testIncidentMetadata := app.Metadata{
 			ChannelName:        "theChannelName",
 			ChannelDisplayName: "theChannelDisplayName",
 			TeamName:           "ourAwesomeTeam",
@@ -1187,10 +1210,11 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 			PostID:      "",
@@ -1221,18 +1245,19 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 			PostID:      "",
 			PlaybookID:  "",
-			Checklists:  []playbook.Checklist{},
+			Checklists:  []app.Checklist{},
 		}
 
-		testIncidentMetadata := incident.Metadata{
+		testIncidentMetadata := app.Metadata{
 			ChannelName:        "theChannelName",
 			ChannelDisplayName: "theChannelDisplayName",
 			TeamName:           "ourAwesomeTeam",
@@ -1267,18 +1292,19 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 			PostID:      "",
 			PlaybookID:  "",
-			Checklists:  []playbook.Checklist{},
+			Checklists:  []app.Checklist{},
 		}
 
-		testIncidentMetadata := incident.Metadata{
+		testIncidentMetadata := app.Metadata{
 			ChannelName:        "theChannelName",
 			ChannelDisplayName: "theChannelDisplayName",
 			TeamName:           "ourAwesomeTeam",
@@ -1311,33 +1337,34 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		incident1 := incident.Incident{
+		teamID := model.NewId()
+		incident1 := app.Incident{
 			ID:              "incidentID1",
 			OwnerUserID:     "testUserID1",
-			TeamID:          "testTeamID1",
+			TeamID:          teamID,
 			Name:            "incidentName1",
 			ChannelID:       "channelID1",
-			Checklists:      []playbook.Checklist{},
-			StatusPosts:     []incident.StatusPost{},
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
 			InvitedUserIDs:  []string{},
 			InvitedGroupIDs: []string{},
-			TimelineEvents:  []incident.TimelineEvent{},
+			TimelineEvents:  []app.TimelineEvent{},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("GetUser", "testUserID").Return(&model.User{}, nil)
 		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
-		result := &incident.GetIncidentsResults{
+		result := &app.GetIncidentsResults{
 			TotalCount: 100,
 			PageCount:  200,
 			HasMore:    true,
-			Items:      []incident.Incident{incident1},
+			Items:      []app.Incident{incident1},
 		}
 		incidentService.EXPECT().GetIncidents(gomock.Any(), gomock.Any()).Return(result, nil)
 
 		actualList, err := c.Incidents.List(context.TODO(), 0, 200, icClient.IncidentListOptions{
-			TeamID: "testTeamID1",
+			TeamID: teamID,
 		})
 		require.NoError(t, err)
 
@@ -1355,10 +1382,11 @@ func TestIncidents(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 		setDefaultExpectations(t)
 
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(false)
+		teamID := model.NewId()
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, teamID, model.PERMISSION_VIEW_TEAM).Return(false)
 
 		resultIncident, err := c.Incidents.List(context.TODO(), 0, 100, icClient.IncidentListOptions{
-			TeamID: "non-existent",
+			TeamID: teamID,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		require.Nil(t, resultIncident)
@@ -1367,18 +1395,20 @@ func TestIncidents(t *testing.T) {
 	t.Run("get disabled list of incidents", func(t *testing.T) {
 		reset(t)
 
+		disabledTeamID := model.NewId()
+		enabledTeamID := model.NewId()
 		configService.EXPECT().
 			GetConfiguration().
 			Return(&config.Configuration{
-				EnabledTeams: []string{"notthisteam"},
+				EnabledTeams: []string{enabledTeamID},
 			})
 
 		setDefaultExpectations(t)
 
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, disabledTeamID, model.PERMISSION_VIEW_TEAM).Return(true)
 
 		actualList, err := c.Incidents.List(context.TODO(), 0, 100, icClient.IncidentListOptions{
-			TeamID: "notonlist",
+			TeamID: disabledTeamID,
 		})
 		require.NoError(t, err)
 
@@ -1393,10 +1423,11 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 		}
@@ -1422,10 +1453,11 @@ func TestIncidents(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 		}
@@ -1436,7 +1468,7 @@ func TestIncidents(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
-		updateOptions := incident.StatusUpdateOptions{
+		updateOptions := app.StatusUpdateOptions{
 			Status:      "Active",
 			Message:     "test message",
 			Description: "test description",
@@ -1453,10 +1485,11 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 		}
@@ -1476,10 +1509,11 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 		}
@@ -1499,10 +1533,11 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 		}
@@ -1522,10 +1557,11 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 		}
@@ -1545,10 +1581,11 @@ func TestIncidents(t *testing.T) {
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		testIncident := incident.Incident{
+		teamID := model.NewId()
+		testIncident := app.Incident{
 			ID:          "incidentID",
 			OwnerUserID: "testUserID",
-			TeamID:      "testTeamID",
+			TeamID:      teamID,
 			Name:        "incidentName",
 			ChannelID:   "channelID",
 		}

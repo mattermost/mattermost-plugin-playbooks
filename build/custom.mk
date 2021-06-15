@@ -8,11 +8,11 @@ ifneq ($(HAS_SERVER),)
 	mockgen -destination server/config/mocks/mock_service.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/config Service
 	mockgen -destination server/bot/mocks/mock_logger.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot Logger
 	mockgen -destination server/bot/mocks/mock_poster.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot Poster
-	mockgen -destination server/incident/mocks/mock_service.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident Service
-	mockgen -destination server/incident/mocks/mock_store.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident Store
-	mockgen -destination server/incident/mocks/mock_job_once_scheduler.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident JobOnceScheduler
-	mockgen -destination server/playbook/mocks/mock_service.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook Service
-	mockgen -destination server/playbook/mocks/mock_store.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook Store
+	mockgen -destination server/app/mocks/mock_incident_service.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/app IncidentService
+	mockgen -destination server/app/mocks/mock_incident_store.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/app IncidentStore
+	mockgen -destination server/app/mocks/mock_job_once_scheduler.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/app JobOnceScheduler
+	mockgen -destination server/app/mocks/mock_playbook_service.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/app PlaybookService
+	mockgen -destination server/app/mocks/mock_playbook_store.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/app PlaybookStore
 	mockgen -destination server/sqlstore/mocks/mock_kvapi.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore KVAPI
 	mockgen -destination server/sqlstore/mocks/mock_storeapi.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore StoreAPI
 	mockgen -destination server/sqlstore/mocks/mock_configurationapi.go github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore ConfigurationAPI

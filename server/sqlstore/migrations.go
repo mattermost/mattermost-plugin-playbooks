@@ -6,7 +6,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -201,10 +201,10 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed getting incidents to update their ActiveStageTitle")
 			}
 
-			for _, theIncident := range incidents {
-				var checklists []playbook.Checklist
-				if err := json.Unmarshal(theIncident.ChecklistsJSON, &checklists); err != nil {
-					return errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", theIncident.ID)
+			for _, incident := range incidents {
+				var checklists []app.Checklist
+				if err := json.Unmarshal(incident.ChecklistsJSON, &checklists); err != nil {
+					return errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", incident.ID)
 				}
 
 				numChecklists := len(checklists)
@@ -212,18 +212,18 @@ var migrations = []Migration{
 					continue
 				}
 
-				if theIncident.ActiveStage < 0 || theIncident.ActiveStage >= numChecklists {
-					sqlStore.log.Warnf("index %d out of bounds, incident '%s' has %d stages: setting ActiveStageTitle to the empty string", theIncident.ActiveStage, theIncident.ID, numChecklists)
+				if incident.ActiveStage < 0 || incident.ActiveStage >= numChecklists {
+					sqlStore.log.Warnf("index %d out of bounds, incident '%s' has %d stages: setting ActiveStageTitle to the empty string", incident.ActiveStage, incident.ID, numChecklists)
 					continue
 				}
 
 				incidentUpdate := sqlStore.builder.
 					Update("IR_Incident").
-					Set("ActiveStageTitle", checklists[theIncident.ActiveStage].Title).
-					Where(sq.Eq{"ID": theIncident.ID})
+					Set("ActiveStageTitle", checklists[incident.ActiveStage].Title).
+					Where(sq.Eq{"ID": incident.ID})
 
 				if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
-					return errors.Errorf("failed updating the ActiveStageTitle field of incident '%s'", theIncident.ID)
+					return errors.Errorf("failed updating the ActiveStageTitle field of incident '%s'", incident.ID)
 				}
 			}
 
