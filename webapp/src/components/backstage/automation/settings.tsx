@@ -15,6 +15,7 @@ import {Announcement} from 'src/components/backstage/automation/announcement';
 
 import {BackstageSubheader, BackstageSubheaderDescription} from 'src/components/backstage/styles';
 import {MessageOnJoin} from 'src/components/backstage/automation/message_on_join';
+import {CategorizeIncident} from 'src/components/backstage/automation/categorize_incident';
 
 interface Props {
     searchProfiles: (term: string) => ActionFunc;
@@ -41,6 +42,8 @@ interface Props {
     onToggleMessageOnJoin: () => void;
     messageOnJoin: string;
     messageOnJoinChange: (message: string) => void;
+    categorizeIncident: boolean;
+    onToggleCategorizeIncident: () => void;
 }
 
 export const AutomationSettings = (props: Props) => {
@@ -105,6 +108,10 @@ export const AutomationSettings = (props: Props) => {
                         onToggle={props.onToggleMessageOnJoin}
                         message={props.messageOnJoin}
                         onChange={props.messageOnJoinChange}
+                    />
+                    <CategorizeIncident
+                        enabled={props.categorizeIncident}
+                        onToggle={props.onToggleCategorizeIncident}
                     />
                 </Setting>
 

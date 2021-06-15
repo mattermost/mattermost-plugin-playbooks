@@ -25,6 +25,7 @@ export interface Playbook {
     message_on_join_enabled: boolean;
     retrospective_reminder_interval_seconds: number;
     retrospective_template: string;
+    categorize_channel_enabled: boolean;
 }
 
 export interface PlaybookNoChecklist {
@@ -102,6 +103,7 @@ export function emptyPlaybook(): Playbook {
         message_on_join_enabled: false,
         retrospective_reminder_interval_seconds: 0,
         retrospective_template: defaultRetrospectiveTemplate,
+        categorize_channel_enabled: false,
     };
 }
 

@@ -384,6 +384,14 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleToggleCategorizeIncident = () => {
+        setPlaybook({
+            ...playbook,
+            categorize_channel_enabled: !playbook.categorize_channel_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
@@ -609,6 +617,8 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
                                     messageOnJoin={playbook.message_on_join}
                                     messageOnJoinChange={handleMessageOnJoinChange}
+                                    categorizeIncident={playbook.categorize_channel_enabled}
+                                    onToggleCategorizeIncident={handleToggleCategorizeIncident}
                                 />
                             </TabContainer>
                             <TabContainer>
