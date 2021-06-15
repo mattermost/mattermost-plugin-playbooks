@@ -1336,6 +1336,56 @@ func (s *ServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	}
 
 	_ = s.sendIncidentToClient(incidentID)
+
+	incident, err := s.store.GetIncident(incidentID)
+	if err != nil {
+		return
+	}
+
+	if incident.CategorizeChannelEnabled {
+		_ = s.createOrUpdateIncidentSidebarCategory(userID, channelID, channel.TeamId)
+	}
+}
+
+// createOrUpdateIncidentSidebarCategory creates or updates an incident sidebar category if
+// it does not already exist and adds the channel within the sidebar category
+func (s *ServiceImpl) createOrUpdateIncidentSidebarCategory(userID, channelID, teamID string) error {
+	sidebar, err := s.pluginAPI.Channel.GetSidebarCategories(userID, teamID)
+	if err != nil {
+		return err
+	}
+
+	var categoryID string
+	for _, category := range sidebar.Categories {
+		if strings.ToLower(category.DisplayName) == "incident" {
+			categoryID = category.Id
+			category.Channels = append(category.Channels, channelID)
+		}
+	}
+
+	if categoryID == "" {
+		_, err = s.pluginAPI.Channel.CreateSidebarCategory(userID, teamID, &model.SidebarCategoryWithChannels{
+			SidebarCategory: model.SidebarCategory{
+				UserId:      userID,
+				TeamId:      teamID,
+				DisplayName: "incident",
+				Muted:       false,
+			},
+			Channels: []string{channelID},
+		})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	_, _, err = s.pluginAPI.Channel.UpdateSidebarCategories(userID, teamID, sidebar.Categories)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
