@@ -12,7 +12,13 @@ import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entiti
 import {ChannelNamesMap} from 'src/types/backstage';
 import {UpdateBody} from 'src/components/rhs/rhs_shared';
 
-const PostText = (props: { text: string, children?: ReactNode | ReactNodeArray }) => {
+interface Props {
+    text: string;
+    children?: ReactNode | ReactNodeArray;
+    className?: string;
+}
+
+const PostText = (props: Props) => {
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
 
@@ -28,7 +34,7 @@ const PostText = (props: { text: string, children?: ReactNode | ReactNodeArray }
     };
 
     return (
-        <UpdateBody>
+        <UpdateBody className={props.className}>
             {messageHtmlToComponent(formatText(props.text, markdownOptions), true, {})}
             {props.children}
         </UpdateBody>

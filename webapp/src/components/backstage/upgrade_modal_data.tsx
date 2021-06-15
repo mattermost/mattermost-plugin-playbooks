@@ -29,7 +29,7 @@ export interface UpgradeModalButtons {
     handleCancel : HandlerType;
 }
 
-export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: boolean, state: ModalActionState, requestLicense: () => void, notifyAdmins: () => void, onHide: () => void) : UpgradeModalButtons => {
+export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: boolean, isCloud: boolean, state: ModalActionState, adminMainAction: () => void, endUserMainAction: () => void, onHide: () => void) : UpgradeModalButtons => {
     if (isServerTeamEdition && isAdmin) {
         return {
             confirmButtonText: '',
@@ -44,17 +44,19 @@ export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: bo
     switch (state) {
     case ModalActionState.Uninitialized:
         if (isAdmin) {
+            const confirmButtonText = isCloud ? 'Upgrade now' : 'Start trial';
+
             return {
-                confirmButtonText: 'Start trial',
+                confirmButtonText,
                 cancelButtonText: 'Not right now',
-                handleConfirm: requestLicense,
+                handleConfirm: adminMainAction,
                 handleCancel: onHide,
             };
         }
         return {
             confirmButtonText: 'Notify System Admin',
             cancelButtonText: 'Not right now',
-            handleConfirm: notifyAdmins,
+            handleConfirm: endUserMainAction,
             handleCancel: onHide,
         };
 

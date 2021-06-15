@@ -10,6 +10,7 @@ interface Props {
     actionState: ModalActionState;
     isCurrentUserAdmin: boolean;
     isServerTeamEdition: boolean;
+    isCloud: boolean;
 }
 
 const UpgradeModalFooter = (props: Props) => {
@@ -22,6 +23,10 @@ const UpgradeModalFooter = (props: Props) => {
     }
 
     if (props.isServerTeamEdition) {
+        return null;
+    }
+
+    if (props.isCloud) {
         return null;
     }
 
