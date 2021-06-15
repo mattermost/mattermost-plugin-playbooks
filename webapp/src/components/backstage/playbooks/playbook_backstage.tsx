@@ -137,7 +137,7 @@ const StatNumRow = styled.div`
     width: 100%;
 `;
 
-const PercentageChangeRectangle = styled.div`
+const PercentageChange = styled.div`
     margin: auto 12px 8px auto;
     display: flex;
     flex-direction: row;
@@ -237,15 +237,6 @@ const PlaybookBackstage = () => {
         navigateToUrl(location.pathname + '/edit');
     };
 
-    let percentage: number | string = stats.runs_finished_percentage_change;
-    if (stats.runs_finished_percentage_change === 99999999) {
-        percentage = '\u221e';
-    }
-    let changeSymbol = 'icon-arrow-up';
-    if (stats.runs_finished_percentage_change < 0) {
-        changeSymbol = 'icon-arrow-down';
-    }
-
     return (
         <OuterContainer>
             <TopContainer>
@@ -279,17 +270,14 @@ const PlaybookBackstage = () => {
                             <StatText>{'Runs finished in the last 30 days'}</StatText>
                             <StatNumRow>
                                 <StatNum>{stats.runs_finished_prev_30_days}</StatNum>
-                                <PercentageChangeRectangle>
-                                    <i className={'icon ' + changeSymbol}/>
-                                    {percentage + '%'}
-                                </PercentageChangeRectangle>
+                                {percentageChange(stats.runs_finished_percentage_change)}
                             </StatNumRow>
                         </StatCard>
                         <GraphBox>
                             <LineGraph
                                 title={'TOTAL RUNS started per week over the last 12 weeks'}
-                                labels={stats.runs_started_per_week_labels.reverse()}
-                                data={stats.runs_started_per_week.reverse()}
+                                labels={stats.runs_started_per_week_labels}
+                                data={stats.runs_started_per_week}
                             />
                         </GraphBox>
                     </BottomRow>
@@ -297,15 +285,15 @@ const PlaybookBackstage = () => {
                         <GraphBox>
                             <BarGraph
                                 title={'ACTIVE RUNS per day over the last 14 days'}
-                                labels={stats.active_runs_per_day_labels.reverse()}
-                                data={stats.active_runs_per_day.reverse()}
+                                labels={stats.active_runs_per_day_labels}
+                                data={stats.active_runs_per_day}
                             />
                         </GraphBox>
                         <GraphBox>
                             <BarGraph
                                 title={'ACTIVE PARTICIPANTS per day over the last 14 days'}
-                                labels={stats.active_participants_per_day_labels.reverse()}
-                                data={stats.active_participants_per_day.reverse()}
+                                labels={stats.active_participants_per_day_labels}
+                                data={stats.active_participants_per_day}
                                 color={'--center-channel-color-40'}
                             />
                         </GraphBox>
@@ -314,6 +302,20 @@ const PlaybookBackstage = () => {
                 </BottomInnerContainer>
             </BottomContainer>
         </OuterContainer>
+    );
+};
+
+const percentageChange = (change: number) => {
+    if (change === 99999999 || change === 0) {
+        return null;
+    }
+    const changeSymbol = (change > 0) ? 'icon-arrow-up' : 'icon-arrow-down';
+
+    return (
+        <PercentageChange>
+            <i className={'icon ' + changeSymbol}/>
+            {change + '%'}
+        </PercentageChange>
     );
 };
 

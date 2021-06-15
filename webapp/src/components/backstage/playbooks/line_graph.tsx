@@ -12,8 +12,8 @@ const GraphBoxContainer = styled.div`
 interface LineGraphProps {
     title: string
     xlabel?: string
-    labels?: string[]
     data?: number[]
+    labels?: string[]
     className?: string
 }
 

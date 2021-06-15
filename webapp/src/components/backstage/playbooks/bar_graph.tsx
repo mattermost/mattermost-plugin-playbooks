@@ -12,8 +12,8 @@ const GraphBoxContainer = styled.div`
 interface BarGraphProps {
     title: string
     xlabel?: string
-    labels?: string[]
     data?: number[]
+    labels?: string[]
     className?: string
     color?: string
 }

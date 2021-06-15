@@ -185,6 +185,8 @@ func (s *StatsStore) MovingWindowQueryActive(query sq.SelectBuilder, numDays int
 	return results, nil
 }
 
+// RunsStartedPerWeekLastXWeeks returns the number of runs started each week for the last X weeks.
+// Returns data in order of oldest week to most recent week.
 func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) ([]int, []string) {
 	day := int64(86400000)
 	week := day * 7
@@ -232,9 +234,14 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 		return []int{}, []string{}
 	}
 
+	reverseInts(counts)
+	reverseStrings(weeksAsStrings)
+
 	return counts, weeksAsStrings
 }
 
+// ActiveRunsPerDayLastXDays returns the number of actives runs per day for the last X days.
+// Returns data in order of oldest day to most recent day.
 func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]int, []string) {
 	startOfDay := beginningOfTodayMillis()
 	endOfDay := endOfTodayMillis()
@@ -283,9 +290,14 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 		return []int{}, []string{}
 	}
 
+	reverseInts(counts)
+	reverseStrings(daysAsStrings)
+
 	return counts, daysAsStrings
 }
 
+// ActiveParticipantsPerDayLastXDays returns the number of actives participants per day for the last X days.
+// Returns data in order of oldest day to most recent day.
 func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilters) ([]int, []string) {
 	startOfDay := beginningOfTodayMillis()
 	endOfDay := endOfTodayMillis()
@@ -331,6 +343,9 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 		s.log.Warnf("failed to perform query: %v", err)
 		return []int{}, []string{}
 	}
+
+	reverseInts(counts)
+	reverseStrings(daysAsStrings)
 
 	return counts, daysAsStrings
 }
@@ -570,4 +585,16 @@ func endOfTodayMillis() int64 {
 	year, month, day := time.Now().UTC().Add(24 * time.Hour).Date()
 	bod := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
 	return bod.UnixNano() / int64(time.Millisecond)
+}
+
+func reverseInts(vals []int) {
+	for i, j := 0, len(vals)-1; i < j; i, j = i+1, j-1 {
+		vals[i], vals[j] = vals[j], vals[i]
+	}
+}
+
+func reverseStrings(vals []string) {
+	for i, j := 0, len(vals)-1; i < j; i, j = i+1, j-1 {
+		vals[i], vals[j] = vals[j], vals[i]
+	}
 }
