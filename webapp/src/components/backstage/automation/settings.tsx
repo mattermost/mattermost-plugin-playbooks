@@ -12,6 +12,7 @@ import {Webhook} from 'src/components/backstage/automation/webhook';
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/automation/auto_assign_owner';
 import {Announcement} from 'src/components/backstage/automation/announcement';
+import {ExportChannelOnArchive} from 'src/components/backstage/automation/export_channel_on_archive';
 
 import {BackstageSubheader, BackstageSubheaderDescription} from 'src/components/backstage/styles';
 import {MessageOnJoin} from 'src/components/backstage/automation/message_on_join';
@@ -45,6 +46,8 @@ interface Props {
     onToggleMessageOnJoin: () => void;
     messageOnJoin: string;
     messageOnJoinChange: (message: string) => void;
+    exportChannelOnArchiveEnabled: boolean;
+    onToggleExportChannelOnArchiveEnabled: () => void;
 }
 
 export const AutomationSettings = (props: Props) => {
@@ -125,6 +128,17 @@ export const AutomationSettings = (props: Props) => {
                     />
                 </Setting>
 
+            </Section>
+            <Section>
+                <SectionTitle>
+                    {'When an incident is archived'}
+                </SectionTitle>
+                <Setting id={'export-channel-on-archive'}>
+                    <ExportChannelOnArchive
+                        enabled={props.exportChannelOnArchiveEnabled}
+                        onToggle={props.onToggleExportChannelOnArchiveEnabled}
+                    />
+                </Setting>
             </Section>
         </>
     );

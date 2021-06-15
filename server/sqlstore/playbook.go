@@ -341,6 +341,7 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
 			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
 			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
+			"ExportChannelOnArchiveEnabled":        rawPlaybook.ExportChannelOnArchiveEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

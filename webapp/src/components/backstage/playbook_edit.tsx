@@ -419,6 +419,14 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleToggleExportChannelOnArchiveEnabled = () => {
+        setPlaybook({
+            ...playbook,
+            export_channel_on_archive_enabled: !playbook.export_channel_on_archive_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
@@ -651,6 +659,8 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
                                     messageOnJoin={playbook.message_on_join}
                                     messageOnJoinChange={handleMessageOnJoinChange}
+                                    onToggleExportChannelOnArchiveEnabled={handleToggleExportChannelOnArchiveEnabled}
+                                    exportChannelOnArchiveEnabled={playbook.export_channel_on_archive_enabled}
                                 />
                             </TabContainer>
                             <TabContainer>
