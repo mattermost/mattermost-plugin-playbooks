@@ -4,11 +4,10 @@ import (
 	"net/http"
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/api"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/command"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -35,8 +34,8 @@ type Plugin struct {
 
 	handler         *api.Handler
 	config          *config.ServiceImpl
-	incidentService incident.Service
-	playbookService playbook.Service
+	incidentService app.IncidentService
+	playbookService app.PlaybookService
 	bot             *bot.Bot
 }
 
@@ -72,8 +71,8 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	var telemetryClient interface {
-		incident.Telemetry
-		playbook.Telemetry
+		app.IncidentTelemetry
+		app.PlaybookTelemetry
 		bot.Telemetry
 		Enable() error
 		Disable() error
@@ -137,7 +136,7 @@ func (p *Plugin) OnActivate() error {
 
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
-	p.incidentService = incident.NewService(
+	p.incidentService = app.NewIncidentService(
 		pluginAPIClient,
 		incidentStore,
 		p.bot,
@@ -154,7 +153,7 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
 	}
 
-	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, telemetryClient)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,

@@ -16,26 +16,24 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 )
 
 // IncidentHandler is the API handler.
 type IncidentHandler struct {
 	*ErrorHandler
 	config          config.Service
-	incidentService incident.Service
-	playbookService playbook.Service
+	incidentService app.IncidentService
+	playbookService app.PlaybookService
 	pluginAPI       *pluginapi.Client
 	poster          bot.Poster
 	log             bot.Logger
 }
 
 // NewIncidentHandler Creates a new Plugin API handler.
-func NewIncidentHandler(router *mux.Router, incidentService incident.Service, playbookService playbook.Service,
+func NewIncidentHandler(router *mux.Router, incidentService app.IncidentService, playbookService app.PlaybookService,
 	api *pluginapi.Client, poster bot.Poster, log bot.Logger, configService config.Service) *IncidentHandler {
 	handler := &IncidentHandler{
 		ErrorHandler:    &ErrorHandler{log: log},
@@ -103,14 +101,14 @@ func (h *IncidentHandler) checkEditPermissions(next http.Handler) http.Handler {
 		vars := mux.Vars(r)
 		userID := r.Header.Get("Mattermost-User-ID")
 
-		incdnt, err := h.incidentService.GetIncident(vars["id"])
+		incident, err := h.incidentService.GetIncident(vars["id"])
 		if err != nil {
 			h.HandleError(w, err)
 			return
 		}
 
-		if err := permissions.EditIncident(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
-			if errors.Is(err, permissions.ErrNoPermissions) {
+		if err := app.EditIncident(userID, incident.ChannelID, h.pluginAPI); err != nil {
+			if errors.Is(err, app.ErrNoPermissions) {
 				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
 			}
@@ -132,28 +130,29 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if !permissions.IsOnEnabledTeam(incidentCreateOptions.TeamID, h.config) {
+	if !app.IsOnEnabledTeam(incidentCreateOptions.TeamID, h.config) {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
 		return
 	}
 
-	payloadIncident := incident.Incident{
-		OwnerUserID: incidentCreateOptions.OwnerUserID,
-		TeamID:      incidentCreateOptions.TeamID,
-		Name:        incidentCreateOptions.Name,
-		Description: incidentCreateOptions.Description,
-		PostID:      incidentCreateOptions.PostID,
-		PlaybookID:  incidentCreateOptions.PlaybookID,
-	}
+	incident, err := h.createIncident(
+		app.Incident{
+			OwnerUserID: incidentCreateOptions.OwnerUserID,
+			TeamID:      incidentCreateOptions.TeamID,
+			Name:        incidentCreateOptions.Name,
+			Description: incidentCreateOptions.Description,
+			PostID:      incidentCreateOptions.PostID,
+			PlaybookID:  incidentCreateOptions.PlaybookID,
+		},
+		userID,
+	)
 
-	newIncident, err := h.createIncident(payloadIncident, userID)
-
-	if errors.Is(err, incident.ErrPermission) {
+	if errors.Is(err, app.ErrPermission) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "unable to create incident", err)
 		return
 	}
 
-	if errors.Is(err, incident.ErrMalformedIncident) {
+	if errors.Is(err, app.ErrMalformedIncident) {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to create incident", err)
 		return
 	}
@@ -163,12 +162,12 @@ func (h *IncidentHandler) createIncidentFromPost(w http.ResponseWriter, r *http.
 		return
 	}
 
-	h.poster.PublishWebsocketEventToUser(incident.IncidentCreatedWSEvent, map[string]interface{}{
-		"incident": newIncident,
+	h.poster.PublishWebsocketEventToUser(app.IncidentCreatedWSEvent, map[string]interface{}{
+		"incident": incident,
 	}, userID)
 
-	w.Header().Add("Location", fmt.Sprintf("/api/v0/incidents/%s", newIncident.ID))
-	ReturnJSON(w, &newIncident, http.StatusCreated)
+	w.Header().Add("Location", fmt.Sprintf("/api/v0/incidents/%s", incident.ID))
+	ReturnJSON(w, &incident, http.StatusCreated)
 }
 
 // Note that this currently does nothing. This is temporary given the removal of stages. Will be used by status.
@@ -183,7 +182,7 @@ func (h *IncidentHandler) updateIncident(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var updates incident.UpdateOptions
+	var updates app.UpdateOptions
 	if err = json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
 		return
@@ -210,12 +209,12 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if !permissions.IsOnEnabledTeam(request.TeamId, h.config) {
+	if !app.IsOnEnabledTeam(request.TeamId, h.config) {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
 		return
 	}
 
-	var state incident.DialogState
+	var state app.DialogState
 	err := json.Unmarshal([]byte(request.State), &state)
 	if err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal dialog state", err)
@@ -223,40 +222,41 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 	}
 
 	var playbookID, name string
-	if rawPlaybookID, ok := request.Submission[incident.DialogFieldPlaybookIDKey].(string); ok {
+	if rawPlaybookID, ok := request.Submission[app.DialogFieldPlaybookIDKey].(string); ok {
 		playbookID = rawPlaybookID
 	}
-	if rawName, ok := request.Submission[incident.DialogFieldNameKey].(string); ok {
+	if rawName, ok := request.Submission[app.DialogFieldNameKey].(string); ok {
 		name = rawName
 	}
 
-	payloadIncident := incident.Incident{
-		OwnerUserID: request.UserId,
-		TeamID:      request.TeamId,
-		Name:        name,
-		PostID:      state.PostID,
-		PlaybookID:  playbookID,
-	}
-
-	newIncident, err := h.createIncident(payloadIncident, request.UserId)
+	incident, err := h.createIncident(
+		app.Incident{
+			OwnerUserID: request.UserId,
+			TeamID:      request.TeamId,
+			Name:        name,
+			PostID:      state.PostID,
+			PlaybookID:  playbookID,
+		},
+		request.UserId,
+	)
 	if err != nil {
-		if errors.Is(err, incident.ErrMalformedIncident) {
+		if errors.Is(err, app.ErrMalformedIncident) {
 			h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to create incident", err)
 			return
 		}
 
 		var msg string
 
-		if errors.Is(err, incident.ErrChannelDisplayNameInvalid) {
+		if errors.Is(err, app.ErrChannelDisplayNameInvalid) {
 			msg = "The incident name is invalid or too long. Please use a valid name with fewer than 64 characters."
-		} else if errors.Is(err, incident.ErrPermission) {
+		} else if errors.Is(err, app.ErrPermission) {
 			msg = err.Error()
 		}
 
 		if msg != "" {
 			resp := &model.SubmitDialogResponse{
 				Errors: map[string]string{
-					incident.DialogFieldNameKey: msg,
+					app.DialogFieldNameKey: msg,
 				},
 			}
 			_, _ = w.Write(resp.ToJson())
@@ -267,17 +267,17 @@ func (h *IncidentHandler) createIncidentFromDialog(w http.ResponseWriter, r *htt
 		return
 	}
 
-	h.poster.PublishWebsocketEventToUser(incident.IncidentCreatedWSEvent, map[string]interface{}{
+	h.poster.PublishWebsocketEventToUser(app.IncidentCreatedWSEvent, map[string]interface{}{
 		"client_id": state.ClientID,
-		"incident":  newIncident,
+		"incident":  incident,
 	}, request.UserId)
 
-	if err := h.postIncidentCreatedMessage(newIncident, request.ChannelId); err != nil {
+	if err := h.postIncidentCreatedMessage(incident, request.ChannelId); err != nil {
 		h.HandleError(w, err)
 		return
 	}
 
-	w.Header().Add("Location", fmt.Sprintf("/api/v0/incidents/%s", newIncident.ID))
+	w.Header().Add("Location", fmt.Sprintf("/api/v0/incidents/%s", incident.ID))
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -298,24 +298,24 @@ func (h *IncidentHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Req
 	}
 
 	var incidentID, summary string
-	if rawIncidentID, ok := request.Submission[incident.DialogFieldIncidentKey].(string); ok {
+	if rawIncidentID, ok := request.Submission[app.DialogFieldIncidentKey].(string); ok {
 		incidentID = rawIncidentID
 	}
-	if rawSummary, ok := request.Submission[incident.DialogFieldSummary].(string); ok {
+	if rawSummary, ok := request.Submission[app.DialogFieldSummary].(string); ok {
 		summary = rawSummary
 	}
 
-	incdnt, incErr := h.incidentService.GetIncident(incidentID)
+	incident, incErr := h.incidentService.GetIncident(incidentID)
 	if incErr != nil {
 		h.HandleError(w, incErr)
 		return
 	}
 
-	if err := permissions.EditIncident(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
+	if err := app.EditIncident(userID, incident.ChannelID, h.pluginAPI); err != nil {
 		return
 	}
 
-	var state incident.DialogStateAddToTimeline
+	var state app.DialogStateAddToTimeline
 	err := json.Unmarshal([]byte(request.State), &state)
 	if err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal dialog state", err)
@@ -330,40 +330,40 @@ func (h *IncidentHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID string) (*incident.Incident, error) {
-	if newIncident.ID != "" {
-		return nil, errors.Wrap(incident.ErrMalformedIncident, "incident already has an id")
+func (h *IncidentHandler) createIncident(incident app.Incident, userID string) (*app.Incident, error) {
+	if incident.ID != "" {
+		return nil, errors.Wrap(app.ErrMalformedIncident, "incident already has an id")
 	}
 
-	if newIncident.ChannelID != "" {
-		return nil, errors.Wrap(incident.ErrMalformedIncident, "incident channel already has an id")
+	if incident.ChannelID != "" {
+		return nil, errors.Wrap(app.ErrMalformedIncident, "incident channel already has an id")
 	}
 
-	if newIncident.CreateAt != 0 {
-		return nil, errors.Wrap(incident.ErrMalformedIncident, "incident channel already has created at date")
+	if incident.CreateAt != 0 {
+		return nil, errors.Wrap(app.ErrMalformedIncident, "incident channel already has created at date")
 	}
 
-	if newIncident.TeamID == "" {
-		return nil, errors.Wrap(incident.ErrMalformedIncident, "missing team id of incident")
+	if incident.TeamID == "" {
+		return nil, errors.Wrap(app.ErrMalformedIncident, "missing team id of incident")
 	}
 
-	if newIncident.OwnerUserID == "" {
-		return nil, errors.Wrap(incident.ErrMalformedIncident, "missing owner user id of incident")
+	if incident.OwnerUserID == "" {
+		return nil, errors.Wrap(app.ErrMalformedIncident, "missing owner user id of incident")
 	}
 
-	if newIncident.Name == "" {
-		return nil, errors.Wrap(incident.ErrMalformedIncident, "missing name of incident")
+	if incident.Name == "" {
+		return nil, errors.Wrap(app.ErrMalformedIncident, "missing name of incident")
 	}
 
 	// Owner should have permission to the team
-	if !permissions.CanViewTeam(newIncident.OwnerUserID, newIncident.TeamID, h.pluginAPI) {
-		return nil, errors.Wrap(incident.ErrPermission, "owner user does not have permissions for the team")
+	if !app.CanViewTeam(incident.OwnerUserID, incident.TeamID, h.pluginAPI) {
+		return nil, errors.Wrap(app.ErrPermission, "owner user does not have permissions for the team")
 	}
 
 	public := true
-	var thePlaybook *playbook.Playbook
-	if newIncident.PlaybookID != "" {
-		pb, err := h.playbookService.Get(newIncident.PlaybookID)
+	var playbook *app.Playbook
+	if incident.PlaybookID != "" {
+		pb, err := h.playbookService.Get(incident.PlaybookID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
@@ -372,45 +372,45 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 			return nil, errors.New("userID is not a member of playbook")
 		}
 
-		newIncident.Checklists = pb.Checklists
+		incident.Checklists = pb.Checklists
 		public = pb.CreatePublicIncident
 
-		newIncident.BroadcastChannelID = pb.BroadcastChannelID
-		newIncident.Description = pb.Description
-		newIncident.ReminderMessageTemplate = pb.ReminderMessageTemplate
-		newIncident.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
+		incident.BroadcastChannelID = pb.BroadcastChannelID
+		incident.Description = pb.Description
+		incident.ReminderMessageTemplate = pb.ReminderMessageTemplate
+		incident.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
 
-		newIncident.InvitedUserIDs = []string{}
-		newIncident.InvitedGroupIDs = []string{}
+		incident.InvitedUserIDs = []string{}
+		incident.InvitedGroupIDs = []string{}
 		if pb.InviteUsersEnabled {
-			newIncident.InvitedUserIDs = pb.InvitedUserIDs
-			newIncident.InvitedGroupIDs = pb.InvitedGroupIDs
+			incident.InvitedUserIDs = pb.InvitedUserIDs
+			incident.InvitedGroupIDs = pb.InvitedGroupIDs
 		}
 
 		if pb.DefaultOwnerEnabled {
-			newIncident.DefaultOwnerID = pb.DefaultOwnerID
+			incident.DefaultOwnerID = pb.DefaultOwnerID
 		}
 
 		if pb.AnnouncementChannelEnabled {
-			newIncident.AnnouncementChannelID = pb.AnnouncementChannelID
+			incident.AnnouncementChannelID = pb.AnnouncementChannelID
 		}
 
 		if pb.WebhookOnCreationEnabled {
-			newIncident.WebhookOnCreationURL = pb.WebhookOnCreationURL
+			incident.WebhookOnCreationURL = pb.WebhookOnCreationURL
 		}
 
 		if pb.WebhookOnStatusUpdateEnabled {
-			newIncident.WebhookOnStatusUpdateURL = pb.WebhookOnStatusUpdateURL
+			incident.WebhookOnStatusUpdateURL = pb.WebhookOnStatusUpdateURL
 		}
 
 		if pb.MessageOnJoinEnabled {
-			newIncident.MessageOnJoin = pb.MessageOnJoin
+			incident.MessageOnJoin = pb.MessageOnJoin
 		}
 
-		newIncident.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
-		newIncident.Retrospective = pb.RetrospectiveTemplate
+		incident.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
+		incident.Retrospective = pb.RetrospectiveTemplate
 
-		thePlaybook = &pb
+		playbook = &pb
 	}
 
 	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
@@ -419,24 +419,24 @@ func (h *IncidentHandler) createIncident(newIncident incident.Incident, userID s
 		permission = model.PERMISSION_CREATE_PUBLIC_CHANNEL
 		permissionMessage = "You are not able to create a public channel"
 	}
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, newIncident.TeamID, permission) {
-		return nil, errors.Wrap(incident.ErrPermission, permissionMessage)
+	if !h.pluginAPI.User.HasPermissionToTeam(userID, incident.TeamID, permission) {
+		return nil, errors.Wrap(app.ErrPermission, permissionMessage)
 	}
 
-	if newIncident.PostID != "" {
-		post, err := h.pluginAPI.Post.GetPost(newIncident.PostID)
+	if incident.PostID != "" {
+		post, err := h.pluginAPI.Post.GetPost(incident.PostID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get incident original post")
 		}
-		if !permissions.MemberOfChannelID(userID, post.ChannelId, h.pluginAPI) {
+		if !app.MemberOfChannelID(userID, post.ChannelId, h.pluginAPI) {
 			return nil, errors.New("user is not a member of the channel containing the incident's original post")
 		}
 	}
-	return h.incidentService.CreateIncident(&newIncident, thePlaybook, userID, public)
+	return h.incidentService.CreateIncident(&incident, playbook, userID, public)
 }
 
-func (h *IncidentHandler) getRequesterInfo(userID string) (permissions.RequesterInfo, error) {
-	return permissions.GetRequesterInfo(userID, h.pluginAPI)
+func (h *IncidentHandler) getRequesterInfo(userID string) (app.RequesterInfo, error) {
+	return app.GetRequesterInfo(userID, h.pluginAPI)
 }
 
 // getIncidents handles the GET /incidents endpoint.
@@ -449,13 +449,13 @@ func (h *IncidentHandler) getIncidents(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Header.Get("Mattermost-User-ID")
 	// More detailed permissions checked on DB level.
-	if !permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
+	if !app.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s", userID, filterOptions.TeamID))
 		return
 	}
 
-	if !permissions.IsOnEnabledTeam(filterOptions.TeamID, h.config) {
+	if !app.IsOnEnabledTeam(filterOptions.TeamID, h.config) {
 		ReturnJSON(w, map[string]bool{"disabled": true}, http.StatusOK)
 		return
 	}
@@ -487,7 +487,7 @@ func (h *IncidentHandler) getIncident(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := permissions.ViewIncidentFromChannelID(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
+	if err := app.ViewIncidentFromChannelID(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to incident.", nil)
 		return
 	}
@@ -507,7 +507,7 @@ func (h *IncidentHandler) getIncidentMetadata(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := permissions.ViewIncidentFromChannelID(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
+	if err := app.ViewIncidentFromChannelID(userID, incidentToGet.ChannelID, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
 			errors.Errorf("userid: %s does not have permissions to view the incident details", userID))
 		return
@@ -528,7 +528,7 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
+	if err := app.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
 		h.log.Warnf("User %s does not have permissions to get incident for channel %s", userID, channelID)
 		h.HandleErrorWithCode(w, http.StatusNotFound, "Not found",
 			errors.Errorf("incident for channel id %s not found", channelID))
@@ -537,7 +537,7 @@ func (h *IncidentHandler) getIncidentByChannel(w http.ResponseWriter, r *http.Re
 
 	incidentID, err := h.incidentService.GetIncidentIDForChannel(channelID)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			h.HandleErrorWithCode(w, http.StatusNotFound, "Not found",
 				errors.Errorf("incident for channel id %s not found", channelID))
 
@@ -564,7 +564,7 @@ func (h *IncidentHandler) getOwners(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
+	if !app.CanViewTeam(userID, teamID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s",
 			userID,
@@ -573,7 +573,7 @@ func (h *IncidentHandler) getOwners(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	options := incident.FilterOptions{
+	options := app.IncidentFilterOptions{
 		TeamID: teamID,
 	}
 
@@ -590,7 +590,7 @@ func (h *IncidentHandler) getOwners(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if owners == nil {
-		owners = []incident.OwnerInfo{}
+		owners = []app.OwnerInfo{}
 	}
 
 	ReturnJSON(w, owners, http.StatusOK)
@@ -604,7 +604,7 @@ func (h *IncidentHandler) getChannels(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	if !permissions.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
+	if !app.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
 			"userID %s does not have view permission for teamID %s",
 			userID,
@@ -646,15 +646,15 @@ func (h *IncidentHandler) changeOwner(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	incdnt, err := h.incidentService.GetIncident(vars["id"])
+	incident, err := h.incidentService.GetIncident(vars["id"])
 	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
 
 	// Check if the target user (params.OwnerID) has permissions
-	if err := permissions.EditIncident(params.OwnerID, incdnt.ChannelID, h.pluginAPI); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
+	if err := app.EditIncident(params.OwnerID, incident.ChannelID, h.pluginAPI); err != nil {
+		if errors.Is(err, app.ErrNoPermissions) {
 			h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
 				errors.Errorf("userid: %s does not have permissions to incident channel; cannot be made owner", params.OwnerID))
 			return
@@ -682,12 +682,12 @@ func (h *IncidentHandler) status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !permissions.CanPostToChannel(userID, incidentToModify.ChannelID, h.pluginAPI) {
+	if !app.CanPostToChannel(userID, incidentToModify.ChannelID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to incident channel %s", userID, incidentToModify.ChannelID))
 		return
 	}
 
-	var options incident.StatusUpdateOptions
+	var options app.StatusUpdateOptions
 	if err = json.NewDecoder(r.Body).Decode(&options); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode body into StatusUpdateOptions", err)
 		return
@@ -713,10 +713,10 @@ func (h *IncidentHandler) status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch options.Status {
-	case incident.StatusActive:
-	case incident.StatusArchived:
-	case incident.StatusReported:
-	case incident.StatusResolved:
+	case app.StatusActive:
+	case app.StatusArchived:
+	case app.StatusReported:
+	case app.StatusResolved:
 		break
 	default:
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid status", nil)
@@ -745,7 +745,7 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if !permissions.CanPostToChannel(userID, incidentToModify.ChannelID, h.pluginAPI) {
+	if !app.CanPostToChannel(userID, incidentToModify.ChannelID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to incident channel %s", userID, incidentToModify.ChannelID))
 		return
 	}
@@ -756,40 +756,40 @@ func (h *IncidentHandler) updateStatusDialog(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	var options incident.StatusUpdateOptions
-	if message, ok := request.Submission[incident.DialogFieldMessageKey]; ok {
+	var options app.StatusUpdateOptions
+	if message, ok := request.Submission[app.DialogFieldMessageKey]; ok {
 		options.Message = strings.TrimSpace(message.(string))
 	}
 	if options.Message == "" {
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(fmt.Sprintf(`{"errors": {"%s":"This field is required."}}`, incident.DialogFieldMessageKey)))
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"errors": {"%s":"This field is required."}}`, app.DialogFieldMessageKey)))
 		return
 	}
 
-	if description, ok := request.Submission[incident.DialogFieldDescriptionKey]; ok {
+	if description, ok := request.Submission[app.DialogFieldDescriptionKey]; ok {
 		options.Description = strings.TrimSpace(description.(string))
 	}
 	if options.Description == "" {
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(fmt.Sprintf(`{"errors": {"%s":"This field is required."}}`, incident.DialogFieldDescriptionKey)))
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"errors": {"%s":"This field is required."}}`, app.DialogFieldDescriptionKey)))
 		return
 	}
 
-	if reminderI, ok := request.Submission[incident.DialogFieldReminderInSecondsKey]; ok {
+	if reminderI, ok := request.Submission[app.DialogFieldReminderInSecondsKey]; ok {
 		if reminder, err2 := strconv.Atoi(reminderI.(string)); err2 == nil {
 			options.Reminder = time.Duration(reminder) * time.Second
 		}
 	}
 
-	if status, ok := request.Submission[incident.DialogFieldStatusKey]; ok {
+	if status, ok := request.Submission[app.DialogFieldStatusKey]; ok {
 		options.Status = status.(string)
 	}
 
 	switch options.Status {
-	case incident.StatusActive:
-	case incident.StatusArchived:
-	case incident.StatusReported:
-	case incident.StatusResolved:
+	case app.StatusActive:
+	case app.StatusArchived:
+	case app.StatusReported:
+	case app.StatusResolved:
 		break
 	default:
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid status", nil)
@@ -821,8 +821,8 @@ func (h *IncidentHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err = permissions.EditIncident(requestData.UserId, requestData.ChannelId, h.pluginAPI); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
+	if err = app.EditIncident(requestData.UserId, requestData.ChannelId, h.pluginAPI); err != nil {
+		if errors.Is(err, app.ErrNoPermissions) {
 			ReturnJSON(w, nil, http.StatusForbidden)
 			return
 		}
@@ -854,8 +854,8 @@ func (h *IncidentHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err = permissions.EditIncident(requestData.UserId, requestData.ChannelId, h.pluginAPI); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
+	if err = app.EditIncident(requestData.UserId, requestData.ChannelId, h.pluginAPI); err != nil {
+		if errors.Is(err, app.ErrNoPermissions) {
 			ReturnJSON(w, nil, http.StatusForbidden)
 			return
 		}
@@ -882,8 +882,8 @@ func (h *IncidentHandler) noRetrospectiveButton(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err = permissions.EditIncident(userID, incidentToCancelRetro.ChannelID, h.pluginAPI); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
+	if err = app.EditIncident(userID, incidentToCancelRetro.ChannelID, h.pluginAPI); err != nil {
+		if errors.Is(err, app.ErrNoPermissions) {
 			ReturnJSON(w, nil, http.StatusForbidden)
 			return
 		}
@@ -937,7 +937,7 @@ func (h *IncidentHandler) getChecklistAutocompleteItem(w http.ResponseWriter, r 
 		return
 	}
 
-	if err = permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
+	if err = app.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}
@@ -962,7 +962,7 @@ func (h *IncidentHandler) getChecklistAutocomplete(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err = permissions.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
+	if err = app.ViewIncidentFromChannelID(userID, channelID, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}
@@ -999,7 +999,7 @@ func (h *IncidentHandler) itemSetState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !playbook.IsValidChecklistItemState(params.NewState) {
+	if !app.IsValidChecklistItemState(params.NewState) {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter new state", nil)
 		return
 	}
@@ -1077,7 +1077,7 @@ func (h *IncidentHandler) addChecklistItem(w http.ResponseWriter, r *http.Reques
 	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	var checklistItem playbook.ChecklistItem
+	var checklistItem app.ChecklistItem
 	if err := json.NewDecoder(r.Body).Decode(&checklistItem); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode ChecklistItem", err)
 		return
@@ -1121,14 +1121,14 @@ func (h *IncidentHandler) addChecklistItemDialog(w http.ResponseWriter, r *http.
 	}
 
 	var name, description string
-	if rawName, ok := request.Submission[incident.DialogFieldItemNameKey].(string); ok {
+	if rawName, ok := request.Submission[app.DialogFieldItemNameKey].(string); ok {
 		name = rawName
 	}
-	if rawDescription, ok := request.Submission[incident.DialogFieldItemDescriptionKey].(string); ok {
+	if rawDescription, ok := request.Submission[app.DialogFieldItemDescriptionKey].(string); ok {
 		description = rawDescription
 	}
 
-	checklistItem := playbook.ChecklistItem{
+	checklistItem := app.ChecklistItem{
 		Title:       name,
 		Description: description,
 	}
@@ -1232,16 +1232,16 @@ func (h *IncidentHandler) reorderChecklist(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *IncidentHandler) postIncidentCreatedMessage(incdnt *incident.Incident, channelID string) error {
-	channel, err := h.pluginAPI.Channel.Get(incdnt.ChannelID)
+func (h *IncidentHandler) postIncidentCreatedMessage(incident *app.Incident, channelID string) error {
+	channel, err := h.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
 		return err
 	}
 
 	post := &model.Post{
-		Message: fmt.Sprintf("Incident %s started in ~%s", incdnt.Name, channel.Name),
+		Message: fmt.Sprintf("Incident %s started in ~%s", incident.Name, channel.Name),
 	}
-	h.poster.EphemeralPost(incdnt.OwnerUserID, channelID, post)
+	h.poster.EphemeralPost(incident.OwnerUserID, channelID, post)
 
 	return nil
 }
@@ -1290,8 +1290,8 @@ func (h *IncidentHandler) publishRetrospective(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusOK)
 }
 
-// parseIncidentsFilterOptions is only for parsing. Put validation logic in incident.validateOptions.
-func parseIncidentsFilterOptions(u *url.URL) (*incident.FilterOptions, error) {
+// parseIncidentsFilterOptions is only for parsing. Put validation logic in app.validateOptions.
+func parseIncidentsFilterOptions(u *url.URL) (*app.IncidentFilterOptions, error) {
 	teamID := u.Query().Get("team_id")
 	if teamID == "" {
 		return nil, errors.New("bad parameter 'team_id'; 'team_id' is required")
@@ -1327,18 +1327,25 @@ func parseIncidentsFilterOptions(u *url.URL) (*incident.FilterOptions, error) {
 
 	playbookID := u.Query().Get("playbook_id")
 
-	return &incident.FilterOptions{
+	options := app.IncidentFilterOptions{
 		TeamID:     teamID,
 		Page:       page,
 		PerPage:    perPage,
-		Sort:       sort,
-		Direction:  direction,
+		Sort:       app.SortField(sort),
+		Direction:  app.SortDirection(direction),
 		Status:     status,
 		OwnerID:    ownerID,
 		SearchTerm: searchTerm,
 		MemberID:   memberID,
 		PlaybookID: playbookID,
-	}, nil
+	}
+
+	options, err = options.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	return &options, nil
 }
 
 func sliceContains(strs []string, target string) bool {

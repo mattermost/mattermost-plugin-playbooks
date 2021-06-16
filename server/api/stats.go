@@ -5,15 +5,15 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 
 	"github.com/gorilla/mux"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 type StatsHandler struct {
@@ -21,10 +21,10 @@ type StatsHandler struct {
 	pluginAPI       *pluginapi.Client
 	log             bot.Logger
 	statsStore      *sqlstore.StatsStore
-	playbookService playbook.Service
+	playbookService app.PlaybookService
 }
 
-func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore, playbookService playbook.Service) *StatsHandler {
+func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore, playbookService app.PlaybookService) *StatsHandler {
 	handler := &StatsHandler{
 		ErrorHandler:    &ErrorHandler{log: log},
 		pluginAPI:       api,
@@ -132,7 +132,7 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err2 := permissions.PlaybookAccess(userID, playbookOfInterest, h.pluginAPI); err2 != nil {
+	if err2 := app.PlaybookAccess(userID, playbookOfInterest, h.pluginAPI); err2 != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err2)
 		return
 	}

@@ -9,10 +9,9 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
@@ -22,16 +21,17 @@ import (
 // PlaybookHandler is the API handler.
 type PlaybookHandler struct {
 	*ErrorHandler
-	playbookService playbook.Service
+	playbookService app.PlaybookService
 	pluginAPI       *pluginapi.Client
 	log             bot.Logger
 	config          config.Service
 }
 
 const SettingsKey = "global_settings"
+const maxPlaybooksToAutocomplete = 15
 
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, api *pluginapi.Client, log bot.Logger, configService config.Service) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, api *pluginapi.Client, log bot.Logger, configService config.Service) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		ErrorHandler:    &ErrorHandler{log: log},
 		playbookService: playbookService,
@@ -59,24 +59,24 @@ func NewPlaybookHandler(router *mux.Router, playbookService playbook.Service, ap
 func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	var pbook playbook.Playbook
-	if err := json.NewDecoder(r.Body).Decode(&pbook); err != nil {
+	var playbook app.Playbook
+	if err := json.NewDecoder(r.Body).Decode(&playbook); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
 		return
 	}
 
-	if pbook.ID != "" {
+	if playbook.ID != "" {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "Playbook given already has ID", nil)
 		return
 	}
 
-	if err := permissions.CreatePlaybook(userID, pbook, h.config, h.pluginAPI, h.playbookService); err != nil {
+	if err := app.CreatePlaybook(userID, playbook, h.config, h.pluginAPI, h.playbookService); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
-	if pbook.WebhookOnCreationEnabled {
-		url, err := url.ParseRequestURI(pbook.WebhookOnCreationURL)
+	if playbook.WebhookOnCreationEnabled {
+		url, err := url.ParseRequestURI(playbook.WebhookOnCreationURL)
 		if err != nil {
 			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
 			return
@@ -89,8 +89,8 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if pbook.WebhookOnStatusUpdateEnabled {
-		url, err := url.ParseRequestURI(pbook.WebhookOnStatusUpdateURL)
+	if playbook.WebhookOnStatusUpdateEnabled {
+		url, err := url.ParseRequestURI(playbook.WebhookOnStatusUpdateURL)
 		if err != nil {
 			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
 			return
@@ -103,7 +103,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	id, err := h.playbookService.Create(pbook, userID)
+	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
 		return
@@ -114,7 +114,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}{
 		ID: id,
 	}
-	w.Header().Add("Location", fmt.Sprintf("/api/v0/playbooks/%s", pbook.ID))
+	w.Header().Add("Location", fmt.Sprintf("/api/v0/playbooks/%s", playbook.ID))
 	ReturnJSON(w, &result, http.StatusCreated)
 }
 
@@ -122,31 +122,31 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	pbook, err := h.playbookService.Get(vars["id"])
+	playbook, err := h.playbookService.Get(vars["id"])
 	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
 
-	if err := permissions.PlaybookAccess(userID, pbook, h.pluginAPI); err != nil {
+	if err := app.PlaybookAccess(userID, playbook, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
-	ReturnJSON(w, &pbook, http.StatusOK)
+	ReturnJSON(w, &playbook, http.StatusOK)
 }
 
 func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
-	var pbook playbook.Playbook
-	if err := json.NewDecoder(r.Body).Decode(&pbook); err != nil {
+	var playbook app.Playbook
+	if err := json.NewDecoder(r.Body).Decode(&playbook); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
 		return
 	}
 
 	// Force parsed playbook id to be URL parameter id
-	pbook.ID = vars["id"]
+	playbook.ID = vars["id"]
 
 	oldPlaybook, err := h.playbookService.Get(vars["id"])
 	if err != nil {
@@ -154,18 +154,18 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err3 := permissions.PlaybookModify(userID, pbook, oldPlaybook, h.config, h.pluginAPI, h.playbookService); err3 != nil {
+	if err3 := app.PlaybookModify(userID, playbook, oldPlaybook, h.config, h.pluginAPI, h.playbookService); err3 != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err3)
 		return
 	}
 
-	if err4 := doPlaybookModificationChecks(&pbook, userID, h.pluginAPI); err4 != nil {
+	if err4 := doPlaybookModificationChecks(&playbook, userID, h.pluginAPI); err4 != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err4)
 		return
 	}
 
-	if pbook.WebhookOnCreationEnabled {
-		url, err2 := url.ParseRequestURI(pbook.WebhookOnCreationURL)
+	if playbook.WebhookOnCreationEnabled {
+		url, err2 := url.ParseRequestURI(playbook.WebhookOnCreationURL)
 		if err2 != nil {
 			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err2)
 			return
@@ -178,8 +178,8 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if pbook.WebhookOnStatusUpdateEnabled {
-		url, err2 := url.ParseRequestURI(pbook.WebhookOnStatusUpdateURL)
+	if playbook.WebhookOnStatusUpdateEnabled {
+		url, err2 := url.ParseRequestURI(playbook.WebhookOnStatusUpdateURL)
 		if err2 != nil {
 			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err2)
 			return
@@ -192,7 +192,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	err = h.playbookService.Update(pbook, userID)
+	err = h.playbookService.Update(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
 		return
@@ -202,20 +202,20 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 }
 
 // doPlaybookModificationChecks performs permissions checks that can be resolved though modification of the input.
-// This function modifies the pbook argument.
-func doPlaybookModificationChecks(pbook *playbook.Playbook, userID string, pluginAPI *pluginapi.Client) error {
+// This function modifies the playbook argument.
+func doPlaybookModificationChecks(playbook *app.Playbook, userID string, pluginAPI *pluginapi.Client) error {
 	filteredUsers := []string{}
-	for _, userID := range pbook.InvitedUserIDs {
-		if !pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
-			pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", pbook.TeamID, "userID", userID)
+	for _, userID := range playbook.InvitedUserIDs {
+		if !pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+			pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", playbook.TeamID, "userID", userID)
 			continue
 		}
 		filteredUsers = append(filteredUsers, userID)
 	}
-	pbook.InvitedUserIDs = filteredUsers
+	playbook.InvitedUserIDs = filteredUsers
 
 	filteredGroups := []string{}
-	for _, groupID := range pbook.InvitedGroupIDs {
+	for _, groupID := range playbook.InvitedGroupIDs {
 		var group *model.Group
 		group, err := pluginAPI.Group.Get(groupID)
 		if err != nil {
@@ -230,19 +230,19 @@ func doPlaybookModificationChecks(pbook *playbook.Playbook, userID string, plugi
 
 		filteredGroups = append(filteredGroups, groupID)
 	}
-	pbook.InvitedGroupIDs = filteredGroups
+	playbook.InvitedGroupIDs = filteredGroups
 
-	if pbook.DefaultOwnerID != "" && !permissions.IsMemberOfTeamID(pbook.DefaultOwnerID, pbook.TeamID, pluginAPI) {
-		pluginAPI.Log.Warn("owner is not a member of the playbook's team, disabling default owner", "teamID", pbook.TeamID, "userID", pbook.DefaultOwnerID)
-		pbook.DefaultOwnerID = ""
-		pbook.DefaultOwnerEnabled = false
+	if playbook.DefaultOwnerID != "" && !app.IsMemberOfTeamID(playbook.DefaultOwnerID, playbook.TeamID, pluginAPI) {
+		pluginAPI.Log.Warn("owner is not a member of the playbook's team, disabling default owner", "teamID", playbook.TeamID, "userID", playbook.DefaultOwnerID)
+		playbook.DefaultOwnerID = ""
+		playbook.DefaultOwnerEnabled = false
 	}
 
-	if pbook.AnnouncementChannelID != "" &&
-		!pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+	if playbook.AnnouncementChannelID != "" &&
+		!pluginAPI.User.HasPermissionToChannel(userID, playbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
 		pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
-		pbook.AnnouncementChannelID = ""
-		pbook.AnnouncementChannelEnabled = false
+		playbook.AnnouncementChannelID = ""
+		playbook.AnnouncementChannelEnabled = false
 	}
 
 	return nil
@@ -258,7 +258,7 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err2 := permissions.PlaybookAccess(userID, playbookToDelete, h.pluginAPI); err2 != nil {
+	if err2 := app.PlaybookAccess(userID, playbookToDelete, h.pluginAPI); err2 != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err2)
 		return
 	}
@@ -287,7 +287,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
+	if !app.CanViewTeam(userID, teamID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to get playbooks on teamID %s",
 			userID,
@@ -297,7 +297,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Exclude guest users
-	if isGuest, errg := permissions.IsGuest(userID, h.pluginAPI); errg != nil {
+	if isGuest, errg := app.IsGuest(userID, h.pluginAPI); errg != nil {
 		h.HandleError(w, errg)
 		return
 	} else if isGuest {
@@ -309,10 +309,10 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	requesterInfo := playbook.RequesterInfo{
+	requesterInfo := app.RequesterInfo{
 		UserID:  userID,
 		TeamID:  teamID,
-		IsAdmin: permissions.IsAdmin(userID, h.pluginAPI),
+		IsAdmin: app.IsAdmin(userID, h.pluginAPI),
 	}
 
 	playbookResults, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, opts)
@@ -329,18 +329,21 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 	teamID := query.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
+	if !app.CanViewTeam(userID, teamID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
 		return
 	}
 
-	requesterInfo := playbook.RequesterInfo{
+	requesterInfo := app.RequesterInfo{
 		UserID:  userID,
 		TeamID:  teamID,
-		IsAdmin: permissions.IsAdmin(userID, h.pluginAPI),
+		IsAdmin: app.IsAdmin(userID, h.pluginAPI),
 	}
 
-	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, playbook.Options{})
+	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, app.PlaybookFilterOptions{
+		Page:    0,
+		PerPage: maxPlaybooksToAutocomplete,
+	})
 	if err != nil {
 		h.HandleError(w, err)
 		return
@@ -348,10 +351,10 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 
 	list := make([]model.AutocompleteListItem, 0)
 
-	for _, thePlaybook := range playbooksResult.Items {
+	for _, playbook := range playbooksResult.Items {
 		list = append(list, model.AutocompleteListItem{
-			Item:     thePlaybook.ID,
-			HelpText: thePlaybook.Title,
+			Item:     playbook.ID,
+			HelpText: playbook.Title,
 		})
 	}
 
@@ -363,7 +366,7 @@ func (h *PlaybookHandler) getPlaybookCount(w http.ResponseWriter, r *http.Reques
 	teamID := query.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !permissions.CanViewTeam(userID, teamID, h.pluginAPI) {
+	if !app.CanViewTeam(userID, teamID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
 		return
 	}
@@ -381,31 +384,31 @@ func (h *PlaybookHandler) getPlaybookCount(w http.ResponseWriter, r *http.Reques
 	ReturnJSON(w, countStruct, http.StatusOK)
 }
 
-func parseGetPlaybooksOptions(u *url.URL) (playbook.Options, error) {
+func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 	params := u.Query()
 
-	var sortField playbook.SortField
+	var sortField app.SortField
 	param := strings.ToLower(params.Get("sort"))
 	switch param {
 	case "title", "":
-		sortField = playbook.SortByTitle
+		sortField = app.SortByTitle
 	case "stages":
-		sortField = playbook.SortByStages
+		sortField = app.SortByStages
 	case "steps":
-		sortField = playbook.SortBySteps
+		sortField = app.SortBySteps
 	default:
-		return playbook.Options{}, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages' or 'steps'", param)
+		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages' or 'steps'", param)
 	}
 
-	var sortDirection playbook.SortDirection
+	var sortDirection app.SortDirection
 	param = strings.ToLower(params.Get("direction"))
 	switch param {
 	case "asc", "":
-		sortDirection = playbook.DirectionAsc
+		sortDirection = app.DirectionAsc
 	case "desc":
-		sortDirection = playbook.DirectionDesc
+		sortDirection = app.DirectionDesc
 	default:
-		return playbook.Options{}, errors.Errorf("bad parameter 'direction' (%s): it should be empty or one of 'asc' or 'desc'", param)
+		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'direction' (%s): it should be empty or one of 'asc' or 'desc'", param)
 	}
 
 	pageParam := params.Get("page")
@@ -414,10 +417,10 @@ func parseGetPlaybooksOptions(u *url.URL) (playbook.Options, error) {
 	}
 	page, err := strconv.Atoi(pageParam)
 	if err != nil {
-		return playbook.Options{}, errors.Wrapf(err, "bad parameter 'page': it should be a number")
+		return app.PlaybookFilterOptions{}, errors.Wrapf(err, "bad parameter 'page': it should be a number")
 	}
 	if page < 0 {
-		return playbook.Options{}, errors.Errorf("bad parameter 'page': it should be a positive number")
+		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'page': it should be a positive number")
 	}
 
 	perPageParam := params.Get("per_page")
@@ -426,13 +429,13 @@ func parseGetPlaybooksOptions(u *url.URL) (playbook.Options, error) {
 	}
 	perPage, err := strconv.Atoi(perPageParam)
 	if err != nil {
-		return playbook.Options{}, errors.Wrapf(err, "bad parameter 'per_page': it should be a number")
+		return app.PlaybookFilterOptions{}, errors.Wrapf(err, "bad parameter 'per_page': it should be a number")
 	}
 	if perPage < 0 {
-		return playbook.Options{}, errors.Errorf("bad parameter 'per_page': it should be a positive number")
+		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'per_page': it should be a positive number")
 	}
 
-	return playbook.Options{
+	return app.PlaybookFilterOptions{
 		Sort:      sortField,
 		Direction: sortDirection,
 		Page:      page,
