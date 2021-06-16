@@ -232,6 +232,28 @@ func (s *incidentStore) GetIncidents(requesterInfo app.RequesterInfo, options ap
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 	}
 
+	if options.ActiveGTE > 0 && options.ActiveLT > 0 {
+		queryForResults = queryActiveBetweenTimes(queryForResults, options.ActiveGTE, options.ActiveLT)
+		queryForTotal = queryActiveBetweenTimes(queryForTotal, options.ActiveGTE, options.ActiveLT)
+	} else if options.ActiveGTE > 0 {
+		queryForResults = queryActiveBetweenTimes(queryForResults, options.ActiveGTE, model.GetMillis())
+		queryForTotal = queryActiveBetweenTimes(queryForTotal, options.ActiveGTE, model.GetMillis())
+	} else if options.ActiveLT > 0 {
+		queryForResults = queryActiveBetweenTimes(queryForResults, 0, options.ActiveLT)
+		queryForTotal = queryActiveBetweenTimes(queryForTotal, 0, options.ActiveLT)
+	}
+
+	if options.StartedGTE > 0 && options.StartedLT > 0 {
+		queryForResults = queryStartedBetweenTimes(queryForResults, options.StartedGTE, options.StartedLT)
+		queryForTotal = queryStartedBetweenTimes(queryForTotal, options.StartedGTE, options.StartedLT)
+	} else if options.StartedGTE > 0 {
+		queryForResults = queryStartedBetweenTimes(queryForResults, options.StartedGTE, model.GetMillis())
+		queryForTotal = queryStartedBetweenTimes(queryForTotal, options.StartedGTE, model.GetMillis())
+	} else if options.StartedLT > 0 {
+		queryForResults = queryStartedBetweenTimes(queryForResults, 0, options.StartedLT)
+		queryForTotal = queryStartedBetweenTimes(queryForTotal, 0, options.StartedLT)
+	}
+
 	queryForResults, err := applyIncidentFilterOptionsSort(queryForResults, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to apply sort options")
@@ -879,4 +901,23 @@ func addTimelineEventsToIncidents(timelineEvents []app.TimelineEvent, incidents 
 	for i, incident := range incidents {
 		incidents[i].TimelineEvents = iToTe[incident.ID]
 	}
+}
+
+func queryActiveBetweenTimes(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	return query.Where(
+		sq.And{
+			sq.Or{
+				sq.GtOrEq{"i.EndAt": start},
+				sq.Eq{"i.EndAt": 0},
+			},
+			sq.Lt{"i.CreateAt": end},
+		})
+}
+
+func queryStartedBetweenTimes(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	return query.Where(
+		sq.And{
+			sq.GtOrEq{"i.CreateAt": start},
+			sq.Lt{"i.CreateAt": end},
+		})
 }

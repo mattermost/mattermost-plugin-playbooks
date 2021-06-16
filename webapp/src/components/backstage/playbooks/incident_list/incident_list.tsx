@@ -18,7 +18,7 @@ import {
     StatusFilter,
     StatusOption,
 } from 'src/components/backstage/incidents/incident_list/status_filter';
-import {FetchIncidentsParams, Incident} from 'src/types/incident';
+import {FetchIncidentsParams, FetchIncidentsParamsTime, Incident} from 'src/types/incident';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {fetchOwnersInTeam, fetchIncidents} from 'src/client';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
@@ -70,6 +70,7 @@ const statusOptions: StatusOption[] = [
 
 interface Props {
     playbook: Playbook | null
+    fetchParamsTime?: FetchIncidentsParamsTime
 }
 
 const IncidentList = (props: Props) => {
@@ -80,6 +81,7 @@ const IncidentList = (props: Props) => {
 
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
         {
+            ...props.fetchParamsTime,
             team_id: currentTeam.id,
             page: 0,
             per_page: BACKSTAGE_LIST_PER_PAGE,
@@ -94,6 +96,15 @@ const IncidentList = (props: Props) => {
             return {...oldParams, team_id: currentTeam.id};
         });
     }, [currentTeam.id]);
+
+    useEffect(() => {
+        setFetchParams((oldParams) => {
+            return {
+                ...oldParams,
+                ...props.fetchParamsTime,
+            };
+        });
+    }, [props.fetchParamsTime]);
 
     useEffect(() => {
         let isCanceled = false;

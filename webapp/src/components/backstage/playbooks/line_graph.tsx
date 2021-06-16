@@ -77,7 +77,10 @@ const LineGraph = (props: LineGraphProps) => {
                         displayColors: false,
                     },
                     onClick(event: any, element: any) {
-                        if (!props.onClick || element.length === 0) {
+                        if (!props.onClick) {
+                            return;
+                        } else if (element.length === 0) {
+                            props.onClick(-1);
                             return;
                         }
                         // eslint-disable-next-line no-underscore-dangle

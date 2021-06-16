@@ -2,8 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
-
-import {Checklist, isChecklist} from './playbook';
+import {Checklist, isChecklist} from 'src/types/playbook';
 
 export interface Incident {
     id: string;
@@ -150,7 +149,32 @@ export interface FetchIncidentsParams {
     member_id?: string;
     disabled?: boolean;
     playbook_id?: string;
+    active_gte?: number;
+    active_lt?: number;
+    started_gte?: number;
+    started_lt?: number;
 }
+
+export interface FetchIncidentsParamsTime {
+    active_gte?: number;
+    active_lt?: number;
+    started_gte?: number;
+    started_lt?: number;
+}
+
+export const DefaultFetchIncidentsParamsTime: FetchIncidentsParamsTime = {
+    active_gte: 0,
+    active_lt: 0,
+    started_gte: 0,
+    started_lt: 0,
+};
+
+export const fetchParamsTimeEqual = (a: FetchIncidentsParamsTime, b: FetchIncidentsParamsTime) => {
+    return Boolean(a.active_gte === b.active_gte &&
+        a.active_lt === b.active_lt &&
+        a.started_gte === b.started_gte &&
+        a.started_lt === b.started_lt);
+};
 
 export interface FetchPlaybooksParams {
     team_id?: string;

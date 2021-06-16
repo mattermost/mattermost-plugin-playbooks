@@ -22,6 +22,7 @@ import LineGraph from 'src/components/backstage/playbooks/line_graph';
 import IncidentList from 'src/components/backstage/playbooks/incident_list/incident_list';
 import BarGraph from 'src/components/backstage/playbooks/bar_graph';
 import {EmptyPlaybookStats} from 'src/types/stats';
+import {DefaultFetchIncidentsParamsTime, fetchParamsTimeEqual} from 'src/types/incident';
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
@@ -215,6 +216,7 @@ const PlaybookBackstage = () => {
     const location = useLocation();
     const currentTeam = useSelector(getCurrentTeam);
     const [playbook, setPlaybook] = useState<Playbook | null>(null);
+    const [fetchParamsTime, setFetchParamsTime] = useState(DefaultFetchIncidentsParamsTime);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [stats, setStats] = useState(EmptyPlaybookStats);
 
@@ -323,7 +325,18 @@ const PlaybookBackstage = () => {
                                     return `${yLabel} ${runs} started`;
                                 }}
                                 onClick={(index) => {
-                                    console.log('clicked on index ' + index + ' which is: ' + stats.runs_started_per_week[index]);
+                                    let nextFetchParamsTime = DefaultFetchIncidentsParamsTime;
+                                    if (index >= 0) {
+                                        nextFetchParamsTime = {
+                                            ...DefaultFetchIncidentsParamsTime,
+                                            started_gte: stats.runs_started_per_week_times[index][0],
+                                            started_lt: stats.runs_started_per_week_times[index][1],
+                                        };
+                                    }
+
+                                    if (!fetchParamsTimeEqual(fetchParamsTime, nextFetchParamsTime)) {
+                                        setFetchParamsTime(nextFetchParamsTime);
+                                    }
                                 }}
                             />
                         </GraphBox>
@@ -340,7 +353,18 @@ const PlaybookBackstage = () => {
                                     return `${yLabel} active ${runs}`;
                                 }}
                                 onClick={(index) => {
-                                    console.log('clicked on index ' + index + ' which is: ' + stats.active_runs_per_day[index]);
+                                    let nextFetchParamsTime = DefaultFetchIncidentsParamsTime;
+                                    if (index >= 0) {
+                                        nextFetchParamsTime = {
+                                            ...DefaultFetchIncidentsParamsTime,
+                                            active_gte: stats.active_runs_per_day_times[index][0],
+                                            active_lt: stats.active_runs_per_day_times[index][1],
+                                        };
+                                    }
+
+                                    if (!fetchParamsTimeEqual(fetchParamsTime, nextFetchParamsTime)) {
+                                        setFetchParamsTime(nextFetchParamsTime);
+                                    }
                                 }}
                             />
                         </GraphBox>
@@ -355,13 +379,13 @@ const PlaybookBackstage = () => {
                                     const participants = (yLabel === 1) ? 'participant' : 'participants';
                                     return `${yLabel} active ${participants}`;
                                 }}
-                                onClick={(index) => {
-                                    console.log('clicked on index ' + index + ' which is: ' + stats.active_participants_per_day[index]);
-                                }}
                             />
                         </GraphBox>
                     </BottomRow>
-                    <IncidentList playbook={playbook}/>
+                    <IncidentList
+                        playbook={playbook}
+                        fetchParamsTime={fetchParamsTime}
+                    />
                 </BottomInnerContainer>
             </BottomContainer>
         </OuterContainer>

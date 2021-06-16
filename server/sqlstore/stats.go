@@ -187,12 +187,13 @@ func (s *StatsStore) MovingWindowQueryActive(query sq.SelectBuilder, numDays int
 
 // RunsStartedPerWeekLastXWeeks returns the number of runs started each week for the last X weeks.
 // Returns data in order of oldest week to most recent week.
-func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) ([]int, []string) {
+func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) ([]int, []string, [][]int64) {
 	day := int64(86400000)
 	week := day * 7
 	startOfWeek := beginningOfTodayMillis() - week
 	endOfWeek := endOfTodayMillis()
 	var weeksAsStrings []string
+	var weeksStartAndEnd [][]int64
 
 	q := s.store.builder.Select()
 	for i := 0; i < x; i++ {
@@ -201,25 +202,26 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
                 CAST(
                      SUM(
                          CASE
-                             WHEN i.CreateAt <= ? AND i.CreateAt > ?
+                             WHEN i.CreateAt >= ? AND i.CreateAt < ?
                                  THEN 1
                              ELSE 0
                          END)
                      AS UNSIGNED)
-                 `, endOfWeek, startOfWeek)
+                 `, startOfWeek, endOfWeek)
 		} else {
 			q = q.Column(`
                 SUM(CASE
-                        WHEN i.CreateAt <= ? AND i.CreateAt > ?
+                        WHEN i.CreateAt >= ? AND i.CreateAt < ?
                             THEN 1
                         ELSE 0
                     END)
-                 `, endOfWeek, startOfWeek)
+                 `, startOfWeek, endOfWeek)
 		}
 
 		// use the middle of the day to get the date, just in case
 		weekAsTime := time.Unix(0, (startOfWeek+day/2)*int64(time.Millisecond))
 		weeksAsStrings = append(weeksAsStrings, weekAsTime.Format("02 Jan"))
+		weeksStartAndEnd = append(weeksStartAndEnd, []int64{startOfWeek, endOfWeek})
 
 		endOfWeek -= week
 		startOfWeek -= week
@@ -231,22 +233,24 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
 		s.log.Warnf("failed to perform query: %v", err)
-		return []int{}, []string{}
+		return []int{}, []string{}, [][]int64{}
 	}
 
 	reverseInts(counts)
 	reverseStrings(weeksAsStrings)
+	reverseInt64Slices(weeksStartAndEnd)
 
-	return counts, weeksAsStrings
+	return counts, weeksAsStrings, weeksStartAndEnd
 }
 
 // ActiveRunsPerDayLastXDays returns the number of actives runs per day for the last X days.
 // Returns data in order of oldest day to most recent day.
-func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]int, []string) {
+func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]int, []string, [][]int64) {
 	startOfDay := beginningOfTodayMillis()
 	endOfDay := endOfTodayMillis()
 	day := int64(86400000)
 	var daysAsStrings []string
+	var daysAsStartAndEnd [][]int64
 
 	q := s.store.builder.Select()
 	for i := 0; i < x; i++ {
@@ -257,25 +261,26 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
                 CAST(
                      SUM(
                          CASE
-                             WHEN i.CreateAt <= ? AND (i.EndAt > ? OR i.EndAt = 0)
+                             WHEN (i.EndAt >= ? OR i.EndAt = 0) AND i.CreateAt < ?
                                  THEN 1
                              ELSE 0
                          END)
                      AS UNSIGNED)
-                `, endOfDay, startOfDay)
+                `, startOfDay, endOfDay)
 		} else {
 			q = q.Column(`
                 SUM(CASE
-                        WHEN i.CreateAt <= ? AND (i.EndAt > ? OR i.EndAt = 0)
+                        WHEN (i.EndAt >= ? OR i.EndAt = 0) AND i.CreateAt < ?
                             THEN 1
                         ELSE 0
                     END)
-                `, endOfDay, startOfDay)
+                `, startOfDay, endOfDay)
 		}
 
 		// use the middle of the day to get the date, just in case
 		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
 		daysAsStrings = append(daysAsStrings, dayAsTime.Format("02 Jan"))
+		daysAsStartAndEnd = append(daysAsStartAndEnd, []int64{startOfDay, endOfDay})
 
 		endOfDay -= day
 		startOfDay -= day
@@ -287,13 +292,14 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
 		s.log.Warnf("failed to perform query: %v", err)
-		return []int{}, []string{}
+		return []int{}, []string{}, [][]int64{}
 	}
 
 	reverseInts(counts)
 	reverseStrings(daysAsStrings)
+	reverseInt64Slices(daysAsStartAndEnd)
 
-	return counts, daysAsStrings
+	return counts, daysAsStrings, daysAsStartAndEnd
 }
 
 // ActiveParticipantsPerDayLastXDays returns the number of actives participants per day for the last X days.
@@ -309,21 +315,21 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 		// COUNT( DISTINCT( CASE: the CASE will return the userId if the row satisfies the conditions,
 		// therefore COUNT( DISTINCT will return the number of unique userIds
 		//
-		// first two lines of the WHEN: an incident was active if it was created before the
-		// end of the day and ended after the start of the day (or still active)
+		// first two lines of the WHEN: an incident was active if it was ended after the start of
+		// the day (or still active) and created before the end of the day
 		//
-		// second two lines: a user was active in the same way--if they joined before the
-		// end of the day and left after the start of the day (or are still in the channel)
+		// second two lines: a user was active in the same way--if they left after the start of
+		// the day (or are still in the channel) and joined before the end of the day
 		q = q.Column(`
                 COUNT(DISTINCT
                       (CASE
-                           WHEN i.CreateAt <= ? AND
-                                (i.EndAt > ? OR i.EndAt = 0) AND
-                                cmh.JoinTime <= ? AND
-                                (cmh.LeaveTime > ? OR cmh.LeaveTime is NULL)
+                           WHEN (i.EndAt >= ? OR i.EndAt = 0) AND
+                                i.CreateAt < ? AND
+                                (cmh.LeaveTime >= ? OR cmh.LeaveTime is NULL) AND
+                                cmh.JoinTime < ?
                                THEN cmh.UserId
                       END))
-                `, endOfDay, startOfDay, endOfDay, startOfDay)
+                `, startOfDay, endOfDay, startOfDay, endOfDay)
 
 		// use the middle of the day to get the date, just in case
 		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
@@ -588,6 +594,12 @@ func endOfTodayMillis() int64 {
 }
 
 func reverseInts(vals []int) {
+	for i, j := 0, len(vals)-1; i < j; i, j = i+1, j-1 {
+		vals[i], vals[j] = vals[j], vals[i]
+	}
+}
+
+func reverseInt64Slices(vals [][]int64) {
 	for i, j := 0, len(vals)-1; i < j; i, j = i+1, j-1 {
 		vals[i], vals[j] = vals[j], vals[i]
 	}

@@ -1327,6 +1327,42 @@ func parseIncidentsFilterOptions(u *url.URL) (*app.IncidentFilterOptions, error)
 
 	playbookID := u.Query().Get("playbook_id")
 
+	activeGTEParam := u.Query().Get("active_gte")
+	if activeGTEParam == "" {
+		activeGTEParam = "0"
+	}
+	activeGTE, err := strconv.ParseInt(activeGTEParam, 10, 64)
+	if err != nil {
+		return nil, errors.Wrapf(err, "bad parameter 'active_gte'")
+	}
+
+	activeLTParam := u.Query().Get("active_lt")
+	if activeLTParam == "" {
+		activeLTParam = "0"
+	}
+	activeLT, err := strconv.ParseInt(activeLTParam, 10, 64)
+	if err != nil {
+		return nil, errors.Wrapf(err, "bad parameter 'active_lt'")
+	}
+
+	startedGTEParam := u.Query().Get("started_gte")
+	if startedGTEParam == "" {
+		startedGTEParam = "0"
+	}
+	startedGTE, err := strconv.ParseInt(startedGTEParam, 10, 64)
+	if err != nil {
+		return nil, errors.Wrapf(err, "bad parameter 'started_gte'")
+	}
+
+	startedLTParam := u.Query().Get("started_lt")
+	if startedLTParam == "" {
+		startedLTParam = "0"
+	}
+	startedLT, err := strconv.ParseInt(startedLTParam, 10, 64)
+	if err != nil {
+		return nil, errors.Wrapf(err, "bad parameter 'started_lt'")
+	}
+
 	options := app.IncidentFilterOptions{
 		TeamID:     teamID,
 		Page:       page,
@@ -1338,6 +1374,10 @@ func parseIncidentsFilterOptions(u *url.URL) (*app.IncidentFilterOptions, error)
 		SearchTerm: searchTerm,
 		MemberID:   memberID,
 		PlaybookID: playbookID,
+		ActiveGTE:  activeGTE,
+		ActiveLT:   activeLT,
+		StartedGTE: startedGTE,
+		StartedLT:  startedLT,
 	}
 
 	options, err = options.Validate()

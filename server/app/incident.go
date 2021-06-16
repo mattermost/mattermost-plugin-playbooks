@@ -487,7 +487,7 @@ type JobOnceScheduler interface {
 
 const PerPageDefault = 1000
 
-// IncidentFilterOptions specifies the optional parameters when getting headers.
+// IncidentFilterOptions specifies the optional parameters when getting incidents.
 type IncidentFilterOptions struct {
 	// Gets all the headers with this TeamID.
 	TeamID string `url:"team_id,omitempty"`
@@ -523,6 +523,22 @@ type IncidentFilterOptions struct {
 	// PlaybookID filters incidents that are derived from this playbook id.
 	// Defaults to blank (no filter).
 	PlaybookID string `url:"playbook_id,omitempty"`
+
+	// ActiveGTE filters incidents that were active after (or equal) to the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	ActiveGTE int64 `url:"active_gte,omitempty"`
+
+	// ActiveLT filters incidents that were active before the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	ActiveLT int64 `url:"active_lt,omitempty"`
+
+	// StartedGTE filters incidents that were started after (or equal) to the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	StartedGTE int64 `url:"started_gte,omitempty"`
+
+	// StartedLT filters incidents that were started before the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	StartedLT int64 `url:"started_lt,omitempty"`
 }
 
 // Clone duplicates the given options.
@@ -581,6 +597,19 @@ func (o IncidentFilterOptions) Validate() (IncidentFilterOptions, error) {
 
 	if options.PlaybookID != "" && !model.IsValidId(options.PlaybookID) {
 		return IncidentFilterOptions{}, errors.New("bad parameter 'playbook_id': must be 26 characters or blank")
+	}
+
+	if options.ActiveGTE < 0 {
+		options.ActiveGTE = 0
+	}
+	if options.ActiveLT < 0 {
+		options.ActiveLT = 0
+	}
+	if options.StartedGTE < 0 {
+		options.StartedGTE = 0
+	}
+	if options.StartedLT < 0 {
+		options.StartedLT = 0
 	}
 
 	return options, nil
