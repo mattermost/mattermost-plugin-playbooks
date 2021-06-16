@@ -15,7 +15,7 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {Incident, Metadata as IncidentMetadata} from 'src/types/incident';
 import {Overview} from 'src/components/backstage/incidents/incident_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/incidents/incident_backstage/retrospective/retrospective';
-import {fetchIncident, fetchIncidentMetadata} from 'src/client';
+import {clientFetchPlaybook, fetchIncident, fetchIncidentMetadata} from 'src/client';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
 import {
@@ -24,6 +24,8 @@ import {
 } from 'src/components/backstage/incidents/shared';
 import ExportLink from 'src/components/backstage/incidents/incident_details/export_link';
 import {useExperimentalFeaturesEnabled} from 'src/hooks';
+import {Playbook} from 'src/types/playbook';
+import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
@@ -89,10 +91,39 @@ const LeftArrow = styled.button`
     }
 `;
 
+const VerticalBlock = styled.div`
+    display: flex;
+    flex-direction: column;
+    font-weight: 400;
+    padding: 0 16px 0 24px;
+`;
+
 const Title = styled.div`
     font-size: 20px;
-    padding: 0 16px 0 24px;
     color: var(--center-channel-color);
+`;
+
+const PlaybookDiv = styled.div`
+    display: flex;
+    flex-direction: row;
+    color: var(--center-channel-color-64);
+    cursor: pointer;
+
+    &:hover {
+        color: var(--button-bg);
+    }
+`;
+
+const SmallPlaybookIcon = styled(PlaybookIcon)`
+    height: 13px;
+    width: auto;
+    margin-top: 1px;
+`;
+
+const SubTitle = styled.div`
+    font-size: 11px;
+    line-height: 16px;
+    margin-left: 4px;
 `;
 
 const TabItem = styled(NavLink)`
@@ -105,7 +136,7 @@ const TabItem = styled(NavLink)`
         text-decoration: unset;
         color: unset;
 
-        &.active{
+        &.active {
             box-shadow: inset 0px -2px 0px var(--button-bg);
             color: var(--button-bg);
         }
@@ -125,6 +156,7 @@ const FetchingStateType = {
 const IncidentBackstage = () => {
     const [incident, setIncident] = useState<Incident | null>(null);
     const [incidentMetadata, setIncidentMetadata] = useState<IncidentMetadata | null>(null);
+    const [playbook, setPlaybook] = useState<Playbook | null>(null);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const channel = useSelector<GlobalState, Channel | null>((state) => (incident ? getChannel(state, incident.channel_id) : null));
     const match = useRouteMatch<MatchParams>();
@@ -143,6 +175,17 @@ const IncidentBackstage = () => {
             setFetchingState(FetchingStateType.notFound);
         });
     }, [match.params.incidentId]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (incident?.playbook_id) {
+                const fetchedPlaybook = await clientFetchPlaybook(incident.playbook_id);
+                setPlaybook(fetchedPlaybook);
+            }
+        };
+
+        fetchData();
+    }, [incident?.playbook_id]);
 
     if (fetchingState === FetchingStateType.loading) {
         return null;
@@ -173,7 +216,13 @@ const IncidentBackstage = () => {
                         className='icon-arrow-left'
                         onClick={closeIncidentDetails}
                     />
-                    <Title data-testid='incident-title'>{incident.name}</Title>
+                    <VerticalBlock>
+                        <Title data-testid='incident-title'>{incident.name}</Title>
+                        <PlaybookDiv onClick={() => navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook?.id}`)}>
+                            <SmallPlaybookIcon/>
+                            <SubTitle>{playbook?.title}</SubTitle>
+                        </PlaybookDiv>
+                    </VerticalBlock>
                     <Badge status={incident.current_status}/>
                     <SecondaryButtonLargerRight onClick={goToChannel}>
                         <i className={'icon ' + channelIcon}/>
@@ -189,12 +238,12 @@ const IncidentBackstage = () => {
                         {'Overview'}
                     </TabItem>
                     {experimentalFeaturesEnabled &&
-                        <TabItem
-                            to={`${match.url}/retrospective`}
-                            activeClassName={'active'}
-                        >
-                            {'Retrospective'}
-                        </TabItem>
+                    <TabItem
+                        to={`${match.url}/retrospective`}
+                        activeClassName={'active'}
+                    >
+                        {'Retrospective'}
+                    </TabItem>
                     }
                 </SecondRow>
             </TopContainer>
