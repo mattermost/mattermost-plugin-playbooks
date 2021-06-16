@@ -68,8 +68,8 @@ func applyIncidentFilterOptionsSort(builder sq.SelectBuilder, options app.Incide
 		sort = "EndAt"
 	case app.SortByStatus:
 		sort = "CurrentStatus"
-	case SortByLastUpdateAt:
-		options.Sort = "LastUpdateAt"
+	case app.SortByLastUpdateAt:
+		sort = "LastUpdateAt"
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
@@ -258,7 +258,7 @@ func (s *incidentStore) GetIncidents(requesterInfo app.RequesterInfo, options ap
 	}
 	hasMore := options.Page+1 < pageCount
 
-	incidents := make([]incident.Incident, 0, len(rawIncidents))
+	incidents := make([]app.Incident, 0, len(rawIncidents))
 	incidentIDs := make([]string, 0, len(rawIncidents))
 	for _, rawIncident := range rawIncidents {
 		var incident *app.Incident

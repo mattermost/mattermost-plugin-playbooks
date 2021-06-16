@@ -102,7 +102,7 @@ const Row = (props: { incident: Incident }) => {
                 </SmallText>
             </div>
             <div className='col-sm-2'>
-                <SmallProfile userId={props.incident.commander_user_id}/>
+                <SmallProfile userId={props.incident.owner_user_id}/>
                 <SmallText>{participantsText(profilesInChannel)}</SmallText>
             </div>
             <div className='col-sm-2'>

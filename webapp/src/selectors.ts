@@ -23,9 +23,9 @@ import {
     TimelineEventsFilterDefault,
 } from 'src/types/rhs';
 import {Incident, incidentIsActive} from 'src/types/incident';
+import {findLastUpdated} from 'src/utils';
 
 import {GlobalSettings} from './types/settings';
-import {findLastUpdated} from 'src/utils';
 
 //@ts-ignore GlobalState is not complete
 const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};

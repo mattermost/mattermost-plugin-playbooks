@@ -39,6 +39,8 @@ func TestMigrationIdempotency(t *testing.T) {
 
 			// Migration to 0.10.0 needs the Channels table to work
 			setupChannelsTable(t, db)
+			// Migration to 0.21.0 need the Posts table
+			setupPostsTable(t, db)
 
 			// Apply each migration twice
 			for _, migration := range migrations {
@@ -68,6 +70,8 @@ func TestMigrationIdempotency(t *testing.T) {
 
 			// Migration to 0.10.0 needs the Channels table to work
 			setupChannelsTable(t, db)
+			// Migration to 0.21.0 need the Posts table
+			setupPostsTable(t, db)
 
 			// Apply the whole set of migrations twice
 			for i := 0; i < 2; i++ {

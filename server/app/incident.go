@@ -550,6 +550,7 @@ func (o IncidentFilterOptions) Validate() (IncidentFilterOptions, error) {
 	case SortByTeamID:
 	case SortByEndAt:
 	case SortByStatus:
+	case SortByLastUpdateAt:
 	case "": // default
 		options.Sort = SortByCreateAt
 	default:

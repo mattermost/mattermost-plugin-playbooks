@@ -33,6 +33,9 @@ const (
 
 	// SortByStatus sorts by the status of an incident.
 	SortByStatus SortField = "status"
+
+	// SortByLastUpdateAt sorts by when the incident was last updated.
+	SortByLastUpdateAt SortField = "last_update_at"
 )
 
 // SortDirection is the type used to specify the ascending or descending order of returned results.
