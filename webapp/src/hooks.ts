@@ -24,7 +24,7 @@ import {Incident, StatusPost} from 'src/types/incident';
 import {clientFetchPlaybooksCount} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
-import {isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from './license';
+import {isCloud, isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from './license';
 import {currentTeamNumPlaybooks, globalSettings} from './selectors';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
@@ -288,6 +288,11 @@ export function useEnsureProfiles(userIds: string[]) {
 
 export function useOpenCloudModal() {
     const dispatch = useDispatch();
+    const isServerCloud = useSelector(isCloud);
+
+    if (!isServerCloud) {
+        return () => { /*do nothing*/ };
+    }
 
     // @ts-ignore
     if (!window.WebappUtils?.modals?.openModal || !window.WebappUtils?.modals?.ModalIdentifiers?.CLOUD_PURCHASE || !window.Components?.PurchaseModal) {
