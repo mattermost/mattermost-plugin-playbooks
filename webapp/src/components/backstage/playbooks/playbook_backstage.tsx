@@ -317,6 +317,14 @@ const PlaybookBackstage = () => {
                                 title={'TOTAL RUNS started per week over the last 12 weeks'}
                                 labels={stats.runs_started_per_week_labels}
                                 data={stats.runs_started_per_week}
+                                tooltipTitleCallback={(xLabel) => 'Week of ' + xLabel}
+                                tooltipLabelCallback={(yLabel) => {
+                                    const runs = (yLabel === 1) ? 'run' : 'runs';
+                                    return `${yLabel} ${runs} started`;
+                                }}
+                                onClick={(index) => {
+                                    console.log('clicked on index ' + index + ' which is: ' + stats.runs_started_per_week[index]);
+                                }}
                             />
                         </GraphBox>
                     </BottomRow>
@@ -326,6 +334,14 @@ const PlaybookBackstage = () => {
                                 title={'ACTIVE RUNS per day over the last 14 days'}
                                 labels={stats.active_runs_per_day_labels}
                                 data={stats.active_runs_per_day}
+                                tooltipTitleCallback={(xLabel) => 'Day: ' + xLabel}
+                                tooltipLabelCallback={(yLabel) => {
+                                    const runs = (yLabel === 1) ? 'run' : 'runs';
+                                    return `${yLabel} active ${runs}`;
+                                }}
+                                onClick={(index) => {
+                                    console.log('clicked on index ' + index + ' which is: ' + stats.active_runs_per_day[index]);
+                                }}
                             />
                         </GraphBox>
                         <GraphBox>
@@ -334,6 +350,14 @@ const PlaybookBackstage = () => {
                                 labels={stats.active_participants_per_day_labels}
                                 data={stats.active_participants_per_day}
                                 color={'--center-channel-color-40'}
+                                tooltipTitleCallback={(xLabel) => 'Day: ' + xLabel}
+                                tooltipLabelCallback={(yLabel) => {
+                                    const participants = (yLabel === 1) ? 'participant' : 'participants';
+                                    return `${yLabel} active ${participants}`;
+                                }}
+                                onClick={(index) => {
+                                    console.log('clicked on index ' + index + ' which is: ' + stats.active_participants_per_day[index]);
+                                }}
                             />
                         </GraphBox>
                     </BottomRow>

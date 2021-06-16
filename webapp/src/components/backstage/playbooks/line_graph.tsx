@@ -15,6 +15,9 @@ interface LineGraphProps {
     data?: number[]
     labels?: string[]
     className?: string
+    tooltipTitleCallback?: (xLabel: string) => string
+    tooltipLabelCallback?: (yLabel: number) => string
+    onClick?: (index: number) => void
 }
 
 const LineGraph = (props: LineGraphProps) => {
@@ -55,6 +58,30 @@ const LineGraph = (props: LineGraphProps) => {
                                 maxRotation: 0,
                             },
                         }],
+                    },
+                    tooltips: {
+                        callbacks: {
+                            title(tooltipItems: any) {
+                                if (props.tooltipTitleCallback) {
+                                    return props.tooltipTitleCallback(tooltipItems[0].xLabel);
+                                }
+                                return tooltipItems[0].xLabel;
+                            },
+                            label(tooltipItem: any) {
+                                if (props.tooltipLabelCallback) {
+                                    return props.tooltipLabelCallback(tooltipItem.yLabel);
+                                }
+                                return tooltipItem.yLabel;
+                            },
+                        },
+                        displayColors: false,
+                    },
+                    onClick(event: any, element: any) {
+                        if (!props.onClick || element.length === 0) {
+                            return;
+                        }
+                        // eslint-disable-next-line no-underscore-dangle
+                        props.onClick(element[0]._index);
                     },
                     maintainAspectRatio: false,
                     responsive: true,
