@@ -848,7 +848,7 @@ var migrations = []Migration{
 			}
 
 			var lastUpdateAts []struct {
-				Id           string
+				ID           string
 				LastUpdateAt int64
 			}
 
@@ -867,10 +867,10 @@ var migrations = []Migration{
 				incidentUpdate := sqlStore.builder.
 					Update("IR_Incident").
 					Set("LastUpdateAt", row.LastUpdateAt).
-					Where(sq.Eq{"ID": row.Id})
+					Where(sq.Eq{"ID": row.ID})
 
 				if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
-					return errors.Wrapf(err, "failed to update incident's LastUpdateAt for id: %s", row.Id)
+					return errors.Wrapf(err, "failed to update incident's LastUpdateAt for id: %s", row.ID)
 				}
 			}
 
