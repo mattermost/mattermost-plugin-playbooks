@@ -852,8 +852,10 @@ var migrations = []Migration{
 				LastUpdateAt int64
 			}
 
+			// Fill in the LastUpdateAt column as either the most recent status post, or
+			// if no posts: the incident's CreateAt.
 			lastUpdateAtSelect := sqlStore.builder.
-				Select("i.Id", "COALESCE(MAX(p.CreateAt), i.CreateAt) as LastUpdateAt").
+				Select("i.Id as ID", "COALESCE(MAX(p.CreateAt), i.CreateAt) as LastUpdateAt").
 				From("IR_Incident as i").
 				LeftJoin("IR_StatusPosts as sp on i.Id = sp.IncidentId").
 				LeftJoin("Posts as p on sp.PostId = p.Id").
