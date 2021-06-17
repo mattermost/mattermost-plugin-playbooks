@@ -37,8 +37,9 @@ describe('backstage', () => {
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
 
-        // * Verify that playbooks are shown
-        cy.findByTestId('titlePlaybook').should('exist').contains('Playbooks');
+        // * Verify that playbooks page has loaded
+        // cy.findByTestId('titlePlaybook').should('exist').contains('Playbooks');
+        cy.findByText('Start a new playbook').should('exist');
     });
 
     it('switches to incidents list view via header button', () => {

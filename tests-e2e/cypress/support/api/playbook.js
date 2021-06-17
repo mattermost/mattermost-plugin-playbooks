@@ -60,6 +60,7 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         teamId,
         userId,
         title,
+        broadcastChannelId,
         checkLists: [{
             title: 'Stage 1',
             items: [

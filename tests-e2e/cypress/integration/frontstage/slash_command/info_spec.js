@@ -7,63 +7,32 @@
 // ***************************************************************
 
 describe('slash command > info', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
+    let testTeam;
     let teamId;
+    let testUser;
     let userId;
+    let testPlaybook;
     let playbookId;
+    let testIncident;
     let incidentId;
     let incidentName;
     let incidentChannelName;
 
     before(() => {
-        // # Login as user-1
-        cy.apiLogin('user-1');
-
-        // # Switch to clean display mode
-        cy.apiSaveMessageDisplayPreference('clean');
-
-        // # Create a playbook and incident.
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        cy.apiInitSetup({createIncident: true}).then(({team, user, playbook, incident}) => {
+            testTeam = team;
             teamId = team.id;
-            cy.apiGetCurrentUser().then((user) => {
-                userId = user.id;
+            testUser = user;
+            userId = user.id;
+            testPlaybook = playbook;
+            playbookId = playbook.id;
+            testIncident = incident;
+            incidentId = incident.id;
+            incidentName = incident.name;
+            incidentChannelName = incidentName.toLowerCase();
 
-                cy.apiCreatePlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    checklists: [
-                        {
-                            title: 'Stage 1',
-                            items: [
-                                {title: 'Step 1'},
-                                {title: 'Step 2'},
-                            ],
-                        },
-                        {
-                            title: 'Stage 2',
-                            items: [
-                                {title: 'Step 1'},
-                                {title: 'Step 2'},
-                            ],
-                        },
-                    ],
-                    memberIDs: [user.id],
-                }).then((playbook) => {
-                    playbookId = playbook.id;
-
-                    const now = Date.now();
-                    incidentName = 'Incident (' + now + ')';
-                    incidentChannelName = 'incident-' + now;
-                    cy.apiStartIncident({
-                        teamId,
-                        playbookId,
-                        incidentName,
-                        commanderUserId: userId,
-                    }).then((incident) => {
-                        incidentId = incident.id;
-                    });
-                });
-            });
+            // # Switch to clean display mode
+            cy.apiSaveMessageDisplayPreference('clean');
         });
     });
 
@@ -72,7 +41,7 @@ describe('slash command > info', () => {
         cy.viewport('macbook-13');
 
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.apiLogin(testUser);
 
         // # Reset the commander to test-1 as necessary.
         cy.apiChangeIncidentCommander(incidentId, userId);
@@ -81,7 +50,7 @@ describe('slash command > info', () => {
     describe('/incident info', () => {
         it('should show an error when not in an incident channel', () => {
             // # Navigate to a non-incident channel.
-            cy.visit('/ad-1/channels/town-square');
+            cy.visit(`/${testTeam.name}/channels/town-square`);
 
             // # Run a slash command to show the incident's info.
             cy.executeSlashCommand('/incident info');
@@ -92,7 +61,7 @@ describe('slash command > info', () => {
 
         it('should open the RHS when it is not open', () => {
             // # Navigate directly to the application and the incident channel.
-            cy.visit('/ad-1/channels/' + incidentChannelName);
+            cy.visit(`/${testTeam.name}/channels/` + incidentChannelName);
 
             // # Close the RHS, which is opened by default when navigating to an incident channel.
             cy.get('#searchResultsCloseButton').click();
@@ -109,7 +78,7 @@ describe('slash command > info', () => {
 
         it('should show an ephemeral post when the RHS is already open', () => {
             // # Navigate directly to the application and the incident channel.
-            cy.visit('/ad-1/channels/' + incidentChannelName);
+            cy.visit(`/${testTeam.name}/channels/` + incidentChannelName);
 
             // * Verify that the RHS is open.
             cy.get('#rhsContainer').should('be.visible');

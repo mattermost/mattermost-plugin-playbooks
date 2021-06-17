@@ -7,52 +7,26 @@
 // ***************************************************************
 
 describe('slash command > test', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
     let playbookId;
+    let testTeam;
+    let testUser;
 
     before(() => {
-        // # Login as user-1.
-        cy.apiLogin('user-1');
+        // # Create test team and test user
+        cy.apiInitSetup().then(({team, user, playbook}) => {
+            testTeam = team;
+            testUser = user;
+            playbookId = playbook.id;
 
         // # Switch to clean display mode.
         cy.apiSaveMessageDisplayPreference('clean');
-
-        // # Create a playbook.
-        cy.apiGetTeamByName('ad-1').then((team) => {
-            cy.apiGetCurrentUser().then((user) => {
-                cy.apiGetUserByEmail('sysadmin@sample.mattermost.com').then(({user: admin}) => {
-                    cy.apiCreatePlaybook({
-                        teamId: team.id,
-                        title: playbookName,
-                        checklists: [
-                            {
-                                title: 'Stage 1',
-                                items: [
-                                    {title: 'Step 1'},
-                                    {title: 'Step 2'},
-                                ],
-                            },
-                            {
-                                title: 'Stage 2',
-                                items: [
-                                    {title: 'Step 1'},
-                                    {title: 'Step 2'},
-                                ],
-                            },
-                        ],
-                        memberIDs: [user.id, admin.id],
-                    }).then((playbook) => {
-                        playbookId = playbook.id;
-                    });
-                });
-            });
         });
     });
 
     describe('as a regular user', () => {
         before(() => {
             // # Login as sysadmin.
-            cy.apiLogin('sysadmin');
+            cy.apiAdminLogin();
 
             // # Set EnableTesting to true.
             cy.apiUpdateConfig({
@@ -64,10 +38,10 @@ describe('slash command > test', () => {
 
         beforeEach(() => {
             // # Login as user-1
-            cy.apiLogin('user-1');
+            cy.apiLogin(testUser);
 
             // # Navigate to a channel.
-            cy.visit('/ad-1/channels/town-square');
+            cy.visit(`/${testTeam.name}/channels/town-square`);
         });
 
         it('fails to run subcommand bulk-data', () => {
@@ -99,7 +73,7 @@ describe('slash command > test', () => {
         describe('with EnableTesting set to false', () => {
             before(() => {
                 // # Login as sysadmin.
-                cy.apiLogin('sysadmin');
+                cy.apiAdminLogin();
 
                 // # Set EnableTesting to false.
                 cy.apiUpdateConfig({
@@ -111,10 +85,10 @@ describe('slash command > test', () => {
 
             beforeEach(() => {
                 // # Login as sysadmin.
-                cy.apiLogin('sysadmin');
+                cy.apiAdminLogin();
 
                 // # Navigate to a channel.
-                cy.visit('/ad-1/channels/town-square');
+                cy.visit(`/${testTeam.name}/channels/town-square`);
             });
 
             it('fails to run subcommand bulk-data', () => {
@@ -145,7 +119,7 @@ describe('slash command > test', () => {
         describe('with EnableTesting set to true', () => {
             before(() => {
                 // # Login as sysadmin.
-                cy.apiLogin('sysadmin');
+                cy.apiAdminLogin();
 
                 // # Set EnableTesting to true.
                 cy.apiUpdateConfig({
@@ -157,13 +131,13 @@ describe('slash command > test', () => {
 
             beforeEach(() => {
                 // # Login as sysadmin.
-                cy.apiLogin('sysadmin');
+                cy.apiAdminLogin();
 
                 // # Size the viewport to show the RHS without covering posts.
                 cy.viewport('macbook-13');
 
                 // # Navigate to a channel.
-                cy.visit('/ad-1/channels/town-square');
+                cy.visit(`/${testTeam.name}/channels/town-square`);
             });
 
             describe('with subcommand self', () => {

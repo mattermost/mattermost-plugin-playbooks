@@ -38,7 +38,7 @@ describe('playbook creation button', () => {
         cy.visit(`/${testTeam.name}`);
     });
 
-    it('opens playbook creation page with New Playbook button', () => {
+    it('opens playbook creation page with Create a Playbook button', () => {
         const url = 'com.mattermost.plugin-incident-management/playbooks/new';
         const playbookName = 'Untitled Playbook';
 
@@ -48,8 +48,8 @@ describe('playbook creation button', () => {
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Click 'New Playbook' button
-        cy.findByText('New Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+        // # Click 'Create a Playbook' button
+        cy.findByText('Create a Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
 
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
@@ -99,8 +99,8 @@ describe('playbook creation button', () => {
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Click 'New Playbook' button
-        cy.findByText('New Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+        // # Click 'Create a Playbook' button
+        cy.findByText('Create a Playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
 
         // # Click 'Permissions' tab
         cy.findByText('Permissions').should('be.visible').click().wait(TIMEOUTS.TINY);
@@ -116,7 +116,7 @@ describe('playbook creation button', () => {
 
         // # Add a new user
         cy.get('.profile-autocomplete__input > input')
-            .type('anne stone', {force: true, delay: 100}).wait(100)
+            .type(otherUser.username, {force: true, delay: 100}).wait(100)
             .type('{enter}');
 
         // * Verify that there is a Remove link when there is more than one member

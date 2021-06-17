@@ -7,33 +7,45 @@
 // ***************************************************************
 
 describe('incident rhs > latest update', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
     const defaultReminderMessage = '# Default reminder message';
+    let testTeam;
     let teamId;
     let userId;
     let playbookId;
-    let incidentChannelId;
+    let testIncident;
     let incidentName;
+    let incidentChannelName;
+    let testChannel;
+    let testUser;
+    let testUser2;
+    let dmChannel;
+    let privateChannel;
 
     before(() => {
-        // # Login as user-1
-        cy.apiLogin('user-1');
-
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        // # Create test team and test user
+        cy.apiInitSetup({createIncident: true}).then(({team, channel, user, playbook, incident}) => {
+            testTeam = team;
             teamId = team.id;
-            cy.apiGetCurrentUser().then((user) => {
-                userId = user.id;
-                cy.apiGetChannelByName('ad-1', 'town-square').then(({channel}) => {
-                    // # Create a playbook
-                    cy.apiCreateTestPlaybook({
-                        teamId,
-                        title: playbookName,
-                        userId,
-                        broadcastChannelId: channel.id,
-                        reminderTimerDefaultSeconds: 3600,
-                        reminderMessageTemplate: defaultReminderMessage,
-                    }).then((playbook) => {
-                        playbookId = playbook.id;
+            testUser = user;
+            userId = user.id;
+            playbookId = playbook.id;
+            testChannel = channel;
+            testIncident = incident;
+            incidentName = incident.name;
+            incidentChannelName = incidentName.toLowerCase();
+
+            cy.apiCreateChannel(team.id, 'private-1', 'Private Channel 1', 'P').then(({channel: prvChnl}) =>  {
+                privateChannel = prvChnl;
+                cy.apiAddUserToChannel(privateChannel.id, userId);
+            });
+
+            cy.apiAdminLogin().then(() => {
+                cy.apiCreateUser({prefix: 'other'}).then(({user: user2}) => {
+                    testUser2 = user2;
+                    cy.apiAddUserToTeam(team.id, user2.id);
+
+                    cy.apiCreateDirectChannel([testUser.id, testUser2.id]).then(({channel: dmChnl}) => {
+                        dmChannel = dmChnl;
                     });
                 });
             });
@@ -45,24 +57,10 @@ describe('incident rhs > latest update', () => {
         cy.viewport('macbook-13');
 
         // # Login as user-1
-        cy.apiLogin('user-1');
-
-        // # Create a new incident
-        const now = Date.now();
-        const name = 'Incident (' + now + ')';
-        const channelName = 'incident-' + now;
-        cy.apiStartIncident({
-            teamId,
-            playbookId,
-            incidentName: name,
-            commanderUserId: userId,
-        }).then((incident) => {
-            incidentChannelId = incident.channel_id;
-            incidentName = name;
-        });
+        cy.apiLogin(testUser);
 
         // # Navigate directly to the application and the incident channel
-        cy.visit('/ad-1/channels/' + channelName);
+        cy.visit(`/${testTeam.name}/channels/` + testIncident.name);
     });
 
     describe('status update interactive dialog', () => {
@@ -73,85 +71,59 @@ describe('incident rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 cy.get('#interactiveDialogModalIntroductionText')
-                    .contains('Update your incident status. This post will be broadcasted to Town Square.');
+                    .contains('Update your incident status.');
             });
         });
 
-        it('shows a generic message when the broadcast channel is private', () => {
-            // # Create a private channel
-            const now = Date.now();
-            const broadcastDisplayName = 'Private channel (' + now + ')';
-            const broadcastName = 'private-channel-' + now;
-            cy.apiCreateChannel(teamId, broadcastName, broadcastDisplayName, 'P')
-                .then(({channel}) => {
-                    // # Create a playbook with a private broadcast channel configured
-                    cy.apiCreateTestPlaybook({
-                        teamId,
-                        title: playbookName,
-                        userId,
-                        broadcastChannelId: channel.id,
-                    }).then((playbook) => {
-                        // # Create a new incident
-                        const name = 'Incident (' + now + ')';
-                        const incidentChannelName = 'incident-' + now;
-                        cy.apiStartIncident({
-                            teamId,
-                            playbookId: playbook.id,
-                            incidentName: name,
-                            commanderUserId: userId,
-                        });
+        it.only('shows a generic message when the broadcast channel is private', () => {
+            // # Visit the selected playbook
+            cy.visit(`/${testTeam.name}/com.mattermost.plugin-incident-management/playbooks/` + playbookId);
 
-                        // # Navigate to the incident channel
-                        cy.visit('/ad-1/channels/' + incidentChannelName);
+            // # Switch to Preferences tab
+            cy.get('#root').findByText('Preferences').click();
 
-                        // # Run the /incident status slash command.
-                        cy.executeSlashCommand('/incident update');
+            // # Open the broadcast channel widget and select a private channel
+            cy.get('#playbook-preferences-broadcast-channel').click().type(`${privateChannel.display_name}{enter}`, {delay: 200});
 
-                        // * Verify that the interactive dialog contains a generic message
-                        cy.get('#interactiveDialogModal').within(() => {
-                            cy.get('#interactiveDialogModalIntroductionText')
-                                .contains('Update your incident status. This post will be broadcasted to a private channel.');
-                        });
-                    });
-                });
+            // # Save the playbook
+            cy.findByTestId('save_playbook').click();
+
+            // # Visit incident channel
+            cy.visit(`/${testTeam.name}/channels/` + incidentChannelName);
+
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // * Verify that the interactive dialog contains a generic message
+            cy.get('#interactiveDialogModal').within(() => {
+                cy.get('#interactiveDialogModalIntroductionText')
+                    .contains('Update your incident status.');
+            });
         });
 
         it('shows a generic message when the broadcast channel is a direct message', () => {
-            // # Create a DM
-            cy.apiGetUsers(['user-1', 'douglas.daniels']).then((res) => {
-                const userIds = res.body.map((user) => user.id);
-                cy.apiCreateDM(userIds[0], userIds[1]).then(({channel}) => {
-                    // # Create a playbook with a private broadcast channel configured
-                    cy.apiCreateTestPlaybook({
-                        teamId,
-                        title: playbookName,
-                        userId,
-                        broadcastChannelId: channel.id,
-                    }).then((playbook) => {
-                        // # Create a new incident
-                        const now = Date.now();
-                        const name = 'Incident (' + now + ')';
-                        const incidentChannelName = 'incident-' + now;
-                        cy.apiStartIncident({
-                            teamId,
-                            playbookId: playbook.id,
-                            incidentName: name,
-                            commanderUserId: userId,
-                        });
+            // # Visit the selected playbook
+            cy.visit(`/${testTeam.name}/com.mattermost.plugin-incident-management/playbooks/` + playbookId);
 
-                        // # Navigate to the incident channel
-                        cy.visit('/ad-1/channels/' + incidentChannelName);
+            // # Switch to Preferences tab
+            cy.get('#root').findByText('Preferences').click();
 
-                        // # Run the /incident status slash command.
-                        cy.executeSlashCommand('/incident update');
+            // # Open the broadcast channel widget and select a DM channel
+            cy.get('#playbook-preferences-broadcast-channel').click().type(`${dmChannel.display_name}{enter}`, {delay: 200});
 
-                        // * Verify that the interactive dialog contains a generic message
-                        cy.get('#interactiveDialogModal').within(() => {
-                            cy.get('#interactiveDialogModalIntroductionText')
-                                .contains('Update your incident status. This post will be broadcasted to a private channel.');
-                        });
-                    });
-                });
+            // # Save the playbook
+            cy.findByTestId('save_playbook').click();
+
+            // # Visit incident channel
+            cy.visit(`/${testTeam.name}/channels/` + incidentChannelName);
+
+            // # Run the /incident status slash command.
+            cy.executeSlashCommand('/incident update');
+
+            // * Verify that the interactive dialog contains a generic message
+            cy.get('#interactiveDialogModal').within(() => {
+                cy.get('#interactiveDialogModalIntroductionText')
+                    .contains('Update your incident status.');
             });
         });
 

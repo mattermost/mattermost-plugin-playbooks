@@ -26,6 +26,7 @@ describe('incidents can be started', () => {
     let testUser;
     let userId;
     let testPlaybook;
+    let testPlaybookName;
     let playbookId;
 
     before(() => {
@@ -36,6 +37,7 @@ describe('incidents can be started', () => {
             userId = testUser.id;
             testPlaybook = playbook;
             playbookId = playbook.id;
+            testPlaybookName = playbook.title;
         })
         // // # Login as user-1
         // cy.apiLogin('user-1');
@@ -68,7 +70,7 @@ describe('incidents can be started', () => {
         // # Visit a public channel: off-topic
         cy.visit(`/${testTeam.name}/channels/off-topic`);
 
-        cy.log("TEST PLAYBOOK: ", testPlaybook.name);
+        cy.log("TEST PLAYBOOK: ",  testPlaybook.title);
 
         // // * Verify that incident can be started with slash command
         // const incidentName = 'Public ' + Date.now();

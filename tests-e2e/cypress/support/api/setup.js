@@ -19,7 +19,7 @@ Cypress.Commands.add('apiInitSetup', ({
                             if (createIncident) {
                                 return cy.apiLogin(user).then(() => {
                                     return cy.apiCreateIncident(team.id, user.id, playbook.id, incidentDesc).then(({incident}) => {
-                                            return cy.wrap({team, channel, user, playbook, incident});
+                                        return cy.wrap({team, channel, user, playbook, incident});
                                     });
                                 });
                             }
