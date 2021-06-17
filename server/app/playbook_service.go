@@ -179,6 +179,7 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 				"postID": postID,
 			},
 		},
+		Style: "primary",
 	}
 
 	if len(playbooks) == 1 {
@@ -194,6 +195,7 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 					"isMobile":        isMobile,
 				},
 			},
+			Style: "primary",
 		}
 
 		url := fmt.Sprintf("%s/%s/edit/automation", playbooksURL, playbooks[0].ID) // automation tab
@@ -225,6 +227,7 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 			},
 		},
 		Options: options,
+		Style:   "primary",
 	}
 
 	attachment := &model.SlackAttachment{
