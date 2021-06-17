@@ -4,11 +4,10 @@ import (
 	"net/http"
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/api"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/command"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -35,8 +34,8 @@ type Plugin struct {
 
 	handler         *api.Handler
 	config          *config.ServiceImpl
-	incidentService incident.Service
-	playbookService playbook.Service
+	incidentService app.IncidentService
+	playbookService app.PlaybookService
 	bot             *bot.Bot
 	pluginAPI       *pluginapi.Client
 }
@@ -74,8 +73,8 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	var telemetryClient interface {
-		incident.Telemetry
-		playbook.Telemetry
+		app.IncidentTelemetry
+		app.PlaybookTelemetry
 		bot.Telemetry
 		Enable() error
 		Disable() error
@@ -113,6 +112,7 @@ func (p *Plugin) OnActivate() error {
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
 	apiClient := sqlstore.NewClient(pluginAPIClient)
+	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, telemetryClient)
 	sqlStore, err := sqlstore.New(apiClient, p.bot)
 	if err != nil {
 		return errors.Wrapf(err, "failed creating the SQL store")
@@ -135,11 +135,10 @@ func (p *Plugin) OnActivate() error {
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
-	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, telemetryClient)
 
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
-	p.incidentService = incident.NewService(
+	p.incidentService = app.NewIncidentService(
 		pluginAPIClient,
 		incidentStore,
 		p.bot,
@@ -156,9 +155,9 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
 	}
 
-	keywordsThreadIgnorer := playbook.NewKeywordsThreadIgnorer()
+	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
 
-	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
@@ -176,7 +175,7 @@ func (p *Plugin) OnActivate() error {
 		p.bot,
 		p.config,
 	)
-	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.config)
+	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config)
 	api.NewTelemetryHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot, telemetryClient, telemetryClient, p.config)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.incidentService, p.playbookService, keywordsThreadIgnorer)

@@ -14,7 +14,7 @@ const StagesAndStepsBox = styled.div`
     text-align: center;
 `;
 
-const StagesAndStepsIcon: FC = () => (
+const StagesAndStepsIcon = () => (
     <StagesAndStepsBox>
         <i className='icon-20 icon-check-circle-outline'/>
     </StagesAndStepsBox>

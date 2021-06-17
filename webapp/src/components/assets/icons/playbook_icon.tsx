@@ -3,7 +3,7 @@
 
 import React, {FC} from 'react';
 
-const PlaybookIcon: FC = () => (
+const PlaybookIcon = () => (
     <svg
         width='14'
         height='16'

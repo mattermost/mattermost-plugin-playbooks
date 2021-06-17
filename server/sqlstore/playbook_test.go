@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -127,7 +127,7 @@ func TestGetPlaybook(t *testing.T) {
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
 		ToPlaybook()
 
-	pb := []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
+	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
 
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
@@ -137,7 +137,7 @@ func TestGetPlaybook(t *testing.T) {
 			actual, err := playbookStore.Get("")
 			require.Error(t, err)
 			require.EqualError(t, err, "ID cannot be empty")
-			require.Equal(t, playbook.Playbook{}, actual)
+			require.Equal(t, app.Playbook{}, actual)
 		})
 
 		t.Run(driverName+" - create and retrieve playbook", func(t *testing.T) {
@@ -152,8 +152,8 @@ func TestGetPlaybook(t *testing.T) {
 		})
 
 		t.Run(driverName+" - create and retrieve all playbooks", func(t *testing.T) {
-			var inserted []playbook.Playbook
-			for _, p := range pb {
+			var inserted []app.Playbook
+			for _, p := range playbooks {
 				id, err := playbookStore.Create(p)
 				require.NoError(t, err)
 
@@ -167,7 +167,7 @@ func TestGetPlaybook(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, p, got)
 			}
-			require.Equal(t, len(pb), len(inserted))
+			require.Equal(t, len(playbooks), len(inserted))
 		})
 
 		t.Run(driverName+" - create but retrieve non-existing playbook", func(t *testing.T) {
@@ -179,7 +179,7 @@ func TestGetPlaybook(t *testing.T) {
 			actual, err := playbookStore.Get("nonexisting")
 			require.Error(t, err)
 			require.EqualError(t, err, "playbook does not exist for id 'nonexisting': not found")
-			require.Equal(t, playbook.Playbook{}, actual)
+			require.Equal(t, app.Playbook{}, actual)
 		})
 
 		t.Run(driverName+" - set and retrieve playbook with no members and no checklists", func(t *testing.T) {
@@ -305,16 +305,16 @@ func TestGetPlaybooks(t *testing.T) {
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
 		ToPlaybook()
 
-	pb := []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
+	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
 
 	tests := []struct {
 		name        string
-		expected    []playbook.Playbook
+		expected    []app.Playbook
 		expectedErr error
 	}{
 		{
 			name:        "get all playbooks",
-			expected:    pb,
+			expected:    playbooks,
 			expectedErr: nil,
 		},
 	}
@@ -326,7 +326,7 @@ func TestGetPlaybooks(t *testing.T) {
 		t.Run("zero playbooks", func(t *testing.T) {
 			result, err := playbookStore.GetPlaybooks()
 			require.NoError(t, err)
-			require.ElementsMatch(t, []playbook.Playbook{}, result)
+			require.ElementsMatch(t, []app.Playbook{}, result)
 		})
 
 		// create playbooks, test that they were created correctly
@@ -334,8 +334,8 @@ func TestGetPlaybooks(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 0, len(all))
 
-		var inserted []playbook.Playbook
-		for _, p := range pb {
+		var inserted []app.Playbook
+		for _, p := range playbooks {
 			id, err := playbookStore.Create(p)
 			require.NoError(t, err)
 
@@ -349,7 +349,7 @@ func TestGetPlaybooks(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, p, got)
 		}
-		require.Equal(t, len(pb), len(inserted))
+		require.Equal(t, len(playbooks), len(inserted))
 
 		for _, testCase := range tests {
 			t.Run(driverName+" - "+testCase.name, func(t *testing.T) {
@@ -371,7 +371,7 @@ func TestGetPlaybooks(t *testing.T) {
 				}
 
 				// remove the checklists from the expected playbooks--we don't return them in getPlaybooks
-				var expected []playbook.Playbook
+				var expected []app.Playbook
 				for _, p := range testCase.expected {
 					tmp := p.Clone()
 					tmp.Checklists = nil
@@ -515,12 +515,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithMembers([]userInfo{}).
 		ToPlaybook()
 
-	pb := []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09}
+	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09}
 
-	createPlaybooks := func(store playbook.Store) {
+	createPlaybooks := func(store app.PlaybookStore) {
 		t.Helper()
 
-		for _, p := range pb {
+		for _, p := range playbooks {
 			_, err := store.Create(p)
 			require.NoError(t, err)
 		}
@@ -529,366 +529,382 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 	tests := []struct {
 		name          string
 		teamID        string
-		requesterInfo playbook.RequesterInfo
-		options       playbook.Options
-		expected      playbook.GetPlaybooksResults
+		requesterInfo app.RequesterInfo
+		options       app.PlaybookFilterOptions
+		expected      app.GetPlaybooksResults
 		expectedErr   error
 	}{
 		{
 			name:   "team1 from Andrew",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID: andrew.ID,
 				TeamID: team1id,
 			},
-			options: playbook.Options{
-				Sort: playbook.SortByTitle,
+			options: app.PlaybookFilterOptions{
+				Sort:    app.SortByTitle,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb01, pb02},
+				Items:      []app.Playbook{pb01, pb02},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team1 from jon",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID: jon.ID,
 				TeamID: team1id,
 			},
-			options: playbook.Options{
-				Sort: playbook.SortByTitle,
+			options: app.PlaybookFilterOptions{
+				Sort:    app.SortByTitle,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb01, pb03},
+				Items:      []app.Playbook{pb01, pb03},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team1 from jon title desc",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID: jon.ID,
 				TeamID: team1id,
 			},
-			options: playbook.Options{
-				Sort:      playbook.SortByTitle,
-				Direction: playbook.DirectionDesc,
+			options: app.PlaybookFilterOptions{
+				Sort:      app.SortByTitle,
+				Direction: app.DirectionDesc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb03, pb01},
+				Items:      []app.Playbook{pb03, pb01},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team1 from jon sort by stages desc",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID: jon.ID,
 				TeamID: team1id,
 			},
-			options: playbook.Options{
-				Sort:      playbook.SortByStages,
-				Direction: playbook.DirectionDesc,
+			options: app.PlaybookFilterOptions{
+				Sort:      app.SortByStages,
+				Direction: app.DirectionDesc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb03, pb01},
+				Items:      []app.Playbook{pb03, pb01},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team1 from Admin, no special access",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
-				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+			requesterInfo: app.RequesterInfo{
+				UserID:  lucia.ID,
+				IsAdmin: true,
 			},
-			options: playbook.Options{
-				Sort: playbook.SortByTitle,
+			options: app.PlaybookFilterOptions{
+				Sort:    app.SortByTitle,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 1,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb03},
+				Items:      []app.Playbook{pb03},
 			},
 			expectedErr: nil,
 		},
 		/*{
 			name:   "team1 from Admin",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+				IsAdmin: true,
 			},
-			options: playbook.Options{
-				Sort: playbook.SortByTitle,
+			options: app.PlaybookFilterOptions{
+				Sort: app.SortByTitle,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 4,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb01, pb02, pb03, pb04},
+				Items:      []app.Playbook{pb01, pb02, pb03, pb04},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team1 from Admin, member only",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
-				MemberOnly:      true,
+				IsAdmin: true,
 			},
-			options: playbook.Options{
-				Sort: playbook.SortByTitle,
+			options: app.PlaybookFilterOptions{
+				Sort: app.SortByTitle,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 1,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb03},
+				Items:      []app.Playbook{pb03},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team1 from Admin sort by steps desc",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+				IsAdmin: true,
 			},
-			options: playbook.Options{
-				Sort:      playbook.SortBySteps,
-				Direction: playbook.DirectionDesc,
+			options: app.PlaybookFilterOptions{
+				Sort:      app.SortBySteps,
+				Direction: app.DirectionDesc,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 4,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb04, pb02, pb03, pb01},
+				Items:      []app.Playbook{pb04, pb02, pb03, pb01},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team1 from Admin sort by title desc",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+				IsAdmin: true,
 			},
-			options: playbook.Options{
-				Sort:      playbook.SortByTitle,
-				Direction: playbook.DirectionDesc,
+			options: app.PlaybookFilterOptions{
+				Sort:      app.SortByTitle,
+				Direction: app.DirectionDesc,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 4,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb04, pb03, pb02, pb01},
+				Items:      []app.Playbook{pb04, pb03, pb02, pb01},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team1 from Admin sort by steps, default is asc",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+				IsAdmin: true,
 			},
-			options: playbook.Options{
-				Sort: playbook.SortBySteps,
+			options: app.PlaybookFilterOptions{
+				Sort: app.SortBySteps,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 4,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb01, pb03, pb02, pb04},
+				Items:      []app.Playbook{pb01, pb03, pb02, pb04},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team1 from Admin sort by steps, specify asc",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+				IsAdmin: true,
 			},
-			options: playbook.Options{
-				Sort:      playbook.SortBySteps,
-				Direction: playbook.DirectionAsc,
+			options: app.PlaybookFilterOptions{
+				Sort:      app.SortBySteps,
+				Direction: app.DirectionAsc,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 4,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb01, pb03, pb02, pb04},
+				Items:      []app.Playbook{pb01, pb03, pb02, pb04},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team1 from Admin sort by steps, desc",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+				IsAdmin: true,
 			},
-			options: playbook.Options{
-				Sort:      playbook.SortBySteps,
-				Direction: playbook.DirectionDesc,
+			options: app.PlaybookFilterOptions{
+				Sort:      app.SortBySteps,
+				Direction: app.DirectionDesc,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 4,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb04, pb02, pb03, pb01},
+				Items:      []app.Playbook{pb04, pb02, pb03, pb01},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team1 from Admin sort by stages",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+				IsAdmin: true,
 			},
-			options: playbook.Options{
-				Sort: playbook.SortByStages,
+			options: app.PlaybookFilterOptions{
+				Sort: app.SortByStages,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 4,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb04, pb01, pb03, pb02},
+				Items:      []app.Playbook{pb04, pb01, pb03, pb02},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team1 from Admin sort by stages, desc",
 			teamID: team1id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+				IsAdmin: true,
 			},
-			options: playbook.Options{
-				Sort:      playbook.SortByStages,
-				Direction: playbook.DirectionDesc,
+			options: app.PlaybookFilterOptions{
+				Sort:      app.SortByStages,
+				Direction: app.DirectionDesc,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 4,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb02, pb03, pb01, pb04},
+				Items:      []app.Playbook{pb02, pb03, pb01, pb04},
 			},
 			expectedErr: nil,
 		},*/
 		{
 			name:   "team2 from Matt",
 			teamID: team2id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID: matt.ID,
 				TeamID: team2id,
 			},
-			options: playbook.Options{
-				Sort: playbook.SortByTitle,
+			options: app.PlaybookFilterOptions{
+				Sort:    app.SortByTitle,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 1,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb06},
+				Items:      []app.Playbook{pb06},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "team3 from Andrew (not on team)",
 			teamID: team3id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID: andrew.ID,
 				TeamID: team3id,
 			},
-			options: playbook.Options{
-				Sort: playbook.SortByTitle,
+			options: app.PlaybookFilterOptions{
+				Sort:    app.SortByTitle,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb07, pb09},
+				Items:      []app.Playbook{pb07, pb09},
 			},
 			expectedErr: nil,
 		},
 		/*{
 			name:   "team3 from Admin",
 			teamID: team3id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
+				IsAdmin: true,
 			},
-			options: playbook.Options{
-				Sort: playbook.SortByTitle,
+			options: app.PlaybookFilterOptions{
+				Sort: app.SortByTitle,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb07, pb08},
-			},
-			expectedErr: nil,
-		},
-		{
-			name:   "team3 from Admin, memberOnly",
-			teamID: team3id,
-			requesterInfo: playbook.RequesterInfo{
-				UserID:          lucia.ID,
-				UserIDtoIsAdmin: map[string]bool{lucia.ID: true},
-				MemberOnly:      true,
-			},
-			options: playbook.Options{
-				Sort: playbook.SortByTitle,
-			},
-			expected: playbook.GetPlaybooksResults{
-				TotalCount: 1,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []playbook.Playbook{pb08},
+				Items:      []app.Playbook{pb07, pb08},
 			},
 			expectedErr: nil,
 		},*/
 		{
 			name:   "team3 from Desmond - testing many members",
 			teamID: team3id,
-			requesterInfo: playbook.RequesterInfo{
+			requesterInfo: app.RequesterInfo{
 				UserID: desmond.ID,
 				TeamID: team3id,
 			},
-			options: playbook.Options{
-				Sort: playbook.SortByTitle,
+			options: app.PlaybookFilterOptions{
+				Sort:    app.SortByTitle,
+				Page:    0,
+				PerPage: 1000,
 			},
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{pb08, pb09},
+				Items:      []app.Playbook{pb08, pb09},
 			},
 			expectedErr: nil,
 		},
 		{
 			name:   "none found",
 			teamID: "not-existing",
-			expected: playbook.GetPlaybooksResults{
+			expected: app.GetPlaybooksResults{
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
@@ -905,7 +921,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		t.Run("zero playbooks", func(t *testing.T) {
 			result, err := playbookStore.GetPlaybooks()
 			require.NoError(t, err)
-			require.ElementsMatch(t, []playbook.Playbook{}, result)
+			require.ElementsMatch(t, []app.Playbook{}, result)
 		})
 
 		_, store := setupSQLStore(t, db)
@@ -991,22 +1007,22 @@ func TestUpdatePlaybook(t *testing.T) {
 
 		tests := []struct {
 			name        string
-			playbook    playbook.Playbook
-			update      func(playbook.Playbook) playbook.Playbook
+			playbook    app.Playbook
+			update      func(app.Playbook) app.Playbook
 			expectedErr error
 		}{
 			{
 				name:     "id should not be empty",
 				playbook: NewPBBuilder().ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
-					return playbook.Playbook{}
+				update: func(old app.Playbook) app.Playbook {
+					return app.Playbook{}
 				},
 				expectedErr: errors.New("id should not be empty"),
 			},
 			{
 				name:     "Incident /can/ contain checklists with no items",
 				playbook: NewPBBuilder().WithChecklists([]int{1}).ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
+				update: func(old app.Playbook) app.Playbook {
 					old.Checklists[0].Items = nil
 					old.NumSteps = 0
 					return old
@@ -1016,7 +1032,7 @@ func TestUpdatePlaybook(t *testing.T) {
 			{
 				name:     "playbook now public",
 				playbook: NewPBBuilder().WithChecklists([]int{1}).ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
+				update: func(old app.Playbook) app.Playbook {
 					old.CreatePublicIncident = true
 					return old
 				},
@@ -1025,7 +1041,7 @@ func TestUpdatePlaybook(t *testing.T) {
 			{
 				name:     "playbook new title",
 				playbook: NewPBBuilder().WithChecklists([]int{1}).ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
+				update: func(old app.Playbook) app.Playbook {
 					old.Title = "new title"
 					return old
 				},
@@ -1035,7 +1051,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				name: "playbook new description",
 				playbook: NewPBBuilder().WithDescription("original description").
 					WithChecklists([]int{1}).ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
+				update: func(old app.Playbook) app.Playbook {
 					old.Description = "new description"
 					return old
 				},
@@ -1044,7 +1060,7 @@ func TestUpdatePlaybook(t *testing.T) {
 			{
 				name:     "delete playbook",
 				playbook: NewPBBuilder().WithChecklists([]int{1}).ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
+				update: func(old app.Playbook) app.Playbook {
 					old.DeleteAt = model.GetMillis()
 					return old
 				},
@@ -1053,8 +1069,8 @@ func TestUpdatePlaybook(t *testing.T) {
 			{
 				name:     "Incident with 2 checklists, update the checklists a bit",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
-					old.Checklists[0].Items[0].State = playbook.ChecklistItemStateClosed
+				update: func(old app.Playbook) app.Playbook {
+					old.Checklists[0].Items[0].State = app.ChecklistItemStateClosed
 					old.Checklists[1].Items[1].Title = "new title"
 					return old
 				},
@@ -1063,8 +1079,8 @@ func TestUpdatePlaybook(t *testing.T) {
 			{
 				name:     "Incident with 3 checklists, update to 0",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2, 5}).ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
-					old.Checklists = []playbook.Checklist{}
+				update: func(old app.Playbook) app.Playbook {
+					old.Checklists = []app.Checklist{}
 					old.NumSteps = 0
 					old.NumStages = 0
 					return old
@@ -1075,7 +1091,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				name: "Incident with 2 members, go to 1",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
 					WithMembers([]userInfo{jon, andrew}).ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
+				update: func(old app.Playbook) app.Playbook {
 					old.MemberIDs = []string{andrew.ID}
 					return old
 				},
@@ -1085,7 +1101,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				name: "Incident with 3 members, go to 4 with different members",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
 					WithMembers([]userInfo{jon, andrew, bob}).ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
+				update: func(old app.Playbook) app.Playbook {
 					old.MemberIDs = []string{matt.ID, bill.ID, alice.ID, jen.ID}
 					return old
 				},
@@ -1095,7 +1111,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				name: "Incident with 3 members, go to 4 with one different member",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
 					WithMembers([]userInfo{jon, andrew, bob}).ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
+				update: func(old app.Playbook) app.Playbook {
 					old.MemberIDs = []string{jon.ID, andrew.ID, bob.ID, alice.ID}
 					return old
 				},
@@ -1104,7 +1120,7 @@ func TestUpdatePlaybook(t *testing.T) {
 			{
 				name:     "Incident with 0 members, go to 2",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
+				update: func(old app.Playbook) app.Playbook {
 					old.MemberIDs = []string{alice.ID, jen.ID}
 					return old
 				},
@@ -1122,7 +1138,7 @@ func TestUpdatePlaybook(t *testing.T) {
 						{model.NewId(), "j3"},
 					}).
 					ToPlaybook(),
-				update: func(old playbook.Playbook) playbook.Playbook {
+				update: func(old app.Playbook) app.Playbook {
 					old.MemberIDs = nil
 					return old
 				},
@@ -1266,9 +1282,9 @@ func TestGetPlaybooksForKeywords(t *testing.T) {
 		WithKeywords([]string{"other", "keywords"}).
 		ToPlaybook()
 
-	pb := []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09}
+	pb := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09}
 
-	createPlaybooks := func(store playbook.Store) {
+	createPlaybooks := func(store app.PlaybookStore) {
 		t.Helper()
 
 		for _, p := range pb {
@@ -1277,7 +1293,7 @@ func TestGetPlaybooksForKeywords(t *testing.T) {
 		}
 	}
 
-	expected := []playbook.Playbook{pb01, pb02, pb03, pb09}
+	expected := []app.Playbook{pb01, pb02, pb03, pb09}
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		playbookStore := setupPlaybookStore(t, db)
@@ -1285,13 +1301,13 @@ func TestGetPlaybooksForKeywords(t *testing.T) {
 		t.Run("zero playbooks", func(t *testing.T) {
 			result, err := playbookStore.GetPlaybooks()
 			require.NoError(t, err)
-			require.ElementsMatch(t, []playbook.Playbook{}, result)
+			require.ElementsMatch(t, []app.Playbook{}, result)
 		})
 
 		createPlaybooks(playbookStore)
 
 		t.Run(driverName+" - get playbooks with keywords", func(t *testing.T) {
-			actual, err := playbookStore.GetPlaybooksWithKeywords(playbook.Options{})
+			actual, err := playbookStore.GetPlaybooksWithKeywords(app.PlaybookFilterOptions{Page: 0, PerPage: 100})
 			sort.Slice(actual, func(i, j int) bool { return actual[i].Title < actual[j].Title })
 
 			require.NoError(t, err)
@@ -1343,9 +1359,9 @@ func TestGetTimeLastUpdated(t *testing.T) {
 		WithUpdateAt(700).
 		ToPlaybook()
 
-	pb := []playbook.Playbook{pb01, pb02, pb03, pb04, pb05}
+	pb := []app.Playbook{pb01, pb02, pb03, pb04, pb05}
 
-	createPlaybooks := func(store playbook.Store) {
+	createPlaybooks := func(store app.PlaybookStore) {
 		t.Helper()
 
 		for _, p := range pb {
@@ -1362,7 +1378,7 @@ func TestGetTimeLastUpdated(t *testing.T) {
 		t.Run("zero playbooks", func(t *testing.T) {
 			result, err := playbookStore.GetPlaybooks()
 			require.NoError(t, err)
-			require.ElementsMatch(t, []playbook.Playbook{}, result)
+			require.ElementsMatch(t, []app.Playbook{}, result)
 
 			lastUpdated, err := playbookStore.GetTimeLastUpdated(true)
 			require.NoError(t, err)
@@ -1472,7 +1488,7 @@ func TestGetPlaybookIDsForUser(t *testing.T) {
 		WithMembers([]userInfo{}).
 		ToPlaybook()
 
-	pb := []playbook.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09}
+	pb := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09}
 
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
@@ -1481,7 +1497,7 @@ func TestGetPlaybookIDsForUser(t *testing.T) {
 		t.Run("zero playbooks", func(t *testing.T) {
 			result, err := playbookStore.GetPlaybooks()
 			require.NoError(t, err)
-			require.ElementsMatch(t, []playbook.Playbook{}, result)
+			require.ElementsMatch(t, []app.Playbook{}, result)
 		})
 
 		_, store := setupSQLStore(t, db)
@@ -1596,20 +1612,20 @@ func TestGetPlaybookIDsForUser(t *testing.T) {
 // Use it as:
 // NewBuilder.WithName("name").WithXYZ(xyz)....ToPlaybook()
 type PlaybookBuilder struct {
-	*playbook.Playbook
+	*app.Playbook
 }
 
 func NewPBBuilder() *PlaybookBuilder {
 	timeNow := model.GetMillis()
 	return &PlaybookBuilder{
-		&playbook.Playbook{
+		&app.Playbook{
 			Title:                "base playbook",
 			TeamID:               model.NewId(),
 			CreatePublicIncident: false,
 			CreateAt:             timeNow,
 			UpdateAt:             timeNow,
 			DeleteAt:             0,
-			Checklists:           []playbook.Checklist(nil),
+			Checklists:           []app.Checklist(nil),
 			MemberIDs:            []string(nil),
 			InvitedUserIDs:       []string(nil),
 			InvitedGroupIDs:      []string(nil),
@@ -1660,18 +1676,18 @@ func (p *PlaybookBuilder) WithDeleteAt(deleteAt int64) *PlaybookBuilder {
 }
 
 func (p *PlaybookBuilder) WithChecklists(itemsPerChecklist []int) *PlaybookBuilder {
-	p.Checklists = make([]playbook.Checklist, len(itemsPerChecklist))
+	p.Checklists = make([]app.Checklist, len(itemsPerChecklist))
 
 	for i, numItems := range itemsPerChecklist {
-		var items []playbook.ChecklistItem
+		var items []app.ChecklistItem
 		for j := 0; j < numItems; j++ {
-			items = append(items, playbook.ChecklistItem{
+			items = append(items, app.ChecklistItem{
 				ID:    model.NewId(),
 				Title: fmt.Sprint("Checklist ", i, " - item ", j),
 			})
 		}
 
-		p.Checklists[i] = playbook.Checklist{
+		p.Checklists[i] = app.Checklist{
 			ID:    model.NewId(),
 			Title: fmt.Sprint("Checklist ", i),
 			Items: items,
@@ -1715,11 +1731,11 @@ func (p *PlaybookBuilder) WithUpdateAt(updateAt int64) *PlaybookBuilder {
 	return p
 }
 
-func (p *PlaybookBuilder) ToPlaybook() playbook.Playbook {
+func (p *PlaybookBuilder) ToPlaybook() app.Playbook {
 	return *p.Playbook
 }
 
-func setupPlaybookStore(t *testing.T, db *sqlx.DB) playbook.Store {
+func setupPlaybookStore(t *testing.T, db *sqlx.DB) app.PlaybookStore {
 	mockCtrl := gomock.NewController(t)
 
 	kvAPI := mock_sqlstore.NewMockKVAPI(mockCtrl)

@@ -5,9 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
@@ -17,12 +16,12 @@ import (
 type SignalHandler struct {
 	*ErrorHandler
 	api                   *pluginapi.Client
-	incidentService       incident.Service
-	playbookService       playbook.Service
-	keywordsThreadIgnorer playbook.KeywordsThreadIgnorer
+	incidentService       app.IncidentService
+	playbookService       app.PlaybookService
+	keywordsThreadIgnorer app.KeywordsThreadIgnorer
 }
 
-func NewSignalHandler(router *mux.Router, api *pluginapi.Client, logger bot.Logger, incidentService incident.Service, playbookService playbook.Service, keywordsThreadIgnorer playbook.KeywordsThreadIgnorer) *SignalHandler {
+func NewSignalHandler(router *mux.Router, api *pluginapi.Client, logger bot.Logger, incidentService app.IncidentService, playbookService app.PlaybookService, keywordsThreadIgnorer app.KeywordsThreadIgnorer) *SignalHandler {
 	handler := &SignalHandler{
 		ErrorHandler:          &ErrorHandler{log: logger},
 		api:                   api,
@@ -68,7 +67,7 @@ func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.incidentService.OpenCreateIncidentDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []playbook.Playbook{pbook}, isMobile); err != nil {
+	if err := h.incidentService.OpenCreateIncidentDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, isMobile); err != nil {
 		h.returnError("can't open dialog", errors.Wrap(err, "can't open a dialog"), w)
 		return
 	}

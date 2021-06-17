@@ -74,7 +74,7 @@ describe('timeline', () => {
             teamId,
             playbookId,
             incidentName,
-            commanderUserId: userId,
+            ownerUserId: userId,
         });
 
         cy.apiGetChannelByName(teamName, channelName).then(({channel}) => {
@@ -99,7 +99,7 @@ describe('timeline', () => {
     });
 
     describe('timeline updates', () => {
-        it('show the incident created, status updated, commander changed, and checklist events', () => {
+        it('show the incident created, status updated, owner changed, and checklist events', () => {
             // * Verify incident created message is visible in the timeline
             verifyTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
 
@@ -109,11 +109,11 @@ describe('timeline', () => {
             // * Verify we can see the update in the timeline
             verifyTimelineEvent('status_updated', 1, 0, 'user-1 posted a status update');
 
-            // # Change commander
-            cy.executeSlashCommand('/incident commander @aaron.peterson');
+            // # Change owner
+            cy.executeSlashCommand('/incident owner @aaron.peterson');
 
-            // * Verify we can see the change commander in the timeline
-            verifyTimelineEvent('commander_changed', 1, 0, 'Commander changed from @user-1 to @aaron.peterson');
+            // * Verify we can see the change owner in the timeline
+            verifyTimelineEvent('owner_changed', 1, 0, 'Owner changed from @user-1 to @aaron.peterson');
 
             // # Post an update that changes the incident status
             cy.updateStatus('this is a status update', 0, 'Active');
@@ -121,11 +121,11 @@ describe('timeline', () => {
             // * Verify we can see the update in the timeline
             verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
 
-            // # Change commander
-            cy.executeSlashCommand('/incident commander @user-1');
+            // # Change owner
+            cy.executeSlashCommand('/incident owner @user-1');
 
-            // * Verify we can see the change commander in the timeline
-            verifyTimelineEvent('commander_changed', 2, 1, 'Commander changed from @aaron.peterson to @user-1');
+            // * Verify we can see the change owner in the timeline
+            verifyTimelineEvent('owner_changed', 2, 1, 'Owner changed from @aaron.peterson to @user-1');
 
             // # Select the tasks tab
             cy.findByTestId('tasks').click();
@@ -146,11 +146,11 @@ describe('timeline', () => {
         it('show up at the end and in the middle of the timeline', () => {
             // # Post the first message we'll click on
             cy.apiCreatePost(channelId, 'this is the first post').then(({post}) => {
-                // # Change commander, to create a timeline event
-                cy.executeSlashCommand('/incident commander @aaron.peterson');
+                // # Change owner, to create a timeline event
+                cy.executeSlashCommand('/incident owner @aaron.peterson');
 
-                // * Verify we can see the change commander in the timeline
-                verifyTimelineEvent('commander_changed', 1, 0, 'Commander changed from @user-1 to @aaron.peterson');
+                // * Verify we can see the change owner in the timeline
+                verifyTimelineEvent('owner_changed', 1, 0, 'Owner changed from @user-1 to @aaron.peterson');
 
                 // # Post the second message we'll click on
                 cy.createPost('this is the second post we\'ll click on');
@@ -223,11 +223,11 @@ describe('timeline', () => {
             // * Verify we can see the update in the timeline
             verifyTimelineEvent('status_updated', 1, 0, 'user-1 posted a status update');
 
-            // # Change commander
-            cy.executeSlashCommand('/incident commander @aaron.peterson');
+            // # Change owner
+            cy.executeSlashCommand('/incident owner @aaron.peterson');
 
-            // * Verify we can see the change commander in the timeline
-            verifyTimelineEvent('commander_changed', 1, 0, 'Commander changed from @user-1 to @aaron.peterson');
+            // * Verify we can see the change owner in the timeline
+            verifyTimelineEvent('owner_changed', 1, 0, 'Owner changed from @user-1 to @aaron.peterson');
 
             // # Post an update that changes the incident status
             cy.updateStatus('this is a status update', 0, 'Active');
@@ -235,11 +235,11 @@ describe('timeline', () => {
             // * Verify we can see the update in the timeline
             verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
 
-            // # Change commander
-            cy.executeSlashCommand('/incident commander @user-1');
+            // # Change owner
+            cy.executeSlashCommand('/incident owner @user-1');
 
-            // * Verify we can see the change commander in the timeline
-            verifyTimelineEvent('commander_changed', 2, 1, 'Commander changed from @aaron.peterson to @user-1');
+            // * Verify we can see the change owner in the timeline
+            verifyTimelineEvent('owner_changed', 2, 1, 'Owner changed from @aaron.peterson to @user-1');
 
             // # Post the message we'll click on
             cy.createPost('this is the first post we\'ll click on');
@@ -257,14 +257,14 @@ describe('timeline', () => {
             // * Delete the second status update
             removeTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
 
-            // * Delete the first commander change
-            removeTimelineEvent('commander_changed', 2, 0, 'Commander changed from @user-1 to @aaron.peterson');
+            // * Delete the first owner change
+            removeTimelineEvent('owner_changed', 2, 0, 'Owner changed from @user-1 to @aaron.peterson');
 
             // * Delete the first status update
             removeTimelineEvent('status_updated', 1, 0, 'user-1 posted a status update');
 
-            // * Delete the second commander change
-            removeTimelineEvent('commander_changed', 1, 0, 'Commander changed from @aaron.peterson to @user-1');
+            // * Delete the second owner change
+            removeTimelineEvent('owner_changed', 1, 0, 'Owner changed from @aaron.peterson to @user-1');
         });
     });
 
@@ -298,8 +298,8 @@ describe('timeline', () => {
             // # Post an update that doesn't change the incident status
             cy.updateStatus('this is a status update');
 
-            // # Change commander
-            cy.executeSlashCommand('/incident commander @aaron.peterson');
+            // # Change owner
+            cy.executeSlashCommand('/incident owner @aaron.peterson');
 
             // # Post an update that changes the incident status
             cy.updateStatus('this is a status update', 0, 'Active');
@@ -311,8 +311,8 @@ describe('timeline', () => {
             const summary1 = 'This is the incident summary 1';
             cy.addPostToTimelineUsingPostMenu(incidentName, summary1);
 
-            // # Change commander
-            cy.executeSlashCommand('/incident commander @user-1');
+            // # Change owner
+            cy.executeSlashCommand('/incident owner @user-1');
 
             // # Select the tasks tab
             cy.findByTestId('tasks').click();
@@ -335,16 +335,16 @@ describe('timeline', () => {
             cy.findByTestId('timeline').click();
 
             // # Remove default options
-            clickOnFilterOption('Commander changes');
+            clickOnFilterOption('Role changes');
             clickOnFilterOption('Status updates');
             clickOnFilterOption('Events from posts');
 
-            // # Filter to Commander Changed only
-            clickOnFilterOption('Commander changes');
-            verifyTimelineEvent('commander_changed', 2, 0, 'Commander changed from @user-1 to @aaron.peterson');
-            verifyTimelineEvent('commander_changed', 2, 1, 'Commander changed from @aaron.peterson to @user-1');
+            // # Filter to Owner Changed only
+            clickOnFilterOption('Role changes');
+            verifyTimelineEvent('owner_changed', 2, 0, 'Owner changed from @user-1 to @aaron.peterson');
+            verifyTimelineEvent('owner_changed', 2, 1, 'Owner changed from @aaron.peterson to @user-1');
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 2);
-            clickOnFilterOption('Commander changes');
+            clickOnFilterOption('Role changes');
 
             // # Filter to Status Updates only
             clickOnFilterOption('Status updates');
@@ -387,9 +387,9 @@ describe('timeline', () => {
             // * Verify all events are shown (incl. one user_joined_left event)
             cy.findAllByTestId(/timeline-item .*/).should('have.length', 10);
             verifyTimelineEvent('status_updated', 2, 0, 'user-1 posted a status update');
-            verifyTimelineEvent('commander_changed', 2, 0, 'Commander changed from @user-1 to @aaron.peterson');
+            verifyTimelineEvent('owner_changed', 2, 0, 'Owner changed from @user-1 to @aaron.peterson');
             verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
-            verifyTimelineEvent('commander_changed', 2, 1, 'Commander changed from @aaron.peterson to @user-1');
+            verifyTimelineEvent('owner_changed', 2, 1, 'Owner changed from @aaron.peterson to @user-1');
             verifyTimelineEvent('event_from_post', 1, 0, summary1);
             verifyTimelineEvent('task_state_modified', 1, 1, 'user-1 checked off checklist item "Step 1"');
             verifyTimelineEvent('assignee_changed', 1, 0, 'Assignee Changed');

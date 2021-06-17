@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import moment from 'moment';
 
 import {useDispatch, useSelector} from 'react-redux';
-import React, {FC, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import {Post} from 'mattermost-redux/types/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -90,7 +90,7 @@ interface Props {
     post: Post | null;
 }
 
-const PostCard: FC<Props> = (props: Props) => {
+const PostCard = (props: Props) => {
     const dispatch = useDispatch();
     const [authorProfileUrl, authorUserName] = useAuthorInfo(props.post?.user_id || '');
 

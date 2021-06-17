@@ -39,7 +39,7 @@ export interface TabsProps {
     setCurrentTab: (newTab: number) => void;
 }
 
-export const Tabs: FC<TabsProps> = (props: TabsProps) => {
+export const Tabs = (props: TabsProps) => {
     return (
         <TabRow>
             {props.children.map((child, index) => (
@@ -60,7 +60,7 @@ export interface TabsContentProps {
     currentTab: number;
 }
 
-export const TabsContent: FC<TabsContentProps> = (props: TabsContentProps) => {
+export const TabsContent = (props: TabsContentProps) => {
     return (
         <>
             {props.children[props.currentTab]}

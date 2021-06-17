@@ -9,15 +9,15 @@ import (
 	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
 
 	"github.com/golang/mock/gomock"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 func TestAPI(t *testing.T) {
@@ -59,7 +59,7 @@ func requireErrorWithStatusCode(t *testing.T, err error, statusCode int) {
 	require.Equal(t, statusCode, errResponse.StatusCode)
 }
 
-func toAPIIncident(internalIncident incident.Incident) icClient.Incident {
+func toAPIIncident(internalIncident app.Incident) icClient.Incident {
 	var apiIncident icClient.Incident
 
 	incidentBytes, _ := json.Marshal(internalIncident)
@@ -71,8 +71,8 @@ func toAPIIncident(internalIncident incident.Incident) icClient.Incident {
 	return apiIncident
 }
 
-func toInternalIncident(apiIncident icClient.Incident) incident.Incident {
-	var internalIncident incident.Incident
+func toInternalIncident(apiIncident icClient.Incident) app.Incident {
+	var internalIncident app.Incident
 
 	incidentBytes, _ := json.Marshal(apiIncident)
 	err := json.Unmarshal(incidentBytes, &internalIncident)
@@ -83,8 +83,8 @@ func toInternalIncident(apiIncident icClient.Incident) incident.Incident {
 	return internalIncident
 }
 
-func toInternalIncidentMetadata(apiIncidentMetadata icClient.IncidentMetadata) incident.Metadata {
-	var internalIncidentMetadata incident.Metadata
+func toInternalIncidentMetadata(apiIncidentMetadata icClient.IncidentMetadata) app.Metadata {
+	var internalIncidentMetadata app.Metadata
 
 	incidentBytes, _ := json.Marshal(apiIncidentMetadata)
 	err := json.Unmarshal(incidentBytes, &internalIncidentMetadata)
@@ -95,7 +95,7 @@ func toInternalIncidentMetadata(apiIncidentMetadata icClient.IncidentMetadata) i
 	return internalIncidentMetadata
 }
 
-func toAPIPlaybook(internalPlaybook playbook.Playbook) icClient.Playbook {
+func toAPIPlaybook(internalPlaybook app.Playbook) icClient.Playbook {
 	var apiPlaybook icClient.Playbook
 
 	playbookBytes, _ := json.Marshal(internalPlaybook)
@@ -107,7 +107,7 @@ func toAPIPlaybook(internalPlaybook playbook.Playbook) icClient.Playbook {
 	return apiPlaybook
 }
 
-func toAPIPlaybooks(internalPlaybooks []playbook.Playbook) []icClient.Playbook {
+func toAPIPlaybooks(internalPlaybooks []app.Playbook) []icClient.Playbook {
 	apiPlaybooks := []icClient.Playbook{}
 
 	for _, internalPlaybook := range internalPlaybooks {
@@ -117,8 +117,8 @@ func toAPIPlaybooks(internalPlaybooks []playbook.Playbook) []icClient.Playbook {
 	return apiPlaybooks
 }
 
-func toInternalPlaybook(apiPlaybook icClient.Playbook) playbook.Playbook {
-	var internalPlaybook playbook.Playbook
+func toInternalPlaybook(apiPlaybook icClient.Playbook) app.Playbook {
+	var internalPlaybook app.Playbook
 
 	playbookBytes, _ := json.Marshal(apiPlaybook)
 	err := json.Unmarshal(playbookBytes, &internalPlaybook)
@@ -129,7 +129,7 @@ func toInternalPlaybook(apiPlaybook icClient.Playbook) playbook.Playbook {
 	return internalPlaybook
 }
 
-func toAPIChecklists(internalChecklists []playbook.Checklist) []icClient.Checklist {
+func toAPIChecklists(internalChecklists []app.Checklist) []icClient.Checklist {
 	var apiChecklists []icClient.Checklist
 
 	checklistBytes, _ := json.Marshal(internalChecklists)

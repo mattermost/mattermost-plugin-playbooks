@@ -7,9 +7,9 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	mock_bot "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/store/storetest"
 	"github.com/stretchr/testify/require"
@@ -463,14 +463,14 @@ func createChannels(t testing.TB, store *SQLStore, channels []model.Channel) {
 	require.NoError(t, err)
 }
 
-func createIncidentChannel(t testing.TB, store *SQLStore, i *incident.Incident) {
+func createIncidentChannel(t testing.TB, store *SQLStore, incident *app.Incident) {
 	t.Helper()
 
-	if i.CreateAt == 0 {
-		i.CreateAt = model.GetMillis()
+	if incident.CreateAt == 0 {
+		incident.CreateAt = model.GetMillis()
 	}
 
-	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "CreateAt", "DeleteAt").Values(i.ChannelID, i.Name, i.CreateAt, 0)
+	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "CreateAt", "DeleteAt").Values(incident.ChannelID, incident.Name, incident.CreateAt, 0)
 
 	_, err := store.execBuilder(store.db, insertBuilder)
 	require.NoError(t, err)

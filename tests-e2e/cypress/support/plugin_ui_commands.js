@@ -167,8 +167,8 @@ Cypress.Commands.add('addInvitedUser', (userName) => {
     });
 });
 
-Cypress.Commands.add('selectCommander', (userName) => {
-    cy.get('.assign-commander-selector__menu').within(() => {
+Cypress.Commands.add('selectOwner', (userName) => {
+    cy.get('.assign-owner-selector__menu').within(() => {
         cy.findByText(userName).click({force: true});
     });
 });

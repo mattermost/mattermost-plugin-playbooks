@@ -1,8 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useEffect} from 'react';
-import {Redirect, useParams, useLocation, Prompt} from 'react-router-dom';
+import React, {useState, useEffect} from 'react';
+import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
 
@@ -15,16 +15,19 @@ import {Team} from 'mattermost-redux/types/teams';
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 import {navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
-import {Playbook, Checklist, emptyPlaybook, defaultMessageOnJoin} from 'src/types/playbook';
+import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import {BackstageNavbar, BackstageNavbarIcon} from 'src/components/backstage/backstage';
+import {BackstageNavbar} from 'src/components/backstage/backstage';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
+import {SecondaryButton} from 'src/components/backstage/incidents/shared';
 
 import './playbook.scss';
+import {useExperimentalFeaturesEnabled} from 'src/hooks';
+
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import ChannelSelector from './channel_selector';
@@ -71,6 +74,13 @@ const SidebarBlock = styled.div`
 
 const NavbarPadding = styled.div`
     flex-grow: 1;
+`;
+
+const SecondaryButtonLarger = styled(SecondaryButton)`
+    height: 40px;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 0 20px;
 `;
 
 const EditableTexts = styled.div`
@@ -161,12 +171,21 @@ const tabInfo = [
     {id: 'permissions', name: 'Permissions'},
 ];
 
+const retrospectiveReminderOptions = [
+    {value: 0, label: 'Once'},
+    {value: 3600, label: '1hr'},
+    {value: 14400, label: '4hr'},
+    {value: 86400, label: '24hr'},
+    {value: 604800, label: '7days'},
+];
+
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
-const PlaybookEdit: FC<Props> = (props: Props) => {
+const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const currentUserId = useSelector(getCurrentUserId);
 
     const [playbook, setPlaybook] = useState<Playbook>({
@@ -177,7 +196,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     const urlParams = useParams<URLParams>();
     const location = useLocation();
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -191,6 +209,8 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
     }
 
     const [currentTab, setCurrentTab] = useState<number>(tab);
+
+    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -230,12 +250,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew]);
 
-    const onSave = async () => {
-        await savePlaybook(setPlaybookDefaults(playbook));
-        setChangesMade(false);
-        navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
-    };
-
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
             ...playbook,
@@ -255,6 +269,21 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             title,
         });
         setChangesMade(true);
+    };
+
+    const onSave = async () => {
+        const data = await savePlaybook(setPlaybookDefaults(playbook));
+        setChangesMade(false);
+        onClose(data?.id);
+    };
+
+    const onClose = (id?: string) => {
+        const playbookId = urlParams.playbookId || id;
+        if (playbookId) {
+            navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbookId}`);
+        } else {
+            navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
+        }
     };
 
     const handlePublicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -309,18 +338,18 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleAssignDefaultCommander = (userId: string | undefined) => {
-        if (userId && playbook.default_commander_id !== userId) {
+    const handleAssignDefaultOwner = (userId: string | undefined) => {
+        if ((userId || userId === '') && playbook.default_owner_id !== userId) {
             setPlaybook({
                 ...playbook,
-                default_commander_id: userId,
+                default_owner_id: userId,
             });
             setChangesMade(true);
         }
     };
 
     const handleAnnouncementChannelSelected = (channelId: string | undefined) => {
-        if (channelId && playbook.announcement_channel_id !== channelId) {
+        if ((channelId || channelId === '') && playbook.announcement_channel_id !== channelId) {
             setPlaybook({
                 ...playbook,
                 announcement_channel_id: channelId,
@@ -334,6 +363,16 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             setPlaybook({
                 ...playbook,
                 webhook_on_creation_url: url,
+            });
+            setChangesMade(true);
+        }
+    };
+
+    const handleWebhookOnStatusUpdateChange = (url: string) => {
+        if (playbook.webhook_on_status_update_url !== url) {
+            setPlaybook({
+                ...playbook,
+                webhook_on_status_update_url: url,
             });
             setChangesMade(true);
         }
@@ -365,10 +404,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleToggleDefaultCommander = () => {
+    const handleToggleDefaultOwner = () => {
         setPlaybook({
             ...playbook,
-            default_commander_enabled: !playbook.default_commander_enabled,
+            default_owner_enabled: !playbook.default_owner_enabled,
         });
         setChangesMade(true);
     };
@@ -405,6 +444,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleToggleWebhookOnStatusUpdate = () => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_status_update_enabled: !playbook.webhook_on_status_update_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
@@ -435,11 +482,6 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
             <BackstageNavbar
                 data-testid='backstage-nav-bar'
             >
-                <BackstageNavbarIcon
-                    data-testid='icon-arrow-left'
-                    className='icon-arrow-left back-icon'
-                    onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
-                />
                 <EditableTexts>
                     <EditableTitleContainer>
                         <EditableText
@@ -451,6 +493,14 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                     </EditableTitleContainer>
                 </EditableTexts>
                 <NavbarPadding/>
+                <SecondaryButtonLarger
+                    className='mr-4'
+                    onClick={() => onClose()}
+                >
+                    <span>
+                        {'Cancel'}
+                    </span>
+                </SecondaryButtonLarger>
                 <PrimaryButton
                     className='mr-4'
                     data-testid='save_playbook'
@@ -503,7 +553,7 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     <BackstageSubheader>
                                         {'Reminder Timer'}
                                         <BackstageSubheaderDescription>
-                                            {'Prompts the commander at a specified interval to update the status of the Incident.'}
+                                            {'Prompts the owner at a specified interval to update the status of the Incident.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <StyledSelect
@@ -558,6 +608,50 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                         }}
                                     />
                                 </SidebarBlock>
+                                {experimentalFeaturesEnabled &&
+                                    <>
+                                        <SidebarBlock>
+                                            <BackstageSubheader>
+                                                {'Retrospective Reminder Interval'}
+                                                <BackstageSubheaderDescription>
+                                                    {'Reminds the channel at a specified interval to fill out the retrospective.'}
+                                                </BackstageSubheaderDescription>
+                                            </BackstageSubheader>
+                                            <StyledSelect
+                                                value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
+                                                onChange={(option: {label: string, value: number}) => {
+                                                    setPlaybook({
+                                                        ...playbook,
+                                                        retrospective_reminder_interval_seconds: option ? option.value : option,
+                                                    });
+                                                    setChangesMade(true);
+                                                }}
+                                                classNamePrefix='channel-selector'
+                                                options={retrospectiveReminderOptions}
+                                                isClearable={false}
+                                            />
+                                        </SidebarBlock>
+                                        <SidebarBlock>
+                                            <BackstageSubheader>
+                                                {'Retrospective Template'}
+                                                <BackstageSubheaderDescription>
+                                                    {'Default text for the retrospective.'}
+                                                </BackstageSubheaderDescription>
+                                            </BackstageSubheader>
+                                            <StyledTextarea
+                                                placeholder={'Enter retrospective template'}
+                                                value={playbook.retrospective_template}
+                                                onChange={(e) => {
+                                                    setPlaybook({
+                                                        ...playbook,
+                                                        retrospective_template: e.target.value,
+                                                    });
+                                                    setChangesMade(true);
+                                                }}
+                                            />
+                                        </SidebarBlock>
+                                    </>
+                                }
                             </TabContainer>
                             <TabContainer>
                                 <AutomationSettings
@@ -568,10 +662,10 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     onToggleInviteUsers={handleToggleInviteUsers}
                                     onAddUser={handleAddUserInvited}
                                     onRemoveUser={handleRemoveUserInvited}
-                                    defaultCommanderEnabled={playbook.default_commander_enabled}
-                                    defaultCommanderID={playbook.default_commander_id}
-                                    onToggleDefaultCommander={handleToggleDefaultCommander}
-                                    onAssignCommander={handleAssignDefaultCommander}
+                                    defaultOwnerEnabled={playbook.default_owner_enabled}
+                                    defaultOwnerID={playbook.default_owner_id}
+                                    onToggleDefaultOwner={handleToggleDefaultOwner}
+                                    onAssignOwner={handleAssignDefaultOwner}
                                     teamID={playbook.team_id}
                                     announcementChannelID={playbook.announcement_channel_id}
                                     announcementChannelEnabled={playbook.announcement_channel_enabled}
@@ -581,9 +675,13 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                                     onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
                                     webhookOnCreationChange={handleWebhookOnCreationChange}
                                     webhookOnCreationURL={playbook.webhook_on_creation_url}
+                                    webhookOnStatusUpdateEnabled={playbook.webhook_on_status_update_enabled}
+                                    onToggleWebhookOnStatusUpdate={handleToggleWebhookOnStatusUpdate}
+                                    webhookOnStatusUpdateURL={playbook.webhook_on_status_update_url}
+                                    webhookOnStatusUpdateChange={handleWebhookOnStatusUpdateChange}
                                     messageOnJoinEnabled={playbook.message_on_join_enabled}
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
-                                    messageOnJoin={playbook.message_on_join || defaultMessageOnJoin}
+                                    messageOnJoin={playbook.message_on_join}
                                     messageOnJoinChange={handleMessageOnJoinChange}
                                     signalAnyKeywordsEnabled={playbook.signal_any_keywords_enabled}
                                     onToggleSignalAnyKeywords={handleToggleSignalAnyKeywords}

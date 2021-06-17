@@ -10,9 +10,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
@@ -25,21 +23,21 @@ func TestGetIncidents(t *testing.T) {
 	team2id := model.NewId()
 	team3id := model.NewId()
 
-	commander1 := incident.CommanderInfo{
+	owner1 := app.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 1",
+		Username: "Owner 1",
 	}
-	commander2 := incident.CommanderInfo{
+	owner2 := app.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 2",
+		Username: "Owner 2",
 	}
-	commander3 := incident.CommanderInfo{
+	owner3 := app.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 3",
+		Username: "Owner 3",
 	}
-	commander4 := incident.CommanderInfo{
+	owner4 := app.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 4",
+		Username: "Owner 4",
 	}
 
 	lucy := userInfo{
@@ -86,35 +84,38 @@ func TestGetIncidents(t *testing.T) {
 		WithName("incident 1 - wheel cat aliens wheelbarrow").
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithChannel(&channel01). // public
-		WithCommanderUserID(commander1.UserID).
+		WithOwnerUserID(owner1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(123).
 		WithChecklists([]int{8}).
+		WithPlaybookID("playbook1").
 		ToIncident()
 
 	inc02 := *NewBuilder(nil).
 		WithName("incident 2 - horse staple battery aliens shotgun mouse shotput").
 		WithChannel(&channel02). // public
-		WithCommanderUserID(commander2.UserID).
+		WithOwnerUserID(owner2.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(199).
 		WithChecklists([]int{7}).
+		WithPlaybookID("playbook1").
 		ToIncident()
 
 	inc03 := *NewBuilder(nil).
 		WithName("incident 3 - Horse stapler battery shotgun mouse shotput").
 		WithChannel(&channel03). // public
-		WithCommanderUserID(commander1.UserID).
+		WithOwnerUserID(owner1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(222).
 		WithChecklists([]int{6}).
 		WithCurrentStatus("Archived").
+		WithPlaybookID("playbook2").
 		ToIncident()
 
 	inc04 := *NewBuilder(nil).
 		WithName("incident 4 - titanic terminatoraliens").
 		WithChannel(&channel04). // private
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(333).
 		WithChecklists([]int{5}).
@@ -124,7 +125,7 @@ func TestGetIncidents(t *testing.T) {
 	inc05 := *NewBuilder(nil).
 		WithName("incident 5 - titanic terminator aliens mouse").
 		WithChannel(&channel05). // private
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(400).
 		WithChecklists([]int{1}).
@@ -133,7 +134,7 @@ func TestGetIncidents(t *testing.T) {
 	inc06 := *NewBuilder(nil).
 		WithName("incident 6 - ubik high castle electric sheep").
 		WithChannel(&channel06). // public
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(444).
 		WithChecklists([]int{4}).
@@ -142,7 +143,7 @@ func TestGetIncidents(t *testing.T) {
 	inc07 := *NewBuilder(nil).
 		WithName("incident 7 - ubik high castle electric sheep").
 		WithChannel(&channel07). // private
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(555).
 		WithChecklists([]int{4}).
@@ -151,7 +152,7 @@ func TestGetIncidents(t *testing.T) {
 	inc08 := *NewBuilder(nil).
 		WithName("incident 8 - ziggürat!").
 		WithChannel(&channel08). // private
-		WithCommanderUserID(commander4.UserID).
+		WithOwnerUserID(owner4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(555).
 		WithChecklists([]int{3}).
@@ -160,19 +161,18 @@ func TestGetIncidents(t *testing.T) {
 	inc09 := *NewBuilder(nil).
 		WithName("incident 9 - Ziggürat!").
 		WithChannel(&channel09). // private
-		WithCommanderUserID(commander4.UserID).
+		WithOwnerUserID(owner4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(556).
 		WithChecklists([]int{2}).
 		ToIncident()
 
-	incidents := []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
-	finishedIncidentNum := []int{2, 3}
+	incidents := []app.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
 
-	createIncidents := func(store *SQLStore, incidentStore incident.Store) {
+	createIncidents := func(store *SQLStore, incidentStore app.IncidentStore) {
 		t.Helper()
 
-		createdIncidents := make([]incident.Incident, len(incidents))
+		createdIncidents := make([]app.Incident, len(incidents))
 
 		for i := range incidents {
 			createdIncident, err := incidentStore.CreateIncident(&incidents[i])
@@ -180,597 +180,726 @@ func TestGetIncidents(t *testing.T) {
 
 			createdIncidents[i] = *createdIncident
 		}
-
-		for _, i := range finishedIncidentNum {
-			err := incidentStore.UpdateStatus(&incident.SQLStatusPost{
-				IncidentID: createdIncidents[i].ID,
-				PostID:     model.NewId(),
-				Status:     incident.StatusArchived,
-			})
-			require.NoError(t, err)
-		}
 	}
 
 	testData := []struct {
 		Name          string
-		RequesterInfo permissions.RequesterInfo
-		Options       incident.FilterOptions
-		Want          incident.GetIncidentsResults
+		RequesterInfo app.RequesterInfo
+		Options       app.IncidentFilterOptions
+		Want          app.GetIncidentsResults
 		ExpectedErr   error
 	}{
 		{
 			Name: "no options - team1 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID: team1id,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 5,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc01, inc02, inc03, inc04, inc05},
+				Items:      []app.Incident{inc01, inc02, inc03, inc04, inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "no options - team1 - guest - no channels",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsGuest: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID: team1id,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      []incident.Incident{},
+				Items:      []app.Incident{},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "no options - team1 - guest - has channels",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  john.ID,
 				IsGuest: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID: team1id,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc01, inc02, inc03},
+				Items:      []app.Incident{inc01, inc02, inc03},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team1 - desc - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
+			Options: app.IncidentFilterOptions{
 				TeamID:    team1id,
-				Direction: "desc",
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionDesc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 5,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc05, inc04, inc03, inc02, inc01},
+				Items:      []app.Incident{inc05, inc04, inc03, inc02, inc01},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team2 - sort by CreateAt desc - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
+			Options: app.IncidentFilterOptions{
 				TeamID:    team2id,
-				Sort:      incident.SortByCreateAt,
-				Direction: incident.DirectionDesc,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionDesc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc07, inc06},
+				Items:      []app.Incident{inc07, inc06},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "no paging, team3, sort by Name",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID: team3id,
-				Sort:   incident.SortByName,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team3id,
+				Sort:      app.SortByName,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc08, inc09},
+				Items:      []app.Incident{inc08, inc09},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "no options, team paged by 1, admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:  team1id,
-				Page:    0,
-				PerPage: 1,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 5,
 				PageCount:  5,
 				HasMore:    true,
-				Items:      []incident.Incident{inc01},
+				Items:      []app.Incident{inc01},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "no options, team1 - paged by 3, page 0 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:  team1id,
-				Page:    0,
-				PerPage: 3,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   3,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 5,
 				PageCount:  2,
 				HasMore:    true,
-				Items:      []incident.Incident{inc01, inc02, inc03},
+				Items:      []app.Incident{inc01, inc02, inc03},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "no options, team1 - paged by 3, page 1 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:  team1id,
-				Page:    1,
-				PerPage: 3,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      1,
+				PerPage:   3,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 5,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      []incident.Incident{inc04, inc05},
+				Items:      []app.Incident{inc04, inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "no options, team1 - paged by 3, page 2 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:  team1id,
-				Page:    2,
-				PerPage: 3,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      2,
+				PerPage:   3,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 5,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      []incident.Incident{},
+				Items:      []app.Incident{},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "no options, team1 - paged by 3, page 999 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:  team1id,
-				Page:    999,
-				PerPage: 3,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      999,
+				PerPage:   3,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 5,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      []incident.Incident{},
+				Items:      []app.Incident{},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "no options, team1 - page 2 by 2 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:  team1id,
-				Page:    2,
-				PerPage: 2,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      2,
+				PerPage:   2,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 5,
 				PageCount:  3,
 				HasMore:    false,
-				Items:      []incident.Incident{inc05},
+				Items:      []app.Incident{inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "no options, team1 - page 1 by 2 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:  team1id,
-				Page:    1,
-				PerPage: 2,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      1,
+				PerPage:   2,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 5,
 				PageCount:  3,
 				HasMore:    true,
-				Items:      []incident.Incident{inc03, inc04},
+				Items:      []app.Incident{inc03, inc04},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "no options, team1 - page 1 by 4 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:  team1id,
-				Page:    1,
-				PerPage: 4,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      1,
+				PerPage:   4,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 5,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      []incident.Incident{inc05},
+				Items:      []app.Incident{inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team1 - only active, page 1 by 2 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:  team1id,
-				Page:    1,
-				PerPage: 2,
-				Status:  incident.StatusReported,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      1,
+				PerPage:   2,
+				Status:    app.StatusReported,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 3,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      []incident.Incident{inc05},
+				Items:      []app.Incident{inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - active, commander3, desc - admin ",
-			RequesterInfo: permissions.RequesterInfo{
+			Name: "team1 - active, owner3, desc - admin ",
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:      team1id,
-				Status:      incident.StatusReported,
-				CommanderID: commander3.UserID,
-				Direction:   "desc",
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Status:    app.StatusReported,
+				OwnerID:   owner3.UserID,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionDesc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 1,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc05},
+				Items:      []app.Incident{inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team1 - search for horse - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
+			Options: app.IncidentFilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "horse",
+				Sort:       app.SortByCreateAt,
+				Direction:  app.DirectionAsc,
+				Page:       0,
+				PerPage:    1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc02, inc03},
+				Items:      []app.Incident{inc02, inc03},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - search for aliens & commander3 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			Name: "team1 - search for aliens & owner3 - admin",
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:      team1id,
-				CommanderID: commander3.UserID,
-				SearchTerm:  "aliens",
+			Options: app.IncidentFilterOptions{
+				TeamID:     team1id,
+				OwnerID:    owner3.UserID,
+				SearchTerm: "aliens",
+				Sort:       app.SortByCreateAt,
+				Direction:  app.DirectionAsc,
+				Page:       0,
+				PerPage:    1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc04, inc05},
+				Items:      []app.Incident{inc04, inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "fuzzy search using starting characters -- not implemented",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
+			Options: app.IncidentFilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "sbsm",
+				Sort:       app.SortByCreateAt,
+				Direction:  app.DirectionAsc,
+				Page:       0,
+				PerPage:    1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      []incident.Incident{},
+				Items:      []app.Incident{},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "fuzzy search using starting characters, active -- not implemented",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
+			Options: app.IncidentFilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "sbsm",
-				Status:     incident.StatusReported,
+				Status:     app.StatusReported,
+				Sort:       app.SortByCreateAt,
+				Direction:  app.DirectionAsc,
+				Page:       0,
+				PerPage:    1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      []incident.Incident{},
+				Items:      []app.Incident{},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team3 - case-insensitive and unicode characters - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
+			Options: app.IncidentFilterOptions{
 				TeamID:     team3id,
 				SearchTerm: "ZiGgüRat",
+				Sort:       app.SortByCreateAt,
+				Direction:  app.DirectionAsc,
+				Page:       0,
+				PerPage:    1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc08, inc09},
+				Items:      []app.Incident{inc08, inc09},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "bad parameter sort",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID: team2id,
-				Sort:   "unknown_field",
+			Options: app.IncidentFilterOptions{
+				TeamID:    team2id,
+				Sort:      "unknown_field",
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want:        incident.GetIncidentsResults{},
-			ExpectedErr: errors.New("bad parameter 'sort'"),
+			Want:        app.GetIncidentsResults{},
+			ExpectedErr: errors.New("failed to apply sort options: unsupported sort parameter 'unknown_field'"),
 		},
 		{
-			Name: "bad team id",
-			RequesterInfo: permissions.RequesterInfo{
+			Name: "no team",
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID: "invalid ID",
+			Options: app.IncidentFilterOptions{
+				TeamID:    "",
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want:        incident.GetIncidentsResults{},
-			ExpectedErr: errors.New("bad parameter 'team_id': must be 26 characters"),
+			Want: app.GetIncidentsResults{
+				TotalCount: 0,
+				PageCount:  0,
+				HasMore:    false,
+				Items:      []app.Incident{},
+			},
+			ExpectedErr: nil,
 		},
 		{
 			Name: "bad parameter direction by",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
+			Options: app.IncidentFilterOptions{
 				TeamID:    team2id,
+				Sort:      app.SortByCreateAt,
 				Direction: "invalid direction",
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want:        incident.GetIncidentsResults{},
-			ExpectedErr: errors.New("bad parameter 'direction'"),
-		},
-		{
-			Name: "bad commander id",
-			RequesterInfo: permissions.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: incident.FilterOptions{
-				TeamID:      team2id,
-				CommanderID: "invalid ID",
-			},
-			Want:        incident.GetIncidentsResults{},
-			ExpectedErr: errors.New("bad parameter 'commander_id': must be 26 characters or blank"),
+			Want:        app.GetIncidentsResults{},
+			ExpectedErr: errors.New("failed to apply sort options: unsupported direction parameter 'invalid direction'"),
 		},
 		{
 			Name: "team1 - desc - Bob (in all channels)",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID: bob.ID,
 			},
-			Options: incident.FilterOptions{
+			Options: app.IncidentFilterOptions{
 				TeamID:    team1id,
-				Direction: "desc",
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionDesc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 5,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc05, inc04, inc03, inc02, inc01},
+				Items:      []app.Incident{inc05, inc04, inc03, inc02, inc01},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team2 -  Bob (in all channels)",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID: bob.ID,
 			},
-			Options: incident.FilterOptions{
-				TeamID: team2id,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team2id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc06, inc07},
+				Items:      []app.Incident{inc06, inc07},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team1 - Alice (in no channels but member of team (because request must have made it through the API team membership test to the store), can see public incidents)",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID: alice.ID,
 			},
-			Options: incident.FilterOptions{
-				TeamID: team1id,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc01, inc02, inc03},
+				Items:      []app.Incident{inc01, inc02, inc03},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team2 - Charlotte (in no channels but member of team -- because her request must have made it to the store through the API's team membership check)",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID: charlotte.ID,
 			},
-			Options: incident.FilterOptions{
-				TeamID: team2id,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team2id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 1,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc06},
+				Items:      []app.Incident{inc06},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team1 - Admin gets incidents with John as member",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:   team1id,
-				MemberID: john.ID,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				MemberID:  john.ID,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc01, inc02, inc03},
+				Items:      []app.Incident{inc01, inc02, inc03},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team1 - Admin gets incidents with Jane as member",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID:   team1id,
-				MemberID: jane.ID,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				MemberID:  jane.ID,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc03, inc04, inc05},
+				Items:      []app.Incident{inc03, inc04, inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team1 - John gets its own incidents",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID: john.ID,
 			},
-			Options: incident.FilterOptions{
-				TeamID:   team1id,
-				MemberID: john.ID,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				MemberID:  john.ID,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc01, inc02, inc03},
+				Items:      []app.Incident{inc01, inc02, inc03},
 			},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team1 - Jane gets its own incidents",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID: jane.ID,
 			},
-			Options: incident.FilterOptions{
-				TeamID:   team1id,
-				MemberID: jane.ID,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				MemberID:  jane.ID,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Want: incident.GetIncidentsResults{
+			Want: app.GetIncidentsResults{
 				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []incident.Incident{inc03, inc04, inc05},
+				Items:      []app.Incident{inc03, inc04, inc05},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - playbook1 - desc - admin",
+			RequesterInfo: app.RequesterInfo{
+				UserID:  lucy.ID,
+				IsAdmin: true,
+			},
+			Options: app.IncidentFilterOptions{
+				TeamID:     team1id,
+				PlaybookID: "playbook1",
+				Sort:       app.SortByCreateAt,
+				Direction:  app.DirectionDesc,
+				Page:       0,
+				PerPage:    1000,
+			},
+			Want: app.GetIncidentsResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []app.Incident{inc02, inc01},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - playbook2 - desc - admin",
+			RequesterInfo: app.RequesterInfo{
+				UserID:  lucy.ID,
+				IsAdmin: true,
+			},
+			Options: app.IncidentFilterOptions{
+				TeamID:     team1id,
+				PlaybookID: "playbook2",
+				Sort:       app.SortByCreateAt,
+				Direction:  app.DirectionDesc,
+				Page:       0,
+				PerPage:    1000,
+			},
+			Want: app.GetIncidentsResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []app.Incident{inc03},
 			},
 			ExpectedErr: nil,
 		},
@@ -796,13 +925,15 @@ func TestGetIncidents(t *testing.T) {
 		makeAdmin(t, store, lucy)
 
 		t.Run("zero incidents", func(t *testing.T) {
-			result, err := incidentStore.GetIncidents(permissions.RequesterInfo{
+			result, err := incidentStore.GetIncidents(app.RequesterInfo{
 				UserID: lucy.ID,
 			},
-				incident.FilterOptions{
-					TeamID:  team1id,
-					Page:    0,
-					PerPage: 10,
+				app.IncidentFilterOptions{
+					TeamID:    team1id,
+					Sort:      app.SortByCreateAt,
+					Direction: app.DirectionAsc,
+					Page:      0,
+					PerPage:   10,
 				})
 			require.NoError(t, err)
 
@@ -850,12 +981,12 @@ func TestCreateAndGetIncident(t *testing.T) {
 
 		validIncidents := []struct {
 			Name        string
-			Incident    *incident.Incident
+			Incident    *app.Incident
 			ExpectedErr error
 		}{
 			{
 				Name:        "Empty values",
-				Incident:    &incident.Incident{},
+				Incident:    &app.Incident{},
 				ExpectedErr: nil,
 			},
 			{
@@ -902,7 +1033,7 @@ func TestCreateAndGetIncident(t *testing.T) {
 
 		for _, testCase := range validIncidents {
 			t.Run(testCase.Name, func(t *testing.T) {
-				var expectedIncident incident.Incident
+				var expectedIncident app.Incident
 				if testCase.Incident != nil {
 					expectedIncident = *testCase.Incident
 				}
@@ -1010,14 +1141,14 @@ func TestUpdateIncident(t *testing.T) {
 
 		validIncidents := []struct {
 			Name        string
-			Incident    *incident.Incident
-			Update      func(incident.Incident) *incident.Incident
+			Incident    *app.Incident
+			Update      func(app.Incident) *app.Incident
 			ExpectedErr error
 		}{
 			{
 				Name:     "nil incident",
 				Incident: NewBuilder(t).ToIncident(),
-				Update: func(old incident.Incident) *incident.Incident {
+				Update: func(old app.Incident) *app.Incident {
 					return nil
 				},
 				ExpectedErr: errors.New("incident is nil"),
@@ -1025,7 +1156,7 @@ func TestUpdateIncident(t *testing.T) {
 			{
 				Name:     "id should not be empty",
 				Incident: NewBuilder(t).ToIncident(),
-				Update: func(old incident.Incident) *incident.Incident {
+				Update: func(old app.Incident) *app.Incident {
 					old.ID = ""
 					return &old
 				},
@@ -1034,7 +1165,7 @@ func TestUpdateIncident(t *testing.T) {
 			{
 				Name:     "Incident /can/ contain checklists with no items",
 				Incident: NewBuilder(t).WithChecklists([]int{1}).ToIncident(),
-				Update: func(old incident.Incident) *incident.Incident {
+				Update: func(old app.Incident) *app.Incident {
 					old.Checklists[0].Items = nil
 					return &old
 				},
@@ -1043,7 +1174,7 @@ func TestUpdateIncident(t *testing.T) {
 			{
 				Name:     "new description",
 				Incident: NewBuilder(t).WithDescription("old description").ToIncident(),
-				Update: func(old incident.Incident) *incident.Incident {
+				Update: func(old app.Incident) *app.Incident {
 					old.Description = "new description"
 					return &old
 				},
@@ -1052,8 +1183,8 @@ func TestUpdateIncident(t *testing.T) {
 			{
 				Name:     "Incident with 2 checklists, update the checklists a bit",
 				Incident: NewBuilder(t).WithChecklists([]int{1, 1}).ToIncident(),
-				Update: func(old incident.Incident) *incident.Incident {
-					old.Checklists[0].Items[0].State = playbook.ChecklistItemStateClosed
+				Update: func(old app.Incident) *app.Incident {
+					old.Checklists[0].Items[0].State = app.ChecklistItemStateClosed
 					old.Checklists[1].Items[0].Title = "new title"
 					return &old
 				},
@@ -1109,14 +1240,15 @@ func TestStressTestGetIncidents(t *testing.T) {
 
 		t.Run("stress test status posts retrieval", func(t *testing.T) {
 			for _, p := range verifyPages {
-				returned, err := incidentStore.GetIncidents(permissions.RequesterInfo{
+				returned, err := incidentStore.GetIncidents(app.RequesterInfo{
 					UserID:  "testID",
 					IsAdmin: true,
-				}, incident.FilterOptions{
-					TeamID:  teamID,
-					Page:    p,
-					PerPage: perPage,
-					Sort:    "create_at",
+				}, app.IncidentFilterOptions{
+					TeamID:    teamID,
+					Sort:      app.SortByCreateAt,
+					Direction: app.DirectionAsc,
+					Page:      p,
+					PerPage:   perPage,
 				})
 				require.NoError(t, err)
 				numRet := min(perPage, len(withPosts))
@@ -1166,14 +1298,15 @@ func TestStressTestGetIncidentsStats(t *testing.T) {
 			intervals := make([]int64, 0, numReps)
 			for i := 0; i < numReps; i++ {
 				start := time.Now()
-				_, err := incidentStore.GetIncidents(permissions.RequesterInfo{
+				_, err := incidentStore.GetIncidents(app.RequesterInfo{
 					UserID:  "testID",
 					IsAdmin: true,
-				}, incident.FilterOptions{
-					TeamID:  teamID,
-					Page:    i,
-					PerPage: perPage,
-					Sort:    "create_at",
+				}, app.IncidentFilterOptions{
+					TeamID:    teamID,
+					Sort:      app.SortByCreateAt,
+					Direction: app.DirectionAsc,
+					Page:      i,
+					PerPage:   perPage,
 				})
 				intervals = append(intervals, time.Since(start).Milliseconds())
 				require.NoError(t, err)
@@ -1185,8 +1318,8 @@ func TestStressTestGetIncidentsStats(t *testing.T) {
 	}
 }
 
-func createIncidentsAndPosts(t testing.TB, store *SQLStore, incidentStore incident.Store, numIncidents, maxPostsPerIncident int, teamID string) []incident.Incident {
-	incidentsSorted := make([]incident.Incident, 0, numIncidents)
+func createIncidentsAndPosts(t testing.TB, store *SQLStore, incidentStore app.IncidentStore, numIncidents, maxPostsPerIncident int, teamID string) []app.Incident {
+	incidentsSorted := make([]app.Incident, 0, numIncidents)
 	for i := 0; i < numIncidents; i++ {
 		numPosts := maxPostsPerIncident
 		posts := make([]*model.Post, 0, numPosts)
@@ -1260,29 +1393,29 @@ func TestGetIncidentIDForChannel(t *testing.T) {
 	}
 }
 
-func TestGetCommanders(t *testing.T) {
+func TestGetOwners(t *testing.T) {
 	team1id := model.NewId()
 	team2id := model.NewId()
 	team3id := model.NewId()
 
-	commander1 := incident.CommanderInfo{
+	owner1 := app.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 1",
+		Username: "Owner 1",
 	}
-	commander2 := incident.CommanderInfo{
+	owner2 := app.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 2",
+		Username: "Owner 2",
 	}
-	commander3 := incident.CommanderInfo{
+	owner3 := app.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 3",
+		Username: "Owner 3",
 	}
-	commander4 := incident.CommanderInfo{
+	owner4 := app.OwnerInfo{
 		UserID:   model.NewId(),
-		Username: "Commander 4",
+		Username: "Owner 4",
 	}
 
-	commanders := []incident.CommanderInfo{commander1, commander2, commander3, commander4}
+	owners := []app.OwnerInfo{owner1, owner2, owner3, owner4}
 
 	lucy := userInfo{
 		ID:   model.NewId(),
@@ -1320,7 +1453,7 @@ func TestGetCommanders(t *testing.T) {
 		WithName("incident 1 - wheel cat aliens wheelbarrow").
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithChannel(&channel01). // public
-		WithCommanderUserID(commander1.UserID).
+		WithOwnerUserID(owner1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(123).
 		WithChecklists([]int{8}).
@@ -1329,7 +1462,7 @@ func TestGetCommanders(t *testing.T) {
 	inc02 := *NewBuilder(nil).
 		WithName("incident 2 - horse staple battery aliens shotgun mouse shotputmouse").
 		WithChannel(&channel02). // public
-		WithCommanderUserID(commander2.UserID).
+		WithOwnerUserID(owner2.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(199).
 		WithChecklists([]int{7}).
@@ -1338,7 +1471,7 @@ func TestGetCommanders(t *testing.T) {
 	inc03 := *NewBuilder(nil).
 		WithName("incident 3 - Horse stapler battery shotgun mouse shotputmouse").
 		WithChannel(&channel03). // public
-		WithCommanderUserID(commander1.UserID).
+		WithOwnerUserID(owner1.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(222).
 		WithChecklists([]int{6}).
@@ -1347,7 +1480,7 @@ func TestGetCommanders(t *testing.T) {
 	inc04 := *NewBuilder(nil).
 		WithName("incident 4 - titanic terminatoraliens").
 		WithChannel(&channel04). // private
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(333).
 		WithChecklists([]int{5}).
@@ -1356,7 +1489,7 @@ func TestGetCommanders(t *testing.T) {
 	inc05 := *NewBuilder(nil).
 		WithName("incident 5 - titanic terminator aliens mouse").
 		WithChannel(&channel05). // private
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team1id).
 		WithCreateAt(400).
 		WithChecklists([]int{1}).
@@ -1365,7 +1498,7 @@ func TestGetCommanders(t *testing.T) {
 	inc06 := *NewBuilder(nil).
 		WithName("incident 6 - ubik high castle electric sheep").
 		WithChannel(&channel06). // public
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(444).
 		WithChecklists([]int{4}).
@@ -1374,7 +1507,7 @@ func TestGetCommanders(t *testing.T) {
 	inc07 := *NewBuilder(nil).
 		WithName("incident 7 - ubik high castle electric sheep").
 		WithChannel(&channel07). // private
-		WithCommanderUserID(commander3.UserID).
+		WithOwnerUserID(owner3.UserID).
 		WithTeamID(team2id).
 		WithCreateAt(555).
 		WithChecklists([]int{4}).
@@ -1383,7 +1516,7 @@ func TestGetCommanders(t *testing.T) {
 	inc08 := *NewBuilder(nil).
 		WithName("incident 8 - ziggürat!").
 		WithChannel(&channel08). // private
-		WithCommanderUserID(commander4.UserID).
+		WithOwnerUserID(owner4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(555).
 		WithChecklists([]int{3}).
@@ -1392,88 +1525,109 @@ func TestGetCommanders(t *testing.T) {
 	inc09 := *NewBuilder(nil).
 		WithName("incident 9 - Ziggürat!").
 		WithChannel(&channel09). // private
-		WithCommanderUserID(commander4.UserID).
+		WithOwnerUserID(owner4.UserID).
 		WithTeamID(team3id).
 		WithCreateAt(556).
 		WithChecklists([]int{2}).
 		ToIncident()
 
-	incidents := []incident.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
+	incidents := []app.Incident{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
 
 	cases := []struct {
 		Name          string
-		RequesterInfo permissions.RequesterInfo
-		Options       incident.FilterOptions
-		Expected      []incident.CommanderInfo
+		RequesterInfo app.RequesterInfo
+		Options       app.IncidentFilterOptions
+		Expected      []app.OwnerInfo
 		ExpectedErr   error
 	}{
 		{
 			Name: "team 1 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
+			Options: app.IncidentFilterOptions{
 				TeamID: team1id,
 			},
-			Expected:    []incident.CommanderInfo{commander1, commander2, commander3},
+			Expected:    []app.OwnerInfo{owner1, owner2, owner3},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team 2 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID: team2id,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team2id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Expected:    []incident.CommanderInfo{commander3},
+			Expected:    []app.OwnerInfo{owner3},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team 3 - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options: incident.FilterOptions{
-				TeamID: team3id,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team3id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Expected:    []incident.CommanderInfo{commander4},
+			Expected:    []app.OwnerInfo{owner4},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team1 - Alice (in no channels but member of team (because must have made it through API team membership test), can see public incidents)",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID: "Alice",
 			},
-			Options: incident.FilterOptions{
-				TeamID: team1id,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Expected:    []incident.CommanderInfo{commander1, commander2},
+			Expected:    []app.OwnerInfo{owner1, owner2},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "team2 - Charlotte (in no channels but member of team, because must have made it through API team membership test)",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID: "Charlotte",
 			},
-			Options: incident.FilterOptions{
-				TeamID: team2id,
+			Options: app.IncidentFilterOptions{
+				TeamID:    team2id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
 			},
-			Expected:    []incident.CommanderInfo{commander3},
+			Expected:    []app.OwnerInfo{owner3},
 			ExpectedErr: nil,
 		},
 		{
 			Name: "no team - admin",
-			RequesterInfo: permissions.RequesterInfo{
+			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
-			Options:     incident.FilterOptions{},
-			Expected:    nil,
-			ExpectedErr: errors.New("bad parameter 'team_id': must be 26 characters"),
+			Options: app.IncidentFilterOptions{
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Page:      0,
+				PerPage:   1000,
+			},
+			Expected:    []app.OwnerInfo{},
+			ExpectedErr: nil,
 		},
 	}
 
@@ -1499,12 +1653,12 @@ func TestGetCommanders(t *testing.T) {
 			queryBuilder = queryBuilder.PlaceholderFormat(sq.Dollar)
 		}
 
-		insertCommander := queryBuilder.Insert("Users").Columns("ID", "Username")
-		for _, commander := range commanders {
-			insertCommander = insertCommander.Values(commander.UserID, commander.Username)
+		insertOwner := queryBuilder.Insert("Users").Columns("ID", "Username")
+		for _, owner := range owners {
+			insertOwner = insertOwner.Values(owner.UserID, owner.Username)
 		}
 
-		query, args, err := insertCommander.ToSql()
+		query, args, err := insertOwner.ToSql()
 		require.NoError(t, err)
 		_, err = db.Exec(query, args...)
 		require.NoError(t, err)
@@ -1518,11 +1672,10 @@ func TestGetCommanders(t *testing.T) {
 
 		for _, testCase := range cases {
 			t.Run(testCase.Name, func(t *testing.T) {
-				actual, actualErr := incidentStore.GetCommanders(testCase.RequesterInfo, testCase.Options)
+				actual, actualErr := incidentStore.GetOwners(testCase.RequesterInfo, testCase.Options)
 
 				if testCase.ExpectedErr != nil {
-					require.NotNil(t, actualErr)
-					require.Equal(t, testCase.ExpectedErr.Error(), actualErr.Error())
+					require.EqualError(t, actualErr, testCase.ExpectedErr.Error())
 					require.Nil(t, actual)
 					return
 				}
@@ -1681,7 +1834,7 @@ func TestCheckAndSendMessageOnJoin(t *testing.T) {
 	}
 }
 
-func setupIncidentStore(t *testing.T, db *sqlx.DB) incident.Store {
+func setupIncidentStore(t *testing.T, db *sqlx.DB) app.IncidentStore {
 	mockCtrl := gomock.NewController(t)
 
 	kvAPI := mock_sqlstore.NewMockKVAPI(mockCtrl)
@@ -1700,75 +1853,75 @@ func setupIncidentStore(t *testing.T, db *sqlx.DB) incident.Store {
 // Use it as:
 // NewBuilder.WithName("name").WithXYZ(xyz)....ToIncident()
 type IncidentBuilder struct {
-	t testing.TB
-	i *incident.Incident
+	t        testing.TB
+	incident *app.Incident
 }
 
 func NewBuilder(t testing.TB) *IncidentBuilder {
 	return &IncidentBuilder{
 		t: t,
-		i: &incident.Incident{
-			Name:            "base incident",
-			CommanderUserID: model.NewId(),
-			TeamID:          model.NewId(),
-			ChannelID:       model.NewId(),
-			CreateAt:        model.GetMillis(),
-			DeleteAt:        0,
-			PostID:          model.NewId(),
-			PlaybookID:      model.NewId(),
-			Checklists:      nil,
-			CurrentStatus:   "Reported",
+		incident: &app.Incident{
+			Name:          "base incident",
+			OwnerUserID:   model.NewId(),
+			TeamID:        model.NewId(),
+			ChannelID:     model.NewId(),
+			CreateAt:      model.GetMillis(),
+			DeleteAt:      0,
+			PostID:        model.NewId(),
+			PlaybookID:    model.NewId(),
+			Checklists:    nil,
+			CurrentStatus: "Reported",
 		},
 	}
 }
 
 func (ib *IncidentBuilder) WithName(name string) *IncidentBuilder {
-	ib.i.Name = name
+	ib.incident.Name = name
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithDescription(desc string) *IncidentBuilder {
-	ib.i.Description = desc
+	ib.incident.Description = desc
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithID() *IncidentBuilder {
-	ib.i.ID = model.NewId()
+	ib.incident.ID = model.NewId()
 
 	return ib
 }
 
-func (ib *IncidentBuilder) ToIncident() *incident.Incident {
-	return ib.i
+func (ib *IncidentBuilder) ToIncident() *app.Incident {
+	return ib.incident
 }
 
 func (ib *IncidentBuilder) WithCreateAt(createAt int64) *IncidentBuilder {
-	ib.i.CreateAt = createAt
+	ib.incident.CreateAt = createAt
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithDeleteAt(deleteAt int64) *IncidentBuilder {
-	ib.i.DeleteAt = deleteAt
+	ib.incident.DeleteAt = deleteAt
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithChecklists(itemsPerChecklist []int) *IncidentBuilder {
-	ib.i.Checklists = make([]playbook.Checklist, len(itemsPerChecklist))
+	ib.incident.Checklists = make([]app.Checklist, len(itemsPerChecklist))
 
 	for i, numItems := range itemsPerChecklist {
-		var items []playbook.ChecklistItem
+		var items []app.ChecklistItem
 		for j := 0; j < numItems; j++ {
-			items = append(items, playbook.ChecklistItem{
+			items = append(items, app.ChecklistItem{
 				ID:    model.NewId(),
 				Title: fmt.Sprint("Checklist ", i, " - item ", j),
 			})
 		}
 
-		ib.i.Checklists[i] = playbook.Checklist{
+		ib.incident.Checklists[i] = app.Checklist{
 			ID:    model.NewId(),
 			Title: fmt.Sprint("Checklist ", i),
 			Items: items,
@@ -1778,29 +1931,39 @@ func (ib *IncidentBuilder) WithChecklists(itemsPerChecklist []int) *IncidentBuil
 	return ib
 }
 
-func (ib *IncidentBuilder) WithCommanderUserID(id string) *IncidentBuilder {
-	ib.i.CommanderUserID = id
+func (ib *IncidentBuilder) WithOwnerUserID(id string) *IncidentBuilder {
+	ib.incident.OwnerUserID = id
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithTeamID(id string) *IncidentBuilder {
-	ib.i.TeamID = id
+	ib.incident.TeamID = id
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithCurrentStatus(status string) *IncidentBuilder {
-	ib.i.CurrentStatus = status
+	ib.incident.CurrentStatus = status
+
+	if status == "Resolved" || status == "Archived" {
+		ib.incident.EndAt = ib.incident.CreateAt + 100
+	}
 
 	return ib
 }
 
 func (ib *IncidentBuilder) WithChannel(channel *model.Channel) *IncidentBuilder {
-	ib.i.ChannelID = channel.Id
+	ib.incident.ChannelID = channel.Id
 
 	// Consider the incident name as authoritative.
-	channel.DisplayName = ib.i.Name
+	channel.DisplayName = ib.incident.Name
+
+	return ib
+}
+
+func (ib *IncidentBuilder) WithPlaybookID(id string) *IncidentBuilder {
+	ib.incident.PlaybookID = id
 
 	return ib
 }

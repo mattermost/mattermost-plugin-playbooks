@@ -36,6 +36,9 @@ type Poster interface {
 	// posting was successful. Often used to include post actions.
 	PostMessageWithAttachments(channelID string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error)
 
+	// PostCustomMessageWithAttachments posts a custom message with the specified type. Falling back to attachments for mobile.
+	PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error)
+
 	// DM posts a simple Direct Message to the specified user.
 	DM(userID, format string, args ...interface{}) error
 

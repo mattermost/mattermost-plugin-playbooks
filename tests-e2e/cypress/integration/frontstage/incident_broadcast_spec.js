@@ -85,7 +85,7 @@ describe('incident broadcast', () => {
             teamId,
             playbookId: publicBroadcastPlaybookId,
             incidentName,
-            commanderUserId: userId,
+            ownerUserId: userId,
         });
 
         // # Navigate directly to the application and the incident channel
@@ -120,7 +120,7 @@ describe('incident broadcast', () => {
             teamId,
             playbookId: privateBroadcastPlaybookId,
             incidentName,
-            commanderUserId: userId,
+            ownerUserId: userId,
         });
 
         // # Navigate directly to the application and the incident channel
