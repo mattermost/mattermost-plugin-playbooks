@@ -556,7 +556,7 @@ const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {
         >
             <FormContainer>
                 <ModalField
-                    placeholder={'Task Name'}
+                    placeholder={'Task name'}
                     type='text'
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}

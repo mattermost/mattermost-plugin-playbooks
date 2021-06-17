@@ -174,7 +174,7 @@ export const ChecklistItemTitle = (props: ChecklistItemTitleProps) => {
 
     return (
         <StyledBaseInput
-            placeholder={'Task Name'}
+            placeholder={'Task name'}
             type='text'
             value={title}
             onChange={(e) => setTitle(e.target.value)}
