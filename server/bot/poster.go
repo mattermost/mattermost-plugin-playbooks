@@ -159,6 +159,10 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		message = fmt.Sprintf("@%s requested access to the timeline in Incident Collaboration.", author.Username)
 		title = "Keep a complete record of the playbook run timeline"
 		text = "The playbook run timeline automatically tracks key events and messages in chronological order so that they can be traced and reviewed afterwards. Teams use timeline to perform retrospectives and extract lessons for the next time that they run the playbook."
+	case "start_trial_to_access_retrospective":
+		message = fmt.Sprintf("@%s requested access to the retrospective.", author.Username)
+		title = "Publish retrospective report and access the timeline"
+		text = "Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes."
 	case "start_trial_to_restrict_playbook_access":
 		message = fmt.Sprintf("@%s requested access to configure who can access specific playbooks in Incident Collaboration.", author.Username)
 		title = "Control who can access specific playbooks in Incident Collaboration with Mattermost Enterprise"
