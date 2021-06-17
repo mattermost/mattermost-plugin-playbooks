@@ -123,6 +123,7 @@ interface Props {
 
 interface URLParams {
     playbookId?: string;
+    tabId?: string;
 }
 
 const FetchingStateType = {
@@ -153,6 +154,13 @@ const timerOptions = [
     {value: 86400, label: '24hr'},
 ];
 
+const tabInfo = [
+    {id: 'tasks', name: 'Tasks'},
+    {id: 'preferences', name: 'Preferences'},
+    {id: 'automation', name: 'Automation'},
+    {id: 'permissions', name: 'Permissions'},
+];
+
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
@@ -173,7 +181,16 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
-    const [currentTab, setCurrentTab] = useState<number>(0);
+    let tab = 0;
+    if (urlParams.tabId) {
+        for (let i = 0; i < tabInfo.length; i++) {
+            if (urlParams.tabId === tabInfo[i].id) {
+                tab = i;
+            }
+        }
+    }
+
+    const [currentTab, setCurrentTab] = useState<number>(tab);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -451,10 +468,9 @@ const PlaybookEdit: FC<Props> = (props: Props) => {
                             currentTab={currentTab}
                             setCurrentTab={setCurrentTab}
                         >
-                            {'Tasks'}
-                            {'Preferences'}
-                            {'Automation'}
-                            {'Permissions'}
+                            {tabInfo.map((item) => {
+                                return (item.name);
+                            })}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>

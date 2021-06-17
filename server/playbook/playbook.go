@@ -172,14 +172,17 @@ type Service interface {
 	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
 	GetNumPlaybooksForTeam(teamID string) (int, error)
 
-	// GetSuggestedPlaybooks returns suggested playbooks for the user post
-	GetSuggestedPlaybooks(post *model.Post) []*CachedPlaybook
+	// GetSuggestedPlaybooks returns suggested playbooks and triggers for the user message
+	GetSuggestedPlaybooks(teamID, userID, message string) ([]*CachedPlaybook, []string)
 
 	// Update updates a playbook
 	Update(playbook Playbook, userID string) error
 
 	// Delete deletes a playbook
 	Delete(playbook Playbook, userID string) error
+
+	// MessageHasBeenPosted suggests playbooks to the user if triggered
+	MessageHasBeenPosted(sessionID string, post *model.Post)
 }
 
 // Store is an interface for storing playbooks

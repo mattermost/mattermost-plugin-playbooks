@@ -1483,6 +1483,12 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 
 	introText := fmt.Sprintf("**Commander:** %v\n\nPlaybooks are necessary to start an incident.%s", getUserDisplayName(user), newPlaybookMarkdown)
 
+	defaultOption := ""
+
+	if len(options) == 1 {
+		defaultOption = options[0].Value
+	}
+
 	return &model.Dialog{
 		Title:            "Incident Details",
 		IntroductionText: introText,
@@ -1492,6 +1498,7 @@ func (s *ServiceImpl) newIncidentDialog(teamID, commanderID, postID, clientID st
 				Name:        DialogFieldPlaybookIDKey,
 				Type:        "select",
 				Options:     options,
+				Default:     defaultOption,
 			},
 			{
 				DisplayName: "Incident Name",

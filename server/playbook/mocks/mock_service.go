@@ -124,17 +124,30 @@ func (mr *MockServiceMockRecorder) GetPlaybooksForTeam(arg0, arg1, arg2 interfac
 }
 
 // GetSuggestedPlaybooks mocks base method
-func (m *MockService) GetSuggestedPlaybooks(arg0 *model.Post) []*playbook.CachedPlaybook {
+func (m *MockService) GetSuggestedPlaybooks(arg0, arg1, arg2 string) ([]*playbook.CachedPlaybook, []string) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSuggestedPlaybooks", arg0)
+	ret := m.ctrl.Call(m, "GetSuggestedPlaybooks", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]*playbook.CachedPlaybook)
-	return ret0
+	ret1, _ := ret[1].([]string)
+	return ret0, ret1
 }
 
 // GetSuggestedPlaybooks indicates an expected call of GetSuggestedPlaybooks
-func (mr *MockServiceMockRecorder) GetSuggestedPlaybooks(arg0 interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) GetSuggestedPlaybooks(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSuggestedPlaybooks", reflect.TypeOf((*MockService)(nil).GetSuggestedPlaybooks), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSuggestedPlaybooks", reflect.TypeOf((*MockService)(nil).GetSuggestedPlaybooks), arg0, arg1, arg2)
+}
+
+// MessageHasBeenPosted mocks base method
+func (m *MockService) MessageHasBeenPosted(arg0 string, arg1 *model.Post) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "MessageHasBeenPosted", arg0, arg1)
+}
+
+// MessageHasBeenPosted indicates an expected call of MessageHasBeenPosted
+func (mr *MockServiceMockRecorder) MessageHasBeenPosted(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MessageHasBeenPosted", reflect.TypeOf((*MockService)(nil).MessageHasBeenPosted), arg0, arg1)
 }
 
 // Update mocks base method

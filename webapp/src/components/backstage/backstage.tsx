@@ -189,7 +189,7 @@ const Backstage: FC = () => {
                             currentTeam={currentTeam}
                         />
                     </Route>
-                    <Route path={`${match.url}/playbooks/:playbookId`}>
+                    <Route path={`${match.url}/playbooks/:playbookId/:tabId?`}>
                         <PlaybookEdit
                             isNew={false}
                             currentTeam={currentTeam}

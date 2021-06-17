@@ -156,7 +156,9 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
 	}
 
-	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient, pluginAPIClient)
+	keywordsThreadIgnorer := playbook.NewKeywordsThreadIgnorer()
+
+	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
@@ -177,6 +179,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.config)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config)
 	api.NewTelemetryHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot, telemetryClient, telemetryClient, p.config)
+	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.incidentService, p.playbookService, keywordsThreadIgnorer)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
@@ -235,16 +238,5 @@ func (p *Plugin) UserHasLeftChannel(c *plugin.Context, channelMember *model.Chan
 }
 
 func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
-	suggestedPlaybooks := p.playbookService.GetSuggestedPlaybooks(post)
-	if len(suggestedPlaybooks) != 0 {
-		p.suggestPlaybooksToTheUser(suggestedPlaybooks, post.UserId, post.ChannelId)
-	}
-}
-
-func (p *Plugin) suggestPlaybooksToTheUser(playbooks []*playbook.CachedPlaybook, userID, channelID string) {
-	message := "May be you want to run one of these playbooks \n"
-	for _, playbook := range playbooks {
-		message += playbook.Title + "\n"
-	}
-	p.bot.EphemeralPost(userID, channelID, &model.Post{Message: message})
+	p.playbookService.MessageHasBeenPosted(c.SessionId, post)
 }
