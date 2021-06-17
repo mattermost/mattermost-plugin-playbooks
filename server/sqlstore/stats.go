@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -236,9 +237,9 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 		return []int{}, []string{}, [][]int64{}
 	}
 
-	reverseInts(counts)
-	reverseStrings(weeksAsStrings)
-	reverseInt64Slices(weeksStartAndEnd)
+	reverseSlice(counts)
+	reverseSlice(weeksAsStrings)
+	reverseSlice(weeksStartAndEnd)
 
 	return counts, weeksAsStrings, weeksStartAndEnd
 }
@@ -295,9 +296,9 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 		return []int{}, []string{}, [][]int64{}
 	}
 
-	reverseInts(counts)
-	reverseStrings(daysAsStrings)
-	reverseInt64Slices(daysAsStartAndEnd)
+	reverseSlice(counts)
+	reverseSlice(daysAsStrings)
+	reverseSlice(daysAsStartAndEnd)
 
 	return counts, daysAsStrings, daysAsStartAndEnd
 }
@@ -350,8 +351,8 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 		return []int{}, []string{}
 	}
 
-	reverseInts(counts)
-	reverseStrings(daysAsStrings)
+	reverseSlice(counts)
+	reverseSlice(daysAsStrings)
 
 	return counts, daysAsStrings
 }
@@ -593,20 +594,14 @@ func endOfTodayMillis() int64 {
 	return bod.UnixNano() / int64(time.Millisecond)
 }
 
-func reverseInts(vals []int) {
-	for i, j := 0, len(vals)-1; i < j; i, j = i+1, j-1 {
-		vals[i], vals[j] = vals[j], vals[i]
+func reverseSlice(s interface{}) {
+	value := reflect.ValueOf(s)
+	if value.Kind() != reflect.Slice {
+		panic(errors.New("s must be a slice type"))
 	}
-}
-
-func reverseInt64Slices(vals [][]int64) {
-	for i, j := 0, len(vals)-1; i < j; i, j = i+1, j-1 {
-		vals[i], vals[j] = vals[j], vals[i]
-	}
-}
-
-func reverseStrings(vals []string) {
-	for i, j := 0, len(vals)-1; i < j; i, j = i+1, j-1 {
-		vals[i], vals[j] = vals[j], vals[i]
+	n := reflect.ValueOf(s).Len()
+	swap := reflect.Swapper(s)
+	for i, j := 0, n-1; i < j; i, j = i+1, j-1 {
+		swap(i, j)
 	}
 }

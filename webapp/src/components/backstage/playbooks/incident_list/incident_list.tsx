@@ -5,7 +5,6 @@ import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import {components, ControlProps} from 'react-select';
 import {debounce} from 'debounce';
-import moment from 'moment';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
@@ -21,7 +20,6 @@ import {
 import {FetchIncidentsParams, FetchIncidentsParamsTime, Incident} from 'src/types/incident';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {fetchOwnersInTeam, fetchIncidents} from 'src/client';
-import {navigateToTeamPluginUrl} from 'src/browser_routing';
 import SearchInput from 'src/components/backstage/incidents/incident_list/search_input';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {SortableColHeader} from 'src/components/sortable_col_header';
@@ -81,11 +79,10 @@ const IncidentList = (props: Props) => {
 
     const [fetchParams, setFetchParams] = useState<FetchIncidentsParams>(
         {
-            ...props.fetchParamsTime,
             team_id: currentTeam.id,
             page: 0,
             per_page: BACKSTAGE_LIST_PER_PAGE,
-            sort: 'last_update_at',
+            sort: 'last_status_update_at',
             direction: 'desc',
             playbook_id: props.playbook?.id,
         },
@@ -98,19 +95,10 @@ const IncidentList = (props: Props) => {
     }, [currentTeam.id]);
 
     useEffect(() => {
-        setFetchParams((oldParams) => {
-            return {
-                ...oldParams,
-                ...props.fetchParamsTime,
-            };
-        });
-    }, [props.fetchParamsTime]);
-
-    useEffect(() => {
         let isCanceled = false;
 
         async function fetchIncidentsAsync() {
-            const incidentsReturn = await fetchIncidents(fetchParams);
+            const incidentsReturn = await fetchIncidents({...fetchParams, ...props.fetchParamsTime});
 
             if (!isCanceled) {
                 setIncidents(incidentsReturn.items);
@@ -128,7 +116,7 @@ const IncidentList = (props: Props) => {
         return () => {
             isCanceled = true;
         };
-    }, [fetchParams, props.playbook]);
+    }, [fetchParams, props.fetchParamsTime, props.playbook]);
 
     function setSearchTerm(term: string) {
         setFetchParams({...fetchParams, search_term: term, page: 0});
@@ -225,8 +213,8 @@ const IncidentList = (props: Props) => {
                             <SortableColHeader
                                 name={'Status / Last update'}
                                 direction={fetchParams.direction ? fetchParams.direction : 'desc'}
-                                active={fetchParams.sort ? fetchParams.sort === 'last_update_at' : false}
-                                onClick={() => colHeaderClicked('last_update_at')}
+                                active={fetchParams.sort ? fetchParams.sort === 'last_status_update_at' : false}
+                                onClick={() => colHeaderClicked('last_status_update_at')}
                             />
                         </div>
                         <div className='col-sm-2'>

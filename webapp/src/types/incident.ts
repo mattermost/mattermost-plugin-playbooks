@@ -162,12 +162,7 @@ export interface FetchIncidentsParamsTime {
     started_lt?: number;
 }
 
-export const DefaultFetchIncidentsParamsTime: FetchIncidentsParamsTime = {
-    active_gte: 0,
-    active_lt: 0,
-    started_gte: 0,
-    started_lt: 0,
-};
+export const DefaultFetchIncidentsParamsTime: FetchIncidentsParamsTime = {};
 
 export const fetchParamsTimeEqual = (a: FetchIncidentsParamsTime, b: FetchIncidentsParamsTime) => {
     return Boolean(a.active_gte === b.active_gte &&

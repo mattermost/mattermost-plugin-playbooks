@@ -32,7 +32,7 @@ type Incident struct {
 	ChannelID                            string          `json:"channel_id"`
 	CreateAt                             int64           `json:"create_at"` // Retrieved from incident channel
 	EndAt                                int64           `json:"end_at"`
-	DeleteAt                             int64           `json:"delete_at"` // Retrieved from incidet channel
+	DeleteAt                             int64           `json:"delete_at"` // Retrieved from incident channel
 	ActiveStage                          int             `json:"active_stage"`
 	ActiveStageTitle                     string          `json:"active_stage_title"`
 	PostID                               string          `json:"post_id"`
@@ -40,7 +40,7 @@ type Incident struct {
 	Checklists                           []Checklist     `json:"checklists"`
 	StatusPosts                          []StatusPost    `json:"status_posts"`
 	CurrentStatus                        string          `json:"current_status"`
-	LastUpdateAt                         int64           `json:"last_update_at"`
+	LastStatusUpdateAt                   int64           `json:"last_status_update_at"`
 	ReminderPostID                       string          `json:"reminder_post_id"`
 	PreviousReminder                     time.Duration   `json:"previous_reminder"`
 	BroadcastChannelID                   string          `json:"broadcast_channel_id"`
@@ -566,7 +566,7 @@ func (o IncidentFilterOptions) Validate() (IncidentFilterOptions, error) {
 	case SortByTeamID:
 	case SortByEndAt:
 	case SortByStatus:
-	case SortByLastUpdateAt:
+	case SortByLastStatusUpdateAt:
 	case "": // default
 		options.Sort = SortByCreateAt
 	default:

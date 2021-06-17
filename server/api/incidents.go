@@ -1331,37 +1331,25 @@ func parseIncidentsFilterOptions(u *url.URL) (*app.IncidentFilterOptions, error)
 	if activeGTEParam == "" {
 		activeGTEParam = "0"
 	}
-	activeGTE, err := strconv.ParseInt(activeGTEParam, 10, 64)
-	if err != nil {
-		return nil, errors.Wrapf(err, "bad parameter 'active_gte'")
-	}
+	activeGTE, _ := strconv.ParseInt(activeGTEParam, 10, 64)
 
 	activeLTParam := u.Query().Get("active_lt")
 	if activeLTParam == "" {
 		activeLTParam = "0"
 	}
-	activeLT, err := strconv.ParseInt(activeLTParam, 10, 64)
-	if err != nil {
-		return nil, errors.Wrapf(err, "bad parameter 'active_lt'")
-	}
+	activeLT, _ := strconv.ParseInt(activeLTParam, 10, 64)
 
 	startedGTEParam := u.Query().Get("started_gte")
 	if startedGTEParam == "" {
 		startedGTEParam = "0"
 	}
-	startedGTE, err := strconv.ParseInt(startedGTEParam, 10, 64)
-	if err != nil {
-		return nil, errors.Wrapf(err, "bad parameter 'started_gte'")
-	}
+	startedGTE, _ := strconv.ParseInt(startedGTEParam, 10, 64)
 
 	startedLTParam := u.Query().Get("started_lt")
 	if startedLTParam == "" {
 		startedLTParam = "0"
 	}
-	startedLT, err := strconv.ParseInt(startedLTParam, 10, 64)
-	if err != nil {
-		return nil, errors.Wrapf(err, "bad parameter 'started_lt'")
-	}
+	startedLT, _ := strconv.ParseInt(startedLTParam, 10, 64)
 
 	options := app.IncidentFilterOptions{
 		TeamID:     teamID,

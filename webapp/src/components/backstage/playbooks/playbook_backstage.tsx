@@ -328,7 +328,6 @@ const PlaybookBackstage = () => {
                                     let nextFetchParamsTime = DefaultFetchIncidentsParamsTime;
                                     if (index >= 0) {
                                         nextFetchParamsTime = {
-                                            ...DefaultFetchIncidentsParamsTime,
                                             started_gte: stats.runs_started_per_week_times[index][0],
                                             started_lt: stats.runs_started_per_week_times[index][1],
                                         };
@@ -356,7 +355,6 @@ const PlaybookBackstage = () => {
                                     let nextFetchParamsTime = DefaultFetchIncidentsParamsTime;
                                     if (index >= 0) {
                                         nextFetchParamsTime = {
-                                            ...DefaultFetchIncidentsParamsTime,
                                             active_gte: stats.active_runs_per_day_times[index][0],
                                             active_lt: stats.active_runs_per_day_times[index][1],
                                         };
