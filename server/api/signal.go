@@ -72,10 +72,11 @@ func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := model.PostActionIntegrationResponse{
-		EphemeralText: fmt.Sprintf("You selected %v", pbook.Title),
-	}
-	ReturnJSON(w, &resp, http.StatusOK)
+	ReturnJSON(w, &model.PostActionIntegrationResponse{}, http.StatusOK)
+	h.api.Post.UpdateEphemeralPost(req.UserId, &model.Post{
+		Id:      req.PostId,
+		Message: fmt.Sprintf("You've selected playbook %s to run", pbook.Title),
+	})
 }
 
 func (h *SignalHandler) ignoreKeywords(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +99,9 @@ func (h *SignalHandler) ignoreKeywords(w http.ResponseWriter, r *http.Request) {
 	if post.RootId != "" {
 		h.keywordsThreadIgnorer.Ignore(post.RootId, post.UserId)
 	}
-	// Not returning a confirmation to the user, since ignore is fuzzy.
+
+	ReturnJSON(w, &model.PostActionIntegrationResponse{}, http.StatusOK)
+	h.api.Post.DeleteEphemeralPost(req.UserId, req.PostId)
 }
 
 func (h *SignalHandler) returnError(returnMessage string, err error, w http.ResponseWriter) {
