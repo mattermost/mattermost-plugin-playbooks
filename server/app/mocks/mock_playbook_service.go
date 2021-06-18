@@ -5,10 +5,10 @@
 package mock_app
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	app "github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
+	model "github.com/mattermost/mattermost-server/v5/model"
+	reflect "reflect"
 )
 
 // MockPlaybookService is a mock of PlaybookService interface
@@ -121,6 +121,33 @@ func (m *MockPlaybookService) GetPlaybooksForTeam(arg0 app.RequesterInfo, arg1 s
 func (mr *MockPlaybookServiceMockRecorder) GetPlaybooksForTeam(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooksForTeam", reflect.TypeOf((*MockPlaybookService)(nil).GetPlaybooksForTeam), arg0, arg1, arg2)
+}
+
+// GetSuggestedPlaybooks mocks base method
+func (m *MockPlaybookService) GetSuggestedPlaybooks(arg0, arg1, arg2 string) ([]*app.CachedPlaybook, []string) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSuggestedPlaybooks", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]*app.CachedPlaybook)
+	ret1, _ := ret[1].([]string)
+	return ret0, ret1
+}
+
+// GetSuggestedPlaybooks indicates an expected call of GetSuggestedPlaybooks
+func (mr *MockPlaybookServiceMockRecorder) GetSuggestedPlaybooks(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSuggestedPlaybooks", reflect.TypeOf((*MockPlaybookService)(nil).GetSuggestedPlaybooks), arg0, arg1, arg2)
+}
+
+// MessageHasBeenPosted mocks base method
+func (m *MockPlaybookService) MessageHasBeenPosted(arg0 string, arg1 *model.Post) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "MessageHasBeenPosted", arg0, arg1)
+}
+
+// MessageHasBeenPosted indicates an expected call of MessageHasBeenPosted
+func (mr *MockPlaybookServiceMockRecorder) MessageHasBeenPosted(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MessageHasBeenPosted", reflect.TypeOf((*MockPlaybookService)(nil).MessageHasBeenPosted), arg0, arg1)
 }
 
 // Update mocks base method

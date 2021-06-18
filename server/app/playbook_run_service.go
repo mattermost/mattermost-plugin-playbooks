@@ -1631,6 +1631,12 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 
 	introText := fmt.Sprintf("**Owner:** %v\n\n%s", getUserDisplayName(user), newPlaybookMarkdown)
 
+	defaultOption := ""
+
+	if len(options) == 1 {
+		defaultOption = options[0].Value
+	}
+
 	return &model.Dialog{
 		Title:            "Run details",
 		IntroductionText: introText,
@@ -1640,6 +1646,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 				Name:        DialogFieldPlaybookIDKey,
 				Type:        "select",
 				Options:     options,
+				Default:     defaultOption,
 			},
 			{
 				DisplayName: "Run name",

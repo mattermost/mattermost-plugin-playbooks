@@ -37,6 +37,7 @@ type Plugin struct {
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
 	bot                *bot.Bot
+	pluginAPI          *pluginapi.Client
 }
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
@@ -47,6 +48,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
 	pluginAPIClient := pluginapi.NewClient(p.API)
+	p.pluginAPI = pluginAPIClient
 
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
 	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
@@ -153,7 +155,9 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
 	}
 
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, telemetryClient)
+	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
+
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
@@ -174,6 +178,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config)
 	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, telemetryClient, telemetryClient, p.config)
+	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
@@ -227,4 +232,8 @@ func (p *Plugin) UserHasLeftChannel(c *plugin.Context, channelMember *model.Chan
 		actorID = actor.Id
 	}
 	p.playbookRunService.UserHasLeftChannel(channelMember.UserId, channelMember.ChannelId, actorID)
+}
+
+func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
+	p.playbookService.MessageHasBeenPosted(c.SessionId, post)
 }

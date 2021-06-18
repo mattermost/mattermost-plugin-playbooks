@@ -390,6 +390,8 @@ func TestPlaybookProperties(t *testing.T) {
 		AnnouncementChannelEnabled:  true,
 		WebhookOnCreationURL:        "webhook_on_creation_url_1\nwebhook_on_creation_url_2",
 		WebhookOnCreationEnabled:    false,
+		SignalAnyKeywordsEnabled:    true,
+		SignalAnyKeywords:           []string{"SEV1, SEV2"},
 	}
 
 	properties := playbookProperties(dummyPlaybook, dummyUserID)
@@ -421,6 +423,8 @@ func TestPlaybookProperties(t *testing.T) {
 		"AnnouncementChannelEnabled":  dummyPlaybook.AnnouncementChannelEnabled,
 		"NumWebhookOnCreationURLs":    2,
 		"WebhookOnCreationEnabled":    dummyPlaybook.WebhookOnCreationEnabled,
+		"SignalAnyKeywordsEnabled":    dummyPlaybook.SignalAnyKeywordsEnabled,
+		"NumSignalAnyKeywords":        len(dummyPlaybook.SignalAnyKeywords),
 	}
 
 	require.Equal(t, expectedProperties, properties)

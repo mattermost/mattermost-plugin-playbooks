@@ -7,13 +7,12 @@ import styled from 'styled-components';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
-import {Webhook} from 'src/components/backstage/automation/webhook';
+import {PatternedInput} from 'src/components/backstage/automation/patterned_input';
 
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/automation/auto_assign_owner';
 import {Announcement} from 'src/components/backstage/automation/announcement';
 
-import {BackstageSubheader, BackstageSubheaderDescription} from 'src/components/backstage/styles';
 import {MessageOnJoin} from 'src/components/backstage/automation/message_on_join';
 
 interface Props {
@@ -45,17 +44,33 @@ interface Props {
     onToggleMessageOnJoin: () => void;
     messageOnJoin: string;
     messageOnJoinChange: (message: string) => void;
+    signalAnyKeywordsEnabled: boolean;
+    onToggleSignalAnyKeywords: () => void;
+    signalAnyKeywordsChange: (keywords: string) => void;
+    signalAnyKeywords: string[];
 }
 
 export const AutomationSettings = (props: Props) => {
     return (
         <>
-            <BackstageSubheader>
-                {'Automation'}
-            </BackstageSubheader>
-            <BackstageSubheaderDescription>
-                {'Select what actions take place after certain situations are triggered.'}
-            </BackstageSubheaderDescription>
+            <Section>
+                <SectionTitle>
+                    {'Prompt to run the playbook when a user posts a message'}
+                </SectionTitle>
+                <Setting id={'signal-any-keywords'}>
+                    <PatternedInput
+                        enabled={props.signalAnyKeywordsEnabled}
+                        onToggle={props.onToggleSignalAnyKeywords}
+                        input={props.signalAnyKeywords.join(',')}
+                        onChange={props.signalAnyKeywordsChange}
+                        pattern={'[\\s\\S]*'} // pretty much everything
+                        placeholderText={'Add comma separated keywords'}
+                        textOnToggle={'Containing any of these keywords'}
+                        type={'text'}
+                        errorText={'Keywords are not valid.'} // this should not happen
+                    />
+                </Setting>
+            </Section>
             <Section>
                 <SectionTitle>
                     {'When a run starts'}
@@ -91,11 +106,16 @@ export const AutomationSettings = (props: Props) => {
                     />
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
-                    <Webhook
+                    <PatternedInput
                         enabled={props.webhookOnCreationEnabled}
                         onToggle={props.onToggleWebhookOnCreation}
-                        url={props.webhookOnCreationURL}
+                        input={props.webhookOnCreationURL}
                         onChange={props.webhookOnCreationChange}
+                        pattern={'https?://.*'}
+                        placeholderText={'Enter webhook'}
+                        textOnToggle={'Send outgoing webhook'}
+                        type={'url'}
+                        errorText={'URL is not valid.'}
                     />
                 </Setting>
             </Section>
@@ -104,11 +124,16 @@ export const AutomationSettings = (props: Props) => {
                     {'When a status updated is posted'}
                 </SectionTitle>
                 <Setting id={'playbook-run-status-update__outgoing-webhook'}>
-                    <Webhook
+                    <PatternedInput
                         enabled={props.webhookOnStatusUpdateEnabled}
                         onToggle={props.onToggleWebhookOnStatusUpdate}
-                        url={props.webhookOnStatusUpdateURL}
+                        input={props.webhookOnStatusUpdateURL}
                         onChange={props.webhookOnStatusUpdateChange}
+                        pattern={'https?://.*'}
+                        placeholderText={'Enter webhook'}
+                        textOnToggle={'Send outgoing webhook'}
+                        type={'url'}
+                        errorText={'URL is not valid.'}
                     />
                 </Setting>
             </Section>
