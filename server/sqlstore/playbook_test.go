@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -234,6 +235,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithDescription("this is a description, not very long, but it can be up to 4096 bytes").
 		WithTeamID(team1id).
 		WithCreateAt(500).
+		WithUpdateAt(0).
 		WithChecklists([]int{1, 2}).
 		WithMembers([]userInfo{jon, andrew, matt}).
 		ToPlaybook()
@@ -242,6 +244,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithTitle("playbook 2").
 		WithTeamID(team1id).
 		WithCreateAt(600).
+		WithUpdateAt(0).
 		WithCreatePublic(true).
 		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
 		WithMembers([]userInfo{andrew, matt}).
@@ -252,6 +255,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithTeamID(team1id).
 		WithChecklists([]int{1, 2, 3}).
 		WithCreateAt(700).
+		WithUpdateAt(0).
 		WithMembers([]userInfo{jon, matt, lucia}).
 		ToPlaybook()
 
@@ -260,6 +264,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithTeamID(team1id).
 		WithCreateAt(800).
+		WithUpdateAt(0).
 		WithChecklists([]int{20}).
 		WithMembers([]userInfo{matt}).
 		ToPlaybook()
@@ -268,6 +273,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithTitle("playbook 5").
 		WithTeamID(team2id).
 		WithCreateAt(1000).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{jon, andrew}).
 		ToPlaybook()
@@ -276,6 +282,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithTitle("playbook 6").
 		WithTeamID(team2id).
 		WithCreateAt(1100).
+		WithUpdateAt(0).
 		WithChecklists([]int{1, 2, 3}).
 		WithMembers([]userInfo{matt}).
 		ToPlaybook()
@@ -284,6 +291,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithTitle("playbook 7").
 		WithTeamID(team3id).
 		WithCreateAt(1200).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{andrew}).
 		ToPlaybook()
@@ -292,6 +300,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithTitle("playbook 8 -- so many members, but should have Desmond and Lucy").
 		WithTeamID(team3id).
 		WithCreateAt(1300).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
 		ToPlaybook()
@@ -427,6 +436,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithDescription("this is a description, not very long, but it can be up to 4096 bytes").
 		WithTeamID(team1id).
 		WithCreateAt(500).
+		WithUpdateAt(0).
 		WithChecklists([]int{1, 2}).
 		WithMembers([]userInfo{jon, andrew, matt}).
 		ToPlaybook()
@@ -435,6 +445,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTitle("playbook 2").
 		WithTeamID(team1id).
 		WithCreateAt(600).
+		WithUpdateAt(0).
 		WithCreatePublic(true).
 		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
 		WithMembers([]userInfo{andrew, matt}).
@@ -445,6 +456,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTeamID(team1id).
 		WithChecklists([]int{1, 2, 3}).
 		WithCreateAt(700).
+		WithUpdateAt(0).
 		WithMembers([]userInfo{jon, matt, lucia}).
 		ToPlaybook()
 
@@ -453,6 +465,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
 		WithTeamID(team1id).
 		WithCreateAt(800).
+		WithUpdateAt(0).
 		WithChecklists([]int{20}).
 		WithMembers([]userInfo{matt}).
 		ToPlaybook()
@@ -461,6 +474,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTitle("playbook 5").
 		WithTeamID(team2id).
 		WithCreateAt(1000).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{jon, andrew}).
 		ToPlaybook()
@@ -469,6 +483,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTitle("playbook 6").
 		WithTeamID(team2id).
 		WithCreateAt(1100).
+		WithUpdateAt(0).
 		WithChecklists([]int{1, 2, 3}).
 		WithMembers([]userInfo{matt}).
 		ToPlaybook()
@@ -477,6 +492,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTitle("playbook 7").
 		WithTeamID(team3id).
 		WithCreateAt(1200).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{andrew}).
 		ToPlaybook()
@@ -485,6 +501,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTitle("playbook 8 -- so many members, but should have Desmond and Lucy").
 		WithTeamID(team3id).
 		WithCreateAt(1300).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
 		ToPlaybook()
@@ -493,6 +510,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithTitle("playbook 9 -- all access").
 		WithTeamID(team3id).
 		WithCreateAt(1600).
+		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{}).
 		ToPlaybook()
@@ -1210,6 +1228,386 @@ func TestDeletePlaybook(t *testing.T) {
 	}
 }
 
+func TestGetPlaybooksForKeywords(t *testing.T) {
+	team1id := model.NewId()
+	team2id := model.NewId()
+	team3id := model.NewId()
+
+	pb01 := NewPBBuilder().
+		WithTitle("playbook 1").
+		WithTeamID(team1id).
+		WithKeywords([]string{"one", "two", "three"}).
+		ToPlaybook()
+
+	pb02 := NewPBBuilder().
+		WithTitle("playbook 2").
+		WithTeamID(team1id).
+		WithKeywords([]string{"one", "two"}).
+		ToPlaybook()
+
+	pb03 := NewPBBuilder().
+		WithTitle("playbook 3").
+		WithTeamID(team1id).
+		WithKeywords([]string{"one"}).
+		ToPlaybook()
+
+	pb04 := NewPBBuilder().
+		WithTitle("playbook 4").
+		WithTeamID(team1id).
+		ToPlaybook()
+
+	pb05 := NewPBBuilder().
+		WithTitle("playbook 5").
+		WithTeamID(team2id).
+		ToPlaybook()
+
+	pb06 := NewPBBuilder().
+		WithTitle("playbook 6").
+		WithTeamID(team2id).
+		ToPlaybook()
+
+	pb07 := NewPBBuilder().
+		WithTitle("playbook 7").
+		WithTeamID(team3id).
+		ToPlaybook()
+
+	pb08 := NewPBBuilder().
+		WithTitle("playbook 8").
+		WithTeamID(team3id).
+		ToPlaybook()
+
+	pb09 := NewPBBuilder().
+		WithTitle("playbook 9").
+		WithTeamID(team3id).
+		WithKeywords([]string{"other", "keywords"}).
+		ToPlaybook()
+
+	pb := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09}
+
+	createPlaybooks := func(store app.PlaybookStore) {
+		t.Helper()
+
+		for _, p := range pb {
+			_, err := store.Create(p)
+			require.NoError(t, err)
+		}
+	}
+
+	expected := []app.Playbook{pb01, pb02, pb03, pb09}
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
+
+		t.Run("zero playbooks", func(t *testing.T) {
+			result, err := playbookStore.GetPlaybooks()
+			require.NoError(t, err)
+			require.ElementsMatch(t, []app.Playbook{}, result)
+		})
+
+		createPlaybooks(playbookStore)
+
+		t.Run(driverName+" - get playbooks with keywords", func(t *testing.T) {
+			actual, err := playbookStore.GetPlaybooksWithKeywords(app.PlaybookFilterOptions{Page: 0, PerPage: 100})
+			sort.Slice(actual, func(i, j int) bool { return actual[i].Title < actual[j].Title })
+
+			require.NoError(t, err)
+			require.Len(t, actual, len(expected))
+			for i := range actual {
+				require.Equal(t, expected[i].TeamID, actual[i].TeamID)
+				require.Equal(t, expected[i].Title, actual[i].Title)
+				require.Equal(t, expected[i].SignalAnyKeywords, actual[i].SignalAnyKeywords)
+			}
+		})
+	}
+}
+
+func TestGetTimeLastUpdated(t *testing.T) {
+	team1id := model.NewId()
+	team2id := model.NewId()
+	team3id := model.NewId()
+
+	pb01 := NewPBBuilder().
+		WithTitle("playbook 1").
+		WithTeamID(team1id).
+		WithKeywords([]string{"one", "two", "three"}).
+		WithUpdateAt(400).
+		ToPlaybook()
+
+	pb02 := NewPBBuilder().
+		WithTitle("playbook 2").
+		WithTeamID(team1id).
+		WithUpdateAt(500).
+		WithKeywords([]string{"one", "two"}).
+		ToPlaybook()
+
+	pb03 := NewPBBuilder().
+		WithTitle("playbook 3").
+		WithTeamID(team2id).
+		WithUpdateAt(450).
+		ToPlaybook()
+
+	pb04 := NewPBBuilder().
+		WithTitle("playbook 4").
+		WithTeamID(team3id).
+		WithUpdateAt(600).
+		WithKeywords([]string{"one"}).
+		ToPlaybook()
+
+	pb05 := NewPBBuilder().
+		WithTitle("playbook 5").
+		WithTeamID(team3id).
+		WithUpdateAt(700).
+		ToPlaybook()
+
+	pb := []app.Playbook{pb01, pb02, pb03, pb04, pb05}
+
+	createPlaybooks := func(store app.PlaybookStore) {
+		t.Helper()
+
+		for _, p := range pb {
+			_, err := store.Create(p)
+			require.NoError(t, err)
+		}
+	}
+
+	expected := int64(600)
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
+
+		t.Run("zero playbooks", func(t *testing.T) {
+			result, err := playbookStore.GetPlaybooks()
+			require.NoError(t, err)
+			require.ElementsMatch(t, []app.Playbook{}, result)
+
+			lastUpdated, err := playbookStore.GetTimeLastUpdated(true)
+			require.NoError(t, err)
+			require.Equal(t, int64(0), lastUpdated)
+		})
+
+		createPlaybooks(playbookStore)
+
+		t.Run(driverName+" - get time last updated", func(t *testing.T) {
+			actual, err := playbookStore.GetTimeLastUpdated(true)
+
+			require.NoError(t, err)
+			require.Equal(t, expected, actual)
+		})
+	}
+}
+
+func TestGetPlaybookIDsForUser(t *testing.T) {
+	team1id := model.NewId()
+	team2id := model.NewId()
+	team3id := model.NewId()
+
+	lucy := userInfo{
+		ID:   model.NewId(),
+		Name: "Lucy",
+	}
+
+	jon := userInfo{
+		ID:   model.NewId(),
+		Name: "jon",
+	}
+
+	andrew := userInfo{
+		ID:   model.NewId(),
+		Name: "Andrew",
+	}
+
+	matt := userInfo{
+		ID:   model.NewId(),
+		Name: "Matt",
+	}
+
+	lucia := userInfo{
+		ID:   model.NewId(),
+		Name: "Lucía",
+	}
+
+	bill := userInfo{
+		ID:   model.NewId(),
+		Name: "Bill",
+	}
+
+	jen := userInfo{
+		ID:   model.NewId(),
+		Name: "Jen",
+	}
+
+	desmond := userInfo{
+		ID:   model.NewId(),
+		Name: "Desmond",
+	}
+
+	users := []userInfo{jon, andrew, matt, lucia, bill, jen, desmond, lucy}
+
+	pb01 := NewPBBuilder().
+		WithTeamID(team1id).
+		WithMembers([]userInfo{jon, andrew, matt}).
+		ToPlaybook()
+
+	pb02 := NewPBBuilder().
+		WithTeamID(team1id).
+		WithMembers([]userInfo{andrew, matt}).
+		ToPlaybook()
+
+	pb03 := NewPBBuilder().
+		WithTeamID(team1id).
+		WithMembers([]userInfo{jon, matt, lucia}).
+		ToPlaybook()
+
+	pb04 := NewPBBuilder().
+		WithTeamID(team1id).
+		WithMembers([]userInfo{matt}).
+		ToPlaybook()
+
+	pb05 := NewPBBuilder().
+		WithTeamID(team2id).
+		WithMembers([]userInfo{jon, andrew}).
+		ToPlaybook()
+
+	pb06 := NewPBBuilder().
+		WithTeamID(team2id).
+		WithMembers([]userInfo{matt}).
+		ToPlaybook()
+
+	pb07 := NewPBBuilder().
+		WithTeamID(team3id).
+		WithMembers([]userInfo{andrew}).
+		ToPlaybook()
+
+	pb08 := NewPBBuilder().
+		WithTeamID(team3id).
+		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
+		ToPlaybook()
+
+	pb09 := NewPBBuilder().
+		WithTeamID(team3id).
+		WithMembers([]userInfo{}).
+		ToPlaybook()
+
+	pb := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09}
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
+
+		t.Run("zero playbooks", func(t *testing.T) {
+			result, err := playbookStore.GetPlaybooks()
+			require.NoError(t, err)
+			require.ElementsMatch(t, []app.Playbook{}, result)
+		})
+
+		_, store := setupSQLStore(t, db)
+		setupUsersTable(t, db)
+		setupTeamMembersTable(t, db)
+		addUsers(t, store, users)
+
+		t.Helper()
+
+		for i := range pb {
+			id, err := playbookStore.Create(pb[i])
+			pb[i].ID = id
+			require.NoError(t, err)
+		}
+
+		tests := []struct {
+			name        string
+			teamID      string
+			userID      string
+			expected    []string
+			expectedErr error
+		}{
+			{
+				name:        "team1 from Andrew",
+				teamID:      team1id,
+				userID:      andrew.ID,
+				expected:    []string{pb[0].ID, pb[1].ID},
+				expectedErr: nil,
+			},
+			{
+				name:        "team1 from jon",
+				teamID:      team1id,
+				userID:      jon.ID,
+				expected:    []string{pb[0].ID, pb[2].ID},
+				expectedErr: nil,
+			},
+			{
+				name:        "team1 from lucia",
+				teamID:      team1id,
+				userID:      lucia.ID,
+				expected:    []string{pb[2].ID},
+				expectedErr: nil,
+			},
+			{
+				name:        "team2 from Matt",
+				teamID:      team2id,
+				userID:      matt.ID,
+				expected:    []string{pb[5].ID},
+				expectedErr: nil,
+			},
+			{
+				name:        "team3 from Andrew (not on team)",
+				teamID:      team3id,
+				userID:      andrew.ID,
+				expected:    []string{pb[6].ID, pb[8].ID},
+				expectedErr: nil,
+			},
+			{
+				name:        "team3 from Lucia",
+				teamID:      team3id,
+				userID:      lucia.ID,
+				expected:    []string{pb[7].ID, pb[8].ID},
+				expectedErr: nil,
+			},
+			{
+				name:        "team3 from Desmond - testing many members",
+				teamID:      team3id,
+				userID:      desmond.ID,
+				expected:    []string{pb[7].ID, pb[8].ID},
+				expectedErr: nil,
+			},
+			{
+				name:        "none found",
+				teamID:      "not-existing",
+				userID:      matt.ID,
+				expected:    []string{},
+				expectedErr: nil,
+			},
+			{
+				name:        "team3 from Matt",
+				teamID:      team3id,
+				userID:      matt.ID,
+				expected:    []string{pb[8].ID},
+				expectedErr: nil,
+			},
+		}
+
+		for _, testCase := range tests {
+			t.Run(driverName+" - "+testCase.name, func(t *testing.T) {
+				actual, err := playbookStore.GetPlaybookIDsForUser(testCase.userID, testCase.teamID)
+
+				if testCase.expectedErr != nil {
+					require.Nil(t, actual)
+					require.Error(t, err)
+					require.Equal(t, testCase.expectedErr.Error(), err.Error())
+
+					return
+				}
+
+				require.NoError(t, err)
+				require.ElementsMatch(t, testCase.expected, actual)
+			})
+		}
+
+		for i := range pb {
+			pb[i].ID = ""
+		}
+	}
+}
+
 // PlaybookBuilder is a utility to build playbooks with a default base.
 // Use it as:
 // NewBuilder.WithName("name").WithXYZ(xyz)....ToPlaybook()
@@ -1218,12 +1616,14 @@ type PlaybookBuilder struct {
 }
 
 func NewPBBuilder() *PlaybookBuilder {
+	timeNow := model.GetMillis()
 	return &PlaybookBuilder{
 		&app.Playbook{
 			Title:                "base playbook",
 			TeamID:               model.NewId(),
 			CreatePublicIncident: false,
-			CreateAt:             model.GetMillis(),
+			CreateAt:             timeNow,
+			UpdateAt:             timeNow,
 			DeleteAt:             0,
 			Checklists:           []app.Checklist(nil),
 			MemberIDs:            []string(nil),
@@ -1314,6 +1714,19 @@ func (p *PlaybookBuilder) WithMembers(members []userInfo) *PlaybookBuilder {
 	for i, member := range members {
 		p.MemberIDs[i] = member.ID
 	}
+
+	return p
+}
+
+func (p *PlaybookBuilder) WithKeywords(keywords []string) *PlaybookBuilder {
+	p.SignalAnyKeywordsEnabled = true
+	p.SignalAnyKeywords = keywords
+
+	return p
+}
+
+func (p *PlaybookBuilder) WithUpdateAt(updateAt int64) *PlaybookBuilder {
+	p.UpdateAt = updateAt
 
 	return p
 }

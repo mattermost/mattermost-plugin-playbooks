@@ -221,6 +221,8 @@ Cypress.Commands.add('apiCreatePlaybook', ({
     webhookOnStatusUpdateEnabled,
     messageOnJoin,
     messageOnJoinEnabled,
+    signalAnyKeywords,
+    signalAnyKeywordsEnabled,
 }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -247,6 +249,8 @@ Cypress.Commands.add('apiCreatePlaybook', ({
             webhook_on_status_update_enabled: webhookOnStatusUpdateEnabled,
             message_on_join: messageOnJoin,
             message_on_join_enabled: messageOnJoinEnabled,
+            signal_any_keywords: signalAnyKeywords,
+            signal_any_keywords_enabled: signalAnyKeywordsEnabled,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);

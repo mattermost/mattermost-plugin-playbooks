@@ -27,6 +27,8 @@ export interface Playbook {
     message_on_join_enabled: boolean;
     retrospective_reminder_interval_seconds: number;
     retrospective_template: string;
+    signal_any_keywords_enabled: boolean;
+    signal_any_keywords: string[];
 }
 
 export interface PlaybookNoChecklist {
@@ -106,6 +108,8 @@ export function emptyPlaybook(): Playbook {
         message_on_join_enabled: false,
         retrospective_reminder_interval_seconds: 0,
         retrospective_template: defaultRetrospectiveTemplate,
+        signal_any_keywords: [],
+        signal_any_keywords_enabled: false,
     };
 }
 
@@ -146,8 +150,8 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.broadcast_channel_id === 'string' &&
         typeof arg.reminder_message_template == 'string' &&
         typeof arg.reminder_timer_default_seconds == 'number' &&
-        arg.invited_user_ids && Array.isArray(arg.invited_user_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
-        arg.invited_group_ids && Array.isArray(arg.invited_group_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
+        arg.invited_user_ids && Array.isArray(arg.invited_user_ids) && arg.invited_user_ids.every((id: any) => typeof id === 'string') &&
+        arg.invited_group_ids && Array.isArray(arg.invited_group_ids) && arg.invited_group_ids.every((id: any) => typeof id === 'string') &&
         typeof arg.invite_users_enabled === 'boolean' &&
         typeof arg.default_owner_id === 'string' &&
         typeof arg.default_owner_enabled === 'boolean' &&
@@ -158,7 +162,9 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.webhook_on_status_update_url === 'string' &&
         typeof arg.webhook_on_status_update_enabled === 'boolean' &&
         typeof arg.message_on_join === 'string' &&
-        typeof arg.message_on_join_enabled === 'boolean';
+        typeof arg.message_on_join_enabled === 'boolean' &&
+        typeof arg.signal_any_keywords && Array.isArray(arg.signal_any_keywords) && arg.signal_any_keywords.every((id: any) => typeof id === 'string') &&
+        typeof arg.signal_any_keywords_enabled === 'boolean';
 }
 
 // eslint-disable-next-line

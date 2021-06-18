@@ -319,6 +319,8 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 		"AnnouncementChannelEnabled":  playbook.AnnouncementChannelEnabled,
 		"NumWebhookOnCreationURLs":    len(strings.Split(playbook.WebhookOnCreationURL, "\n")),
 		"WebhookOnCreationEnabled":    playbook.WebhookOnCreationEnabled,
+		"SignalAnyKeywordsEnabled":    playbook.SignalAnyKeywordsEnabled,
+		"NumSignalAnyKeywords":        len(playbook.SignalAnyKeywords),
 	}
 }
 

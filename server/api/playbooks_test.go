@@ -1069,6 +1069,7 @@ func TestPlaybooks(t *testing.T) {
 			InviteUsersEnabled: true,
 			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
 			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:  []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
@@ -1126,6 +1127,7 @@ func TestPlaybooks(t *testing.T) {
 			InviteUsersEnabled: false,
 			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
 			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:  []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
@@ -1184,6 +1186,7 @@ func TestPlaybooks(t *testing.T) {
 			InviteUsersEnabled: false,
 			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
 			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:  []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()

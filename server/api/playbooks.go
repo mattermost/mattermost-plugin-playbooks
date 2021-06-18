@@ -103,6 +103,10 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	if len(playbook.SignalAnyKeywords) != 0 {
+		playbook.SignalAnyKeywords = removeDuplicates(playbook.SignalAnyKeywords)
+	}
+
 	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -190,6 +194,10 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
+	}
+
+	if len(playbook.SignalAnyKeywords) != 0 {
+		playbook.SignalAnyKeywords = removeDuplicates(playbook.SignalAnyKeywords)
 	}
 
 	err = h.playbookService.Update(playbook, userID)
@@ -441,4 +449,18 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		Page:      page,
 		PerPage:   perPage,
 	}, nil
+}
+
+func removeDuplicates(a []string) []string {
+	items := make(map[string]bool)
+	for _, item := range a {
+		if item != "" {
+			items[item] = true
+		}
+	}
+	res := make([]string, 0, len(items))
+	for item := range items {
+		res = append(res, item)
+	}
+	return res
 }
