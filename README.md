@@ -26,9 +26,13 @@ If you're uncertain whether your PR requires documentation, or you'd like some e
 
 To quickly test Mattermost Incident Collaboration, use the following test commands to create playbook runs populated with random data:
 
-- `/playbook test create-incident [playbook ID] [timestamp] [incident name]` - Provide the ID of an existing playbook to which the current user has access, a timestamp, and a run name. The command creates an ongoing playbook run with the creation date set to the specified timestamp.
+- `/incident test create-playbooks [total playbooks]` - Provide a number of total playbooks that will be created. The command creates one or more playbooks based on the given parameter.
 
-  * An example command looks like: `/playbook test create-incident 6utgh6qg7p8ndeef9edc583cpc 2020-11-23 PR-Testing`
+  * An example command looks like: `/playbook test create-playbooks 5`
+
+- `/incident test create-playbook-run [playbook ID] [timestamp] [playbook run name]` - Provide the ID of an existing playbook to which the current user has access, a timestamp, and an playbook run name. The command creates an ongoing playbook run with the creation date set to the specified timestamp.
+
+  * An example command looks like: `/playbook test create-playbook-run 6utgh6qg7p8ndeef9edc583cpc 2020-11-23 PR-Testing`
 
 - `/playbook test bulk-data [ongoing] [ended] [days] [seed]` - Provide a number of ongoing and ended playbook runs, a number of days, and an optional random seed. The command creates the given number of ongoing and ended playbook runs, with creation dates randomly between `n` days ago and the day when the command was issued. The seed may be used to reproduce the same outcome on multiple invocations. Names are generated randomly.
 
