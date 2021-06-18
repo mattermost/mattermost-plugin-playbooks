@@ -885,4 +885,50 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.21.0"),
+		toVersion:   semver.MustParse("0.22.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "LastStatusUpdateAt", "BIGINT DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column LastStatusUpdateAt to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "LastStatusUpdateAt", "BIGINT DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column LastStatusUpdateAt to table IR_Incident")
+				}
+			}
+
+			var lastUpdateAts []struct {
+				ID                 string
+				LastStatusUpdateAt int64
+			}
+
+			// Fill in the LastStatusUpdateAt column as either the most recent status post, or
+			// if no posts: the incident's CreateAt.
+			lastUpdateAtSelect := sqlStore.builder.
+				Select("i.Id as ID", "COALESCE(MAX(p.CreateAt), i.CreateAt) as LastStatusUpdateAt").
+				From("IR_Incident as i").
+				LeftJoin("IR_StatusPosts as sp on i.Id = sp.IncidentId").
+				LeftJoin("Posts as p on sp.PostId = p.Id").
+				GroupBy("i.Id")
+
+			if err := sqlStore.selectBuilder(e, &lastUpdateAts, lastUpdateAtSelect); err != nil {
+				return errors.Wrapf(err, "failed getting incidents to update their LastStatusUpdateAt")
+			}
+
+			for _, row := range lastUpdateAts {
+				incidentUpdate := sqlStore.builder.
+					Update("IR_Incident").
+					Set("LastStatusUpdateAt", row.LastStatusUpdateAt).
+					Where(sq.Eq{"ID": row.ID})
+
+				if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
+					return errors.Wrapf(err, "failed to update incident's LastStatusUpdateAt for id: %s", row.ID)
+				}
+			}
+
+			return nil
+		},
+	},
 }

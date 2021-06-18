@@ -32,7 +32,7 @@ type Incident struct {
 	ChannelID                            string          `json:"channel_id"`
 	CreateAt                             int64           `json:"create_at"` // Retrieved from incident channel
 	EndAt                                int64           `json:"end_at"`
-	DeleteAt                             int64           `json:"delete_at"` // Retrieved from incidet channel
+	DeleteAt                             int64           `json:"delete_at"` // Retrieved from incident channel
 	ActiveStage                          int             `json:"active_stage"`
 	ActiveStageTitle                     string          `json:"active_stage_title"`
 	PostID                               string          `json:"post_id"`
@@ -40,6 +40,7 @@ type Incident struct {
 	Checklists                           []Checklist     `json:"checklists"`
 	StatusPosts                          []StatusPost    `json:"status_posts"`
 	CurrentStatus                        string          `json:"current_status"`
+	LastStatusUpdateAt                   int64           `json:"last_status_update_at"`
 	ReminderPostID                       string          `json:"reminder_post_id"`
 	PreviousReminder                     time.Duration   `json:"previous_reminder"`
 	BroadcastChannelID                   string          `json:"broadcast_channel_id"`
@@ -486,7 +487,7 @@ type JobOnceScheduler interface {
 
 const PerPageDefault = 1000
 
-// IncidentFilterOptions specifies the optional parameters when getting headers.
+// IncidentFilterOptions specifies the optional parameters when getting incidents.
 type IncidentFilterOptions struct {
 	// Gets all the headers with this TeamID.
 	TeamID string `url:"team_id,omitempty"`
@@ -522,6 +523,22 @@ type IncidentFilterOptions struct {
 	// PlaybookID filters incidents that are derived from this playbook id.
 	// Defaults to blank (no filter).
 	PlaybookID string `url:"playbook_id,omitempty"`
+
+	// ActiveGTE filters incidents that were active after (or equal) to the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	ActiveGTE int64 `url:"active_gte,omitempty"`
+
+	// ActiveLT filters incidents that were active before the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	ActiveLT int64 `url:"active_lt,omitempty"`
+
+	// StartedGTE filters incidents that were started after (or equal) to the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	StartedGTE int64 `url:"started_gte,omitempty"`
+
+	// StartedLT filters incidents that were started before the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	StartedLT int64 `url:"started_lt,omitempty"`
 }
 
 // Clone duplicates the given options.
@@ -549,6 +566,7 @@ func (o IncidentFilterOptions) Validate() (IncidentFilterOptions, error) {
 	case SortByTeamID:
 	case SortByEndAt:
 	case SortByStatus:
+	case SortByLastStatusUpdateAt:
 	case "": // default
 		options.Sort = SortByCreateAt
 	default:
@@ -579,6 +597,19 @@ func (o IncidentFilterOptions) Validate() (IncidentFilterOptions, error) {
 
 	if options.PlaybookID != "" && !model.IsValidId(options.PlaybookID) {
 		return IncidentFilterOptions{}, errors.New("bad parameter 'playbook_id': must be 26 characters or blank")
+	}
+
+	if options.ActiveGTE < 0 {
+		options.ActiveGTE = 0
+	}
+	if options.ActiveLT < 0 {
+		options.ActiveLT = 0
+	}
+	if options.StartedGTE < 0 {
+		options.StartedGTE = 0
+	}
+	if options.StartedLT < 0 {
+		options.StartedLT = 0
 	}
 
 	return options, nil

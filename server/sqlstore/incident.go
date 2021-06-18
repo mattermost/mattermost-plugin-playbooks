@@ -68,6 +68,8 @@ func applyIncidentFilterOptionsSort(builder sq.SelectBuilder, options app.Incide
 		sort = "EndAt"
 	case app.SortByStatus:
 		sort = "CurrentStatus"
+	case app.SortByLastStatusUpdateAt:
+		sort = "LastStatusUpdateAt"
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
@@ -111,7 +113,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 	// When adding an Incident column #1: add to this select
 	incidentSelect := sqlStore.builder.
 		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
-			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
+			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
@@ -230,6 +232,12 @@ func (s *incidentStore) GetIncidents(requesterInfo app.RequesterInfo, options ap
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 	}
 
+	queryForResults = queryActiveBetweenTimes(queryForResults, options.ActiveGTE, options.ActiveLT)
+	queryForTotal = queryActiveBetweenTimes(queryForTotal, options.ActiveGTE, options.ActiveLT)
+
+	queryForResults = queryStartedBetweenTimes(queryForResults, options.StartedGTE, options.StartedLT)
+	queryForTotal = queryStartedBetweenTimes(queryForTotal, options.StartedGTE, options.StartedLT)
+
 	queryForResults, err := applyIncidentFilterOptionsSort(queryForResults, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to apply sort options")
@@ -336,6 +344,7 @@ func (s *incidentStore) CreateIncident(incident *app.Incident) (*app.Incident, e
 			"BroadcastChannelID":                   rawIncident.BroadcastChannelID,
 			"ReminderMessageTemplate":              rawIncident.ReminderMessageTemplate,
 			"CurrentStatus":                        rawIncident.CurrentStatus,
+			"LastStatusUpdateAt":                   rawIncident.LastStatusUpdateAt,
 			"ConcatenatedInvitedUserIDs":           rawIncident.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":          rawIncident.ConcatenatedInvitedGroupIDs,
 			"DefaultCommanderID":                   rawIncident.DefaultOwnerID,
@@ -382,6 +391,7 @@ func (s *incidentStore) UpdateIncident(incident *app.Incident) error {
 			"Name":                                 "",
 			"Description":                          rawIncident.Description,
 			"CommanderUserID":                      rawIncident.OwnerUserID,
+			"LastStatusUpdateAt":                   rawIncident.LastStatusUpdateAt,
 			"ChecklistsJSON":                       rawIncident.ChecklistsJSON,
 			"ReminderPostID":                       rawIncident.ReminderPostID,
 			"PreviousReminder":                     rawIncident.PreviousReminder,
@@ -875,4 +885,57 @@ func addTimelineEventsToIncidents(timelineEvents []app.TimelineEvent, incidents 
 	for i, incident := range incidents {
 		incidents[i].TimelineEvents = iToTe[incident.ID]
 	}
+}
+
+// queryActiveBetweenTimes will modify the query only if one (or both) of start and end are non-zero.
+// If both are non-zero, return the incidents active between those two times.
+// If start is zero, return the incident active before the end (not active after the end).
+// If end is zero, return the incident active after start.
+func queryActiveBetweenTimes(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	if start > 0 && end > 0 {
+		return queryActive(query, start, end)
+	} else if start > 0 {
+		return queryActive(query, start, model.GetMillis())
+	} else if end > 0 {
+		return queryActive(query, 0, end)
+	}
+
+	// both were zero, don't apply a filter:
+	return query
+}
+
+func queryActive(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	return query.Where(
+		sq.And{
+			sq.Or{
+				sq.GtOrEq{"i.EndAt": start},
+				sq.Eq{"i.EndAt": 0},
+			},
+			sq.Lt{"i.CreateAt": end},
+		})
+}
+
+// queryStartedBetweenTimes will modify the query only if one (or both) of start and end are non-zero.
+// If both are non-zero, return the incidents started between those two times.
+// If start is zero, return the incident started before the end
+// If end is zero, return the incident started after start.
+func queryStartedBetweenTimes(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	if start > 0 && end > 0 {
+		return queryStarted(query, start, end)
+	} else if start > 0 {
+		return queryStarted(query, start, model.GetMillis())
+	} else if end > 0 {
+		return queryStarted(query, 0, end)
+	}
+
+	// both were zero, don't apply a filter:
+	return query
+}
+
+func queryStarted(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	return query.Where(
+		sq.And{
+			sq.GtOrEq{"i.CreateAt": start},
+			sq.Lt{"i.CreateAt": end},
+		})
 }

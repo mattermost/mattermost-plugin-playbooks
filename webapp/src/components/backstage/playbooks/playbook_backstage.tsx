@@ -22,6 +22,7 @@ import LineGraph from 'src/components/backstage/playbooks/line_graph';
 import IncidentList from 'src/components/backstage/playbooks/incident_list/incident_list';
 import BarGraph from 'src/components/backstage/playbooks/bar_graph';
 import {EmptyPlaybookStats} from 'src/types/stats';
+import {DefaultFetchIncidentsParamsTime, fetchParamsTimeEqual} from 'src/types/incident';
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
@@ -62,10 +63,33 @@ const LeftArrow = styled.button`
     }
 `;
 
+const VerticalBlock = styled.div`
+    display: flex;
+    flex-direction: column;
+    font-weight: 400;
+    padding: 0 16px 0 24px;
+`;
+
+const HorizontalBlock = styled.div`
+    display: flex;
+    flex-direction: row;
+    color: var(--center-channel-color-64);
+
+    > i {
+        font-size: 12px;
+        margin-left: -3px;
+    }
+`;
+
 const Title = styled.div`
     font-size: 20px;
-    padding: 0 16px 0 24px;
+    line-height: 28px;
     color: var(--center-channel-color);
+`;
+
+const SubTitle = styled.div`
+    font-size: 11px;
+    line-height: 16px;
 `;
 
 const PrimaryButtonLargerRight = styled(PrimaryButtonRight)`
@@ -137,7 +161,7 @@ const StatNumRow = styled.div`
     width: 100%;
 `;
 
-const PercentageChangeRectangle = styled.div`
+const PercentageChange = styled.div`
     margin: auto 12px 8px auto;
     display: flex;
     flex-direction: row;
@@ -192,6 +216,7 @@ const PlaybookBackstage = () => {
     const location = useLocation();
     const currentTeam = useSelector(getCurrentTeam);
     const [playbook, setPlaybook] = useState<Playbook | null>(null);
+    const [fetchParamsTime, setFetchParamsTime] = useState(DefaultFetchIncidentsParamsTime);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [stats, setStats] = useState(EmptyPlaybookStats);
 
@@ -237,13 +262,14 @@ const PlaybookBackstage = () => {
         navigateToUrl(location.pathname + '/edit');
     };
 
-    let percentage: number | string = stats.runs_finished_percentage_change;
-    if (stats.runs_finished_percentage_change === 99999999) {
-        percentage = '\u221e';
-    }
-    let changeSymbol = 'icon-arrow-up';
-    if (stats.runs_finished_percentage_change < 0) {
-        changeSymbol = 'icon-arrow-down';
+    let subTitle = 'Everyone can access this playbook';
+    let accessIconClass = 'icon-globe';
+    if (playbook.member_ids.length === 1) {
+        subTitle = 'Only you can access this playbook';
+        accessIconClass = 'icon-lock-outline';
+    } else if (playbook.member_ids.length > 1) {
+        subTitle = `${playbook.member_ids.length} people can access this playbook`;
+        accessIconClass = 'icon-lock-outline';
     }
 
     return (
@@ -254,7 +280,13 @@ const PlaybookBackstage = () => {
                         className='icon-arrow-left'
                         onClick={goToPlaybooks}
                     />
-                    <Title>{playbook.title}</Title>
+                    <VerticalBlock>
+                        <Title>{playbook.title}</Title>
+                        <HorizontalBlock>
+                            <i className={'icon ' + accessIconClass}/>
+                            <SubTitle>{subTitle}</SubTitle>
+                        </HorizontalBlock>
+                    </VerticalBlock>
                     <PrimaryButtonLargerRight onClick={goToEdit}>
                         <i className={'icon icon-pencil-outline'}/>
                         {'Edit Playbook'}
@@ -279,17 +311,32 @@ const PlaybookBackstage = () => {
                             <StatText>{'Runs finished in the last 30 days'}</StatText>
                             <StatNumRow>
                                 <StatNum>{stats.runs_finished_prev_30_days}</StatNum>
-                                <PercentageChangeRectangle>
-                                    <i className={'icon ' + changeSymbol}/>
-                                    {percentage + '%'}
-                                </PercentageChangeRectangle>
+                                {percentageChange(stats.runs_finished_percentage_change)}
                             </StatNumRow>
                         </StatCard>
                         <GraphBox>
                             <LineGraph
                                 title={'TOTAL RUNS started per week over the last 12 weeks'}
-                                labels={stats.runs_started_per_week_labels.reverse()}
-                                data={stats.runs_started_per_week.reverse()}
+                                labels={stats.runs_started_per_week_labels}
+                                data={stats.runs_started_per_week}
+                                tooltipTitleCallback={(xLabel) => 'Week of ' + xLabel}
+                                tooltipLabelCallback={(yLabel) => {
+                                    const runs = (yLabel === 1) ? 'run' : 'runs';
+                                    return `${yLabel} ${runs} started`;
+                                }}
+                                onClick={(index) => {
+                                    let nextFetchParamsTime = DefaultFetchIncidentsParamsTime;
+                                    if (index >= 0) {
+                                        nextFetchParamsTime = {
+                                            started_gte: stats.runs_started_per_week_times[index][0],
+                                            started_lt: stats.runs_started_per_week_times[index][1],
+                                        };
+                                    }
+
+                                    if (!fetchParamsTimeEqual(fetchParamsTime, nextFetchParamsTime)) {
+                                        setFetchParamsTime(nextFetchParamsTime);
+                                    }
+                                }}
                             />
                         </GraphBox>
                     </BottomRow>
@@ -297,23 +344,63 @@ const PlaybookBackstage = () => {
                         <GraphBox>
                             <BarGraph
                                 title={'ACTIVE RUNS per day over the last 14 days'}
-                                labels={stats.active_runs_per_day_labels.reverse()}
-                                data={stats.active_runs_per_day.reverse()}
+                                labels={stats.active_runs_per_day_labels}
+                                data={stats.active_runs_per_day}
+                                tooltipTitleCallback={(xLabel) => 'Day: ' + xLabel}
+                                tooltipLabelCallback={(yLabel) => {
+                                    const runs = (yLabel === 1) ? 'run' : 'runs';
+                                    return `${yLabel} active ${runs}`;
+                                }}
+                                onClick={(index) => {
+                                    let nextFetchParamsTime = DefaultFetchIncidentsParamsTime;
+                                    if (index >= 0) {
+                                        nextFetchParamsTime = {
+                                            active_gte: stats.active_runs_per_day_times[index][0],
+                                            active_lt: stats.active_runs_per_day_times[index][1],
+                                        };
+                                    }
+
+                                    if (!fetchParamsTimeEqual(fetchParamsTime, nextFetchParamsTime)) {
+                                        setFetchParamsTime(nextFetchParamsTime);
+                                    }
+                                }}
                             />
                         </GraphBox>
                         <GraphBox>
                             <BarGraph
                                 title={'ACTIVE PARTICIPANTS per day over the last 14 days'}
-                                labels={stats.active_participants_per_day_labels.reverse()}
-                                data={stats.active_participants_per_day.reverse()}
+                                labels={stats.active_participants_per_day_labels}
+                                data={stats.active_participants_per_day}
                                 color={'--center-channel-color-40'}
+                                tooltipTitleCallback={(xLabel) => 'Day: ' + xLabel}
+                                tooltipLabelCallback={(yLabel) => {
+                                    const participants = (yLabel === 1) ? 'participant' : 'participants';
+                                    return `${yLabel} active ${participants}`;
+                                }}
                             />
                         </GraphBox>
                     </BottomRow>
-                    <IncidentList playbook={playbook}/>
+                    <IncidentList
+                        playbook={playbook}
+                        fetchParamsTime={fetchParamsTime}
+                    />
                 </BottomInnerContainer>
             </BottomContainer>
         </OuterContainer>
+    );
+};
+
+const percentageChange = (change: number) => {
+    if (change === 99999999 || change === 0) {
+        return null;
+    }
+    const changeSymbol = (change > 0) ? 'icon-arrow-up' : 'icon-arrow-down';
+
+    return (
+        <PercentageChange>
+            <i className={'icon ' + changeSymbol}/>
+            {change + '%'}
+        </PercentageChange>
     );
 };
 
