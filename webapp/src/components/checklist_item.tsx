@@ -476,7 +476,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             </ItemContainer>
             <ConfirmModal
                 show={showDeleteConfirm}
-                title={'Delete Task'}
+                title={'Delete task'}
                 message={'Are you sure you want to delete this task? This will be removed from this run but will not affect the playbook.'}
                 confirmButtonText={'Delete'}
                 onConfirm={() =>
