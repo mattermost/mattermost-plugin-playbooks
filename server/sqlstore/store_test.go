@@ -1,7 +1,6 @@
 package sqlstore
 
 import (
-	"fmt"
 	"testing"
 
 	sq "github.com/Masterminds/squirrel"
@@ -18,7 +17,6 @@ func TestMigrationIdempotency(t *testing.T) {
 	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).Times(2)
 
 	for _, driver := range driverNames {
-		fmt.Println(driver)
 		builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
 		if driver == model.DATABASE_DRIVER_POSTGRES {
 			builder = builder.PlaceholderFormat(sq.Dollar)

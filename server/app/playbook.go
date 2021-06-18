@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
 
@@ -15,6 +16,7 @@ type Playbook struct {
 	TeamID                               string      `json:"team_id"`
 	CreatePublicIncident                 bool        `json:"create_public_incident"`
 	CreateAt                             int64       `json:"create_at"`
+	UpdateAt                             int64       `json:"update_at"`
 	DeleteAt                             int64       `json:"delete_at"`
 	NumStages                            int64       `json:"num_stages"`
 	NumSteps                             int64       `json:"num_steps"`
@@ -38,6 +40,8 @@ type Playbook struct {
 	RetrospectiveTemplate                string      `json:"retrospective_template"`
 	WebhookOnStatusUpdateURL             string      `json:"webhook_on_status_update_url"`
 	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
+	SignalAnyKeywords                    []string    `json:"signal_any_keywords"`
+	SignalAnyKeywordsEnabled             bool        `json:"signal_any_keywords_enabled"`
 }
 
 func (p Playbook) Clone() Playbook {
@@ -53,6 +57,9 @@ func (p Playbook) Clone() Playbook {
 	}
 	if len(p.InvitedGroupIDs) != 0 {
 		newPlaybook.InvitedGroupIDs = append([]string(nil), p.InvitedGroupIDs...)
+	}
+	if len(p.SignalAnyKeywords) != 0 {
+		newPlaybook.SignalAnyKeywords = append([]string(nil), p.SignalAnyKeywords...)
 	}
 	return newPlaybook
 }
@@ -78,6 +85,9 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	}
 	if old.InvitedGroupIDs == nil {
 		old.InvitedGroupIDs = []string{}
+	}
+	if old.SignalAnyKeywords == nil {
+		old.SignalAnyKeywords = []string{}
 	}
 
 	return json.Marshal(old)
@@ -154,11 +164,17 @@ type PlaybookService interface {
 	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
 	GetNumPlaybooksForTeam(teamID string) (int, error)
 
+	// GetSuggestedPlaybooks returns suggested playbooks and triggers for the user message
+	GetSuggestedPlaybooks(teamID, userID, message string) ([]*CachedPlaybook, []string)
+
 	// Update updates a playbook
 	Update(playbook Playbook, userID string) error
 
 	// Delete deletes a playbook
 	Delete(playbook Playbook, userID string) error
+
+	// MessageHasBeenPosted suggests playbooks to the user if triggered
+	MessageHasBeenPosted(sessionID string, post *model.Post)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -176,6 +192,17 @@ type PlaybookStore interface {
 
 	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
 	GetNumPlaybooksForTeam(teamID string) (int, error)
+
+	// GetPlaybooksWithKeywords retrieves all playbooks with keywords enabled
+	GetPlaybooksWithKeywords(opts PlaybookFilterOptions) ([]Playbook, error)
+
+	// GetTimeLastUpdated retrieves time last playbook was updated at.
+	// Passed argument determins whether to include playbooks with
+	// SignalAnyKeywordsEnabled flag or not.
+	GetTimeLastUpdated(onlyPlaybooksWithKeywordsEnabled bool) (int64, error)
+
+	// GetPlaybookIDsForUser retrieves playbooks user can access
+	GetPlaybookIDsForUser(userID, teamID string) ([]string, error)
 
 	// Update updates a playbook
 	Update(playbook Playbook) error
