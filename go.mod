@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/lib/pq v1.10.0
-	github.com/mattermost/mattermost-plugin-api v0.0.16-0.20210514101030-33637915555a
+	github.com/mattermost/mattermost-plugin-api v0.0.16-0.20210617150024-a576c5d40298
 	github.com/mattermost/mattermost-plugin-incident-collaboration/client v0.3.1
 	github.com/mattermost/mattermost-server/v5 v5.3.2-0.20210514083559-0bf7aed02e2c
 	github.com/pkg/errors v0.9.1
