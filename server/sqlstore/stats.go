@@ -244,7 +244,7 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 	return counts, weeksAsStrings, weeksStartAndEnd
 }
 
-// ActiveRunsPerDayLastXDays returns the number of actives runs per day for the last X days.
+// ActiveRunsPerDayLastXDays returns the number of active runs per day for the last X days.
 // Returns data in order of oldest day to most recent day.
 func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]int, []string, [][]int64) {
 	startOfDay := beginningOfTodayMillis()
@@ -303,7 +303,7 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 	return counts, daysAsStrings, daysAsStartAndEnd
 }
 
-// ActiveParticipantsPerDayLastXDays returns the number of actives participants per day for the last X days.
+// ActiveParticipantsPerDayLastXDays returns the number of active participants per day for the last X days.
 // Returns data in order of oldest day to most recent day.
 func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilters) ([]int, []string) {
 	startOfDay := beginningOfTodayMillis()
