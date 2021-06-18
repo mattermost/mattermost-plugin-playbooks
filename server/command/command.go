@@ -59,10 +59,10 @@ func getCommand(addTestCommands bool) *model.Command {
 }
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
-	command := model.NewAutocompleteData("incident", "[command]",
+	command := model.NewAutocompleteData("playbook", "[command]",
 		"Available commands: start, end, update, restart, check, checkadd, checkremove, list, owner, info, timeline")
 
-	start := model.NewAutocompleteData("start", "", "Starts a new incident")
+	start := model.NewAutocompleteData("start", "", "Starts a new playbook run")
 	command.AddCommand(start)
 
 	end := model.NewAutocompleteData("end", "",
