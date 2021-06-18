@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, FC} from 'react';
+import React, {useEffect} from 'react';
 import {Switch, Route, NavLink, useRouteMatch, Redirect} from 'react-router-dom';
 import {useSelector} from 'react-redux';
 
@@ -15,17 +15,15 @@ import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import BackstageIncidentList from 'src/components/backstage/incidents/incident_list/incident_list';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
-
 import {ErrorPageTypes} from 'src/constants';
-
-import {navigateToUrl, navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
-
-import PlaybookIcon from '../assets/icons/playbook_icon';
-import IncidentIcon from '../assets/icons/incident_icon';
+import {navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
+import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
+import IncidentIcon from 'src/components/assets/icons/incident_icon';
 import IncidentBackstage
     from 'src/components/backstage/incidents/incident_backstage/incident_backstage';
-
+import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
 import {useExperimentalFeaturesEnabled} from 'src/hooks';
+import CloudModal from 'src/components/cloud_modal';
 
 import StatsView from './stats';
 import SettingsView from './settings';
@@ -33,6 +31,8 @@ import SettingsView from './settings';
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
     height: 100%;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
 `;
 
@@ -68,7 +68,7 @@ export const BackstageNavbar = styled.div`
     background: var(--center-channel-bg);
     color: var(--center-channel-color);
     font-family: 'compass-icons';
-    box-shadow: 0px 1px 0px var(--center-channel-color-16);
+    box-shadow: inset 0px -1px 0px var(--center-channel-color-16);
 
     font-family: 'Open Sans';
     font-style: normal;
@@ -102,7 +102,7 @@ const BackstageTitlebarItem = styled(NavLink)`
 
 const BackstageBody = styled.div`
     z-index: 1;
-    margin: 0 auto;
+    flex-grow: 1;
 `;
 
 const Backstage = () => {
@@ -122,10 +122,6 @@ const Backstage = () => {
 
     const goToMattermost = () => {
         navigateToUrl(`/${currentTeam.name}`);
-    };
-
-    const goToPlaybooks = () => {
-        navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
     };
 
     const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
@@ -189,11 +185,14 @@ const Backstage = () => {
                             currentTeam={currentTeam}
                         />
                     </Route>
-                    <Route path={`${match.url}/playbooks/:playbookId`}>
+                    <Route path={`${match.url}/playbooks/:playbookId/edit/:tabId?`}>
                         <PlaybookEdit
                             isNew={false}
                             currentTeam={currentTeam}
                         />
+                    </Route>
+                    <Route path={`${match.url}/playbooks/:playbookId`}>
+                        <PlaybookBackstage/>
                     </Route>
                     <Route path={`${match.url}/playbooks`}>
                         <PlaybookList/>
@@ -222,6 +221,7 @@ const Backstage = () => {
                     </Route>
                 </Switch>
             </BackstageBody>
+            <CloudModal/>
         </BackstageContainer>
     );
 };

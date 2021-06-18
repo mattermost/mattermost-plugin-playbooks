@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
+
 	rudder "github.com/rudderlabs/analytics-go"
 	"github.com/stretchr/testify/require"
 )
@@ -80,23 +80,23 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 	}, server
 }
 
-var dummyIncident = &incident.Incident{
-	ID:              "id",
-	Name:            "name",
-	Description:     "description",
-	CommanderUserID: "commander_user_id",
-	ReporterUserID:  "reporter_user_id",
-	TeamID:          "team_id",
-	ChannelID:       "channel_id_1",
-	CreateAt:        1234,
-	EndAt:           5678,
-	DeleteAt:        9999,
-	PostID:          "post_id",
-	PlaybookID:      "playbookID1",
-	Checklists: []playbook.Checklist{
+var dummyIncident = &app.Incident{
+	ID:             "id",
+	Name:           "name",
+	Description:    "description",
+	OwnerUserID:    "owner_user_id",
+	ReporterUserID: "reporter_user_id",
+	TeamID:         "team_id",
+	ChannelID:      "channel_id_1",
+	CreateAt:       1234,
+	EndAt:          5678,
+	DeleteAt:       9999,
+	PostID:         "post_id",
+	PlaybookID:     "playbookID1",
+	Checklists: []app.Checklist{
 		{
 			Title: "Checklist",
-			Items: []playbook.ChecklistItem{
+			Items: []app.ChecklistItem{
 				{
 					ID:                     "task_id_1",
 					Title:                  "Test Item",
@@ -114,18 +114,18 @@ var dummyIncident = &incident.Incident{
 		},
 		{
 			Title: "Checklist 2",
-			Items: []playbook.ChecklistItem{
+			Items: []app.ChecklistItem{
 				{Title: "Test Item 2"},
 				{Title: "Test Item 3"},
 			},
 		},
 	},
-	StatusPosts: []incident.StatusPost{
-		{ID: "status_post_1", Status: incident.StatusActive},
-		{ID: "status_post_2", Status: incident.StatusReported},
+	StatusPosts: []app.StatusPost{
+		{ID: "status_post_1", Status: app.StatusActive},
+		{ID: "status_post_2", Status: app.StatusReported},
 	},
 	PreviousReminder: 5 * time.Second,
-	TimelineEvents: []incident.TimelineEvent{
+	TimelineEvents: []app.TimelineEvent{
 		{ID: "timeline_event_1"},
 		{ID: "timeline_event_2"},
 		{ID: "timeline_event_3"},
@@ -137,7 +137,7 @@ var dummyTask = dummyIncident.Checklists[0].Items[0]
 func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, expectedAction string) {
 	t.Helper()
 
-	incidentFromProperties := func(properties map[string]interface{}) *incident.Incident {
+	incidentFromProperties := func(properties map[string]interface{}) *app.Incident {
 		require.Contains(t, properties, "IncidentID")
 		require.Contains(t, properties, "HasDescription")
 		require.Contains(t, properties, "CommanderUserID")
@@ -156,11 +156,11 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 		require.Contains(t, properties, "PreviousReminder")
 		require.Contains(t, properties, "NumTimelineEvents")
 
-		return &incident.Incident{
+		return &app.Incident{
 			ID:               properties["IncidentID"].(string),
 			Name:             dummyIncident.Name, // not included in the tracked event
 			Description:      dummyIncident.Description,
-			CommanderUserID:  properties["CommanderUserID"].(string),
+			OwnerUserID:      properties["CommanderUserID"].(string),
 			ReporterUserID:   properties["ReporterUserID"].(string),
 			TeamID:           properties["TeamID"].(string),
 			CreateAt:         int64(properties["CreateAt"].(float64)),
@@ -340,7 +340,7 @@ func TestDisableTelemetry(t *testing.T) {
 }
 
 func TestPlaybookProperties(t *testing.T) {
-	var dummyPlaybook = playbook.Playbook{
+	var dummyPlaybook = app.Playbook{
 		ID:                   "id",
 		Title:                "title",
 		Description:          "description",
@@ -350,10 +350,10 @@ func TestPlaybookProperties(t *testing.T) {
 		DeleteAt:             9999,
 		NumStages:            2,
 		NumSteps:             3,
-		Checklists: []playbook.Checklist{
+		Checklists: []app.Checklist{
 			{
 				Title: "Checklist",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						ID:                     "task_id_1",
 						Title:                  "Test Item",
@@ -371,7 +371,7 @@ func TestPlaybookProperties(t *testing.T) {
 			},
 			{
 				Title: "Checklist 2",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{Title: "Test Item 2"},
 					{Title: "Test Item 3"},
 				},
@@ -384,12 +384,14 @@ func TestPlaybookProperties(t *testing.T) {
 		InvitedUserIDs:              []string{"invited_user_id_1", "invited_user_id_2"},
 		InvitedGroupIDs:             []string{"invited_group_id_1", "invited_group_id_2"},
 		InviteUsersEnabled:          true,
-		DefaultCommanderID:          "default_commander_id",
-		DefaultCommanderEnabled:     false,
+		DefaultOwnerID:              "default_owner_id",
+		DefaultOwnerEnabled:         false,
 		AnnouncementChannelID:       "announcement_channel_id",
 		AnnouncementChannelEnabled:  true,
 		WebhookOnCreationURL:        "webhook_on_creation_url_1\nwebhook_on_creation_url_2",
 		WebhookOnCreationEnabled:    false,
+		SignalAnyKeywordsEnabled:    true,
+		SignalAnyKeywords:           []string{"SEV1, SEV2"},
 	}
 
 	properties := playbookProperties(dummyPlaybook, dummyUserID)
@@ -415,12 +417,14 @@ func TestPlaybookProperties(t *testing.T) {
 		"NumInvitedUserIDs":           len(dummyPlaybook.InvitedUserIDs),
 		"NumInvitedGroupIDs":          len(dummyPlaybook.InvitedGroupIDs),
 		"InviteUsersEnabled":          dummyPlaybook.InviteUsersEnabled,
-		"DefaultCommanderID":          dummyPlaybook.DefaultCommanderID,
-		"DefaultCommanderEnabled":     dummyPlaybook.DefaultCommanderEnabled,
+		"DefaultCommanderID":          dummyPlaybook.DefaultOwnerID,
+		"DefaultCommanderEnabled":     dummyPlaybook.DefaultOwnerEnabled,
 		"AnnouncementChannelID":       dummyPlaybook.AnnouncementChannelID,
 		"AnnouncementChannelEnabled":  dummyPlaybook.AnnouncementChannelEnabled,
 		"NumWebhookOnCreationURLs":    2,
 		"WebhookOnCreationEnabled":    dummyPlaybook.WebhookOnCreationEnabled,
+		"SignalAnyKeywordsEnabled":    dummyPlaybook.SignalAnyKeywordsEnabled,
+		"NumSignalAnyKeywords":        len(dummyPlaybook.SignalAnyKeywords),
 	}
 
 	require.Equal(t, expectedProperties, properties)
@@ -436,7 +440,7 @@ func TestIncidentProperties(t *testing.T) {
 		"UserActualID":        dummyUserID,
 		"IncidentID":          dummyIncident.ID,
 		"HasDescription":      true,
-		"CommanderUserID":     dummyIncident.CommanderUserID,
+		"CommanderUserID":     dummyIncident.OwnerUserID,
 		"ReporterUserID":      dummyIncident.ReporterUserID,
 		"TeamID":              dummyIncident.TeamID,
 		"ChannelID":           dummyIncident.ChannelID,

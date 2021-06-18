@@ -3,7 +3,7 @@
 
 import {Channel} from 'mattermost-redux/types/channels';
 
-export interface CommanderInfo {
+export interface OwnerInfo {
     user_id: string;
     username: string;
 }

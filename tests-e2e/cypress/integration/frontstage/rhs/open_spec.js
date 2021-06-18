@@ -71,7 +71,7 @@ describe('incident rhs', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             });
 
             // # Open the flagged posts RHS
@@ -101,7 +101,7 @@ describe('incident rhs', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             });
 
             // # Navigate directly to the application and the incident channel
@@ -122,7 +122,7 @@ describe('incident rhs', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             }).then((incident) => {
                 // # End the incident
                 cy.apiUpdateStatus({
@@ -153,7 +153,7 @@ describe('incident rhs', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             }).then((incident) => {
                 // # End the incident
                 cy.apiUpdateStatus({
@@ -193,7 +193,7 @@ describe('incident rhs', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             });
 
             // # Open the incident channel from the LHS.
@@ -223,7 +223,7 @@ describe('incident rhs', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             }).then((incident) => {
                 // # End the incident
                 cy.apiUpdateStatus({
@@ -263,7 +263,7 @@ describe('incident rhs', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             }).then((incident) => {
                 // # End the incident
                 cy.apiUpdateStatus({
@@ -294,7 +294,7 @@ describe('incident rhs', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             });
 
             // # Navigate to a channel without an incident.
@@ -322,7 +322,7 @@ describe('incident rhs', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             }).then((incident) => {
                 // # End the incident
                 cy.apiUpdateStatus({
@@ -360,7 +360,7 @@ describe('incident rhs', () => {
                 teamId,
                 playbookId,
                 incidentName,
-                commanderUserId: userId,
+                ownerUserId: userId,
             }).then((incident) => {
                 // # End the incident
                 cy.apiUpdateStatus({

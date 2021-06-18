@@ -29,6 +29,7 @@ const OuterContainer = styled.div`
     background: var(center-channel-bg);
     display: flex;
     flex-direction: column;
+    height: 100%;
 `;
 
 const TopContainer = styled.div`
@@ -63,8 +64,10 @@ const BottomContainer = styled.div`
 
 const InnerContainer = styled.div`
     padding: 20px;
+    padding-top: 40px;
     max-width: 1120px;
     margin: 0 auto;
+    height: 100%;
     font-family: 'Open Sans', sans-serif;
     font-style: normal;
     font-weight: 600;

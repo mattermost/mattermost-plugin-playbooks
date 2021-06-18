@@ -83,6 +83,23 @@ func (mr *MockPosterMockRecorder) EphemeralPost(arg0, arg1, arg2 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EphemeralPost", reflect.TypeOf((*MockPoster)(nil).EphemeralPost), arg0, arg1, arg2)
 }
 
+// EphemeralPostWithAttachments mocks base method
+func (m *MockPoster) EphemeralPostWithAttachments(arg0, arg1, arg2 string, arg3 []*model.SlackAttachment, arg4 string, arg5 ...interface{}) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2, arg3, arg4}
+	for _, a := range arg5 {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "EphemeralPostWithAttachments", varargs...)
+}
+
+// EphemeralPostWithAttachments indicates an expected call of EphemeralPostWithAttachments
+func (mr *MockPosterMockRecorder) EphemeralPostWithAttachments(arg0, arg1, arg2, arg3, arg4 interface{}, arg5 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2, arg3, arg4}, arg5...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EphemeralPostWithAttachments", reflect.TypeOf((*MockPoster)(nil).EphemeralPostWithAttachments), varargs...)
+}
+
 // NotifyAdmins mocks base method
 func (m *MockPoster) NotifyAdmins(arg0, arg1 string, arg2 bool) error {
 	m.ctrl.T.Helper()
@@ -95,6 +112,26 @@ func (m *MockPoster) NotifyAdmins(arg0, arg1 string, arg2 bool) error {
 func (mr *MockPosterMockRecorder) NotifyAdmins(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyAdmins", reflect.TypeOf((*MockPoster)(nil).NotifyAdmins), arg0, arg1, arg2)
+}
+
+// PostCustomMessageWithAttachments mocks base method
+func (m *MockPoster) PostCustomMessageWithAttachments(arg0, arg1 string, arg2 []*model.SlackAttachment, arg3 string, arg4 ...interface{}) (*model.Post, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2, arg3}
+	for _, a := range arg4 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PostCustomMessageWithAttachments", varargs...)
+	ret0, _ := ret[0].(*model.Post)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PostCustomMessageWithAttachments indicates an expected call of PostCustomMessageWithAttachments
+func (mr *MockPosterMockRecorder) PostCustomMessageWithAttachments(arg0, arg1, arg2, arg3 interface{}, arg4 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostCustomMessageWithAttachments", reflect.TypeOf((*MockPoster)(nil).PostCustomMessageWithAttachments), varargs...)
 }
 
 // PostMessage mocks base method

@@ -10,6 +10,8 @@ import UpgradeModalFooter from 'src/components/backstage/upgrade_modal_footer';
 import {isCurrentUserAdmin, getAdminAnalytics, isTeamEdition} from 'src/selectors';
 
 import {AdminNotificationType} from 'src/constants';
+import {isCloud} from 'src/license';
+import {useOpenCloudModal} from 'src/hooks';
 
 import {ModalActionState, getUpgradeModalButtons, getUpgradeModalCopy} from 'src/components/backstage/upgrade_modal_data';
 
@@ -23,6 +25,8 @@ interface Props {
 }
 
 const UpgradeModal = (props: Props) => {
+    const openCloudModal = useOpenCloudModal();
+    const isServerCloud = useSelector(isCloud);
     const isAdmin = useSelector(isCurrentUserAdmin);
     const isServerTeamEdition = useSelector(isTeamEdition);
 
@@ -31,11 +35,10 @@ const UpgradeModal = (props: Props) => {
     const analytics = useSelector(getAdminAnalytics);
     const serverTotalUsers = analytics?.TOTAL_USERS || 0;
 
-    const requestLicense = async () => {
+    const requestLicenseSelfHosted = async () => {
         if (actionState === ModalActionState.Loading) {
             return;
         }
-
         setActionState(ModalActionState.Loading);
 
         const requestedUsers = Math.max(serverTotalUsers, 30);
@@ -47,7 +50,22 @@ const UpgradeModal = (props: Props) => {
         }
     };
 
-    const notifyAdmins = async () => {
+    const openUpgradeModal = async () => {
+        if (actionState === ModalActionState.Loading) {
+            return;
+        }
+
+        props.onHide();
+
+        openCloudModal();
+    };
+
+    let adminMainAction = requestLicenseSelfHosted;
+    if (isServerCloud) {
+        adminMainAction = openUpgradeModal;
+    }
+
+    const endUserMainAction = async () => {
         if (actionState === ModalActionState.Loading) {
             return;
         }
@@ -63,7 +81,7 @@ const UpgradeModal = (props: Props) => {
     };
 
     const copy = getUpgradeModalCopy(isAdmin, isServerTeamEdition, actionState, props.messageType);
-    const buttons = getUpgradeModalButtons(isAdmin, isServerTeamEdition, actionState, requestLicense, notifyAdmins, props.onHide);
+    const buttons = getUpgradeModalButtons(isAdmin, isServerTeamEdition, isServerCloud, actionState, adminMainAction, endUserMainAction, props.onHide);
 
     return (
         <SizedGenericModal
@@ -81,6 +99,7 @@ const UpgradeModal = (props: Props) => {
                     actionState={actionState}
                     isCurrentUserAdmin={isAdmin}
                     isServerTeamEdition={isServerTeamEdition}
+                    isCloud={isServerCloud}
                 />
             )}
         >
