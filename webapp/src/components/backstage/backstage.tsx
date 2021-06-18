@@ -126,6 +126,18 @@ const Backstage = () => {
 
     const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
+    const playbookBackstageWithId = () => {
+        if (experimentalFeaturesEnabled) {
+            return <PlaybookBackstage/>;
+        }
+        return (
+            <PlaybookEdit
+                isNew={false}
+                currentTeam={currentTeam}
+            />
+        );
+    };
+
     return (
         <BackstageContainer>
             <BackstageNavbar className='flex justify-content-between'>
@@ -192,7 +204,7 @@ const Backstage = () => {
                         />
                     </Route>
                     <Route path={`${match.url}/playbooks/:playbookId`}>
-                        <PlaybookBackstage/>
+                        {playbookBackstageWithId()}
                     </Route>
                     <Route path={`${match.url}/playbooks`}>
                         <PlaybookList/>

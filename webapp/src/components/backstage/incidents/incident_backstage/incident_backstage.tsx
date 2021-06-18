@@ -4,7 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
-import {Redirect, Route, useRouteMatch, Link, NavLink, Switch} from 'react-router-dom';
+import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
