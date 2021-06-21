@@ -152,6 +152,22 @@ type PlaybookRunListOptions struct {
 	// PlaybookID filters playbook runs that are derived from this playbook id.
 	// Defaults to blank (no filter).
 	PlaybookID string `url:"playbook_id,omitempty"`
+
+	// ActiveGTE filters playbook runs that were active after (or equal) to the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	ActiveGTE int64 `url:"active_gte,omitempty"`
+
+	// ActiveLT filters playbook runs that were active before the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	ActiveLT int64 `url:"active_lt,omitempty"`
+
+	// StartedGTE filters playbook runs that were started after (or equal) to the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	StartedGTE int64 `url:"started_gte,omitempty"`
+
+	// StartedLT filters playbook runs that were started before the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	StartedLT int64 `url:"started_lt,omitempty"`
 }
 
 // PlaybookRunList contains the paginated result.

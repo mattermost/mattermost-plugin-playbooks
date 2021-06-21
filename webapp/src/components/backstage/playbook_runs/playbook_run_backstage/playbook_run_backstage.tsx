@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -13,10 +13,11 @@ import {Channel} from 'mattermost-redux/types/channels';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
-
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
-
+import {clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookRunMetadata} from 'src/client';
+import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
+import {ErrorPageTypes} from 'src/constants';
 import {
     Badge,
     SecondaryButtonLargerRight,
@@ -24,11 +25,9 @@ import {
 
 import ExportLink from 'src/components/backstage/playbook_runs/playbook_run_details/export_link';
 
-import {fetchPlaybookRun, fetchPlaybookRunMetadata} from 'src/client';
-import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
-import {ErrorPageTypes} from 'src/constants';
-
 import {useExperimentalFeaturesEnabled} from 'src/hooks';
+import {Playbook} from 'src/types/playbook';
+import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
@@ -94,10 +93,39 @@ const LeftArrow = styled.button`
     }
 `;
 
+const VerticalBlock = styled.div`
+    display: flex;
+    flex-direction: column;
+    font-weight: 400;
+    padding: 0 16px 0 24px;
+`;
+
 const Title = styled.div`
     font-size: 20px;
-    padding: 0 16px 0 24px;
     color: var(--center-channel-color);
+`;
+
+const PlaybookDiv = styled.div`
+    display: flex;
+    flex-direction: row;
+    color: var(--center-channel-color-64);
+    cursor: pointer;
+
+    &:hover {
+        color: var(--button-bg);
+    }
+`;
+
+const SmallPlaybookIcon = styled(PlaybookIcon)`
+    height: 13px;
+    width: auto;
+    margin-top: 1px;
+`;
+
+const SubTitle = styled.div`
+    font-size: 11px;
+    line-height: 16px;
+    margin-left: 4px;
 `;
 
 const TabItem = styled(NavLink)`
@@ -110,7 +138,7 @@ const TabItem = styled(NavLink)`
         text-decoration: unset;
         color: unset;
 
-        &.active{
+        &.active {
             box-shadow: inset 0px -2px 0px var(--button-bg);
             color: var(--button-bg);
         }
@@ -130,6 +158,7 @@ const FetchingStateType = {
 const PlaybookRunBackstage = () => {
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
+    const [playbook, setPlaybook] = useState<Playbook | null>(null);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const channel = useSelector<GlobalState, Channel | null>((state) => (playbookRun ? getChannel(state, playbookRun.channel_id) : null));
     const match = useRouteMatch<MatchParams>();
@@ -148,6 +177,17 @@ const PlaybookRunBackstage = () => {
             setFetchingState(FetchingStateType.notFound);
         });
     }, [match.params.playbookRunId]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (playbookRun?.playbook_id) {
+                const fetchedPlaybook = await clientFetchPlaybook(playbookRun.playbook_id);
+                setPlaybook(fetchedPlaybook);
+            }
+        };
+
+        fetchData();
+    }, [playbookRun?.playbook_id]);
 
     if (fetchingState === FetchingStateType.loading) {
         return null;
@@ -178,7 +218,13 @@ const PlaybookRunBackstage = () => {
                         className='icon-arrow-left'
                         onClick={closePlaybookRunDetails}
                     />
-                    <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
+                    <VerticalBlock>
+                        <Title data-testid='playbookRun-title'>{playbookRun.name}</Title>
+                        <PlaybookDiv onClick={() => navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook?.id}`)}>
+                            <SmallPlaybookIcon/>
+                            <SubTitle>{playbook?.title}</SubTitle>
+                        </PlaybookDiv>
+                    </VerticalBlock>
                     <Badge status={playbookRun.current_status}/>
                     <SecondaryButtonLargerRight onClick={goToChannel}>
                         <i className={'icon ' + channelIcon}/>
@@ -194,12 +240,12 @@ const PlaybookRunBackstage = () => {
                         {'Overview'}
                     </TabItem>
                     {experimentalFeaturesEnabled &&
-                        <TabItem
-                            to={`${match.url}/retrospective`}
-                            activeClassName={'active'}
-                        >
-                            {'Retrospective'}
-                        </TabItem>
+                    <TabItem
+                        to={`${match.url}/retrospective`}
+                        activeClassName={'active'}
+                    >
+                        {'Retrospective'}
+                    </TabItem>
                     }
                 </SecondRow>
             </TopContainer>

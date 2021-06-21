@@ -15,15 +15,16 @@ import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {$ID, IDMappedObjects, Dictionary} from 'mattermost-redux/types/utilities';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
-
 import {pluginId} from 'src/manifest';
+
+import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import {
     RHSState,
     RHSTabState,
     TimelineEventsFilter,
     TimelineEventsFilterDefault,
 } from 'src/types/rhs';
+import {findLastUpdated} from 'src/utils';
 
 import {GlobalSettings} from './types/settings';
 
@@ -114,19 +115,15 @@ export const lastUpdatedByPlaybookRunId = createSelector(
     (teamId, playbookRunsMapByTeam) => {
         const result = {} as Record<string, number>;
         const playbookRunMap = playbookRunsMapByTeam[teamId];
+        if (!playbookRunMap) {
+            return {};
+        }
         for (const playbookRun of Object.values(playbookRunMap)) {
             result[playbookRun.id] = findLastUpdated(playbookRun);
         }
         return result;
     },
 );
-
-const findLastUpdated = (playbookRun: PlaybookRun) => {
-    const posts = [...playbookRun.status_posts]
-        .filter((a) => a.delete_at === 0)
-        .sort((a, b) => b.create_at - a.create_at);
-    return posts.length === 0 ? 0 : posts[0].create_at;
-};
 
 const PROFILE_SET_ALL = 'all';
 

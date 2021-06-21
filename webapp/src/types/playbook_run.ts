@@ -2,8 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
-
-import {Checklist, isChecklist} from './playbook';
+import {Checklist, isChecklist} from 'src/types/playbook';
 
 export interface PlaybookRun {
     id: string;
@@ -150,7 +149,27 @@ export interface FetchPlaybookRunsParams {
     member_id?: string;
     disabled?: boolean;
     playbook_id?: string;
+    active_gte?: number;
+    active_lt?: number;
+    started_gte?: number;
+    started_lt?: number;
 }
+
+export interface FetchPlaybookRunsParamsTime {
+    active_gte?: number;
+    active_lt?: number;
+    started_gte?: number;
+    started_lt?: number;
+}
+
+export const DefaultFetchPlaybookRunsParamsTime: FetchPlaybookRunsParamsTime = {};
+
+export const fetchParamsTimeEqual = (a: FetchPlaybookRunsParamsTime, b: FetchPlaybookRunsParamsTime) => {
+    return Boolean(a.active_gte === b.active_gte &&
+        a.active_lt === b.active_lt &&
+        a.started_gte === b.started_gte &&
+        a.started_lt === b.started_lt);
+};
 
 export interface FetchPlaybooksParams {
     team_id?: string;

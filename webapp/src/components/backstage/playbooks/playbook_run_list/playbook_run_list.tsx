@@ -5,7 +5,6 @@ import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import {components, ControlProps} from 'react-select';
 import {debounce} from 'debounce';
-import moment from 'moment';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
@@ -18,30 +17,19 @@ import {
     StatusFilter,
     StatusOption,
 } from 'src/components/backstage/playbook_runs/playbook_run_list/status_filter';
+import {FetchPlaybookRunsParams, FetchPlaybookRunsParamsTime, PlaybookRun} from 'src/types/playbook_run';
 
 import SearchInput from 'src/components/backstage/playbook_runs/playbook_run_list/search_input';
 
-import {
-    FetchPlaybookRunsParams,
-    PlaybookRun,
-    playbookRunCurrentStatus,
-    playbookRunIsActive,
-} from 'src/types/playbook_run';
-
-import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
-
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {fetchOwnersInTeam, fetchPlaybookRuns} from 'src/client';
-import {navigateToTeamPluginUrl} from 'src/browser_routing';
 import ProfileSelector from 'src/components/profile/profile_selector';
-import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import {SortableColHeader} from 'src/components/sortable_col_header';
-import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-
-import Profile from 'src/components/profile/profile';
 import {PaginationRow} from 'src/components/pagination_row';
 import {Playbook} from 'src/types/playbook';
+
 import 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list.scss';
+import Row from 'src/components/backstage/playbooks/playbook_run_list/row';
 
 const debounceDelay = 300; // in milliseconds
 
@@ -63,6 +51,16 @@ const PlaybookRunListContainer = styled.div`
     padding-top: 32px;
 `;
 
+const PlaybookRunListHeader = styled.div`
+    font-weight: 600;
+    font-size: 11px;
+    line-height: 36px;
+    color: var(--center-channel-color-72);
+    background-color: var(--center-channel-color-04);
+    border-radius: 4px;
+    padding: 0 1.6rem;
+`;
+
 const statusOptions: StatusOption[] = [
     {value: '', label: 'All'},
     {value: 'Reported', label: 'Reported'},
@@ -73,20 +71,21 @@ const statusOptions: StatusOption[] = [
 
 interface Props {
     playbook: Playbook | null
+    fetchParamsTime?: FetchPlaybookRunsParamsTime
 }
 
 const PlaybookRunList = (props: Props) => {
     const [playbookRuns, setPlaybookRuns] = useState<PlaybookRun[] | null>(null);
     const [totalCount, setTotalCount] = useState(0);
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => UserProfile;
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const [fetchParams, setFetchParams] = useState<FetchPlaybookRunsParams>(
         {
             team_id: currentTeam.id,
             page: 0,
             per_page: BACKSTAGE_LIST_PER_PAGE,
-            sort: 'create_at',
+            sort: 'last_status_update_at',
             direction: 'desc',
             playbook_id: props.playbook?.id,
         },
@@ -102,7 +101,7 @@ const PlaybookRunList = (props: Props) => {
         let isCanceled = false;
 
         async function fetchPlaybookRunsAsync() {
-            const playbookRunsReturn = await fetchPlaybookRuns(fetchParams);
+            const playbookRunsReturn = await fetchPlaybookRuns({...fetchParams, ...props.fetchParamsTime});
 
             if (!isCanceled) {
                 setPlaybookRuns(playbookRunsReturn.items);
@@ -120,7 +119,7 @@ const PlaybookRunList = (props: Props) => {
         return () => {
             isCanceled = true;
         };
-    }, [fetchParams, props.playbook]);
+    }, [fetchParams, props.fetchParamsTime, props.playbook]);
 
     function setSearchTerm(term: string) {
         setFetchParams({...fetchParams, search_term: term, page: 0});
@@ -157,10 +156,6 @@ const PlaybookRunList = (props: Props) => {
 
     function setOwnerId(userId?: string) {
         setFetchParams({...fetchParams, owner_user_id: userId, page: 0});
-    }
-
-    function openPlaybookRunDetails(playbookRun: PlaybookRun) {
-        navigateToTeamPluginUrl(currentTeam.name, `/runs/${playbookRun.id}`);
     }
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
@@ -213,11 +208,11 @@ const PlaybookRunList = (props: Props) => {
                         onChange={setStatus}
                     />
                 </div>
-                <BackstageListHeader>
+                <PlaybookRunListHeader>
                     <div className='row'>
-                        <div className='col-sm-3'>
+                        <div className='col-sm-4'>
                             <SortableColHeader
-                                name={'Run name'}
+                                name={'Run Name'}
                                 direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                                 active={fetchParams.sort ? fetchParams.sort === 'name' : false}
                                 onClick={() => colHeaderClicked('name')}
@@ -225,31 +220,28 @@ const PlaybookRunList = (props: Props) => {
                         </div>
                         <div className='col-sm-2'>
                             <SortableColHeader
-                                name={'Status'}
+                                name={'Status / Last update'}
                                 direction={fetchParams.direction ? fetchParams.direction : 'desc'}
-                                active={fetchParams.sort ? fetchParams.sort === 'status' : false}
-                                onClick={() => colHeaderClicked('status')}
+                                active={fetchParams.sort ? fetchParams.sort === 'last_status_update_at' : false}
+                                onClick={() => colHeaderClicked('last_status_update_at')}
                             />
                         </div>
                         <div className='col-sm-2'>
                             <SortableColHeader
-                                name={'Start time'}
+                                name={'Duration / Started on'}
                                 direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                                 active={fetchParams.sort ? fetchParams.sort === 'create_at' : false}
                                 onClick={() => colHeaderClicked('create_at')}
                             />
                         </div>
                         <div className='col-sm-2'>
-                            <SortableColHeader
-                                name={'End time'}
-                                direction={fetchParams.direction ? fetchParams.direction : 'desc'}
-                                active={fetchParams.sort ? fetchParams.sort === 'end_at' : false}
-                                onClick={() => colHeaderClicked('end_at')}
-                            />
+                            {'Owner / Participants'}
                         </div>
-                        <div className='col-sm-3'> {'Owner'} </div>
+                        <div className='col-sm-2'>
+                            {'Tasks finished'}
+                        </div>
                     </div>
-                </BackstageListHeader>
+                </PlaybookRunListHeader>
 
                 {playbookRuns.length === 0 && !isFiltering &&
                     <div className='text-center pt-8'>
@@ -262,36 +254,10 @@ const PlaybookRunList = (props: Props) => {
                     </div>
                 }
                 {playbookRuns.map((playbookRun) => (
-                    <div
-                        className='row playbook-run-item'
+                    <Row
                         key={playbookRun.id}
-                        onClick={() => openPlaybookRunDetails(playbookRun)}
-                    >
-                        <a className='col-sm-3 playbook-run-item__title'>
-                            <TextWithTooltip
-                                id={playbookRun.id}
-                                text={playbookRun.name}
-                            />
-                        </a>
-                        <div className='col-sm-2'>
-                            <StatusBadge status={playbookRunCurrentStatus(playbookRun)}/>
-                        </div>
-                        <div
-                            className='col-sm-2'
-                        >
-                            {
-                                formatDate(moment(playbookRun.create_at))
-                            }
-                        </div>
-                        <div className='col-sm-2'>
-                            {
-                                endedAt(playbookRunIsActive(playbookRun), playbookRun.end_at)
-                            }
-                        </div>
-                        <div className='col-sm-3'>
-                            <Profile userId={playbookRun.owner_user_id}/>
-                        </div>
-                    </div>
+                        playbookRun={playbookRun}
+                    />
                 ))}
                 <PaginationRow
                     page={fetchParams.page ? fetchParams.page : 0}
@@ -302,25 +268,6 @@ const PlaybookRunList = (props: Props) => {
             </div>
         </PlaybookRunListContainer>
     );
-};
-
-const formatDate = (mom: moment.Moment) => {
-    if (mom.isSame(moment(), 'year')) {
-        return mom.format('MMM DD LT');
-    }
-    return mom.format('MMM DD YYYY LT');
-};
-
-const endedAt = (isActive: boolean, time: number) => {
-    if (isActive) {
-        return '--';
-    }
-
-    const mom = moment(time);
-    if (mom.isSameOrAfter('2020-01-01')) {
-        return formatDate(mom);
-    }
-    return '--';
 };
 
 export default PlaybookRunList;

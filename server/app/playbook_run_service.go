@@ -241,8 +241,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		return nil, err
 	}
 
+	now := model.GetMillis()
 	playbookRun.ChannelID = channel.Id
-	playbookRun.CreateAt = model.GetMillis()
+	playbookRun.CreateAt = now
+	playbookRun.LastStatusUpdateAt = now
 	playbookRun.CurrentStatus = StatusReported
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
@@ -721,6 +723,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 
 	playbookRunToModify.PreviousReminder = options.Reminder
 	playbookRunToModify.Description = options.Description
+	playbookRunToModify.LastStatusUpdateAt = post.CreateAt
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrap(err, "failed to update playbook run")

@@ -33,6 +33,9 @@ const (
 
 	// SortByStatus sorts by the status of a playbook run.
 	SortByStatus SortField = "status"
+
+	// SortByLastStatusUpdateAt sorts by when the playbook run was last updated.
+	SortByLastStatusUpdateAt SortField = "last_status_update_at"
 )
 
 // SortDirection is the type used to specify the ascending or descending order of returned results.

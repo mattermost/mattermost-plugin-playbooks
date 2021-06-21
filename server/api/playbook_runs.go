@@ -1327,6 +1327,30 @@ func parsePlaybookRunsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, 
 
 	playbookID := u.Query().Get("playbook_id")
 
+	activeGTEParam := u.Query().Get("active_gte")
+	if activeGTEParam == "" {
+		activeGTEParam = "0"
+	}
+	activeGTE, _ := strconv.ParseInt(activeGTEParam, 10, 64)
+
+	activeLTParam := u.Query().Get("active_lt")
+	if activeLTParam == "" {
+		activeLTParam = "0"
+	}
+	activeLT, _ := strconv.ParseInt(activeLTParam, 10, 64)
+
+	startedGTEParam := u.Query().Get("started_gte")
+	if startedGTEParam == "" {
+		startedGTEParam = "0"
+	}
+	startedGTE, _ := strconv.ParseInt(startedGTEParam, 10, 64)
+
+	startedLTParam := u.Query().Get("started_lt")
+	if startedLTParam == "" {
+		startedLTParam = "0"
+	}
+	startedLT, _ := strconv.ParseInt(startedLTParam, 10, 64)
+
 	options := app.PlaybookRunFilterOptions{
 		TeamID:     teamID,
 		Page:       page,
@@ -1338,6 +1362,10 @@ func parsePlaybookRunsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, 
 		SearchTerm: searchTerm,
 		MemberID:   memberID,
 		PlaybookID: playbookID,
+		ActiveGTE:  activeGTE,
+		ActiveLT:   activeLT,
+		StartedGTE: startedGTE,
+		StartedLT:  startedLT,
 	}
 
 	options, err = options.Validate()

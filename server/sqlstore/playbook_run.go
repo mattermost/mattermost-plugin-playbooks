@@ -68,6 +68,8 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 		sort = "EndAt"
 	case app.SortByStatus:
 		sort = "CurrentStatus"
+	case app.SortByLastStatusUpdateAt:
+		sort = "LastStatusUpdateAt"
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
@@ -111,7 +113,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 	// When adding a Playbook Run column #1: add to this select
 	playbookRunSelect := sqlStore.builder.
 		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
-			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
+			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
@@ -230,6 +232,12 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 	}
 
+	queryForResults = queryActiveBetweenTimes(queryForResults, options.ActiveGTE, options.ActiveLT)
+	queryForTotal = queryActiveBetweenTimes(queryForTotal, options.ActiveGTE, options.ActiveLT)
+
+	queryForResults = queryStartedBetweenTimes(queryForResults, options.StartedGTE, options.StartedLT)
+	queryForTotal = queryStartedBetweenTimes(queryForTotal, options.StartedGTE, options.StartedLT)
+
 	queryForResults, err := applyPlaybookRunFilterOptionsSort(queryForResults, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to apply sort options")
@@ -336,6 +344,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"BroadcastChannelID":                   rawPlaybookRun.BroadcastChannelID,
 			"ReminderMessageTemplate":              rawPlaybookRun.ReminderMessageTemplate,
 			"CurrentStatus":                        rawPlaybookRun.CurrentStatus,
+			"LastStatusUpdateAt":                   rawPlaybookRun.LastStatusUpdateAt,
 			"ConcatenatedInvitedUserIDs":           rawPlaybookRun.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":          rawPlaybookRun.ConcatenatedInvitedGroupIDs,
 			"DefaultCommanderID":                   rawPlaybookRun.DefaultOwnerID,
@@ -382,6 +391,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 			"Name":                                 "",
 			"Description":                          rawPlaybookRun.Description,
 			"CommanderUserID":                      rawPlaybookRun.OwnerUserID,
+			"LastStatusUpdateAt":                   rawPlaybookRun.LastStatusUpdateAt,
 			"ChecklistsJSON":                       rawPlaybookRun.ChecklistsJSON,
 			"ReminderPostID":                       rawPlaybookRun.ReminderPostID,
 			"PreviousReminder":                     rawPlaybookRun.PreviousReminder,
@@ -875,4 +885,57 @@ func addTimelineEventsToPlaybookRuns(timelineEvents []app.TimelineEvent, playboo
 	for i, playbookRun := range playbookRuns {
 		playbookRuns[i].TimelineEvents = iToTe[playbookRun.ID]
 	}
+}
+
+// queryActiveBetweenTimes will modify the query only if one (or both) of start and end are non-zero.
+// If both are non-zero, return the playbook runs active between those two times.
+// If start is zero, return the playbook run active before the end (not active after the end).
+// If end is zero, return the playbook run active after start.
+func queryActiveBetweenTimes(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	if start > 0 && end > 0 {
+		return queryActive(query, start, end)
+	} else if start > 0 {
+		return queryActive(query, start, model.GetMillis())
+	} else if end > 0 {
+		return queryActive(query, 0, end)
+	}
+
+	// both were zero, don't apply a filter:
+	return query
+}
+
+func queryActive(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	return query.Where(
+		sq.And{
+			sq.Or{
+				sq.GtOrEq{"i.EndAt": start},
+				sq.Eq{"i.EndAt": 0},
+			},
+			sq.Lt{"i.CreateAt": end},
+		})
+}
+
+// queryStartedBetweenTimes will modify the query only if one (or both) of start and end are non-zero.
+// If both are non-zero, return the playbook runs started between those two times.
+// If start is zero, return the playbook run started before the end
+// If end is zero, return the playbook run started after start.
+func queryStartedBetweenTimes(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	if start > 0 && end > 0 {
+		return queryStarted(query, start, end)
+	} else if start > 0 {
+		return queryStarted(query, start, model.GetMillis())
+	} else if end > 0 {
+		return queryStarted(query, 0, end)
+	}
+
+	// both were zero, don't apply a filter:
+	return query
+}
+
+func queryStarted(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	return query.Where(
+		sq.And{
+			sq.GtOrEq{"i.CreateAt": start},
+			sq.Lt{"i.CreateAt": end},
+		})
 }

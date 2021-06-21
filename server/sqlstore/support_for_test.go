@@ -64,6 +64,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	require.NoError(t, err)
 
 	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		err = sqlStore.Migrate(currentSchemaVersion)
@@ -340,7 +341,7 @@ func setupPostsTable(t testing.TB, db *sqlx.DB) {
 	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
 	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
 		_, err := db.Exec(`
-			CREATE TABLE public.posts (
+			CREATE TABLE IF NOT EXISTS public.posts (
 				id character varying(26) NOT NULL,
 				createat bigint,
 				updateat bigint,
@@ -368,7 +369,7 @@ func setupPostsTable(t testing.TB, db *sqlx.DB) {
 
 	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
 	_, err := db.Exec(`
-			CREATE TABLE Posts (
+			CREATE TABLE IF NOT EXISTS Posts (
 			  Id varchar(26) NOT NULL,
 			  CreateAt bigint(20) DEFAULT NULL,
 			  UpdateAt bigint(20) DEFAULT NULL,
