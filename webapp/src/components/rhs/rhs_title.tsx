@@ -7,12 +7,14 @@ import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
+import {PlaybookRun, playbookRunCurrentStatus} from 'src/types/playbook_run';
+
+import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
+
 import LeftChevron from 'src/components/assets/icons/left_chevron';
 import {RHSState} from 'src/types/rhs';
 import {setRHSViewingList} from 'src/actions';
-import {currentIncident, currentRHSState} from 'src/selectors';
-import StatusBadge from 'src/components/backstage/incidents/status_badge';
-import {Incident, incidentCurrentStatus} from 'src/types/incident';
+import {currentPlaybookRun, currentRHSState} from 'src/selectors';
 
 const RHSTitleContainer = styled.div`
     display: flex;
@@ -36,10 +38,10 @@ const Button = styled.button`
 
 const RHSTitle = () => {
     const dispatch = useDispatch();
-    const incident = useSelector<GlobalState, Incident | undefined>(currentIncident);
+    const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>(currentPlaybookRun);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
 
-    if (rhsState === RHSState.ViewingIncident) {
+    if (rhsState === RHSState.ViewingPlaybookRun) {
         return (
             <RHSTitleContainer>
                 <Button
@@ -47,10 +49,10 @@ const RHSTitle = () => {
                     data-testid='back-button'
                 >
                     <LeftChevron/>
-                </Button><RHSTitleText data-testid='rhs-title'>{incident?.name || 'Incidents'}</RHSTitleText>
-                {incident && (
+                </Button><RHSTitleText data-testid='rhs-title'>{playbookRun?.name || 'Runs'}</RHSTitleText>
+                {playbookRun && (
                     <StatusBadge
-                        status={incidentCurrentStatus(incident)}
+                        status={playbookRunCurrentStatus(playbookRun)}
                         compact={true}
                     />
                 )}
@@ -60,7 +62,7 @@ const RHSTitle = () => {
 
     return (
         <RHSTitleText>
-            {'Your Ongoing Incidents'}
+            {'Runs in progress'}
         </RHSTitleText>
     );
 };

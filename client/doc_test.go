@@ -23,11 +23,11 @@ func Example() {
 		log.Fatal(err)
 	}
 
-	incidentID := "h4n3h7s1qjf5pkis4dn6cuxgwa"
-	incident, err := c.Incidents.Get(ctx, incidentID)
+	playbookRunID := "h4n3h7s1qjf5pkis4dn6cuxgwa"
+	playbookRun, err := c.PlaybookRuns.Get(ctx, playbookRunID)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Incident Name: %s\n", incident.Name)
+	fmt.Printf("Playbook Run Name: %s\n", playbookRun.Name)
 }

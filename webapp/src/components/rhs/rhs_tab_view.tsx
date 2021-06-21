@@ -7,13 +7,14 @@ import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 
+import {PlaybookRun} from 'src/types/playbook_run';
+
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 
 import {RHSTabState} from 'src/types/rhs';
-import {currentIncident, currentRHSTabState} from 'src/selectors';
+import {currentPlaybookRun, currentRHSTabState} from 'src/selectors';
 import {setRHSTabState} from 'src/actions';
-import {Incident} from 'src/types/incident';
-import {telemetryEventForIncident} from 'src/client';
+import {telemetryEventForPlaybookRun} from 'src/client';
 
 import {useAllowTimelineViewInCurrentTeam} from 'src/hooks';
 
@@ -46,7 +47,7 @@ const RHSTabView = () => {
     const dispatch = useDispatch();
     const currentTabState = useSelector<GlobalState, RHSTabState>(currentRHSTabState);
     const channelId = useSelector<GlobalState, string>(getCurrentChannelId);
-    const incident = useSelector<GlobalState, Incident>(currentIncident);
+    const playbookRun = useSelector<GlobalState, PlaybookRun>(currentPlaybookRun);
     const allowTimelineView = useAllowTimelineViewInCurrentTeam();
 
     const setTabState = (nextState: RHSTabState) => {
@@ -67,15 +68,15 @@ const RHSTabView = () => {
             <TabItem
                 active={currentTabState === RHSTabState.ViewingTasks}
                 onClick={() => setTabState(RHSTabState.ViewingTasks)}
-                data-testid='tasks'
+                data-testid='checklists'
             >
-                {'Tasks'}
+                {'Checklists'}
             </TabItem>
             <TabItem
                 active={currentTabState === RHSTabState.ViewingTimeline}
                 onClick={() => {
                     setTabState(RHSTabState.ViewingTimeline);
-                    telemetryEventForIncident(incident.id, 'timeline_tab_clicked');
+                    telemetryEventForPlaybookRun(playbookRun.id, 'timeline_tab_clicked');
                 }}
                 data-testid='timeline'
             >

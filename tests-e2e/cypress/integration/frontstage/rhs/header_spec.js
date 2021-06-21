@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('incident rhs > header', () => {
+describe('playbook run rhs > header', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
     let userId;
@@ -42,48 +42,48 @@ describe('incident rhs > header', () => {
     });
 
     describe('shows name', () => {
-        it('of active incident', () => {
-            // # Start the incident
+        it('of active playbook run', () => {
+            // # Run the playbook
             const now = Date.now();
-            const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
-            cy.apiStartIncident({
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            const playbookRunChannelName = 'playbook-run-' + now;
+            cy.apiRunPlaybook({
                 teamId,
                 playbookId,
-                incidentName,
+                playbookRunName,
                 ownerUserId: userId,
             });
 
-            // # Navigate directly to the application and the incident channel
-            cy.visit('/ad-1/channels/' + incidentChannelName);
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit('/ad-1/channels/' + playbookRunChannelName);
 
             // * Verify the title is displayed
             cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains(incidentName);
+                cy.get('.sidebar--right__title').contains(playbookRunName);
             });
         });
 
-        it('of renamed incident', () => {
-            // # Start the incident
+        it('of renamed playbook run', () => {
+            // # Run the playbook
             const now = Date.now();
-            const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
-            cy.apiStartIncident({
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            const playbookRunChannelName = 'playbook-run-' + now;
+            cy.apiRunPlaybook({
                 teamId,
                 playbookId,
-                incidentName,
+                playbookRunName,
                 ownerUserId: userId,
             });
 
-            // # Navigate directly to the application and the incident channel
-            cy.visit('/ad-1/channels/' + incidentChannelName);
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit('/ad-1/channels/' + playbookRunChannelName);
 
             // * Verify the existing title is displayed
             cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains(incidentName);
+                cy.get('.sidebar--right__title').contains(playbookRunName);
             });
 
-            cy.apiGetChannelByName('ad-1', incidentChannelName).then(({channel}) => {
+            cy.apiGetChannelByName('ad-1', playbookRunChannelName).then(({channel}) => {
                 // # Rename the channel
                 cy.apiPatchChannel(channel.id, {
                     id: channel.id,
@@ -100,19 +100,19 @@ describe('incident rhs > header', () => {
 
     describe('shows status', () => {
         it('when ongoing', () => {
-            // # Start the incident
+            // # Run the playbook
             const now = Date.now();
-            const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
-            cy.apiStartIncident({
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            const playbookRunChannelName = 'playbook-run-' + now;
+            cy.apiRunPlaybook({
                 teamId,
                 playbookId,
-                incidentName,
+                playbookRunName,
                 ownerUserId: userId,
             });
 
-            // # Navigate directly to the application and the incident channel
-            cy.visit('/ad-1/channels/' + incidentChannelName);
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit('/ad-1/channels/' + playbookRunChannelName);
 
             // * Verify the title shows "Reported"
             cy.get('#rhsContainer').within(() => {
@@ -121,19 +121,19 @@ describe('incident rhs > header', () => {
         });
 
         it('when Resolved', () => {
-            // # Start the incident
+            // # Run the playbook
             const now = Date.now();
-            const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
-            cy.apiStartIncident({
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            const playbookRunChannelName = 'playbook-run-' + now;
+            cy.apiRunPlaybook({
                 teamId,
                 playbookId,
-                incidentName,
+                playbookRunName,
                 ownerUserId: userId,
-            }).then((incident) => {
-                // # End the incident
+            }).then((playbookRun) => {
+                // # End the playbook run
                 cy.apiUpdateStatus({
-                    incidentId: incident.id,
+                    playbookRunId: playbookRun.id,
                     userId,
                     teamId,
                     message: 'ending',
@@ -142,8 +142,8 @@ describe('incident rhs > header', () => {
                 });
             });
 
-            // # Navigate directly to the application and the incident channel
-            cy.visit('/ad-1/channels/' + incidentChannelName);
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit('/ad-1/channels/' + playbookRunChannelName);
 
             // * Verify the title shows "Resolved"
             cy.get('#rhsContainer').within(() => {
@@ -152,19 +152,19 @@ describe('incident rhs > header', () => {
         });
 
         it('when Archived', () => {
-            // # Start the incident
+            // # Run the playbook
             const now = Date.now();
-            const incidentName = 'Incident (' + now + ')';
-            const incidentChannelName = 'incident-' + now;
-            cy.apiStartIncident({
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            const playbookRunChannelName = 'playbook-run-' + now;
+            cy.apiRunPlaybook({
                 teamId,
                 playbookId,
-                incidentName,
+                playbookRunName,
                 ownerUserId: userId,
-            }).then((incident) => {
-                // # End the incident
+            }).then((playbookRun) => {
+                // # End the playbook run
                 cy.apiUpdateStatus({
-                    incidentId: incident.id,
+                    playbookRunId: playbookRun.id,
                     userId,
                     teamId,
                     message: 'ending',
@@ -173,8 +173,8 @@ describe('incident rhs > header', () => {
                 });
             });
 
-            // # Navigate directly to the application and the incident channel
-            cy.visit('/ad-1/channels/' + incidentChannelName);
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit('/ad-1/channels/' + playbookRunChannelName);
 
             // * Verify the title shows "Archived"
             cy.get('#rhsContainer').within(() => {
@@ -182,20 +182,20 @@ describe('incident rhs > header', () => {
             });
         });
 
-        it('for an incident with a long title name', () => {
-            // # Start the incident
+        it('for a playbook run with a long title name', () => {
+            // # Run the playbook
             const now = Date.now();
-            const incidentName = 'Incident with a really long name (' + now + ')';
-            const incidentChannelName = 'incident-with-a-really-long-name-' + now;
-            cy.apiStartIncident({
+            const playbookRunName = 'Playbook run with a really long name (' + now + ')';
+            const playbookRunChannelName = 'playbook-run-with-a-really-long-name-' + now;
+            cy.apiRunPlaybook({
                 teamId,
                 playbookId,
-                incidentName,
+                playbookRunName,
                 ownerUserId: userId,
             });
 
-            // # Navigate directly to the application and the incident channel
-            cy.visit('/ad-1/channels/' + incidentChannelName);
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit('/ad-1/channels/' + playbookRunChannelName);
 
             // * Verify the title shows "Ongoing"
             cy.get('#rhsContainer').within(() => {

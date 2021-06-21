@@ -2,23 +2,23 @@ package app
 
 import "github.com/pkg/errors"
 
-// ErrNotFound used to indicate entity not found.
+// ErrNotFound used when an entity is not found.
 var ErrNotFound = errors.New("not found")
 
-// ErrChannelDisplayNameInvalid is used to indicate a channel name is too long.
+// ErrChannelDisplayNameInvalid is used when a channel name is too long.
 var ErrChannelDisplayNameInvalid = errors.New("channel name is invalid or too long")
 
-// ErrPermission is used to indicate a user does not have permissions
+// ErrPermission occurs when a user does not have permissions.
 var ErrPermission = errors.New("permissions error")
 
-// ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
-var ErrIncidentNotActive = errors.New("incident not active")
+// ErrPlaybookRunNotActive occurs when trying to run a command on a playbook run that has ended.
+var ErrPlaybookRunNotActive = errors.New("already ended")
 
-// ErrIncidentActive is used to indicate trying to run a command on an incident that is active.
-var ErrIncidentActive = errors.New("incident active")
+// ErrPlaybookRunActive occurs when trying to run a command on a playbook run that is active.
+var ErrPlaybookRunActive = errors.New("already active")
 
-// ErrMalformedIncident is used to indicate an incident is not valid
-var ErrMalformedIncident = errors.New("incident active")
+// ErrMalformedPlaybookRun occurs when a playbook run is not valid.
+var ErrMalformedPlaybookRun = errors.New("malformed")
 
-// ErrDuplicateEntry indicates the db could not make an insert because the entry already existed.
+// ErrDuplicateEntry occurs when failing to insert because the entry already existed.
 var ErrDuplicateEntry = errors.New("duplicate entry")

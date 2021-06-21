@@ -1,6 +1,6 @@
 .app__body {
     .profile-dropdown--active {
-        .IncidentProfileButton {
+        .PlaybookRunProfileButton {
             .Profile {
                 background-color: var(--button-bg-08);
             }
@@ -8,28 +8,28 @@
     }
 
     .profile-dropdown {
-        .incident-user-select__container {
+        .playbook-run-user-select__container {
             z-index: 2;
             position: absolute;
         }
     }
 
     .profile-dropdown.show-on-right {
-        .incident-user-select__container {
+        .playbook-run-user-select__container {
             right: 0;
         }
     }
 
-    .incident-user-select__menu-list {
+    .playbook-run-user-select__menu-list {
         padding: 0 0 12px;
         border: none;
     }
 
-    .incident-user-select__input {
+    .playbook-run-user-select__input {
         color: var(--center-channel-color);
     }
 
-    .incident-user-select {
+    .playbook-run-user-select {
         border-radius: 4px;
         -webkit-overflow-scrolling: touch;
         background-color: var(--center-channel-bg);
@@ -40,16 +40,16 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     }
 
-    .incident-user-select__option--is-selected {
+    .playbook-run-user-select__option--is-selected {
         background-color: var(--center-channel-color-08);
     }
 
-    .incident-user-select__option--is-focused {
+    .playbook-run-user-select__option--is-focused {
         background-color: var(--center-channel-color-08);
         color: inherit;
     }
 
-    .incident-user-select__control {
+    .playbook-run-user-select__control {
         margin: 12px;
         border: none;
         background: transparent;
@@ -65,13 +65,13 @@
         }
     }
 
-    .incident-user-select__option {
+    .playbook-run-user-select__option {
         &:active {
             background-color: var(--center-channel-color-08);
         }
     }
 
-    .incident-user-select__value-container {
+    .playbook-run-user-select__value-container {
         overflow: visible;
         padding-left: 3.2rem;
 

@@ -1,31 +1,31 @@
 import {
-    REMOVED_FROM_INCIDENT_CHANNEL,
+    REMOVED_FROM_CHANNEL,
 } from 'src/types/actions';
 import reducer from 'src/reducer';
 
-describe('myIncidentsByTeam', () => {
+describe('myPlaybookRunsByTeam', () => {
     // @ts-ignore
     const initialState = reducer(undefined, {}); // eslint-disable-line no-undefined
 
-    describe('REMOVED_FROM_INCIDENT_CHANNEL', () => {
-        const makeState = (myIncidentsByTeam: any) => ({
+    describe('REMOVED_FROM_CHANNEL', () => {
+        const makeState = (myPlaybookRunsByTeam: any) => ({
             ...initialState,
-            myIncidentsByTeam,
+            myPlaybookRunsByTeam,
         });
 
         it('should ignore a channel not in the data structure', () => {
             const state = makeState({
                 teamId1: {
-                    channelId1: {id: 'incidentId1'},
-                    channelId2: {id: 'incidentId2'},
+                    channelId1: {id: 'playbookRunId1'},
+                    channelId2: {id: 'playbookRunId2'},
                 },
                 teamId2: {
-                    channelId3: {id: 'incidentId3'},
-                    channelId4: {id: 'incidentId4'},
+                    channelId3: {id: 'playbookRunId3'},
+                    channelId4: {id: 'playbookRunId4'},
                 },
             });
             const action = {
-                type: REMOVED_FROM_INCIDENT_CHANNEL,
+                type: REMOVED_FROM_CHANNEL,
                 channelId: 'unknown',
             };
             const expectedState = state;
@@ -37,25 +37,25 @@ describe('myIncidentsByTeam', () => {
         it('should remove a channel in the data structure', () => {
             const state = makeState({
                 teamId1: {
-                    channelId1: {id: 'incidentId1'},
-                    channelId2: {id: 'incidentId2'},
+                    channelId1: {id: 'playbookRunId1'},
+                    channelId2: {id: 'playbookRunId2'},
                 },
                 teamId2: {
-                    channelId3: {id: 'incidentId3'},
-                    channelId4: {id: 'incidentId4'},
+                    channelId3: {id: 'playbookRunId3'},
+                    channelId4: {id: 'playbookRunId4'},
                 },
             });
             const action = {
-                type: REMOVED_FROM_INCIDENT_CHANNEL,
+                type: REMOVED_FROM_CHANNEL,
                 channelId: 'channelId2',
             };
             const expectedState = makeState({
                 teamId1: {
-                    channelId1: {id: 'incidentId1'},
+                    channelId1: {id: 'playbookRunId1'},
                 },
                 teamId2: {
-                    channelId3: {id: 'incidentId3'},
-                    channelId4: {id: 'incidentId4'},
+                    channelId3: {id: 'playbookRunId3'},
+                    channelId4: {id: 'playbookRunId4'},
                 },
             });
 

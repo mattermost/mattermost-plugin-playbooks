@@ -21,7 +21,7 @@ func TestPlaybook_MarshalJSON(t *testing.T) {
 				Title:                       "the playbook title",
 				Description:                 "the playbook's description",
 				TeamID:                      "theteamid",
-				CreatePublicIncident:        true,
+				CreatePublicPlaybookRun:     true,
 				CreateAt:                    4503134,
 				DeleteAt:                    0,
 				NumStages:                   0,
@@ -40,15 +40,15 @@ func TestPlaybook_MarshalJSON(t *testing.T) {
 		{
 			name: "marshals a struct with nil []checklistItems into an empty array",
 			original: Playbook{
-				ID:                   "playbookid",
-				Title:                "the playbook title",
-				Description:          "the playbook's description",
-				TeamID:               "theteamid",
-				CreatePublicIncident: true,
-				CreateAt:             4503134,
-				DeleteAt:             0,
-				NumStages:            0,
-				NumSteps:             0,
+				ID:                      "playbookid",
+				Title:                   "the playbook title",
+				Description:             "the playbook's description",
+				TeamID:                  "theteamid",
+				CreatePublicPlaybookRun: true,
+				CreateAt:                4503134,
+				DeleteAt:                0,
+				NumStages:               0,
+				NumSteps:                0,
 				Checklists: []Checklist{
 					{
 						ID:    "checklist1",

@@ -6,11 +6,12 @@ import Scrollbars from 'react-custom-scrollbars';
 import styled from 'styled-components';
 import {useDispatch} from 'react-redux';
 
+import {PlaybookRun} from 'src/types/playbook_run';
+
 import {setOwner} from 'src/client';
-import {Incident} from 'src/types/incident';
 import ProfileSelector from 'src/components/profile/profile_selector';
 
-import './incident_details.scss';
+import './playbook_run_details.scss';
 import {
     renderThumbHorizontal,
     renderThumbVertical,
@@ -37,16 +38,16 @@ const NoDescription = styled.div`
 `;
 
 interface Props {
-    incident: Incident;
+    playbookRun: PlaybookRun;
 }
 
 const RHSAbout = (props: Props) => {
     const dispatch = useDispatch();
     const profilesInChannel = useProfilesInCurrentChannel();
-    const latestUpdatePost = useLatestUpdate(props.incident);
+    const latestUpdatePost = useLatestUpdate(props.playbookRun);
 
-    let description = <PostText text={props.incident.description}/>;
-    if (props.incident.status_posts.length === 0) {
+    let description = <PostText text={props.playbookRun.description}/>;
+    if (props.playbookRun.status_posts.length === 0) {
         description = (
             <NoDescription>
                 {'No description yet. '}
@@ -64,7 +65,7 @@ const RHSAbout = (props: Props) => {
         if (!userId) {
             return;
         }
-        const response = await setOwner(props.incident.id, userId);
+        const response = await setOwner(props.playbookRun.id, userId);
         if (response.error) {
             // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console
@@ -81,7 +82,7 @@ const RHSAbout = (props: Props) => {
             renderView={renderView}
             style={{position: 'absolute'}}
         >
-            <div className='IncidentDetails'>
+            <div className='PlaybookRunDetails'>
                 <Description>
                     <div className='title'>
                         {'Description'}
@@ -93,7 +94,7 @@ const RHSAbout = (props: Props) => {
                         <div className='inner-container first-container'>
                             <div className='first-title'>{'Owner'}</div>
                             <ProfileSelector
-                                selectedUserId={props.incident.owner_user_id}
+                                selectedUserId={props.playbookRun.owner_user_id}
                                 placeholder={'Assign the owner role'}
                                 placeholderButtonClass={'NoAssignee-button'}
                                 profileButtonClass={'Assigned-button'}
@@ -106,15 +107,15 @@ const RHSAbout = (props: Props) => {
                         <div className='first-title'>
                             {'Duration'}
                             <Duration
-                                from={props.incident.create_at}
-                                to={props.incident.end_at}
+                                from={props.playbookRun.create_at}
+                                to={props.playbookRun.end_at}
                             />
                         </div>
                     </div>
                 </Row>
-                <div id={'incidentRHSUpdates'}>
+                <div id={'playbookRunRHSUpdates'}>
                     <div className='title'>
-                        {'Recent Update:'}
+                        {'Recent update:'}
                     </div>
                     <PostCard post={latestUpdatePost}/>
                 </div>

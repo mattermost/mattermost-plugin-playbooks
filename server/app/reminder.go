@@ -12,14 +12,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Reminder struct {
-	IncidentID string `json:"incident_id"`
-}
-
 const RetrospectivePrefix = "retro_"
 
 // HandleReminder is the handler for all reminder events.
-func (s *IncidentServiceImpl) HandleReminder(key string) {
+func (s *PlaybookRunServiceImpl) HandleReminder(key string) {
 	if strings.HasPrefix(key, RetrospectivePrefix) {
 		s.handleReminderToFillRetro(strings.TrimPrefix(key, RetrospectivePrefix))
 	} else {
@@ -27,49 +23,49 @@ func (s *IncidentServiceImpl) HandleReminder(key string) {
 	}
 }
 
-func (s *IncidentServiceImpl) handleReminderToFillRetro(incidentID string) {
-	incidentToRemind, err := s.GetIncident(incidentID)
+func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string) {
+	playbookRunToRemind, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "handleReminderToFillRetro failed to get incident id: %s", incidentID).Error())
+		s.logger.Errorf(errors.Wrapf(err, "handleReminderToFillRetro failed to get playbook run id: %s", playbookRunID).Error())
 		return
 	}
 
 	// In the meantime we did publish a retrospective, so no reminder.
-	if incidentToRemind.RetrospectivePublishedAt != 0 {
+	if playbookRunToRemind.RetrospectivePublishedAt != 0 {
 		return
 	}
 
 	// If we are not in the resolved state then don't remind
-	if incidentToRemind.CurrentStatus != StatusResolved &&
-		incidentToRemind.CurrentStatus != StatusArchived {
+	if playbookRunToRemind.CurrentStatus != StatusResolved &&
+		playbookRunToRemind.CurrentStatus != StatusArchived {
 		return
 	}
 
-	if err = s.postRetrospectiveReminder(incidentToRemind, false); err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "couldn't post incident reminder").Error())
+	if err = s.postRetrospectiveReminder(playbookRunToRemind, false); err != nil {
+		s.logger.Errorf(errors.Wrapf(err, "couldn't post reminder").Error())
 		return
 	}
 
 	// Jobs can't be rescheduled within themselves with the same key. As a temporary workaround do it in a delayed goroutine
 	go func() {
 		time.Sleep(time.Second * 2)
-		if err = s.SetReminder(RetrospectivePrefix+incidentID, time.Duration(incidentToRemind.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
+		if err = s.SetReminder(RetrospectivePrefix+playbookRunID, time.Duration(playbookRunToRemind.RetrospectiveReminderIntervalSeconds)*time.Second); err != nil {
 			s.logger.Errorf(errors.Wrap(err, "failed to reocurr retrospective reminder").Error())
 			return
 		}
 	}()
 }
 
-func (s *IncidentServiceImpl) handleStatusUpdateReminder(incidentID string) {
-	incidentToModify, err := s.GetIncident(incidentID)
+func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string) {
+	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get incident id: %s", incidentID).Error())
+		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get playbook run id: %s", playbookRunID).Error())
 		return
 	}
 
-	owner, err := s.pluginAPI.User.Get(incidentToModify.OwnerUserID)
+	owner, err := s.pluginAPI.User.Get(playbookRunToModify.OwnerUserID)
 	if err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get owner for id: %s", incidentToModify.OwnerUserID).Error())
+		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get owner for id: %s", playbookRunToModify.OwnerUserID).Error())
 		return
 	}
 
@@ -78,71 +74,71 @@ func (s *IncidentServiceImpl) handleStatusUpdateReminder(incidentID string) {
 			Actions: []*model.PostAction{
 				{
 					Type: "button",
-					Name: "Update Status",
+					Name: "Update status",
 					Integration: &model.PostActionIntegration{
-						URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/reminder/button-update",
+						URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/reminder/button-update",
 							s.configService.GetManifest().Id,
-							incidentToModify.ID),
+							playbookRunToModify.ID),
 					},
 				},
 				{
 					Type: "button",
 					Name: "Dismiss",
 					Integration: &model.PostActionIntegration{
-						URL: fmt.Sprintf("/plugins/%s/api/v0/incidents/%s/reminder/button-dismiss",
+						URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/reminder/button-dismiss",
 							s.configService.GetManifest().Id,
-							incidentToModify.ID),
+							playbookRunToModify.ID),
 					},
 				},
 			},
 		},
 	}
 
-	post, err := s.poster.PostMessageWithAttachments(incidentToModify.ChannelID, attachments,
-		"@%s, please provide an update on this incident's progress.", owner.Username)
+	post, err := s.poster.PostMessageWithAttachments(playbookRunToModify.ChannelID, attachments,
+		"@%s, please provide a status update.", owner.Username)
 	if err != nil {
 		s.logger.Errorf(errors.Wrap(err, "HandleReminder error posting reminder message").Error())
 		return
 	}
 
-	incidentToModify.ReminderPostID = post.Id
-	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		s.logger.Errorf(errors.Wrapf(err, "error updating with reminder post id, incident id: %s", incidentToModify.ID).Error())
+	playbookRunToModify.ReminderPostID = post.Id
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		s.logger.Errorf(errors.Wrapf(err, "error updating with reminder post id, playbook run id: %s", playbookRunToModify.ID).Error())
 	}
 }
 
 // SetReminder sets a reminder. After timeInMinutes in the future, the owner will be
-// reminded to update the incident's status.
-func (s *IncidentServiceImpl) SetReminder(incidentID string, fromNow time.Duration) error {
-	if _, err := s.scheduler.ScheduleOnce(incidentID, time.Now().Add(fromNow)); err != nil {
+// reminded to update the playbook run's status.
+func (s *PlaybookRunServiceImpl) SetReminder(playbookRunID string, fromNow time.Duration) error {
+	if _, err := s.scheduler.ScheduleOnce(playbookRunID, time.Now().Add(fromNow)); err != nil {
 		return errors.Wrap(err, "unable to schedule reminder")
 	}
 
 	return nil
 }
 
-// RemoveReminder removes the pending reminder for incidentID (if any).
-func (s *IncidentServiceImpl) RemoveReminder(incidentID string) {
-	s.scheduler.Cancel(incidentID)
+// RemoveReminder removes the pending reminder for the given playbook run, if any.
+func (s *PlaybookRunServiceImpl) RemoveReminder(playbookRunID string) {
+	s.scheduler.Cancel(playbookRunID)
 }
 
-// RemoveReminderPost will remove the reminder post in the incident channel (if any).
-func (s *IncidentServiceImpl) RemoveReminderPost(incidentID string) error {
-	incidentToModify, err := s.store.GetIncident(incidentID)
+// RemoveReminderPost removes the reminder post in the channel for the given playbook run, if any.
+func (s *PlaybookRunServiceImpl) RemoveReminderPost(playbookRunID string) error {
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve incident")
+		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
-	return s.removeReminderPost(incidentToModify)
+	return s.removeReminderPost(playbookRunToModify)
 }
 
-// removeReminderPost will remove the reminder post in the incident channel (if any).
-func (s *IncidentServiceImpl) removeReminderPost(incidentToModify *Incident) error {
-	if incidentToModify.ReminderPostID == "" {
+// removeReminderPost removes the reminder post in the channel for the given playbook run, if any.
+func (s *PlaybookRunServiceImpl) removeReminderPost(playbookRunToModify *PlaybookRun) error {
+	if playbookRunToModify.ReminderPostID == "" {
 		return nil
 	}
 
-	post, err := s.pluginAPI.Post.GetPost(incidentToModify.ReminderPostID)
+	post, err := s.pluginAPI.Post.GetPost(playbookRunToModify.ReminderPostID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve reminder post")
 	}
@@ -151,13 +147,13 @@ func (s *IncidentServiceImpl) removeReminderPost(incidentToModify *Incident) err
 		return nil
 	}
 
-	if err = s.pluginAPI.Post.DeletePost(incidentToModify.ReminderPostID); err != nil {
+	if err = s.pluginAPI.Post.DeletePost(playbookRunToModify.ReminderPostID); err != nil {
 		return errors.Wrapf(err, "failed to delete reminder post")
 	}
 
-	incidentToModify.ReminderPostID = ""
-	if err = s.store.UpdateIncident(incidentToModify); err != nil {
-		return errors.Wrapf(err, "error updating incident removing reminder post id")
+	playbookRunToModify.ReminderPostID = ""
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run after removing reminder post id")
 	}
 
 	return nil

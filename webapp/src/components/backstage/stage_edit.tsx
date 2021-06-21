@@ -132,7 +132,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                 onClick={handleAddChecklistItem}
             >
                 <i className='icon-plus'/>
-                {'New Task'}
+                {'New task'}
             </TertiaryButton>
         </CollapsibleSection>
     );

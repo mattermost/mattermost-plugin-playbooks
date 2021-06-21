@@ -24,9 +24,9 @@ type RequesterInfo struct {
 	IsGuest bool
 }
 
-// ViewIncidentFromChannelID returns nil if the userID has permissions to view the incident
+// ViewPlaybookRunFromChannelID returns nil if the userID has permissions to view the playbook run
 // associated with channelID
-func ViewIncidentFromChannelID(userID, channelID string, pluginAPI *pluginapi.Client) error {
+func ViewPlaybookRunFromChannelID(userID, channelID string, pluginAPI *pluginapi.Client) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil
 	}
@@ -47,8 +47,8 @@ func ViewIncidentFromChannelID(userID, channelID string, pluginAPI *pluginapi.Cl
 	return ErrNoPermissions
 }
 
-// EditIncident returns nil if the userID has permissions to edit channelID
-func EditIncident(userID, channelID string, pluginAPI *pluginapi.Client) error {
+// EditPlaybookRun returns nil if the userID has permissions to edit channelID
+func EditPlaybookRun(userID, channelID string, pluginAPI *pluginapi.Client) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil
 	}
