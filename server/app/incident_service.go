@@ -784,28 +784,30 @@ func (s *IncidentServiceImpl) UpdateStatus(incidentID, userID string, options St
 
 	if options.Status == StatusArchived && incidentToModify.ExportChannelOnArchiveEnabled {
 		// set url and query string
-		exportPluginUrl := fmt.Sprintf("plugins/com.mattermost.plugin-channel-export/api/v1/export?format=csv&channel_id=%s", incidentToModify.ChannelID)
+		exportPluginURL := fmt.Sprintf("plugins/com.mattermost.plugin-channel-export/api/v1/export?format=csv&channel_id=%s", incidentToModify.ChannelID)
 
-		req, err := http.NewRequest(http.MethodGet, exportPluginUrl, nil)
+		buf := bytes.Buffer{}
+		buf.WriteString("Request call /exports from plugin channel-exports")
+		req, err := http.NewRequest(http.MethodGet, exportPluginURL, &buf)
 		req.Header.Add("Mattermost-User-ID", incidentToModify.OwnerUserID)
 		if err != nil {
 			s.pluginAPI.Log.Warn("failed to create request for exporting channel", "plugin", "channel-export", "error", err)
-			// return errors.Wrap(err, "failed to create request for exporting channel")
 		}
 
 		res := s.pluginAPI.Plugin.HTTP(req)
 		if res.StatusCode == http.StatusOK {
-			bodyBytes, err := ioutil.ReadAll(res.Body)
+			_, err := ioutil.ReadAll(res.Body)
 			if err != nil {
 				s.pluginAPI.Log.Warn("failed to read content from response body", "plugin", "channel-export", "error", err)
-				// return errors.Wrap(err, "failed to read content from response body")
 			}
 			res.Body.Close()
 			res.Body = nil
-			fileResult := string(bodyBytes)
 
-			if err = s.poster.DM(incidentToModify.OwnerUserID, "Here are the link for exported channel %s", fileResult); err != nil {
-				return errors.Wrap(err, "failed to send exported channel to incident's commander")
+			url := fmt.Sprintf("/%s", exportPluginURL)
+			msg := fmt.Sprintf("[%s](%s)", incidentToModify.Name, url)
+
+			if err = s.poster.DM(incidentToModify.OwnerUserID, "Data successfully exported %s", msg); err != nil {
+				return errors.Wrap(err, "failed to send exported channel result to incident's commander")
 			}
 
 		}
