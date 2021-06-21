@@ -219,7 +219,7 @@ const PlaybookRunBackstage = () => {
                         onClick={closePlaybookRunDetails}
                     />
                     <VerticalBlock>
-                        <Title data-testid='playbookRun-title'>{playbookRun.name}</Title>
+                        <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
                         <PlaybookDiv onClick={() => navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook?.id}`)}>
                             <SmallPlaybookIcon/>
                             <SubTitle>{playbook?.title}</SubTitle>
