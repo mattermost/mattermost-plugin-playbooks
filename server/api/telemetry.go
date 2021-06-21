@@ -9,24 +9,23 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 )
 
 // TelemetryHandler is the API handler.
 type TelemetryHandler struct {
 	*ErrorHandler
-	incidentService   incident.Service
-	incidentTelemetry incident.Telemetry
+	incidentService   app.IncidentService
+	incidentTelemetry app.IncidentTelemetry
 	botTelemetry      bot.Telemetry
 	pluginAPI         *pluginapi.Client
 }
 
 // NewTelemetryHandler Creates a new Plugin API handler.
-func NewTelemetryHandler(router *mux.Router, incidentService incident.Service,
-	api *pluginapi.Client, log bot.Logger, incidentTelemetry incident.Telemetry, botTelemetry bot.Telemetry, configService config.Service) *TelemetryHandler {
+func NewTelemetryHandler(router *mux.Router, incidentService app.IncidentService,
+	api *pluginapi.Client, log bot.Logger, incidentTelemetry app.IncidentTelemetry, botTelemetry bot.Telemetry, configService config.Service) *TelemetryHandler {
 	handler := &TelemetryHandler{
 		ErrorHandler:      &ErrorHandler{log: log},
 		incidentService:   incidentService,
@@ -52,14 +51,14 @@ func (h *TelemetryHandler) checkViewPermissions(next http.Handler) http.Handler 
 		vars := mux.Vars(r)
 		userID := r.Header.Get("Mattermost-User-ID")
 
-		incdnt, err := h.incidentService.GetIncident(vars["id"])
+		incident, err := h.incidentService.GetIncident(vars["id"])
 		if err != nil {
 			h.HandleError(w, err)
 			return
 		}
 
-		if err := permissions.ViewIncidentFromChannelID(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
-			if errors.Is(err, permissions.ErrNoPermissions) {
+		if err := app.ViewIncidentFromChannelID(userID, incident.ChannelID, h.pluginAPI); err != nil {
+			if errors.Is(err, app.ErrNoPermissions) {
 				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
 			}
@@ -93,13 +92,13 @@ func (h *TelemetryHandler) telemetryForIncident(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	incdnt, err := h.incidentService.GetIncident(id)
+	incident, err := h.incidentService.GetIncident(id)
 	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
 
-	h.incidentTelemetry.FrontendTelemetryForIncident(incdnt, userID, params.Action)
+	h.incidentTelemetry.FrontendTelemetryForIncident(incident, userID, params.Action)
 
 	w.WriteHeader(http.StatusNoContent)
 }

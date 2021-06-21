@@ -8,6 +8,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const maxAdminsToQueryForNotification = 1000
+
 // PostMessage posts a message to a specified channel.
 func (b *Bot) PostMessage(channelID, format string, args ...interface{}) (*model.Post, error) {
 	post := &model.Post{
@@ -73,6 +75,19 @@ func (b *Bot) EphemeralPost(userID, channelID string, post *model.Post) {
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
 }
 
+// EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
+func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, attachments []*model.SlackAttachment, format string, args ...interface{}) {
+	post := &model.Post{
+		Message:   fmt.Sprintf(format, args...),
+		UserId:    b.botUserID,
+		ChannelId: channelID,
+		RootId:    postID,
+	}
+
+	model.ParseSlackAttachment(post, attachments)
+	b.pluginAPI.Post.SendEphemeralPost(userID, post)
+}
+
 // PublishWebsocketEventToTeam sends a websocket event with payload to teamID
 func (b *Bot) PublishWebsocketEventToTeam(event string, payload interface{}, teamID string) {
 	payloadMap := b.makePayloadMap(payload)
@@ -106,7 +121,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 	admins, err := b.pluginAPI.User.List(&model.UserGetOptions{
 		Role:    string(model.SYSTEM_ADMIN_ROLE_ID),
 		Page:    0,
-		PerPage: 1000,
+		PerPage: maxAdminsToQueryForNotification,
 	})
 
 	if err != nil {

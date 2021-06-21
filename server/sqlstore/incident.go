@@ -15,10 +15,8 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -28,7 +26,7 @@ const (
 )
 
 type sqlIncident struct {
-	incident.Incident
+	app.Incident
 	ChecklistsJSON              json.RawMessage
 	ConcatenatedInvitedUserIDs  string
 	ConcatenatedInvitedGroupIDs string
@@ -45,20 +43,77 @@ type incidentStore struct {
 	timelineEventsSelect sq.SelectBuilder
 }
 
-// Ensure incidentStore implements the incident.Store interface.
-var _ incident.Store = (*incidentStore)(nil)
+// Ensure incidentStore implements the app.IncidentStore interface.
+var _ app.IncidentStore = (*incidentStore)(nil)
 
 type incidentStatusPosts []struct {
 	IncidentID string
-	incident.StatusPost
+	app.StatusPost
+}
+
+func applyIncidentFilterOptionsSort(builder sq.SelectBuilder, options app.IncidentFilterOptions) (sq.SelectBuilder, error) {
+	var sort string
+	switch options.Sort {
+	case app.SortByCreateAt:
+		sort = "CreateAt"
+	case app.SortByID:
+		sort = "ID"
+	case app.SortByName:
+		sort = "Name"
+	case app.SortByOwnerUserID:
+		sort = "OwnerUserID"
+	case app.SortByTeamID:
+		sort = "TeamID"
+	case app.SortByEndAt:
+		sort = "EndAt"
+	case app.SortByStatus:
+		sort = "CurrentStatus"
+	case app.SortByLastStatusUpdateAt:
+		sort = "LastStatusUpdateAt"
+	case "":
+		// Default to a stable sort if none explicitly provided.
+		sort = "ID"
+	default:
+		return sq.SelectBuilder{}, errors.Errorf("unsupported sort parameter '%s'", options.Sort)
+	}
+
+	var direction string
+	switch options.Direction {
+	case app.DirectionAsc:
+		direction = "ASC"
+	case app.DirectionDesc:
+		direction = "DESC"
+	case "":
+		// Default to an ascending sort if none explicitly provided.
+		direction = "ASC"
+	default:
+		return sq.SelectBuilder{}, errors.Errorf("unsupported direction parameter '%s'", options.Direction)
+	}
+
+	builder = builder.OrderByClause(fmt.Sprintf("%s %s", sort, direction))
+
+	page := options.Page
+	perPage := options.PerPage
+	if page < 0 {
+		page = 0
+	}
+	if perPage < 0 {
+		perPage = 0
+	}
+
+	builder = builder.
+		Offset(uint64(page * perPage)).
+		Limit(uint64(perPage))
+
+	return builder, nil
 }
 
 // NewIncidentStore creates a new store for incident ServiceImpl.
-func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) incident.Store {
+func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) app.IncidentStore {
 	// When adding an Incident column #1: add to this select
 	incidentSelect := sqlStore.builder.
 		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
-			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus",
+			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
@@ -84,7 +139,7 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		Column(
 			sq.Alias(
 				sq.Case().
-					When(sq.Eq{"te.EventType": legacyEventTypeCommanderChanged}, sq.Expr("?", incident.OwnerChanged)).
+					When(sq.Eq{"te.EventType": legacyEventTypeCommanderChanged}, sq.Expr("?", app.OwnerChanged)).
 					Else("te.EventType"),
 				"EventType",
 			),
@@ -110,18 +165,12 @@ func NewIncidentStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *incidentStore) GetIncidents(requesterInfo permissions.RequesterInfo, options incident.FilterOptions) (*incident.GetIncidentsResults, error) {
-	if err := incident.ValidateOptions(&options); err != nil {
-		return nil, err
-	}
-
+func (s *incidentStore) GetIncidents(requesterInfo app.RequesterInfo, options app.IncidentFilterOptions) (*app.GetIncidentsResults, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
 
 	queryForResults := s.incidentSelect.
 		Where(permissionsExpr).
-		Where(sq.Eq{"i.TeamID": options.TeamID}).
-		Offset(uint64(options.Page * options.PerPage)).
-		Limit(uint64(options.PerPage))
+		Where(sq.Eq{"i.TeamID": options.TeamID})
 
 	queryForTotal := s.store.builder.
 		Select("COUNT(*)").
@@ -183,7 +232,16 @@ func (s *incidentStore) GetIncidents(requesterInfo permissions.RequesterInfo, op
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 	}
 
-	queryForResults = queryForResults.OrderBy(fmt.Sprintf("%s %s", options.Sort, options.Direction))
+	queryForResults = queryActiveBetweenTimes(queryForResults, options.ActiveGTE, options.ActiveLT)
+	queryForTotal = queryActiveBetweenTimes(queryForTotal, options.ActiveGTE, options.ActiveLT)
+
+	queryForResults = queryStartedBetweenTimes(queryForResults, options.StartedGTE, options.StartedLT)
+	queryForTotal = queryStartedBetweenTimes(queryForTotal, options.StartedGTE, options.StartedLT)
+
+	queryForResults, err := applyIncidentFilterOptionsSort(queryForResults, options)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to apply sort options")
+	}
 
 	tx, err := s.store.db.Beginx()
 	if err != nil {
@@ -200,19 +258,22 @@ func (s *incidentStore) GetIncidents(requesterInfo permissions.RequesterInfo, op
 	if err = s.store.getBuilder(tx, &total, queryForTotal); err != nil {
 		return nil, errors.Wrap(err, "failed to get total count")
 	}
-	pageCount := int(math.Ceil(float64(total) / float64(options.PerPage)))
+	pageCount := 0
+	if options.PerPage > 0 {
+		pageCount = int(math.Ceil(float64(total) / float64(options.PerPage)))
+	}
 	hasMore := options.Page+1 < pageCount
 
-	incidents := make([]incident.Incident, 0, len(rawIncidents))
+	incidents := make([]app.Incident, 0, len(rawIncidents))
 	incidentIDs := make([]string, 0, len(rawIncidents))
 	for _, rawIncident := range rawIncidents {
-		var asIncident *incident.Incident
-		asIncident, err = s.toIncident(rawIncident)
+		var incident *app.Incident
+		incident, err = s.toIncident(rawIncident)
 		if err != nil {
 			return nil, err
 		}
-		incidents = append(incidents, *asIncident)
-		incidentIDs = append(incidentIDs, asIncident.ID)
+		incidents = append(incidents, *incident)
+		incidentIDs = append(incidentIDs, incident.ID)
 	}
 
 	var statusPosts incidentStatusPosts
@@ -238,7 +299,7 @@ func (s *incidentStore) GetIncidents(requesterInfo permissions.RequesterInfo, op
 	addStatusPostsToIncidents(statusPosts, incidents)
 	addTimelineEventsToIncidents(timelineEvents, incidents)
 
-	return &incident.GetIncidentsResults{
+	return &app.GetIncidentsResults{
 		TotalCount: total,
 		PageCount:  pageCount,
 		HasMore:    hasMore,
@@ -246,18 +307,18 @@ func (s *incidentStore) GetIncidents(requesterInfo permissions.RequesterInfo, op
 	}, nil
 }
 
-// CreateIncident creates a new incident. If newIncident has an ID, that ID will be used.
-func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *incident.Incident, err error) {
-	if newIncident == nil {
+// CreateIncident creates a new incident. If incident has an ID, that ID will be used.
+func (s *incidentStore) CreateIncident(incident *app.Incident) (*app.Incident, error) {
+	if incident == nil {
 		return nil, errors.New("incident is nil")
 	}
-	incidentCopy := newIncident.Clone()
+	incident = incident.Clone()
 
-	if incidentCopy.ID == "" {
-		incidentCopy.ID = model.NewId()
+	if incident.ID == "" {
+		incident.ID = model.NewId()
 	}
 
-	rawIncident, err := toSQLIncident(*incidentCopy)
+	rawIncident, err := toSQLIncident(*incident)
 	if err != nil {
 		return nil, err
 	}
@@ -283,6 +344,7 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 			"BroadcastChannelID":                   rawIncident.BroadcastChannelID,
 			"ReminderMessageTemplate":              rawIncident.ReminderMessageTemplate,
 			"CurrentStatus":                        rawIncident.CurrentStatus,
+			"LastStatusUpdateAt":                   rawIncident.LastStatusUpdateAt,
 			"ConcatenatedInvitedUserIDs":           rawIncident.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":          rawIncident.ConcatenatedInvitedGroupIDs,
 			"DefaultCommanderID":                   rawIncident.DefaultOwnerID,
@@ -306,19 +368,19 @@ func (s *incidentStore) CreateIncident(newIncident *incident.Incident) (out *inc
 		return nil, errors.Wrapf(err, "failed to store new incident")
 	}
 
-	return incidentCopy, nil
+	return incident, nil
 }
 
 // UpdateIncident updates an incident.
-func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
-	if newIncident == nil {
+func (s *incidentStore) UpdateIncident(incident *app.Incident) error {
+	if incident == nil {
 		return errors.New("incident is nil")
 	}
-	if newIncident.ID == "" {
+	if incident.ID == "" {
 		return errors.New("ID should not be empty")
 	}
 
-	rawIncident, err := toSQLIncident(*newIncident)
+	rawIncident, err := toSQLIncident(*incident)
 	if err != nil {
 		return err
 	}
@@ -330,6 +392,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 			"Name":                                 "",
 			"Description":                          rawIncident.Description,
 			"CommanderUserID":                      rawIncident.OwnerUserID,
+			"LastStatusUpdateAt":                   rawIncident.LastStatusUpdateAt,
 			"ChecklistsJSON":                       rawIncident.ChecklistsJSON,
 			"ReminderPostID":                       rawIncident.ReminderPostID,
 			"PreviousReminder":                     rawIncident.PreviousReminder,
@@ -357,7 +420,7 @@ func (s *incidentStore) UpdateIncident(newIncident *incident.Incident) error {
 	return nil
 }
 
-func (s *incidentStore) UpdateStatus(statusPost *incident.SQLStatusPost) error {
+func (s *incidentStore) UpdateStatus(statusPost *app.SQLStatusPost) error {
 	if statusPost == nil {
 		return errors.New("status post is nil")
 	}
@@ -395,7 +458,7 @@ func (s *incidentStore) UpdateStatus(statusPost *incident.SQLStatusPost) error {
 }
 
 // CreateTimelineEvent creates the timeline event
-func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*incident.TimelineEvent, error) {
+func (s *incidentStore) CreateTimelineEvent(event *app.TimelineEvent) (*app.TimelineEvent, error) {
 	if event.IncidentID == "" {
 		return nil, errors.New("needs incident ID")
 	}
@@ -408,7 +471,7 @@ func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*inc
 	event.ID = model.NewId()
 
 	eventType := string(event.EventType)
-	if event.EventType == incident.OwnerChanged {
+	if event.EventType == app.OwnerChanged {
 		eventType = legacyEventTypeCommanderChanged
 	}
 
@@ -436,7 +499,7 @@ func (s *incidentStore) CreateTimelineEvent(event *incident.TimelineEvent) (*inc
 }
 
 // UpdateTimelineEvent updates (or inserts) the timeline event
-func (s *incidentStore) UpdateTimelineEvent(event *incident.TimelineEvent) error {
+func (s *incidentStore) UpdateTimelineEvent(event *app.TimelineEvent) error {
 	if event.ID == "" {
 		return errors.New("needs event ID")
 	}
@@ -448,7 +511,7 @@ func (s *incidentStore) UpdateTimelineEvent(event *incident.TimelineEvent) error
 	}
 
 	eventType := string(event.EventType)
-	if event.EventType == incident.OwnerChanged {
+	if event.EventType == app.OwnerChanged {
 		eventType = legacyEventTypeCommanderChanged
 	}
 
@@ -476,27 +539,28 @@ func (s *incidentStore) UpdateTimelineEvent(event *incident.TimelineEvent) error
 }
 
 // GetIncident gets an incident by ID.
-func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, err error) {
+func (s *incidentStore) GetIncident(incidentID string) (*app.Incident, error) {
 	if incidentID == "" {
 		return nil, errors.New("ID cannot be empty")
 	}
 
 	tx, err := s.store.db.Beginx()
 	if err != nil {
-		return out, errors.Wrap(err, "could not begin transaction")
+		return nil, errors.Wrap(err, "could not begin transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
 
 	var rawIncident sqlIncident
 	err = s.store.getBuilder(tx, &rawIncident, s.incidentSelect.Where(sq.Eq{"i.ID": incidentID}))
 	if err == sql.ErrNoRows {
-		return nil, errors.Wrapf(incident.ErrNotFound, "incident with id '%s' does not exist", incidentID)
+		return nil, errors.Wrapf(app.ErrNotFound, "incident with id '%s' does not exist", incidentID)
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "failed to get incident by id '%s'", incidentID)
 	}
 
-	if out, err = s.toIncident(rawIncident); err != nil {
-		return out, err
+	incident, err := s.toIncident(rawIncident)
+	if err != nil {
+		return nil, err
 	}
 
 	var statusPosts incidentStatusPosts
@@ -507,7 +571,7 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 
 	err = s.store.selectBuilder(tx, &statusPosts, postInfoSelect)
 	if err != nil && err != sql.ErrNoRows {
-		return out, errors.Wrapf(err, "failed to get incidentStatusPosts for incident with id '%s'", incidentID)
+		return nil, errors.Wrapf(err, "failed to get incidentStatusPosts for incident with id '%s'", incidentID)
 	}
 
 	timelineEvents, err := s.getTimelineEventsForIncident(tx, []string{incidentID})
@@ -516,20 +580,20 @@ func (s *incidentStore) GetIncident(incidentID string) (out *incident.Incident, 
 	}
 
 	if err = tx.Commit(); err != nil {
-		return out, errors.Wrap(err, "could not commit transaction")
+		return nil, errors.Wrap(err, "could not commit transaction")
 	}
 
 	for _, p := range statusPosts {
-		out.StatusPosts = append(out.StatusPosts, p.StatusPost)
+		incident.StatusPosts = append(incident.StatusPosts, p.StatusPost)
 	}
 
-	out.TimelineEvents = append(out.TimelineEvents, timelineEvents...)
+	incident.TimelineEvents = append(incident.TimelineEvents, timelineEvents...)
 
-	return out, nil
+	return incident, nil
 }
 
-func (s *incidentStore) getTimelineEventsForIncident(q sqlx.Queryer, incidentIDs []string) ([]incident.TimelineEvent, error) {
-	var timelineEvents []incident.TimelineEvent
+func (s *incidentStore) getTimelineEventsForIncident(q sqlx.Queryer, incidentIDs []string) ([]app.TimelineEvent, error) {
+	var timelineEvents []app.TimelineEvent
 
 	timelineEventsSelect := s.timelineEventsSelect.
 		OrderBy("te.EventAt ASC").
@@ -544,15 +608,15 @@ func (s *incidentStore) getTimelineEventsForIncident(q sqlx.Queryer, incidentIDs
 }
 
 // GetTimelineEvent returns the timeline event for incidentID by the timeline event ID.
-func (s *incidentStore) GetTimelineEvent(incidentID, eventID string) (*incident.TimelineEvent, error) {
-	var event incident.TimelineEvent
+func (s *incidentStore) GetTimelineEvent(incidentID, eventID string) (*app.TimelineEvent, error) {
+	var event app.TimelineEvent
 
 	timelineEventSelect := s.timelineEventsSelect.
 		Where(sq.And{sq.Eq{"te.IncidentID": incidentID}, sq.Eq{"te.ID": eventID}})
 
 	err := s.store.getBuilder(s.store.db, &event, timelineEventSelect)
 	if err == sql.ErrNoRows {
-		return nil, errors.Wrapf(incident.ErrNotFound, "timeline event with id (%s) does not exist for incident with id (%s)", eventID, incidentID)
+		return nil, errors.Wrapf(app.ErrNotFound, "timeline event with id (%s) does not exist for incident with id (%s)", eventID, incidentID)
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "failed to get timeline event with id (%s) for incident with id (%s)", eventID, incidentID)
 	}
@@ -570,7 +634,7 @@ func (s *incidentStore) GetIncidentIDForChannel(channelID string) (string, error
 	var id string
 	err := s.store.getBuilder(s.store.db, &id, query)
 	if err == sql.ErrNoRows {
-		return "", errors.Wrapf(incident.ErrNotFound, "channel with id (%s) does not have an incident", channelID)
+		return "", errors.Wrapf(app.ErrNotFound, "channel with id (%s) does not have an incident", channelID)
 	} else if err != nil {
 		return "", errors.Wrapf(err, "failed to get incident by channelID '%s'", channelID)
 	}
@@ -597,11 +661,7 @@ func (s *incidentStore) GetAllIncidentMembersCount(channelID string) (int64, err
 }
 
 // GetOwners returns the owners of the incidents selected by options
-func (s *incidentStore) GetOwners(requesterInfo permissions.RequesterInfo, options incident.FilterOptions) ([]incident.OwnerInfo, error) {
-	if err := incident.ValidateOptions(&options); err != nil {
-		return nil, err
-	}
-
+func (s *incidentStore) GetOwners(requesterInfo app.RequesterInfo, options app.IncidentFilterOptions) ([]app.OwnerInfo, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
 
 	// At the moment, the options only includes teamID
@@ -612,7 +672,7 @@ func (s *incidentStore) GetOwners(requesterInfo permissions.RequesterInfo, optio
 		Where(sq.Eq{"i.TeamID": options.TeamID}).
 		Where(permissionsExpr)
 
-	var owners []incident.OwnerInfo
+	var owners []app.OwnerInfo
 	err := s.store.selectBuilder(s.store.db, &owners, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query database")
@@ -656,7 +716,7 @@ func (s *incidentStore) ChangeCreationDate(incidentID string, creationTimestamp 
 	}
 
 	if numRows == 0 {
-		return incident.ErrNotFound
+		return app.ErrNotFound
 	}
 
 	return nil
@@ -697,12 +757,12 @@ func (s *incidentStore) SetViewedChannel(userID, channelID string) error {
 		if s.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
 			me, ok := err.(*mysql.MySQLError)
 			if ok && me.Number == 1062 {
-				return errors.Wrap(incident.ErrDuplicateEntry, err.Error())
+				return errors.Wrap(app.ErrDuplicateEntry, err.Error())
 			}
 		} else {
 			pe, ok := err.(*pq.Error)
 			if ok && pe.Code == "23505" {
-				return errors.Wrap(incident.ErrDuplicateEntry, err.Error())
+				return errors.Wrap(app.ErrDuplicateEntry, err.Error())
 			}
 		}
 
@@ -712,7 +772,7 @@ func (s *incidentStore) SetViewedChannel(userID, channelID string) error {
 	return nil
 }
 
-func (s *incidentStore) buildPermissionsExpr(info permissions.RequesterInfo) sq.Sqlizer {
+func (s *incidentStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqlizer {
 	if info.IsAdmin {
 		return nil
 	}
@@ -743,47 +803,47 @@ func (s *incidentStore) buildPermissionsExpr(info permissions.RequesterInfo) sq.
 		  )`, info.UserID)
 }
 
-func (s *incidentStore) toIncident(rawIncident sqlIncident) (*incident.Incident, error) {
-	i := rawIncident.Incident
-	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &i.Checklists); err != nil {
+func (s *incidentStore) toIncident(rawIncident sqlIncident) (*app.Incident, error) {
+	incident := rawIncident.Incident
+	if err := json.Unmarshal(rawIncident.ChecklistsJSON, &incident.Checklists); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal checklists json for incident id: %s", rawIncident.ID)
 	}
 
-	i.InvitedUserIDs = []string(nil)
+	incident.InvitedUserIDs = []string(nil)
 	if rawIncident.ConcatenatedInvitedUserIDs != "" {
-		i.InvitedUserIDs = strings.Split(rawIncident.ConcatenatedInvitedUserIDs, ",")
+		incident.InvitedUserIDs = strings.Split(rawIncident.ConcatenatedInvitedUserIDs, ",")
 	}
 
-	i.InvitedGroupIDs = []string(nil)
+	incident.InvitedGroupIDs = []string(nil)
 	if rawIncident.ConcatenatedInvitedGroupIDs != "" {
-		i.InvitedGroupIDs = strings.Split(rawIncident.ConcatenatedInvitedGroupIDs, ",")
+		incident.InvitedGroupIDs = strings.Split(rawIncident.ConcatenatedInvitedGroupIDs, ",")
 	}
 
-	return &i, nil
+	return &incident, nil
 }
 
-func toSQLIncident(origIncident incident.Incident) (*sqlIncident, error) {
-	newChecklists := populateChecklistIDs(origIncident.Checklists)
+func toSQLIncident(incident app.Incident) (*sqlIncident, error) {
+	newChecklists := populateChecklistIDs(incident.Checklists)
 	checklistsJSON, err := checklistsToJSON(newChecklists)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origIncident.ID)
+		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", incident.ID)
 	}
 
 	return &sqlIncident{
-		Incident:                    origIncident,
+		Incident:                    incident,
 		ChecklistsJSON:              checklistsJSON,
-		ConcatenatedInvitedUserIDs:  strings.Join(origIncident.InvitedUserIDs, ","),
-		ConcatenatedInvitedGroupIDs: strings.Join(origIncident.InvitedGroupIDs, ","),
+		ConcatenatedInvitedUserIDs:  strings.Join(incident.InvitedUserIDs, ","),
+		ConcatenatedInvitedGroupIDs: strings.Join(incident.InvitedGroupIDs, ","),
 	}, nil
 }
 
 // populateChecklistIDs returns a cloned slice with ids entered for checklists and checklist items.
-func populateChecklistIDs(checklists []playbook.Checklist) []playbook.Checklist {
+func populateChecklistIDs(checklists []app.Checklist) []app.Checklist {
 	if len(checklists) == 0 {
 		return nil
 	}
 
-	newChecklists := make([]playbook.Checklist, len(checklists))
+	newChecklists := make([]app.Checklist, len(checklists))
 	for i, c := range checklists {
 		newChecklists[i] = c.Clone()
 		if newChecklists[i].ID == "" {
@@ -800,7 +860,7 @@ func populateChecklistIDs(checklists []playbook.Checklist) []playbook.Checklist 
 }
 
 // An incident needs to assign unique ids to its checklist items
-func checklistsToJSON(checklists []playbook.Checklist) (json.RawMessage, error) {
+func checklistsToJSON(checklists []app.Checklist) (json.RawMessage, error) {
 	checklistsJSON, err := json.Marshal(checklists)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal checklist json")
@@ -809,22 +869,75 @@ func checklistsToJSON(checklists []playbook.Checklist) (json.RawMessage, error) 
 	return checklistsJSON, nil
 }
 
-func addStatusPostsToIncidents(statusIDs incidentStatusPosts, incidents []incident.Incident) {
-	iToPosts := make(map[string][]incident.StatusPost)
+func addStatusPostsToIncidents(statusIDs incidentStatusPosts, incidents []app.Incident) {
+	iToPosts := make(map[string][]app.StatusPost)
 	for _, p := range statusIDs {
 		iToPosts[p.IncidentID] = append(iToPosts[p.IncidentID], p.StatusPost)
 	}
-	for i, incdnt := range incidents {
-		incidents[i].StatusPosts = iToPosts[incdnt.ID]
+	for i, incident := range incidents {
+		incidents[i].StatusPosts = iToPosts[incident.ID]
 	}
 }
 
-func addTimelineEventsToIncidents(timelineEvents []incident.TimelineEvent, incidents []incident.Incident) {
-	iToTe := make(map[string][]incident.TimelineEvent)
+func addTimelineEventsToIncidents(timelineEvents []app.TimelineEvent, incidents []app.Incident) {
+	iToTe := make(map[string][]app.TimelineEvent)
 	for _, te := range timelineEvents {
 		iToTe[te.IncidentID] = append(iToTe[te.IncidentID], te)
 	}
-	for i, incdnt := range incidents {
-		incidents[i].TimelineEvents = iToTe[incdnt.ID]
+	for i, incident := range incidents {
+		incidents[i].TimelineEvents = iToTe[incident.ID]
 	}
+}
+
+// queryActiveBetweenTimes will modify the query only if one (or both) of start and end are non-zero.
+// If both are non-zero, return the incidents active between those two times.
+// If start is zero, return the incident active before the end (not active after the end).
+// If end is zero, return the incident active after start.
+func queryActiveBetweenTimes(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	if start > 0 && end > 0 {
+		return queryActive(query, start, end)
+	} else if start > 0 {
+		return queryActive(query, start, model.GetMillis())
+	} else if end > 0 {
+		return queryActive(query, 0, end)
+	}
+
+	// both were zero, don't apply a filter:
+	return query
+}
+
+func queryActive(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	return query.Where(
+		sq.And{
+			sq.Or{
+				sq.GtOrEq{"i.EndAt": start},
+				sq.Eq{"i.EndAt": 0},
+			},
+			sq.Lt{"i.CreateAt": end},
+		})
+}
+
+// queryStartedBetweenTimes will modify the query only if one (or both) of start and end are non-zero.
+// If both are non-zero, return the incidents started between those two times.
+// If start is zero, return the incident started before the end
+// If end is zero, return the incident started after start.
+func queryStartedBetweenTimes(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	if start > 0 && end > 0 {
+		return queryStarted(query, start, end)
+	} else if start > 0 {
+		return queryStarted(query, start, model.GetMillis())
+	} else if end > 0 {
+		return queryStarted(query, 0, end)
+	}
+
+	// both were zero, don't apply a filter:
+	return query
+}
+
+func queryStarted(query sq.SelectBuilder, start int64, end int64) sq.SelectBuilder {
+	return query.Where(
+		sq.And{
+			sq.GtOrEq{"i.CreateAt": start},
+			sq.Lt{"i.CreateAt": end},
+		})
 }

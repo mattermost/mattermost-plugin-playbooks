@@ -23,6 +23,7 @@ import {
     TimelineEventsFilterDefault,
 } from 'src/types/rhs';
 import {Incident, incidentIsActive} from 'src/types/incident';
+import {findLastUpdated} from 'src/utils';
 
 import {GlobalSettings} from './types/settings';
 
@@ -113,19 +114,15 @@ export const lastUpdatedByIncidentId = createSelector(
     (teamId, incidentsMapByTeam) => {
         const result = {} as Record<string, number>;
         const incidentMap = incidentsMapByTeam[teamId];
+        if (!incidentMap) {
+            return {};
+        }
         for (const incident of Object.values(incidentMap)) {
             result[incident.id] = findLastUpdated(incident);
         }
         return result;
     },
 );
-
-const findLastUpdated = (incident: Incident) => {
-    const posts = [...incident.status_posts]
-        .filter((a) => a.delete_at === 0)
-        .sort((a, b) => b.create_at - a.create_at);
-    return posts.length === 0 ? 0 : posts[0].create_at;
-};
 
 const PROFILE_SET_ALL = 'all';
 

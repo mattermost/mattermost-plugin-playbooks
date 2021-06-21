@@ -133,6 +133,7 @@ interface Props {
 
 interface URLParams {
     playbookId?: string;
+    tabId?: string;
 }
 
 const FetchingStateType = {
@@ -163,6 +164,13 @@ const timerOptions = [
     {value: 86400, label: '24hr'},
 ];
 
+const tabInfo = [
+    {id: 'tasks', name: 'Tasks'},
+    {id: 'preferences', name: 'Preferences'},
+    {id: 'automation', name: 'Automation'},
+    {id: 'permissions', name: 'Permissions'},
+];
+
 const retrospectiveReminderOptions = [
     {value: 0, label: 'Once'},
     {value: 3600, label: '1hr'},
@@ -191,7 +199,16 @@ const PlaybookEdit = (props: Props) => {
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
-    const [currentTab, setCurrentTab] = useState<number>(0);
+    let tab = 0;
+    if (urlParams.tabId) {
+        for (let i = 0; i < tabInfo.length; i++) {
+            if (urlParams.tabId === tabInfo[i].id) {
+                tab = i;
+            }
+        }
+    }
+
+    const [currentTab, setCurrentTab] = useState<number>(tab);
 
     const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
@@ -262,7 +279,7 @@ const PlaybookEdit = (props: Props) => {
 
     const onClose = (id?: string) => {
         const playbookId = urlParams.playbookId || id;
-        if (playbookId) {
+        if (playbookId && experimentalFeaturesEnabled) {
             navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbookId}`);
         } else {
             navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
@@ -411,6 +428,22 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleSignalAnyKeywordsChange = (keywords: string) => {
+        setPlaybook({
+            ...playbook,
+            signal_any_keywords: keywords.split(','),
+        });
+        setChangesMade(true);
+    };
+
+    const handleToggleSignalAnyKeywords = () => {
+        setPlaybook({
+            ...playbook,
+            signal_any_keywords_enabled: !playbook.signal_any_keywords_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const handleToggleWebhookOnStatusUpdate = () => {
         setPlaybook({
             ...playbook,
@@ -493,10 +526,9 @@ const PlaybookEdit = (props: Props) => {
                             currentTab={currentTab}
                             setCurrentTab={setCurrentTab}
                         >
-                            {'Tasks'}
-                            {'Preferences'}
-                            {'Automation'}
-                            {'Permissions'}
+                            {tabInfo.map((item) => {
+                                return (item.name);
+                            })}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>
@@ -534,7 +566,7 @@ const PlaybookEdit = (props: Props) => {
                                     </BackstageSubheader>
                                     <StyledSelect
                                         value={timerOptions.find((option) => option.value === playbook.reminder_timer_default_seconds)}
-                                        onChange={(option: { label: string, value: number }) => {
+                                        onChange={(option: {label: string, value: number}) => {
                                             setPlaybook({
                                                 ...playbook,
                                                 reminder_timer_default_seconds: option ? option.value : option,
@@ -585,48 +617,48 @@ const PlaybookEdit = (props: Props) => {
                                     />
                                 </SidebarBlock>
                                 {experimentalFeaturesEnabled &&
-                                <>
-                                    <SidebarBlock>
-                                        <BackstageSubheader>
-                                            {'Retrospective Reminder Interval'}
-                                            <BackstageSubheaderDescription>
-                                                {'Reminds the channel at a specified interval to fill out the retrospective.'}
-                                            </BackstageSubheaderDescription>
-                                        </BackstageSubheader>
-                                        <StyledSelect
-                                            value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
-                                            onChange={(option: { label: string, value: number }) => {
-                                                setPlaybook({
-                                                    ...playbook,
-                                                    retrospective_reminder_interval_seconds: option ? option.value : option,
-                                                });
-                                                setChangesMade(true);
-                                            }}
-                                            classNamePrefix='channel-selector'
-                                            options={retrospectiveReminderOptions}
-                                            isClearable={false}
-                                        />
-                                    </SidebarBlock>
-                                    <SidebarBlock>
-                                        <BackstageSubheader>
-                                            {'Retrospective Template'}
-                                            <BackstageSubheaderDescription>
-                                                {'Default text for the retrospective.'}
-                                            </BackstageSubheaderDescription>
-                                        </BackstageSubheader>
-                                        <StyledTextarea
-                                            placeholder={'Enter retrospective template'}
-                                            value={playbook.retrospective_template}
-                                            onChange={(e) => {
-                                                setPlaybook({
-                                                    ...playbook,
-                                                    retrospective_template: e.target.value,
-                                                });
-                                                setChangesMade(true);
-                                            }}
-                                        />
-                                    </SidebarBlock>
-                                </>
+                                    <>
+                                        <SidebarBlock>
+                                            <BackstageSubheader>
+                                                {'Retrospective Reminder Interval'}
+                                                <BackstageSubheaderDescription>
+                                                    {'Reminds the channel at a specified interval to fill out the retrospective.'}
+                                                </BackstageSubheaderDescription>
+                                            </BackstageSubheader>
+                                            <StyledSelect
+                                                value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
+                                                onChange={(option: {label: string, value: number}) => {
+                                                    setPlaybook({
+                                                        ...playbook,
+                                                        retrospective_reminder_interval_seconds: option ? option.value : option,
+                                                    });
+                                                    setChangesMade(true);
+                                                }}
+                                                classNamePrefix='channel-selector'
+                                                options={retrospectiveReminderOptions}
+                                                isClearable={false}
+                                            />
+                                        </SidebarBlock>
+                                        <SidebarBlock>
+                                            <BackstageSubheader>
+                                                {'Retrospective Template'}
+                                                <BackstageSubheaderDescription>
+                                                    {'Default text for the retrospective.'}
+                                                </BackstageSubheaderDescription>
+                                            </BackstageSubheader>
+                                            <StyledTextarea
+                                                placeholder={'Enter retrospective template'}
+                                                value={playbook.retrospective_template}
+                                                onChange={(e) => {
+                                                    setPlaybook({
+                                                        ...playbook,
+                                                        retrospective_template: e.target.value,
+                                                    });
+                                                    setChangesMade(true);
+                                                }}
+                                            />
+                                        </SidebarBlock>
+                                    </>
                                 }
                             </TabContainer>
                             <TabContainer>
@@ -661,6 +693,10 @@ const PlaybookEdit = (props: Props) => {
                                     messageOnJoinChange={handleMessageOnJoinChange}
                                     onToggleExportChannelOnArchiveEnabled={handleToggleExportChannelOnArchiveEnabled}
                                     exportChannelOnArchiveEnabled={playbook.export_channel_on_archive_enabled}
+                                    signalAnyKeywordsEnabled={playbook.signal_any_keywords_enabled}
+                                    onToggleSignalAnyKeywords={handleToggleSignalAnyKeywords}
+                                    signalAnyKeywordsChange={handleSignalAnyKeywordsChange}
+                                    signalAnyKeywords={playbook.signal_any_keywords}
                                 />
                             </TabContainer>
                             <TabContainer>

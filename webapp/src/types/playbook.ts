@@ -28,6 +28,8 @@ export interface Playbook {
     retrospective_reminder_interval_seconds: number;
     retrospective_template: string;
     export_channel_on_archive_enabled: boolean;
+    signal_any_keywords_enabled: boolean;
+    signal_any_keywords: string[];
 }
 
 export interface PlaybookNoChecklist {
@@ -108,6 +110,8 @@ export function emptyPlaybook(): Playbook {
         retrospective_reminder_interval_seconds: 0,
         retrospective_template: defaultRetrospectiveTemplate,
         export_channel_on_archive_enabled: false,
+        signal_any_keywords: [],
+        signal_any_keywords_enabled: false,
     };
 }
 
@@ -148,8 +152,8 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.broadcast_channel_id === 'string' &&
         typeof arg.reminder_message_template == 'string' &&
         typeof arg.reminder_timer_default_seconds == 'number' &&
-        arg.invited_user_ids && Array.isArray(arg.invited_user_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
-        arg.invited_group_ids && Array.isArray(arg.invited_group_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
+        arg.invited_user_ids && Array.isArray(arg.invited_user_ids) && arg.invited_user_ids.every((id: any) => typeof id === 'string') &&
+        arg.invited_group_ids && Array.isArray(arg.invited_group_ids) && arg.invited_group_ids.every((id: any) => typeof id === 'string') &&
         typeof arg.invite_users_enabled === 'boolean' &&
         typeof arg.default_owner_id === 'string' &&
         typeof arg.default_owner_enabled === 'boolean' &&
@@ -160,7 +164,9 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.webhook_on_status_update_url === 'string' &&
         typeof arg.webhook_on_status_update_enabled === 'boolean' &&
         typeof arg.message_on_join === 'string' &&
-        typeof arg.message_on_join_enabled === 'boolean';
+        typeof arg.message_on_join_enabled === 'boolean' &&
+        typeof arg.signal_any_keywords && Array.isArray(arg.signal_any_keywords) && arg.signal_any_keywords.every((id: any) => typeof id === 'string') &&
+        typeof arg.signal_any_keywords_enabled === 'boolean';
 }
 
 // eslint-disable-next-line
@@ -192,7 +198,7 @@ export const defaultMessageOnJoin = 'Welcome. This channel was automatically cre
     '[Incident Collaboration documentation](https://docs.mattermost.com/administration/devops-command-center.html)';
 
 export const defaultRetrospectiveTemplate = `### Summary
-This should contain 2-3 sentences that gives a reader an overview of what happened, what was the cause, and what was done. The briefer the better as this is what future teams will look at first for reference.
+This should contain 2-3 sentences that give a reader an overview of what happened, what was the cause, and what was done. The briefer the better as this is what future teams will look at first for reference.
 
 ### What was the impact?
 This section describes the impact of this playbook run as experienced by internal and external customers as well as stakeholders.
@@ -207,7 +213,7 @@ This section tells the story of how the team collaborated throughout the event t
 This section should include perspective from everyone that was involved to celebrate the victories and identify areas for improvement. For example: What went well? What didn't go well? What should be done differently next time?
 
 ### Follow-up tasks
-This section lists the action items to turn learnings into changes that help the team become more proficient with iterations. It could include tweaking the playbook, publishing the retrospective, or other improvements. The best follow-ups will have clear owner assigned as well as due date.
+This section lists the action items to turn learnings into changes that help the team become more proficient with iterations. It could include tweaking the playbook, publishing the retrospective, or other improvements. The best follow-ups will have a clear owner as well as due date.
 
 ### Timeline Highlights
 This section is a curated log that details the most important moments. It can contain key communications, screen shots, or other artifacts. Use the built-in timeline feature to help you retrace and replay the sequence of events.`;

@@ -5,15 +5,15 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 
 	"github.com/gorilla/mux"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 type StatsHandler struct {
@@ -21,10 +21,10 @@ type StatsHandler struct {
 	pluginAPI       *pluginapi.Client
 	log             bot.Logger
 	statsStore      *sqlstore.StatsStore
-	playbookService playbook.Service
+	playbookService app.PlaybookService
 }
 
-func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore, playbookService playbook.Service) *StatsHandler {
+func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore, playbookService app.PlaybookService) *StatsHandler {
 	handler := &StatsHandler{
 		ErrorHandler:    &ErrorHandler{log: log},
 		pluginAPI:       api,
@@ -53,16 +53,18 @@ type Stats struct {
 }
 
 type PlaybookStats struct {
-	RunsInProgress                 int      `json:"runs_in_progress"`
-	ParticipantsActive             int      `json:"participants_active"`
-	RunsFinishedPrev30Days         int      `json:"runs_finished_prev_30_days"`
-	RunsFinishedPercentageChange   int      `json:"runs_finished_percentage_change"`
-	RunsStartedPerWeek             []int    `json:"runs_started_per_week"`
-	RunsStartedPerWeekLabels       []string `json:"runs_started_per_week_labels"`
-	ActiveRunsPerDay               []int    `json:"active_runs_per_day"`
-	ActiveRunsPerDayLabels         []string `json:"active_runs_per_day_labels"`
-	ActiveParticipantsPerDay       []int    `json:"active_participants_per_day"`
-	ActiveParticipantsPerDayLabels []string `json:"active_participants_per_day_labels"`
+	RunsInProgress                 int       `json:"runs_in_progress"`
+	ParticipantsActive             int       `json:"participants_active"`
+	RunsFinishedPrev30Days         int       `json:"runs_finished_prev_30_days"`
+	RunsFinishedPercentageChange   int       `json:"runs_finished_percentage_change"`
+	RunsStartedPerWeek             []int     `json:"runs_started_per_week"`
+	RunsStartedPerWeekLabels       []string  `json:"runs_started_per_week_labels"`
+	RunsStartedPerWeekTimes        [][]int64 `json:"runs_started_per_week_times"`
+	ActiveRunsPerDay               []int     `json:"active_runs_per_day"`
+	ActiveRunsPerDayLabels         []string  `json:"active_runs_per_day_labels"`
+	ActiveRunsPerDayTimes          [][]int64 `json:"active_runs_per_day_times"`
+	ActiveParticipantsPerDay       []int     `json:"active_participants_per_day"`
+	ActiveParticipantsPerDayLabels []string  `json:"active_participants_per_day_labels"`
 }
 
 func parseStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
@@ -132,7 +134,7 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err2 := permissions.PlaybookAccess(userID, playbookOfInterest, h.pluginAPI); err2 != nil {
+	if err2 := app.PlaybookAccess(userID, playbookOfInterest, h.pluginAPI); err2 != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err2)
 		return
 	}
@@ -145,8 +147,8 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	} else {
 		percentageChange = int(math.Floor(float64((runsFinishedLast30Days-runsFinishedBetween60and30DaysAgo)/runsFinishedBetween60and30DaysAgo) * 100))
 	}
-	runsStartedPerWeek, runsStartedPerWeekLabels := h.statsStore.RunsStartedPerWeekLastXWeeks(12, filters)
-	activeRunsPerDay, activeRunsPerDayLabels := h.statsStore.ActiveRunsPerDayLastXDays(14, filters)
+	runsStartedPerWeek, runsStartedPerWeekLabels, runsStartedPerWeekTimes := h.statsStore.RunsStartedPerWeekLastXWeeks(12, filters)
+	activeRunsPerDay, activeRunsPerDayLabels, activeRunsPerDayTimes := h.statsStore.ActiveRunsPerDayLastXDays(14, filters)
 	activeParticipantsPerDay, activeParticipantsPerDayLabels := h.statsStore.ActiveParticipantsPerDayLastXDays(14, filters)
 
 	ReturnJSON(w, &PlaybookStats{
@@ -156,8 +158,10 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 		RunsFinishedPercentageChange:   percentageChange,
 		RunsStartedPerWeek:             runsStartedPerWeek,
 		RunsStartedPerWeekLabels:       runsStartedPerWeekLabels,
+		RunsStartedPerWeekTimes:        runsStartedPerWeekTimes,
 		ActiveRunsPerDay:               activeRunsPerDay,
 		ActiveRunsPerDayLabels:         activeRunsPerDayLabels,
+		ActiveRunsPerDayTimes:          activeRunsPerDayTimes,
 		ActiveParticipantsPerDay:       activeParticipantsPerDay,
 		ActiveParticipantsPerDayLabels: activeParticipantsPerDayLabels,
 	}, http.StatusOK)

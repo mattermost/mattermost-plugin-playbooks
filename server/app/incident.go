@@ -1,14 +1,12 @@
-package incident
+package app
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
-
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 
 	"github.com/mattermost/mattermost-plugin-api/cluster"
 )
@@ -25,45 +23,46 @@ const (
 // NOTE: when adding a column to the db, search for "When adding an Incident column" to see where
 // that column needs to be added in the sqlstore code.
 type Incident struct {
-	ID                                   string               `json:"id"`
-	Name                                 string               `json:"name"` // Retrieved from incident channel
-	Description                          string               `json:"description"`
-	OwnerUserID                          string               `json:"owner_user_id"`
-	ReporterUserID                       string               `json:"reporter_user_id"`
-	TeamID                               string               `json:"team_id"`
-	ChannelID                            string               `json:"channel_id"`
-	CreateAt                             int64                `json:"create_at"` // Retrieved from incident channel
-	EndAt                                int64                `json:"end_at"`
-	DeleteAt                             int64                `json:"delete_at"` // Retrieved from incidet channel
-	ActiveStage                          int                  `json:"active_stage"`
-	ActiveStageTitle                     string               `json:"active_stage_title"`
-	PostID                               string               `json:"post_id"`
-	PlaybookID                           string               `json:"playbook_id"`
-	Checklists                           []playbook.Checklist `json:"checklists"`
-	StatusPosts                          []StatusPost         `json:"status_posts"`
-	CurrentStatus                        string               `json:"current_status"`
-	ReminderPostID                       string               `json:"reminder_post_id"`
-	PreviousReminder                     time.Duration        `json:"previous_reminder"`
-	BroadcastChannelID                   string               `json:"broadcast_channel_id"`
-	ReminderMessageTemplate              string               `json:"reminder_message_template"`
-	InvitedUserIDs                       []string             `json:"invited_user_ids"`
-	InvitedGroupIDs                      []string             `json:"invited_group_ids"`
-	TimelineEvents                       []TimelineEvent      `json:"timeline_events"`
-	DefaultOwnerID                       string               `json:"default_owner_id"`
-	AnnouncementChannelID                string               `json:"announcement_channel_id"`
-	WebhookOnCreationURL                 string               `json:"webhook_on_creation_url"`
-	WebhookOnStatusUpdateURL             string               `json:"webhook_on_status_update_url"`
-	Retrospective                        string               `json:"retrospective"`
-	RetrospectivePublishedAt             int64                `json:"retrospective_published_at"` // The last time a retrospective was published. 0 if never published.
-	RetrospectiveWasCanceled             bool                 `json:"retrospective_was_canceled"`
-	RetrospectiveReminderIntervalSeconds int64                `json:"retrospective_reminder_interval_seconds"`
-	MessageOnJoin                        string               `json:"message_on_join"`
-	ExportChannelOnArchiveEnabled        bool                 `json:"export_channel_on_archive_enabled"`
+	ID                                   string          `json:"id"`
+	Name                                 string          `json:"name"` // Retrieved from incident channel
+	Description                          string          `json:"description"`
+	OwnerUserID                          string          `json:"owner_user_id"`
+	ReporterUserID                       string          `json:"reporter_user_id"`
+	TeamID                               string          `json:"team_id"`
+	ChannelID                            string          `json:"channel_id"`
+	CreateAt                             int64           `json:"create_at"` // Retrieved from incident channel
+	EndAt                                int64           `json:"end_at"`
+	DeleteAt                             int64           `json:"delete_at"` // Retrieved from incident channel
+	ActiveStage                          int             `json:"active_stage"`
+	ActiveStageTitle                     string          `json:"active_stage_title"`
+	PostID                               string          `json:"post_id"`
+	PlaybookID                           string          `json:"playbook_id"`
+	Checklists                           []Checklist     `json:"checklists"`
+	StatusPosts                          []StatusPost    `json:"status_posts"`
+	CurrentStatus                        string          `json:"current_status"`
+	LastStatusUpdateAt                   int64           `json:"last_status_update_at"`
+	ReminderPostID                       string          `json:"reminder_post_id"`
+	PreviousReminder                     time.Duration   `json:"previous_reminder"`
+	BroadcastChannelID                   string          `json:"broadcast_channel_id"`
+	ReminderMessageTemplate              string          `json:"reminder_message_template"`
+	InvitedUserIDs                       []string        `json:"invited_user_ids"`
+	InvitedGroupIDs                      []string        `json:"invited_group_ids"`
+	TimelineEvents                       []TimelineEvent `json:"timeline_events"`
+	DefaultOwnerID                       string          `json:"default_owner_id"`
+	AnnouncementChannelID                string          `json:"announcement_channel_id"`
+	WebhookOnCreationURL                 string          `json:"webhook_on_creation_url"`
+	WebhookOnStatusUpdateURL             string          `json:"webhook_on_status_update_url"`
+	Retrospective                        string          `json:"retrospective"`
+	RetrospectivePublishedAt             int64           `json:"retrospective_published_at"` // The last time a retrospective was published. 0 if never published.
+	RetrospectiveWasCanceled             bool            `json:"retrospective_was_canceled"`
+	RetrospectiveReminderIntervalSeconds int64           `json:"retrospective_reminder_interval_seconds"`
+	MessageOnJoin                        string          `json:"message_on_join"`
+	ExportChannelOnArchiveEnabled        bool            `json:"export_channel_on_archive_enabled"`
 }
 
 func (i *Incident) Clone() *Incident {
 	newIncident := *i
-	var newChecklists []playbook.Checklist
+	var newChecklists []Checklist
 	for _, c := range i.Checklists {
 		newChecklists = append(newChecklists, c.Clone())
 	}
@@ -83,11 +82,11 @@ func (i *Incident) MarshalJSON() ([]byte, error) {
 	old := (*Alias)(i.Clone())
 	// replace nils with empty slices for the frontend
 	if old.Checklists == nil {
-		old.Checklists = []playbook.Checklist{}
+		old.Checklists = []Checklist{}
 	}
 	for j, cl := range old.Checklists {
 		if cl.Items == nil {
-			old.Checklists[j].Items = []playbook.ChecklistItem{}
+			old.Checklists[j].Items = []ChecklistItem{}
 		}
 	}
 	if old.StatusPosts == nil {
@@ -250,43 +249,22 @@ type DialogStateAddToTimeline struct {
 	PostID string `json:"post_id"`
 }
 
-// ErrNotFound used to indicate entity not found.
-var ErrNotFound = errors.New("not found")
-
-// ErrChannelDisplayNameInvalid is used to indicate a channel name is too long.
-var ErrChannelDisplayNameInvalid = errors.New("channel name is invalid or too long")
-
-// ErrPermission is used to indicate a user does not have permissions
-var ErrPermission = errors.New("permissions error")
-
-// ErrIncidentNotActive is used to indicate trying to run a command on an incident that has ended.
-var ErrIncidentNotActive = errors.New("incident not active")
-
-// ErrIncidentActive is used to indicate trying to run a command on an incident that is active.
-var ErrIncidentActive = errors.New("incident active")
-
-// ErrMalformedIncident is used to indicate an incident is not valid
-var ErrMalformedIncident = errors.New("incident active")
-
-// ErrDuplicateEntry indicates the db could not make an insert because the entry already existed.
-var ErrDuplicateEntry = errors.New("duplicate entry")
-
-// Service is the incident/service interface.
-type Service interface {
+// IncidentService is the incident/service interface.
+type IncidentService interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
-	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
+	GetIncidents(requesterInfo RequesterInfo, options IncidentFilterOptions) (*GetIncidentsResults, error)
 
 	// CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
-	CreateIncident(incdnt *Incident, playbook *playbook.Playbook, userID string, public bool) (*Incident, error)
+	CreateIncident(incident *Incident, playbook *Playbook, userID string, public bool) (*Incident, error)
 
 	// OpenCreateIncidentDialog opens an interactive dialog to start a new incident.
-	OpenCreateIncidentDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error
+	OpenCreateIncidentDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the incident's status.
 	OpenUpdateStatusDialog(incidentID, triggerID string) error
 
 	// OpenAddToTimelineDialog opens an interactive dialog so the user can add a post to the incident timeline.
-	OpenAddToTimelineDialog(requesterInfo permissions.RequesterInfo, postID, teamID, triggerID string) error
+	OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error
 
 	// OpenAddChecklistItemDialog opens an interactive dialog so the user can add a post to the incident timeline.
 	OpenAddChecklistItemDialog(triggerID, incidentID string, checklist int) error
@@ -311,7 +289,7 @@ type Service interface {
 	GetIncidentIDForChannel(channelID string) (string, error)
 
 	// GetOwners returns all the owners of incidents selected
-	GetOwners(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]OwnerInfo, error)
+	GetOwners(requesterInfo RequesterInfo, options IncidentFilterOptions) ([]OwnerInfo, error)
 
 	// IsOwner returns true if the userID is the owner for incidentID.
 	IsOwner(incidentID string, userID string) bool
@@ -335,7 +313,7 @@ type Service interface {
 	RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) (string, error)
 
 	// AddChecklistItem adds an item to the specified checklist
-	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error
+	AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem ChecklistItem) error
 
 	// RemoveChecklistItem removes an item from the specified checklist
 	RemoveChecklistItem(incidentID, userID string, checklistNumber int, itemNumber int) error
@@ -389,20 +367,20 @@ type Service interface {
 	CancelRetrospective(incidentID, userID string) error
 
 	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
-	// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.
+	// incident.MessageOnJoin if it exists. Returns true if the message was sent.
 	CheckAndSendMessageOnJoin(userID, incidentID, channelID string) bool
 }
 
-// Store defines the methods the ServiceImpl needs from the interfaceStore.
-type Store interface {
+// IncidentStore defines the methods the IncidentServiceImpl needs from the interfaceStore.
+type IncidentStore interface {
 	// GetIncidents returns filtered incidents and the total count before paging.
-	GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error)
+	GetIncidents(requesterInfo RequesterInfo, options IncidentFilterOptions) (*GetIncidentsResults, error)
 
-	// CreateIncident creates a new incident. If incdnt has an ID, that ID will be used.
-	CreateIncident(incdnt *Incident) (*Incident, error)
+	// CreateIncident creates a new incident. If incident has an ID, that ID will be used.
+	CreateIncident(incident *Incident) (*Incident, error)
 
 	// UpdateIncident updates an incident.
-	UpdateIncident(incdnt *Incident) error
+	UpdateIncident(incident *Incident) error
 
 	// UpdateStatus updates the status of an incident.
 	UpdateStatus(statusPost *SQLStatusPost) error
@@ -428,7 +406,7 @@ type Store interface {
 	GetAllIncidentMembersCount(channelID string) (int64, error)
 
 	// GetOwners returns the owners of the incidents selected by options
-	GetOwners(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]OwnerInfo, error)
+	GetOwners(requesterInfo RequesterInfo, options IncidentFilterOptions) ([]OwnerInfo, error)
 
 	// NukeDB removes all incident related data.
 	NukeDB() error
@@ -444,9 +422,9 @@ type Store interface {
 	SetViewedChannel(userID, channelID string) error
 }
 
-// Telemetry defines the methods that the ServiceImpl needs from the RudderTelemetry.
+// IncidentTelemetry defines the methods that the IncidentServiceImpl needs from the RudderTelemetry.
 // Unless otherwise noted, userID is the user initiating the event.
-type Telemetry interface {
+type IncidentTelemetry interface {
 	// CreateIncident tracks the creation of a new incident.
 	CreateIncident(incident *Incident, userID string, public bool)
 
@@ -463,35 +441,35 @@ type Telemetry interface {
 	UpdateStatus(incident *Incident, userID string)
 
 	// FrontendTelemetryForIncident tracks an event originating from the frontend
-	FrontendTelemetryForIncident(incdnt *Incident, userID, action string)
+	FrontendTelemetryForIncident(incident *Incident, userID, action string)
 
 	// AddPostToTimeline tracks userID creating a timeline event from a post.
-	AddPostToTimeline(incdnt *Incident, userID string)
+	AddPostToTimeline(incident *Incident, userID string)
 
 	// RemoveTimelineEvent tracks userID removing a timeline event.
-	RemoveTimelineEvent(incdnt *Incident, userID string)
+	RemoveTimelineEvent(incident *Incident, userID string)
 
 	// ModifyCheckedState tracks the checking and unchecking of items.
-	ModifyCheckedState(incidentID, userID string, task playbook.ChecklistItem, wasOwner bool)
+	ModifyCheckedState(incidentID, userID string, task ChecklistItem, wasOwner bool)
 
 	// SetAssignee tracks the changing of an assignee on an item.
-	SetAssignee(incidentID, userID string, task playbook.ChecklistItem)
+	SetAssignee(incidentID, userID string, task ChecklistItem)
 
 	// AddTask tracks the creation of a new checklist item.
-	AddTask(incidentID, userID string, task playbook.ChecklistItem)
+	AddTask(incidentID, userID string, task ChecklistItem)
 
 	// RemoveTask tracks the removal of a checklist item.
-	RemoveTask(incidentID, userID string, task playbook.ChecklistItem)
+	RemoveTask(incidentID, userID string, task ChecklistItem)
 
 	// RenameTask tracks the update of a checklist item.
-	RenameTask(incidentID, userID string, task playbook.ChecklistItem)
+	RenameTask(incidentID, userID string, task ChecklistItem)
 
 	// MoveTask tracks the unchecking of checked item.
-	MoveTask(incidentID, userID string, task playbook.ChecklistItem)
+	MoveTask(incidentID, userID string, task ChecklistItem)
 
 	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
-	RunTaskSlashCommand(incidentID, userID string, task playbook.ChecklistItem)
+	RunTaskSlashCommand(incidentID, userID string, task ChecklistItem)
 
 	// UpdateRetrospective event
 	UpdateRetrospective(incident *Incident, userID string)
@@ -506,4 +484,134 @@ type JobOnceScheduler interface {
 	ListScheduledJobs() ([]cluster.JobOnceMetadata, error)
 	ScheduleOnce(key string, runAt time.Time) (*cluster.JobOnce, error)
 	Cancel(key string)
+}
+
+const PerPageDefault = 1000
+
+// IncidentFilterOptions specifies the optional parameters when getting incidents.
+type IncidentFilterOptions struct {
+	// Gets all the headers with this TeamID.
+	TeamID string `url:"team_id,omitempty"`
+
+	// Pagination options.
+	Page    int `url:"page,omitempty"`
+	PerPage int `url:"per_page,omitempty"`
+
+	// Sort sorts by this header field in json format (eg, "create_at", "end_at", "name", etc.);
+	// defaults to "create_at".
+	Sort SortField `url:"sort,omitempty"`
+
+	// Direction orders by ascending or descending, defaulting to ascending.
+	Direction SortDirection `url:"direction,omitempty"`
+
+	// Status filters by current status
+	Status string
+
+	// Statuses filters by all statuses in the list (inclusive)
+	Statuses []string
+
+	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter).
+	OwnerID string `url:"owner_user_id,omitempty"`
+
+	// MemberID filters incidents that have this member. Defaults to blank (no filter).
+	MemberID string `url:"member_id,omitempty"`
+
+	// SearchTerm returns results of the search term and respecting the other header filter options.
+	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
+	// not returned in relevance order).
+	SearchTerm string `url:"search_term,omitempty"`
+
+	// PlaybookID filters incidents that are derived from this playbook id.
+	// Defaults to blank (no filter).
+	PlaybookID string `url:"playbook_id,omitempty"`
+
+	// ActiveGTE filters incidents that were active after (or equal) to the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	ActiveGTE int64 `url:"active_gte,omitempty"`
+
+	// ActiveLT filters incidents that were active before the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	ActiveLT int64 `url:"active_lt,omitempty"`
+
+	// StartedGTE filters incidents that were started after (or equal) to the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	StartedGTE int64 `url:"started_gte,omitempty"`
+
+	// StartedLT filters incidents that were started before the unix time given (in millis).
+	// A value of 0 means the filter is ignored (which is the default).
+	StartedLT int64 `url:"started_lt,omitempty"`
+}
+
+// Clone duplicates the given options.
+func (o *IncidentFilterOptions) Clone() IncidentFilterOptions {
+	newIncidentFilterOptions := *o
+	newIncidentFilterOptions.Statuses = append([]string{}, o.Statuses...)
+
+	return newIncidentFilterOptions
+}
+
+// Validate returns a new, validated filter options or returns an error if invalid.
+func (o IncidentFilterOptions) Validate() (IncidentFilterOptions, error) {
+	options := o.Clone()
+
+	if options.PerPage <= 0 {
+		options.PerPage = PerPageDefault
+	}
+
+	options.Sort = SortField(strings.ToLower(string(options.Sort)))
+	switch options.Sort {
+	case SortByCreateAt:
+	case SortByID:
+	case SortByName:
+	case SortByOwnerUserID:
+	case SortByTeamID:
+	case SortByEndAt:
+	case SortByStatus:
+	case SortByLastStatusUpdateAt:
+	case "": // default
+		options.Sort = SortByCreateAt
+	default:
+		return IncidentFilterOptions{}, errors.Errorf("unsupported sort '%s'", options.Sort)
+	}
+
+	options.Direction = SortDirection(strings.ToUpper(string(options.Direction)))
+	switch options.Direction {
+	case DirectionAsc:
+	case DirectionDesc:
+	case "": //default
+		options.Direction = DirectionAsc
+	default:
+		return IncidentFilterOptions{}, errors.Errorf("unsupported direction '%s'", options.Direction)
+	}
+
+	if options.TeamID != "" && !model.IsValidId(options.TeamID) {
+		return IncidentFilterOptions{}, errors.New("bad parameter 'team_id': must be 26 characters or blank")
+	}
+
+	if options.OwnerID != "" && !model.IsValidId(options.OwnerID) {
+		return IncidentFilterOptions{}, errors.New("bad parameter 'owner_id': must be 26 characters or blank")
+	}
+
+	if options.MemberID != "" && !model.IsValidId(options.MemberID) {
+		return IncidentFilterOptions{}, errors.New("bad parameter 'member_id': must be 26 characters or blank")
+	}
+
+	if options.PlaybookID != "" && !model.IsValidId(options.PlaybookID) {
+		return IncidentFilterOptions{}, errors.New("bad parameter 'playbook_id': must be 26 characters or blank")
+	}
+
+	if options.ActiveGTE < 0 {
+		options.ActiveGTE = 0
+	}
+	if options.ActiveLT < 0 {
+		options.ActiveLT = 0
+	}
+	if options.StartedGTE < 0 {
+		options.StartedGTE = 0
+	}
+	if options.StartedLT < 0 {
+		options.StartedLT = 0
+	}
+
+	return options, nil
 }

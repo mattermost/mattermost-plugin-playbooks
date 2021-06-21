@@ -1,13 +1,12 @@
-package playbook
+package app
 
 import (
 	"encoding/json"
+	"strings"
 
+	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
-
-// ErrNotFound used to indicate entity not found.
-var ErrNotFound = errors.New("not found")
 
 // Playbook represents the planning before an incident type is initiated.
 type Playbook struct {
@@ -17,6 +16,7 @@ type Playbook struct {
 	TeamID                               string      `json:"team_id"`
 	CreatePublicIncident                 bool        `json:"create_public_incident"`
 	CreateAt                             int64       `json:"create_at"`
+	UpdateAt                             int64       `json:"update_at"`
 	DeleteAt                             int64       `json:"delete_at"`
 	NumStages                            int64       `json:"num_stages"`
 	NumSteps                             int64       `json:"num_steps"`
@@ -41,6 +41,8 @@ type Playbook struct {
 	WebhookOnStatusUpdateURL             string      `json:"webhook_on_status_update_url"`
 	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
 	ExportChannelOnArchiveEnabled        bool        `json:"export_channel_on_archive_enabled"`
+	SignalAnyKeywords                    []string    `json:"signal_any_keywords"`
+	SignalAnyKeywordsEnabled             bool        `json:"signal_any_keywords_enabled"`
 }
 
 func (p Playbook) Clone() Playbook {
@@ -56,6 +58,9 @@ func (p Playbook) Clone() Playbook {
 	}
 	if len(p.InvitedGroupIDs) != 0 {
 		newPlaybook.InvitedGroupIDs = append([]string(nil), p.InvitedGroupIDs...)
+	}
+	if len(p.SignalAnyKeywords) != 0 {
+		newPlaybook.SignalAnyKeywords = append([]string(nil), p.SignalAnyKeywords...)
 	}
 	return newPlaybook
 }
@@ -81,6 +86,9 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	}
 	if old.InvitedGroupIDs == nil {
 		old.InvitedGroupIDs = []string{}
+	}
+	if old.SignalAnyKeywords == nil {
+		old.SignalAnyKeywords = []string{}
 	}
 
 	return json.Marshal(old)
@@ -139,16 +147,9 @@ func (r GetPlaybooksResults) MarshalJSON() ([]byte, error) {
 	return json.Marshal(aux)
 }
 
-// RequesterInfo holds the userID and permissions for the user making the request
-type RequesterInfo struct {
-	UserID  string
-	TeamID  string
-	IsAdmin bool
-}
-
-// Service is the playbook service for managing playbooks
+// PlaybookService is the playbook service for managing playbooks
 // userID is the user initiating the event.
-type Service interface {
+type PlaybookService interface {
 	// Get retrieves a playbook. Returns ErrNotFound if not found.
 	Get(id string) (Playbook, error)
 
@@ -159,20 +160,26 @@ type Service interface {
 	GetPlaybooks() ([]Playbook, error)
 
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
-	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
+	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
 
 	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
 	GetNumPlaybooksForTeam(teamID string) (int, error)
+
+	// GetSuggestedPlaybooks returns suggested playbooks and triggers for the user message
+	GetSuggestedPlaybooks(teamID, userID, message string) ([]*CachedPlaybook, []string)
 
 	// Update updates a playbook
 	Update(playbook Playbook, userID string) error
 
 	// Delete deletes a playbook
 	Delete(playbook Playbook, userID string) error
+
+	// MessageHasBeenPosted suggests playbooks to the user if triggered
+	MessageHasBeenPosted(sessionID string, post *model.Post)
 }
 
-// Store is an interface for storing playbooks
-type Store interface {
+// PlaybookStore is an interface for storing playbooks
+type PlaybookStore interface {
 	// Get retrieves a playbook
 	Get(id string) (Playbook, error)
 
@@ -182,10 +189,21 @@ type Store interface {
 	GetPlaybooks() ([]Playbook, error)
 
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
-	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts Options) (GetPlaybooksResults, error)
+	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
 
 	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
 	GetNumPlaybooksForTeam(teamID string) (int, error)
+
+	// GetPlaybooksWithKeywords retrieves all playbooks with keywords enabled
+	GetPlaybooksWithKeywords(opts PlaybookFilterOptions) ([]Playbook, error)
+
+	// GetTimeLastUpdated retrieves time last playbook was updated at.
+	// Passed argument determins whether to include playbooks with
+	// SignalAnyKeywordsEnabled flag or not.
+	GetTimeLastUpdated(onlyPlaybooksWithKeywordsEnabled bool) (int64, error)
+
+	// GetPlaybookIDsForUser retrieves playbooks user can access
+	GetPlaybookIDsForUser(userID, teamID string) ([]string, error)
 
 	// Update updates a playbook
 	Update(playbook Playbook) error
@@ -194,9 +212,9 @@ type Store interface {
 	Delete(id string) error
 }
 
-// Telemetry defines the methods that the Playbook service needs from the RudderTelemetry.
+// PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.
 // userID is the user initiating the event.
-type Telemetry interface {
+type PlaybookTelemetry interface {
 	// CreatePlaybook tracks the creation of a playbook.
 	CreatePlaybook(playbook Playbook, userID string)
 
@@ -221,4 +239,52 @@ func IsValidChecklistItemState(state string) bool {
 
 func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int) bool {
 	return checklists != nil && checklistNum >= 0 && itemNum >= 0 && checklistNum < len(checklists) && itemNum < len(checklists[checklistNum].Items)
+}
+
+// PlaybookFilterOptions specifies the parameters when getting playbooks.
+type PlaybookFilterOptions struct {
+	Sort      SortField
+	Direction SortDirection
+
+	// Pagination options.
+	Page    int
+	PerPage int
+}
+
+// Clone duplicates the given options.
+func (o *PlaybookFilterOptions) Clone() PlaybookFilterOptions {
+	return *o
+}
+
+// Validate returns a new, validated filter options or returns an error if invalid.
+func (o PlaybookFilterOptions) Validate() (PlaybookFilterOptions, error) {
+	options := o.Clone()
+
+	if options.PerPage <= 0 {
+		options.PerPage = PerPageDefault
+	}
+
+	options.Sort = SortField(strings.ToLower(string(options.Sort)))
+	switch options.Sort {
+	case SortByID:
+	case SortByTitle:
+	case SortByStages:
+	case SortBySteps:
+	case "": // default
+		options.Sort = SortByID
+	default:
+		return PlaybookFilterOptions{}, errors.Errorf("unsupported sort '%s'", options.Sort)
+	}
+
+	options.Direction = SortDirection(strings.ToUpper(string(options.Direction)))
+	switch options.Direction {
+	case DirectionAsc:
+	case DirectionDesc:
+	case "": //default
+		options.Direction = DirectionAsc
+	default:
+		return PlaybookFilterOptions{}, errors.Errorf("unsupported direction '%s'", options.Direction)
+	}
+
+	return options, nil
 }

@@ -1,4 +1,4 @@
-package incident
+package app
 
 import (
 	"bytes"
@@ -15,8 +15,6 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/model"
 
@@ -30,16 +28,16 @@ const (
 	noAssigneeName         = "No Assignee"
 )
 
-// ServiceImpl holds the information needed by the IncidentService's methods to complete their functions.
-type ServiceImpl struct {
+// IncidentServiceImpl holds the information needed by the IncidentService's methods to complete their functions.
+type IncidentServiceImpl struct {
 	pluginAPI     *pluginapi.Client
 	httpClient    *http.Client
 	configService config.Service
-	store         Store
+	store         IncidentStore
 	poster        bot.Poster
 	logger        bot.Logger
 	scheduler     JobOnceScheduler
-	telemetry     Telemetry
+	telemetry     IncidentTelemetry
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -77,10 +75,10 @@ const DialogFieldItemDescriptionKey = "description"
 // DialogFieldCommandKey is the key for the command in AddChecklistItemDialog
 const DialogFieldItemCommandKey = "command"
 
-// NewService creates a new incident ServiceImpl.
-func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, logger bot.Logger,
-	configService config.Service, scheduler JobOnceScheduler, telemetry Telemetry) *ServiceImpl {
-	return &ServiceImpl{
+// NewIncidentService creates a new incident IncidentServiceImpl.
+func NewIncidentService(pluginAPI *pluginapi.Client, store IncidentStore, poster bot.Poster, logger bot.Logger,
+	configService config.Service, scheduler JobOnceScheduler, telemetry IncidentTelemetry) *IncidentServiceImpl {
+	return &IncidentServiceImpl{
 		pluginAPI:     pluginAPI,
 		store:         store,
 		poster:        poster,
@@ -93,24 +91,24 @@ func NewService(pluginAPI *pluginapi.Client, store Store, poster bot.Poster, log
 }
 
 // GetIncidents returns filtered incidents and the total count before paging.
-func (s *ServiceImpl) GetIncidents(requesterInfo permissions.RequesterInfo, options FilterOptions) (*GetIncidentsResults, error) {
+func (s *IncidentServiceImpl) GetIncidents(requesterInfo RequesterInfo, options IncidentFilterOptions) (*GetIncidentsResults, error) {
 	return s.store.GetIncidents(requesterInfo, options)
 }
 
-func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, owner *model.User) error {
-	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+func (s *IncidentServiceImpl) broadcastIncidentCreation(incident *Incident, owner *model.User) error {
+	incidentChannel, err := s.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
 		return err
 	}
 
-	if err := permissions.IsChannelActiveInTeam(theIncident.AnnouncementChannelID, theIncident.TeamID, s.pluginAPI); err != nil {
+	if err := IsChannelActiveInTeam(incident.AnnouncementChannelID, incident.TeamID, s.pluginAPI); err != nil {
 		return err
 	}
 
 	announcementMsg := fmt.Sprintf("#### New Incident: ~%s\n", incidentChannel.Name)
 	announcementMsg += fmt.Sprintf("**Owner**: @%s\n", owner.Username)
 
-	if _, err := s.poster.PostMessage(theIncident.AnnouncementChannelID, announcementMsg); err != nil {
+	if _, err := s.poster.PostMessage(incident.AnnouncementChannelID, announcementMsg); err != nil {
 		return err
 	}
 
@@ -119,33 +117,33 @@ func (s *ServiceImpl) broadcastIncidentCreation(theIncident *Incident, owner *mo
 
 // sendWebhookOnCreation sends a POST request to the creation webhook URL.
 // It blocks until a response is received.
-func (s *ServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
+func (s *IncidentServiceImpl) sendWebhookOnCreation(incident Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on creation, please set siteURL")
 		return errors.New("Could not send webhook, please set siteURL")
 	}
 
-	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	team, err := s.pluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		return err
 	}
 
-	channel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	channel, err := s.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
 		return err
 	}
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, theIncident.ID)
+	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, incident.ID)
 
 	payload := struct {
 		Incident
 		ChannelURL string `json:"channel_url"`
 		DetailsURL string `json:"details_url"`
 	}{
-		Incident:   theIncident,
+		Incident:   incident,
 		ChannelURL: channelURL,
 		DetailsURL: detailsURL,
 	}
@@ -155,7 +153,7 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", theIncident.WebhookOnCreationURL, bytes.NewReader(body))
+	req, err := http.NewRequest("POST", incident.WebhookOnCreationURL, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -177,20 +175,20 @@ func (s *ServiceImpl) sendWebhookOnCreation(theIncident Incident) error {
 }
 
 // CreateIncident creates a new incident. userID is the user who initiated the CreateIncident.
-func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, userID string, public bool) (*Incident, error) {
-	if incdnt.DefaultOwnerID != "" {
+func (s *IncidentServiceImpl) CreateIncident(incident *Incident, pb *Playbook, userID string, public bool) (*Incident, error) {
+	if incident.DefaultOwnerID != "" {
 		// Check if the user is a member of the incident's team
-		if !permissions.IsMemberOfTeamID(incdnt.DefaultOwnerID, incdnt.TeamID, s.pluginAPI) {
-			s.pluginAPI.Log.Warn("default owner specified, but it is not a member of the incident's team", "userID", incdnt.DefaultOwnerID, "teamID", incdnt.TeamID)
+		if !IsMemberOfTeamID(incident.DefaultOwnerID, incident.TeamID, s.pluginAPI) {
+			s.pluginAPI.Log.Warn("default owner specified, but it is not a member of the incident's team", "userID", incident.DefaultOwnerID, "teamID", incident.TeamID)
 		} else {
-			incdnt.OwnerUserID = incdnt.DefaultOwnerID
+			incident.OwnerUserID = incident.DefaultOwnerID
 		}
 	}
 
-	incdnt.ReporterUserID = userID
-	incdnt.ID = model.NewId()
+	incident.ReporterUserID = userID
+	incident.ID = model.NewId()
 
-	team, err := s.pluginAPI.Team.Get(incdnt.TeamID)
+	team, err := s.pluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch team")
 	}
@@ -204,45 +202,47 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 
 	header := "This is an incident channel. To view more information, select the shield icon then select *Tasks* or *Overview*."
 	if siteURL != "" && pb != nil {
-		overviewURL = fmt.Sprintf("%s/%s/%s/incidents/%s", siteURL, team.Name, s.configService.GetManifest().Id, incdnt.ID)
+		overviewURL = fmt.Sprintf("%s/%s/%s/incidents/%s", siteURL, team.Name, s.configService.GetManifest().Id, incident.ID)
 		playbookURL = fmt.Sprintf("%s/%s/%s/playbooks/%s", siteURL, team.Name, s.configService.GetManifest().Id, pb.ID)
 		header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
 			pb.Title, playbookURL, overviewURL)
 	}
 
 	// Try to create the channel first
-	channel, err := s.createIncidentChannel(incdnt, header, public)
+	channel, err := s.createIncidentChannel(incident, header, public)
 	if err != nil {
 		return nil, err
 	}
 
-	incdnt.ChannelID = channel.Id
-	incdnt.CreateAt = model.GetMillis()
-	incdnt.CurrentStatus = StatusReported
+	now := model.GetMillis()
+	incident.ChannelID = channel.Id
+	incident.CreateAt = now
+	incident.LastStatusUpdateAt = now
+	incident.CurrentStatus = StatusReported
 	if pb != nil {
-		incdnt.ExportChannelOnArchiveEnabled = pb.ExportChannelOnArchiveEnabled
+		incident.ExportChannelOnArchiveEnabled = pb.ExportChannelOnArchiveEnabled
 	}
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
-	if incdnt.PlaybookID == "" {
-		incdnt.Checklists = []playbook.Checklist{
+	if incident.PlaybookID == "" {
+		incident.Checklists = []Checklist{
 			{
 				Title: "Checklist",
-				Items: []playbook.ChecklistItem{},
+				Items: []ChecklistItem{},
 			},
 		}
 	}
 
-	incdnt, err = s.store.CreateIncident(incdnt)
+	incident, err = s.store.CreateIncident(incident)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create incident")
 	}
 
-	s.telemetry.CreateIncident(incdnt, userID, public)
+	s.telemetry.CreateIncident(incident, userID, public)
 
-	invitedUserIDs := incdnt.InvitedUserIDs
+	invitedUserIDs := incident.InvitedUserIDs
 
-	for _, groupID := range incdnt.InvitedGroupIDs {
+	for _, groupID := range incident.InvitedGroupIDs {
 		var group *model.Group
 		group, err = s.pluginAPI.Group.Get(groupID)
 		if err != nil {
@@ -276,13 +276,13 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 	usersFailedToInvite := []string{}
 	for _, userID := range invitedUserIDs {
 		// Check if the user is a member of the incident's team
-		_, err = s.pluginAPI.Team.GetMember(incdnt.TeamID, userID)
+		_, err = s.pluginAPI.Team.GetMember(incident.TeamID, userID)
 		if err != nil {
 			usersFailedToInvite = append(usersFailedToInvite, userID)
 			continue
 		}
 
-		_, err = s.pluginAPI.Channel.AddUser(incdnt.ChannelID, userID, s.configService.GetConfiguration().BotUserID)
+		_, err = s.pluginAPI.Channel.AddUser(incident.ChannelID, userID, s.configService.GetConfiguration().BotUserID)
 		if err != nil {
 			usersFailedToInvite = append(usersFailedToInvite, userID)
 			continue
@@ -313,18 +313,18 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 		}
 	}
 
-	reporter, err := s.pluginAPI.User.Get(incdnt.ReporterUserID)
+	reporter, err := s.pluginAPI.User.Get(incident.ReporterUserID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.ReporterUserID)
+		return nil, errors.Wrapf(err, "failed to resolve user %s", incident.ReporterUserID)
 	}
 
-	owner, err := s.pluginAPI.User.Get(incdnt.OwnerUserID)
+	owner, err := s.pluginAPI.User.Get(incident.OwnerUserID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", incdnt.OwnerUserID)
+		return nil, errors.Wrapf(err, "failed to resolve user %s", incident.OwnerUserID)
 	}
 
 	startMessage := fmt.Sprintf("This incident has been started and is commanded by @%s.", reporter.Username)
-	if incdnt.OwnerUserID != incdnt.ReporterUserID {
+	if incident.OwnerUserID != incident.ReporterUserID {
 		startMessage = fmt.Sprintf("This incident has been started by @%s and is commanded by @%s.", reporter.Username, owner.Username)
 	}
 
@@ -333,9 +333,9 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
 	}
 
-	if incdnt.AnnouncementChannelID != "" {
-		if err2 := s.broadcastIncidentCreation(incdnt, owner); err2 != nil {
-			s.pluginAPI.Log.Warn("failed to broadcast the incident creation to channel", "ChannelID", incdnt.AnnouncementChannelID)
+	if incident.AnnouncementChannelID != "" {
+		if err2 := s.broadcastIncidentCreation(incident, owner); err2 != nil {
+			s.pluginAPI.Log.Warn("failed to broadcast the incident creation to channel", "ChannelID", incident.AnnouncementChannelID)
 
 			if _, err = s.poster.PostMessage(channel.Id, "Failed to announce the creation of this incident in the configured channel."); err != nil {
 				return nil, errors.Wrapf(err, "failed to post to incident channel")
@@ -344,39 +344,39 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 	}
 
 	event := &TimelineEvent{
-		IncidentID:    incdnt.ID,
-		CreateAt:      incdnt.CreateAt,
-		EventAt:       incdnt.CreateAt,
+		IncidentID:    incident.ID,
+		CreateAt:      incident.CreateAt,
+		EventAt:       incident.CreateAt,
 		EventType:     IncidentCreated,
 		PostID:        newPost.Id,
-		SubjectUserID: incdnt.ReporterUserID,
+		SubjectUserID: incident.ReporterUserID,
 	}
 
 	if _, err = s.store.CreateTimelineEvent(event); err != nil {
-		return incdnt, errors.Wrap(err, "failed to create timeline event")
+		return incident, errors.Wrap(err, "failed to create timeline event")
 	}
-	incdnt.TimelineEvents = append(incdnt.TimelineEvents, *event)
+	incident.TimelineEvents = append(incident.TimelineEvents, *event)
 
-	if incdnt.WebhookOnCreationURL != "" {
+	if incident.WebhookOnCreationURL != "" {
 		go func() {
-			if err = s.sendWebhookOnCreation(*incdnt); err != nil {
-				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incdnt.WebhookOnCreationURL, "error", err)
+			if err = s.sendWebhookOnCreation(*incident); err != nil {
+				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", incident.WebhookOnCreationURL, "error", err)
 				_, _ = s.poster.PostMessage(channel.Id, "Incident creation announcement through the outgoing webhook failed. Contact your System Admin for more information.")
 			}
 		}()
 	}
 
-	if incdnt.PostID == "" {
-		return incdnt, nil
+	if incident.PostID == "" {
+		return incident, nil
 	}
 
 	// Post the content and link of the original post
-	post, err := s.pluginAPI.Post.GetPost(incdnt.PostID)
+	post, err := s.pluginAPI.Post.GetPost(incident.PostID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get incident original post")
 	}
 
-	postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, incdnt.PostID)
+	postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, incident.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
 	_, err = s.poster.PostMessage(channel.Id, postMessage)
@@ -384,11 +384,11 @@ func (s *ServiceImpl) CreateIncident(incdnt *Incident, pb *playbook.Playbook, us
 		return nil, errors.Wrapf(err, "failed to post to incident channel")
 	}
 
-	return incdnt, nil
+	return incident, nil
 }
 
 // OpenCreateIncidentDialog opens a interactive dialog to start a new incident.
-func (s *ServiceImpl) OpenCreateIncidentDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) error {
+func (s *IncidentServiceImpl) OpenCreateIncidentDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error {
 	dialog, err := s.newIncidentDialog(teamID, ownerID, postID, clientID, playbooks, isMobileApp)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new incident dialog")
@@ -408,7 +408,7 @@ func (s *ServiceImpl) OpenCreateIncidentDialog(teamID, ownerID, triggerID, postI
 	return nil
 }
 
-func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string) error {
+func (s *IncidentServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string) error {
 	currentIncident, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve incident")
@@ -447,13 +447,15 @@ func (s *ServiceImpl) OpenUpdateStatusDialog(incidentID string, triggerID string
 	return nil
 }
 
-func (s *ServiceImpl) OpenAddToTimelineDialog(requesterInfo permissions.RequesterInfo, postID, teamID, triggerID string) error {
-	options := FilterOptions{
+func (s *IncidentServiceImpl) OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error {
+	options := IncidentFilterOptions{
 		TeamID:    teamID,
 		MemberID:  requesterInfo.UserID,
 		Sort:      SortByCreateAt,
 		Direction: DirectionDesc,
 		Statuses:  []string{StatusReported, StatusActive, StatusResolved},
+		Page:      0,
+		PerPage:   PerPageDefault,
 	}
 
 	result, err := s.GetIncidents(requesterInfo, options)
@@ -480,7 +482,7 @@ func (s *ServiceImpl) OpenAddToTimelineDialog(requesterInfo permissions.Requeste
 	return nil
 }
 
-func (s *ServiceImpl) OpenAddChecklistItemDialog(triggerID, incidentID string, checklist int) error {
+func (s *IncidentServiceImpl) OpenAddChecklistItemDialog(triggerID, incidentID string, checklist int) error {
 	dialog := &model.Dialog{
 		Title: "Add New Task",
 		Elements: []model.DialogElement{
@@ -516,7 +518,7 @@ func (s *ServiceImpl) OpenAddChecklistItemDialog(triggerID, incidentID string, c
 	return nil
 }
 
-func (s *ServiceImpl) AddPostToTimeline(incidentID, userID, postID, summary string) error {
+func (s *IncidentServiceImpl) AddPostToTimeline(incidentID, userID, postID, summary string) error {
 	post, err := s.pluginAPI.Post.GetPost(postID)
 	if err != nil {
 		return errors.Wrap(err, "failed to find post")
@@ -554,7 +556,7 @@ func (s *ServiceImpl) AddPostToTimeline(incidentID, userID, postID, summary stri
 }
 
 // RemoveTimelineEvent removes the timeline event (sets the DeleteAt to the current time).
-func (s *ServiceImpl) RemoveTimelineEvent(incidentID, userID, eventID string) error {
+func (s *IncidentServiceImpl) RemoveTimelineEvent(incidentID, userID, eventID string) error {
 	event, err := s.store.GetTimelineEvent(incidentID, eventID)
 	if err != nil {
 		return err
@@ -579,13 +581,13 @@ func (s *ServiceImpl) RemoveTimelineEvent(incidentID, userID, eventID string) er
 	return nil
 }
 
-func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *Incident, authorID, originalPostID string) error {
-	incidentChannel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+func (s *IncidentServiceImpl) broadcastStatusUpdate(statusUpdate string, incident *Incident, authorID, originalPostID string) error {
+	incidentChannel, err := s.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
 		return err
 	}
 
-	incidentTeam, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	incidentTeam, err := s.pluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		return err
 	}
@@ -595,14 +597,14 @@ func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *In
 		return err
 	}
 
-	duration := timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())
+	duration := timeutils.DurationString(timeutils.GetTimeForMillis(incident.CreateAt), time.Now())
 
 	broadcastedMsg := fmt.Sprintf("# Incident Update: [%s](/%s/pl/%s)\n", incidentChannel.DisplayName, incidentTeam.Name, originalPostID)
-	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, theIncident.CurrentStatus)
+	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, incident.CurrentStatus)
 	broadcastedMsg += "***\n"
 	broadcastedMsg += statusUpdate
 
-	if _, err := s.poster.PostMessage(theIncident.BroadcastChannelID, broadcastedMsg); err != nil {
+	if _, err := s.poster.PostMessage(incident.BroadcastChannelID, broadcastedMsg); err != nil {
 		return err
 	}
 
@@ -611,33 +613,33 @@ func (s *ServiceImpl) broadcastStatusUpdate(statusUpdate string, theIncident *In
 
 // sendWebhookOnUpdateStatus sends a POST request to the status update webhook URL.
 // It blocks until a response is received.
-func (s *ServiceImpl) sendWebhookOnUpdateStatus(theIncident Incident) error {
+func (s *IncidentServiceImpl) sendWebhookOnUpdateStatus(incident Incident) error {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on update, please set siteURL")
 		return errors.New("siteURL not set")
 	}
 
-	team, err := s.pluginAPI.Team.Get(theIncident.TeamID)
+	team, err := s.pluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		return err
 	}
 
-	channel, err := s.pluginAPI.Channel.Get(theIncident.ChannelID)
+	channel, err := s.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
 		return err
 	}
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, theIncident.ID)
+	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, incident.ID)
 
 	payload := struct {
 		Incident
 		ChannelURL string `json:"channel_url"`
 		DetailsURL string `json:"details_url"`
 	}{
-		Incident:   theIncident,
+		Incident:   incident,
 		ChannelURL: channelURL,
 		DetailsURL: detailsURL,
 	}
@@ -647,7 +649,7 @@ func (s *ServiceImpl) sendWebhookOnUpdateStatus(theIncident Incident) error {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", theIncident.WebhookOnStatusUpdateURL, bytes.NewReader(body))
+	req, err := http.NewRequest("POST", incident.WebhookOnStatusUpdateURL, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -668,7 +670,7 @@ func (s *ServiceImpl) sendWebhookOnUpdateStatus(theIncident Incident) error {
 }
 
 // UpdateStatus updates an incident's status.
-func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error {
+func (s *IncidentServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpdateOptions) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve incident")
@@ -697,6 +699,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 
 	incidentToModify.PreviousReminder = options.Reminder
 	incidentToModify.Description = options.Description
+	incidentToModify.LastStatusUpdateAt = post.CreateAt
 
 	if err = s.store.UpdateIncident(incidentToModify); err != nil {
 		return errors.Wrap(err, "failed to update incident")
@@ -816,7 +819,7 @@ func (s *ServiceImpl) UpdateStatus(incidentID, userID string, options StatusUpda
 	return nil
 }
 
-func (s *ServiceImpl) postRetrospectiveReminder(incident *Incident, isInitial bool) error {
+func (s *IncidentServiceImpl) postRetrospectiveReminder(incident *Incident, isInitial bool) error {
 	team, err := s.pluginAPI.Team.Get(incident.TeamID)
 	if err != nil {
 		return err
@@ -857,12 +860,12 @@ func (s *ServiceImpl) postRetrospectiveReminder(incident *Incident, isInitial bo
 }
 
 // GetIncident gets an incident by ID. Returns error if it could not be found.
-func (s *ServiceImpl) GetIncident(incidentID string) (*Incident, error) {
+func (s *IncidentServiceImpl) GetIncident(incidentID string) (*Incident, error) {
 	return s.store.GetIncident(incidentID)
 }
 
 // GetIncidentMetadata gets ancillary metadata about an incident.
-func (s *ServiceImpl) GetIncidentMetadata(incidentID string) (*Metadata, error) {
+func (s *IncidentServiceImpl) GetIncidentMetadata(incidentID string) (*Metadata, error) {
 	incident, err := s.GetIncident(incidentID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve incident '%s'", incidentID)
@@ -894,7 +897,7 @@ func (s *ServiceImpl) GetIncidentMetadata(incidentID string) (*Metadata, error) 
 
 // GetIncidentIDForChannel get the incidentID associated with this channel. Returns ErrNotFound
 // if there is no incident associated with this channel.
-func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) {
+func (s *IncidentServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) {
 	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
 	if err != nil {
 		return "", err
@@ -903,22 +906,22 @@ func (s *ServiceImpl) GetIncidentIDForChannel(channelID string) (string, error) 
 }
 
 // GetOwners returns all the owners of the incidents selected by options
-func (s *ServiceImpl) GetOwners(requesterInfo permissions.RequesterInfo, options FilterOptions) ([]OwnerInfo, error) {
+func (s *IncidentServiceImpl) GetOwners(requesterInfo RequesterInfo, options IncidentFilterOptions) ([]OwnerInfo, error) {
 	return s.store.GetOwners(requesterInfo, options)
 }
 
 // IsOwner returns true if the userID is the owner for incidentID.
-func (s *ServiceImpl) IsOwner(incidentID, userID string) bool {
-	incdnt, err := s.store.GetIncident(incidentID)
+func (s *IncidentServiceImpl) IsOwner(incidentID, userID string) bool {
+	incident, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return false
 	}
-	return incdnt.OwnerUserID == userID
+	return incident.OwnerUserID == userID
 }
 
 // ChangeOwner processes a request from userID to change the owner for incidentID
 // to ownerID. Changing to the same ownerID is a no-op.
-func (s *ServiceImpl) ChangeOwner(incidentID, userID, ownerID string) error {
+func (s *IncidentServiceImpl) ChangeOwner(incidentID, userID, ownerID string) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return err
@@ -975,13 +978,13 @@ func (s *ServiceImpl) ChangeOwner(incidentID, userID, ownerID string) error {
 
 // ModifyCheckedState checks or unchecks the specified checklist item. Idempotent, will not perform
 // any action if the checklist item is already in the given checked state
-func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, checklistNumber, itemNumber int) error {
+func (s *IncidentServiceImpl) ModifyCheckedState(incidentID, userID, newState string, checklistNumber, itemNumber int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
 	}
 
-	if !playbook.IsValidChecklistItemIndex(incidentToModify.Checklists, checklistNumber, itemNumber) {
+	if !IsValidChecklistItemIndex(incidentToModify.Checklists, checklistNumber, itemNumber) {
 		return errors.New("invalid checklist item indicies")
 	}
 
@@ -994,7 +997,7 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 	// from the notification message.
 	mainChannelID := incidentToModify.ChannelID
 	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(itemToCheck.Title))
-	if newState == playbook.ChecklistItemStateOpen {
+	if newState == ChecklistItemStateOpen {
 		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 	post, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
@@ -1035,20 +1038,20 @@ func (s *ServiceImpl) ModifyCheckedState(incidentID, userID, newState string, ch
 }
 
 // ToggleCheckedState checks or unchecks the specified checklist item
-func (s *ServiceImpl) ToggleCheckedState(incidentID, userID string, checklistNumber, itemNumber int) error {
+func (s *IncidentServiceImpl) ToggleCheckedState(incidentID, userID string, checklistNumber, itemNumber int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
 	}
 
-	if !playbook.IsValidChecklistItemIndex(incidentToModify.Checklists, checklistNumber, itemNumber) {
+	if !IsValidChecklistItemIndex(incidentToModify.Checklists, checklistNumber, itemNumber) {
 		return errors.New("invalid checklist item indices")
 	}
 
-	isOpen := incidentToModify.Checklists[checklistNumber].Items[itemNumber].State == playbook.ChecklistItemStateOpen
-	newState := playbook.ChecklistItemStateOpen
+	isOpen := incidentToModify.Checklists[checklistNumber].Items[itemNumber].State == ChecklistItemStateOpen
+	newState := ChecklistItemStateOpen
 	if isOpen {
-		newState = playbook.ChecklistItemStateClosed
+		newState = ChecklistItemStateClosed
 	}
 
 	return s.ModifyCheckedState(incidentID, userID, newState, checklistNumber, itemNumber)
@@ -1056,13 +1059,13 @@ func (s *ServiceImpl) ToggleCheckedState(incidentID, userID string, checklistNum
 
 // SetAssignee sets the assignee for the specified checklist item
 // Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
-func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checklistNumber, itemNumber int) error {
+func (s *IncidentServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checklistNumber, itemNumber int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
 	}
 
-	if !playbook.IsValidChecklistItemIndex(incidentToModify.Checklists, checklistNumber, itemNumber) {
+	if !IsValidChecklistItemIndex(incidentToModify.Checklists, checklistNumber, itemNumber) {
 		return errors.New("invalid checklist item indices")
 	}
 
@@ -1134,13 +1137,13 @@ func (s *ServiceImpl) SetAssignee(incidentID, userID, assigneeID string, checkli
 
 // RunChecklistItemSlashCommand executes the slash command associated with the specified checklist
 // item.
-func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) (string, error) {
+func (s *IncidentServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, checklistNumber, itemNumber int) (string, error) {
 	incident, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return "", err
 	}
 
-	if !playbook.IsValidChecklistItemIndex(incident.Checklists, checklistNumber, itemNumber) {
+	if !IsValidChecklistItemIndex(incident.Checklists, checklistNumber, itemNumber) {
 		return "", errors.New("invalid checklist item indices")
 	}
 
@@ -1196,7 +1199,7 @@ func (s *ServiceImpl) RunChecklistItemSlashCommand(incidentID, userID string, ch
 }
 
 // AddChecklistItem adds an item to the specified checklist
-func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem playbook.ChecklistItem) error {
+func (s *IncidentServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumber int, checklistItem ChecklistItem) error {
 	incidentToModify, err := s.checklistParamsVerify(incidentID, userID, checklistNumber)
 	if err != nil {
 		return err
@@ -1215,7 +1218,7 @@ func (s *ServiceImpl) AddChecklistItem(incidentID, userID string, checklistNumbe
 }
 
 // RemoveChecklistItem removes the item at the given index from the given checklist
-func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNumber, itemNumber int) error {
+func (s *IncidentServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNumber, itemNumber int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -1238,7 +1241,7 @@ func (s *ServiceImpl) RemoveChecklistItem(incidentID, userID string, checklistNu
 }
 
 // EditChecklistItem changes the title of a specified checklist item
-func (s *ServiceImpl) EditChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle, newCommand, newDescription string) error {
+func (s *IncidentServiceImpl) EditChecklistItem(incidentID, userID string, checklistNumber, itemNumber int, newTitle, newCommand, newDescription string) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -1260,7 +1263,7 @@ func (s *ServiceImpl) EditChecklistItem(incidentID, userID string, checklistNumb
 }
 
 // MoveChecklistItem moves a checklist item to a new location
-func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumber, itemNumber, newLocation int) error {
+func (s *IncidentServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumber, itemNumber, newLocation int) error {
 	incidentToModify, err := s.checklistItemParamsVerify(incidentID, userID, checklistNumber, itemNumber)
 	if err != nil {
 		return err
@@ -1276,7 +1279,7 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 	// Delete item to move
 	checklist = append(checklist[:itemNumber], checklist[itemNumber+1:]...)
 	// Insert item in new location
-	checklist = append(checklist, playbook.ChecklistItem{})
+	checklist = append(checklist, ChecklistItem{})
 	copy(checklist[newLocation+1:], checklist[newLocation:])
 	checklist[newLocation] = itemMoved
 	incidentToModify.Checklists[checklistNumber].Items = checklist
@@ -1292,15 +1295,15 @@ func (s *ServiceImpl) MoveChecklistItem(incidentID, userID string, checklistNumb
 }
 
 // GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
-func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
-	theIncident, err := s.store.GetIncident(incidentID)
+func (s *IncidentServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
+	incident, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve incident")
 	}
 
 	ret := make([]model.AutocompleteListItem, 0)
 
-	for i, checklist := range theIncident.Checklists {
+	for i, checklist := range incident.Checklists {
 		ret = append(ret, model.AutocompleteListItem{
 			Item: fmt.Sprintf("%d", i),
 			Hint: fmt.Sprintf("\"%s\"", stripmd.Strip(checklist.Title)),
@@ -1311,15 +1314,15 @@ func (s *ServiceImpl) GetChecklistAutocomplete(incidentID string) ([]model.Autoc
 }
 
 // GetChecklistAutocomplete returns the list of checklist items for incidentID to be used in autocomplete
-func (s *ServiceImpl) GetChecklistItemAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
-	theIncident, err := s.store.GetIncident(incidentID)
+func (s *IncidentServiceImpl) GetChecklistItemAutocomplete(incidentID string) ([]model.AutocompleteListItem, error) {
+	incident, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve incident")
 	}
 
 	ret := make([]model.AutocompleteListItem, 0)
 
-	for i, checklist := range theIncident.Checklists {
+	for i, checklist := range incident.Checklists {
 		for j, item := range checklist.Items {
 			ret = append(ret, model.AutocompleteListItem{
 				Item: fmt.Sprintf("%d %d", i, j),
@@ -1331,7 +1334,7 @@ func (s *ServiceImpl) GetChecklistItemAutocomplete(incidentID string) ([]model.A
 	return ret, nil
 }
 
-func (s *ServiceImpl) checklistParamsVerify(incidentID, userID string, checklistNumber int) (*Incident, error) {
+func (s *IncidentServiceImpl) checklistParamsVerify(incidentID, userID string, checklistNumber int) (*Incident, error) {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve incident")
@@ -1348,7 +1351,7 @@ func (s *ServiceImpl) checklistParamsVerify(incidentID, userID string, checklist
 	return incidentToModify, nil
 }
 
-func (s *ServiceImpl) modificationMessage(userID, channelID, message string) (*model.Post, error) {
+func (s *IncidentServiceImpl) modificationMessage(userID, channelID, message string) (*model.Post, error) {
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to to resolve user %s", userID)
@@ -1362,7 +1365,7 @@ func (s *ServiceImpl) modificationMessage(userID, channelID, message string) (*m
 	return post, nil
 }
 
-func (s *ServiceImpl) checklistItemParamsVerify(incidentID, userID string, checklistNumber, itemNumber int) (*Incident, error) {
+func (s *IncidentServiceImpl) checklistItemParamsVerify(incidentID, userID string, checklistNumber, itemNumber int) (*Incident, error) {
 	incidentToModify, err := s.checklistParamsVerify(incidentID, userID, checklistNumber)
 	if err != nil {
 		return nil, err
@@ -1376,18 +1379,18 @@ func (s *ServiceImpl) checklistItemParamsVerify(incidentID, userID string, check
 }
 
 // NukeDB removes all incident related data.
-func (s *ServiceImpl) NukeDB() error {
+func (s *IncidentServiceImpl) NukeDB() error {
 	return s.store.NukeDB()
 }
 
 // ChangeCreationDate changes the creation date of the incident.
-func (s *ServiceImpl) ChangeCreationDate(incidentID string, creationTimestamp time.Time) error {
+func (s *IncidentServiceImpl) ChangeCreationDate(incidentID string, creationTimestamp time.Time) error {
 	return s.store.ChangeCreationDate(incidentID, creationTimestamp)
 }
 
 // UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
 // was invited by actorID.
-func (s *ServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
+func (s *IncidentServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
 
 	if err != nil {
@@ -1439,8 +1442,8 @@ func (s *ServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 }
 
 // CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
-// theIncident.MessageOnJoin if it exists. Returns true if the message was sent.
-func (s *ServiceImpl) CheckAndSendMessageOnJoin(userID, givenIncidentID, channelID string) bool {
+// incident.MessageOnJoin if it exists. Returns true if the message was sent.
+func (s *IncidentServiceImpl) CheckAndSendMessageOnJoin(userID, givenIncidentID, channelID string) bool {
 	hasViewed := s.store.HasViewedChannel(userID, channelID)
 
 	if hasViewed {
@@ -1458,7 +1461,7 @@ func (s *ServiceImpl) CheckAndSendMessageOnJoin(userID, givenIncidentID, channel
 		return false
 	}
 
-	theIncident, err := s.store.GetIncident(incidentID)
+	incident, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		s.logger.Errorf("failed to resolve incident for incidentID: %s; error: %s", incidentID, err.Error())
 		return false
@@ -1469,9 +1472,9 @@ func (s *ServiceImpl) CheckAndSendMessageOnJoin(userID, givenIncidentID, channel
 		return errors.Is(err, ErrDuplicateEntry)
 	}
 
-	if theIncident.MessageOnJoin != "" {
+	if incident.MessageOnJoin != "" {
 		s.poster.EphemeralPost(userID, channelID, &model.Post{
-			Message: theIncident.MessageOnJoin,
+			Message: incident.MessageOnJoin,
 		})
 	}
 
@@ -1480,7 +1483,7 @@ func (s *ServiceImpl) CheckAndSendMessageOnJoin(userID, givenIncidentID, channel
 
 // UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
 // was removed from the channel by actorID.
-func (s *ServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
+func (s *IncidentServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
 	incidentID, err := s.store.GetIncidentIDForChannel(channelID)
 
 	if err != nil {
@@ -1531,22 +1534,22 @@ func (s *ServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
 	_ = s.sendIncidentToClient(incidentID)
 }
 
-func (s *ServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID string) bool {
+func (s *IncidentServiceImpl) hasPermissionToModifyIncident(incident *Incident, userID string) bool {
 	// Incident main channel membership is required to modify incident
 	return s.pluginAPI.User.HasPermissionToChannel(userID, incident.ChannelID, model.PERMISSION_READ_CHANNEL)
 }
 
-func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, header string, public bool) (*model.Channel, error) {
+func (s *IncidentServiceImpl) createIncidentChannel(incident *Incident, header string, public bool) (*model.Channel, error) {
 	channelType := model.CHANNEL_PRIVATE
 	if public {
 		channelType = model.CHANNEL_OPEN
 	}
 
 	channel := &model.Channel{
-		TeamId:      incdnt.TeamID,
+		TeamId:      incident.TeamID,
 		Type:        channelType,
-		DisplayName: incdnt.Name,
-		Name:        cleanChannelName(incdnt.Name),
+		DisplayName: incident.Name,
+		Name:        cleanChannelName(incident.Name),
 		Header:      header,
 	}
 
@@ -1585,24 +1588,24 @@ func (s *ServiceImpl) createIncidentChannel(incdnt *Incident, header string, pub
 		return nil, errors.Wrapf(err, "failed to add bot to the channel")
 	}
 
-	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incident.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 		return nil, errors.Wrapf(err, "failed to add reporter to the channel")
 	}
 
-	if incdnt.OwnerUserID != incdnt.ReporterUserID {
-		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incdnt.OwnerUserID, s.configService.GetConfiguration().BotUserID); err != nil {
+	if incident.OwnerUserID != incident.ReporterUserID {
+		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, incident.OwnerUserID, s.configService.GetConfiguration().BotUserID); err != nil {
 			return nil, errors.Wrapf(err, "failed to add owner to channel")
 		}
 	}
 
-	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, incdnt.OwnerUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
-		s.pluginAPI.Log.Warn("failed to promote owner to admin", "ChannelID", channel.Id, "OwnerUserID", incdnt.OwnerUserID, "err", err.Error())
+	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, incident.OwnerUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
+		s.pluginAPI.Log.Warn("failed to promote owner to admin", "ChannelID", channel.Id, "OwnerUserID", incident.OwnerUserID, "err", err.Error())
 	}
 
 	return channel, nil
 }
 
-func (s *ServiceImpl) newIncidentDialog(teamID, ownerID, postID, clientID string, playbooks []playbook.Playbook, isMobileApp bool) (*model.Dialog, error) {
+func (s *IncidentServiceImpl) newIncidentDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) (*model.Dialog, error) {
 	team, err := s.pluginAPI.Team.Get(teamID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch team")
@@ -1641,6 +1644,12 @@ func (s *ServiceImpl) newIncidentDialog(teamID, ownerID, postID, clientID string
 
 	introText := fmt.Sprintf("**Owner:** %v\n\nPlaybooks are necessary to start an incident.%s", getUserDisplayName(user), newPlaybookMarkdown)
 
+	defaultOption := ""
+
+	if len(options) == 1 {
+		defaultOption = options[0].Value
+	}
+
 	return &model.Dialog{
 		Title:            "Incident Details",
 		IntroductionText: introText,
@@ -1650,6 +1659,7 @@ func (s *ServiceImpl) newIncidentDialog(teamID, ownerID, postID, clientID string
 				Name:        DialogFieldPlaybookIDKey,
 				Type:        "select",
 				Options:     options,
+				Default:     defaultOption,
 			},
 			{
 				DisplayName: "Incident Name",
@@ -1665,7 +1675,7 @@ func (s *ServiceImpl) newIncidentDialog(teamID, ownerID, postID, clientID string
 	}, nil
 }
 
-func (s *ServiceImpl) newUpdateIncidentDialog(description, message, broadcastChannelID, status string, reminderTimer time.Duration) (*model.Dialog, error) {
+func (s *IncidentServiceImpl) newUpdateIncidentDialog(description, message, broadcastChannelID, status string, reminderTimer time.Duration) (*model.Dialog, error) {
 	introductionText := "Update your incident status."
 
 	broadcastChannel, err := s.pluginAPI.Channel.Get(broadcastChannelID)
@@ -1776,7 +1786,7 @@ func (s *ServiceImpl) newUpdateIncidentDialog(description, message, broadcastCha
 	}, nil
 }
 
-func (s *ServiceImpl) newAddToTimelineDialog(incidents []Incident, postID string) (*model.Dialog, error) {
+func (s *IncidentServiceImpl) newAddToTimelineDialog(incidents []Incident, postID string) (*model.Dialog, error) {
 	var options []*model.PostActionOptions
 	for _, i := range incidents {
 		options = append(options, &model.PostActionOptions{
@@ -1836,7 +1846,7 @@ func (s *ServiceImpl) newAddToTimelineDialog(incidents []Incident, postID string
 	}, nil
 }
 
-func (s *ServiceImpl) sendIncidentToClient(incidentID string) error {
+func (s *IncidentServiceImpl) sendIncidentToClient(incidentID string) error {
 	incidentToSend, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve incident")
@@ -1847,7 +1857,7 @@ func (s *ServiceImpl) sendIncidentToClient(incidentID string) error {
 	return nil
 }
 
-func (s *ServiceImpl) UpdateRetrospective(incidentID, updaterID, newRetrospective string) error {
+func (s *IncidentServiceImpl) UpdateRetrospective(incidentID, updaterID, newRetrospective string) error {
 	incidentToModify, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve incident")
@@ -1865,7 +1875,7 @@ func (s *ServiceImpl) UpdateRetrospective(incidentID, updaterID, newRetrospectiv
 	return nil
 }
 
-func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string) error {
+func (s *IncidentServiceImpl) PublishRetrospective(incidentID, text, publisherID string) error {
 	incidentToPublish, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve incident")
@@ -1920,7 +1930,7 @@ func (s *ServiceImpl) PublishRetrospective(incidentID, text, publisherID string)
 	return nil
 }
 
-func (s *ServiceImpl) CancelRetrospective(incidentID, cancelerID string) error {
+func (s *IncidentServiceImpl) CancelRetrospective(incidentID, cancelerID string) error {
 	incidentToCancel, err := s.store.GetIncident(incidentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve incident")

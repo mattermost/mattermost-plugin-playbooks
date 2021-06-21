@@ -7,6 +7,12 @@ import moment from 'moment';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import {Post} from 'mattermost-redux/types/posts';
+
+import {getPostIdsInCurrentChannel, getPostsInCurrentChannel} from 'mattermost-redux/selectors/entities/posts';
+
+import {GlobalState} from 'mattermost-redux/types/store';
+
 import {currentIncident} from 'src/selectors';
 
 import {navigateToUrl} from 'src/browser_routing';
@@ -40,12 +46,19 @@ interface ReminderCommonProps {
     header: string
     primary: string
     secondary: string
+    post: Post
 }
+
+const selectLatestReminderPost = (state: GlobalState) => getPostsInCurrentChannel(state)?.find((value: Post) => value.type.startsWith('custom_retro'));
 
 const ReminderCommon = (props: ReminderCommonProps) => {
     const incident = useSelector(currentIncident);
     const reminderDuration = incident?.retrospective_reminder_interval_seconds || 0;
+    const wasPublishedOrCanceled = incident?.retrospective_published_at !== 0;
     const currentTeam = useSelector(getCurrentTeam);
+    const latestReminderPost = useSelector(selectLatestReminderPost);
+
+    const disableButtons = wasPublishedOrCanceled || latestReminderPost?.id !== props.post.id;
 
     let reminderText = (
         <>{'You will not be reminded again.'}</>
@@ -68,11 +81,13 @@ const ReminderCommon = (props: ReminderCommonProps) => {
                 <CustomPostButtonRow>
                     <PrimaryButton
                         onClick={() => navigateToUrl(`/${currentTeam.name}/${pluginId}/incidents/${incident?.id}/retrospective`)}
+                        disabled={disableButtons}
                     >
                         {props.primary}
                     </PrimaryButton>
                     <StyledTertiaryButton
                         onClick={() => noRetrospective(incident?.id)}
+                        disabled={disableButtons}
                     >
                         {props.secondary}
                     </StyledTertiaryButton>
@@ -87,9 +102,10 @@ const ReminderCommon = (props: ReminderCommonProps) => {
     );
 };
 
-export const RetrospectiveFirstReminder = () => {
+export const RetrospectiveFirstReminder = (props: {post: Post}) => {
     return (
         <ReminderCommon
+            post={props.post}
             header={'Would you like to fill out the retrospective report?'}
             primary={'Yes, start retrospective'}
             secondary={'No, skip retrospective'}
@@ -97,9 +113,10 @@ export const RetrospectiveFirstReminder = () => {
     );
 };
 
-export const RetrospectiveReminder = () => {
+export const RetrospectiveReminder = (props: {post: Post}) => {
     return (
         <ReminderCommon
+            post={props.post}
             header={'Reminder to fill out the retrospective'}
             primary={'Start retrospective'}
             secondary={'Skip retrospective'}

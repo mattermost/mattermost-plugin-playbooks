@@ -9,11 +9,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
@@ -39,6 +37,7 @@ const helpText = "###### Mattermost Incident Collaboration Plugin - Slash Comman
 	""
 
 const confirmPrompt = "CONFIRM"
+const maxIncidentsToList = 10
 
 // Register is a function that allows the runner to register commands with the mattermost server.
 type Register func(*model.Command) error
@@ -124,6 +123,10 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	if addTestCommands {
 		test := model.NewAutocompleteData("test", "", "Commands for testing and debugging.")
 
+		testGeneratePlaybooks := model.NewAutocompleteData("create-playbooks", "[total playbooks]", "Create one or more playbooks based on number of playbooks defined")
+		testGeneratePlaybooks.AddTextArgument("An integer indicating how many playbooks will be generated (at most 5).", "Number of playbooks", "")
+		test.AddCommand(testGeneratePlaybooks)
+
 		testCreate := model.NewAutocompleteData("create-incident", "[playbook ID] [timestamp] [incident name]", "Create an incident with a specific creation date")
 		testCreate.AddDynamicListArgument("List of playbooks is downloading from your incident response plugin", "api/v0/playbooks/autocomplete", true)
 		testCreate.AddTextArgument("Date in format 2020-01-31", "Creation timestamp", `/[0-9]{4}-[0-9]{2}-[0-9]{2}/`)
@@ -153,14 +156,14 @@ type Runner struct {
 	pluginAPI       *pluginapi.Client
 	logger          bot.Logger
 	poster          bot.Poster
-	incidentService incident.Service
-	playbookService playbook.Service
+	incidentService app.IncidentService
+	playbookService app.PlaybookService
 	configService   config.Service
 }
 
 // NewCommandRunner creates a command runner.
 func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
-	logger bot.Logger, poster bot.Poster, incidentService incident.Service, playbookService playbook.Service, configService config.Service) *Runner {
+	logger bot.Logger, poster bot.Poster, incidentService app.IncidentService, playbookService app.PlaybookService, configService config.Service) *Runner {
 	return &Runner{
 		context:         ctx,
 		args:            args,
@@ -205,21 +208,23 @@ func (r *Runner) actionStart(args []string) {
 		postID = args[1]
 	}
 
-	if !permissions.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI) {
+	if !app.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI) {
 		r.postCommandResponse("Must be a member of the team to start incidents.")
 		return
 	}
 
-	requesterInfo := playbook.RequesterInfo{
+	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: permissions.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
 	}
 
 	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
-		playbook.Options{
-			Sort:      playbook.SortByTitle,
-			Direction: playbook.DirectionAsc,
+		app.PlaybookFilterOptions{
+			Sort:      app.SortByTitle,
+			Direction: app.DirectionAsc,
+			Page:      0,
+			PerPage:   app.PerPageDefault,
 		})
 	if err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
@@ -258,7 +263,7 @@ func (r *Runner) actionCheck(args []string) {
 
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You can only check/uncheck an item from within the incident's channel.")
 			return
 		}
@@ -286,7 +291,7 @@ func (r *Runner) actionAddChecklistItem(args []string) {
 
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You can only add an item from within the incident's channel.")
 			return
 		}
@@ -304,7 +309,7 @@ func (r *Runner) actionAddChecklistItem(args []string) {
 	}
 
 	combineargs := strings.Join(args[1:], " ")
-	if err := r.incidentService.AddChecklistItem(incidentID, r.args.UserId, checklist, playbook.ChecklistItem{
+	if err := r.incidentService.AddChecklistItem(incidentID, r.args.UserId, checklist, app.ChecklistItem{
 		Title: combineargs,
 	}); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
@@ -333,7 +338,7 @@ func (r *Runner) actionRemoveChecklistItem(args []string) {
 
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You can only remove an item from within the incident's channel.")
 			return
 		}
@@ -360,7 +365,7 @@ func (r *Runner) actionOwner(args []string) {
 
 func (r *Runner) actionShowOwner([]string) {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if errors.Is(err, incident.ErrNotFound) {
+	if errors.Is(err, app.ErrNotFound) {
 		r.postCommandResponse("You can only see the owner from within the incident's channel.")
 		return
 	} else if err != nil {
@@ -387,7 +392,7 @@ func (r *Runner) actionChangeOwner(args []string) {
 	targetOwnerUsername := strings.TrimLeft(args[0], "@")
 
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if errors.Is(err, incident.ErrNotFound) {
+	if errors.Is(err, app.ErrNotFound) {
 		r.postCommandResponse("You can only change the owner from within the incident's channel.")
 		return
 	} else if err != nil {
@@ -439,7 +444,7 @@ func (r *Runner) actionAnnounce(args []string) {
 
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You can only announce from within the incident's channel.")
 			return
 		}
@@ -472,7 +477,7 @@ func (r *Runner) actionAnnounce(args []string) {
 			r.postCommandResponse("Channel not found: " + channelarg)
 			continue
 		}
-		if !permissions.CanPostToChannel(r.args.UserId, targetChannel.Id, r.pluginAPI) {
+		if !app.CanPostToChannel(r.args.UserId, targetChannel.Id, r.pluginAPI) {
 			r.postCommandResponse("Cannot post to: " + channelarg)
 			continue
 		}
@@ -501,19 +506,20 @@ func (r *Runner) actionList() {
 		return
 	}
 
-	requesterInfo, err := permissions.GetRequesterInfo(r.args.UserId, r.pluginAPI)
+	requesterInfo, err := app.GetRequesterInfo(r.args.UserId, r.pluginAPI)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error resolving permissions: %v", err)
 		return
 	}
 
-	options := incident.FilterOptions{
+	options := app.IncidentFilterOptions{
 		TeamID:    r.args.TeamId,
 		MemberID:  r.args.UserId,
-		PerPage:   10,
-		Sort:      incident.SortByCreateAt,
-		Direction: incident.DirectionDesc,
-		Statuses:  []string{incident.StatusReported, incident.StatusActive, incident.StatusResolved},
+		Page:      0,
+		PerPage:   maxIncidentsToList,
+		Sort:      app.SortByCreateAt,
+		Direction: app.DirectionDesc,
+		Statuses:  []string{app.StatusReported, app.StatusActive, app.StatusResolved},
 	}
 
 	result, err := r.incidentService.GetIncidents(requesterInfo, options)
@@ -529,23 +535,23 @@ func (r *Runner) actionList() {
 
 	now := time.Now()
 	attachments := make([]*model.SlackAttachment, len(result.Items))
-	for i, theIncident := range result.Items {
-		owner, err := r.pluginAPI.User.Get(theIncident.OwnerUserID)
+	for i, incident := range result.Items {
+		owner, err := r.pluginAPI.User.Get(incident.OwnerUserID)
 		if err != nil {
-			r.warnUserAndLogErrorf("Error retrieving owner of incident '%s': %v", theIncident.Name, err)
+			r.warnUserAndLogErrorf("Error retrieving owner of incident '%s': %v", incident.Name, err)
 			return
 		}
 
-		channel, err := r.pluginAPI.Channel.Get(theIncident.ChannelID)
+		channel, err := r.pluginAPI.Channel.Get(incident.ChannelID)
 		if err != nil {
-			r.warnUserAndLogErrorf("Error retrieving channel of incident '%s': %v", theIncident.Name, err)
+			r.warnUserAndLogErrorf("Error retrieving channel of incident '%s': %v", incident.Name, err)
 			return
 		}
 
 		attachments[i] = &model.SlackAttachment{
 			Pretext: fmt.Sprintf("### ~%s", channel.Name),
 			Fields: []*model.SlackAttachmentField{
-				{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), now)},
+				{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(incident.CreateAt), now)},
 				{Title: "Owner:", Value: fmt.Sprintf("@%s", owner.Username)},
 			},
 		}
@@ -562,7 +568,7 @@ func (r *Runner) actionList() {
 
 func (r *Runner) actionInfo() {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
-	if errors.Is(err, incident.ErrNotFound) {
+	if errors.Is(err, app.ErrNotFound) {
 		r.postCommandResponse("You can only see the details of an incident from within the incident's channel.")
 		return
 	} else if err != nil {
@@ -582,24 +588,24 @@ func (r *Runner) actionInfo() {
 		return
 	}
 
-	theIncident, err := r.incidentService.GetIncident(incidentID)
+	incident, err := r.incidentService.GetIncident(incidentID)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving incident: %v", err)
 		return
 	}
 
-	owner, err := r.pluginAPI.User.Get(theIncident.OwnerUserID)
+	owner, err := r.pluginAPI.User.Get(incident.OwnerUserID)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error retrieving owner user: %v", err)
 		return
 	}
 
 	tasks := ""
-	for _, checklist := range theIncident.Checklists {
+	for _, checklist := range incident.Checklists {
 		for _, item := range checklist.Items {
 			icon := ":white_large_square: "
 			timestamp := ""
-			if item.State == playbook.ChecklistItemStateClosed {
+			if item.State == app.ChecklistItemStateClosed {
 				icon = ":white_check_mark: "
 				timestamp = " (" + timeutils.GetTimeForMillis(item.StateModified).Format("15:04 PM") + ")"
 			}
@@ -609,8 +615,8 @@ func (r *Runner) actionInfo() {
 	}
 	attachment := &model.SlackAttachment{
 		Fields: []*model.SlackAttachmentField{
-			{Title: "Incident Name:", Value: fmt.Sprintf("**%s**", strings.Trim(theIncident.Name, " "))},
-			{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(theIncident.CreateAt), time.Now())},
+			{Title: "Incident Name:", Value: fmt.Sprintf("**%s**", strings.Trim(incident.Name, " "))},
+			{Title: "Duration:", Value: timeutils.DurationString(timeutils.GetTimeForMillis(incident.CreateAt), time.Now())},
 			{Title: "Owner:", Value: fmt.Sprintf("@%s", owner.Username)},
 			{Title: "Tasks:", Value: tasks},
 		},
@@ -639,7 +645,7 @@ func (r *Runner) actionEnd() {
 func (r *Runner) actionUpdate() {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You can only update an incident from within the incident's channel.")
 			return
 		}
@@ -647,8 +653,8 @@ func (r *Runner) actionUpdate() {
 		return
 	}
 
-	if err = permissions.EditIncident(r.args.UserId, r.args.ChannelId, r.pluginAPI); err != nil {
-		if errors.Is(err, permissions.ErrNoPermissions) {
+	if err = app.EditIncident(r.args.UserId, r.args.ChannelId, r.pluginAPI); err != nil {
+		if errors.Is(err, app.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
 		}
@@ -658,7 +664,7 @@ func (r *Runner) actionUpdate() {
 
 	err = r.incidentService.OpenUpdateStatusDialog(incidentID, r.args.TriggerId)
 	switch {
-	case errors.Is(err, incident.ErrIncidentNotActive):
+	case errors.Is(err, app.ErrIncidentNotActive):
 		r.postCommandResponse("This incident has already been closed.")
 		return
 	case err != nil:
@@ -683,15 +689,15 @@ func (r *Runner) actionAdd(args []string) {
 		return
 	}
 
-	isGuest, err := permissions.IsGuest(r.args.UserId, r.pluginAPI)
+	isGuest, err := app.IsGuest(r.args.UserId, r.pluginAPI)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
 
-	requesterInfo := permissions.RequesterInfo{
+	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
-		IsAdmin: permissions.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
 		IsGuest: isGuest,
 	}
 
@@ -704,7 +710,7 @@ func (r *Runner) actionAdd(args []string) {
 func (r *Runner) actionTimeline() {
 	incidentID, err := r.incidentService.GetIncidentIDForChannel(r.args.ChannelId)
 	if err != nil {
-		if errors.Is(err, incident.ErrNotFound) {
+		if errors.Is(err, app.ErrNotFound) {
 			r.postCommandResponse("You can only run the timeline command from within an incident channel.")
 			return
 		}
@@ -736,15 +742,15 @@ func (r *Runner) actionTimeline() {
 
 	var reported time.Time
 	for _, e := range incidentToRead.TimelineEvents {
-		if e.EventType == incident.IncidentCreated {
+		if e.EventType == app.IncidentCreated {
 			reported = timeutils.GetTimeForMillis(e.EventAt)
 			break
 		}
 	}
 	for _, e := range incidentToRead.TimelineEvents {
-		if e.EventType == incident.AssigneeChanged ||
-			e.EventType == incident.TaskStateModified ||
-			e.EventType == incident.RanSlashCommand {
+		if e.EventType == app.AssigneeChanged ||
+			e.EventType == app.TaskStateModified ||
+			e.EventType == app.RanSlashCommand {
 			continue
 		}
 
@@ -758,7 +764,7 @@ func (r *Runner) actionTimeline() {
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, &model.Post{Message: message})
 }
 
-func (r *Runner) summaryMessage(event incident.TimelineEvent) string {
+func (r *Runner) summaryMessage(event app.TimelineEvent) string {
 	var username string
 	user, err := r.pluginAPI.User.Get(event.SubjectUserID)
 	if err == nil {
@@ -766,32 +772,32 @@ func (r *Runner) summaryMessage(event incident.TimelineEvent) string {
 	}
 
 	switch event.EventType {
-	case incident.IncidentCreated:
+	case app.IncidentCreated:
 		return "Incident Reported by @" + username
-	case incident.StatusUpdated:
+	case app.StatusUpdated:
 		if event.Summary == "" {
 			return "@" + username + " posted a status update"
 		}
 		return "@" + username + " changed status from " + event.Summary
-	case incident.OwnerChanged:
+	case app.OwnerChanged:
 		return "Owner changes from " + event.Summary
-	case incident.TaskStateModified:
+	case app.TaskStateModified:
 		return "@" + username + " " + event.Summary
-	case incident.AssigneeChanged:
+	case app.AssigneeChanged:
 		return "@" + username + " " + event.Summary
-	case incident.RanSlashCommand:
+	case app.RanSlashCommand:
 		return "@" + username + " " + event.Summary
-	case incident.PublishedRetrospective:
+	case app.PublishedRetrospective:
 		return "@" + username + " published retrospective"
-	case incident.CanceledRetrospective:
+	case app.CanceledRetrospective:
 		return "@" + username + " canceled retrospective"
 	default:
 		return event.Summary
 	}
 }
 
-func (r *Runner) timeSince(event incident.TimelineEvent, reported time.Time) string {
-	if event.EventType == incident.IncidentCreated {
+func (r *Runner) timeSince(event app.TimelineEvent, reported time.Time) string {
+	if event.EventType == app.IncidentCreated {
 		return ""
 	}
 	eventAt := timeutils.GetTimeForMillis(event.EventAt)
@@ -844,20 +850,20 @@ And... yes, of course, we have emojis
 
 :muscle: :sunglasses: :tada: :confetti_ball: :balloon: :cowboy_hat_face: :nail_care:`
 
-	testPlaybook := playbook.Playbook{
+	testPlaybook := app.Playbook{
 		Title:  "testing playbook",
 		TeamID: r.args.TeamId,
-		Checklists: []playbook.Checklist{
+		Checklists: []app.Checklist{
 			{
 				Title: "Identification",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title:       "Create Jira ticket",
 						Description: longDescription,
 					},
 					{
 						Title: "Add on-call team members",
-						State: playbook.ChecklistItemStateClosed,
+						State: app.ChecklistItemStateClosed,
 					},
 					{
 						Title:       "Identify blast radius",
@@ -876,7 +882,7 @@ And... yes, of course, we have emojis
 			},
 			{
 				Title: "Resolution",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Align on plan of attack",
 					},
@@ -887,7 +893,7 @@ And... yes, of course, we have emojis
 			},
 			{
 				Title: "Analysis",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Writeup root-cause analysis",
 					},
@@ -964,7 +970,7 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	createdIncident, err := r.incidentService.CreateIncident(&incident.Incident{
+	incident, err := r.incidentService.CreateIncident(&app.Incident{
 		Name:               "Cloud Incident 4739",
 		TeamID:             r.args.TeamId,
 		OwnerUserID:        r.args.UserId,
@@ -977,50 +983,50 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{
+	if err := r.incidentService.AddChecklistItem(incident.ID, r.args.UserId, 0, app.ChecklistItem{
 		Title: "I should be checked and second",
 	}); err != nil {
 		r.postCommandResponse("Unable to add checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{
+	if err := r.incidentService.AddChecklistItem(incident.ID, r.args.UserId, 0, app.ChecklistItem{
 		Title: "I should be deleted",
 	}); err != nil {
 		r.postCommandResponse("Unable to add checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.AddChecklistItem(createdIncident.ID, r.args.UserId, 0, playbook.ChecklistItem{
+	if err := r.incidentService.AddChecklistItem(incident.ID, r.args.UserId, 0, app.ChecklistItem{
 		Title: "I should not say this.",
-		State: playbook.ChecklistItemStateClosed,
+		State: app.ChecklistItemStateClosed,
 	}); err != nil {
 		r.postCommandResponse("Unable to add checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, playbook.ChecklistItemStateClosed, 0, 0); err != nil {
+	if err := r.incidentService.ModifyCheckedState(incident.ID, r.args.UserId, app.ChecklistItemStateClosed, 0, 0); err != nil {
 		r.postCommandResponse("Unable to modify checked state: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.ModifyCheckedState(createdIncident.ID, r.args.UserId, playbook.ChecklistItemStateOpen, 0, 2); err != nil {
+	if err := r.incidentService.ModifyCheckedState(incident.ID, r.args.UserId, app.ChecklistItemStateOpen, 0, 2); err != nil {
 		r.postCommandResponse("Unable to modify checked state: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.RemoveChecklistItem(createdIncident.ID, r.args.UserId, 0, 1); err != nil {
+	if err := r.incidentService.RemoveChecklistItem(incident.ID, r.args.UserId, 0, 1); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.EditChecklistItem(createdIncident.ID, r.args.UserId, 0, 1,
+	if err := r.incidentService.EditChecklistItem(incident.ID, r.args.UserId, 0, 1,
 		"I should say this! and be unchecked and first!", "", ""); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
 
-	if err := r.incidentService.MoveChecklistItem(createdIncident.ID, r.args.UserId, 0, 0, 1); err != nil {
+	if err := r.incidentService.MoveChecklistItem(incident.ID, r.args.UserId, 0, 0, 1); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
@@ -1052,6 +1058,8 @@ func (r *Runner) actionTest(args []string) {
 	}
 
 	switch command {
+	case "create-playbooks":
+		r.actionTestGeneratePlaybooks(params)
 	case "create-incident":
 		r.actionTestCreate(params)
 		return
@@ -1065,6 +1073,51 @@ func (r *Runner) actionTest(args []string) {
 	}
 }
 
+func (r *Runner) actionTestGeneratePlaybooks(params []string) {
+	if len(params) < 1 {
+		r.postCommandResponse("The command expects one parameter: <numPlaybooks>")
+		return
+	}
+
+	numPlaybooks, err := strconv.Atoi(params[0])
+	if err != nil {
+		r.postCommandResponse("Error parsing the first argument. Must be a number.")
+		return
+	}
+
+	if numPlaybooks > 5 {
+		r.postCommandResponse("Maximum number of playbooks is 5")
+		return
+	}
+
+	playbookIds := make([]string, 0, numPlaybooks)
+	for i := 0; i < numPlaybooks; i++ {
+		dummyPlaybook := dummyListPlaybooks[i]
+		dummyPlaybook.TeamID = r.args.TeamId
+		newPlaybookID, errCreatePlayboook := r.playbookService.Create(dummyPlaybook, r.args.UserId)
+		if errCreatePlayboook != nil {
+			r.warnUserAndLogErrorf("unable to create playbook: %v", err)
+			return
+		}
+
+		playbookIds = append(playbookIds, newPlaybookID)
+	}
+
+	team, errGetTeam := r.pluginAPI.Team.Get(r.args.TeamId)
+	if errGetTeam != nil {
+		r.warnUserAndLogErrorf("unable to retrieve team: %v", err)
+		return
+	}
+
+	msg := "Playbooks successfully created"
+	for i, playbookID := range playbookIds {
+		url := fmt.Sprintf("/%s/com.mattermost.plugin-incident-management/playbooks/%s", team.Name, playbookID)
+		msg += fmt.Sprintf("\n- [%s](%s)", dummyListPlaybooks[i].Title, url)
+	}
+
+	r.postCommandResponse(msg)
+}
+
 func (r *Runner) actionTestCreate(params []string) {
 	if len(params) < 3 {
 		r.postCommandResponse("The command expects three parameters: <playbook_id> <timestamp> <incident name>")
@@ -1076,7 +1129,7 @@ func (r *Runner) actionTestCreate(params []string) {
 		r.postCommandResponse("The first parameter, <playbook_id>, must be a valid ID.")
 		return
 	}
-	thePlaybook, err := r.playbookService.Get(playbookID)
+	playbook, err := r.playbookService.Get(playbookID)
 	if err != nil {
 		r.postCommandResponse(fmt.Sprintf("The playbook with ID '%s' does not exist.", playbookID))
 		return
@@ -1090,26 +1143,29 @@ func (r *Runner) actionTestCreate(params []string) {
 
 	incidentName := strings.Join(params[2:], " ")
 
-	theIncident := &incident.Incident{
-		Name:        incidentName,
-		OwnerUserID: r.args.UserId,
-		TeamID:      r.args.TeamId,
-		PlaybookID:  playbookID,
-		Checklists:  thePlaybook.Checklists,
-	}
-
-	newIncident, err := r.incidentService.CreateIncident(theIncident, &thePlaybook, r.args.UserId, true)
+	incident, err := r.incidentService.CreateIncident(
+		&app.Incident{
+			Name:        incidentName,
+			OwnerUserID: r.args.UserId,
+			TeamID:      r.args.TeamId,
+			PlaybookID:  playbookID,
+			Checklists:  playbook.Checklists,
+		},
+		&playbook,
+		r.args.UserId,
+		true,
+	)
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to create incident: %v", err)
 		return
 	}
 
-	if err = r.incidentService.ChangeCreationDate(newIncident.ID, creationTimestamp); err != nil {
+	if err = r.incidentService.ChangeCreationDate(incident.ID, creationTimestamp); err != nil {
 		r.warnUserAndLogErrorf("unable to change date of recently created incident: %v", err)
 		return
 	}
 
-	channel, err := r.pluginAPI.Channel.Get(newIncident.ChannelID)
+	channel, err := r.pluginAPI.Channel.Get(incident.ChannelID)
 	if err != nil {
 		r.warnUserAndLogErrorf("unable to retrieve information of incident's channel: %v", err)
 		return
@@ -1250,6 +1306,280 @@ var incidentNames = []string{
 	"MM HA sync errors",
 }
 
+var dummyListPlaybooks = []app.Playbook{
+	{
+		Title:       "Blank Playbook",
+		Description: "This is an example of an empty playbook",
+	},
+	{
+		Title: "Test playbook",
+		Checklists: []app.Checklist{
+			{
+				Title: "Identification",
+				Items: []app.ChecklistItem{
+					{
+						Title: "Create Jira ticket",
+					},
+					{
+						Title: "Add on-call team members",
+						State: app.ChecklistItemStateClosed,
+					},
+					{
+						Title: "Identify blast radius",
+					},
+					{
+						Title: "Identify impacted services",
+					},
+					{
+						Title: "Collect server data logs",
+					},
+					{
+						Title: "Identify blast Analyze data logs",
+					},
+				},
+			},
+			{
+				Title: "Resolution",
+				Items: []app.ChecklistItem{
+					{
+						Title: "Align on plan of attack",
+					},
+					{
+						Title: "Confirm resolution",
+					},
+				},
+			},
+			{
+				Title: "Analysis",
+				Items: []app.ChecklistItem{
+					{
+						Title: "Writeup root-cause analysis",
+					},
+					{
+						Title: "Review post-mortem",
+					},
+				},
+			},
+		},
+	},
+	{
+		Title: "Release 2.4",
+		Checklists: []app.Checklist{
+			{
+				Title: "Preparation",
+				Items: []app.ChecklistItem{
+					{
+						Title:   "Invite Feature Team to Channel",
+						Command: "/echo ''",
+					},
+					{
+						Title: "Acknowledge Alert",
+					},
+					{
+						Title:   "Get Alert Info",
+						Command: "/announce ~release-checklist",
+					},
+					{
+						Title:   "Invite Escalators",
+						Command: "/github mvp-2.4",
+					},
+					{
+						Title: "Determine Priority",
+					},
+					{
+						Title: "Update Alert Priority",
+					},
+				},
+			},
+			{
+				Title: "Meeting",
+				Items: []app.ChecklistItem{
+					{
+						Title: "Final Testing by QA",
+					},
+					{
+						Title: "Prepare Deployment Documentation",
+					},
+					{
+						Title: "Create New Alert for User",
+					},
+				},
+			},
+			{
+				Title: "Deployment",
+				Items: []app.ChecklistItem{
+					{
+						Title: "Database Backup",
+					},
+					{
+						Title: "Migrate New migration File",
+					},
+					{
+						Title: "Deploy Backend API",
+					},
+					{
+						Title: "Deploy Front-end",
+					},
+					{
+						Title: "Create new tag in gitlab",
+					},
+				},
+			},
+		},
+	},
+	{
+		Title:       "Incident #4281",
+		Description: "There is an error when accessing message from deleted channel",
+		Checklists: []app.Checklist{
+			{
+				Title: "Prepare the Jira card for this task",
+				Items: []app.ChecklistItem{
+					{
+						Title: "Create new Jira Card and fill the description",
+					},
+					{
+						Title: "Set someone to be asignee for this task",
+					},
+					{
+						Title: "Set story point for this card",
+					},
+				},
+			},
+			{
+				Title: "Resolve the issue",
+				Items: []app.ChecklistItem{
+					{
+						Title: "Check the root cause of the issue",
+					},
+					{
+						Title: "Fix the bug",
+					},
+					{
+						Title: "Testing the issue manually by programmer",
+					},
+				},
+			},
+			{
+				Title: "QA",
+				Items: []app.ChecklistItem{
+					{
+						Title: "Create several scenario testing",
+					},
+					{
+						Title: "Implement it using cypress",
+					},
+					{
+						Title: "Run the testing and check the result",
+					},
+				},
+			},
+			{
+				Title: "Deployment",
+				Items: []app.ChecklistItem{
+					{
+						Title: "Merge the result to branch 'master'",
+					},
+					{
+						Title: "Create new Merge Request",
+					},
+					{
+						Title: "Run deployment pipeline",
+					},
+					{
+						Title: "Test the result in production",
+					},
+				},
+			},
+		},
+	},
+	{
+		Title:       "Incident Collaboration Playbook",
+		Description: "Sample playbook",
+		Checklists: []app.Checklist{
+			{
+				Title: "Triage",
+				Items: []app.ChecklistItem{
+					{
+						Title: "Announce incident type and resources",
+					},
+					{
+						Title: "Acknowledge alert",
+					},
+					{
+						Title: "Get alert info",
+					},
+					{
+						Title: "Invite escalators",
+					},
+					{
+						Title: "Determine priority",
+					},
+					{
+						Title: "Update alert priority",
+					},
+					{
+						Title: "Update alert priority",
+					},
+					{
+						Title:   "Create a JIRA ticket",
+						Command: "/jira create",
+					},
+					{
+						Title:   "Find out who’s on call",
+						Command: "/genie whoisoncall",
+					},
+					{
+						Title: "Announce incident",
+					},
+					{
+						Title: "Invite on-call lead",
+					},
+				},
+			}, {
+				Title: "Investigation",
+				Items: []app.ChecklistItem{
+					{
+						Title: "Perform initial investigation",
+					},
+					{
+						Title: "Escalate to other on-call members (optional)",
+					},
+					{
+						Title: "Escalate to other engineering teams (optional)",
+					},
+				},
+			}, {
+				Title: "Resolution",
+				Items: []app.ChecklistItem{
+					{
+						Title: "Close alert",
+					},
+					{
+						Title:   "End the incident",
+						Command: "/incident end",
+					},
+					{
+						Title: "Schedule a post-mortem",
+					},
+					{
+						Title: "Record post-mortem action items",
+					},
+					{
+						Title: "Update playbook with learnings",
+					},
+					{
+						Title:   "Export channel message history",
+						Command: "/export",
+					},
+					{
+						Title: "Archive this channel",
+					},
+				},
+			},
+		},
+	},
+}
+
 // generateTestData generates `numActiveIncidents` ongoing incidents and
 // `numEndedIncidents` ended incidents, whose creation timestamp lies randomly
 // between the `begin` and `end` timestamps.
@@ -1275,38 +1605,55 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 		timestamps = append(timestamps, timestamp)
 	}
 
-	requesterInfo := playbook.RequesterInfo{
+	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: permissions.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
 	}
 
-	playbooksResult, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId, playbook.Options{})
+	playbooksResult, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId, app.PlaybookFilterOptions{
+		Page:    0,
+		PerPage: app.PerPageDefault,
+	})
 	if err != nil {
 		r.warnUserAndLogErrorf("Error getting playbooks: %v", err)
 		return
 	}
 
+	var playbooks []app.Playbook
 	if len(playbooksResult.Items) == 0 {
-		r.postCommandResponse("You are not a member of any playbook. Create at least one playbook before generating the test data.")
-		return
-	}
+		dummyPlaybook := dummyListPlaybooks[rand.Intn(len(dummyListPlaybooks))]
+		dummyPlaybook.TeamID = r.args.TeamId
+		newPlaybookID, err := r.playbookService.Create(dummyPlaybook, r.args.UserId)
+		if err != nil {
+			r.warnUserAndLogErrorf("unable to create playbook: %v", err)
+			return
+		}
 
-	playbooks := make([]playbook.Playbook, 0, len(playbooksResult.Items))
-	for _, thePlaybook := range playbooksResult.Items {
-		wholePlaybook, err := r.playbookService.Get(thePlaybook.ID)
+		newPlaybook, err := r.playbookService.Get(newPlaybookID)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error getting playbook: %v", err)
 			return
 		}
 
-		playbooks = append(playbooks, wholePlaybook)
+		playbooks = []app.Playbook{newPlaybook}
+	} else {
+		playbooks = make([]app.Playbook, 0, len(playbooksResult.Items))
+		for _, thePlaybook := range playbooksResult.Items {
+			wholePlaybook, err := r.playbookService.Get(thePlaybook.ID)
+			if err != nil {
+				r.warnUserAndLogErrorf("Error getting playbook: %v", err)
+				return
+			}
+
+			playbooks = append(playbooks, wholePlaybook)
+		}
 	}
 
 	tableMsg := "| Incident name | Created at | Status |\n|-	|-	|-	|\n"
-	incidents := make([]*incident.Incident, 0, numIncidents)
+	incidents := make([]*app.Incident, 0, numIncidents)
 	for i := 0; i < numIncidents; i++ {
-		thePlaybook := playbooks[rand.Intn(len(playbooks))]
+		playbook := playbooks[rand.Intn(len(playbooks))]
 
 		incidentName := incidentNames[rand.Intn(len(incidentNames))]
 		// Give a company name to 1/3 of the incidents created
@@ -1315,28 +1662,31 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 			incidentName = fmt.Sprintf("[%s] %s", companyName, incidentName)
 		}
 
-		theIncident := &incident.Incident{
-			Name:        incidentName,
-			OwnerUserID: r.args.UserId,
-			TeamID:      r.args.TeamId,
-			PlaybookID:  thePlaybook.ID,
-			Checklists:  thePlaybook.Checklists,
-		}
-
-		newIncident, err := r.incidentService.CreateIncident(theIncident, &thePlaybook, r.args.UserId, true)
+		incident, err := r.incidentService.CreateIncident(
+			&app.Incident{
+				Name:        incidentName,
+				OwnerUserID: r.args.UserId,
+				TeamID:      r.args.TeamId,
+				PlaybookID:  playbook.ID,
+				Checklists:  playbook.Checklists,
+			},
+			&playbook,
+			r.args.UserId,
+			true,
+		)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error creating incident: %v", err)
 			return
 		}
 
 		createAt := timeutils.GetTimeForMillis(timestamps[i])
-		err = r.incidentService.ChangeCreationDate(newIncident.ID, createAt)
+		err = r.incidentService.ChangeCreationDate(incident.ID, createAt)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error changing creation date: %v", err)
 			return
 		}
 
-		channel, err := r.pluginAPI.Channel.Get(newIncident.ChannelID)
+		channel, err := r.pluginAPI.Channel.Get(incident.ChannelID)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error retrieveing incident's channel: %v", err)
 			return
@@ -1348,12 +1698,12 @@ func (r *Runner) generateTestData(numActiveIncidents, numEndedIncidents int, beg
 		}
 		tableMsg += fmt.Sprintf("|~%s|%s|%s|\n", channel.Name, createAt.Format("2006-01-02"), status)
 
-		incidents = append(incidents, newIncident)
+		incidents = append(incidents, incident)
 	}
 
 	for i := 0; i < numEndedIncidents; i++ {
-		err := r.incidentService.UpdateStatus(incidents[i].ID, r.args.UserId, incident.StatusUpdateOptions{
-			Status:  incident.StatusArchived,
+		err := r.incidentService.UpdateStatus(incidents[i].ID, r.args.UserId, app.StatusUpdateOptions{
+			Status:  app.StatusArchived,
 			Message: "This is now archived.",
 		})
 		if err != nil {
@@ -1411,7 +1761,7 @@ func (r *Runner) Execute() error {
 		return nil
 	}
 
-	if !permissions.IsOnEnabledTeam(r.args.TeamId, r.configService) {
+	if !app.IsOnEnabledTeam(r.args.TeamId, r.configService) {
 		r.postCommandResponse("Not enabled on this team.")
 		return nil
 	}

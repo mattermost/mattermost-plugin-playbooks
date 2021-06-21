@@ -5,8 +5,9 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
+	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -201,10 +202,10 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed getting incidents to update their ActiveStageTitle")
 			}
 
-			for _, theIncident := range incidents {
-				var checklists []playbook.Checklist
-				if err := json.Unmarshal(theIncident.ChecklistsJSON, &checklists); err != nil {
-					return errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", theIncident.ID)
+			for _, incident := range incidents {
+				var checklists []app.Checklist
+				if err := json.Unmarshal(incident.ChecklistsJSON, &checklists); err != nil {
+					return errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", incident.ID)
 				}
 
 				numChecklists := len(checklists)
@@ -212,18 +213,18 @@ var migrations = []Migration{
 					continue
 				}
 
-				if theIncident.ActiveStage < 0 || theIncident.ActiveStage >= numChecklists {
-					sqlStore.log.Warnf("index %d out of bounds, incident '%s' has %d stages: setting ActiveStageTitle to the empty string", theIncident.ActiveStage, theIncident.ID, numChecklists)
+				if incident.ActiveStage < 0 || incident.ActiveStage >= numChecklists {
+					sqlStore.log.Warnf("index %d out of bounds, incident '%s' has %d stages: setting ActiveStageTitle to the empty string", incident.ActiveStage, incident.ID, numChecklists)
 					continue
 				}
 
 				incidentUpdate := sqlStore.builder.
 					Update("IR_Incident").
-					Set("ActiveStageTitle", checklists[theIncident.ActiveStage].Title).
-					Where(sq.Eq{"ID": theIncident.ID})
+					Set("ActiveStageTitle", checklists[incident.ActiveStage].Title).
+					Where(sq.Eq{"ID": incident.ID})
 
 				if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
-					return errors.Errorf("failed updating the ActiveStageTitle field of incident '%s'", theIncident.ID)
+					return errors.Errorf("failed updating the ActiveStageTitle field of incident '%s'", incident.ID)
 				}
 			}
 
@@ -851,6 +852,103 @@ var migrations = []Migration{
 				}
 				if err := addColumnToPGTable(e, "IR_Incident", "ExportChannelOnArchiveEnabled", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column ExportChannelOnArchiveEnabled to table IR_Incident")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.20.0"),
+		toVersion:   semver.MustParse("0.21.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ConcatenatedSignalAnyKeywords", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedSignalAnyKeywords to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET ConcatenatedSignalAnyKeywords = '' WHERE ConcatenatedSignalAnyKeywords IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column ConcatenatedSignalAnyKeywords of table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "SignalAnyKeywordsEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column SignalAnyKeywordsEnabled to table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "UpdateAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column UpdateAt to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET UpdateAt = CreateAt"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column UpdateAt of table IR_Playbook")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Playbook ADD INDEX IR_Playbook_UpdateAt (UpdateAt)`); err != nil {
+					me, ok := err.(*mysql.MySQLError)
+					if !ok || me.Number != 1061 { // not a Duplicate key name error
+						return errors.Wrapf(err, "failed creating index IR_Playbook_UpdateAt")
+					}
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "ConcatenatedSignalAnyKeywords", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedSignalAnyKeywords to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "SignalAnyKeywordsEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column SignalAnyKeywordsEnabled to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "UpdateAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column UpdateAt to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET UpdateAt = CreateAt"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column UpdateAt of table IR_Playbook")
+				}
+				if _, err := e.Exec(createPGIndex("IR_Playbook_UpdateAt", "IR_Playbook", "UpdateAt")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_Playbook_UpdateAt")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.21.0"),
+		toVersion:   semver.MustParse("0.22.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "LastStatusUpdateAt", "BIGINT DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column LastStatusUpdateAt to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "LastStatusUpdateAt", "BIGINT DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column LastStatusUpdateAt to table IR_Incident")
+				}
+			}
+
+			var lastUpdateAts []struct {
+				ID                 string
+				LastStatusUpdateAt int64
+			}
+
+			// Fill in the LastStatusUpdateAt column as either the most recent status post, or
+			// if no posts: the incident's CreateAt.
+			lastUpdateAtSelect := sqlStore.builder.
+				Select("i.Id as ID", "COALESCE(MAX(p.CreateAt), i.CreateAt) as LastStatusUpdateAt").
+				From("IR_Incident as i").
+				LeftJoin("IR_StatusPosts as sp on i.Id = sp.IncidentId").
+				LeftJoin("Posts as p on sp.PostId = p.Id").
+				GroupBy("i.Id")
+
+			if err := sqlStore.selectBuilder(e, &lastUpdateAts, lastUpdateAtSelect); err != nil {
+				return errors.Wrapf(err, "failed getting incidents to update their LastStatusUpdateAt")
+			}
+
+			for _, row := range lastUpdateAts {
+				incidentUpdate := sqlStore.builder.
+					Update("IR_Incident").
+					Set("LastStatusUpdateAt", row.LastStatusUpdateAt).
+					Where(sq.Eq{"ID": row.ID})
+
+				if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
+					return errors.Wrapf(err, "failed to update incident's LastStatusUpdateAt for id: %s", row.ID)
 				}
 			}
 

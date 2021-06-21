@@ -1,10 +1,9 @@
-package permissions
+package app
 
 import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -20,6 +19,7 @@ var ErrLicensedFeature = errors.New("not covered by current server license")
 // for the user making the request
 type RequesterInfo struct {
 	UserID  string
+	TeamID  string
 	IsAdmin bool
 	IsGuest bool
 }
@@ -171,23 +171,23 @@ func isPlaybookCreator(userID string, cfgService config.Service) error {
 	return errors.Wrap(ErrNoPermissions, "create playbooks")
 }
 
-func PlaybookAccess(userID string, pbook playbook.Playbook, pluginAPI *pluginapi.Client) error {
+func PlaybookAccess(userID string, playbook Playbook, pluginAPI *pluginapi.Client) error {
 	noAccessErr := errors.Wrapf(
 		ErrNoPermissions,
 		"userID %s to access playbook",
 		userID,
 	)
 
-	if !CanViewTeam(userID, pbook.TeamID, pluginAPI) {
+	if !CanViewTeam(userID, playbook.TeamID, pluginAPI) {
 		return errors.Wrap(noAccessErr, "no team view permission")
 	}
 
 	// If the list of members is empty then the playbook is open for all.
-	if len(pbook.MemberIDs) == 0 {
+	if len(playbook.MemberIDs) == 0 {
 		return nil
 	}
 
-	for _, memberID := range pbook.MemberIDs {
+	for _, memberID := range playbook.MemberIDs {
 		if memberID == userID {
 			return nil
 		}
@@ -197,8 +197,8 @@ func PlaybookAccess(userID string, pbook playbook.Playbook, pluginAPI *pluginapi
 }
 
 // checkPlaybookIsNotUsingE20Features features returns a non-nil error if the playbook is using E20 features
-func checkPlaybookIsNotUsingE20Features(pbook playbook.Playbook) error {
-	if len(pbook.MemberIDs) > 0 {
+func checkPlaybookIsNotUsingE20Features(playbook Playbook) error {
+	if len(playbook.MemberIDs) > 0 {
 		return errors.Wrap(ErrLicensedFeature, "restrict playbook editing to specific users is a Mattermost Enterprise feature")
 	}
 
@@ -206,8 +206,8 @@ func checkPlaybookIsNotUsingE20Features(pbook playbook.Playbook) error {
 }
 
 // checkPlaybookIsNotUsingE10Features features returns a non-nil error if the playbook is using E10 features
-func checkPlaybookIsNotUsingE10Features(pbook playbook.Playbook, playbookService playbook.Service) error {
-	num, err := playbookService.GetNumPlaybooksForTeam(pbook.TeamID)
+func checkPlaybookIsNotUsingE10Features(playbook Playbook, playbookService PlaybookService) error {
+	num, err := playbookService.GetNumPlaybooksForTeam(playbook.TeamID)
 	if err != nil {
 		return err
 	}
@@ -219,12 +219,12 @@ func checkPlaybookIsNotUsingE10Features(pbook playbook.Playbook, playbookService
 	return nil
 }
 
-func PlaybookLicensedFeatures(pbook playbook.Playbook, cfgService config.Service, playbookService playbook.Service) error {
+func PlaybookLicensedFeatures(playbook Playbook, cfgService config.Service, playbookService PlaybookService) error {
 	if cfgService.IsAtLeastE20Licensed() {
 		return nil
 	}
 
-	if err := checkPlaybookIsNotUsingE20Features(pbook); err != nil {
+	if err := checkPlaybookIsNotUsingE20Features(playbook); err != nil {
 		return err
 	}
 
@@ -232,23 +232,23 @@ func PlaybookLicensedFeatures(pbook playbook.Playbook, cfgService config.Service
 		return nil
 	}
 
-	if err := checkPlaybookIsNotUsingE10Features(pbook, playbookService); err != nil {
+	if err := checkPlaybookIsNotUsingE10Features(playbook, playbookService); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Service, pluginAPI *pluginapi.Client, playbookService playbook.Service) error {
+func CreatePlaybook(userID string, playbook Playbook, cfgService config.Service, pluginAPI *pluginapi.Client, playbookService PlaybookService) error {
 	if err := isPlaybookCreator(userID, cfgService); err != nil {
 		return err
 	}
 
-	if !IsOnEnabledTeam(pbook.TeamID, cfgService) {
+	if !IsOnEnabledTeam(playbook.TeamID, cfgService) {
 		return errors.Wrap(ErrNoPermissions, "not enabled on this team")
 	}
 
-	if err := PlaybookLicensedFeatures(pbook, cfgService, playbookService); err != nil {
+	if err := PlaybookLicensedFeatures(playbook, cfgService, playbookService); err != nil {
 		return err
 	}
 
@@ -259,48 +259,48 @@ func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Se
 		return errors.Errorf(
 			"userID %s does not have permission to create playbook on teamID %s because they are a guest",
 			userID,
-			pbook.TeamID,
+			playbook.TeamID,
 		)
 	}
 
-	if pbook.BroadcastChannelID != "" &&
-		!pluginAPI.User.HasPermissionToChannel(userID, pbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
+	if playbook.BroadcastChannelID != "" &&
+		!pluginAPI.User.HasPermissionToChannel(userID, playbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
 		return errors.Errorf(
 			"userID %s does not have permission to create posts in the channel %s",
 			userID,
-			pbook.BroadcastChannelID,
+			playbook.BroadcastChannelID,
 		)
 	}
 
-	if !CanViewTeam(userID, pbook.TeamID, pluginAPI) {
+	if !CanViewTeam(userID, playbook.TeamID, pluginAPI) {
 		return errors.Errorf(
 			"userID %s does not have permission to create playbook on teamID %s",
 			userID,
-			pbook.TeamID,
+			playbook.TeamID,
 		)
 	}
 
-	if pbook.AnnouncementChannelID != "" &&
-		!pluginAPI.User.HasPermissionToChannel(userID, pbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+	if playbook.AnnouncementChannelID != "" &&
+		!pluginAPI.User.HasPermissionToChannel(userID, playbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
 		return errors.Errorf(
 			"userID %s does not have permission to create posts in the channel %s",
 			userID,
-			pbook.AnnouncementChannelID,
+			playbook.AnnouncementChannelID,
 		)
 	}
 
 	// Check all invited users have permissions to the team.
-	for _, userID := range pbook.InvitedUserIDs {
-		if !pluginAPI.User.HasPermissionToTeam(userID, pbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+	for _, userID := range playbook.InvitedUserIDs {
+		if !pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PERMISSION_VIEW_TEAM) {
 			return errors.Errorf(
 				"invited user with ID %s does not have permission to playbook's team %s",
 				userID,
-				pbook.TeamID,
+				playbook.TeamID,
 			)
 		}
 	}
 
-	for _, groupID := range pbook.InvitedGroupIDs {
+	for _, groupID := range playbook.InvitedGroupIDs {
 		group, err := pluginAPI.Group.Get(groupID)
 		if err != nil {
 			return errors.Wrap(err, "invalid group")
@@ -319,23 +319,23 @@ func CreatePlaybook(userID string, pbook playbook.Playbook, cfgService config.Se
 
 // DANGER This is not a complete check. There is more in the current handler for updatePlaybook
 // if you need to use this function, integrate that here first.
-func PlaybookModify(userID string, pbook, oldPlaybook playbook.Playbook, cfgService config.Service, pluginAPI *pluginapi.Client, playbookService playbook.Service) error {
+func PlaybookModify(userID string, playbook, oldPlaybook Playbook, cfgService config.Service, pluginAPI *pluginapi.Client, playbookService PlaybookService) error {
 	if err := PlaybookAccess(userID, oldPlaybook, pluginAPI); err != nil {
 		return err
 	}
 
-	if err := PlaybookLicensedFeatures(pbook, cfgService, playbookService); err != nil {
+	if err := PlaybookLicensedFeatures(playbook, cfgService, playbookService); err != nil {
 		return err
 	}
 
-	if pbook.BroadcastChannelID != "" &&
-		pbook.BroadcastChannelID != oldPlaybook.BroadcastChannelID &&
-		!pluginAPI.User.HasPermissionToChannel(userID, pbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
+	if playbook.BroadcastChannelID != "" &&
+		playbook.BroadcastChannelID != oldPlaybook.BroadcastChannelID &&
+		!pluginAPI.User.HasPermissionToChannel(userID, playbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
 		return errors.Wrapf(
 			ErrNoPermissions,
 			"userID %s does not have permission to create posts in the channel %s",
 			userID,
-			pbook.BroadcastChannelID,
+			playbook.BroadcastChannelID,
 		)
 	}
 
