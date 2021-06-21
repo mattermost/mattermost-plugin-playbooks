@@ -784,19 +784,13 @@ func (s *IncidentServiceImpl) UpdateStatus(incidentID, userID string, options St
 
 	if options.Status == StatusArchived && incidentToModify.ExportChannelOnArchiveEnabled {
 		// set url and query string
-		exportPluginUrl := "/plugins/com.mattermost.plugin-channel-export/api/v1/export?"
-		queryString := fmt.Sprintf("format=csv&channel_id=%s", incidentToModify.ChannelID)
+		exportPluginUrl := fmt.Sprintf("plugins/com.mattermost.plugin-channel-export/api/v1/export?format=csv&channel_id=%s", incidentToModify.ChannelID)
 
-		req, err := http.NewRequest(http.MethodGet, exportPluginUrl+queryString, nil)
-		req.Header.Set("X-Requested-With", "XMLHttpRequest")
-		req.Header.Set("Mattermost-User-ID", incidentToModify.OwnerUserID)
+		req, err := http.NewRequest(http.MethodGet, exportPluginUrl, nil)
+		req.Header.Add("Mattermost-User-ID", incidentToModify.OwnerUserID)
 		if err != nil {
 			s.pluginAPI.Log.Warn("failed to create request for exporting channel", "plugin", "channel-export", "error", err)
 			// return errors.Wrap(err, "failed to create request for exporting channel")
-		}
-
-		if err = s.poster.DM(incidentToModify.OwnerUserID, "Second Message %s", "AA"); err != nil {
-			return errors.Wrap(err, "failed to send exported channel to incident's commander")
 		}
 
 		res := s.pluginAPI.Plugin.HTTP(req)
@@ -806,6 +800,8 @@ func (s *IncidentServiceImpl) UpdateStatus(incidentID, userID string, options St
 				s.pluginAPI.Log.Warn("failed to read content from response body", "plugin", "channel-export", "error", err)
 				// return errors.Wrap(err, "failed to read content from response body")
 			}
+			res.Body.Close()
+			res.Body = nil
 			fileResult := string(bodyBytes)
 
 			if err = s.poster.DM(incidentToModify.OwnerUserID, "Here are the link for exported channel %s", fileResult); err != nil {
