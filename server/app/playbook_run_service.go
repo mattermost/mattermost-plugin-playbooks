@@ -1659,7 +1659,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 				MaxLength:   64,
 			},
 		},
-		SubmitLabel:    "Run playbook",
+		SubmitLabel:    "Start run",
 		NotifyOnCancel: false,
 		State:          string(state),
 	}, nil
