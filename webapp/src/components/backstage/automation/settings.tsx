@@ -121,7 +121,7 @@ export const AutomationSettings = (props: Props) => {
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When a status updated is posted'}
+                    {'When a status update is posted'}
                 </SectionTitle>
                 <Setting id={'playbook-run-status-update__outgoing-webhook'}>
                     <PatternedInput
