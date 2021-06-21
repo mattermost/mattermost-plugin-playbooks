@@ -40,13 +40,13 @@ describe('playbook run creation dialog', () => {
 
         // * Verify the playbook run creation dialog has opened
         cy.get('#interactiveDialogModal').should('exist').within(() => {
-            cy.findByText('Run details').should('exist');
+            cy.findByText('Run playbook').should('exist');
         });
     });
 
     it('cannot create a playbook run without filling required fields', () => {
         cy.get('#interactiveDialogModal').within(() => {
-            cy.findByText('Run details').should('exist');
+            cy.findByText('Run playbook').should('exist');
 
             // # Attempt to submit
             cy.get('#interactiveDialogSubmit').click();

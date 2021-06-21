@@ -1641,7 +1641,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 	}
 
 	return &model.Dialog{
-		Title:            "Run details",
+		Title:            "Run playbook",
 		IntroductionText: introText,
 		Elements: []model.DialogElement{
 			{
