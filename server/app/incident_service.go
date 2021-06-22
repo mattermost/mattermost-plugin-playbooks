@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
@@ -796,17 +795,14 @@ func (s *IncidentServiceImpl) UpdateStatus(incidentID, userID string, options St
 
 		res := s.pluginAPI.Plugin.HTTP(req)
 		if res.StatusCode == http.StatusOK {
-			_, err := ioutil.ReadAll(res.Body)
+			file, err := s.pluginAPI.File.Upload(res.Body, fmt.Sprintf("%s.csv", incidentToModify.Name), incidentToModify.ChannelID)
 			if err != nil {
-				s.pluginAPI.Log.Warn("failed to read content from response body", "plugin", "channel-export", "error", err)
+				s.pluginAPI.Log.Error("unable to upload the exported file to the channel",
+					"Channel ID", incidentToModify.ChannelID, "Error", err)
+				return errors.Wrap(err, "unable to upload the exported file")
 			}
-			res.Body.Close()
-			res.Body = nil
 
-			url := fmt.Sprintf("/%s", exportPluginURL)
-			msg := fmt.Sprintf("[%s](%s)", incidentToModify.Name, url)
-
-			if err = s.poster.DM(incidentToModify.OwnerUserID, "Data successfully exported %s", msg); err != nil {
+			if err = s.poster.PostDM(incidentToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Incident %s exported succesfully", incidentToModify.Name), FileIds: []string{file.Id}}); err != nil {
 				return errors.Wrap(err, "failed to send exported channel result to incident's commander")
 			}
 

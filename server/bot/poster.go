@@ -52,6 +52,11 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 	return post, nil
 }
 
+// Post custom DM to the specified user
+func (b *Bot) PostDM(userID string, post *model.Post) error {
+	return b.dm(userID, post)
+}
+
 // DM posts a simple Direct Message to the specified user
 func (b *Bot) DM(userID, format string, args ...interface{}) error {
 	return b.dm(userID, &model.Post{
