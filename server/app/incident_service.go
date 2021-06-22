@@ -794,6 +794,7 @@ func (s *IncidentServiceImpl) UpdateStatus(incidentID, userID string, options St
 		}
 
 		res := s.pluginAPI.Plugin.HTTP(req)
+		defer res.Body.Close()
 		if res.StatusCode == http.StatusOK {
 			file, err := s.pluginAPI.File.Upload(res.Body, fmt.Sprintf("%s.csv", incidentToModify.Name), incidentToModify.ChannelID)
 			if err != nil {
