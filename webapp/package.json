@@ -1,5 +1,9 @@
 {
   "private": true,
+  "engines": {
+    "node" : ">=16.3.0",
+    "npm": ">=7.15.1"
+  },
   "scripts": {
     "build": "webpack --mode=production",
     "build:watch": "webpack --mode=production --watch",
@@ -74,7 +78,7 @@
     "core-js": "3.10.2",
     "debounce": "1.2.1",
     "mattermost-redux": "github:mattermost/mattermost-redux#3d1028034d7677adfda58e91b9a5dcaf1bc0ff99",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#0b27dbfaa79b88cc207d835bbe604577d9397425",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#e0e2e2587ab374dd591fba78488829f4de7c6f0e",
     "moment": "2.29.1",
     "qs": "6.10.1",
     "react": "16.13.1",
