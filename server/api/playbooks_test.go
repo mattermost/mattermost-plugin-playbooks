@@ -140,7 +140,7 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
@@ -167,7 +167,7 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
@@ -217,7 +217,7 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
@@ -270,7 +270,7 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
@@ -329,7 +329,7 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
@@ -388,7 +388,7 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
@@ -442,7 +442,7 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
@@ -503,7 +503,7 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		playbookService = mock_playbook.NewMockService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
@@ -1616,7 +1616,7 @@ func TestSortingPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)
@@ -1821,7 +1821,7 @@ func TestPagingPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
 		playbookService = mock_playbook.NewMockService(mockCtrl)

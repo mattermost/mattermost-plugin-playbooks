@@ -61,7 +61,7 @@ func TestIncidents(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
@@ -779,7 +779,7 @@ func TestIncidents(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)

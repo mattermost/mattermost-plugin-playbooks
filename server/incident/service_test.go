@@ -31,7 +31,7 @@ func TestCreateIncident(t *testing.T) {
 	t.Run("invalid channel name has only invalid characters", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
+		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		store := mock_incident.NewMockStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -61,7 +61,7 @@ func TestCreateIncident(t *testing.T) {
 	t.Run("invalid channel name has only invalid characters", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
+		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		store := mock_incident.NewMockStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -91,7 +91,7 @@ func TestCreateIncident(t *testing.T) {
 	t.Run("channel name already exists, fixed on second try", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
+		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		store := mock_incident.NewMockStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -140,7 +140,7 @@ func TestCreateIncident(t *testing.T) {
 	t.Run("channel name already exists, failed second try", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
+		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		store := mock_incident.NewMockStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -171,7 +171,7 @@ func TestCreateIncident(t *testing.T) {
 	t.Run("channel admin fails promotion fails", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
+		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		store := mock_incident.NewMockStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -214,7 +214,7 @@ func TestCreateIncident(t *testing.T) {
 	t.Run("channel name has multibyte characters", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
+		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		store := mock_incident.NewMockStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -260,7 +260,7 @@ func TestCreateIncident(t *testing.T) {
 	t.Run("webhook is sent", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI)
+		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		store := mock_incident.NewMockStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -452,7 +452,7 @@ func TestOpenCreateIncidentDialog(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			controller := gomock.NewController(t)
 			api := &plugintest.API{}
-			client := pluginapi.NewClient(api)
+			client := pluginapi.NewClient(api, &plugintest.Driver{})
 			store := mock_incident.NewMockStore(controller)
 			poster := mock_bot.NewMockPoster(controller)
 			logger := mock_bot.NewMockLogger(controller)
