@@ -781,13 +781,13 @@ func (s *IncidentServiceImpl) UpdateStatus(incidentID, userID string, options St
 
 	if options.Status == StatusArchived && incidentToModify.ExportChannelOnArchiveEnabled {
 
-		fileId, err := s.exportFileToChannel(incidentToModify.Name, incidentToModify.OwnerUserID, incidentToModify.ChannelID)
+		fileID, err := s.exportFileToChannel(incidentToModify.Name, incidentToModify.OwnerUserID, incidentToModify.ChannelID)
 		if err != nil {
 			_, _ = s.poster.PostMessage(incidentToModify.ChannelID, "Incident Collaboration failed to export channel information. Contact your System Admin for more information.")
 			return errors.Wrap(err, "failed to export file to a channel")
 		}
 
-		if err = s.poster.PostDM(incidentToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Incident %s exported succesfully", incidentToModify.Name), FileIds: []string{fileId}}); err != nil {
+		if err = s.poster.PostDM(incidentToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Incident %s exported succesfully", incidentToModify.Name), FileIds: []string{fileID}}); err != nil {
 			return errors.Wrap(err, "failed to send exported channel result to incident's commander")
 		}
 
@@ -821,9 +821,9 @@ func (s *IncidentServiceImpl) exportFileToChannel(incidentName string, ownerUser
 		}
 
 		return file.Id, nil
-	} else {
-		return "", errors.New(fmt.Sprintf("There is an error when make a request to upload file with status code %s", strconv.Itoa(res.StatusCode)))
 	}
+
+	return "", errors.New(fmt.Sprintf("There is an error when make a request to upload file with status code %s", strconv.Itoa(res.StatusCode)))
 
 }
 
