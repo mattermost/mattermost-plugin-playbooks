@@ -785,9 +785,7 @@ func (s *IncidentServiceImpl) UpdateStatus(incidentID, userID string, options St
 		// set url and query string
 		exportPluginURL := fmt.Sprintf("plugins/com.mattermost.plugin-channel-export/api/v1/export?format=csv&channel_id=%s", incidentToModify.ChannelID)
 
-		buf := bytes.Buffer{}
-		buf.WriteString("Request call /exports from plugin channel-exports")
-		req, err := http.NewRequest(http.MethodGet, exportPluginURL, &buf)
+		req, err := http.NewRequest(http.MethodGet, exportPluginURL, bytes.NewBufferString(""))
 		req.Header.Add("Mattermost-User-ID", incidentToModify.OwnerUserID)
 		if err != nil {
 			s.pluginAPI.Log.Warn("failed to create request for exporting channel", "plugin", "channel-export", "error", err)
