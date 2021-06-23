@@ -407,6 +407,10 @@ func (h *IncidentHandler) createIncident(incident app.Incident, userID string) (
 			incident.MessageOnJoin = pb.MessageOnJoin
 		}
 
+		if pb.ExportChannelOnArchiveEnabled {
+			incident.ExportChannelOnArchiveEnabled = pb.ExportChannelOnArchiveEnabled
+		}
+
 		incident.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
 		incident.Retrospective = pb.RetrospectiveTemplate
 

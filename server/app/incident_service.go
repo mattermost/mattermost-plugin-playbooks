@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -218,9 +219,6 @@ func (s *IncidentServiceImpl) CreateIncident(incident *Incident, pb *Playbook, u
 	incident.CreateAt = now
 	incident.LastStatusUpdateAt = now
 	incident.CurrentStatus = StatusReported
-	if pb != nil {
-		incident.ExportChannelOnArchiveEnabled = pb.ExportChannelOnArchiveEnabled
-	}
 
 	// Start with a blank playbook with one empty checklist if one isn't provided
 	if incident.PlaybookID == "" {
@@ -782,34 +780,51 @@ func (s *IncidentServiceImpl) UpdateStatus(incidentID, userID string, options St
 	}
 
 	if options.Status == StatusArchived && incidentToModify.ExportChannelOnArchiveEnabled {
-		// set url and query string
-		exportPluginURL := fmt.Sprintf("plugins/com.mattermost.plugin-channel-export/api/v1/export?format=csv&channel_id=%s", incidentToModify.ChannelID)
 
-		req, err := http.NewRequest(http.MethodGet, exportPluginURL, bytes.NewBufferString(""))
-		req.Header.Add("Mattermost-User-ID", incidentToModify.OwnerUserID)
+		fileId, err := s.exportFileToChannel(incidentToModify.Name, incidentToModify.OwnerUserID, incidentToModify.ChannelID)
 		if err != nil {
-			s.pluginAPI.Log.Warn("failed to create request for exporting channel", "plugin", "channel-export", "error", err)
+			_, _ = s.poster.PostMessage(incidentToModify.ChannelID, "Incident Collaboration failed to export channel information. Contact your System Admin for more information.")
+			return errors.Wrap(err, "failed to export file to a channel")
 		}
 
-		res := s.pluginAPI.Plugin.HTTP(req)
-		defer res.Body.Close()
-		if res.StatusCode == http.StatusOK {
-			file, err := s.pluginAPI.File.Upload(res.Body, fmt.Sprintf("%s.csv", incidentToModify.Name), incidentToModify.ChannelID)
-			if err != nil {
-				s.pluginAPI.Log.Error("unable to upload the exported file to the channel",
-					"Channel ID", incidentToModify.ChannelID, "Error", err)
-				return errors.Wrap(err, "unable to upload the exported file")
-			}
-
-			if err = s.poster.PostDM(incidentToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Incident %s exported succesfully", incidentToModify.Name), FileIds: []string{file.Id}}); err != nil {
-				return errors.Wrap(err, "failed to send exported channel result to incident's commander")
-			}
-
+		if err = s.poster.PostDM(incidentToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Incident %s exported succesfully", incidentToModify.Name), FileIds: []string{fileId}}); err != nil {
+			return errors.Wrap(err, "failed to send exported channel result to incident's commander")
 		}
 
 	}
 
 	return nil
+}
+
+func (s *IncidentServiceImpl) exportFileToChannel(incidentName string, ownerUserID string, channelID string) (string, error) {
+	// set url and query string
+	exportPluginURL := fmt.Sprintf("plugins/com.mattermost.plugin-channel-export/api/v1/export?format=csv&channel_id=%s", channelID)
+
+	req, err := http.NewRequest(http.MethodGet, exportPluginURL, bytes.NewBufferString(""))
+	req.Header.Add("Mattermost-User-ID", ownerUserID)
+	if err != nil {
+		errMessage := "failed to create request to generate export file"
+		s.pluginAPI.Log.Warn(errMessage, "plugin", "channel-export", "error", err)
+
+		return "", errors.Wrap(err, errMessage)
+	}
+
+	res := s.pluginAPI.Plugin.HTTP(req)
+	defer res.Body.Close()
+	if res.StatusCode == http.StatusOK {
+		file, err := s.pluginAPI.File.Upload(res.Body, fmt.Sprintf("%s.csv", incidentName), channelID)
+		if err != nil {
+			errMessage := "unable to upload the exported file to a channel"
+			s.pluginAPI.Log.Error(errMessage, "Channel ID", channelID, "Error", err)
+
+			return "", errors.Wrap(err, errMessage)
+		}
+
+		return file.Id, nil
+	} else {
+		return "", errors.New(fmt.Sprintf("There is an error when make a request to upload file with status code %s", strconv.Itoa(res.StatusCode)))
+	}
+
 }
 
 func (s *IncidentServiceImpl) postRetrospectiveReminder(incident *Incident, isInitial bool) error {
