@@ -1,4 +1,4 @@
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 
 import styled from 'styled-components';
 
@@ -34,7 +34,7 @@ const ClickableI = styled.i`
     }
 `;
 
-const CollapsibleSection: FC<CollapsibleSectionProps> = (props: CollapsibleSectionProps) => {
+const CollapsibleSection = (props: CollapsibleSectionProps) => {
     const [expanded, setExpanded] = useState(true);
 
     let icon = 'icon-20 icon-chevron-down';

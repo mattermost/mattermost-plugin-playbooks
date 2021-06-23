@@ -14,11 +14,13 @@ import WebsocketEvents from 'mattermost-redux/constants/websocket';
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
 
+import {RetrospectiveFirstReminder, RetrospectiveReminder} from './components/retrospective_reminder_posts';
+
 import {pluginId} from './manifest';
 import ChannelHeaderButton from './components/assets/icons/channel_header_button';
 import RightHandSidebar from './components/rhs/rhs_main';
 import RHSTitle from './components/rhs/rhs_title';
-import {AttachToIncidentPostMenu, StartIncidentPostMenu} from './components/post_menu';
+import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from './components/post_menu';
 import Backstage from './components/backstage/backstage';
 import ErrorPage from './components/error_page';
 import PostMenuModal from './components/post_menu_modal';
@@ -28,8 +30,8 @@ import {
 import reducer from './reducer';
 import {
     handleReconnect,
-    handleWebsocketIncidentUpdated,
-    handleWebsocketIncidentCreated,
+    handleWebsocketPlaybookRunUpdated,
+    handleWebsocketPlaybookRunCreated,
     handleWebsocketPlaybookCreated,
     handleWebsocketPlaybookDeleted,
     handleWebsocketUserAdded,
@@ -38,16 +40,17 @@ import {
     handleWebsocketChannelUpdated, handleWebsocketChannelViewed,
 } from './websocket_events';
 import {
-    WEBSOCKET_INCIDENT_UPDATED,
-    WEBSOCKET_INCIDENT_CREATED,
+    WEBSOCKET_PLAYBOOK_RUN_UPDATED,
+    WEBSOCKET_PLAYBOOK_RUN_CREATED,
     WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_DELETED,
 } from './types/websocket_events';
 import RegistryWrapper from './registry_wrapper';
-import {isE10LicensedOrDevelopment, isPricingPlanDifferentiationEnabled} from './license';
+import {isE20LicensedOrDevelopment} from './license';
 import SystemConsoleEnabledTeams from './system_console_enabled_teams';
 import {makeUpdateMainMenu} from './make_update_main_menu';
 import {fetchGlobalSettings} from './client';
+import {CloudUpgradePost} from './components/cloud_upgrade_post';
 
 export default class Plugin {
     removeMainMenuSub?: Unsubscribe;
@@ -81,14 +84,14 @@ export default class Plugin {
             // Store the toggleRHS action to use later
             store.dispatch(setToggleRHSAction(boundToggleRHSAction));
 
-            r.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, 'Incidents', 'Incidents');
-            r.registerPostDropdownMenuComponent(StartIncidentPostMenu);
-            r.registerPostDropdownMenuComponent(AttachToIncidentPostMenu);
+            r.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, 'Playbook', 'Playbook');
+            r.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);
+            r.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
             r.registerRootComponent(PostMenuModal);
 
             r.registerReconnectHandler(handleReconnect(store.getState, store.dispatch));
-            r.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_UPDATED, handleWebsocketIncidentUpdated(store.getState, store.dispatch));
-            r.registerWebSocketEventHandler(WEBSOCKET_INCIDENT_CREATED, handleWebsocketIncidentCreated(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RUN_UPDATED, handleWebsocketPlaybookRunUpdated(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RUN_CREATED, handleWebsocketPlaybookRunCreated(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CREATED, handleWebsocketPlaybookCreated(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_DELETED, handleWebsocketPlaybookDeleted(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
@@ -109,6 +112,10 @@ export default class Plugin {
             r.registerNeedsTeamRoute('/error', ErrorPage);
             r.registerNeedsTeamRoute('/', Backstage);
 
+            r.registerPostTypeComponent('custom_retro_rem_first', RetrospectiveFirstReminder);
+            r.registerPostTypeComponent('custom_retro_rem', RetrospectiveReminder);
+            r.registerPostTypeComponent('custom_cloud_upgrade', CloudUpgradePost);
+
             return r.unregister;
         };
 
@@ -119,13 +126,10 @@ export default class Plugin {
         const checkRegistrations = () => {
             updateMainMenuAction();
 
-            if (!registered && isPricingPlanDifferentiationEnabled(store.getState())) {
+            if (!registered && isE20LicensedOrDevelopment(store.getState())) {
                 unregister = doRegistrations();
                 registered = true;
-            } else if (!registered && isE10LicensedOrDevelopment(store.getState())) {
-                unregister = doRegistrations();
-                registered = true;
-            } else if (unregister && !isE10LicensedOrDevelopment(store.getState())) {
+            } else if (unregister && !isE20LicensedOrDevelopment(store.getState())) {
                 unregister();
                 registered = false;
             }

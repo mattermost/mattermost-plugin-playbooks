@@ -18,13 +18,14 @@ import {Post} from 'mattermost-redux/types/posts';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
 
+import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
+
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel} from 'src/selectors';
-import {Incident, StatusPost} from 'src/types/incident';
 import {clientFetchPlaybooksCount} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
-import {isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from './license';
+import {isCloud, isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from './license';
 import {currentTeamNumPlaybooks, globalSettings} from './selectors';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
@@ -213,8 +214,8 @@ export function usePost(postId: string) {
     return post;
 }
 
-export function useLatestUpdate(incident: Incident) {
-    const postId = getLatestPostId(incident.status_posts);
+export function useLatestUpdate(playbookRun: PlaybookRun) {
+    const postId = getLatestPostId(playbookRun.status_posts);
     return usePost(postId);
 }
 
@@ -284,4 +285,34 @@ export function useEnsureProfiles(userIds: string[]) {
     if (unknownIds.length > 0) {
         dispatch(getProfilesByIds(userIds));
     }
+}
+
+export function useOpenCloudModal() {
+    const dispatch = useDispatch();
+    const isServerCloud = useSelector(isCloud);
+
+    if (!isServerCloud) {
+        return () => { /*do nothing*/ };
+    }
+
+    // @ts-ignore
+    if (!window.WebappUtils?.modals?.openModal || !window.WebappUtils?.modals?.ModalIdentifiers?.CLOUD_PURCHASE || !window.Components?.PurchaseModal) {
+        // eslint-disable-next-line no-console
+        console.error('unable to open cloud modal');
+
+        return () => { /*do nothing*/ };
+    }
+
+    // @ts-ignore
+    const {openModal, ModalIdentifiers} = window.WebappUtils.modals;
+
+    // @ts-ignore
+    const PurchaseModal = window.Components.PurchaseModal;
+
+    return () => {
+        dispatch(openModal({
+            modalId: ModalIdentifiers.CLOUD_PURCHASE,
+            dialogType: PurchaseModal,
+        }));
+    };
 }

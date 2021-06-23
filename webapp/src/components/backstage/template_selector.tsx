@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 import styled from 'styled-components';
 
 import {Playbook, emptyPlaybook, newChecklistItem, defaultMessageOnJoin} from 'src/types/playbook';
@@ -19,16 +19,16 @@ export interface PresetTemplate {
 
 export const PresetTemplates: PresetTemplate[] = [
     {
-        title: 'Blank Playbook',
+        title: 'Blank',
         icon: <FileIcon/>,
         template: emptyPlaybook(),
     },
     {
-        title: 'Incident Collaboration Playbook',
+        title: 'Service Outage Incident',
         icon: <AlertIcon/>,
         template: {
             ...emptyPlaybook(),
-            title: 'Incident Collaboration Playbook',
+            title: 'Service Outage Incident',
             description: '### Summary\n\nDescribe the incident so that someone without prior knowledge can ramp up quickly. Two sentences is the ideal length.\n\n' +
                 '### Impact\n\nDescribe the customer and organizational impact of this incident.',
             reminder_message_template: '### Incident update\n\nDescribe progress and changes to the incident since the last update.\n\n' +
@@ -62,7 +62,7 @@ export const PresetTemplates: PresetTemplate[] = [
                     title: 'Resolution',
                     items: [
                         newChecklistItem('Close alert'),
-                        newChecklistItem('End the incident', '', '/incident end'),
+                        newChecklistItem('End the incident', '', '/playbook end'),
                         newChecklistItem('Schedule a post-mortem'),
                         newChecklistItem('Record post-mortem action items'),
                         newChecklistItem('Update playbook with learnings'),
@@ -133,7 +133,7 @@ interface Props {
     onSelect: (t: PresetTemplate) => void
 }
 
-const TemplateSelector: FC<Props> = ({templates = PresetTemplates, onSelect}: Props) => {
+const TemplateSelector = ({templates = PresetTemplates, onSelect}: Props) => {
     const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
 
     return (
@@ -141,7 +141,7 @@ const TemplateSelector: FC<Props> = ({templates = PresetTemplates, onSelect}: Pr
             <RootContainer>
                 <InnerContainer>
                     <Title>
-                        {'Start a new playbook'}
+                        {'Create a playbook'}
                         {!allowPlaybookCreation && <PositionedUpgradeBadge/>}
                     </Title>
                     <TemplateItemDiv>

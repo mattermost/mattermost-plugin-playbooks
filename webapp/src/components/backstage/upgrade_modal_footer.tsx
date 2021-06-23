@@ -1,4 +1,4 @@
-import React, {FC} from 'react';
+import React from 'react';
 
 import styled from 'styled-components';
 
@@ -10,9 +10,10 @@ interface Props {
     actionState: ModalActionState;
     isCurrentUserAdmin: boolean;
     isServerTeamEdition: boolean;
+    isCloud: boolean;
 }
 
-const UpgradeModalFooter : FC<Props> = (props: Props) => {
+const UpgradeModalFooter = (props: Props) => {
     if (!props.isCurrentUserAdmin) {
         return null;
     }
@@ -22,6 +23,10 @@ const UpgradeModalFooter : FC<Props> = (props: Props) => {
     }
 
     if (props.isServerTeamEdition) {
+        return null;
+    }
+
+    if (props.isCloud) {
         return null;
     }
 

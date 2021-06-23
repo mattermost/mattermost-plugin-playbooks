@@ -18,8 +18,9 @@
 /**
  * @type {Cypress.PluginConfig}
  */
-module.exports = (on, config) => {
+module.exports = (on) => {
     // `on` is used to hook into various events Cypress emits
     // `config` is the resolved Cypress config
+    //eslint-disable-next-line global-require
     require('cypress-terminal-report/src/installLogsPrinter')(on);
 };

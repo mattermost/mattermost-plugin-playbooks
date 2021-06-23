@@ -11,6 +11,8 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
+import {PlaybookRun} from 'src/types/playbook_run';
+
 import {pluginId} from 'src/manifest';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 import PlusIcon from 'src/components/assets/icons/plus_icon';
@@ -19,13 +21,12 @@ import {
     renderTrackHorizontal,
     renderView, RHSContainer, RHSContent,
 } from 'src/components/rhs/rhs_shared';
-import {setRHSViewingIncident, startIncident} from 'src/actions';
+import {setRHSViewingPlaybookRun, startPlaybookRun} from 'src/actions';
 import {navigateToTeamPluginUrl, navigateToUrl} from 'src/browser_routing';
-import {Incident} from 'src/types/incident';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
-import {myActiveIncidentsList} from 'src/selectors';
+import {myActivePlaybookRunsList} from 'src/selectors';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
-import RHSListIncident from 'src/components/rhs/rhs_list_incident';
+import RHSListPlaybookRun from 'src/components/rhs/rhs_list_playbook_run';
 
 const Header = styled.div`
     display: grid;
@@ -75,18 +76,18 @@ const RHSListView = () => {
     const dispatch = useDispatch();
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
-    const incidentList = useSelector<GlobalState, Incident[]>(myActiveIncidentsList);
+    const playbookRunList = useSelector<GlobalState, PlaybookRun[]>(myActivePlaybookRunsList);
 
-    const viewIncident = (channelId: string) => {
-        dispatch(setRHSViewingIncident());
+    const viewPlaybookRun = (channelId: string) => {
+        dispatch(setRHSViewingPlaybookRun());
         navigateToUrl(`/${currentTeam.name}/channels/${channelId}`);
     };
 
-    const viewBackstageIncidentList = () => {
-        navigateToUrl(`/${currentTeam.name}/${pluginId}/incidents`);
+    const viewBackstagePlaybookRunList = () => {
+        navigateToUrl(`/${currentTeam.name}/${pluginId}/runs`);
     };
 
-    if (incidentList.length === 0) {
+    if (playbookRunList.length === 0) {
         return <RHSWelcomeView/>;
     }
 
@@ -104,33 +105,32 @@ const RHSListView = () => {
                 >
                     <Header>
                         <CenterCell>
-                            <Link onClick={() => dispatch(startIncident())}>
-                                <PlusIcon/>{'Start Incident'}
+                            <Link onClick={() => dispatch(startPlaybookRun())}>
+                                <PlusIcon/>{'Run playbook'}
                             </Link>
                         </CenterCell>
                         <RightCell>
                             <ThreeDotMenu
                                 onCreatePlaybook={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
-                                onSeeAllIncidents={() => navigateToTeamPluginUrl(currentTeam.name, '/incidents')}
+                                onSeeAllPlaybookRuns={() => navigateToTeamPluginUrl(currentTeam.name, '/runs')}
                             />
                         </RightCell>
                     </Header>
 
-                    {incidentList.map((incident) => {
+                    {playbookRunList.map((playbookRun) => {
                         return (
-                            <RHSListIncident
-                                key={incident.id}
-                                incident={incident}
-                                active={currentChannelId === incident.channel_id}
-                                viewIncident={viewIncident}
+                            <RHSListPlaybookRun
+                                key={playbookRun.id}
+                                playbookRun={playbookRun}
+                                active={currentChannelId === playbookRun.channel_id}
+                                viewPlaybookRun={viewPlaybookRun}
                             />
                         );
                     })}
 
                     <Footer>
-                        {'Looking for closed incidents? '}
-                        <a onClick={viewBackstageIncidentList}>{'Click here'}</a>
-                        {' to see all incidents.'}
+                        <a onClick={viewBackstagePlaybookRunList}>{'Click here'}</a>
+                        {' to see all runs in the team.'}
                     </Footer>
                 </Scrollbars>
             </RHSContent>
@@ -140,7 +140,7 @@ const RHSListView = () => {
 
 interface ThreeDotMenuProps {
     onCreatePlaybook: () => void;
-    onSeeAllIncidents: () => void;
+    onSeeAllPlaybookRuns: () => void;
 }
 
 const ThreeDotMenu = (props: ThreeDotMenuProps) => (
@@ -149,12 +149,12 @@ const ThreeDotMenu = (props: ThreeDotMenuProps) => (
         left={true}
     >
         <DropdownMenuItem
-            text='Create Playbook'
+            text='Create playbook'
             onClick={props.onCreatePlaybook}
         />
         <DropdownMenuItem
-            text='See all Incidents'
-            onClick={props.onSeeAllIncidents}
+            text='See all runs'
+            onClick={props.onSeeAllPlaybookRuns}
         />
     </DotMenu>
 );

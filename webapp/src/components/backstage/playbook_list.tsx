@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 import qs from 'qs';
@@ -41,7 +41,7 @@ import {useAllowPlaybookCreationInCurrentTeam, useCanCreatePlaybooks} from 'src/
 
 const DeleteBannerTimeout = 5000;
 
-const PlaybookList: FC = () => {
+const PlaybookList = () => {
     const [playbooks, setPlaybooks] = useState<PlaybookNoChecklist[] | null>(null);
     const [totalCount, setTotalCount] = useState(0);
     const [selectedPlaybook, setSelectedPlaybook] = useState<PlaybookNoChecklist | null>(null);
@@ -86,9 +86,14 @@ const PlaybookList: FC = () => {
         fetchPlaybooks();
     }, [currentTeam.id, fetchParams]);
 
-    const editPlaybook = (playbook: PlaybookNoChecklist) => {
+    const viewPlaybook = (playbook: PlaybookNoChecklist) => {
         setSelectedPlaybook(playbook);
         navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook.id}`);
+    };
+
+    const editPlaybook = (playbook: PlaybookNoChecklist) => {
+        setSelectedPlaybook(playbook);
+        navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook.id}/edit`);
     };
 
     const newPlaybook = (templateTitle?: string | undefined) => {
@@ -154,7 +159,7 @@ const PlaybookList: FC = () => {
             <div
                 className='row playbook-item'
                 key={p.id}
-                onClick={() => editPlaybook(p)}
+                onClick={() => viewPlaybook(p)}
             >
                 <a className='col-sm-4 title'>
                     <TextWithTooltip
@@ -243,7 +248,7 @@ const PlaybookList: FC = () => {
                                         allowPlaybookCreation={allowPlaybookCreation}
                                     >
                                         <i className='icon-plus mr-2'/>
-                                        {'Create a Playbook'}
+                                        {'Create playbook'}
                                     </UpgradeOrPrimaryButton>
                                 </div>
                             }
@@ -287,9 +292,9 @@ const PlaybookList: FC = () => {
                     </div>
                     <ConfirmModal
                         show={showConfirmation}
-                        title={'Confirm Playbook Deletion'}
+                        title={'Delete playbook'}
                         message={`Are you sure you want to delete the playbook "${selectedPlaybook?.title}"?`}
-                        confirmButtonText={'Delete Playbook'}
+                        confirmButtonText={'Delete'}
                         onConfirm={onDelete}
                         onCancel={hideConfirmModal}
                     />
@@ -301,7 +306,7 @@ const PlaybookList: FC = () => {
 
 type CreatePlaybookButtonProps = UpgradeButtonProps & {allowPlaybookCreation: boolean};
 
-const UpgradeOrPrimaryButton : FC<CreatePlaybookButtonProps> = (props: CreatePlaybookButtonProps) => {
+const UpgradeOrPrimaryButton = (props: CreatePlaybookButtonProps) => {
     const {children, allowPlaybookCreation, ...rest} = props;
 
     if (allowPlaybookCreation) {
@@ -387,8 +392,8 @@ const Button = styled.button`
 const NoContentPage = (props: { onNewPlaybook: () => void, canCreatePlaybooks: boolean, allowPlaybookCreation: boolean }) => {
     return (
         <Container>
-            <Title>{'What is a Playbook?'}</Title>
-            <Description>{'A playbook is a workflow template which must be created before an incident occurs. It defines the checklists and tasks associated with an incident, as well as who can use playbook to start an incident.'}</Description>
+            <Title>{'What is a playbook?'}</Title>
+            <Description>{'A playbook is a workflow that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives.'}</Description>
             { props.canCreatePlaybooks &&
                 <UpgradeOrPrimaryButton
                     className='mt-6'
@@ -396,11 +401,11 @@ const NoContentPage = (props: { onNewPlaybook: () => void, canCreatePlaybooks: b
                     allowPlaybookCreation={props.allowPlaybookCreation}
                 >
                     <i className='icon-plus mr-2'/>
-                    {'New Playbook'}
+                    {'Create playbook'}
                 </UpgradeOrPrimaryButton>
             }
             { !props.canCreatePlaybooks &&
-            <DescriptionWarn>{"There are no playbooks to view. You don't have permission to create playbooks on this server."}</DescriptionWarn>
+            <DescriptionWarn>{"There are no playbooks to view. You don't have permission to create playbooks in this workspace."}</DescriptionWarn>
             }
         </Container>
     );

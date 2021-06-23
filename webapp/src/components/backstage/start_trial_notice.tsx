@@ -1,6 +1,6 @@
 import React, {FC} from 'react';
 
-const StartTrialNotice : FC = () => {
+const StartTrialNotice = () => {
     const agreement = (
         <a
             href={'https://mattermost.com/software-evaluation-agreement/'}

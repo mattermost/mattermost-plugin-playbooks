@@ -1,4 +1,4 @@
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {ActionFunc} from 'mattermost-redux/types/actions';
@@ -35,7 +35,7 @@ const UserSelectorWrapper = styled.div`
 
 const selectCurrentTeamName = (state: GlobalState) => getCurrentTeam(state).name;
 
-const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
+const SharePlaybook = (props: SharePlaybookProps) => {
     const allowPlaybookGranularAccess = useAllowPlaybookGranularAccess();
     const [showModal, setShowModal] = useState(false);
 
@@ -92,7 +92,7 @@ const SharePlaybook: FC<SharePlaybookProps> = (props: SharePlaybookProps) => {
             {enabled &&
                 <UserSelectorWrapper>
                     <BackstageSubheaderDescription>
-                        {'Only users who you select will be able to edit the playbook or create an incident from this playbook.'}
+                        {'Only users who you select will be able to edit or run this playbook.'}
                     </BackstageSubheaderDescription>
                     <SelectUsersBelow
                         userIds={props.playbook.member_ids}

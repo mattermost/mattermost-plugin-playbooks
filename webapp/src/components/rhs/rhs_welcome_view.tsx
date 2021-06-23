@@ -9,14 +9,14 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 
-import {startIncident} from 'src/actions';
+import {startPlaybookRun} from 'src/actions';
 import {navigateToTeamPluginUrl} from 'src/browser_routing';
 import {clientHasPlaybooks} from 'src/client';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import NoContentPlaybookSvgRhs from 'src/components/assets/no_content_playbooks_rhs_svg';
 import {RHSContainer} from 'src/components/rhs/rhs_shared';
 
-const NoIncidentsContainer = styled.div`
+const NoPlaybookRunsContainer = styled.div`
     margin: 48px 40px 0;
     display: block;
     flex-direction: column;
@@ -31,7 +31,7 @@ const NoIncidentsContainer = styled.div`
     }
 `;
 
-const NoIncidentsItem = styled.div`
+const NoPlaybookRunsItem = styled.div`
     margin-bottom: 24px;
 `;
 
@@ -56,22 +56,22 @@ const RHSWelcomeView = () => {
     if (hasPlaybooks) {
         return (
             <RHSContainer>
-                <NoIncidentsContainer data-testid='welcome-view-has-playbooks'>
+                <NoPlaybookRunsContainer data-testid='welcome-view-has-playbooks'>
                     <NoContentPlaybookSvgRhs/>
-                    <NoIncidentsItem>
+                    <NoPlaybookRunsItem>
                         <h1>
-                            {'Take action now with Incident Collaboration.'}
+                            {'Take action now using playbooks'}
                         </h1>
                         <p className='mt-3 mb-4 light'>
-                            {'You don’t have any active incidents at the moment. Start an incident immediately with an existing playbook.'}
+                            {'There are no runs in progress at the moment. Run a playbook to start orchestrating workflows for your team and tools.'}
                         </p>
                         <div className='header-button-div mb-4'>
                             <PrimaryButton
-                                onClick={() => dispatch(startIncident())}
+                                onClick={() => dispatch(startPlaybookRun())}
                             >
                                 <SideBySide>
                                     <i className='icon-plus icon--no-spacing mr-2'/>
-                                    {'Start Incident'}
+                                    {'Run playbook'}
                                 </SideBySide>
                             </PrimaryButton>
                         </div>
@@ -81,34 +81,34 @@ const RHSWelcomeView = () => {
                         <TertiaryButton
                             onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
                         >
-                            {'Create Playbook'}
+                            {'Create playbook'}
                         </TertiaryButton>
-                    </NoIncidentsItem>
-                </NoIncidentsContainer>
+                    </NoPlaybookRunsItem>
+                </NoPlaybookRunsContainer>
             </RHSContainer>
         );
     }
 
     return (
         <RHSContainer>
-            <NoIncidentsContainer data-testid='welcome-view'>
+            <NoPlaybookRunsContainer data-testid='welcome-view'>
                 <NoContentPlaybookSvgRhs/>
-                <NoIncidentsItem>
+                <NoPlaybookRunsItem>
                     <h1>
-                        {'Simplify your processes with Incident Collaboration'}
+                        {'Streamline your processes with playbooks'}
                     </h1>
                     <p className='mt-3 mb-8 light'>
-                        {'Create a playbook to define your incident collaboration workflow. Select a template or create your playbook from scratch.'}
+                        {'Create a playbook to prescribe the workflow that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives.'}
                     </p>
                     <div className='header-button-div mb-4'>
                         <PrimaryButton
                             onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
                         >
-                            {'Create Playbook'}
+                            {'Create playbook'}
                         </PrimaryButton>
                     </div>
-                </NoIncidentsItem>
-            </NoIncidentsContainer>
+                </NoPlaybookRunsItem>
+            </NoPlaybookRunsContainer>
         </RHSContainer>
     );
 };

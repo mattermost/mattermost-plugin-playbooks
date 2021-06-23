@@ -2,8 +2,8 @@ import {Store} from 'redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {generateId} from 'mattermost-redux/utils/helpers';
 
-import {toggleRHS, setClientId, setRHSViewingList, setRHSViewingIncident} from 'src/actions';
-import {inIncidentChannel, isIncidentRHSOpen, currentRHSState} from 'src/selectors';
+import {toggleRHS, setClientId, setRHSViewingList, setRHSViewingPlaybookRun} from 'src/actions';
+import {inPlaybookRunChannel, isPlaybookRunRHSOpen, currentRHSState} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
 
 export function makeSlashCommandHook(store: Store<GlobalState>) {
@@ -14,39 +14,39 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
             messageTrimmed = message.trim();
         }
 
-        if (messageTrimmed && messageTrimmed.startsWith('/incident start')) {
+        if (messageTrimmed && messageTrimmed.startsWith('/playbook start')) {
             const clientId = generateId();
             store.dispatch(setClientId(clientId));
 
-            messageTrimmed = `/incident start ${clientId}`;
+            messageTrimmed = `/playbook start ${clientId}`;
 
             return Promise.resolve({message: messageTrimmed, args});
         }
 
-        if (messageTrimmed && messageTrimmed.startsWith('/incident info')) {
+        if (messageTrimmed && messageTrimmed.startsWith('/playbook info')) {
             const state = store.getState();
 
-            if (inIncidentChannel(state) && !isIncidentRHSOpen(state)) {
+            if (inPlaybookRunChannel(state) && !isPlaybookRunRHSOpen(state)) {
                 //@ts-ignore thunk
                 store.dispatch(toggleRHS());
             }
 
-            if (inIncidentChannel(state) && currentRHSState(state) !== RHSState.ViewingIncident) {
-                store.dispatch(setRHSViewingIncident());
+            if (inPlaybookRunChannel(state) && currentRHSState(state) !== RHSState.ViewingPlaybookRun) {
+                store.dispatch(setRHSViewingPlaybookRun());
             }
 
             return Promise.resolve({message: messageTrimmed, args});
         }
 
-        if (messageTrimmed && messageTrimmed.startsWith('/incident list')) {
+        if (messageTrimmed && messageTrimmed.startsWith('/playbook list')) {
             const state = store.getState();
 
-            if (!isIncidentRHSOpen(state)) {
+            if (!isPlaybookRunRHSOpen(state)) {
                 //@ts-ignore thunk
                 store.dispatch(toggleRHS());
             }
 
-            if (inIncidentChannel(state) && currentRHSState(state) !== RHSState.ViewingList) {
+            if (inPlaybookRunChannel(state) && currentRHSState(state) !== RHSState.ViewingList) {
                 store.dispatch(setRHSViewingList());
             }
 

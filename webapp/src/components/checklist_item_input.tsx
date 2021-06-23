@@ -1,4 +1,4 @@
-import React, {FC, useState, useRef, useEffect} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 
 import styled from 'styled-components';
 
@@ -19,7 +19,7 @@ const SlashCommandContainer = styled.div`
     flex: 0.5;
 `;
 
-export const ChecklistItemCommand: FC<ChecklistItemCommandProps> = (props: ChecklistItemCommandProps) => {
+export const ChecklistItemCommand = (props: ChecklistItemCommandProps) => {
     const [commandOpen, setCommandOpen] = useState(props.command.length > 0);
     const [wasOpened, setWasOpened] = useState(false);
 
@@ -38,7 +38,7 @@ export const ChecklistItemCommand: FC<ChecklistItemCommandProps> = (props: Check
             }}
         >
             <i className='icon-plus'/>
-            {'Add a Slash Command'}
+            {'Add a slash command'}
         </TertiaryButton>
     );
 
@@ -72,7 +72,7 @@ interface ChecklistItemDescriptionProps {
     setDescription: (description: string) => void;
 }
 
-export const ChecklistItemDescription: FC<ChecklistItemDescriptionProps> = (props: ChecklistItemDescriptionProps) => {
+export const ChecklistItemDescription = (props: ChecklistItemDescriptionProps) => {
     const [description, setDescription] = useState(props.description);
     const [descriptionOpen, setDescriptionOpen] = useState(props.description.length > 0);
     const [hover, setHover] = useState(false);
@@ -88,7 +88,7 @@ export const ChecklistItemDescription: FC<ChecklistItemDescriptionProps> = (prop
             }}
         >
             <i className='icon-plus icon-12 icon--no-spacing mr-1'/>
-            {'Add Optional Description'}
+            {'Add optional description'}
         </GrayTertiaryButton>
     );
     if (descriptionOpen) {
@@ -132,7 +132,7 @@ interface ChecklistItemButtonProps {
     item: ChecklistItem;
 }
 
-export const ChecklistItemButton: FC<ChecklistItemButtonProps> = (props: ChecklistItemButtonProps) => {
+export const ChecklistItemButton = (props: ChecklistItemButtonProps) => {
     const isChecked = props.item.state === ChecklistItemState.Closed;
 
     return (
@@ -159,7 +159,7 @@ const StyledBaseInput = styled(BaseInput)`
     flex: 0.5;
 `;
 
-export const ChecklistItemTitle: FC<ChecklistItemTitleProps> = (props: ChecklistItemTitleProps) => {
+export const ChecklistItemTitle = (props: ChecklistItemTitleProps) => {
     const [title, setTitle] = useState(props.title);
 
     const save = () => {
@@ -174,7 +174,7 @@ export const ChecklistItemTitle: FC<ChecklistItemTitleProps> = (props: Checklist
 
     return (
         <StyledBaseInput
-            placeholder={'Task Name'}
+            placeholder={'Task name'}
             type='text'
             value={title}
             onChange={(e) => setTitle(e.target.value)}

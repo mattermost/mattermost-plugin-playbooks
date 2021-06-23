@@ -1,4 +1,4 @@
-import React, {FC, useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 import styled, {createGlobalStyle} from 'styled-components';
 
@@ -50,7 +50,7 @@ interface CommandInputProps {
     grabFocus?: boolean;
 }
 
-const CommandInput: FC<CommandInputProps> = (props: CommandInputProps) => {
+const CommandInput = (props: CommandInputProps) => {
     const [command, setCommand] = useState(props.command);
     const [hover, setHover] = useState(false);
     const textboxRef = useRef(null);

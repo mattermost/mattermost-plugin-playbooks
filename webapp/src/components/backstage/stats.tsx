@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useEffect, useState, ReactNode} from 'react';
+import React, {useEffect, useState, ReactNode} from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 
 import {Line} from 'react-chartjs-2';
@@ -71,7 +71,7 @@ const Content = styled.div`
     padding: 0.3em 0 0.35em;
 `;
 
-const StatisticCount: FC<SatisticCountProps> = (props: SatisticCountProps) => {
+const StatisticCount = (props: SatisticCountProps) => {
     const match = useRouteMatch<URLParams>('/:team/:plugin');
     const titleandcontent = (
         <>
@@ -120,7 +120,7 @@ const GraphBoxContainer = styled.div`
     float: left;
 `;
 
-const GraphBox: FC<GraphBoxProps> = (props: GraphBoxProps) => {
+const GraphBox = (props: GraphBoxProps) => {
     const style = getComputedStyle(document.body);
     const centerChannelFontColor = style.getPropertyValue('--center-channel-color');
     return (
@@ -177,7 +177,7 @@ const StatsContainers = styled.div`
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 `;
 
-const StatsView: FC = () => {
+const StatsView = () => {
     const [stats, setStats] = useState<Stats|null>(null);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
@@ -199,18 +199,18 @@ const StatsView: FC = () => {
             </BackstageHeader>
             <StatsContainers>
                 <StatisticCount
-                    id={'TotalReportedIncidents'}
-                    title={'Total Reported Incidents'}
+                    id={'TotalReportedPlaybookRuns'}
+                    title={'Total Reported'}
                     icon={'fa-exclamation-triangle'}
-                    count={stats?.total_reported_incidents}
-                    to={'incidents?status=Reported'}
+                    count={stats?.total_reported_playbook_runs}
+                    to={'runs?status=Reported'}
                 />
                 <StatisticCount
-                    id={'TotalActiveIncidents'}
-                    title={'Total Active Incidents'}
+                    id={'TotalActivePlaybookRuns'}
+                    title={'Total Active'}
                     icon={'fa-exclamation-circle'}
-                    count={stats?.total_active_incidents}
-                    to={'incidents?status=Active'}
+                    count={stats?.total_active_playbook_runs}
+                    to={'runs?status=Active'}
                 />
                 <StatisticCount
                     id={'TotalActiveParticipants'}
@@ -222,21 +222,21 @@ const StatsView: FC = () => {
                     id={'AverageDuration'}
                     title={'Average Duration'}
                     icon={'fa-clock-o'}
-                    count={renderDuration(moment.duration(stats?.average_duration_active_incidents_minutes, 'minutes'))}
+                    count={renderDuration(moment.duration(stats?.average_duration_active_playbook_runs_minutes, 'minutes'))}
                 />
             </StatsContainers>
             <div>
                 <GraphBox
-                    title={'Total incidents by day'}
+                    title={'Total runs by day'}
                     xlabel={'Days ago'}
-                    labels={stats?.active_incidents.map((_: number, index: number) => String(index + 1)).reverse()}
-                    data={stats?.active_incidents.slice().reverse()}
+                    labels={stats?.active_playbook_runs.map((_: number, index: number) => String(index + 1)).reverse()}
+                    data={stats?.active_playbook_runs.slice().reverse()}
                 />
                 <GraphBox
                     title={'Total participants by day'}
                     xlabel={'Days ago'}
-                    labels={stats?.people_in_incidents.map((_: number, index: number) => String(index + 1)).reverse()}
-                    data={stats?.people_in_incidents.slice().reverse()}
+                    labels={stats?.people_in_playbook_runs.map((_: number, index: number) => String(index + 1)).reverse()}
+                    data={stats?.people_in_playbook_runs.slice().reverse()}
                 />
             </div>
             <div>

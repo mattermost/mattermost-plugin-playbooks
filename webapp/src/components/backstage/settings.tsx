@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {getProfiles, searchProfiles} from 'mattermost-redux/actions/users';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -62,7 +62,7 @@ interface PlaybookCreatorsProps {
     onChange: (newsettings: GlobalSettings) => void
 }
 
-const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProps) => {
+const PlaybookCreators = (props: PlaybookCreatorsProps) => {
     const allowPlaybookCreationRestriction = useAllowPlaybookCreationRestriction();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
@@ -158,7 +158,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
                         checked={!enabled}
                         onChange={handleDisabled}
                     />
-                    {'Everyone on the server can create playbooks.'}
+                    {'Everyone in this workspace can create playbooks.'}
                 </RadioLabel>
                 <RadioLabel>
                     <RadioInput
@@ -191,9 +191,9 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
             </UserSelectorWrapper>
             <ConfirmModal
                 show={confirmRemoveSelfOpen !== ''}
-                title={'Confirm Remove Self'}
-                message={"When you remove yourself as a playbook creator you won't be able to add yourself back. Are you sure you'd like to perform this action?"}
-                confirmButtonText={'Remove Self'}
+                title={'Remove from playbook'}
+                message={'After you remove your own access to this playbook, you won\'t be able to add yourself back. Are you sure you\'d like to perform this action?'}
+                confirmButtonText={'Remove'}
                 onConfirm={() => {
                     removeUser(confirmRemoveSelfOpen);
                     setConfirmRemoveSelfOpen('');
@@ -209,7 +209,7 @@ const PlaybookCreators: FC<PlaybookCreatorsProps> = (props: PlaybookCreatorsProp
     );
 };
 
-const SettingsView: FC = () => {
+const SettingsView = () => {
     const dispatch = useDispatch();
     const settings = useSelector(globalSettings);
 

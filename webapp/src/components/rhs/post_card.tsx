@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import moment from 'moment';
 
 import {useDispatch, useSelector} from 'react-redux';
-import React, {FC, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import {Post} from 'mattermost-redux/types/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -20,11 +20,12 @@ import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entiti
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 
+import {StatusPost} from 'src/types/playbook_run';
+
 import {isMobile} from 'src/mobile';
 import {updateStatus, toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import ShowMore from 'src/components/rhs/show_more';
-import {StatusPost} from 'src/types/incident';
 import {UpdateBody} from 'src/components/rhs/rhs_shared';
 import PostText from 'src/components/post_text';
 
@@ -90,7 +91,7 @@ interface Props {
     post: Post | null;
 }
 
-const PostCard: FC<Props> = (props: Props) => {
+const PostCard = (props: Props) => {
     const dispatch = useDispatch();
     const [authorProfileUrl, authorUserName] = useAuthorInfo(props.post?.user_id || '');
 

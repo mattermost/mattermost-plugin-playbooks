@@ -16,7 +16,7 @@ import WarningIcon from 'src/components/assets/icons/warning_icon';
 import {ErrorPageTypes} from 'src/constants';
 import {teamPluginUrl} from 'src/browser_routing';
 
-const ErrorPage: FC = () => {
+const ErrorPage = () => {
     useEffect(() => {
         document.body.setAttribute('class', 'sticky error');
         return () => {
@@ -29,23 +29,23 @@ const ErrorPage: FC = () => {
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
-    let title = 'Page Not Found';
+    let title = 'Page not found';
     let message = 'The page you were trying to reach does not exist.';
     let returnTo = '/';
     let returnToMsg = 'Back to Mattermost';
 
     switch (params.type) {
-    case ErrorPageTypes.INCIDENTS:
-        title = 'Incident Not Found';
-        message = "The incident you're requesting is private or does not exist. Please contact an Administrator to be added to the incident.";
-        returnTo = teamPluginUrl(currentTeam.name, '/incidents');
-        returnToMsg = 'Back to Incidents';
+    case ErrorPageTypes.PLAYBOOK_RUNS:
+        title = 'Run not found';
+        message = "The run you're requesting is private or does not exist.";
+        returnTo = teamPluginUrl(currentTeam.name, '/runs');
+        returnToMsg = 'Back to runs';
         break;
     case ErrorPageTypes.PLAYBOOKS:
         title = 'Playbook Not Found';
-        message = "The playbook you're requesting is private or does not exist. Please contact an Administrator to access the playbook.";
+        message = "The playbook you're requesting is private or does not exist.";
         returnTo = teamPluginUrl(currentTeam.name, '/playbooks');
-        returnToMsg = 'Back to Playbooks';
+        returnToMsg = 'Back to playbooks';
         break;
     }
 

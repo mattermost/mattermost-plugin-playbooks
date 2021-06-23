@@ -1,4 +1,4 @@
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 
@@ -50,7 +50,7 @@ export interface DragHandleProps {
     onDelete: () => void
 }
 
-const DragHandle: FC<DragHandleProps> = (props: DragHandleProps) => {
+const DragHandle = (props: DragHandleProps) => {
     const [hover, setHover] = useState(false);
 
     return (

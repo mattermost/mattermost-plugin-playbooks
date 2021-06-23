@@ -29,7 +29,7 @@ export interface UpgradeModalButtons {
     handleCancel : HandlerType;
 }
 
-export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: boolean, state: ModalActionState, requestLicense: () => void, notifyAdmins: () => void, onHide: () => void) : UpgradeModalButtons => {
+export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: boolean, isCloud: boolean, state: ModalActionState, adminMainAction: () => void, endUserMainAction: () => void, onHide: () => void) : UpgradeModalButtons => {
     if (isServerTeamEdition && isAdmin) {
         return {
             confirmButtonText: '',
@@ -44,17 +44,19 @@ export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: bo
     switch (state) {
     case ModalActionState.Uninitialized:
         if (isAdmin) {
+            const confirmButtonText = isCloud ? 'Upgrade now' : 'Start trial';
+
             return {
-                confirmButtonText: 'Start trial',
+                confirmButtonText,
                 cancelButtonText: 'Not right now',
-                handleConfirm: requestLicense,
+                handleConfirm: adminMainAction,
                 handleCancel: onHide,
             };
         }
         return {
             confirmButtonText: 'Notify System Admin',
             cancelButtonText: 'Not right now',
-            handleConfirm: notifyAdmins,
+            handleConfirm: endUserMainAction,
             handleCancel: onHide,
         };
 
@@ -116,7 +118,7 @@ export const getUpgradeModalCopy = (
                 titleText: 'Your 30-day trial has started',
                 helpText: (
                     <span>
-                        {`Your Enterprise E10 license expires on ${expiryDate}. You can purchase a license at any time through the `}
+                        {`Your Mattermost Enterprise license expires on ${expiryDate}. You can purchase a license at any time through the `}
                         <a
                             href='https://customers.mattermost.com/signup'
                             target={'_blank'}
@@ -138,16 +140,16 @@ export const getUpgradeModalCopy = (
         switch (messageType) {
         case AdminNotificationType.PLAYBOOK:
             titleText = 'Playbook limit reached';
-            helpText = 'Every incident is different. With multiple playbooks each incident\'s workflow can be refined over time to improve time to resolution.';
+            helpText = 'Create multiple playbooks to prescribe different workflows for your teams.';
             break;
         case AdminNotificationType.VIEW_TIMELINE:
         case AdminNotificationType.MESSAGE_TO_TIMELINE:
             titleText = 'Add more to your timeline';
-            helpText = 'Add important messages from the incident channel to the timeline and improve context in your retrospective.';
+            helpText = 'Save important messages for a complete picture that streamlines retrospectives.';
             break;
         case AdminNotificationType.PLAYBOOK_GRANULAR_ACCESS:
             titleText = 'Put your team in control';
-            helpText = 'Use permissions to manage who can view, modify, and create incidents from this playbook.';
+            helpText = 'Manage permission for who can view, modify, and run this playbook.';
             break;
         case AdminNotificationType.PLAYBOOK_CREATION_RESTRICTION:
             titleText = 'Put your team in control';

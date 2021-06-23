@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 
 import styled from 'styled-components';
@@ -11,9 +11,9 @@ import {Post} from 'mattermost-redux/types/posts';
 import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 
-import IncidentPostMenuIcon from 'src/components/assets/icons/post_menu_icon';
+import PlaybookRunPostMenuIcon from 'src/components/assets/icons/post_menu_icon';
 
-import {addToTimeline, startIncident, showPostMenuModal} from 'src/actions';
+import {addToTimeline, startPlaybookRun, showPostMenuModal} from 'src/actions';
 
 import {useAllowAddMessageToTimelineInCurrentTeam} from 'src/hooks';
 
@@ -23,7 +23,7 @@ interface Props {
     postId: string;
 }
 
-export const StartIncidentPostMenu: FC<Props> = (props: Props) => {
+export const StartPlaybookRunPostMenu = (props: Props) => {
     const dispatch = useDispatch();
     const post = useSelector<GlobalState, Post>((state) => getPost(state, props.postId));
     if (!post || isSystemMessage(post)) {
@@ -31,7 +31,7 @@ export const StartIncidentPostMenu: FC<Props> = (props: Props) => {
     }
 
     const handleClick = () => {
-        dispatch(startIncident(props.postId));
+        dispatch(startPlaybookRun(props.postId));
     };
 
     return (
@@ -42,19 +42,19 @@ export const StartIncidentPostMenu: FC<Props> = (props: Props) => {
                 onClick={handleClick}
             >
                 <button
-                    data-testid='incidentPostMenuIcon'
+                    data-testid='playbookRunPostMenuIcon'
                     className='style--none'
                     role='presentation'
                 >
-                    <IncidentPostMenuIcon/>
-                    {'Start incident'}
+                    <PlaybookRunPostMenuIcon/>
+                    {'Run playbook'}
                 </button>
             </li>
         </React.Fragment>
     );
 };
 
-export const AttachToIncidentPostMenu: FC<Props> = (props: Props) => {
+export const AttachToPlaybookRunPostMenu = (props: Props) => {
     const dispatch = useDispatch();
     const allowMessage = useAllowAddMessageToTimelineInCurrentTeam();
 
@@ -79,12 +79,12 @@ export const AttachToIncidentPostMenu: FC<Props> = (props: Props) => {
                 onClick={handleClick}
             >
                 <button
-                    data-testid='incidentAddToTimeline'
+                    data-testid='playbookRunAddToTimeline'
                     className='style--none'
                     role='presentation'
                 >
-                    <IncidentPostMenuIcon/>
-                    {'Add to incident timeline'}
+                    <PlaybookRunPostMenuIcon/>
+                    {'Add to run timeline'}
                     {!allowMessage && <PositionedUpgradeBadge/>}
                 </button>
             </li>

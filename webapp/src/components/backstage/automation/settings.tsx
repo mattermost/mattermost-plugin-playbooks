@@ -1,19 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 
 import styled from 'styled-components';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
-import {WebhookOnCreation} from 'src/components/backstage/automation/webhook_on_creation';
+import {PatternedInput} from 'src/components/backstage/automation/patterned_input';
 
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
-import {AutoAssignCommander} from 'src/components/backstage/automation/auto_assign_commander';
+import {AutoAssignOwner} from 'src/components/backstage/automation/auto_assign_owner';
 import {Announcement} from 'src/components/backstage/automation/announcement';
 
-import {BackstageSubheader, BackstageSubheaderDescription} from 'src/components/backstage/styles';
 import {MessageOnJoin} from 'src/components/backstage/automation/message_on_join';
 
 interface Props {
@@ -24,10 +23,10 @@ interface Props {
     onToggleInviteUsers: () => void;
     onAddUser: (userId: string) => void;
     onRemoveUser: (userId: string) => void;
-    defaultCommanderID: string;
-    defaultCommanderEnabled: boolean;
-    onToggleDefaultCommander: () => void;
-    onAssignCommander: (userId: string | undefined) => void;
+    defaultOwnerID: string;
+    defaultOwnerEnabled: boolean;
+    onToggleDefaultOwner: () => void;
+    onAssignOwner: (userId: string | undefined) => void;
     teamID: string;
     announcementChannelID: string;
     announcementChannelEnabled: boolean;
@@ -37,24 +36,44 @@ interface Props {
     onToggleWebhookOnCreation: () => void;
     webhookOnCreationChange: (url: string) => void;
     webhookOnCreationURL: string;
+    webhookOnStatusUpdateEnabled: boolean;
+    onToggleWebhookOnStatusUpdate: () => void;
+    webhookOnStatusUpdateURL: string;
+    webhookOnStatusUpdateChange: (url: string) => void;
     messageOnJoinEnabled: boolean;
     onToggleMessageOnJoin: () => void;
     messageOnJoin: string;
     messageOnJoinChange: (message: string) => void;
+    signalAnyKeywordsEnabled: boolean;
+    onToggleSignalAnyKeywords: () => void;
+    signalAnyKeywordsChange: (keywords: string) => void;
+    signalAnyKeywords: string[];
 }
 
-export const AutomationSettings: FC<Props> = (props: Props) => {
+export const AutomationSettings = (props: Props) => {
     return (
         <>
-            <BackstageSubheader>
-                {'Automation'}
-            </BackstageSubheader>
-            <BackstageSubheaderDescription>
-                {'Select what actions take place after certain situations are triggered.'}
-            </BackstageSubheaderDescription>
             <Section>
                 <SectionTitle>
-                    {'When an incident starts'}
+                    {'Prompt to run the playbook when a user posts a message'}
+                </SectionTitle>
+                <Setting id={'signal-any-keywords'}>
+                    <PatternedInput
+                        enabled={props.signalAnyKeywordsEnabled}
+                        onToggle={props.onToggleSignalAnyKeywords}
+                        input={props.signalAnyKeywords.join(',')}
+                        onChange={props.signalAnyKeywordsChange}
+                        pattern={'[\\s\\S]*'} // pretty much everything
+                        placeholderText={'Add comma separated keywords'}
+                        textOnToggle={'Containing any of these keywords'}
+                        type={'text'}
+                        errorText={'Keywords are not valid.'} // this should not happen
+                    />
+                </Setting>
+            </Section>
+            <Section>
+                <SectionTitle>
+                    {'When a run starts'}
                 </SectionTitle>
                 <Setting id={'invite-users'}>
                     <InviteUsers
@@ -67,14 +86,14 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                         onRemoveUser={props.onRemoveUser}
                     />
                 </Setting>
-                <Setting id={'assign-commander'}>
-                    <AutoAssignCommander
-                        enabled={props.defaultCommanderEnabled}
-                        onToggle={props.onToggleDefaultCommander}
+                <Setting id={'assign-owner'}>
+                    <AutoAssignOwner
+                        enabled={props.defaultOwnerEnabled}
+                        onToggle={props.onToggleDefaultOwner}
                         searchProfiles={props.searchProfiles}
                         getProfiles={props.getProfiles}
-                        commanderID={props.defaultCommanderID}
-                        onAssignCommander={props.onAssignCommander}
+                        ownerID={props.defaultOwnerID}
+                        onAssignOwner={props.onAssignOwner}
                         teamID={props.teamID}
                     />
                 </Setting>
@@ -86,18 +105,41 @@ export const AutomationSettings: FC<Props> = (props: Props) => {
                         onChannelSelected={props.onAnnouncementChannelSelected}
                     />
                 </Setting>
-                <Setting id={'incident-creation__outgoing-webhook'}>
-                    <WebhookOnCreation
+                <Setting id={'playbook-run-creation__outgoing-webhook'}>
+                    <PatternedInput
                         enabled={props.webhookOnCreationEnabled}
                         onToggle={props.onToggleWebhookOnCreation}
-                        url={props.webhookOnCreationURL}
+                        input={props.webhookOnCreationURL}
                         onChange={props.webhookOnCreationChange}
+                        pattern={'https?://.*'}
+                        placeholderText={'Enter webhook'}
+                        textOnToggle={'Send outgoing webhook'}
+                        type={'url'}
+                        errorText={'URL is not valid.'}
                     />
                 </Setting>
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When a new member joins'}
+                    {'When a status update is posted'}
+                </SectionTitle>
+                <Setting id={'playbook-run-status-update__outgoing-webhook'}>
+                    <PatternedInput
+                        enabled={props.webhookOnStatusUpdateEnabled}
+                        onToggle={props.onToggleWebhookOnStatusUpdate}
+                        input={props.webhookOnStatusUpdateURL}
+                        onChange={props.webhookOnStatusUpdateChange}
+                        pattern={'https?://.*'}
+                        placeholderText={'Enter webhook'}
+                        textOnToggle={'Send outgoing webhook'}
+                        type={'url'}
+                        errorText={'URL is not valid.'}
+                    />
+                </Setting>
+            </Section>
+            <Section>
+                <SectionTitle>
+                    {'When a new member joins the channel'}
                 </SectionTitle>
                 <Setting id={'user-joins-message'}>
                     <MessageOnJoin

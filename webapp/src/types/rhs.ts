@@ -3,7 +3,7 @@
 
 export enum RHSState {
     ViewingList,
-    ViewingIncident,
+    ViewingPlaybookRun,
 }
 
 export enum RHSTabState {
@@ -13,20 +13,21 @@ export enum RHSTabState {
 }
 
 export enum TimelineEventType {
-    IncidentCreated = 'incident_created',
+    PlaybookRunCreated = 'incident_created',
     StatusUpdated = 'status_updated',
-    CommanderChanged = 'commander_changed',
+    OwnerChanged = 'owner_changed',
     AssigneeChanged = 'assignee_changed',
     TaskStateModified = 'task_state_modified',
     RanSlashCommand = 'ran_slash_command',
     EventFromPost = 'event_from_post',
     UserJoinedLeft = 'user_joined_left',
     PublishedRetrospective = 'published_retrospective',
+    CanceledRetrospective = 'canceled_retrospective',
 }
 
 export interface TimelineEvent {
     id: string;
-    incident_id: string;
+    playbook_run_id: string;
     create_at: number;
     delete_at: number;
     event_at: number;
@@ -41,7 +42,7 @@ export interface TimelineEvent {
 
 export interface TimelineEventsFilter {
     all: boolean;
-    commander_changed: boolean;
+    owner_changed: boolean;
     status_updated: boolean;
     event_from_post: boolean;
     task_state_modified: boolean;
@@ -52,7 +53,7 @@ export interface TimelineEventsFilter {
 
 export const TimelineEventsFilterDefault = {
     all: false,
-    commander_changed: true,
+    owner_changed: true,
     status_updated: true,
     event_from_post: true,
     task_state_modified: false,

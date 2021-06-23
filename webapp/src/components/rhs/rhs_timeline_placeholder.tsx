@@ -1,4 +1,4 @@
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
 
 import styled from 'styled-components';
@@ -19,6 +19,8 @@ import ConvertEnterpriseNotice from 'src/components/backstage/convert_enterprise
 import {requestTrialLicense, postMessageToAdmins} from 'src/client';
 
 import {AdminNotificationType} from 'src/constants';
+import {isCloud} from 'src/license';
+import {useOpenCloudModal} from 'src/hooks';
 
 enum ActionState {
     Uninitialized,
@@ -29,7 +31,9 @@ enum ActionState {
 
 type HandlerType = undefined | (() => (Promise<void> | void));
 
-const TimelineUpgradePlaceholder : FC = () => {
+const TimelineUpgradePlaceholder = () => {
+    const isServerCloud = useSelector(isCloud);
+    const openCloudModal = useOpenCloudModal();
     const currentUser = useSelector(getCurrentUser);
     const isCurrentUserAdmin = isSystemAdmin(currentUser.roles);
     const [actionState, setActionState] = useState(ActionState.Uninitialized);
@@ -38,7 +42,7 @@ const TimelineUpgradePlaceholder : FC = () => {
     const analytics = useSelector(getAdminAnalytics);
     const serverTotalUsers = analytics?.TOTAL_USERS || 0;
 
-    const notifyAdmins = async () => {
+    const endUserMainAction = async () => {
         if (actionState === ActionState.Loading) {
             return;
         }
@@ -53,7 +57,7 @@ const TimelineUpgradePlaceholder : FC = () => {
         }
     };
 
-    const requestLicense = async () => {
+    const requestLicenseSelfHosted = async () => {
         if (actionState === ActionState.Loading) {
             return;
         }
@@ -69,9 +73,22 @@ const TimelineUpgradePlaceholder : FC = () => {
         }
     };
 
+    const openUpgradeModal = async () => {
+        if (actionState === ActionState.Loading) {
+            return;
+        }
+
+        openCloudModal();
+    };
+
+    let adminMainAction = requestLicenseSelfHosted;
+    if (isServerCloud) {
+        adminMainAction = openUpgradeModal;
+    }
+
     let illustration = <UpgradeTimelineSvg/>;
-    let titleText = 'Keep all your incident events in one place';
-    let helpText : React.ReactNode = 'Make retros easy. Your timeline includes all the events in your incident, separated by type, and downloadable for offline review.';
+    let titleText = 'Know what happened';
+    let helpText : React.ReactNode = 'Make retrospectives easy with a timeline that automatically keeps track of the key events and messages so that teams have it at their fingertips.';
 
     if (isCurrentUserAdmin && isServerTeamEdition) {
         helpText = <><p>{helpText}</p><ConvertEnterpriseNotice/></>;
@@ -106,10 +123,11 @@ const TimelineUpgradePlaceholder : FC = () => {
                     actionState={actionState}
                     isCurrentUserAdmin={isCurrentUserAdmin}
                     isServerTeamEdition={isServerTeamEdition}
-                    notifyAdmins={notifyAdmins}
-                    requestLicense={requestLicense}
+                    endUserMainAction={endUserMainAction}
+                    adminMainAction={adminMainAction}
+                    isCloud={isServerCloud}
                 />
-                {isCurrentUserAdmin && !isServerTeamEdition && actionState === ActionState.Uninitialized && <Footer/> }
+                {!isServerCloud && isCurrentUserAdmin && !isServerTeamEdition && actionState === ActionState.Uninitialized && <Footer/> }
             </UpgradeContent>
         </UpgradeWrapper>
     );
@@ -138,11 +156,12 @@ interface ButtonProps {
     actionState: ActionState;
     isCurrentUserAdmin: boolean;
     isServerTeamEdition: boolean;
-    notifyAdmins: HandlerType;
-    requestLicense: HandlerType;
+    endUserMainAction: HandlerType;
+    adminMainAction: HandlerType;
+    isCloud: boolean;
 }
 
-const Button : FC<ButtonProps> = (props: ButtonProps) => {
+const Button = (props: ButtonProps) => {
     if (props.actionState === ActionState.Loading) {
         return <Spinner/>;
     }
@@ -169,11 +188,11 @@ const Button : FC<ButtonProps> = (props: ButtonProps) => {
     }
 
     let buttonText = 'Notify System Admin';
-    let handleClick : HandlerType = props.notifyAdmins;
+    let handleClick : HandlerType = props.endUserMainAction;
 
     if (props.isCurrentUserAdmin) {
-        handleClick = props.requestLicense;
-        buttonText = 'Start trial';
+        handleClick = props.adminMainAction;
+        buttonText = props.isCloud ? 'Upgrade now' : 'Start trial';
     }
 
     return (

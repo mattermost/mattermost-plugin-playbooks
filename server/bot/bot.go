@@ -36,6 +36,9 @@ type Poster interface {
 	// posting was successful. Often used to include post actions.
 	PostMessageWithAttachments(channelID string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error)
 
+	// PostCustomMessageWithAttachments posts a custom message with the specified type. Falling back to attachments for mobile.
+	PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error)
+
 	// DM posts a simple Direct Message to the specified user.
 	DM(userID, format string, args ...interface{}) error
 
@@ -45,6 +48,9 @@ type Poster interface {
 
 	// Ephemeral sends an ephemeral message to a user.
 	EphemeralPost(userID, channelID string, post *model.Post)
+
+	// EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
+	EphemeralPostWithAttachments(userID, channelID, rootPostID string, attachments []*model.SlackAttachment, format string, args ...interface{})
 
 	// PublishWebsocketEventToTeam sends a websocket event with payload to teamID.
 	PublishWebsocketEventToTeam(event string, payload interface{}, teamID string)

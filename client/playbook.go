@@ -1,12 +1,12 @@
 package client
 
-// Playbook represents the planning before an incident type is initiated.
+// Playbook represents the planning before a playbook run is initiated.
 type Playbook struct {
 	ID                          string      `json:"id"`
 	Title                       string      `json:"title"`
 	Description                 string      `json:"description"`
 	TeamID                      string      `json:"team_id"`
-	CreatePublicIncident        bool        `json:"create_public_incident"`
+	CreatePublicPlaybookRun     bool        `json:"create_public_playbook_run"`
 	CreateAt                    int64       `json:"create_at"`
 	DeleteAt                    int64       `json:"delete_at"`
 	NumStages                   int64       `json:"num_stages"`
@@ -19,8 +19,8 @@ type Playbook struct {
 	InvitedUserIDs              []string    `json:"invited_user_ids"`
 	InvitedGroupIDs             []string    `json:"invited_group_ids"`
 	InvitedUsersEnabled         bool        `json:"invited_users_enabled"`
-	DefaultCommanderID          string      `json:"default_commander_id"`
-	DefaultCommanderEnabled     bool        `json:"default_commander_enabled"`
+	DefaultOwnerID              string      `json:"default_owner_id"`
+	DefaultOwnerEnabled         bool        `json:"default_owner_enabled"`
 	AnnouncementChannelID       string      `json:"announcement_channel_id"`
 	AnnouncementChannelEnabled  bool        `json:"announcement_channel_enabled"`
 }
@@ -52,7 +52,7 @@ type PlaybookCreateOptions struct {
 	Title                       string      `json:"title"`
 	Description                 string      `json:"description"`
 	TeamID                      string      `json:"team_id"`
-	CreatePublicIncident        bool        `json:"create_public_incident"`
+	CreatePublicPlaybookRun     bool        `json:"create_public_playbook_run"`
 	Checklists                  []Checklist `json:"checklists"`
 	MemberIDs                   []string    `json:"member_ids"`
 	BroadcastChannelID          string      `json:"broadcast_channel_id"`
@@ -61,8 +61,8 @@ type PlaybookCreateOptions struct {
 	InvitedUserIDs              []string    `json:"invited_user_ids"`
 	InvitedGroupIDs             []string    `json:"invited_group_ids"`
 	InviteUsersEnabled          bool        `json:"invite_users_enabled"`
-	DefaultCommanderID          string      `json:"default_commander_id"`
-	DefaultCommanderEnabled     bool        `json:"default_commander_enabled"`
+	DefaultOwnerID              string      `json:"default_owner_id"`
+	DefaultOwnerEnabled         bool        `json:"default_owner_enabled"`
 	AnnouncementChannelID       string      `json:"announcement_channel_id"`
 	AnnouncementChannelEnabled  bool        `json:"announcement_channel_enabled"`
 }
@@ -70,9 +70,6 @@ type PlaybookCreateOptions struct {
 // PlaybookListOptions specifies the optional parameters to the
 // PlaybooksService.List method.
 type PlaybookListOptions struct {
-	// MemberOnly filters playbooks to those for which the current user is a member.
-	MemberOnly bool `url:"member_only,omitempty"`
-
 	Sort      Sort          `url:"sort,omitempty"`
 	Direction SortDirection `url:"direction,omitempty"`
 }

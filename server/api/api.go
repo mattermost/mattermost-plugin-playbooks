@@ -9,9 +9,10 @@ import (
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 
 	"github.com/gorilla/mux"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 // Handler Root API handler.
@@ -76,7 +77,7 @@ func (h *Handler) setSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := permissions.ModifySettings(userID, h.config); err != nil {
+	if err := app.ModifySettings(userID, h.config); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}

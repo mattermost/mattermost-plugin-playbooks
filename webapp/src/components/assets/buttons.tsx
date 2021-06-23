@@ -1,7 +1,7 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 import styled from 'styled-components';
 
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
@@ -32,7 +32,7 @@ export const PrimaryButton = styled.button`
         opacity: 0;
     }
 
-    &:hover {
+    &:hover:enabled {
         &:before {
             opacity: 1;
         }
@@ -43,7 +43,8 @@ export const PrimaryButton = styled.button`
     }
 
     &:disabled {
-        background: rgba(var(--button-bg-rgb), 0.4);
+        color: rgba(var(--center-channel-color-rgb), 0.32);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     i {
@@ -66,12 +67,16 @@ export const TertiaryButton = styled.button`
     padding: 0 20px;
     transition: all 0.15s ease-out;
 
-    &:hover {
+    &:hover:enabled {
         background: rgba(var(--button-bg-rgb), 0.08);
     }
 
     &:active  {
         background: rgba(var(--button-bg-rgb), 0.16);
+    }
+
+    &:disabled {
+        color: rgba(var(--center-channel-color-rgb), 0.32);
     }
 
     i {
@@ -100,7 +105,7 @@ export const GrayTertiaryButton = styled.button`
 
 export type UpgradeButtonProps = React.ComponentProps<typeof PrimaryButton>;
 
-export const UpgradeButton: FC<UpgradeButtonProps> = (props: UpgradeButtonProps) => {
+export const UpgradeButton = (props: UpgradeButtonProps) => {
     const {children, ...rest} = props;
     return (
         <PrimaryButton {...rest}>
