@@ -21,5 +21,4 @@ export const ExportChannelOnArchive = (props: Props) => (
             <div>{'Export channel'}</div>
         </AutomationTitle>
     </AutomationHeader>
-
 );
