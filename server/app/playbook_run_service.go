@@ -811,12 +811,12 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 
 		fileID, err := s.exportChannelToFile(playbookRunToModify.Name, playbookRunToModify.OwnerUserID, playbookRunToModify.ChannelID)
 		if err != nil {
-			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Incident Collaboration failed to export channel. Contact your System Admin for more information.")
+			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
 			return errors.Wrap(err, "failed to export channel")
 		}
 
 		if err = s.poster.PostDM(playbookRunToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Incident %s exported succesfully", playbookRunToModify.Name), FileIds: []string{fileID}}); err != nil {
-			return errors.Wrap(err, "failed to send exported channel result to incident's owner")
+			return errors.Wrap(err, "failed to send exported channel result to playbook owner")
 		}
 
 	}
@@ -840,7 +840,7 @@ func (s *PlaybookRunServiceImpl) exportChannelToFile(playbookRunName string, own
 	res := s.pluginAPI.Plugin.HTTP(req)
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return "", errors.New(fmt.Sprintf("There is an error when make a request to upload file with status code %s", strconv.Itoa(res.StatusCode)))
+		return "", errors.New(fmt.Sprintf("There was an error when making a request to upload file with status code %s", strconv.Itoa(res.StatusCode)))
 	}
 
 	file, err := s.pluginAPI.File.Upload(res.Body, fmt.Sprintf("%s.csv", playbookRunName), channelID)
