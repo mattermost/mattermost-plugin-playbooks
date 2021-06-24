@@ -16,16 +16,16 @@ import (
 type SignalHandler struct {
 	*ErrorHandler
 	api                   *pluginapi.Client
-	incidentService       app.IncidentService
+	playbookRunService    app.PlaybookRunService
 	playbookService       app.PlaybookService
 	keywordsThreadIgnorer app.KeywordsThreadIgnorer
 }
 
-func NewSignalHandler(router *mux.Router, api *pluginapi.Client, logger bot.Logger, incidentService app.IncidentService, playbookService app.PlaybookService, keywordsThreadIgnorer app.KeywordsThreadIgnorer) *SignalHandler {
+func NewSignalHandler(router *mux.Router, api *pluginapi.Client, logger bot.Logger, playbookRunService app.PlaybookRunService, playbookService app.PlaybookService, keywordsThreadIgnorer app.KeywordsThreadIgnorer) *SignalHandler {
 	handler := &SignalHandler{
 		ErrorHandler:          &ErrorHandler{log: logger},
 		api:                   api,
-		incidentService:       incidentService,
+		playbookRunService:    playbookRunService,
 		playbookService:       playbookService,
 		keywordsThreadIgnorer: keywordsThreadIgnorer,
 	}
@@ -67,7 +67,7 @@ func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.incidentService.OpenCreateIncidentDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, isMobile); err != nil {
+	if err := h.playbookRunService.OpenCreatePlaybookRunDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, isMobile); err != nil {
 		h.returnError("can't open dialog", errors.Wrap(err, "can't open a dialog"), w)
 		return
 	}

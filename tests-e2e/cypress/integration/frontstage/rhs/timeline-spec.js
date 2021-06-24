@@ -9,7 +9,7 @@ describe('timeline', () => {
     let teamName;
     let userId;
     let playbookId;
-    let incidentName;
+    let playbookRunName;
     let channelName;
     let channelId;
 
@@ -66,14 +66,14 @@ describe('timeline', () => {
         // # Login as user-1
         cy.apiLogin('user-1');
 
-        // # Create a new incident
+        // # Create a new playbook run
         const now = Date.now();
-        incidentName = 'Incident (' + now + ')';
-        channelName = 'incident-' + now;
-        cy.apiStartIncident({
+        playbookRunName = 'Playbook Run (' + now + ')';
+        channelName = 'playbook-run-' + now;
+        cy.apiRunPlaybook({
             teamId,
             playbookId,
-            incidentName,
+            playbookRunName,
             ownerUserId: userId,
         });
 
@@ -81,7 +81,7 @@ describe('timeline', () => {
             channelId = channel.id;
         });
 
-        // # Navigate directly to the application and the incident channel
+        // # Navigate directly to the application and the playbook run channel
         cy.visit(`/${teamName}/channels/${channelName}`);
 
         // # Add @aaron.peterson
@@ -89,9 +89,9 @@ describe('timeline', () => {
             cy.apiAddUserToChannel(channelId, aaron.id);
         });
 
-        // * Verify the incident RHS is open.
+        // * Verify the playbook run RHS is open.
         cy.get('#rhsContainer').should('exist').within(() => {
-            cy.findByText(incidentName).should('exist');
+            cy.findByText(playbookRunName).should('exist');
 
             // # Select the timeline tab
             cy.findByTestId('timeline').click();
@@ -99,36 +99,36 @@ describe('timeline', () => {
     });
 
     describe('timeline updates', () => {
-        it('show the incident created, status updated, owner changed, and checklist events', () => {
-            // * Verify incident created message is visible in the timeline
-            verifyTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
+        it('show the playbook run created, status updated, owner changed, and checklist events', () => {
+            // * Verify playbook run created message is visible in the timeline
+            verifyTimelineEvent('incident_created', 1, 0, 'Run started by user-1');
 
-            // # Post an update that doesn't change the incident status
+            // # Post an update that doesn't change the playbook run status
             cy.updateStatus('this is a status update');
 
             // * Verify we can see the update in the timeline
             verifyTimelineEvent('status_updated', 1, 0, 'user-1 posted a status update');
 
             // # Change owner
-            cy.executeSlashCommand('/incident owner @aaron.peterson');
+            cy.executeSlashCommand('/playbook owner @aaron.peterson');
 
             // * Verify we can see the change owner in the timeline
             verifyTimelineEvent('owner_changed', 1, 0, 'Owner changed from @user-1 to @aaron.peterson');
 
-            // # Post an update that changes the incident status
+            // # Post an update that changes the playbook run status
             cy.updateStatus('this is a status update', 0, 'Active');
 
             // * Verify we can see the update in the timeline
             verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
 
             // # Change owner
-            cy.executeSlashCommand('/incident owner @user-1');
+            cy.executeSlashCommand('/playbook owner @user-1');
 
             // * Verify we can see the change owner in the timeline
             verifyTimelineEvent('owner_changed', 2, 1, 'Owner changed from @aaron.peterson to @user-1');
 
-            // # Select the tasks tab
-            cy.findByTestId('tasks').click();
+            // # Select the checklists tab
+            cy.findByTestId('checklists').click();
 
             // # Click the first task
             cy.get('[type="checkbox"]').first().check();
@@ -142,12 +142,12 @@ describe('timeline', () => {
         });
     });
 
-    describe('events from posts in the incident channel ', () => {
+    describe('events from posts in the playbook run channel ', () => {
         it('show up at the end and in the middle of the timeline', () => {
             // # Post the first message we'll click on
             cy.apiCreatePost(channelId, 'this is the first post').then(({post}) => {
                 // # Change owner, to create a timeline event
-                cy.executeSlashCommand('/incident owner @aaron.peterson');
+                cy.executeSlashCommand('/playbook owner @aaron.peterson');
 
                 // * Verify we can see the change owner in the timeline
                 verifyTimelineEvent('owner_changed', 1, 0, 'Owner changed from @user-1 to @aaron.peterson');
@@ -155,16 +155,16 @@ describe('timeline', () => {
                 // # Post the second message we'll click on
                 cy.createPost('this is the second post we\'ll click on');
 
-                // # Add a timeline event from a post at the end of the incident
-                const summary1 = 'This is the incident summary 1';
-                cy.addPostToTimelineUsingPostMenu(incidentName, summary1);
+                // # Add a timeline event from a post at the end of the playbook run
+                const summary1 = 'This is the playbook run summary 1';
+                cy.addPostToTimelineUsingPostMenu(playbookRunName, summary1);
 
                 // * Verify we can see the new timeline event
                 verifyTimelineEvent('event_from_post', 1, 0, summary1);
 
-                // # Add a timeline event from a post near the start of the incident
-                const summary2 = 'This is the incident summary 2';
-                cy.addPostToTimelineUsingPostMenu(incidentName, summary2, post.id);
+                // # Add a timeline event from a post near the start of the playbook run
+                const summary2 = 'This is the playbook run summary 2';
+                cy.addPostToTimelineUsingPostMenu(playbookRunName, summary2, post.id);
 
                 // * Verify we can see the new timeline event
                 verifyTimelineEvent('event_from_post', 2, 0, summary2);
@@ -174,8 +174,8 @@ describe('timeline', () => {
 
     describe('events from posts in another channel ', () => {
         it('show up at the end and in the middle of the timeline', () => {
-            const summary1 = 'This is the incident summary 1';
-            const summary2 = 'This is the incident summary 2';
+            const summary1 = 'This is the playbook run summary 1';
+            const summary2 = 'This is the playbook run summary 2';
 
             cy.apiCreateChannel(teamId, 'test-channel', 'Test Channel', 'O').then(({channel}) => {
                 // # Navigate to our new channel
@@ -185,20 +185,20 @@ describe('timeline', () => {
                     // # Post the second message we'll click on
                     cy.createPost('this is the second post we\'ll click on');
 
-                    // # Add a timeline event from a post at the end of the incident
-                    cy.addPostToTimelineUsingPostMenu(incidentName, summary1);
+                    // # Add a timeline event from a post at the end of the playbook run
+                    cy.addPostToTimelineUsingPostMenu(playbookRunName, summary1);
 
-                    // # Add a timeline event from a post near the start of the incident
-                    cy.addPostToTimelineUsingPostMenu(incidentName, summary2, post.id);
+                    // # Add a timeline event from a post near the start of the playbook run
+                    cy.addPostToTimelineUsingPostMenu(playbookRunName, summary2, post.id);
                 });
             });
 
-            // # Navigate back to the incident channel
+            // # Navigate back to the playbook run channel
             cy.visit(`/${teamName}/channels/${channelName}`);
 
-            // * Verify the incident RHS is open.
+            // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(incidentName).should('exist');
+                cy.findByText(playbookRunName).should('exist');
 
                 // # Select the timeline tab
                 cy.findByTestId('timeline').click();
@@ -214,29 +214,29 @@ describe('timeline', () => {
 
     describe('timeline updates', () => {
         it('can be deleted (both standard events and events from posts)', () => {
-            // * Verify incident created message is visible in the timeline
-            verifyTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
+            // * Verify playbook run created message is visible in the timeline
+            verifyTimelineEvent('incident_created', 1, 0, 'Run started by user-1');
 
-            // # Post an update that doesn't change the incident status
+            // # Post an update that doesn't change the playbook run status
             cy.updateStatus('this is a status update');
 
             // * Verify we can see the update in the timeline
             verifyTimelineEvent('status_updated', 1, 0, 'user-1 posted a status update');
 
             // # Change owner
-            cy.executeSlashCommand('/incident owner @aaron.peterson');
+            cy.executeSlashCommand('/playbook owner @aaron.peterson');
 
             // * Verify we can see the change owner in the timeline
             verifyTimelineEvent('owner_changed', 1, 0, 'Owner changed from @user-1 to @aaron.peterson');
 
-            // # Post an update that changes the incident status
+            // # Post an update that changes the playbook run status
             cy.updateStatus('this is a status update', 0, 'Active');
 
             // * Verify we can see the update in the timeline
             verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
 
             // # Change owner
-            cy.executeSlashCommand('/incident owner @user-1');
+            cy.executeSlashCommand('/playbook owner @user-1');
 
             // * Verify we can see the change owner in the timeline
             verifyTimelineEvent('owner_changed', 2, 1, 'Owner changed from @aaron.peterson to @user-1');
@@ -244,15 +244,15 @@ describe('timeline', () => {
             // # Post the message we'll click on
             cy.createPost('this is the first post we\'ll click on');
 
-            // # Add a timeline event from a post at the end of the incident
-            const summary1 = 'This is the incident summary 1';
-            cy.addPostToTimelineUsingPostMenu(incidentName, summary1);
+            // # Add a timeline event from a post at the end of the playbook run
+            const summary1 = 'This is the playbook run summary 1';
+            cy.addPostToTimelineUsingPostMenu(playbookRunName, summary1);
 
             // * Delete the custom event
             removeTimelineEvent('event_from_post', 1, 0, summary1);
 
-            // * Delete the incident created event
-            removeTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
+            // * Delete the playbook run created event
+            removeTimelineEvent('incident_created', 1, 0, 'Run started by user-1');
 
             // * Delete the second status update
             removeTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
@@ -273,16 +273,16 @@ describe('timeline', () => {
             // * See all events:
             clickOnFilterOption('All events');
 
-            // * Verify incident created message is visible in the timeline
-            verifyTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
+            // * Verify playbook run created message is visible in the timeline
+            verifyTimelineEvent('incident_created', 1, 0, 'Run started by user-1');
 
-            // * Delete the incident created event
-            removeTimelineEvent('incident_created', 1, 0, 'Incident Reported by user-1');
+            // * Delete the playbook run created event
+            removeTimelineEvent('incident_created', 1, 0, 'Run started by user-1');
 
             // * Verify user joined message is visible in the timeline
             verifyTimelineEvent('user_joined_left', 1, 0, '@aaron.peterson joined the channel');
 
-            // * Delete the incident created event
+            // * Delete the playbook run created event
             removeTimelineEvent('user_joined_left', 1, 0, '@aaron.peterson joined the channel');
 
             // * Verify notice is shown
@@ -295,27 +295,27 @@ describe('timeline', () => {
 
     describe('timeline filter', () => {
         it('shows each type, and all', () => {
-            // # Post an update that doesn't change the incident status
+            // # Post an update that doesn't change the playbook run status
             cy.updateStatus('this is a status update');
 
             // # Change owner
-            cy.executeSlashCommand('/incident owner @aaron.peterson');
+            cy.executeSlashCommand('/playbook owner @aaron.peterson');
 
-            // # Post an update that changes the incident status
+            // # Post an update that changes the playbook run status
             cy.updateStatus('this is a status update', 0, 'Active');
 
             // # Post the message we'll click on
             cy.createPost('this is the first post we\'ll click on');
 
-            // # Add a timeline event from a post at the end of the incident
-            const summary1 = 'This is the incident summary 1';
-            cy.addPostToTimelineUsingPostMenu(incidentName, summary1);
+            // # Add a timeline event from a post at the end of the playbook run
+            const summary1 = 'This is the playbook run summary 1';
+            cy.addPostToTimelineUsingPostMenu(playbookRunName, summary1);
 
             // # Change owner
-            cy.executeSlashCommand('/incident owner @user-1');
+            cy.executeSlashCommand('/playbook owner @user-1');
 
-            // # Select the tasks tab
-            cy.findByTestId('tasks').click();
+            // # Select the checklists tab
+            cy.findByTestId('checklists').click();
 
             // # Click the first task
             cy.get('[type="checkbox"]').first().check();
@@ -326,7 +326,7 @@ describe('timeline', () => {
             // # Assign Aaron to the first task
             cy.findAllByTestId('checkbox-item-container').eq(1).trigger('mouseover').within(() => {
                 cy.get('.icon-account-plus-outline').click().wait(TINY);
-                cy.get('.incident-user-select__input > input')
+                cy.get('.playbook-run-user-select__input > input')
                     .type('aaron', {force: true, delay: 100})
                     .wait(100).type('{enter}');
             });

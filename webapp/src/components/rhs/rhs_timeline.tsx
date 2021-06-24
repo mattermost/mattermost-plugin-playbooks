@@ -21,7 +21,8 @@ import {
 import {Team} from 'mattermost-redux/types/teams';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {Incident} from 'src/types/incident';
+import {PlaybookRun} from 'src/types/playbook_run';
+
 import {
     TimelineEvent,
     TimelineEventsFilter,
@@ -35,9 +36,9 @@ import {
 } from 'src/components/rhs/rhs_shared';
 import {ChannelNamesMap} from 'src/types/backstage';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
-import {currentRHSEventsFilter, currentIncident} from 'src/selectors';
+import {currentRHSEventsFilter, currentPlaybookRun} from 'src/selectors';
 import {setRHSEventsFilter} from 'src/actions';
-import {telemetryEventForIncident} from 'src/client';
+import {telemetryEventForPlaybookRun} from 'src/client';
 
 import {useAllowTimelineViewInCurrentTeam} from 'src/hooks';
 
@@ -77,7 +78,7 @@ const NoEventsNotice = styled.div`
 type IdToUserFn = (userId: string) => UserProfile;
 
 interface Props {
-    incident: Incident;
+    playbookRun: PlaybookRun;
 }
 
 const RHSTimeline = (props: Props) => {
@@ -92,7 +93,7 @@ const RHSTimeline = (props: Props) => {
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
     const [filteredEvents, setFilteredEvents] = useState<TimelineEvent[]>([]);
     const eventsFilter = useSelector<GlobalState, TimelineEventsFilter>(currentRHSEventsFilter);
-    const incident = useSelector<GlobalState, Incident>(currentIncident);
+    const playbookRun = useSelector<GlobalState, PlaybookRun>(currentPlaybookRun);
 
     const allowTimelineView = useAllowTimelineViewInCurrentTeam();
 
@@ -101,7 +102,7 @@ const RHSTimeline = (props: Props) => {
     }, [eventsFilter, allEvents]);
 
     const selectOption = (value: string, checked: boolean) => {
-        telemetryEventForIncident(incident.id, 'timeline_tab_filter_selected');
+        telemetryEventForPlaybookRun(playbookRun.id, 'timeline_tab_filter_selected');
 
         if (eventsFilter.all && value !== 'all') {
             return;
@@ -114,7 +115,7 @@ const RHSTimeline = (props: Props) => {
     };
 
     useEffect(() => {
-        Promise.all(props.incident.timeline_events.map(async (e) => {
+        Promise.all(props.playbookRun.timeline_events.map(async (e) => {
             let user = selectUser(e.subject_user_id) as UserProfile | undefined;
 
             if (!user) {
@@ -132,7 +133,7 @@ const RHSTimeline = (props: Props) => {
         })).then((eventArray) => {
             setAllEvents(eventArray.filter((e) => e) as TimelineEvent[]);
         });
-    }, [props.incident.timeline_events, displayPreference]);
+    }, [props.playbookRun.timeline_events, displayPreference]);
 
     if (!allowTimelineView) {
         return (
@@ -140,7 +141,7 @@ const RHSTimeline = (props: Props) => {
         );
     }
 
-    if (props.incident.timeline_events.length === 0) {
+    if (props.playbookRun.timeline_events.length === 0) {
         return (
             <NoEventsNotice>
                 {'Timeline events are displayed here as they occur. Hover over an event to remove it.'}
@@ -211,7 +212,7 @@ const RHSTimeline = (props: Props) => {
                         <RHSTimelineEventItem
                             key={event.id}
                             event={event}
-                            reportedAt={moment(props.incident.create_at)}
+                            reportedAt={moment(props.playbookRun.create_at)}
                             channelNames={channelNamesMap}
                             team={team}
                         />
@@ -252,5 +253,5 @@ const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
     }
     const filterRecord = filter as unknown as Record<string, boolean>;
     return filterRecord[eventType] ||
-        (eventType === TimelineEventType.IncidentCreated && filterRecord[TimelineEventType.StatusUpdated]);
+        (eventType === TimelineEventType.PlaybookRunCreated && filterRecord[TimelineEventType.StatusUpdated]);
 };

@@ -6,7 +6,7 @@ export interface Playbook {
     title: string;
     description: string;
     team_id: string;
-    create_public_incident: boolean;
+    create_public_playbook_run: boolean;
     checklists: Checklist[];
     member_ids: string[];
     broadcast_channel_id: string;
@@ -37,7 +37,7 @@ export interface PlaybookNoChecklist {
     title: string;
     description: string;
     team_id: string;
-    create_public_incident: boolean;
+    create_public_playbook_run: boolean;
     num_stages: number;
     num_steps: number;
     member_ids: string[];
@@ -50,7 +50,7 @@ export interface FetchPlaybooksNoChecklistReturn {
     items: PlaybookNoChecklist[];
 }
 
-export interface FetchIncidentsParams {
+export interface FetchPlaybookRunsParams {
     sort?: string;
     direction?: string;
 }
@@ -88,7 +88,7 @@ export function emptyPlaybook(): Playbook {
         title: '',
         description: '',
         team_id: '',
-        create_public_incident: false,
+        create_public_playbook_run: false,
         checklists: [emptyChecklist()],
         member_ids: [],
         broadcast_channel_id: '',
@@ -117,7 +117,7 @@ export function emptyPlaybook(): Playbook {
 
 export function emptyChecklist(): Checklist {
     return {
-        title: 'Default Checklist',
+        title: 'Default checklist',
         items: [emptyChecklistItem()],
     };
 }
@@ -146,7 +146,7 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.id === 'string' &&
         typeof arg.title === 'string' &&
         typeof arg.team_id === 'string' &&
-        typeof arg.create_public_incident === 'boolean' &&
+        typeof arg.create_public_playbook_run === 'boolean' &&
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
         arg.member_ids && Array.isArray(arg.member_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
         typeof arg.broadcast_channel_id === 'string' &&
@@ -190,12 +190,11 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
         typeof arg.command_last_run === 'number';
 }
 
-export const defaultMessageOnJoin = 'Welcome. This channel was automatically created by an Incident Collaboration playbook. To view information about this incident, such as the owner\'s name and list of tasks, select the shield icon in the channel header. You can also use the `/incident info` slash command.\n' +
-    '\n' +
-    'You may find the following resources helpful:\n' +
-    '\n' +
-    '[Mattermost Incident Collaboration channel](https://community.mattermost.com/core/channels/ee-incident-response)\n' +
-    '[Incident Collaboration documentation](https://docs.mattermost.com/administration/devops-command-center.html)';
+export const defaultMessageOnJoin = `Welcome! This channel was automatically created as part of a playbook run. You can [learn more about playbooks here](https://docs.mattermost.com/administration/devops-command-center.html?highlight=playbook#playbooks). To see information about this run, such as current owner and checklist of tasks, select the shield icon in the channel header.
+
+Here are some resources that you may find helpful:
+[Mattermost community channel](https://community.mattermost.com/core/channels/ee-incident-response)
+[User guide and documentation](https://docs.mattermost.com/administration/devops-command-center.html)`;
 
 export const defaultRetrospectiveTemplate = `### Summary
 This should contain 2-3 sentences that give a reader an overview of what happened, what was the cause, and what was done. The briefer the better as this is what future teams will look at first for reference.

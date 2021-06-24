@@ -92,7 +92,7 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 // NewPlaybookStore creates a new store for playbook service.
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) app.PlaybookStore {
 	playbookSelect := sqlStore.builder.
-		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
+		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident AS CreatePublicPlaybookRun", "CreateAt",
 			"UpdateAt", "DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds",
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "InviteUsersEnabled",
@@ -148,7 +148,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"Title":                                rawPlaybook.Title,
 			"Description":                          rawPlaybook.Description,
 			"TeamID":                               rawPlaybook.TeamID,
-			"CreatePublicIncident":                 rawPlaybook.CreatePublicIncident,
+			"CreatePublicIncident":                 rawPlaybook.CreatePublicPlaybookRun,
 			"CreateAt":                             rawPlaybook.CreateAt,
 			"UpdateAt":                             rawPlaybook.UpdateAt,
 			"DeleteAt":                             rawPlaybook.DeleteAt,
@@ -248,7 +248,7 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 
 	var playbooks []app.Playbook
 	err = p.store.selectBuilder(tx, &playbooks, p.store.builder.
-		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
+		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident AS CreatePublicPlaybookRun", "CreateAt",
 			"DeleteAt", "NumStages", "NumSteps").
 		From("IR_Playbook AS p").
 		Where(sq.Eq{"DeleteAt": 0}))
@@ -288,7 +288,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		)`, requesterInfo.UserID)
 
 	queryForResults := p.store.builder.
-		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
+		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident AS CreatePublicPlaybookRun", "CreateAt",
 			"DeleteAt", "NumStages", "NumSteps").
 		From("IR_Playbook AS p").
 		Where(sq.Eq{"DeleteAt": 0}).
@@ -452,7 +452,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"Title":                                rawPlaybook.Title,
 			"Description":                          rawPlaybook.Description,
 			"TeamID":                               rawPlaybook.TeamID,
-			"CreatePublicIncident":                 rawPlaybook.CreatePublicIncident,
+			"CreatePublicIncident":                 rawPlaybook.CreatePublicPlaybookRun,
 			"UpdateAt":                             rawPlaybook.UpdateAt,
 			"DeleteAt":                             rawPlaybook.DeleteAt,
 			"ChecklistsJSON":                       rawPlaybook.ChecklistsJSON,
@@ -580,7 +580,7 @@ func getSteps(playbook app.Playbook) int {
 func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 	checklistsJSON, err := json.Marshal(playbook.Checklists)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", playbook.ID)
+		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook id: '%s'", playbook.ID)
 	}
 
 	return &sqlPlaybook{

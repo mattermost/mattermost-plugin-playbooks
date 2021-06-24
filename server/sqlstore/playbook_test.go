@@ -1020,7 +1020,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				expectedErr: errors.New("id should not be empty"),
 			},
 			{
-				name:     "Incident /can/ contain checklists with no items",
+				name:     "Playbook run /can/ contain checklists with no items",
 				playbook: NewPBBuilder().WithChecklists([]int{1}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
 					old.Checklists[0].Items = nil
@@ -1033,7 +1033,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				name:     "playbook now public",
 				playbook: NewPBBuilder().WithChecklists([]int{1}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
-					old.CreatePublicIncident = true
+					old.CreatePublicPlaybookRun = true
 					return old
 				},
 				expectedErr: nil,
@@ -1067,7 +1067,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				expectedErr: nil,
 			},
 			{
-				name:     "Incident with 2 checklists, update the checklists a bit",
+				name:     "Playbook run with 2 checklists, update the checklists a bit",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
 					old.Checklists[0].Items[0].State = app.ChecklistItemStateClosed
@@ -1077,7 +1077,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				expectedErr: nil,
 			},
 			{
-				name:     "Incident with 3 checklists, update to 0",
+				name:     "Playbook run with 3 checklists, update to 0",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2, 5}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
 					old.Checklists = []app.Checklist{}
@@ -1088,7 +1088,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				expectedErr: nil,
 			},
 			{
-				name: "Incident with 2 members, go to 1",
+				name: "Playbook run with 2 members, go to 1",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
 					WithMembers([]userInfo{jon, andrew}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
@@ -1098,7 +1098,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				expectedErr: nil,
 			},
 			{
-				name: "Incident with 3 members, go to 4 with different members",
+				name: "Playbook run with 3 members, go to 4 with different members",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
 					WithMembers([]userInfo{jon, andrew, bob}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
@@ -1108,7 +1108,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				expectedErr: nil,
 			},
 			{
-				name: "Incident with 3 members, go to 4 with one different member",
+				name: "Playbook run with 3 members, go to 4 with one different member",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
 					WithMembers([]userInfo{jon, andrew, bob}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
@@ -1118,7 +1118,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				expectedErr: nil,
 			},
 			{
-				name:     "Incident with 0 members, go to 2",
+				name:     "Playbook run with 0 members, go to 2",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
 					old.MemberIDs = []string{alice.ID, jen.ID}
@@ -1127,7 +1127,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				expectedErr: nil,
 			},
 			{
-				name: "Incident with 5 members, go to 0",
+				name: "Playbook run with 5 members, go to 0",
 				playbook: NewPBBuilder().
 					WithChecklists([]int{1, 2}).
 					WithMembers([]userInfo{
@@ -1619,16 +1619,16 @@ func NewPBBuilder() *PlaybookBuilder {
 	timeNow := model.GetMillis()
 	return &PlaybookBuilder{
 		&app.Playbook{
-			Title:                "base playbook",
-			TeamID:               model.NewId(),
-			CreatePublicIncident: false,
-			CreateAt:             timeNow,
-			UpdateAt:             timeNow,
-			DeleteAt:             0,
-			Checklists:           []app.Checklist(nil),
-			MemberIDs:            []string(nil),
-			InvitedUserIDs:       []string(nil),
-			InvitedGroupIDs:      []string(nil),
+			Title:                   "base playbook",
+			TeamID:                  model.NewId(),
+			CreatePublicPlaybookRun: false,
+			CreateAt:                model.GetMillis(),
+			UpdateAt:                timeNow,
+			DeleteAt:                0,
+			Checklists:              []app.Checklist(nil),
+			MemberIDs:               []string(nil),
+			InvitedUserIDs:          []string(nil),
+			InvitedGroupIDs:         []string(nil),
 		},
 	}
 }
@@ -1658,7 +1658,7 @@ func (p *PlaybookBuilder) WithTeamID(id string) *PlaybookBuilder {
 }
 
 func (p *PlaybookBuilder) WithCreatePublic(public bool) *PlaybookBuilder {
-	p.CreatePublicIncident = public
+	p.CreatePublicPlaybookRun = public
 
 	return p
 }

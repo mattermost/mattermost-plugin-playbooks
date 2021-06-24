@@ -50,17 +50,17 @@ Cypress.Commands.add('requireIncidentCollaborationPlugin', (version) => {
 });
 
 /**
- * End all active incidents directly from API with sysadmin. Need to login after this.
+ * End all active playbook runs directly from API with sysadmin. Need to login after this.
  */
-Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
+Cypress.Commands.add('endAllActivePlaybookRuns', (teamId) => {
     cy.apiLogin('sysadmin');
     cy.apiGetCurrentUser().then((user) => {
-        cy.apiGetAllActiveIncidents(teamId).then((response) => {
-            const incidents = response.body.items;
+        cy.apiGetAllActivePlaybookRuns(teamId).then((response) => {
+            const playbookRuns = response.body.items;
 
-            incidents.forEach((incident) => {
+            playbookRuns.forEach((playbookRun) => {
                 cy.apiUpdateStatus({
-                    incidentId: incident.id,
+                    playbookRunId: playbookRun.id,
                     userId: user.id,
                     teamId,
                     message: 'ending',
@@ -70,12 +70,12 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
             });
         });
 
-        cy.apiGetAllReportedIncidents(teamId).then((response) => {
-            const incidents = response.body.items;
+        cy.apiGetAllReportedPlaybookRuns(teamId).then((response) => {
+            const playbookRuns = response.body.items;
 
-            incidents.forEach((incident) => {
+            playbookRuns.forEach((playbookRun) => {
                 cy.apiUpdateStatus({
-                    incidentId: incident.id,
+                    playbookRunId: playbookRun.id,
                     userId: user.id,
                     teamId,
                     message: 'ending',
@@ -85,14 +85,14 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
             });
         });
 
-        cy.apiGetAllActiveIncidents(teamId).then((response) => {
-            const incidents = response.body.items;
-            expect(incidents.length).to.equal(0);
+        cy.apiGetAllActivePlaybookRuns(teamId).then((response) => {
+            const playbookRuns = response.body.items;
+            expect(playbookRuns.length).to.equal(0);
         });
 
-        cy.apiGetAllReportedIncidents(teamId).then((response) => {
-            const incidents = response.body.items;
-            expect(incidents.length).to.equal(0);
+        cy.apiGetAllReportedPlaybookRuns(teamId).then((response) => {
+            const playbookRuns = response.body.items;
+            expect(playbookRuns.length).to.equal(0);
         });
 
         cy.apiLogout();
@@ -100,16 +100,16 @@ Cypress.Commands.add('endAllActiveIncidents', (teamId) => {
 });
 
 /**
- * End all active incidents directly from API with current user.
+ * End all active playbook runs directly from API with current user.
  */
-Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
+Cypress.Commands.add('endAllMyActivePlaybookRuns', (teamId) => {
     cy.apiGetCurrentUser().then((user) => {
-        cy.apiGetAllActiveIncidents(teamId, user.id).then((response) => {
-            const incidents = response.body.items;
+        cy.apiGetAllActivePlaybookRuns(teamId, user.id).then((response) => {
+            const playbookRuns = response.body.items;
 
-            incidents.forEach((incident) => {
+            playbookRuns.forEach((playbookRun) => {
                 cy.apiUpdateStatus({
-                    incidentId: incident.id,
+                    playbookRunId: playbookRun.id,
                     userId: user.id,
                     teamId,
                     message: 'ending',
@@ -119,12 +119,12 @@ Cypress.Commands.add('endAllMyActiveIncidents', (teamId) => {
             });
         });
 
-        cy.apiGetAllReportedIncidents(teamId, user.id).then((response) => {
-            const incidents = response.body.items;
+        cy.apiGetAllReportedPlaybookRuns(teamId, user.id).then((response) => {
+            const playbookRuns = response.body.items;
 
-            incidents.forEach((incident) => {
+            playbookRuns.forEach((playbookRun) => {
                 cy.apiUpdateStatus({
-                    incidentId: incident.id,
+                    playbookRunId: playbookRun.id,
                     userId: user.id,
                     teamId,
                     message: 'ending',

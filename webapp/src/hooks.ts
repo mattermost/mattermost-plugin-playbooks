@@ -18,9 +18,10 @@ import {Post} from 'mattermost-redux/types/posts';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
 
+import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
+
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel} from 'src/selectors';
-import {Incident, StatusPost} from 'src/types/incident';
 import {clientFetchPlaybooksCount} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
@@ -213,8 +214,8 @@ export function usePost(postId: string) {
     return post;
 }
 
-export function useLatestUpdate(incident: Incident) {
-    const postId = getLatestPostId(incident.status_posts);
+export function useLatestUpdate(playbookRun: PlaybookRun) {
+    const postId = getLatestPostId(playbookRun.status_posts);
     return usePost(postId);
 }
 

@@ -78,7 +78,7 @@ const Cross = styled.i`
 `;
 
 const UserPic = styled.div`
-    .IncidentProfile {
+    .PlaybookRunProfile {
         flex-direction: column;
 
         .name {

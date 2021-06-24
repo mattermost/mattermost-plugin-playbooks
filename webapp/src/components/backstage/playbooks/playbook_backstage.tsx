@@ -8,21 +8,23 @@ import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import {DefaultFetchPlaybookRunsParamsTime, fetchParamsTimeEqual} from 'src/types/playbook_run';
+
+import {
+    PrimaryButtonRight,
+} from 'src/components/backstage/playbook_runs/shared';
+
 import {clientFetchPlaybook, fetchPlaybookStats} from 'src/client';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
-import {
-    PrimaryButtonRight,
-} from 'src/components/backstage/incidents/shared';
 import {Playbook} from 'src/types/playbook';
 import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import ClipboardsCheckmark from 'src/components/assets/icons/clipboards_checkmark';
 import Profiles from 'src/components/assets/icons/profiles';
 import LineGraph from 'src/components/backstage/playbooks/line_graph';
-import IncidentList from 'src/components/backstage/playbooks/incident_list/incident_list';
+import PlaybookRunList from 'src/components/backstage/playbooks/playbook_run_list/playbook_run_list';
 import BarGraph from 'src/components/backstage/playbooks/bar_graph';
 import {EmptyPlaybookStats} from 'src/types/stats';
-import {DefaultFetchIncidentsParamsTime, fetchParamsTimeEqual} from 'src/types/incident';
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
@@ -216,7 +218,7 @@ const PlaybookBackstage = () => {
     const location = useLocation();
     const currentTeam = useSelector(getCurrentTeam);
     const [playbook, setPlaybook] = useState<Playbook | null>(null);
-    const [fetchParamsTime, setFetchParamsTime] = useState(DefaultFetchIncidentsParamsTime);
+    const [fetchParamsTime, setFetchParamsTime] = useState(DefaultFetchPlaybookRunsParamsTime);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [stats, setStats] = useState(EmptyPlaybookStats);
 
@@ -325,7 +327,7 @@ const PlaybookBackstage = () => {
                                     return `${yLabel} ${runs} started`;
                                 }}
                                 onClick={(index) => {
-                                    let nextFetchParamsTime = DefaultFetchIncidentsParamsTime;
+                                    let nextFetchParamsTime = DefaultFetchPlaybookRunsParamsTime;
                                     if (index >= 0) {
                                         nextFetchParamsTime = {
                                             started_gte: stats.runs_started_per_week_times[index][0],
@@ -352,7 +354,7 @@ const PlaybookBackstage = () => {
                                     return `${yLabel} active ${runs}`;
                                 }}
                                 onClick={(index) => {
-                                    let nextFetchParamsTime = DefaultFetchIncidentsParamsTime;
+                                    let nextFetchParamsTime = DefaultFetchPlaybookRunsParamsTime;
                                     if (index >= 0) {
                                         nextFetchParamsTime = {
                                             active_gte: stats.active_runs_per_day_times[index][0],
@@ -380,7 +382,7 @@ const PlaybookBackstage = () => {
                             />
                         </GraphBox>
                     </BottomRow>
-                    <IncidentList
+                    <PlaybookRunList
                         playbook={playbook}
                         fetchParamsTime={fetchParamsTime}
                     />

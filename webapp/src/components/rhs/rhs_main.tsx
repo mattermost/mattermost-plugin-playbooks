@@ -7,9 +7,9 @@ import {useDispatch, useSelector} from 'react-redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
-import {setRHSOpen, setRHSViewingIncident, setRHSViewingList} from 'src/actions';
+import {setRHSOpen, setRHSViewingPlaybookRun, setRHSViewingList} from 'src/actions';
 import RHSListView from 'src/components/rhs/rhs_list_view';
-import {currentRHSState, inIncidentChannel} from 'src/selectors';
+import {currentRHSState, inPlaybookRunChannel} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 import RHSDetailsView from 'src/components/rhs/rhs_details_view';
@@ -17,7 +17,7 @@ import RHSDetailsView from 'src/components/rhs/rhs_details_view';
 const RightHandSidebar = () => {
     const dispatch = useDispatch();
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
-    const inIncident = useSelector<GlobalState, boolean>(inIncidentChannel);
+    const inPlaybookRun = useSelector<GlobalState, boolean>(inPlaybookRunChannel);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
     const [seenChannelId, setSeenChannelId] = useState('');
 
@@ -32,15 +32,15 @@ const RightHandSidebar = () => {
     if (currentChannelId !== seenChannelId) {
         setSeenChannelId(currentChannelId);
 
-        if (inIncident) {
-            dispatch(setRHSViewingIncident());
+        if (inPlaybookRun) {
+            dispatch(setRHSViewingPlaybookRun());
         } else {
             dispatch(setRHSViewingList());
         }
     }
 
-    if (rhsState === RHSState.ViewingIncident) {
-        if (inIncident) {
+    if (rhsState === RHSState.ViewingPlaybookRun) {
+        if (inPlaybookRun) {
             return <RHSDetailsView/>;
         }
         return <RHSWelcomeView/>;

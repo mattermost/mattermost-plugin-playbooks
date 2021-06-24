@@ -464,14 +464,14 @@ func createChannels(t testing.TB, store *SQLStore, channels []model.Channel) {
 	require.NoError(t, err)
 }
 
-func createIncidentChannel(t testing.TB, store *SQLStore, incident *app.Incident) {
+func createPlaybookRunChannel(t testing.TB, store *SQLStore, playbookRun *app.PlaybookRun) {
 	t.Helper()
 
-	if incident.CreateAt == 0 {
-		incident.CreateAt = model.GetMillis()
+	if playbookRun.CreateAt == 0 {
+		playbookRun.CreateAt = model.GetMillis()
 	}
 
-	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "CreateAt", "DeleteAt").Values(incident.ChannelID, incident.Name, incident.CreateAt, 0)
+	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "CreateAt", "DeleteAt").Values(playbookRun.ChannelID, playbookRun.Name, playbookRun.CreateAt, 0)
 
 	_, err := store.execBuilder(store.db, insertBuilder)
 	require.NoError(t, err)

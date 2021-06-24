@@ -16,13 +16,14 @@ import {$ID, IDMappedObjects, Dictionary} from 'mattermost-redux/types/utilities
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {pluginId} from 'src/manifest';
+
+import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import {
     RHSState,
     RHSTabState,
     TimelineEventsFilter,
     TimelineEventsFilterDefault,
 } from 'src/types/rhs';
-import {Incident, incidentIsActive} from 'src/types/incident';
 import {findLastUpdated} from 'src/utils';
 
 import {GlobalSettings} from './types/settings';
@@ -32,7 +33,7 @@ const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
 
 export const selectToggleRHS = (state: GlobalState): () => void => pluginState(state).toggleRHSFunction;
 
-export const isIncidentRHSOpen = (state: GlobalState): boolean => pluginState(state).rhsOpen;
+export const isPlaybookRunRHSOpen = (state: GlobalState): boolean => pluginState(state).rhsOpen;
 
 export const getIsRhsExpanded = (state: WebGlobalState): boolean => state.views.rhs.isSidebarExpanded;
 
@@ -40,50 +41,50 @@ export const getAdminAnalytics = (state: GlobalState): Dictionary<number> => sta
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
-export const isDisabledOnCurrentTeam = (state: GlobalState): boolean => pluginState(state).myIncidentsByTeam[getCurrentTeamId(state)] === false;
+export const isDisabledOnCurrentTeam = (state: GlobalState): boolean => pluginState(state).myPlaybookRunsByTeam[getCurrentTeamId(state)] === false;
 
 export const globalSettings = (state: GlobalState): GlobalSettings | null => pluginState(state).globalSettings;
 
-// reminder: myIncidentsByTeam indexes teamId->channelId->incident
-const myIncidentsByTeam = (state: GlobalState): Record<string, Record<string, Incident>> =>
-    pluginState(state).myIncidentsByTeam;
+// reminder: myPlaybookRunsByTeam indexes teamId->channelId->playbookRun
+const myPlaybookRunsByTeam = (state: GlobalState): Record<string, Record<string, PlaybookRun>> =>
+    pluginState(state).myPlaybookRunsByTeam;
 
-export const inIncidentChannel = createSelector(
+export const inPlaybookRunChannel = createSelector(
     getCurrentTeamId,
     getCurrentChannelId,
-    myIncidentsByTeam,
-    (teamId, channelId, incidentMapByTeam) => {
-        return Boolean(incidentMapByTeam[teamId]?.[channelId]);
+    myPlaybookRunsByTeam,
+    (teamId, channelId, playbookRunMapByTeam) => {
+        return Boolean(playbookRunMapByTeam[teamId]?.[channelId]);
     },
 );
 
-export const currentIncident = createSelector(
+export const currentPlaybookRun = createSelector(
     getCurrentTeamId,
     getCurrentChannelId,
-    myIncidentsByTeam,
-    (teamId, channelId, incidentMapByTeam) => {
-        return incidentMapByTeam[teamId]?.[channelId];
+    myPlaybookRunsByTeam,
+    (teamId, channelId, playbookRunMapByTeam) => {
+        return playbookRunMapByTeam[teamId]?.[channelId];
     },
 );
 
-export const myActiveIncidentsList = createSelector(
+export const myActivePlaybookRunsList = createSelector(
     getCurrentTeamId,
-    myIncidentsByTeam,
-    (teamId, incidentMapByTeam) => {
-        if (!incidentMapByTeam[teamId]) {
+    myPlaybookRunsByTeam,
+    (teamId, playbookRunMapByTeam) => {
+        if (!playbookRunMapByTeam[teamId]) {
             return [];
         }
 
-        // return active incidents, sorted descending by create_at
-        return Object.values(incidentMapByTeam[teamId])
-            .filter((i) => incidentIsActive(i))
+        // return active playbook runs, sorted descending by create_at
+        return Object.values(playbookRunMapByTeam[teamId])
+            .filter((i) => playbookRunIsActive(i))
             .sort((a, b) => b.create_at - a.create_at);
     },
 );
 
-// myActiveIncidentsMap returns a map indexed by channelId->incident for the current team
-export const myIncidentsMap = (state: GlobalState) => {
-    return myIncidentsByTeam(state)[getCurrentTeamId(state)] || {};
+// myActivePlaybookRunsMap returns a map indexed by channelId->playbookRun for the current team
+export const myPlaybookRunsMap = (state: GlobalState) => {
+    return myPlaybookRunsByTeam(state)[getCurrentTeamId(state)] || {};
 };
 
 export const isExportLicensed = (state: GlobalState): boolean => {
@@ -108,17 +109,17 @@ export const rhsEventsFilterForChannel = (state: GlobalState, channelId: string)
     return pluginState(state).eventsFilterByChannel[channelId] || TimelineEventsFilterDefault;
 };
 
-export const lastUpdatedByIncidentId = createSelector(
+export const lastUpdatedByPlaybookRunId = createSelector(
     getCurrentTeamId,
-    myIncidentsByTeam,
-    (teamId, incidentsMapByTeam) => {
+    myPlaybookRunsByTeam,
+    (teamId, playbookRunsMapByTeam) => {
         const result = {} as Record<string, number>;
-        const incidentMap = incidentsMapByTeam[teamId];
-        if (!incidentMap) {
+        const playbookRunMap = playbookRunsMapByTeam[teamId];
+        if (!playbookRunMap) {
             return {};
         }
-        for (const incident of Object.values(incidentMap)) {
-            result[incident.id] = findLastUpdated(incident);
+        for (const playbookRun of Object.values(playbookRunMap)) {
+            result[playbookRun.id] = findLastUpdated(playbookRun);
         }
         return result;
     },

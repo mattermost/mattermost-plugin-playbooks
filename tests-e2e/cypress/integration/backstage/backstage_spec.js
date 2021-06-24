@@ -13,7 +13,7 @@ describe('backstage', () => {
         // # Login as user-1
         cy.apiLogin('user-1');
 
-        // # Create a playbook and start an incident.
+        // # Create and run a playbook.
         cy.apiGetTeamByName('ad-1').then((team) => {
             cy.apiGetCurrentUser().then((user) => {
                 cy.apiCreateTestPlaybook({
@@ -22,11 +22,11 @@ describe('backstage', () => {
                     userId: user.id,
                 }).then((playbook) => {
                     const now = Date.now();
-                    const incidentName = 'Incident (' + now + ')';
-                    cy.apiStartIncident({
+                    const playbookRunName = 'Playbook Run (' + now + ')';
+                    cy.apiRunPlaybook({
                         teamId: team.id,
                         playbookId: playbook.id,
-                        incidentName,
+                        playbookRunName,
                         ownerUserId: user.id,
                     });
                 });
@@ -61,17 +61,17 @@ describe('backstage', () => {
         cy.findByTestId('titlePlaybook').should('exist').contains('Playbooks');
     });
 
-    it('switches to incidents list view via header button', () => {
+    it('switches to playbook runs list view via header button', () => {
         // # Open backstage
         cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Switch to incidents backstage
-        cy.findByTestId('incidentsLHSButton').click();
+        // # Switch to playbook runs backstage
+        cy.findByTestId('playbookRunsLHSButton').click();
 
-        // * Verify that incidents are shown
-        cy.findByTestId('titleIncident').should('exist').contains('Incidents');
+        // * Verify that playbook runs are shown
+        cy.findByTestId('titlePlaybookRun').should('exist').contains('Runs');
     });
 });

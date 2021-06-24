@@ -1,12 +1,12 @@
 package client
 
-// Playbook represents the planning before an incident type is initiated.
+// Playbook represents the planning before a playbook run is initiated.
 type Playbook struct {
 	ID                            string      `json:"id"`
 	Title                         string      `json:"title"`
 	Description                   string      `json:"description"`
 	TeamID                        string      `json:"team_id"`
-	CreatePublicIncident          bool        `json:"create_public_incident"`
+	CreatePublicPlaybookRun       bool        `json:"create_public_playbook_run"`
 	CreateAt                      int64       `json:"create_at"`
 	DeleteAt                      int64       `json:"delete_at"`
 	NumStages                     int64       `json:"num_stages"`
@@ -53,7 +53,7 @@ type PlaybookCreateOptions struct {
 	Title                       string      `json:"title"`
 	Description                 string      `json:"description"`
 	TeamID                      string      `json:"team_id"`
-	CreatePublicIncident        bool        `json:"create_public_incident"`
+	CreatePublicPlaybookRun     bool        `json:"create_public_playbook_run"`
 	Checklists                  []Checklist `json:"checklists"`
 	MemberIDs                   []string    `json:"member_ids"`
 	BroadcastChannelID          string      `json:"broadcast_channel_id"`

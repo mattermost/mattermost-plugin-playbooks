@@ -6,9 +6,9 @@ import {useSelector} from 'react-redux';
 
 import {createGlobalStyle} from 'styled-components';
 
-import {isIncidentRHSOpen, isDisabledOnCurrentTeam} from 'src/selectors';
+import {isPlaybookRunRHSOpen, isDisabledOnCurrentTeam} from 'src/selectors';
 
-import IncidentIcon, {Ref as IncidentIconRef} from './incident_icon';
+import IncidentIcon, {Ref as PlaybookRunIconRef} from './incident_icon';
 
 const DisabledStyle = createGlobalStyle`
     .plugin-icon-hide {
@@ -17,8 +17,8 @@ const DisabledStyle = createGlobalStyle`
 `;
 
 const ChannelHeaderButton = () => {
-    const myRef = useRef<IncidentIconRef>(null);
-    const isRHSOpen = useSelector(isIncidentRHSOpen);
+    const myRef = useRef<PlaybookRunIconRef>(null);
+    const isRHSOpen = useSelector(isPlaybookRunRHSOpen);
     const disabled = useSelector(isDisabledOnCurrentTeam);
 
     // If it has been mounted, we know our parent is always a button.

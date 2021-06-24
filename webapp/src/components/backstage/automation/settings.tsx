@@ -14,7 +14,6 @@ import {AutoAssignOwner} from 'src/components/backstage/automation/auto_assign_o
 import {Announcement} from 'src/components/backstage/automation/announcement';
 import {ExportChannelOnArchive} from 'src/components/backstage/automation/export_channel_on_archive';
 
-import {BackstageSubheader, BackstageSubheaderDescription} from 'src/components/backstage/styles';
 import {MessageOnJoin} from 'src/components/backstage/automation/message_on_join';
 
 interface Props {
@@ -57,15 +56,9 @@ interface Props {
 export const AutomationSettings = (props: Props) => {
     return (
         <>
-            <BackstageSubheader>
-                {'Automation'}
-            </BackstageSubheader>
-            <BackstageSubheaderDescription>
-                {'Select when to start an incident and what actions take place once an incident is started.'}
-            </BackstageSubheaderDescription>
             <Section>
                 <SectionTitle>
-                    {'Prompt to start a new incident when a user posts a message'}
+                    {'Prompt to run the playbook when a user posts a message'}
                 </SectionTitle>
                 <Setting id={'signal-any-keywords'}>
                     <PatternedInput
@@ -83,7 +76,7 @@ export const AutomationSettings = (props: Props) => {
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When an incident starts'}
+                    {'When a run starts'}
                 </SectionTitle>
                 <Setting id={'invite-users'}>
                     <InviteUsers
@@ -115,7 +108,7 @@ export const AutomationSettings = (props: Props) => {
                         onChannelSelected={props.onAnnouncementChannelSelected}
                     />
                 </Setting>
-                <Setting id={'incident-creation__outgoing-webhook'}>
+                <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <PatternedInput
                         enabled={props.webhookOnCreationEnabled}
                         onToggle={props.onToggleWebhookOnCreation}
@@ -123,7 +116,7 @@ export const AutomationSettings = (props: Props) => {
                         onChange={props.webhookOnCreationChange}
                         pattern={'https?://.*'}
                         placeholderText={'Enter webhook'}
-                        textOnToggle={'Send a webhook'}
+                        textOnToggle={'Send outgoing webhook'}
                         type={'url'}
                         errorText={'URL is not valid.'}
                     />
@@ -131,9 +124,9 @@ export const AutomationSettings = (props: Props) => {
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When an incident status is updated'}
+                    {'When a status update is posted'}
                 </SectionTitle>
-                <Setting id={'incident-status-update__outgoing-webhook'}>
+                <Setting id={'playbook-run-status-update__outgoing-webhook'}>
                     <PatternedInput
                         enabled={props.webhookOnStatusUpdateEnabled}
                         onToggle={props.onToggleWebhookOnStatusUpdate}
@@ -141,7 +134,7 @@ export const AutomationSettings = (props: Props) => {
                         onChange={props.webhookOnStatusUpdateChange}
                         pattern={'https?://.*'}
                         placeholderText={'Enter webhook'}
-                        textOnToggle={'Send a webhook'}
+                        textOnToggle={'Send outgoing webhook'}
                         type={'url'}
                         errorText={'URL is not valid.'}
                     />
@@ -149,7 +142,7 @@ export const AutomationSettings = (props: Props) => {
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When a new member joins'}
+                    {'When a new member joins the channel'}
                 </SectionTitle>
                 <Setting id={'user-joins-message'}>
                     <MessageOnJoin

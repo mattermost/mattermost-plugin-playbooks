@@ -13,28 +13,28 @@ const (
 	// SortBySteps sorts by the number of steps in a playbook.
 	SortBySteps SortField = "steps"
 
-	// SortByCreateAt sorts by the created time of an incident or playbook.
+	// SortByCreateAt sorts by the created time of a playbook or playbook run.
 	SortByCreateAt SortField = "create_at"
 
-	// SortByID sorts by the primary key of an incident or playbook.
+	// SortByID sorts by the primary key of a playbook or playbook run.
 	SortByID SortField = "id"
 
-	// SortByName sorts by the name of an incident.
+	// SortByName sorts by the name of a playbook run.
 	SortByName SortField = "name"
 
-	// SortByOwnerUserID sorts by the user id of the owner of an incident.
+	// SortByOwnerUserID sorts by the user id of the owner of a playbook run.
 	SortByOwnerUserID SortField = "owner_user_id"
 
-	// SortByTeamID sorts by the team id of an incident or playbook.
+	// SortByTeamID sorts by the team id of a playbook or playbook run.
 	SortByTeamID SortField = "team_id"
 
-	// SortByEndAt sorts by the end time of an incident.
+	// SortByEndAt sorts by the end time of a playbook run.
 	SortByEndAt SortField = "end_at"
 
-	// SortByStatus sorts by the status of an incident.
+	// SortByStatus sorts by the status of a playbook run.
 	SortByStatus SortField = "status"
 
-	// SortByLastStatusUpdateAt sorts by when the incident was last updated.
+	// SortByLastStatusUpdateAt sorts by when the playbook run was last updated.
 	SortByLastStatusUpdateAt SortField = "last_status_update_at"
 )
 

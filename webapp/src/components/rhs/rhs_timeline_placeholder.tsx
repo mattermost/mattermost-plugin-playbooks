@@ -87,8 +87,8 @@ const TimelineUpgradePlaceholder = () => {
     }
 
     let illustration = <UpgradeTimelineSvg/>;
-    let titleText = 'Keep all your incident events in one place';
-    let helpText : React.ReactNode = 'Make retros easy. Your timeline includes all the events in your incident, separated by type, and downloadable for offline review.';
+    let titleText = 'Know what happened';
+    let helpText : React.ReactNode = 'Make retrospectives easy with a timeline that automatically keeps track of the key events and messages so that teams have it at their fingertips.';
 
     if (isCurrentUserAdmin && isServerTeamEdition) {
         helpText = <><p>{helpText}</p><ConvertEnterpriseNotice/></>;

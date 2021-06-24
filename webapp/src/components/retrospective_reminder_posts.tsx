@@ -13,7 +13,7 @@ import {getPostIdsInCurrentChannel, getPostsInCurrentChannel} from 'mattermost-r
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {currentIncident} from 'src/selectors';
+import {currentPlaybookRun} from 'src/selectors';
 
 import {navigateToUrl} from 'src/browser_routing';
 
@@ -52,9 +52,9 @@ interface ReminderCommonProps {
 const selectLatestReminderPost = (state: GlobalState) => getPostsInCurrentChannel(state)?.find((value: Post) => value.type.startsWith('custom_retro'));
 
 const ReminderCommon = (props: ReminderCommonProps) => {
-    const incident = useSelector(currentIncident);
-    const reminderDuration = incident?.retrospective_reminder_interval_seconds || 0;
-    const wasPublishedOrCanceled = incident?.retrospective_published_at !== 0;
+    const playbookRun = useSelector(currentPlaybookRun);
+    const reminderDuration = playbookRun?.retrospective_reminder_interval_seconds || 0;
+    const wasPublishedOrCanceled = playbookRun?.retrospective_published_at !== 0;
     const currentTeam = useSelector(getCurrentTeam);
     const latestReminderPost = useSelector(selectLatestReminderPost);
 
@@ -80,13 +80,13 @@ const ReminderCommon = (props: ReminderCommonProps) => {
                 </CustomPostHeader>
                 <CustomPostButtonRow>
                     <PrimaryButton
-                        onClick={() => navigateToUrl(`/${currentTeam.name}/${pluginId}/incidents/${incident?.id}/retrospective`)}
+                        onClick={() => navigateToUrl(`/${currentTeam.name}/${pluginId}/runs/${playbookRun?.id}/retrospective`)}
                         disabled={disableButtons}
                     >
                         {props.primary}
                     </PrimaryButton>
                     <StyledTertiaryButton
-                        onClick={() => noRetrospective(incident?.id)}
+                        onClick={() => noRetrospective(playbookRun?.id)}
                         disabled={disableButtons}
                     >
                         {props.secondary}

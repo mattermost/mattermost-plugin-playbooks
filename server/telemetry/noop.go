@@ -15,32 +15,32 @@ func (t *NoopTelemetry) Disable() error {
 	return nil
 }
 
-// CreateIncident does nothing
-func (t *NoopTelemetry) CreateIncident(*app.Incident, string, bool) {
+// CreatePlaybookRun does nothing
+func (t *NoopTelemetry) CreatePlaybookRun(*app.PlaybookRun, string, bool) {
 }
 
-// EndIncident does nothing
-func (t *NoopTelemetry) EndIncident(*app.Incident, string) {
+// EndPlaybookRun does nothing
+func (t *NoopTelemetry) EndPlaybookRun(*app.PlaybookRun, string) {
 }
 
-// RestartIncident does nothing
-func (t *NoopTelemetry) RestartIncident(*app.Incident, string) {
+// RestartPlaybookRun does nothing
+func (t *NoopTelemetry) RestartPlaybookRun(*app.PlaybookRun, string) {
 }
 
 // UpdateStatus does nothing
-func (t *NoopTelemetry) UpdateStatus(*app.Incident, string) {
+func (t *NoopTelemetry) UpdateStatus(*app.PlaybookRun, string) {
 }
 
-// FrontendTelemetryForIncident does nothing
-func (t *NoopTelemetry) FrontendTelemetryForIncident(*app.Incident, string, string) {
+// FrontendTelemetryForPlaybookRun does nothing
+func (t *NoopTelemetry) FrontendTelemetryForPlaybookRun(*app.PlaybookRun, string, string) {
 }
 
 // AddPostToTimeline does nothing
-func (t *NoopTelemetry) AddPostToTimeline(*app.Incident, string) {
+func (t *NoopTelemetry) AddPostToTimeline(*app.PlaybookRun, string) {
 }
 
 // RemoveTimelineEvent does nothing
-func (t *NoopTelemetry) RemoveTimelineEvent(*app.Incident, string) {
+func (t *NoopTelemetry) RemoveTimelineEvent(*app.PlaybookRun, string) {
 }
 
 // AddTask does nothing.
@@ -80,17 +80,17 @@ func (t *NoopTelemetry) DeletePlaybook(app.Playbook, string) {
 }
 
 // ChangeOwner does nothing
-func (t *NoopTelemetry) ChangeOwner(*app.Incident, string) {
+func (t *NoopTelemetry) ChangeOwner(*app.PlaybookRun, string) {
 }
 
 // RunTaskSlashCommand does nothing
 func (t *NoopTelemetry) RunTaskSlashCommand(string, string, app.ChecklistItem) {
 }
 
-func (t *NoopTelemetry) UpdateRetrospective(incident *app.Incident, userID string) {
+func (t *NoopTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, userID string) {
 }
 
-func (t *NoopTelemetry) PublishRetrospective(incident *app.Incident, userID string) {
+func (t *NoopTelemetry) PublishRetrospective(playbookRun *app.PlaybookRun, userID string) {
 }
 
 // StartTrialToViewTimeline does nothing.
