@@ -781,14 +781,14 @@ func (s *IncidentServiceImpl) UpdateStatus(incidentID, userID string, options St
 
 	if options.Status == StatusArchived && incidentToModify.ExportChannelOnArchiveEnabled {
 
-		fileID, err := s.exportFileToChannel(incidentToModify.Name, incidentToModify.OwnerUserID, incidentToModify.ChannelID)
+		fileID, err := s.exportChannelToFile(incidentToModify.Name, incidentToModify.OwnerUserID, incidentToModify.ChannelID)
 		if err != nil {
-			_, _ = s.poster.PostMessage(incidentToModify.ChannelID, "Incident Collaboration failed to export channel information. Contact your System Admin for more information.")
-			return errors.Wrap(err, "failed to export file to a channel")
+			_, _ = s.poster.PostMessage(incidentToModify.ChannelID, "Incident Collaboration failed to export channel. Contact your System Admin for more information.")
+			return errors.Wrap(err, "failed to export channel")
 		}
 
 		if err = s.poster.PostDM(incidentToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Incident %s exported succesfully", incidentToModify.Name), FileIds: []string{fileID}}); err != nil {
-			return errors.Wrap(err, "failed to send exported channel result to incident's commander")
+			return errors.Wrap(err, "failed to send exported channel result to incident's owner")
 		}
 
 	}
@@ -796,7 +796,7 @@ func (s *IncidentServiceImpl) UpdateStatus(incidentID, userID string, options St
 	return nil
 }
 
-func (s *IncidentServiceImpl) exportFileToChannel(incidentName string, ownerUserID string, channelID string) (string, error) {
+func (s *IncidentServiceImpl) exportChannelToFile(incidentName string, ownerUserID string, channelID string) (string, error) {
 	// set url and query string
 	exportPluginURL := fmt.Sprintf("plugins/com.mattermost.plugin-channel-export/api/v1/export?format=csv&channel_id=%s", channelID)
 
