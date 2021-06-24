@@ -811,19 +811,19 @@ func (s *IncidentServiceImpl) exportChannelToFile(incidentName string, ownerUser
 
 	res := s.pluginAPI.Plugin.HTTP(req)
 	defer res.Body.Close()
-	if res.StatusCode == http.StatusOK {
-		file, err := s.pluginAPI.File.Upload(res.Body, fmt.Sprintf("%s.csv", incidentName), channelID)
-		if err != nil {
-			errMessage := "unable to upload the exported file to a channel"
-			s.pluginAPI.Log.Error(errMessage, "Channel ID", channelID, "Error", err)
-
-			return "", errors.Wrap(err, errMessage)
-		}
-
-		return file.Id, nil
+	if res.StatusCode != http.StatusOK {
+		return "", errors.New(fmt.Sprintf("There is an error when make a request to upload file with status code %s", strconv.Itoa(res.StatusCode)))
 	}
 
-	return "", errors.New(fmt.Sprintf("There is an error when make a request to upload file with status code %s", strconv.Itoa(res.StatusCode)))
+	file, err := s.pluginAPI.File.Upload(res.Body, fmt.Sprintf("%s.csv", incidentName), channelID)
+	if err != nil {
+		errMessage := "unable to upload the exported file to a channel"
+		s.pluginAPI.Log.Error(errMessage, "Channel ID", channelID, "Error", err)
+
+		return "", errors.Wrap(err, errMessage)
+	}
+
+	return file.Id, nil
 
 }
 
