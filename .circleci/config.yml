@@ -40,7 +40,7 @@ commands:
           name: Getting JavaScript dependencies
           command: |
             cd webapp
-            NODE_ENV=development npm install --ignore-scripts
+            NODE_ENV=development npm install --ignore-scripts --no-save
       - save_cache:
           name: Save npm cache
           key: v2-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
@@ -146,9 +146,9 @@ commands:
           command: |
             sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb
             cd webapp
-            NODE_ENV=development npm install --ignore-scripts
+            NODE_ENV=development npm install --ignore-scripts --no-save
             cd ../tests-e2e
-            NODE_ENV=development npm install --ignore-scripts
+            NODE_ENV=development npm install --ignore-scripts --no-save
             npx cypress install
       - run:
           name: Install Incident Collaboration plugin
