@@ -156,7 +156,7 @@ export const AutomationSettings = (props: Props) => {
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When an incident is archived'}
+                    {'When a run is archived'}
                 </SectionTitle>
                 <Setting id={'export-channel-on-archive'}>
                     <ExportChannelOnArchive

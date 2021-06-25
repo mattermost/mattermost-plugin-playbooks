@@ -815,7 +815,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 			return errors.Wrap(err, "failed to export channel")
 		}
 
-		if err = s.poster.PostDM(playbookRunToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Incident %s exported succesfully", playbookRunToModify.Name), FileIds: []string{fileID}}); err != nil {
+		if err = s.poster.DM(playbookRunToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Playbook run %s exported succesfully", playbookRunToModify.Name), FileIds: []string{fileID}}); err != nil {
 			return errors.Wrap(err, "failed to send exported channel result to playbook owner")
 		}
 

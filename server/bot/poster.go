@@ -52,24 +52,19 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 	return post, nil
 }
 
-// Post custom DM to the specified user
-func (b *Bot) PostDM(userID string, post *model.Post) error {
-	return b.dm(userID, post)
-}
-
-// DM posts a simple Direct Message to the specified user
-func (b *Bot) DM(userID, format string, args ...interface{}) error {
-	return b.dm(userID, &model.Post{
-		Message: fmt.Sprintf(format, args...),
-	})
-}
-
-// DMWithAttachments posts a Direct Message that contains Slack attachments.
-// Often used to include post actions.
-func (b *Bot) DMWithAttachments(userID string, attachments ...*model.SlackAttachment) error {
-	post := model.Post{}
-	model.ParseSlackAttachment(&post, attachments)
-	return b.dm(userID, &post)
+// Post DM to the specified user
+func (b *Bot) DM(userID string, post *model.Post) error {
+	channel, err := b.pluginAPI.Channel.GetDirect(userID, b.botUserID)
+	if err != nil {
+		b.pluginAPI.Log.Info("Couldn't get bot's DM channel", "user_id", userID)
+		return err
+	}
+	post.ChannelId = channel.Id
+	post.UserId = b.botUserID
+	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Ephemeral sends an ephemeral message to a user
@@ -246,24 +241,10 @@ func (b *Bot) makePayloadMap(payload interface{}) map[string]interface{} {
 	return map[string]interface{}{"payload": string(payloadJSON)}
 }
 
-func (b *Bot) dm(userID string, post *model.Post) error {
-	channel, err := b.pluginAPI.Channel.GetDirect(userID, b.botUserID)
-	if err != nil {
-		b.pluginAPI.Log.Info("Couldn't get bot's DM channel", "user_id", userID)
-		return err
-	}
-	post.ChannelId = channel.Id
-	post.UserId = b.botUserID
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
-		return err
-	}
-	return nil
-}
-
 // DM posts a simple Direct Message to the specified user
 func (b *Bot) dmAdmins(format string, args ...interface{}) error {
 	for _, id := range b.configService.GetConfiguration().AllowedUserIDs {
-		err := b.dm(id, &model.Post{
+		err := b.DM(id, &model.Post{
 			Message: fmt.Sprintf(format, args...),
 		})
 		if err != nil {
