@@ -6,7 +6,7 @@ orbs:
 executors:
   default:
     docker:
-      - image: circleci/golang:1.16.0-node
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
 
 aliases:
   - &restore_go_cache
@@ -40,7 +40,7 @@ commands:
           name: Getting JavaScript dependencies
           command: |
             cd webapp
-            NODE_ENV=development npm install --ignore-scripts
+            NODE_ENV=development npm install --ignore-scripts --no-save
       - save_cache:
           name: Save npm cache
           key: v2-npm-{{ checksum "./webapp/package-lock.json" }}-{{ arch }}
@@ -58,35 +58,6 @@ commands:
           from: << parameters.filename >>
           to: << parameters.bucket >>
           arguments: '--acl public-read --cache-control no-cache'
-
-  install-golangci-lint:
-    description: Install golangci-lint
-    parameters:
-      version:
-        type: string
-        default: 1.31.0
-      gobin:
-        type: string
-        default: /go/bin
-      prefix:
-        type: string
-        default: v1
-        description: Prefix for cache key to store the binary.
-    steps:
-      - restore_cache:
-          name: Restore golangci-lint cache
-          keys: [ '<< parameters.prefix >>-golangci-lint-{{ arch }}-<< parameters.version >>' ]
-      - run:
-          name: Install golangci-lint
-          command: |
-            mkdir -p << parameters.gobin >>
-            command -v << parameters.gobin >>/golangci-lint && exit
-            download=https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
-            wget -O- -q $download | sh -s -- -b << parameters.gobin >>/ v<< parameters.version >>
-      - save_cache:
-          name: Save golangci-lint cache
-          key: '<< parameters.prefix >>-golangci-lint-{{ arch }}-<< parameters.version >>'
-          paths: [ << parameters.gobin >>/golangci-lint ]
 
   test-with-db:
     description: "Run tests with database"
@@ -142,12 +113,13 @@ commands:
             if test $STATUSCODE -ne 200; then exit 1; fi
       - *restore_cypress_cache
       - run:
-          name: Getting JavaScript dependencies
+          name: Getting Cypress & JavaScript dependencies
           command: |
+            sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb
             cd webapp
-            NODE_ENV=development npm install --ignore-scripts
+            NODE_ENV=development npm install --ignore-scripts --no-save
             cd ../tests-e2e
-            NODE_ENV=development npm install --ignore-scripts
+            NODE_ENV=development npm install --ignore-scripts --no-save
             npx cypress install
       - run:
           name: Install Incident Collaboration plugin
@@ -175,7 +147,6 @@ jobs:
     resource_class: large
     steps:
       - checkout
-      - install-golangci-lint
       - *restore_go_cache
       - npm-dependencies
       - run:
@@ -260,7 +231,7 @@ jobs:
 
   test-MySQL56-Postgres96:
     docker:
-      - image: circleci/golang:1.14.1-node
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: circleci/postgres:9.6-alpine
         environment:
           POSTGRES_USER: mmuser
@@ -278,7 +249,7 @@ jobs:
 
   test-MySQL57-Postgres10:
     docker:
-      - image: circleci/golang:1.14.1-node
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: circleci/postgres:10-alpine
         environment:
           POSTGRES_USER: mmuser
@@ -296,7 +267,7 @@ jobs:
 
   test-MySQL8-Postgres11:
     docker:
-      - image: circleci/golang:1.14.1-node
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: circleci/postgres:11-alpine
         environment:
           POSTGRES_USER: mmuser
@@ -314,7 +285,7 @@ jobs:
 
   test-MySQL-Postgres-latest:
     docker:
-      - image: circleci/golang:1.14.1-node
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: circleci/postgres:latest
         environment:
           POSTGRES_HOST_AUTH_METHOD: trust
@@ -334,7 +305,7 @@ jobs:
   e2e-cypress-tests-cloud:
     resource_class: xlarge
     docker:
-      - image: circleci/golang:1.14.1-node-browsers
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: circleci/postgres:10-alpine-ram
@@ -406,7 +377,7 @@ jobs:
   e2e-cypress-tests-master:
     resource_class: xlarge
     docker:
-      - image: circleci/golang:1.14.1-node-browsers
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: circleci/postgres:10-alpine-ram
@@ -478,7 +449,7 @@ jobs:
   e2e-cypress-tests-534:
     resource_class: large
     docker:
-      - image: circleci/golang:1.14.1-node-browsers
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: circleci/postgres:10-alpine-ram
