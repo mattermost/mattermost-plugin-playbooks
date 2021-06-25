@@ -807,7 +807,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		}()
 	}
 
-	if options.Status == StatusArchived && playbookRunToModify.ExportChannelOnArchiveEnabled {
+	if previousStatus != StatusArchived && options.Status == StatusArchived && playbookRunToModify.ExportChannelOnArchiveEnabled {
 
 		fileID, err := s.exportChannelToFile(playbookRunToModify.Name, playbookRunToModify.OwnerUserID, playbookRunToModify.ChannelID)
 		if err != nil {
