@@ -52,7 +52,7 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 	return post, nil
 }
 
-// Post DM to the specified user
+// Post DM from the plugin bot to the specified user
 func (b *Bot) DM(userID string, post *model.Post) error {
 	channel, err := b.pluginAPI.Channel.GetDirect(userID, b.botUserID)
 	if err != nil {
