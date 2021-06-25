@@ -6,7 +6,7 @@ orbs:
 executors:
   default:
     docker:
-      - image: circleci/golang:1.16.0-node
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
 
 aliases:
   - &restore_go_cache
