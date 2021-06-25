@@ -260,7 +260,7 @@ jobs:
 
   test-MySQL56-Postgres96:
     docker:
-      - image: circleci/golang:1.14.1-node
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: circleci/postgres:9.6-alpine
         environment:
           POSTGRES_USER: mmuser
@@ -278,7 +278,7 @@ jobs:
 
   test-MySQL57-Postgres10:
     docker:
-      - image: circleci/golang:1.14.1-node
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: circleci/postgres:10-alpine
         environment:
           POSTGRES_USER: mmuser
@@ -296,7 +296,7 @@ jobs:
 
   test-MySQL8-Postgres11:
     docker:
-      - image: circleci/golang:1.14.1-node
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: circleci/postgres:11-alpine
         environment:
           POSTGRES_USER: mmuser
@@ -314,7 +314,7 @@ jobs:
 
   test-MySQL-Postgres-latest:
     docker:
-      - image: circleci/golang:1.14.1-node
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: circleci/postgres:latest
         environment:
           POSTGRES_HOST_AUTH_METHOD: trust
@@ -334,7 +334,7 @@ jobs:
   e2e-cypress-tests-cloud:
     resource_class: xlarge
     docker:
-      - image: circleci/golang:1.14.1-node-browsers
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: circleci/postgres:10-alpine-ram
@@ -406,7 +406,7 @@ jobs:
   e2e-cypress-tests-master:
     resource_class: xlarge
     docker:
-      - image: circleci/golang:1.14.1-node-browsers
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: circleci/postgres:10-alpine-ram
@@ -478,7 +478,7 @@ jobs:
   e2e-cypress-tests-534:
     resource_class: large
     docker:
-      - image: circleci/golang:1.14.1-node-browsers
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
       - image: circleci/postgres:10-alpine-ram
