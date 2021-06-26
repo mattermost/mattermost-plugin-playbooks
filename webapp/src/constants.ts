@@ -21,6 +21,7 @@ export enum AdminNotificationType {
     PLAYBOOK = 'start_trial_to_create_playbook',
     VIEW_TIMELINE = 'start_trial_to_view_timeline',
     MESSAGE_TO_TIMELINE = 'start_trial_to_add_message_to_timeline',
+    MESSAGE_TO_PLAYBOOK_DASHBOARD = 'start_trial_to_access_playbook_dashboard',
     PLAYBOOK_GRANULAR_ACCESS = 'start_trial_to_restrict_playbook_access',
     PLAYBOOK_CREATION_RESTRICTION = 'start_trial_to_restrict_playbook_creation',
 }
