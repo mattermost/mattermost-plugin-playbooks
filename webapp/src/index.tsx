@@ -46,7 +46,6 @@ import {
     WEBSOCKET_PLAYBOOK_DELETED,
 } from './types/websocket_events';
 import RegistryWrapper from './registry_wrapper';
-import {isE20LicensedOrDevelopment} from './license';
 import SystemConsoleEnabledTeams from './system_console_enabled_teams';
 import {makeUpdateMainMenu} from './make_update_main_menu';
 import {fetchGlobalSettings} from './client';
@@ -126,10 +125,10 @@ export default class Plugin {
         const checkRegistrations = () => {
             updateMainMenuAction();
 
-            if (!registered && isE20LicensedOrDevelopment(store.getState())) {
+            if (!registered) {
                 unregister = doRegistrations();
                 registered = true;
-            } else if (unregister && !isE20LicensedOrDevelopment(store.getState())) {
+            } else if (unregister) {
                 unregister();
                 registered = false;
             }
