@@ -32,7 +32,7 @@ func NewSettingsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logge
 
 	settingsRouter := router.PathPrefix("/settings").Subrouter()
 	settingsRouter.HandleFunc("", handler.getSettings).Methods(http.MethodGet)
-	settingsRouter.HandleFunc("", handler.setSettings).Methods(http.MethodPost)
+	settingsRouter.HandleFunc("", handler.setSettings).Methods(http.MethodPut)
 
 	return handler
 }

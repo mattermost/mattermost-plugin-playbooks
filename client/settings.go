@@ -44,7 +44,7 @@ func (s *SettingsService) Get(ctx context.Context) (*GlobalSettings, error) {
 // Update the configured settings.
 func (s *SettingsService) Update(ctx context.Context, settings GlobalSettings) error {
 	settingsURL := "settings"
-	req, err := s.client.newRequest(http.MethodPost, settingsURL, settings)
+	req, err := s.client.newRequest(http.MethodPut, settingsURL, settings)
 	if err != nil {
 		return err
 	}
