@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {ReactElement, JSXElementConstructor, ReactNodeArray, ReactPortal, useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled, {StyledComponent} from 'styled-components';
 
@@ -17,6 +17,11 @@ import {AdminNotificationType} from 'src/constants';
 import {isCloud} from 'src/license';
 import {useOpenCloudModal} from 'src/hooks';
 
+import SuccessSvg from './assets/success_svg';
+import ErrorSvg from './assets/error_svg';
+import UpgradeIllustrationSvg from './assets/upgrade_illustration_svg';
+import {PrimaryButton} from './assets/buttons';
+
 enum ActionState {
     Uninitialized,
     Loading,
@@ -26,19 +31,69 @@ enum ActionState {
 
 type HandlerType = undefined | (() => (Promise<void> | void));
 
+const UpgradeWrapper = styled.div`
+    position: relative;
+    height: 100%;
+    text-align: center;
+`;
+
+const UpgradeContent = styled.div<{vertical?: boolean, verticalAdjustment: number}>`
+    height: 100%;
+    display: flex;
+    flex-direction: ${(props) => (props.vertical ? 'column' : 'row')};
+    margin-top: -${(props) => props.verticalAdjustment}px;
+    align-items: center;
+    justify-content: center;
+`;
+
+const InfoContainer = styled.div<{vertical?: boolean}>`
+    display: flex;
+    flex-direction: column;
+    max-width: 425px;
+    align-items: ${(props) => (props.vertical ? 'center' : 'flex-start')};
+    text-align: ${(props) => (props.vertical ? 'center' : 'left')};
+`;
+
+const Title = styled.div`
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 28px;
+    color: var(--center-channel-color);
+`;
+
+const HelpText = styled.div`
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--center-channel-color);
+`;
+
+const FooterContainer = styled.div`
+    margin-top: 18px;
+
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 16px;
+    color: var(--center-channel-color-56);
+`;
+
+const StyledUpgradeIllustration = styled(UpgradeIllustrationSvg)`
+    margin-right: 54px;
+    margin-left: 54px;
+`;
+
+const UpgradeHeader = styled.div`
+    margin-bottom: 14px;
+`;
+
 interface Props {
-    illustration: JSX.Element;
-    successIllustration: JSX.Element;
-    errorIllustration: JSX.Element;
+    background: JSX.Element;
     titleText: string;
     helpText: string;
     notificationType: AdminNotificationType;
-    upgradeWrapperSC: StyledComponent<'div', any>;
-    upgradeContentSC: StyledComponent<'div', any>;
-    titleSC: StyledComponent<'div', any>;
-    helpTextSC: StyledComponent<'div', any>;
-    buttonSC: StyledComponent<'button', any>;
-    footerContainerSC: StyledComponent<'div', any>;
+    verticalAdjustment: number;
+    vertical?: boolean;
 }
 
 const UpgradeBanner = (props: Props) => {
@@ -96,22 +151,22 @@ const UpgradeBanner = (props: Props) => {
         adminMainAction = openUpgradeModal;
     }
 
-    let illustration = props.illustration;
     let titleText = props.titleText;
     let helpText: React.ReactNode = props.helpText;
+    let stateImage = <StyledUpgradeIllustration/>;
 
     if (isCurrentUserAdmin && isServerTeamEdition) {
         helpText = <><p>{helpText}</p><ConvertEnterpriseNotice/></>;
     }
 
     if (actionState === ActionState.Success) {
-        illustration = props.successIllustration;
+        stateImage = <SuccessSvg/>;
         titleText = 'Thank you!';
         helpText = 'Your System Admin has been notified.';
     }
 
     if (actionState === ActionState.Error) {
-        illustration = props.errorIllustration;
+        stateImage = <ErrorSvg/>;
         if (isCurrentUserAdmin) {
             titleText = 'Your license could not be generated';
             helpText = 'Please check the system logs for more information.';
@@ -121,46 +176,35 @@ const UpgradeBanner = (props: Props) => {
         }
     }
 
-    const UpgradeWrapper = props.upgradeWrapperSC;
-    const UpgradeContent = props.upgradeContentSC;
-    const Title = props.titleSC;
-    const HelpText = props.helpTextSC;
-
     return (
         <UpgradeWrapper>
-            {illustration}
-            <UpgradeContent>
-                <UpgradeHeader>
-                    <Title>{titleText}</Title>
-                    <HelpText>{helpText}</HelpText>
-                </UpgradeHeader>
-                <Button
-                    actionState={actionState}
-                    isCurrentUserAdmin={isCurrentUserAdmin}
-                    isServerTeamEdition={isServerTeamEdition}
-                    endUserMainAction={endUserMainAction}
-                    adminMainAction={adminMainAction}
-                    isCloud={isServerCloud}
-                    buttonSC={props.buttonSC}
-                />
-                {!isServerCloud && isCurrentUserAdmin && !isServerTeamEdition && actionState === ActionState.Uninitialized &&
-                <Footer footerContainerSC={props.footerContainerSC}/>}
+            {props.background}
+            <UpgradeContent
+                vertical={props.vertical}
+                verticalAdjustment={props.verticalAdjustment}
+            >
+                {stateImage}
+                <InfoContainer vertical={props.vertical}>
+                    <UpgradeHeader>
+                        <Title>{titleText}</Title>
+                        <HelpText>{helpText}</HelpText>
+                    </UpgradeHeader>
+                    <Button
+                        actionState={actionState}
+                        isCurrentUserAdmin={isCurrentUserAdmin}
+                        isServerTeamEdition={isServerTeamEdition}
+                        endUserMainAction={endUserMainAction}
+                        adminMainAction={adminMainAction}
+                        isCloud={isServerCloud}
+                    />
+                    {!isServerCloud && isCurrentUserAdmin && !isServerTeamEdition && actionState === ActionState.Uninitialized &&
+                        <FooterContainer>
+                            <StartTrialNotice/>
+                        </FooterContainer>
+                    }
+                </InfoContainer>
             </UpgradeContent>
         </UpgradeWrapper>
-    );
-};
-
-interface FooterProps {
-    footerContainerSC: StyledComponent<'div', any>;
-}
-
-const Footer = (props: FooterProps) => {
-    const FooterContainer = props.footerContainerSC;
-
-    return (
-        <FooterContainer>
-            <StartTrialNotice/>
-        </FooterContainer>
     );
 };
 
@@ -171,12 +215,9 @@ interface ButtonProps {
     endUserMainAction: HandlerType;
     adminMainAction: HandlerType;
     isCloud: boolean;
-    buttonSC: StyledComponent<'button', any>;
 }
 
 const Button = (props: ButtonProps) => {
-    const ButtonSC = props.buttonSC;
-
     if (props.actionState === ActionState.Loading) {
         return <Spinner/>;
     }
@@ -188,11 +229,11 @@ const Button = (props: ButtonProps) => {
     if (props.actionState === ActionState.Error) {
         if (props.isCurrentUserAdmin) {
             return (
-                <ButtonSC
+                <PrimaryButton
                     onClick={() => window.open('https://mattermost.com/support/')}
                 >
                     {'Contact support'}
-                </ButtonSC>
+                </PrimaryButton>
             );
         }
         return null;
@@ -211,9 +252,9 @@ const Button = (props: ButtonProps) => {
     }
 
     return (
-        <ButtonSC onClick={handleClick}>
+        <PrimaryButton onClick={handleClick}>
             {buttonText}
-        </ButtonSC>
+        </PrimaryButton>
     );
 };
 
@@ -221,9 +262,5 @@ const isSystemAdmin = (roles: string): boolean => {
     const rolesArray = roles.split(' ');
     return rolesArray.includes(General.SYSTEM_ADMIN_ROLE);
 };
-
-const UpgradeHeader = styled.div`
-    margin-bottom: 14px;
-`;
 
 export default UpgradeBanner;

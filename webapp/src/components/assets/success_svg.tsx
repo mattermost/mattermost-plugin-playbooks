@@ -9,6 +9,8 @@ import Icon from 'src/components/assets/icons/icon';
 const Svg = styled(Icon)`
     width: 256px;
     height: 156px;
+    margin-right: 54px;
+    margin-left: 54px;
 `;
 
 const SuccessSvg = () => (

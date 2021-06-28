@@ -180,6 +180,30 @@ const UpgradeTimelineBackgroundSvg = () => (
             stroke='var(--center-channel-color)'
             strokeOpacity='0.16'
         />
+        <rect
+            width='372'
+            height='307'
+            fill='url(#paint0_linear)'
+        />
+        <defs>
+            <linearGradient
+                id='paint0_linear'
+                x1='186'
+                y1='0'
+                x2='186'
+                y2='307'
+                gradientUnits='userSpaceOnUse'
+            >
+                <stop
+                    stopColor='white'
+                    stopOpacity='0'
+                />
+                <stop
+                    offset='0.613396'
+                    stopColor='white'
+                />
+            </linearGradient>
+        </defs>
     </Svg>
 );
 
