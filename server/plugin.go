@@ -179,6 +179,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config)
 	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, telemetryClient, telemetryClient, p.config)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
+	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
