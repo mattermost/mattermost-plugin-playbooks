@@ -11,11 +11,13 @@ import {PlaybookRun} from 'src/types/playbook_run';
 
 import {SecondaryButtonLarger} from 'src/components/backstage/playbook_runs/shared';
 
-import {OVERLAY_DELAY} from 'src/constants';
-import {isExportLicensed} from 'src/selectors';
+import {OVERLAY_DELAY, AdminNotificationType} from 'src/constants';
+import {useAllowChannelExport} from 'src/hooks';
 import {exportChannelUrl} from 'src/client';
 
 import {Banner} from 'src/components/backstage/styles';
+import UpgradeModal from 'src/components/backstage/upgrade_modal';
+import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 
 interface ExportLinkProps {
     playbookRun: PlaybookRun
@@ -37,14 +39,25 @@ const SecondaryButtonDisabled = styled(SecondaryButtonWithSpace)`
     }
 `;
 
+const PositionedUpgradeBadge = styled(UpgradeBadge)`
+    margin-left: -11px;
+    margin-top: -29px;
+`;
+
 const ExportLink = (props: ExportLinkProps) => {
     //@ts-ignore plugins state is a thing
     const exportAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
-    const exportLicensed = useSelector<GlobalState, boolean>(isExportLicensed);
+    const allowChannelExport = useAllowChannelExport();
+    const [showModal, setShowModal] = useState(false);
 
     const [showBanner, setShowBanner] = useState(false);
 
     const onExportClick = () => {
+        if (!allowChannelExport) {
+            setShowModal(true);
+            return;
+        }
+
         window.location.href = exportChannelUrl(props.playbookRun.channel_id);
         setShowBanner(true);
         window.setTimeout(() => {
@@ -71,7 +84,7 @@ const ExportLink = (props: ExportLinkProps) => {
             {linkText}
         </SecondaryButtonWithSpace>
     );
-    if (!exportAvailable || !exportLicensed) {
+    if (!exportAvailable) {
         link = (
             <SecondaryButtonDisabled>
                 {linkText}
@@ -91,12 +104,6 @@ const ExportLink = (props: ExportLinkProps) => {
                 {'Install and enable the Channel Export plugin to support exporting the channel'}
             </Tooltip>
         );
-    } else if (!exportLicensed) {
-        tooltip = (
-            <Tooltip id='exportUnlicensed'>
-                {'Exporting a channel requires a Mattermost Enterprise license'}
-            </Tooltip>
-        );
     }
 
     return (
@@ -109,6 +116,12 @@ const ExportLink = (props: ExportLinkProps) => {
             >
                 {link}
             </OverlayTrigger>
+            {!allowChannelExport && <PositionedUpgradeBadge/>}
+            <UpgradeModal
+                messageType={AdminNotificationType.EXPORT_CHANNEL}
+                show={showModal}
+                onHide={() => setShowModal(false)}
+            />
         </>
     );
 };

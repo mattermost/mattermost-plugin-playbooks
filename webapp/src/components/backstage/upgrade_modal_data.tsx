@@ -155,6 +155,10 @@ export const getUpgradeModalCopy = (
             titleText = 'Put your team in control';
             helpText = 'Every team\'s structure is different. You can manage which users in the team can create playbooks.';
             break;
+        case AdminNotificationType.EXPORT_CHANNEL:
+            titleText = 'Save your playbook run history';
+            helpText = 'Export the channel of your playbook run and save it for later analysis.';
+            break;
         }
 
         if (!isAdmin) {
