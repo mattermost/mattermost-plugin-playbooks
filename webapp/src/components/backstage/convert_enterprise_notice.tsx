@@ -10,14 +10,15 @@ const ConvertEnterpriseNotice = () => (
                 <li>
                     <a
                         href={'https://docs.mattermost.com/install/ee-install.html#converting-team-edition-to-enterprise-edition'}
+
                         target={'_blank'}
                         rel='noreferrer'
                     >
-                        {'Convert to Enterprise Edition.'}
+                        {'Convert to a commercial edition.'}
                     </a>
                 </li>
                 <li>
-                    {'Start a trial or upgrade to Mattermost Professional or Enterprise editions.'}
+                    {'Start a trial or upgrade your subscription.'}
                 </li>
             </StyledOl>
         </p>

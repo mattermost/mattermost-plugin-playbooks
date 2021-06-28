@@ -199,7 +199,7 @@ func PlaybookAccess(userID string, playbook Playbook, pluginAPI *pluginapi.Clien
 // checkPlaybookIsNotUsingE20Features features returns a non-nil error if the playbook is using E20 features
 func checkPlaybookIsNotUsingE20Features(playbook Playbook) error {
 	if len(playbook.MemberIDs) > 0 {
-		return errors.Wrap(ErrLicensedFeature, "restrict playbook editing to specific users is a Mattermost Enterprise feature")
+		return errors.Wrap(ErrLicensedFeature, "restricting playbook editing to specific users is not available with your current subscription")
 	}
 
 	return nil
@@ -213,7 +213,7 @@ func checkPlaybookIsNotUsingE10Features(playbook Playbook, playbookService Playb
 	}
 
 	if num > 0 {
-		return errors.Wrap(ErrLicensedFeature, "creating more than one playbook per team is a Mattermost Professional feature")
+		return errors.Wrap(ErrLicensedFeature, "creating more than one playbook per team is not available with your current subscription")
 	}
 
 	return nil
