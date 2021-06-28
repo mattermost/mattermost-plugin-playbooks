@@ -225,6 +225,8 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		b.telemetry.NotifyAdminsToRestrictPlaybookAccess(authorUserID)
 	case "start_trial_to_restrict_playbook_creation":
 		b.telemetry.NotifyAdminsToRestrictPlaybookCreation(authorUserID)
+	case "start_trial_to_export_channel":
+		b.telemetry.NotifyAdminsToExportChannel(authorUserID)
 	}
 
 	return nil
