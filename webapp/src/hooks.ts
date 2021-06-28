@@ -26,7 +26,7 @@ import {clientFetchPlaybooksCount} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
 import {isCloud, isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from './license';
-import {currentTeamNumPlaybooks, globalSettings} from './selectors';
+import {currentTeamNumPlaybooks, globalSettings, isCurrentUserAdmin} from './selectors';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -153,6 +153,24 @@ export function useCanCreatePlaybooks() {
 
     // No restrictions if length is zero
     if (settings.playbook_creators_user_ids.length === 0) {
+        return true;
+    }
+
+    return settings.playbook_creators_user_ids.includes(currentUserID);
+}
+
+export function useCanRestrictPlaybookCreation() {
+    const settings = useSelector(globalSettings);
+    const isAdmin = useSelector(isCurrentUserAdmin);
+    const currentUserID = useSelector(getCurrentUserId);
+
+    // This is really a loading state so just assume no.
+    if (!settings) {
+        return false;
+    }
+
+    // No restrictions if user is a system administrator.
+    if (isAdmin) {
         return true;
     }
 

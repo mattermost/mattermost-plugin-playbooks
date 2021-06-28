@@ -188,6 +188,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -198,7 +199,7 @@ func TestSetSettings(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
-	t.Run("not licensed, no-op settings change", func(t *testing.T) {
+	t.Run("not licensed, no-op settings change, but not an admin", func(t *testing.T) {
 		reset(t)
 
 		existingConfiguration := config.Configuration{
@@ -212,6 +213,39 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		configService.EXPECT().
+			GetConfiguration().
+			AnyTimes().
+			Return(&existingConfiguration)
+		configService.EXPECT().
+			IsAtLeastE20Licensed().
+			Return(false)
+		pluginAPI.On("GetPluginConfig").Return(map[string]interface{}{})
+		pluginAPI.On("SavePluginConfig", map[string]interface{}{
+			"PlaybookCreatorsUserIds": []string{},
+		}).Return(nil)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+
+		err := c.Settings.Update(context.TODO(), settings)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("not licensed, no-op settings change, as an admin", func(t *testing.T) {
+		reset(t)
+
+		existingConfiguration := config.Configuration{
+			PlaybookCreatorsUserIds:    []string{},
+			EnableExperimentalFeatures: false,
+			AllowedUserIDs:             []string{},
+		}
+		settings := icClient.GlobalSettings{
+			PlaybookCreatorsUserIds: []string{},
+		}
+
+		NewSettingsHandler(handler.APIRouter, client, logger, configService)
+
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -242,6 +276,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -255,7 +290,7 @@ func TestSetSettings(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
-	t.Run("set settings, licensed, settings playbook creators for the first time", func(t *testing.T) {
+	t.Run("set settings, licensed, settings playbook creators for the first time, not an admin", func(t *testing.T) {
 		reset(t)
 
 		existingConfiguration := config.Configuration{
@@ -269,6 +304,40 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		configService.EXPECT().
+			GetConfiguration().
+			AnyTimes().
+			Return(&existingConfiguration)
+		configService.EXPECT().
+			IsAtLeastE20Licensed().
+			Return(true)
+		pluginAPI.On("GetPluginConfig").Return(make(map[string]interface{}))
+		pluginAPI.On("SavePluginConfig", map[string]interface{}{
+			"PlaybookCreatorsUserIds": []string{mattermostUserID},
+		}).Return(nil)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+
+		err := c.Settings.Update(context.TODO(), settings)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("set settings, licensed, settings playbook creators for the first time, as an admin", func(t *testing.T) {
+		reset(t)
+
+		existingConfiguration := config.Configuration{
+			PlaybookCreatorsUserIds:    []string{},
+			EnableExperimentalFeatures: false,
+			AllowedUserIDs:             []string{},
+		}
+		settings := icClient.GlobalSettings{
+			PlaybookCreatorsUserIds: []string{mattermostUserID},
+		}
+
+		NewSettingsHandler(handler.APIRouter, client, logger, configService)
+
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -285,7 +354,7 @@ func TestSetSettings(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("set settings, licensed, adding another user", func(t *testing.T) {
+	t.Run("set settings, licensed, adding another user, not an admin", func(t *testing.T) {
 		reset(t)
 
 		newUserID := model.NewId()
@@ -300,6 +369,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -316,7 +386,71 @@ func TestSetSettings(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("set settings, licensed, assigning to someone else", func(t *testing.T) {
+	t.Run("set settings, licensed, adding another user, as an admin", func(t *testing.T) {
+		reset(t)
+
+		newUserID := model.NewId()
+		existingConfiguration := config.Configuration{
+			PlaybookCreatorsUserIds:    []string{mattermostUserID},
+			EnableExperimentalFeatures: false,
+			AllowedUserIDs:             []string{},
+		}
+		settings := icClient.GlobalSettings{
+			PlaybookCreatorsUserIds: []string{mattermostUserID, newUserID},
+		}
+
+		NewSettingsHandler(handler.APIRouter, client, logger, configService)
+
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		configService.EXPECT().
+			GetConfiguration().
+			AnyTimes().
+			Return(&existingConfiguration)
+		configService.EXPECT().
+			IsAtLeastE20Licensed().
+			Return(true)
+		pluginAPI.On("GetPluginConfig").Return(make(map[string]interface{}))
+		pluginAPI.On("SavePluginConfig", map[string]interface{}{
+			"PlaybookCreatorsUserIds": []string{mattermostUserID, newUserID},
+		}).Return(nil)
+
+		err := c.Settings.Update(context.TODO(), settings)
+		require.NoError(t, err)
+	})
+
+	t.Run("set settings, licensed, adding another user, as an admin not in the list", func(t *testing.T) {
+		reset(t)
+
+		newUserID := model.NewId()
+		existingConfiguration := config.Configuration{
+			PlaybookCreatorsUserIds:    []string{newUserID},
+			EnableExperimentalFeatures: false,
+			AllowedUserIDs:             []string{},
+		}
+		settings := icClient.GlobalSettings{
+			PlaybookCreatorsUserIds: []string{mattermostUserID, newUserID},
+		}
+
+		NewSettingsHandler(handler.APIRouter, client, logger, configService)
+
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		configService.EXPECT().
+			GetConfiguration().
+			AnyTimes().
+			Return(&existingConfiguration)
+		configService.EXPECT().
+			IsAtLeastE20Licensed().
+			Return(true)
+		pluginAPI.On("GetPluginConfig").Return(make(map[string]interface{}))
+		pluginAPI.On("SavePluginConfig", map[string]interface{}{
+			"PlaybookCreatorsUserIds": []string{mattermostUserID, newUserID},
+		}).Return(nil)
+
+		err := c.Settings.Update(context.TODO(), settings)
+		require.NoError(t, err)
+	})
+
+	t.Run("set settings, licensed, assigning to someone else, not an admin", func(t *testing.T) {
 		reset(t)
 
 		otherUserID := model.NewId()
@@ -331,6 +465,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -347,7 +482,72 @@ func TestSetSettings(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("set settings, licensed, removing all users", func(t *testing.T) {
+	t.Run("set settings, licensed, assigning to someone else, as an admin", func(t *testing.T) {
+		reset(t)
+
+		otherUserID := model.NewId()
+		existingConfiguration := config.Configuration{
+			PlaybookCreatorsUserIds:    []string{mattermostUserID},
+			EnableExperimentalFeatures: false,
+			AllowedUserIDs:             []string{},
+		}
+		settings := icClient.GlobalSettings{
+			PlaybookCreatorsUserIds: []string{otherUserID},
+		}
+
+		NewSettingsHandler(handler.APIRouter, client, logger, configService)
+
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		configService.EXPECT().
+			GetConfiguration().
+			AnyTimes().
+			Return(&existingConfiguration)
+		configService.EXPECT().
+			IsAtLeastE20Licensed().
+			Return(true)
+		pluginAPI.On("GetPluginConfig").Return(make(map[string]interface{}))
+		pluginAPI.On("SavePluginConfig", map[string]interface{}{
+			"PlaybookCreatorsUserIds": []string{otherUserID},
+		}).Return(nil)
+
+		err := c.Settings.Update(context.TODO(), settings)
+		require.NoError(t, err)
+	})
+
+	t.Run("set settings, licensed, assigning to someone else, as an admin not in the list", func(t *testing.T) {
+		reset(t)
+
+		otherUserID := model.NewId()
+		otherUserID2 := model.NewId()
+		existingConfiguration := config.Configuration{
+			PlaybookCreatorsUserIds:    []string{otherUserID},
+			EnableExperimentalFeatures: false,
+			AllowedUserIDs:             []string{},
+		}
+		settings := icClient.GlobalSettings{
+			PlaybookCreatorsUserIds: []string{otherUserID2},
+		}
+
+		NewSettingsHandler(handler.APIRouter, client, logger, configService)
+
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		configService.EXPECT().
+			GetConfiguration().
+			AnyTimes().
+			Return(&existingConfiguration)
+		configService.EXPECT().
+			IsAtLeastE20Licensed().
+			Return(true)
+		pluginAPI.On("GetPluginConfig").Return(make(map[string]interface{}))
+		pluginAPI.On("SavePluginConfig", map[string]interface{}{
+			"PlaybookCreatorsUserIds": []string{otherUserID2},
+		}).Return(nil)
+
+		err := c.Settings.Update(context.TODO(), settings)
+		require.NoError(t, err)
+	})
+
+	t.Run("set settings, licensed, removing all users, not an admin but in the list", func(t *testing.T) {
 		reset(t)
 
 		otherUserID := model.NewId()
@@ -362,6 +562,39 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		configService.EXPECT().
+			GetConfiguration().
+			AnyTimes().
+			Return(&existingConfiguration)
+		configService.EXPECT().
+			IsAtLeastE20Licensed().
+			Return(true)
+		pluginAPI.On("GetPluginConfig").Return(make(map[string]interface{}))
+		pluginAPI.On("SavePluginConfig", map[string]interface{}{
+			"PlaybookCreatorsUserIds": []string{},
+		}).Return(nil)
+
+		err := c.Settings.Update(context.TODO(), settings)
+		require.NoError(t, err)
+	})
+
+	t.Run("set settings, licensed, removing all users, as an admin not in the list", func(t *testing.T) {
+		reset(t)
+
+		otherUserID := model.NewId()
+		existingConfiguration := config.Configuration{
+			PlaybookCreatorsUserIds:    []string{otherUserID},
+			EnableExperimentalFeatures: false,
+			AllowedUserIDs:             []string{},
+		}
+		settings := icClient.GlobalSettings{
+			PlaybookCreatorsUserIds: []string{},
+		}
+
+		NewSettingsHandler(handler.APIRouter, client, logger, configService)
+
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
