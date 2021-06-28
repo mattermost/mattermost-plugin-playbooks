@@ -3,14 +3,14 @@
 
 import styled from 'styled-components';
 import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {DefaultFetchPlaybookRunsParamsTime} from 'src/types/playbook_run';
 import {
-    PrimaryButtonRight,
+    PrimaryButtonRight, SecondaryButtonLargerRight,
 } from 'src/components/backstage/playbook_runs/shared';
 import {clientFetchPlaybook, fetchPlaybookStats} from 'src/client';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
@@ -20,6 +20,9 @@ import PlaybookRunList
     from 'src/components/backstage/playbooks/playbook_run_list/playbook_run_list';
 import {EmptyPlaybookStats} from 'src/types/stats';
 import StatsView from 'src/components/backstage/playbooks/stats_view';
+import {startPlaybookById} from 'src/actions';
+import {PrimaryButton} from 'src/components/assets/buttons';
+import ClipboardsCheckmark from 'src/components/assets/icons/clipboards_checkmark';
 
 interface MatchParams {
     playbookId: string
@@ -32,6 +35,7 @@ const FetchingStateType = {
 };
 
 const PlaybookBackstage = () => {
+    const dispatch = useDispatch();
     const match = useRouteMatch<MatchParams>();
     const location = useLocation();
     const currentTeam = useSelector(getCurrentTeam);
@@ -82,6 +86,14 @@ const PlaybookBackstage = () => {
         navigateToUrl(location.pathname + '/edit');
     };
 
+    const runPlaybook = () => {
+        navigateToUrl(`/${currentTeam.name}`);
+
+        if (playbook?.id) {
+            dispatch(startPlaybookById(playbook.id));
+        }
+    };
+
     let subTitle = 'Everyone can access this playbook';
     let accessIconClass = 'icon-globe';
     if (playbook.member_ids.length === 1) {
@@ -107,10 +119,14 @@ const PlaybookBackstage = () => {
                             <SubTitle>{subTitle}</SubTitle>
                         </HorizontalBlock>
                     </VerticalBlock>
-                    <PrimaryButtonLargerRight onClick={goToEdit}>
+                    <SecondaryButtonLargerRight onClick={goToEdit}>
                         <i className={'icon icon-pencil-outline'}/>
-                        {'Edit Playbook'}
-                    </PrimaryButtonLargerRight>
+                        {'Edit'}
+                    </SecondaryButtonLargerRight>
+                    <PrimaryButtonLarger onClick={runPlaybook}>
+                        <ClipboardsCheckmarkSmall/>
+                        {'Run'}
+                    </PrimaryButtonLarger>
                 </TitleRow>
             </TopContainer>
             <BottomContainer>
@@ -198,9 +214,17 @@ const SubTitle = styled.div`
     line-height: 16px;
 `;
 
-const PrimaryButtonLargerRight = styled(PrimaryButtonRight)`
-    padding: 12px 20px;
-    height: 40px;
+const ClipboardsCheckmarkSmall = styled(ClipboardsCheckmark)`
+    height: 18px;
+    width: auto;
+    margin-right: 7px;
+    color: var(--button-color);
+`;
+
+const PrimaryButtonLarger = styled(PrimaryButton)`
+    padding: 0 16px;
+    height: 36px;
+    margin-left: 12px;
 `;
 
 const BottomContainer = styled.div`

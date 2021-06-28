@@ -236,6 +236,65 @@ func (r *Runner) actionStart(args []string) {
 	}
 }
 
+// actionStartPlaybook is intended for scripting use, not use by the end user (they would have
+// to type in the correct playbookID).
+func (r *Runner) actionStartPlaybook(args []string) {
+	if len(args) != 2 {
+		r.postCommandResponse("Usage: `/playbook start-playbook <playbookID> <clientID>`")
+		return
+	}
+
+	playbookID := args[0]
+	clientID := args[1]
+
+	if !app.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI) {
+		r.postCommandResponse("Must be a member of the team to run playbooks.")
+		return
+	}
+
+	requesterInfo := app.RequesterInfo{
+		UserID:  r.args.UserId,
+		TeamID:  r.args.TeamId,
+		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
+	}
+
+	// Using the GetPlaybooksForTeam so that requesterInfo and the expected security restrictions
+	// are respected.
+	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
+		app.PlaybookFilterOptions{
+			Sort:      app.SortByTitle,
+			Direction: app.DirectionAsc,
+			Page:      0,
+			PerPage:   app.PerPageDefault,
+		})
+	if err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+
+	var playbook []app.Playbook
+	for _, pb := range playbooksResults.Items {
+		if pb.ID == playbookID {
+			playbook = append(playbook, pb)
+		}
+	}
+	if len(playbook) == 0 {
+		r.postCommandResponse("Playbook not found for id: " + playbookID)
+		return
+	}
+
+	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
+		return
+	}
+
+	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, "", clientID, playbook, session.IsMobileApp()); err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+}
+
 func (r *Runner) actionCheck(args []string) {
 	if len(args) != 2 {
 		r.postCommandResponse(helpText)
@@ -1705,6 +1764,8 @@ func (r *Runner) Execute() error {
 	switch cmd {
 	case "start":
 		r.actionStart(parameters)
+	case "start-playbook":
+		r.actionStartPlaybook(parameters)
 	case "end":
 		r.actionEnd()
 	case "update":

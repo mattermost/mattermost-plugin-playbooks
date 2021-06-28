@@ -218,7 +218,6 @@ const Backstage = () => {
                     </Route>
                     <Route path={`${match.url}/runs`}>
                         <BackstagePlaybookRunList/>
-                        {/*<Dashboard/>*/}
                     </Route>
                     <Route path={`${match.url}/stats`}>
                         <StatsView/>
