@@ -20,7 +20,7 @@ import PlaybookRunList
     from 'src/components/backstage/playbooks/playbook_run_list/playbook_run_list';
 import {EmptyPlaybookStats} from 'src/types/stats';
 import StatsView from 'src/components/backstage/playbooks/stats_view';
-import {startPlaybookById} from 'src/actions';
+import {startPlaybookRunById} from 'src/actions';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import ClipboardsCheckmark from 'src/components/assets/icons/clipboards_checkmark';
 
@@ -90,7 +90,7 @@ const PlaybookBackstage = () => {
         navigateToUrl(`/${currentTeam.name}`);
 
         if (playbook?.id) {
-            dispatch(startPlaybookById(playbook.id));
+            dispatch(startPlaybookRunById(playbook.id));
         }
     };
 

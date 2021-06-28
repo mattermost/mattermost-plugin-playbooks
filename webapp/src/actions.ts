@@ -70,7 +70,7 @@ export function startPlaybookRun(postId?: string) {
     };
 }
 
-export function startPlaybookById(playbookId: string) {
+export function startPlaybookRunById(playbookId: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
