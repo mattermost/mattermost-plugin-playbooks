@@ -12,7 +12,7 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
-const npsPluginId = "com.mattermost.nps"
+const npsPluginID = "com.mattermost.nps"
 
 // ServiceImpl holds access to the plugin's Configuration.
 type ServiceImpl struct {
@@ -198,13 +198,13 @@ func (c *ServiceImpl) IsAtLeastE10Licensed() bool {
 
 // SupportsGivingFeedback returns nil when the nps plugin is installed and enabled, thus enabling giving feedback.
 func (c *ServiceImpl) SupportsGivingFeedback() error {
-	pluginState := c.api.Configuration.GetConfig().PluginSettings.PluginStates[npsPluginId]
+	pluginState := c.api.Configuration.GetConfig().PluginSettings.PluginStates[npsPluginID]
 
 	if pluginState == nil || !pluginState.Enable {
 		return errors.New("nps plugin not enabled")
 	}
 
-	pluginStatus, err := c.api.Plugin.GetPluginStatus(npsPluginId)
+	pluginStatus, err := c.api.Plugin.GetPluginStatus(npsPluginID)
 	if err != nil {
 		return fmt.Errorf("failed to query nps plugin status: %w", err)
 	}
