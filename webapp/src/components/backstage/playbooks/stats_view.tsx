@@ -3,6 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
+import moment from 'moment';
 
 import LineGraph from 'src/components/backstage/playbooks/line_graph';
 import {
@@ -18,11 +19,13 @@ import {PlaybookStats} from 'src/types/stats';
 import {useAllowPlaybookStatsView} from 'src/hooks';
 import UpgradePlaybookPlaceholder
     from 'src/components/backstage/playbooks/upgrade_playbook_placeholder';
+import Pill from 'src/components/widgets/pill';
 
 interface Props {
     stats: PlaybookStats
     fetchParamsTime: FetchPlaybookRunsParamsTime
     setFetchParamsTime: (params: FetchPlaybookRunsParamsTime) => void
+    setFilterPill: (pill: JSX.Element | null) => void
 }
 
 const StatsView = (props: Props) => {
@@ -35,6 +38,64 @@ const StatsView = (props: Props) => {
             </PlaceholderRow>
         );
     }
+
+    const filterStarted = (index: number) => {
+        if (index < 0) {
+            clearFilter();
+            return;
+        }
+
+        const started = props.stats.runs_started_per_week_times[index][0];
+        const ended = props.stats.runs_started_per_week_times[index][1];
+        const nextFetchParamsTime = {
+            started_gte: started,
+            started_lt: ended,
+        };
+
+        if (!fetchParamsTimeEqual(props.fetchParamsTime, nextFetchParamsTime)) {
+            const text = 'Runs started between ' +
+                moment.utc(started).format('D MMM') + ' and ' +
+                moment.utc(ended).format('D MMM');
+
+            props.setFilterPill(pill(text));
+            props.setFetchParamsTime(nextFetchParamsTime);
+        }
+    };
+
+    const filterActive = (index: number) => {
+        if (index < 0) {
+            clearFilter();
+            return;
+        }
+
+        const started = props.stats.active_runs_per_day_times[index][0];
+        const ended = props.stats.active_runs_per_day_times[index][1];
+        const nextFetchParamsTime = {
+            active_gte: started,
+            active_lt: ended,
+        };
+
+        if (!fetchParamsTimeEqual(props.fetchParamsTime, nextFetchParamsTime)) {
+            const text = 'Runs active on ' + moment.utc(started).format('D MMM');
+
+            props.setFilterPill(pill(text));
+            props.setFetchParamsTime(nextFetchParamsTime);
+        }
+    };
+
+    const clearFilter = () => {
+        props.setFilterPill(null);
+        props.setFetchParamsTime(DefaultFetchPlaybookRunsParamsTime);
+    };
+
+    const pill = (text: string) => (
+        <PillRow>
+            <Pill
+                text={text}
+                onClose={clearFilter}
+            />
+        </PillRow>
+    );
 
     return (
         <>
@@ -67,19 +128,7 @@ const StatsView = (props: Props) => {
                             const runs = (yLabel === 1) ? 'run' : 'runs';
                             return `${yLabel} ${runs} started`;
                         }}
-                        onClick={(index) => {
-                            let nextFetchParamsTime = DefaultFetchPlaybookRunsParamsTime;
-                            if (index >= 0) {
-                                nextFetchParamsTime = {
-                                    started_gte: props.stats.runs_started_per_week_times[index][0],
-                                    started_lt: props.stats.runs_started_per_week_times[index][1],
-                                };
-                            }
-
-                            if (!fetchParamsTimeEqual(props.fetchParamsTime, nextFetchParamsTime)) {
-                                props.setFetchParamsTime(nextFetchParamsTime);
-                            }
-                        }}
+                        onClick={filterStarted}
                     />
                 </GraphBox>
             </BottomRow>
@@ -94,19 +143,7 @@ const StatsView = (props: Props) => {
                             const runs = (yLabel === 1) ? 'run' : 'runs';
                             return `${yLabel} active ${runs}`;
                         }}
-                        onClick={(index) => {
-                            let nextFetchParamsTime = DefaultFetchPlaybookRunsParamsTime;
-                            if (index >= 0) {
-                                nextFetchParamsTime = {
-                                    active_gte: props.stats.active_runs_per_day_times[index][0],
-                                    active_lt: props.stats.active_runs_per_day_times[index][1],
-                                };
-                            }
-
-                            if (!fetchParamsTimeEqual(props.fetchParamsTime, nextFetchParamsTime)) {
-                                props.setFetchParamsTime(nextFetchParamsTime);
-                            }
-                        }}
+                        onClick={filterActive}
                     />
                 </GraphBox>
                 <GraphBox>
@@ -227,6 +264,10 @@ const GraphBox = styled.div`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.32);
     border-radius: 4px;
+`;
+
+const PillRow = styled.div`
+    margin-bottom: 20px;
 `;
 
 export default StatsView;
