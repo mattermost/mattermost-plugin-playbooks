@@ -351,7 +351,7 @@ func ModifyPlaybookCreators(userID string, isAdmin bool, config config.Service) 
 	cfg := config.GetConfiguration()
 
 	// Only admins are allowed to initially modify the settings.
-	if len(cfg.PlaybookCreatorsUserIds) == 0 && !isAdmin {
+	if len(cfg.PlaybookCreatorsUserIds) == 0 {
 		return errors.Wrap(ErrNoPermissions, "only system admins may initially constrain playbook creators")
 	}
 
