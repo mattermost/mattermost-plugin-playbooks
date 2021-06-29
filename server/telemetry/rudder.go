@@ -57,6 +57,7 @@ const (
 	actionNotifyAdminsToRestrictPlaybookCreation = "notify_admins_to_restrict_playbook_creation"
 	actionNotifyAdminsToRestrictPlaybookAccess   = "notify_admins_to_restrict_playbook_access"
 	actionNotifyAdminsToExportChannel            = "notify_admins_to_export_channel"
+	actionNotifyAdminsToAccessPlaybookDashboard  = "notify_admins_to_access_playbook_dashboard"
 
 	eventStartTrial                            = "start_trial"
 	actionStartTrialToViewTimeline             = "start_trial_to_view_timeline"
@@ -65,6 +66,7 @@ const (
 	actionStartTrialToRestrictPlaybookCreation = "start_trial_to_restrict_playbook_creation"
 	actionStartTrialToRestrictPlaybookAccess   = "start_trial_to_restrict_playbook_access"
 	actionStartTrialToExportChannel            = "start_trial_to_export_channel"
+	actionStartTrialToAccessPlaybookDashboard  = "start_trial_to_access_playbook_dashboard"
 
 	// telemetryKeyPlaybookRunID records the legacy name used to identify a playbook run via telemetry.
 	telemetryKeyPlaybookRunID = "IncidentID"
@@ -392,6 +394,12 @@ func (t *RudderTelemetry) StartTrialToExportChannel(userID string) {
 	t.track(eventStartTrial, properties)
 }
 
+func (t *RudderTelemetry) StartTrialToAccessPlaybookDashboard(userID string) {
+	properties := commonProperties(userID)
+	properties["Action"] = actionStartTrialToAccessPlaybookDashboard
+	t.track(eventStartTrial, properties)
+}
+
 func (t *RudderTelemetry) NotifyAdminsToViewTimeline(userID string) {
 	properties := commonProperties(userID)
 	properties["Action"] = actionNotifyAdminsToViewTimeline
@@ -425,6 +433,12 @@ func (t *RudderTelemetry) NotifyAdminsToRestrictPlaybookAccess(userID string) {
 func (t *RudderTelemetry) NotifyAdminsToExportChannel(userID string) {
 	properties := commonProperties(userID)
 	properties["Action"] = actionNotifyAdminsToExportChannel
+	t.track(eventNotifyAdmins, properties)
+}
+
+func (t *RudderTelemetry) NotifyAdminsToAccessPlaybookDashboard(userID string) {
+	properties := commonProperties(userID)
+	properties["Action"] = actionNotifyAdminsToAccessPlaybookDashboard
 	t.track(eventNotifyAdmins, properties)
 }
 

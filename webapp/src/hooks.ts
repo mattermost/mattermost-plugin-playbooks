@@ -292,6 +292,12 @@ export function useAllowChannelExport() {
     return useSelector(isE20LicensedOrDevelopment);
 }
 
+// useAllowPlaybookStatsView returns whether the server is licensed to show
+// the stats in the playbook backstage dashboard
+export function useAllowPlaybookStatsView() {
+    return useSelector(isE20LicensedOrDevelopment);
+}
+
 export function useEnsureProfiles(userIds: string[]) {
     const dispatch = useDispatch();
     type StringToUserProfileFn = (id: string) => UserProfile;

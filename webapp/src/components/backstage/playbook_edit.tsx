@@ -23,7 +23,7 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar} from 'src/components/backstage/backstage';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
-import {SecondaryButton} from 'src/components/backstage/playbook_runs/shared';
+import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
 
 import './playbook.scss';
 import {useExperimentalFeaturesEnabled} from 'src/hooks';
@@ -76,7 +76,7 @@ const NavbarPadding = styled.div`
     flex-grow: 1;
 `;
 
-const SecondaryButtonLarger = styled(SecondaryButton)`
+const SecondaryButtonLarger = styled(SecondaryButtonSmaller)`
     height: 40px;
     font-weight: 600;
     font-size: 14px;

@@ -171,6 +171,10 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		message = fmt.Sprintf("@%s requested access to export the playbook run channel.", author.Username)
 		title = "Save the message history of your playbook runs"
 		text = "Export the channel of your playbook run and save it for later analysis. When you upgrade, you can automatically generate and download a CSV file containing all the timestamped messages sent to the channel.\n" + footer
+	case "start_trial_to_access_playbook_dashboard":
+		message = fmt.Sprintf("@%s requested access to view playbook statistics", author.Username)
+		title = "All the statistics you need"
+		text = "View trends for total runs, active runs and participants involved in runs of this playbook. Notify your system admin to upgrade."
 	}
 
 	actions := []*model.PostAction{
@@ -231,6 +235,8 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		b.telemetry.NotifyAdminsToRestrictPlaybookCreation(authorUserID)
 	case "start_trial_to_export_channel":
 		b.telemetry.NotifyAdminsToExportChannel(authorUserID)
+	case "start_trial_to_access_playbook_dashboard":
+		b.telemetry.NotifyAdminsToAccessPlaybookDashboard(authorUserID)
 	}
 
 	return nil
