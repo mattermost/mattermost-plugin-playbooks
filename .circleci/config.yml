@@ -521,7 +521,7 @@ workflows:
       - test-MySQL-Postgres-latest
       # 534 is broken at the moment (sql schema mismatch with what works on cloud and master)
       # - e2e-cypress-tests-534
-      - e2e-cypress-tests-cloud
+#      - e2e-cypress-tests-cloud
       - e2e-cypress-tests-master
            # remove/comment this filters statement to include e2e tests on master for a PR branch
 #          filters:
@@ -543,7 +543,7 @@ workflows:
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-cloud
+            #- e2e-cypress-tests-cloud
             - build
       - deploy-release:
           context: plugin-ci
@@ -558,7 +558,7 @@ workflows:
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-cloud
+            # - e2e-cypress-tests-cloud
             - build
       - deploy-release-github:
           context: matterbuild-github-token
@@ -573,5 +573,5 @@ workflows:
             - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
             - test-MySQL-Postgres-latest
-            - e2e-cypress-tests-cloud
+            # - e2e-cypress-tests-cloud
             - build
