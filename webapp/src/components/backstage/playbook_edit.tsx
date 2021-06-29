@@ -279,7 +279,7 @@ const PlaybookEdit = (props: Props) => {
 
     const onClose = (id?: string) => {
         const playbookId = urlParams.playbookId || id;
-        if (playbookId && experimentalFeaturesEnabled) {
+        if (playbookId) {
             navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbookId}`);
         } else {
             navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
