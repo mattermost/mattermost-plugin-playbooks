@@ -39,6 +39,9 @@ const BarGraph = (props: BarGraphProps) => {
                     scales: {
                         yAxes: [{
                             ticks: {
+                                callback: (val: any) => {
+                                    return (val % 1 === 0) ? val : null;
+                                },
                                 beginAtZero: true,
                                 fontColor: centerChannelFontColor,
                             },
