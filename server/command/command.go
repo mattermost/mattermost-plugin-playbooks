@@ -276,6 +276,7 @@ func (r *Runner) actionStartPlaybook(args []string) {
 	for _, pb := range playbooksResults.Items {
 		if pb.ID == playbookID {
 			playbook = append(playbook, pb)
+			break
 		}
 	}
 	if len(playbook) == 0 {
