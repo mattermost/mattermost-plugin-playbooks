@@ -342,21 +342,24 @@ func PlaybookModify(userID string, playbook, oldPlaybook Playbook, cfgService co
 	return nil
 }
 
-func ModifySettings(userID string, config config.Service) error {
-	cfg := config.GetConfiguration()
-	if len(cfg.PlaybookCreatorsUserIds) > 0 {
-		found := false
-		for _, candidateUserID := range cfg.PlaybookCreatorsUserIds {
-			if candidateUserID == userID {
-				found = true
-				break
-			}
-		}
+func ModifyPlaybookCreators(userID string, isAdmin bool, config config.Service) error {
+	// Admins are always allowed to modify settings.
+	if isAdmin {
+		return nil
+	}
 
-		if !found {
-			return errors.Wrap(ErrNoPermissions, "not a playbook creator")
+	cfg := config.GetConfiguration()
+
+	// Only admins are allowed to initially modify the settings.
+	if len(cfg.PlaybookCreatorsUserIds) == 0 {
+		return errors.Wrap(ErrNoPermissions, "only system admins may initially constrain playbook creators")
+	}
+
+	for _, candidateUserID := range cfg.PlaybookCreatorsUserIds {
+		if candidateUserID == userID {
+			return nil
 		}
 	}
 
-	return nil
+	return errors.Wrap(ErrNoPermissions, "not a playbook creator")
 }
