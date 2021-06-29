@@ -160,9 +160,9 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		title = "Keep a complete record of the playbook run timeline"
 		text = "The playbook run timeline automatically tracks key events and messages in chronological order so that they can be traced and reviewed afterwards. Teams use timeline to perform retrospectives and extract lessons for the next time that they run the playbook."
 	case "start_trial_to_access_playbook_dashboard":
-		message = fmt.Sprintf("@%s requested access to the playbook dashboard in Incident Collaboration.", author.Username)
-		title = "View playbook statistics in the Playbook Dashboard"
-		text = "The Playbook Dashboard shows trends for total runs, active runs, and participants involved in each type of playbook."
+		message = fmt.Sprintf("@%s requested access to view playbook statistics", author.Username)
+		title = "All the statistics you need"
+		text = "View trends for total runs, active runs and participants involved in runs of this playbook. Notify your system admin to upgrade."
 	case "start_trial_to_restrict_playbook_access":
 		message = fmt.Sprintf("@%s requested access to configure who can access specific playbooks in Incident Collaboration.", author.Username)
 		title = "Control who can access specific playbooks in Incident Collaboration with Mattermost Enterprise"

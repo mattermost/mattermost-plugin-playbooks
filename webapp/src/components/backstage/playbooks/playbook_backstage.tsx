@@ -205,7 +205,7 @@ const PrimaryButtonLargerRight = styled(PrimaryButtonRight)`
 
 const BottomContainer = styled.div`
     flex-grow: 1;
-    background: rgba(var(--center-channel-color-rgb), 0.03);
+    background: var(--center-channel-bg);
     width: 100%;
 `;
 

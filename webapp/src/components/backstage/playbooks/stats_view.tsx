@@ -143,6 +143,7 @@ const percentageChange = (change: number) => {
 
 const PlaceholderRow = styled.div`
     height: 260px;
+    margin: 32px 0;
 `;
 
 const BottomRow = styled.div`
