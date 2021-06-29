@@ -66,20 +66,8 @@ type Poster interface {
 }
 
 type Telemetry interface {
-	NotifyAdminsToViewTimeline(userID string)
-	NotifyAdminsToAddMessageToTimeline(userID string)
-	NotifyAdminsToCreatePlaybook(userID string)
-	NotifyAdminsToRestrictPlaybookCreation(userID string)
-	NotifyAdminsToRestrictPlaybookAccess(userID string)
-	NotifyAdminsToExportChannel(userID string)
-	NotifyAdminsToAccessPlaybookDashboard(userID string)
-	StartTrialToViewTimeline(userID string)
-	StartTrialToAddMessageToTimeline(userID string)
-	StartTrialToCreatePlaybook(userID string)
-	StartTrialToRestrictPlaybookCreation(userID string)
-	StartTrialToRestrictPlaybookAccess(userID string)
-	StartTrialToExportChannel(userID string)
-	StartTrialToAccessPlaybookDashboard(userID string)
+	NotifyAdmins(userID string, action string)
+	StartTrial(userID string, action string)
 }
 
 // New creates a new bot poster/logger.

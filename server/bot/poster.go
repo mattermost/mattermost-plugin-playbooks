@@ -226,22 +226,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		}(admin.Id)
 	}
 
-	switch messageType {
-	case "start_trial_to_create_playbook":
-		b.telemetry.NotifyAdminsToCreatePlaybook(authorUserID)
-	case "start_trial_to_view_timeline":
-		b.telemetry.NotifyAdminsToViewTimeline(authorUserID)
-	case "start_trial_to_add_message_to_timeline":
-		b.telemetry.NotifyAdminsToAddMessageToTimeline(authorUserID)
-	case "start_trial_to_restrict_playbook_access":
-		b.telemetry.NotifyAdminsToRestrictPlaybookAccess(authorUserID)
-	case "start_trial_to_restrict_playbook_creation":
-		b.telemetry.NotifyAdminsToRestrictPlaybookCreation(authorUserID)
-	case "start_trial_to_export_channel":
-		b.telemetry.NotifyAdminsToExportChannel(authorUserID)
-	case "start_trial_to_access_playbook_dashboard":
-		b.telemetry.NotifyAdminsToAccessPlaybookDashboard(authorUserID)
-	}
+	b.telemetry.NotifyAdmins(authorUserID, messageType)
 
 	return nil
 }
