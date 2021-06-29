@@ -16,6 +16,7 @@ const UpgradePlaybookPlaceholder = () => {
             helpText={'Upgrade to view trends for total runs, active runs and participants involved in runs of this playbook.'}
             notificationType={AdminNotificationType.MESSAGE_TO_PLAYBOOK_DASHBOARD}
             verticalAdjustment={200}
+            secondaryButton={true}
         />
     );
 };

@@ -1,7 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ReactElement, JSXElementConstructor, ReactNodeArray, ReactPortal, useState} from 'react';
+import React, {
+    ReactElement,
+    JSXElementConstructor,
+    ReactNodeArray,
+    ReactPortal,
+    useState
+} from 'react';
 import {useSelector} from 'react-redux';
 import styled, {StyledComponent} from 'styled-components';
 
@@ -20,7 +26,7 @@ import {useOpenCloudModal} from 'src/hooks';
 import SuccessSvg from './assets/success_svg';
 import ErrorSvg from './assets/error_svg';
 import UpgradeIllustrationSvg from './assets/upgrade_illustration_svg';
-import {PrimaryButton} from './assets/buttons';
+import {PrimaryButton, SecondaryButton} from './assets/buttons';
 
 enum ActionState {
     Uninitialized,
@@ -37,7 +43,7 @@ const UpgradeWrapper = styled.div`
     text-align: center;
 `;
 
-const UpgradeContent = styled.div<{vertical?: boolean, verticalAdjustment: number}>`
+const UpgradeContent = styled.div<{ vertical?: boolean, verticalAdjustment: number }>`
     height: 100%;
     display: flex;
     flex-direction: ${(props) => (props.vertical ? 'column' : 'row')};
@@ -46,7 +52,7 @@ const UpgradeContent = styled.div<{vertical?: boolean, verticalAdjustment: numbe
     justify-content: center;
 `;
 
-const InfoContainer = styled.div<{vertical?: boolean}>`
+const InfoContainer = styled.div<{ vertical?: boolean }>`
     display: flex;
     flex-direction: column;
     max-width: 425px;
@@ -94,6 +100,7 @@ interface Props {
     notificationType: AdminNotificationType;
     verticalAdjustment: number;
     vertical?: boolean;
+    secondaryButton?: boolean;
 }
 
 const UpgradeBanner = (props: Props) => {
@@ -196,11 +203,12 @@ const UpgradeBanner = (props: Props) => {
                         endUserMainAction={endUserMainAction}
                         adminMainAction={adminMainAction}
                         isCloud={isServerCloud}
+                        secondaryButton={props.secondaryButton}
                     />
                     {!isServerCloud && isCurrentUserAdmin && !isServerTeamEdition && actionState === ActionState.Uninitialized &&
-                        <FooterContainer>
-                            <StartTrialNotice/>
-                        </FooterContainer>
+                    <FooterContainer>
+                        <StartTrialNotice/>
+                    </FooterContainer>
                     }
                 </InfoContainer>
             </UpgradeContent>
@@ -215,6 +223,7 @@ interface ButtonProps {
     endUserMainAction: HandlerType;
     adminMainAction: HandlerType;
     isCloud: boolean;
+    secondaryButton?: boolean;
 }
 
 const Button = (props: ButtonProps) => {
@@ -226,14 +235,16 @@ const Button = (props: ButtonProps) => {
         return null;
     }
 
+    const ButtonSC = props.secondaryButton ? SecondaryButton : PrimaryButton;
+
     if (props.actionState === ActionState.Error) {
         if (props.isCurrentUserAdmin) {
             return (
-                <PrimaryButton
+                <ButtonSC
                     onClick={() => window.open('https://mattermost.com/support/')}
                 >
                     {'Contact support'}
-                </PrimaryButton>
+                </ButtonSC>
             );
         }
         return null;
@@ -252,9 +263,9 @@ const Button = (props: ButtonProps) => {
     }
 
     return (
-        <PrimaryButton onClick={handleClick}>
+        <ButtonSC onClick={handleClick}>
             {buttonText}
-        </PrimaryButton>
+        </ButtonSC>
     );
 };
 
