@@ -171,6 +171,10 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		message = fmt.Sprintf("@%s requested access to configure who can create playbooks in Incident Collaboration.", author.Username)
 		title = "Control who can create playbooks in Incident Collaboration with Mattermost Enterprise"
 		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+	case "start_trial_to_export_channel":
+		message = fmt.Sprintf("@%s requested access to export the playbook run channel.", author.Username)
+		title = "Save the message history of your playbook runs"
+		text = "Export the channel of your playbook run and save it for later analysis. When you upgrade, you can automatically generate and download a CSV file containing all the timestamped messages sent to the channel.\n" + footer
 	}
 
 	actions := []*model.PostAction{
@@ -229,6 +233,8 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		b.telemetry.NotifyAdminsToRestrictPlaybookAccess(authorUserID)
 	case "start_trial_to_restrict_playbook_creation":
 		b.telemetry.NotifyAdminsToRestrictPlaybookCreation(authorUserID)
+	case "start_trial_to_export_channel":
+		b.telemetry.NotifyAdminsToExportChannel(authorUserID)
 	}
 
 	return nil

@@ -71,11 +71,13 @@ type Telemetry interface {
 	NotifyAdminsToCreatePlaybook(userID string)
 	NotifyAdminsToRestrictPlaybookCreation(userID string)
 	NotifyAdminsToRestrictPlaybookAccess(userID string)
+	NotifyAdminsToExportChannel(userID string)
 	StartTrialToViewTimeline(userID string)
 	StartTrialToAddMessageToTimeline(userID string)
 	StartTrialToCreatePlaybook(userID string)
 	StartTrialToRestrictPlaybookCreation(userID string)
 	StartTrialToRestrictPlaybookAccess(userID string)
+	StartTrialToExportChannel(userID string)
 }
 
 // New creates a new bot poster/logger.

@@ -269,6 +269,11 @@ export function useAllowPlaybookCreationRestriction() {
     return useSelector(isE20LicensedOrDevelopment);
 }
 
+// useAllowChannelExport returns whether exporting the channel is allowed
+export function useAllowChannelExport() {
+    return useSelector(isE20LicensedOrDevelopment);
+}
+
 // useAllowPlaybookStatsView returns whether the server is licensed to show
 // the stats in the playbook backstage dashboard
 export function useAllowPlaybookStatsView() {
