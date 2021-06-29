@@ -191,8 +191,8 @@ func (s *StatsStore) MovingWindowQueryActive(query sq.SelectBuilder, numDays int
 func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) ([]int, []string, [][]int64) {
 	day := int64(86400000)
 	week := day * 7
-	startOfWeek := beginningOfTodayMillis() - week
-	endOfWeek := endOfTodayMillis()
+	startOfWeek := beginningOfLastSundayMillis()
+	endOfWeek := startOfWeek + week - 1
 	var weeksAsStrings []string
 	var weeksStartAndEnd [][]int64
 
@@ -591,7 +591,15 @@ func beginningOfTodayMillis() int64 {
 func endOfTodayMillis() int64 {
 	year, month, day := time.Now().UTC().Add(24 * time.Hour).Date()
 	bod := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
-	return bod.UnixNano() / int64(time.Millisecond)
+	return bod.UnixNano()/int64(time.Millisecond) - 1
+}
+
+func beginningOfLastSundayMillis() int64 {
+	// Weekday is an iota where Sun = 0, Mon = 1, etc. So this is an offset to get back to Sun.
+	offset := int(time.Now().UTC().Weekday())
+	now := time.Now().UTC()
+	startOfSunday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -offset)
+	return startOfSunday.UnixNano() / int64(time.Millisecond)
 }
 
 func reverseSlice(s interface{}) {
