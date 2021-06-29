@@ -85,6 +85,11 @@ const BarGraph = (props: BarGraphProps) => {
                         // eslint-disable-next-line no-underscore-dangle
                         props.onClick(element[0]._index);
                     },
+                    onHover(event: any) {
+                        if (props.onClick) {
+                            event.target.style.cursor = 'pointer';
+                        }
+                    },
                     maintainAspectRatio: false,
                     responsive: true,
                 }}
