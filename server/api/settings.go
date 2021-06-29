@@ -57,7 +57,7 @@ func (h *SettingsHandler) setSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	isAdmin := app.IsAdmin(userID, h.pluginAPI)
-	if err := app.ModifySettings(userID, isAdmin, h.config); err != nil {
+	if err := app.ModifyPlaybookCreators(userID, isAdmin, h.config); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}

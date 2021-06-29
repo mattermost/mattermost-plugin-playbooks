@@ -342,7 +342,7 @@ func PlaybookModify(userID string, playbook, oldPlaybook Playbook, cfgService co
 	return nil
 }
 
-func ModifySettings(userID string, isAdmin bool, config config.Service) error {
+func ModifyPlaybookCreators(userID string, isAdmin bool, config config.Service) error {
 	// Admins are always allowed to modify settings.
 	if isAdmin {
 		return nil
