@@ -87,12 +87,6 @@ export const myPlaybookRunsMap = (state: GlobalState) => {
     return myPlaybookRunsByTeam(state)[getCurrentTeamId(state)] || {};
 };
 
-export const isExportLicensed = (state: GlobalState): boolean => {
-    const license = getLicense(state);
-
-    return license?.IsLicensed === 'true' && license?.MessageExport === 'true';
-};
-
 export const currentRHSState = (state: GlobalState): RHSState => pluginState(state).rhsState;
 
 export const currentRHSTabState = (state: GlobalState): RHSTabState => {

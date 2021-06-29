@@ -269,6 +269,11 @@ export function useAllowPlaybookCreationRestriction() {
     return useSelector(isE20LicensedOrDevelopment);
 }
 
+// useAllowChannelExport returns whether exporting the channel is allowed
+export function useAllowChannelExport() {
+    return useSelector(isE20LicensedOrDevelopment);
+}
+
 export function useEnsureProfiles(userIds: string[]) {
     const dispatch = useDispatch();
     type StringToUserProfileFn = (id: string) => UserProfile;

@@ -23,4 +23,5 @@ export enum AdminNotificationType {
     MESSAGE_TO_TIMELINE = 'start_trial_to_add_message_to_timeline',
     PLAYBOOK_GRANULAR_ACCESS = 'start_trial_to_restrict_playbook_access',
     PLAYBOOK_CREATION_RESTRICTION = 'start_trial_to_restrict_playbook_creation',
+    EXPORT_CHANNEL = 'start_trial_to_export_channel',
 }
