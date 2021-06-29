@@ -383,6 +383,15 @@ export const postMessageToAdmins = async (messageType: AdminNotificationType, is
     }
 };
 
+export const promptForFeedback = async () => {
+    try {
+        const response = await doPost(`${apiUrl}/bot/prompt-for-feedback`);
+        return {data: response};
+    } catch (e) {
+        return {error: e.message};
+    }
+};
+
 export const doGet = async (url: string) => {
     const {data} = await doFetchWithResponse(url, {method: 'get'});
 

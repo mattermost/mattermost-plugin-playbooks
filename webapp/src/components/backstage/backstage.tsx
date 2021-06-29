@@ -6,12 +6,15 @@ import {Switch, Route, NavLink, useRouteMatch, Redirect} from 'react-router-dom'
 import {useSelector} from 'react-redux';
 
 import styled from 'styled-components';
+import Icon from '@mdi/react';
+import {mdiThumbsUpDown} from '@mdi/js';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 
 import IncidentIcon from 'src/components/assets/icons/incident_icon';
+import {promptForFeedback} from 'src/client';
 
 import PlaybookRunBackstage
     from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
@@ -110,6 +113,8 @@ const BackstageBody = styled.div`
 `;
 
 const Backstage = () => {
+    //@ts-ignore plugins state is a thing
+    const npsAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.nps']));
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
@@ -189,10 +194,28 @@ const Backstage = () => {
                         {'Settings'}
                     </BackstageTitlebarItem>
                 </div>
-                <BackstageNavbarIcon
-                    className='icon-close close-icon'
-                    onClick={goToMattermost}
-                />
+                <div className='d-flex items-center'>
+                    {npsAvailable &&
+                        <BackstageTitlebarItem
+                            onClick={promptForFeedback}
+                            to={`/${currentTeam.name}/messages/@surveybot`}
+                            data-testid='giveFeedbackButton'
+                        >
+                            <span className='mr-3 d-flex items-center'>
+                                <Icon
+                                    path={mdiThumbsUpDown}
+                                    title='Give Feedback'
+                                    size={1}
+                                />
+                            </span>
+                            {'Give Feedback'}
+                        </BackstageTitlebarItem>
+                    }
+                    <BackstageNavbarIcon
+                        className='icon-close close-icon'
+                        onClick={goToMattermost}
+                    />
+                </div>
             </BackstageNavbar>
             <BackstageBody>
                 <Switch>

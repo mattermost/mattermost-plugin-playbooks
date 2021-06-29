@@ -236,6 +236,29 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 	return nil
 }
 
+func (b *Bot) PromptForFeedback(userID string) error {
+	surveyBot, err := b.pluginAPI.User.GetByUsername("surveybot")
+	if err != nil {
+		return fmt.Errorf("unable to find surveybot user: %w", err)
+	}
+
+	channel, err := b.pluginAPI.Channel.GetDirect(userID, surveyBot.Id)
+	if err != nil {
+		return fmt.Errorf("failed to get direct message channel between user %s and surveybot %s: %w", userID, surveyBot.Id, err)
+	}
+
+	post := &model.Post{
+		ChannelId: channel.Id,
+		UserId:    surveyBot.Id,
+		Message:   "Have feedback about Incident Collaboration?",
+	}
+	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+		return fmt.Errorf("failed to create post: %w", err)
+	}
+
+	return nil
+}
+
 func (b *Bot) makePayloadMap(payload interface{}) map[string]interface{} {
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
