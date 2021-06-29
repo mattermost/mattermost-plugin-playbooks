@@ -28,7 +28,7 @@ const PillBox = styled.div`
     font-weight: normal;
     font-size: 14px;
     line-height: 15px;
-    padding: 4px 4px 5px 12px;
+    padding: 4px 4px 4px 12px;
 `;
 
 const CloseIcon = styled(ClearIcon)`
