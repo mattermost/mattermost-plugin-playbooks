@@ -174,6 +174,20 @@ func (mr *MockPosterMockRecorder) PostMessageWithAttachments(arg0, arg1, arg2 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostMessageWithAttachments", reflect.TypeOf((*MockPoster)(nil).PostMessageWithAttachments), varargs...)
 }
 
+// PromptForFeedback mocks base method
+func (m *MockPoster) PromptForFeedback(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PromptForFeedback", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PromptForFeedback indicates an expected call of PromptForFeedback
+func (mr *MockPosterMockRecorder) PromptForFeedback(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PromptForFeedback", reflect.TypeOf((*MockPoster)(nil).PromptForFeedback), arg0)
+}
+
 // PublishWebsocketEventToChannel mocks base method
 func (m *MockPoster) PublishWebsocketEventToChannel(arg0 string, arg1 interface{}, arg2 string) {
 	m.ctrl.T.Helper()
