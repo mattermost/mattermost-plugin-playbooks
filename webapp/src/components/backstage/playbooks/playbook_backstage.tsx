@@ -20,7 +20,7 @@ import {EmptyPlaybookStats} from 'src/types/stats';
 import StatsView from 'src/components/backstage/playbooks/stats_view';
 import {startPlaybookRunById} from 'src/actions';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import ClipboardsCheckmark from 'src/components/assets/icons/clipboards_checkmark';
+import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 
 interface MatchParams {
     playbookId: string
@@ -124,7 +124,7 @@ const PlaybookBackstage = () => {
                         {'Edit'}
                     </SecondaryButtonLargerRight>
                     <PrimaryButtonLarger onClick={runPlaybook}>
-                        <ClipboardsCheckmarkSmall/>
+                        <ClipboardsPlaySmall/>
                         {'Run'}
                     </PrimaryButtonLarger>
                 </TitleRow>
@@ -216,7 +216,7 @@ const SubTitle = styled.div`
     line-height: 16px;
 `;
 
-const ClipboardsCheckmarkSmall = styled(ClipboardsCheckmark)`
+const ClipboardsPlaySmall = styled(ClipboardsPlay)`
     height: 18px;
     width: auto;
     margin-right: 7px;
