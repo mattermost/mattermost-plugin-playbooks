@@ -338,6 +338,13 @@ func (t *RudderTelemetry) DeletePlaybook(playbook app.Playbook, userID string) {
 	t.track(eventPlaybook, properties)
 }
 
+// FrontendTelemetryForPlaybook tracks an event originating from the frontend
+func (t *RudderTelemetry) FrontendTelemetryForPlaybook(playbook app.Playbook, userID, action string) {
+	properties := playbookProperties(playbook, userID)
+	properties["Action"] = action
+	t.track(eventFrontend, properties)
+}
+
 func commonProperties(userID string) map[string]interface{} {
 	return map[string]interface{}{
 		"UserActualID": userID,

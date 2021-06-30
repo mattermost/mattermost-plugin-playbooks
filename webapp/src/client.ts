@@ -304,6 +304,13 @@ export async function telemetryEventForPlaybookRun(playbookRunID: string, action
     });
 }
 
+export async function telemetryEventForPlaybook(playbookID: string, action: string) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry/playbook/${playbookID}`, {
+        method: 'POST',
+        body: JSON.stringify({action}),
+    });
+}
+
 export async function setGlobalSettings(settings: GlobalSettings) {
     await doFetchWithoutResponse(`${apiUrl}/settings`, {
         method: 'PUT',

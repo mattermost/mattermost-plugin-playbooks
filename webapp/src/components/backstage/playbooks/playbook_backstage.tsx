@@ -9,10 +9,8 @@ import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {DefaultFetchPlaybookRunsParamsTime} from 'src/types/playbook_run';
-import {
-    PrimaryButtonRight, SecondaryButtonLargerRight,
-} from 'src/components/backstage/playbook_runs/shared';
-import {clientFetchPlaybook, fetchPlaybookStats} from 'src/client';
+import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
+import {clientFetchPlaybook, fetchPlaybookStats, telemetryEventForPlaybook} from 'src/client';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
 import {Playbook} from 'src/types/playbook';
@@ -91,6 +89,7 @@ const PlaybookBackstage = () => {
         navigateToUrl(`/${currentTeam.name}`);
 
         if (playbook?.id) {
+            telemetryEventForPlaybook(playbook.id, 'playbook_dashboard_run_clicked');
             dispatch(startPlaybookRunById(playbook.id));
         }
     };

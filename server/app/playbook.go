@@ -223,6 +223,9 @@ type PlaybookTelemetry interface {
 
 	// DeletePlaybook tracks the deletion of a playbook.
 	DeletePlaybook(playbook Playbook, userID string)
+
+	// FrontendTelemetryForPlaybook tracks an event originating from the frontend
+	FrontendTelemetryForPlaybook(playbook Playbook, userID, action string)
 }
 
 const (
