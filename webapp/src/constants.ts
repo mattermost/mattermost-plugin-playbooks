@@ -24,4 +24,5 @@ export enum AdminNotificationType {
     PLAYBOOK_GRANULAR_ACCESS = 'start_trial_to_restrict_playbook_access',
     PLAYBOOK_CREATION_RESTRICTION = 'start_trial_to_restrict_playbook_creation',
     EXPORT_CHANNEL = 'start_trial_to_export_channel',
+    MESSAGE_TO_PLAYBOOK_DASHBOARD = 'start_trial_to_access_playbook_dashboard',
 }

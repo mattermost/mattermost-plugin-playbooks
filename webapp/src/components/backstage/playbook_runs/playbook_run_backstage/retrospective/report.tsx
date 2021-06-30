@@ -8,7 +8,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 
 import {
     Title,
-    SecondaryButton,
+    SecondaryButtonSmaller,
 } from 'src/components/backstage/playbook_runs/shared';
 
 import {StyledTextarea} from 'src/components/backstage/styles';
@@ -142,26 +142,26 @@ const TextContainer = styled.span`
 const EditButton = (props: SaveButtonProps) => {
     if (props.editing) {
         return (
-            <SecondaryButton
+            <SecondaryButtonSmaller
                 onClick={props.onSave}
             >
                 <TextContainer>
                     <i className={'fa fa-floppy-o'}/>
                     {'Save'}
                 </TextContainer>
-            </SecondaryButton>
+            </SecondaryButtonSmaller>
         );
     }
 
     return (
-        <SecondaryButton
+        <SecondaryButtonSmaller
             onClick={props.onEdit}
         >
             <TextContainer>
                 <i className={'icon icon-pencil-outline'}/>
                 {'Edit'}
             </TextContainer>
-        </SecondaryButton>
+        </SecondaryButtonSmaller>
     );
 };
 

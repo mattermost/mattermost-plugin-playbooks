@@ -49,7 +49,7 @@ interface ReminderCommonProps {
     post: Post
 }
 
-const selectLatestReminderPost = (state: GlobalState) => getPostsInCurrentChannel(state)?.find((value: Post) => value.type.startsWith('custom_retro'));
+const selectLatestReminderPost = (state: GlobalState) => getPostsInCurrentChannel(state)?.find((value: Post) => value.type?.startsWith('custom_retro'));
 
 const ReminderCommon = (props: ReminderCommonProps) => {
     const playbookRun = useSelector(currentPlaybookRun);
