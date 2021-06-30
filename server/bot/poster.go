@@ -152,11 +152,11 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 
 	switch messageType {
 	case "start_trial_to_create_playbook":
-		message = fmt.Sprintf("@%s requested access to create more playbooks in Incident Collaboration.", author.Username)
-		title = "Create multiple playbooks in Incident Collaboration with Mattermost Professional"
-		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. Each playbook can be customized and refined over time, to improve time to resolution. In Mattermost Professional you can create an unlimited number of playbooks for your team.\n" + footer
+		message = fmt.Sprintf("@%s requested access to create more playbooks.", author.Username)
+		title = "Create multiple playbooks for all your use cases"
+		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. Each playbook can be customized and refined over time, to improve time to resolution. When you upgrade, you can create an unlimited number of playbooks for your team.\n" + footer
 	case "start_trial_to_add_message_to_timeline", "start_trial_to_view_timeline":
-		message = fmt.Sprintf("@%s requested access to the timeline in Incident Collaboration.", author.Username)
+		message = fmt.Sprintf("@%s requested access to the playbook run timeline.", author.Username)
 		title = "Keep a complete record of the playbook run timeline"
 		text = "The playbook run timeline automatically tracks key events and messages in chronological order so that they can be traced and reviewed afterwards. Teams use timeline to perform retrospectives and extract lessons for the next time that they run the playbook."
 	case "start_trial_to_access_retrospective":
@@ -164,13 +164,13 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		title = "Publish retrospective report and access the timeline"
 		text = "Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes."
 	case "start_trial_to_restrict_playbook_access":
-		message = fmt.Sprintf("@%s requested access to configure who can access specific playbooks in Incident Collaboration.", author.Username)
-		title = "Control who can access specific playbooks in Incident Collaboration with Mattermost Enterprise"
-		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+		message = fmt.Sprintf("@%s requested permission to configure who can access specific playbooks.", author.Username)
+		title = "Control who can access your team's playbooks"
+		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. When you upgrade, you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
 	case "start_trial_to_restrict_playbook_creation":
-		message = fmt.Sprintf("@%s requested access to configure who can create playbooks in Incident Collaboration.", author.Username)
-		title = "Control who can create playbooks in Incident Collaboration with Mattermost Enterprise"
-		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+		message = fmt.Sprintf("@%s requested permission to configure who can create playbooks.", author.Username)
+		title = "Control who can create playbooks"
+		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. When you upgrade, you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
 	case "start_trial_to_export_channel":
 		message = fmt.Sprintf("@%s requested access to export the playbook run channel.", author.Username)
 		title = "Save the message history of your playbook runs"
