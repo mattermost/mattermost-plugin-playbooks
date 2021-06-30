@@ -41,6 +41,7 @@ const PlaybookBackstage = () => {
     const currentTeam = useSelector(getCurrentTeam);
     const [playbook, setPlaybook] = useState<Playbook | null>(null);
     const [fetchParamsTime, setFetchParamsTime] = useState(DefaultFetchPlaybookRunsParamsTime);
+    const [filterPill, setFilterPill] = useState<JSX.Element | null>(null);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [stats, setStats] = useState(EmptyPlaybookStats);
 
@@ -135,10 +136,12 @@ const PlaybookBackstage = () => {
                         stats={stats}
                         fetchParamsTime={fetchParamsTime}
                         setFetchParamsTime={setFetchParamsTime}
+                        setFilterPill={setFilterPill}
                     />
                     <PlaybookRunList
                         playbook={playbook}
                         fetchParamsTime={fetchParamsTime}
+                        filterPill={filterPill}
                     />
                 </BottomInnerContainer>
             </BottomContainer>

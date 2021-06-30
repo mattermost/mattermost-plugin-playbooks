@@ -748,7 +748,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		options.Status == StatusResolved &&
 		previousStatus != StatusArchived &&
 		previousStatus != StatusResolved &&
-		s.configService.GetConfiguration().EnableExperimentalFeatures {
+		s.configService.IsAtLeastE10Licensed() {
 		if err = s.postRetrospectiveReminder(playbookRunToModify, true); err != nil {
 			return errors.Wrap(err, "couldn't post retrospective reminder")
 		}

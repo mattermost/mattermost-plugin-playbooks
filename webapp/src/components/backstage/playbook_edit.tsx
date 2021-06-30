@@ -26,7 +26,7 @@ import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
 
 import './playbook.scss';
-import {useExperimentalFeaturesEnabled} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useExperimentalFeaturesEnabled} from 'src/hooks';
 
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
@@ -212,6 +212,8 @@ const PlaybookEdit = (props: Props) => {
 
     const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
+    const retrospectiveAccess = useAllowRetrospectiveAccess();
+
     useEffect(() => {
         const fetchData = async () => {
             // No need to fetch anything if we're adding a new playbook
@@ -279,7 +281,7 @@ const PlaybookEdit = (props: Props) => {
 
     const onClose = (id?: string) => {
         const playbookId = urlParams.playbookId || id;
-        if (playbookId && experimentalFeaturesEnabled) {
+        if (playbookId) {
             navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbookId}`);
         } else {
             navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
@@ -608,7 +610,7 @@ const PlaybookEdit = (props: Props) => {
                                         }}
                                     />
                                 </SidebarBlock>
-                                {experimentalFeaturesEnabled &&
+                                {retrospectiveAccess &&
                                     <>
                                         <SidebarBlock>
                                             <BackstageSubheader>

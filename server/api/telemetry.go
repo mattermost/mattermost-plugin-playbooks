@@ -112,25 +112,7 @@ func (h *TelemetryHandler) startTrial(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch params.Action {
-	case "start_trial_to_view_timeline":
-		h.botTelemetry.StartTrialToViewTimeline(userID)
-	case "start_trial_to_add_message_to_timeline":
-		h.botTelemetry.StartTrialToAddMessageToTimeline(userID)
-	case "start_trial_to_create_playbook":
-		h.botTelemetry.StartTrialToCreatePlaybook(userID)
-	case "start_trial_to_restrict_playbook_creation":
-		h.botTelemetry.StartTrialToRestrictPlaybookCreation(userID)
-	case "start_trial_to_restrict_playbook_access":
-		h.botTelemetry.StartTrialToRestrictPlaybookAccess(userID)
-	case "start_trial_to_export_channel":
-		h.botTelemetry.StartTrialToExportChannel(userID)
-	case "start_trial_to_access_playbook_dashboard":
-		h.botTelemetry.StartTrialToAccessPlaybookDashboard(userID)
-	default:
-		h.HandleError(w, errors.New("unknown action"))
-		return
-	}
+	h.botTelemetry.StartTrial(userID, params.Action)
 
 	w.WriteHeader(http.StatusNoContent)
 }

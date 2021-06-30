@@ -195,12 +195,12 @@ const UpgradeTimelineBackgroundSvg = () => (
                 gradientUnits='userSpaceOnUse'
             >
                 <stop
-                    stopColor='white'
+                    stopColor='var(--center-channel-bg)'
                     stopOpacity='0'
                 />
                 <stop
                     offset='0.613396'
-                    stopColor='white'
+                    stopColor='var(--center-channel-bg)'
                 />
             </linearGradient>
         </defs>
