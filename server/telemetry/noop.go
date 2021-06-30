@@ -113,6 +113,14 @@ func (t *NoopTelemetry) StartTrialToRestrictPlaybookCreation(userID string) {
 func (t *NoopTelemetry) StartTrialToRestrictPlaybookAccess(userID string) {
 }
 
+// StartTrialToExportChannel does nothing.
+func (t *NoopTelemetry) StartTrialToExportChannel(userID string) {
+}
+
+// StartTrialToAccessPlaybookDashboard does nothing.
+func (t *NoopTelemetry) StartTrialToAccessPlaybookDashboard(userID string) {
+}
+
 // NotifyAdminsToViewTimeline does nothing.
 func (t *NoopTelemetry) NotifyAdminsToViewTimeline(userID string) {
 
@@ -135,5 +143,15 @@ func (t *NoopTelemetry) NotifyAdminsToRestrictPlaybookCreation(userID string) {
 
 // NotifyAdminsToRestrictPlaybookAccess does nothing.
 func (t *NoopTelemetry) NotifyAdminsToRestrictPlaybookAccess(userID string) {
+
+}
+
+// NotifyAdminsToExportChannel does nothing.
+func (t *NoopTelemetry) NotifyAdminsToExportChannel(userID string) {
+
+}
+
+// NotifyAdminsToAccessPlaybookDashboard does nothing.
+func (t *NoopTelemetry) NotifyAdminsToAccessPlaybookDashboard(userID string) {
 
 }

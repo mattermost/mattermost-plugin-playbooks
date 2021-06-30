@@ -103,6 +103,11 @@ export const GrayTertiaryButton = styled.button`
     }
 `;
 
+export const SecondaryButton = styled(TertiaryButton)`
+    background: var(--button-color-rgb);
+    border: 1px solid var(--button-bg);
+`;
+
 export type UpgradeButtonProps = React.ComponentProps<typeof PrimaryButton>;
 
 export const UpgradeButton = (props: UpgradeButtonProps) => {

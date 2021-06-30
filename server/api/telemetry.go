@@ -123,6 +123,10 @@ func (h *TelemetryHandler) startTrial(w http.ResponseWriter, r *http.Request) {
 		h.botTelemetry.StartTrialToRestrictPlaybookCreation(userID)
 	case "start_trial_to_restrict_playbook_access":
 		h.botTelemetry.StartTrialToRestrictPlaybookAccess(userID)
+	case "start_trial_to_export_channel":
+		h.botTelemetry.StartTrialToExportChannel(userID)
+	case "start_trial_to_access_playbook_dashboard":
+		h.botTelemetry.StartTrialToAccessPlaybookDashboard(userID)
 	default:
 		h.HandleError(w, errors.New("unknown action"))
 		return
