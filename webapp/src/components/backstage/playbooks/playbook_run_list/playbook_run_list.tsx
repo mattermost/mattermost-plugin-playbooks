@@ -72,6 +72,7 @@ const statusOptions: StatusOption[] = [
 interface Props {
     playbook: Playbook | null
     fetchParamsTime?: FetchPlaybookRunsParamsTime
+    filterPill?: JSX.Element | null
 }
 
 const PlaybookRunList = (props: Props) => {
@@ -208,6 +209,7 @@ const PlaybookRunList = (props: Props) => {
                         onChange={setStatus}
                     />
                 </div>
+                {props.filterPill}
                 <PlaybookRunListHeader>
                     <div className='row'>
                         <div className='col-sm-4'>
