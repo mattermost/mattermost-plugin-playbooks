@@ -11,14 +11,12 @@ interface Props {
     onClose: () => void;
 }
 
-const Pill = (props: Props) => {
-    return (
-        <PillBox>
-            {props.text}
-            <CloseIcon onClick={props.onClose}/>
-        </PillBox>
-    );
-};
+const Pill = (props: Props) => (
+    <PillBox>
+        {props.text}
+        <CloseIcon onClick={props.onClose}/>
+    </PillBox>
+);
 
 const PillBox = styled.div`
     display: inline-block;

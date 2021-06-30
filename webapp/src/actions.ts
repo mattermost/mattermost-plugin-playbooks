@@ -70,6 +70,18 @@ export function startPlaybookRun(postId?: string) {
     };
 }
 
+export function startPlaybookRunById(playbookId: string) {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        // Add unique id
+        const clientId = generateId();
+        dispatch(setClientId(clientId));
+
+        const command = `/playbook start-playbook ${playbookId} ${clientId}`;
+
+        await clientExecuteCommand(dispatch, getState, command);
+    };
+}
+
 export function endPlaybookRun() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         await clientExecuteCommand(dispatch, getState, '/playbook end');

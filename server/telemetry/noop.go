@@ -101,3 +101,8 @@ func (t *NoopTelemetry) StartTrial(userID string, action string) {
 func (t *NoopTelemetry) NotifyAdmins(userID string, action string) {
 
 }
+
+// FrontendTelemetryForPlaybook does nothing.
+func (t *NoopTelemetry) FrontendTelemetryForPlaybook(playbook app.Playbook, userID, action string) {
+
+}
