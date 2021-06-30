@@ -158,7 +158,11 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 	case "start_trial_to_add_message_to_timeline", "start_trial_to_view_timeline":
 		message = fmt.Sprintf("@%s requested access to the playbook run timeline.", author.Username)
 		title = "Keep a complete record of the playbook run timeline"
-		text = "The playbook run timeline automatically tracks key events and messages in chronological order so that they can be traced and reviewed afterwards. Teams use timeline to perform retrospectives and extract lessons for the next time that they run the playbook. This feature is not available with your current subscription. When you upgrade, you can download your timeline, adding messages from within the channel, and use it for your retrospectives to improve how you manage and respond to events."
+		text = "The playbook run timeline automatically tracks key events and messages in chronological order so that they can be traced and reviewed afterwards. Teams use timeline to perform retrospectives and extract lessons for the next time that they run the playbook."
+	case "start_trial_to_access_retrospective":
+		message = fmt.Sprintf("@%s requested access to the retrospective.", author.Username)
+		title = "Publish retrospective report and access the timeline"
+		text = "Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes."
 	case "start_trial_to_restrict_playbook_access":
 		message = fmt.Sprintf("@%s requested permission to configure who can access specific playbooks.", author.Username)
 		title = "Control who can access your team's playbooks"
@@ -222,22 +226,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		}(admin.Id)
 	}
 
-	switch messageType {
-	case "start_trial_to_create_playbook":
-		b.telemetry.NotifyAdminsToCreatePlaybook(authorUserID)
-	case "start_trial_to_view_timeline":
-		b.telemetry.NotifyAdminsToViewTimeline(authorUserID)
-	case "start_trial_to_add_message_to_timeline":
-		b.telemetry.NotifyAdminsToAddMessageToTimeline(authorUserID)
-	case "start_trial_to_restrict_playbook_access":
-		b.telemetry.NotifyAdminsToRestrictPlaybookAccess(authorUserID)
-	case "start_trial_to_restrict_playbook_creation":
-		b.telemetry.NotifyAdminsToRestrictPlaybookCreation(authorUserID)
-	case "start_trial_to_export_channel":
-		b.telemetry.NotifyAdminsToExportChannel(authorUserID)
-	case "start_trial_to_access_playbook_dashboard":
-		b.telemetry.NotifyAdminsToAccessPlaybookDashboard(authorUserID)
-	}
+	b.telemetry.NotifyAdmins(authorUserID, messageType)
 
 	return nil
 }

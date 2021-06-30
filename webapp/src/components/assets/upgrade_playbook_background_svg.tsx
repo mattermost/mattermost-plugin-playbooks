@@ -20,7 +20,7 @@ const UpgradePlaybookBackgroundSvg = () => (
         <g filter='url(#filter0_d)'>
             <path
                 d='M195 1H7C4.79086 1 3 2.79086 3 5V177C3 179.209 4.79086 181 7 181H195C197.209 181 199 179.209 199 177V5C199 2.79086 197.209 1 195 1Z'
-                fill='white'
+                fill='var(--center-channel-bg)'
             />
             <path
                 opacity='0.48'
@@ -73,7 +73,7 @@ const UpgradePlaybookBackgroundSvg = () => (
         <g filter='url(#filter1_d)'>
             <path
                 d='M637 1H219C216.791 1 215 2.79086 215 5V177C215 179.209 216.791 181 219 181H637C639.209 181 641 179.209 641 177V5C641 2.79086 639.209 1 637 1Z'
-                fill='white'
+                fill='var(--center-channel-bg)'
             />
             <path
                 d='M231 17C231 14.7909 232.791 13 235 13H298C300.209 13 302 14.7909 302 17V25C302 27.2091 300.209 29 298 29H235C232.791 29 231 27.2091 231 25V17Z'
@@ -271,7 +271,7 @@ const UpgradePlaybookBackgroundSvg = () => (
             />
             <path
                 d='M250.384 148.447H618.361'
-                stroke='white'
+                stroke='var(--center-channel-bg)'
                 strokeOpacity='0.32'
             />
             <path
@@ -296,7 +296,7 @@ const UpgradePlaybookBackgroundSvg = () => (
             />
             <path
                 d='M250.384 48.0212V148.447'
-                stroke='white'
+                stroke='var(--center-channel-bg)'
                 strokeOpacity='0.32'
             />
             <path
@@ -367,7 +367,7 @@ const UpgradePlaybookBackgroundSvg = () => (
         <g filter='url(#filter2_d)'>
             <path
                 d='M1079 1H661C658.791 1 657 2.79086 657 5V177C657 179.209 658.791 181 661 181H1079C1081.21 181 1083 179.209 1083 177V5C1083 2.79086 1081.21 1 1079 1Z'
-                fill='white'
+                fill='var(--center-channel-bg)'
             />
             <path
                 d='M673 17C673 14.7909 674.791 13 677 13H743C745.209 13 747 14.7909 747 17V25C747 27.2091 745.209 29 743 29H677C674.791 29 673 27.2091 673 25V17Z'
@@ -385,7 +385,7 @@ const UpgradePlaybookBackgroundSvg = () => (
             />
             <path
                 d='M891 13H782C779.791 13 778 14.7909 778 17V25C778 27.2091 779.791 29 782 29H891C893.209 29 895 27.2091 895 25V17C895 14.7909 893.209 13 891 13Z'
-                fill='white'
+                fill='var(--center-channel-bg)'
             />
             <g opacity='0.08'>
                 <path
@@ -837,22 +837,22 @@ const UpgradePlaybookBackgroundSvg = () => (
                 gradientUnits='userSpaceOnUse'
             >
                 <stop
-                    stopColor='white'
+                    stopColor='var(--center-channel-bg)'
                     stopOpacity='0.5'
                 />
                 <stop
                     offset='0.192708'
-                    stopColor='white'
+                    stopColor='var(--center-channel-bg)'
                     stopOpacity='0.8'
                 />
                 <stop
                     offset='0.291667'
-                    stopColor='white'
+                    stopColor='var(--center-channel-bg)'
                     stopOpacity='0.9'
                 />
                 <stop
                     offset='0.510417'
-                    stopColor='white'
+                    stopColor='var(--center-channel-bg)'
                 />
             </linearGradient>
         </defs>

@@ -26,7 +26,7 @@ import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
 
 import './playbook.scss';
-import {useExperimentalFeaturesEnabled} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useExperimentalFeaturesEnabled} from 'src/hooks';
 
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
@@ -211,6 +211,8 @@ const PlaybookEdit = (props: Props) => {
     const [currentTab, setCurrentTab] = useState<number>(tab);
 
     const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
+
+    const retrospectiveAccess = useAllowRetrospectiveAccess();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -608,7 +610,7 @@ const PlaybookEdit = (props: Props) => {
                                         }}
                                     />
                                 </SidebarBlock>
-                                {experimentalFeaturesEnabled &&
+                                {retrospectiveAccess &&
                                     <>
                                         <SidebarBlock>
                                             <BackstageSubheader>
