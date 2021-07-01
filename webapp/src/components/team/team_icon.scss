@@ -1,0 +1,105 @@
+.TeamIcon__content {
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    &.no-hover {
+        transition:none;
+    }
+}
+
+.TeamIcon__initials {
+    &.TeamIcon__initials__lg {
+        font-size: 3em;
+
+    }
+    &.TeamIcon__initials__sm {
+        font-size: 14px;
+        color:black
+    }
+}
+
+.TeamIcon {
+    font-weight: 600;
+    height: 34px;
+    width: 34px;
+    text-align: center;
+    text-transform: uppercase;
+    background-color: var(--button-bg);
+    border: 3px solid var(--button-bg);
+    border-radius: 8px;
+    box-sizing: content-box;
+    transition: box-shadow 0.3s, background-color 0.3s, border-color 0.3s;
+    transform-origin: center center;
+    position: relative;
+
+    &:not(.no-hover):hover {
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.30);
+        border-color: #0b428c;
+        background-color:  rgba(var(--button-bg), 0.30);
+    }
+
+    &:active {
+        border-color: #0b428c;
+        box-shadow: 0 0 0 3px #579eff;
+    }
+
+    &.active {
+        border-color: #0b428c;
+        box-shadow: 0 0 0 3px #579eff;
+        background-color: rgba(var(--button-bg), 0.30);
+    }
+
+    &.TeamIcon__lg {
+        width: 94px;
+        height: 94px;
+    }
+
+    &.TeamIcon__sm {
+        height: 34px;
+        width: 34px;
+    }
+
+    &.withImage {
+        border: none;
+        &.TeamIcon__lg {
+            width: 100px;
+            height: 100px;
+        }
+
+        &.TeamIcon__sm {
+            height: 40px;
+            width: 40px;
+        }
+
+        .TeamIcon__image {
+            transition: box-shadow 200ms;
+            border-radius: 8px;
+        }
+
+        &:not(.no-hover):hover {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.32);
+
+            .TeamIcon__image {
+                box-shadow: inset 0 0 0 3px #0b428c;
+            }
+        }
+    }
+
+    &.withImage.active {
+        box-shadow:  0 0 0 3px rgba(#579eff, 0.72);
+
+        .TeamIcon__image {
+            box-shadow: inset 0 0 0 3px #0b428c;
+        }
+    }
+
+    .TeamIcon__image {
+        background-color: white;
+        background-repeat: unset;
+        width: 100%;
+        height: 100%;
+    }
+}

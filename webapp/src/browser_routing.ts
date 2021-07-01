@@ -24,6 +24,18 @@ export const teamPluginErrorUrl = (teamName: string, type: string) => {
     return teamPluginUrl(teamName, `/error?type=${type}`);
 };
 
+export const pluginUrl = (urlPath: string) => {
+    return `/plug/${pluginId}` + urlPath;
+};
+
+export const navigateToPluginUrl = (urlPath: string) => {
+    WebappUtils.browserHistory.push(pluginUrl(urlPath));
+};
+
+export const pluginErrorUrl = (type: string) => {
+    return pluginUrl(`/error?type=${type}`);
+};
+
 export const handleFormattedTextClick = (e: React.MouseEvent<HTMLElement, MouseEvent>, currentRelativeTeamUrl: string) => {
     // @ts-ignore
     const channelMentionAttribute = e.target.getAttributeNode('data-channel-mention');

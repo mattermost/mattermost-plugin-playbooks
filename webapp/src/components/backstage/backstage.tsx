@@ -22,7 +22,7 @@ import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
 import {ErrorPageTypes} from 'src/constants';
-import {navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
+import {navigateToUrl, pluginErrorUrl} from 'src/browser_routing';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 
 import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
@@ -233,7 +233,7 @@ const Backstage = () => {
                         <Redirect to={experimentalFeaturesEnabled ? `${match.url}/stats` : `${match.url}/runs`}/>
                     </Route>
                     <Route>
-                        <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>
+                        <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>
                     </Route>
                 </Switch>
             </BackstageBody>

@@ -91,7 +91,38 @@ func NewPlaybookRunService(pluginAPI *pluginapi.Client, store PlaybookRunStore, 
 
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
-	return s.store.GetPlaybookRuns(requesterInfo, options)
+	results, err := s.store.GetPlaybookRuns(requesterInfo, options)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get playbook runs from the store")
+	}
+	println(fmt.Sprintf("res = %v", results))
+	enabledTeams := s.configService.GetConfiguration().EnabledTeams
+	println(fmt.Sprintf("enabledTeams = %v", enabledTeams))
+
+	if len(enabledTeams) == 0 { // no filter required
+		return results, nil
+	}
+	filteredItems := []PlaybookRun{}
+	for _, item := range results.Items {
+		if sliceContains(enabledTeams, item.TeamID) {
+			filteredItems = append(filteredItems, item)
+		}
+	}
+	return &GetPlaybookRunsResults{
+		TotalCount: results.TotalCount,
+		PageCount:  results.PageCount,
+		HasMore:    results.HasMore,
+		Items:      filteredItems,
+	}, nil
+}
+
+func sliceContains(strs []string, target string) bool {
+	for _, s := range strs {
+		if s == target {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbook *Playbook, playbookRun *PlaybookRun, owner *model.User) error {
@@ -897,7 +928,37 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunIDForChannel(channelID string) (s
 
 // GetOwners returns all the owners of the playbook runs selected by options
 func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) ([]OwnerInfo, error) {
-	return s.store.GetOwners(requesterInfo, options)
+	owners, err := s.store.GetOwners(requesterInfo, options)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get owners from the store")
+	}
+	enabledTeams := s.configService.GetConfiguration().EnabledTeams
+	if len(enabledTeams) == 0 {
+		return owners, nil
+	}
+
+	filteredOwners := []OwnerInfo{}
+	for _, owner := range owners {
+		teams, err := s.pluginAPI.Team.List(pluginapi.FilterTeamsByUser(owner.UserID))
+		if err != nil {
+			return nil, errors.Wrap(err, "can't get teams for user")
+		}
+		if containsTeam(teams, enabledTeams) {
+			filteredOwners = append(filteredOwners, owner)
+		}
+	}
+	return filteredOwners, nil
+}
+
+func containsTeam(teams []*model.Team, enabledTeams []string) bool {
+	for _, team := range teams {
+		for _, enabledTeam := range enabledTeams {
+			if enabledTeam == team.Id {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // IsOwner returns true if the userID is the owner for playbookRunID.

@@ -448,18 +448,6 @@ func (h *PlaybookRunHandler) getPlaybookRuns(w http.ResponseWriter, r *http.Requ
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	// More detailed permissions checked on DB level.
-	if !app.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
-			"userID %s does not have view permission for teamID %s", userID, filterOptions.TeamID))
-		return
-	}
-
-	if !app.IsOnEnabledTeam(filterOptions.TeamID, h.config) {
-		ReturnJSON(w, map[string]bool{"disabled": true}, http.StatusOK)
-		return
-	}
-
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -559,20 +547,8 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(w http.ResponseWriter, r *h
 // getOwners handles the /runs/owners api endpoint.
 func (h *PlaybookRunHandler) getOwners(w http.ResponseWriter, r *http.Request) {
 	teamID := r.URL.Query().Get("team_id")
-	if teamID == "" {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
-	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	if !app.CanViewTeam(userID, teamID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
-			"userID %s does not have view permission for teamID %s",
-			userID,
-			teamID,
-		))
-		return
-	}
-
 	options := app.PlaybookRunFilterOptions{
 		TeamID: teamID,
 	}
@@ -604,15 +580,6 @@ func (h *PlaybookRunHandler) getChannels(w http.ResponseWriter, r *http.Request)
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	if !app.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
-			"userID %s does not have view permission for teamID %s",
-			userID,
-			filterOptions.TeamID,
-		))
-		return
-	}
-
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -1293,9 +1260,6 @@ func (h *PlaybookRunHandler) publishRetrospective(w http.ResponseWriter, r *http
 // parsePlaybookRunsFilterOptions is only for parsing. Put validation logic in app.validateOptions.
 func parsePlaybookRunsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, error) {
 	teamID := u.Query().Get("team_id")
-	if teamID == "" {
-		return nil, errors.New("bad parameter 'team_id'; 'team_id' is required")
-	}
 
 	pageParam := u.Query().Get("page")
 	if pageParam == "" {
