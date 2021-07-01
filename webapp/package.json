@@ -1,5 +1,9 @@
 {
   "private": true,
+  "engines": {
+    "node": ">=16.4.0",
+    "npm": ">=7.18.1"
+  },
   "scripts": {
     "build": "webpack --mode=production",
     "build:watch": "webpack --mode=production --watch",
@@ -63,7 +67,7 @@
     "react-refresh": "^0.10.0",
     "react-test-renderer": "16.13.1",
     "redux-mock-store": "1.5.4",
-    "sass": "1.32.11",
+    "sass": "1.32.12",
     "sass-loader": "11.0.1",
     "style-loader": "2.0.0",
     "webpack": "5.34.0",
@@ -71,10 +75,12 @@
     "webpack-dev-server": "3.11.2"
   },
   "dependencies": {
+    "@mdi/js": "^5.9.55",
+    "@mdi/react": "^1.5.0",
     "core-js": "3.10.2",
     "debounce": "1.2.1",
     "mattermost-redux": "github:mattermost/mattermost-redux#3d1028034d7677adfda58e91b9a5dcaf1bc0ff99",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#0b27dbfaa79b88cc207d835bbe604577d9397425",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#54a54c3b8da77af256b4ac8182cf4b81afe47561",
     "moment": "2.29.1",
     "qs": "6.10.1",
     "react": "16.13.1",

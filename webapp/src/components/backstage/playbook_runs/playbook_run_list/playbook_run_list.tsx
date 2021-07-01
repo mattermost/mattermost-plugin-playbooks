@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import moment from 'moment';
 import {debounce} from 'debounce';
 import {components, ControlProps} from 'react-select';
@@ -16,19 +16,14 @@ import {Team} from 'mattermost-redux/types/teams';
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import NoContentPlaybookRunSvg from 'src/components/assets/no_content_playbook_runs_svg';
-
 import {
     StatusFilter,
     StatusOption,
 } from 'src/components/backstage/playbook_runs/playbook_run_list/status_filter';
-
 import SearchInput from 'src/components/backstage/playbook_runs/playbook_run_list/search_input';
-
 import {FetchPlaybookRunsParams, PlaybookRun, playbookRunIsActive, playbookRunCurrentStatus} from 'src/types/playbook_run';
-
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {SortableColHeader} from 'src/components/sortable_col_header';
-
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {PaginationRow} from 'src/components/pagination_row';
 import {
@@ -42,11 +37,11 @@ import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
+import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
+import {startPlaybookRun} from 'src/actions';
 
 import './playbook_run_list.scss';
 import BackstageListHeader from '../../backstage_list_header';
-import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
-import {startPlaybookRun} from 'src/actions';
 
 const debounceDelay = 300; // in milliseconds
 

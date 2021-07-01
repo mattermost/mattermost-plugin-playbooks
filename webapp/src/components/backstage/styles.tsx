@@ -23,7 +23,7 @@ export const BackstageHeader = styled.div`
     font-size: 2.8rem;
     line-height: 3.6rem;
     align-items: center;
-    margin: 4rem 1rem 3.2rem;
+    padding: 4rem 0 3.2rem;
 `;
 
 export const TeamContainer = styled.div`

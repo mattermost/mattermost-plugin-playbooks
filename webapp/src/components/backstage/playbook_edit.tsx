@@ -23,10 +23,10 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar} from 'src/components/backstage/backstage';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
-import {SecondaryButton} from 'src/components/backstage/playbook_runs/shared';
+import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
 
 import './playbook.scss';
-import {useExperimentalFeaturesEnabled} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useExperimentalFeaturesEnabled} from 'src/hooks';
 
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
@@ -76,7 +76,7 @@ const NavbarPadding = styled.div`
     flex-grow: 1;
 `;
 
-const SecondaryButtonLarger = styled(SecondaryButton)`
+const SecondaryButtonLarger = styled(SecondaryButtonSmaller)`
     height: 40px;
     font-weight: 600;
     font-size: 14px;
@@ -212,6 +212,8 @@ const PlaybookEdit = (props: Props) => {
 
     const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
+    const retrospectiveAccess = useAllowRetrospectiveAccess();
+
     useEffect(() => {
         const fetchData = async () => {
             // No need to fetch anything if we're adding a new playbook
@@ -279,7 +281,7 @@ const PlaybookEdit = (props: Props) => {
 
     const onClose = (id?: string) => {
         const playbookId = urlParams.playbookId || id;
-        if (playbookId && experimentalFeaturesEnabled) {
+        if (playbookId) {
             navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbookId}`);
         } else {
             navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
@@ -616,7 +618,7 @@ const PlaybookEdit = (props: Props) => {
                                         }}
                                     />
                                 </SidebarBlock>
-                                {experimentalFeaturesEnabled &&
+                                {retrospectiveAccess &&
                                     <>
                                         <SidebarBlock>
                                             <BackstageSubheader>

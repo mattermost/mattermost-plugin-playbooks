@@ -59,19 +59,14 @@ type Poster interface {
 
 	// NotifyAdmins sends a DM with the message to each admins
 	NotifyAdmins(message, authorUserID string, isTeamEdition bool) error
+
+	// PromptForFeedback sends a DM as the surveybot to the given user, prompting for product feedback.
+	PromptForFeedback(userID string) error
 }
 
 type Telemetry interface {
-	NotifyAdminsToViewTimeline(userID string)
-	NotifyAdminsToAddMessageToTimeline(userID string)
-	NotifyAdminsToCreatePlaybook(userID string)
-	NotifyAdminsToRestrictPlaybookCreation(userID string)
-	NotifyAdminsToRestrictPlaybookAccess(userID string)
-	StartTrialToViewTimeline(userID string)
-	StartTrialToAddMessageToTimeline(userID string)
-	StartTrialToCreatePlaybook(userID string)
-	StartTrialToRestrictPlaybookCreation(userID string)
-	StartTrialToRestrictPlaybookAccess(userID string)
+	NotifyAdmins(userID string, action string)
+	StartTrial(userID string, action string)
 }
 
 // New creates a new bot poster/logger.

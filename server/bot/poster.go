@@ -152,21 +152,33 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 
 	switch messageType {
 	case "start_trial_to_create_playbook":
-		message = fmt.Sprintf("@%s requested access to create more playbooks in Incident Collaboration.", author.Username)
-		title = "Create multiple playbooks in Incident Collaboration with Mattermost Professional"
-		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. Each playbook can be customized and refined over time, to improve time to resolution. In Mattermost Professional you can create an unlimited number of playbooks for your team.\n" + footer
+		message = fmt.Sprintf("@%s requested access to create more playbooks.", author.Username)
+		title = "Create multiple playbooks for all your use cases"
+		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. Each playbook can be customized and refined over time, to improve time to resolution. When you upgrade, you can create an unlimited number of playbooks for your team.\n" + footer
 	case "start_trial_to_add_message_to_timeline", "start_trial_to_view_timeline":
-		message = fmt.Sprintf("@%s requested access to the timeline in Incident Collaboration.", author.Username)
+		message = fmt.Sprintf("@%s requested access to the playbook run timeline.", author.Username)
 		title = "Keep a complete record of the playbook run timeline"
 		text = "The playbook run timeline automatically tracks key events and messages in chronological order so that they can be traced and reviewed afterwards. Teams use timeline to perform retrospectives and extract lessons for the next time that they run the playbook."
+	case "start_trial_to_access_retrospective":
+		message = fmt.Sprintf("@%s requested access to the retrospective.", author.Username)
+		title = "Publish retrospective report and access the timeline"
+		text = "Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes."
 	case "start_trial_to_restrict_playbook_access":
-		message = fmt.Sprintf("@%s requested access to configure who can access specific playbooks in Incident Collaboration.", author.Username)
-		title = "Control who can access specific playbooks in Incident Collaboration with Mattermost Enterprise"
-		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+		message = fmt.Sprintf("@%s requested permission to configure who can access specific playbooks.", author.Username)
+		title = "Control who can access your team's playbooks"
+		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. When you upgrade, you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
 	case "start_trial_to_restrict_playbook_creation":
-		message = fmt.Sprintf("@%s requested access to configure who can create playbooks in Incident Collaboration.", author.Username)
-		title = "Control who can create playbooks in Incident Collaboration with Mattermost Enterprise"
-		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+		message = fmt.Sprintf("@%s requested permission to configure who can create playbooks.", author.Username)
+		title = "Control who can create playbooks"
+		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. When you upgrade, you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+	case "start_trial_to_export_channel":
+		message = fmt.Sprintf("@%s requested access to export the playbook run channel.", author.Username)
+		title = "Save the message history of your playbook runs"
+		text = "Export the channel of your playbook run and save it for later analysis. When you upgrade, you can automatically generate and download a CSV file containing all the timestamped messages sent to the channel.\n" + footer
+	case "start_trial_to_access_playbook_dashboard":
+		message = fmt.Sprintf("@%s requested access to view playbook statistics", author.Username)
+		title = "All the statistics you need"
+		text = "View trends for total runs, active runs and participants involved in runs of this playbook. Notify your system admin to upgrade."
 	}
 
 	actions := []*model.PostAction{
@@ -214,17 +226,29 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		}(admin.Id)
 	}
 
-	switch messageType {
-	case "start_trial_to_create_playbook":
-		b.telemetry.NotifyAdminsToCreatePlaybook(authorUserID)
-	case "start_trial_to_view_timeline":
-		b.telemetry.NotifyAdminsToViewTimeline(authorUserID)
-	case "start_trial_to_add_message_to_timeline":
-		b.telemetry.NotifyAdminsToAddMessageToTimeline(authorUserID)
-	case "start_trial_to_restrict_playbook_access":
-		b.telemetry.NotifyAdminsToRestrictPlaybookAccess(authorUserID)
-	case "start_trial_to_restrict_playbook_creation":
-		b.telemetry.NotifyAdminsToRestrictPlaybookCreation(authorUserID)
+	b.telemetry.NotifyAdmins(authorUserID, messageType)
+
+	return nil
+}
+
+func (b *Bot) PromptForFeedback(userID string) error {
+	surveyBot, err := b.pluginAPI.User.GetByUsername("surveybot")
+	if err != nil {
+		return fmt.Errorf("unable to find surveybot user: %w", err)
+	}
+
+	channel, err := b.pluginAPI.Channel.GetDirect(userID, surveyBot.Id)
+	if err != nil {
+		return fmt.Errorf("failed to get direct message channel between user %s and surveybot %s: %w", userID, surveyBot.Id, err)
+	}
+
+	post := &model.Post{
+		ChannelId: channel.Id,
+		UserId:    surveyBot.Id,
+		Message:   "Have feedback about Incident Collaboration?",
+	}
+	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+		return fmt.Errorf("failed to create post: %w", err)
 	}
 
 	return nil

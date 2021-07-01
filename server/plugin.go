@@ -47,7 +47,7 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
-	pluginAPIClient := pluginapi.NewClient(p.API)
+	pluginAPIClient := pluginapi.NewClient(p.API, p.Driver)
 	p.pluginAPI = pluginAPIClient
 
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
@@ -177,8 +177,9 @@ func (p *Plugin) OnActivate() error {
 	)
 	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config)
-	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, telemetryClient, telemetryClient, p.config)
+	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, telemetryClient, p.playbookService, telemetryClient, telemetryClient)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
+	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
@@ -209,7 +210,7 @@ func (p *Plugin) OnConfigurationChange() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.bot, p.playbookRunService, p.playbookService, p.config)
+	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot, p.bot, p.playbookRunService, p.playbookService, p.config)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("IncidentCollaborationPlugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
