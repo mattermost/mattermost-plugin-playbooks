@@ -39,12 +39,8 @@ type Poster interface {
 	// PostCustomMessageWithAttachments posts a custom message with the specified type. Falling back to attachments for mobile.
 	PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error)
 
-	// DM posts a simple Direct Message to the specified user.
-	DM(userID, format string, args ...interface{}) error
-
-	// DMWithAttachments posts a Direct Message that contains Slack attachments.
-	// Often used to include post actions.
-	DMWithAttachments(userID string, attachments ...*model.SlackAttachment) error
+	// Post DM from the plugin bot to the specified user
+	DM(userID string, post *model.Post) error
 
 	// Ephemeral sends an ephemeral message to a user.
 	EphemeralPost(userID, channelID string, post *model.Post)

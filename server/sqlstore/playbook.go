@@ -104,6 +104,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"RetrospectiveTemplate",
 			"WebhookOnStatusUpdateURL",
 			"WebhookOnStatusUpdateEnabled",
+			"ExportChannelOnArchiveEnabled",
 			"ConcatenatedSignalAnyKeywords", "SignalAnyKeywordsEnabled").
 		From("IR_Playbook")
 
@@ -172,6 +173,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
 			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
 			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
+			"ExportChannelOnArchiveEnabled":        rawPlaybook.ExportChannelOnArchiveEnabled,
 			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
 			"SignalAnyKeywordsEnabled":             rawPlaybook.SignalAnyKeywordsEnabled,
 		}))
@@ -474,6 +476,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
 			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
 			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
+			"ExportChannelOnArchiveEnabled":        rawPlaybook.ExportChannelOnArchiveEnabled,
 			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
 			"SignalAnyKeywordsEnabled":             rawPlaybook.SignalAnyKeywordsEnabled,
 		}).
