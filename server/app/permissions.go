@@ -324,10 +324,6 @@ func PlaybookModify(userID string, playbook, oldPlaybook Playbook, cfgService co
 		return err
 	}
 
-	if err := PlaybookLicensedFeatures(playbook, cfgService, playbookService); err != nil {
-		return err
-	}
-
 	if playbook.BroadcastChannelID != "" &&
 		playbook.BroadcastChannelID != oldPlaybook.BroadcastChannelID &&
 		!pluginAPI.User.HasPermissionToChannel(userID, playbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
