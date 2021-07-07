@@ -224,9 +224,17 @@ const Backstage = () => {
                     <Route path={`${match.url}/playbooks`}>
                         <PlaybookList/>
                     </Route>
+                    <Redirect
+                        from={`${match.url}/incidents/:playbookRunId`}
+                        to={`${match.url}/runs/:playbookRunId`}
+                    />
                     <Route path={`${match.url}/runs/:playbookRunId`}>
                         <PlaybookRunBackstage/>
                     </Route>
+                    <Redirect
+                        from={`${match.url}/incidents`}
+                        to={`${match.url}/runs`}
+                    />
                     <Route path={`${match.url}/runs`}>
                         <BackstagePlaybookRunList/>
                     </Route>
