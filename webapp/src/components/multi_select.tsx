@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import styled from 'styled-components';
 
 import {CheckboxContainer} from 'src/components/checklist_item';
@@ -12,7 +12,7 @@ export interface SelectOption{
     value: any;
     selected: boolean;
     disabled: boolean;
-};
+}
 
 const FilterCheckboxContainer = styled(CheckboxContainer)`
     margin: 0 34px 0 20px;
@@ -72,11 +72,10 @@ interface Props{
 }
 
 export const MultiSelect = (props: Props) => {
-
     const [isOpen, setOpen] = useState(false);
 
     const toggleOpen = () => {
-        setOpen( !isOpen );
+        setOpen(!isOpen);
     };
 
     const rootRef = useRef<HTMLDivElement>(null);
@@ -88,17 +87,16 @@ export const MultiSelect = (props: Props) => {
         setOpen(false);
     });
 
-    const onSelect = (value:any,checked:boolean) => {
-
-        const opts = props.options.map( (opt) => 
-            ( opt.value == value ? {                    
+    const onSelect = (value:any, checked:boolean) => {
+        const opts = props.options.map((opt) =>
+            (opt.value === value ? {
                 ...opt,
-                selected: checked
-            } : {...opt})
+                selected: checked,
+            } : {...opt}),
         );
 
-        if( props.onChange ){
-            props.onChange(opts, opts.filter( (op) => op.value == value )[0] );
+        if (props.onChange) {
+            props.onChange(opts, opts.filter((op) => op.value === value)[0]);
         }
     };
 
@@ -109,18 +107,19 @@ export const MultiSelect = (props: Props) => {
                 isOpen &&
                 <Dropdown>
                     {props.options.map((option) => {
-                        return <FilterCheckboxContainer
-                            key={option.value}
-                            onClick={() => onSelect(option.value, !option.selected)}
-                        >
-                            
-                            <input
-                                type='checkbox'
-                                checked={option.selected}
-                                disabled={option.disabled}
-                            />
-                            <span>{option.display}</span>
-                        </FilterCheckboxContainer>
+                        return (
+                            <FilterCheckboxContainer
+                                key={option.value}
+                                onClick={() => onSelect(option.value, !option.selected)}
+                            >
+
+                                <input
+                                    type='checkbox'
+                                    checked={option.selected}
+                                    disabled={option.disabled}
+                                />
+                                <span>{option.display}</span>
+                            </FilterCheckboxContainer>);
                     })}
                 </Dropdown>
             }
