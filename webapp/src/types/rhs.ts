@@ -6,12 +6,6 @@ export enum RHSState {
     ViewingPlaybookRun,
 }
 
-export enum RHSTabState {
-    ViewingAbout,
-    ViewingTasks,
-    ViewingTimeline,
-}
-
 export enum TimelineEventType {
     PlaybookRunCreated = 'incident_created',
     StatusUpdated = 'status_updated',

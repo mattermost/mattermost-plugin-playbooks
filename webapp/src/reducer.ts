@@ -5,7 +5,7 @@ import {combineReducers} from 'redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
-import {RHSState, RHSTabState, TimelineEventsFilter} from 'src/types/rhs';
+import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
 
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
@@ -24,8 +24,6 @@ import {
     PlaybookRunUpdated,
     PLAYBOOK_RUN_UPDATED,
     REMOVED_FROM_CHANNEL,
-    SetRHSTabState,
-    SET_RHS_TAB_STATE,
     SetRHSEventsFilter,
     SET_RHS_EVENTS_FILTER,
     ReceivedTeamDisabled,
@@ -160,18 +158,6 @@ const myPlaybookRunsByTeam = (
     }
 };
 
-const tabStateByChannel = (state: Record<string, RHSTabState> = {}, action: SetRHSTabState) => {
-    switch (action.type) {
-    case SET_RHS_TAB_STATE:
-        return {
-            ...state,
-            [action.channelId]: action.nextState,
-        };
-    default:
-        return state;
-    }
-};
-
 const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {}, action: SetRHSEventsFilter) => {
     switch (action.type) {
     case SET_RHS_EVENTS_FILTER:
@@ -264,7 +250,6 @@ export default combineReducers({
     clientId,
     myPlaybookRunsByTeam,
     rhsState,
-    tabStateByChannel,
     eventsFilterByChannel,
     numPlaybooksByTeam,
     globalSettings,

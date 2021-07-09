@@ -11,7 +11,7 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import {selectToggleRHS} from 'src/selectors';
-import {RHSState, RHSTabState, TimelineEventsFilter} from 'src/types/rhs';
+import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
 
 import {
     PLAYBOOK_RUN_CREATED,
@@ -28,12 +28,10 @@ import {
     SET_RHS_EVENTS_FILTER,
     SET_RHS_OPEN,
     SET_RHS_STATE,
-    SET_RHS_TAB_STATE,
     SetClientId,
     SetRHSEventsFilter,
     SetRHSOpen,
     SetRHSState,
-    SetRHSTabState,
     SetTriggerId,
     RECEIVED_TEAM_DISABLED,
     ReceivedTeamDisabled,
@@ -203,12 +201,6 @@ export const receivedDisabledOnTeam = (teamId: string): ReceivedTeamDisabled => 
 export const removedFromPlaybookRunChannel = (channelId: string): RemovedFromChannel => ({
     type: REMOVED_FROM_CHANNEL,
     channelId,
-});
-
-export const setRHSTabState = (channelId: string, nextState: RHSTabState): SetRHSTabState => ({
-    type: SET_RHS_TAB_STATE,
-    channelId,
-    nextState,
 });
 
 export const setRHSEventsFilter = (channelId: string, nextState: TimelineEventsFilter): SetRHSEventsFilter => ({
