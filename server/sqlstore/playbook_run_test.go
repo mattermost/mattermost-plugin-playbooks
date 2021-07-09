@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"fmt"
 	"math/rand"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -89,6 +90,8 @@ func TestGetPlaybookRuns(t *testing.T) {
 		WithCreateAt(123).
 		WithChecklists([]int{8}).
 		WithPlaybookID("playbook1").
+		WithParticipant(bob).
+		WithParticipant(john).
 		ToPlaybookRun()
 
 	inc02 := *NewBuilder(nil).
@@ -99,6 +102,8 @@ func TestGetPlaybookRuns(t *testing.T) {
 		WithCreateAt(199).
 		WithChecklists([]int{7}).
 		WithPlaybookID("playbook1").
+		WithParticipant(bob).
+		WithParticipant(john).
 		ToPlaybookRun()
 
 	inc03 := *NewBuilder(nil).
@@ -110,6 +115,9 @@ func TestGetPlaybookRuns(t *testing.T) {
 		WithChecklists([]int{6}).
 		WithCurrentStatus("Archived").
 		WithPlaybookID("playbook2").
+		WithParticipant(bob).
+		WithParticipant(john).
+		WithParticipant(jane).
 		ToPlaybookRun()
 
 	inc04 := *NewBuilder(nil).
@@ -120,6 +128,8 @@ func TestGetPlaybookRuns(t *testing.T) {
 		WithCreateAt(333).
 		WithChecklists([]int{5}).
 		WithCurrentStatus("Archived").
+		WithParticipant(bob).
+		WithParticipant(jane).
 		ToPlaybookRun()
 
 	inc05 := *NewBuilder(nil).
@@ -129,6 +139,8 @@ func TestGetPlaybookRuns(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(400).
 		WithChecklists([]int{1}).
+		WithParticipant(bob).
+		WithParticipant(jane).
 		ToPlaybookRun()
 
 	inc06 := *NewBuilder(nil).
@@ -138,6 +150,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 		WithTeamID(team2id).
 		WithCreateAt(444).
 		WithChecklists([]int{4}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	inc07 := *NewBuilder(nil).
@@ -147,6 +160,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 		WithTeamID(team2id).
 		WithCreateAt(555).
 		WithChecklists([]int{4}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	inc08 := *NewBuilder(nil).
@@ -156,6 +170,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 		WithTeamID(team3id).
 		WithCreateAt(555).
 		WithChecklists([]int{3}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	inc09 := *NewBuilder(nil).
@@ -165,6 +180,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 		WithTeamID(team3id).
 		WithCreateAt(556).
 		WithChecklists([]int{2}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
@@ -965,6 +981,11 @@ func TestGetPlaybookRuns(t *testing.T) {
 					result.Items[i] = item
 				}
 
+				// sort the participants so equality will work
+				for i := range result.Items {
+					sort.Strings(result.Items[i].ParticipantIDs)
+				}
+
 				require.Equal(t, testCase.Want, *result)
 			})
 		}
@@ -1457,6 +1478,7 @@ func TestGetOwners(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(123).
 		WithChecklists([]int{8}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	inc02 := *NewBuilder(nil).
@@ -1466,6 +1488,7 @@ func TestGetOwners(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(199).
 		WithChecklists([]int{7}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	inc03 := *NewBuilder(nil).
@@ -1475,6 +1498,7 @@ func TestGetOwners(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(222).
 		WithChecklists([]int{6}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	inc04 := *NewBuilder(nil).
@@ -1484,6 +1508,7 @@ func TestGetOwners(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(333).
 		WithChecklists([]int{5}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	inc05 := *NewBuilder(nil).
@@ -1493,6 +1518,7 @@ func TestGetOwners(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(400).
 		WithChecklists([]int{1}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	inc06 := *NewBuilder(nil).
@@ -1502,6 +1528,7 @@ func TestGetOwners(t *testing.T) {
 		WithTeamID(team2id).
 		WithCreateAt(444).
 		WithChecklists([]int{4}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	inc07 := *NewBuilder(nil).
@@ -1511,6 +1538,7 @@ func TestGetOwners(t *testing.T) {
 		WithTeamID(team2id).
 		WithCreateAt(555).
 		WithChecklists([]int{4}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	inc08 := *NewBuilder(nil).
@@ -1520,6 +1548,7 @@ func TestGetOwners(t *testing.T) {
 		WithTeamID(team3id).
 		WithCreateAt(555).
 		WithChecklists([]int{3}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	inc09 := *NewBuilder(nil).
@@ -1529,6 +1558,7 @@ func TestGetOwners(t *testing.T) {
 		WithTeamID(team3id).
 		WithCreateAt(556).
 		WithChecklists([]int{2}).
+		WithParticipant(bob).
 		ToPlaybookRun()
 
 	playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
@@ -1889,6 +1919,13 @@ func (ib *PlaybookRunBuilder) WithDescription(desc string) *PlaybookRunBuilder {
 
 func (ib *PlaybookRunBuilder) WithID() *PlaybookRunBuilder {
 	ib.playbookRun.ID = model.NewId()
+
+	return ib
+}
+
+func (ib *PlaybookRunBuilder) WithParticipant(user userInfo) *PlaybookRunBuilder {
+	ib.playbookRun.ParticipantIDs = append(ib.playbookRun.ParticipantIDs, user.ID)
+	sort.Strings(ib.playbookRun.ParticipantIDs)
 
 	return ib
 }
