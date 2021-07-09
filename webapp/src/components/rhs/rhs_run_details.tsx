@@ -5,9 +5,6 @@ import React from 'react';
 import Scrollbars from 'react-custom-scrollbars';
 import {useSelector} from 'react-redux';
 
-import {GlobalState} from 'mattermost-redux/types/store';
-
-import {PlaybookRun} from 'src/types/playbook_run';
 import {
     renderThumbHorizontal,
     renderThumbVertical, renderView,
@@ -19,7 +16,7 @@ import RHSAbout from 'src/components/rhs/rhs_about';
 import RHSChecklists from 'src/components/rhs/rhs_checklists';
 
 const RHSRunDetails = () => {
-    const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>(currentPlaybookRun);
+    const playbookRun = useSelector(currentPlaybookRun);
 
     if (!playbookRun) {
         return null;
