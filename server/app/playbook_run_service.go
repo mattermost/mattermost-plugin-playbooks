@@ -95,16 +95,16 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get playbook runs from the store")
 	}
-	println(fmt.Sprintf("res = %v", results))
 	enabledTeams := s.configService.GetConfiguration().EnabledTeams
-	println(fmt.Sprintf("enabledTeams = %v", enabledTeams))
 
 	if len(enabledTeams) == 0 { // no filter required
 		return results, nil
 	}
+
+	enabledTeamsMap := fromSliceToMap(enabledTeams)
 	filteredItems := []PlaybookRun{}
 	for _, item := range results.Items {
-		if sliceContains(enabledTeams, item.TeamID) {
+		if ok := enabledTeamsMap[item.TeamID]; ok {
 			filteredItems = append(filteredItems, item)
 		}
 	}
@@ -116,13 +116,12 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 	}, nil
 }
 
-func sliceContains(strs []string, target string) bool {
-	for _, s := range strs {
-		if s == target {
-			return true
-		}
+func fromSliceToMap(slice []string) map[string]bool {
+	result := make(map[string]bool, len(slice))
+	for _, item := range slice {
+		result[item] = true
 	}
-	return false
+	return result
 }
 
 func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbook *Playbook, playbookRun *PlaybookRun, owner *model.User) error {
@@ -937,25 +936,25 @@ func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options 
 		return owners, nil
 	}
 
+	enabledTeamsMap := fromSliceToMap(enabledTeams)
+
 	filteredOwners := []OwnerInfo{}
 	for _, owner := range owners {
 		teams, err := s.pluginAPI.Team.List(pluginapi.FilterTeamsByUser(owner.UserID))
 		if err != nil {
 			return nil, errors.Wrap(err, "can't get teams for user")
 		}
-		if containsTeam(teams, enabledTeams) {
+		if containsTeam(teams, enabledTeamsMap) {
 			filteredOwners = append(filteredOwners, owner)
 		}
 	}
 	return filteredOwners, nil
 }
 
-func containsTeam(teams []*model.Team, enabledTeams []string) bool {
+func containsTeam(teams []*model.Team, enabledTeamsMap map[string]bool) bool {
 	for _, team := range teams {
-		for _, enabledTeam := range enabledTeams {
-			if enabledTeam == team.Id {
-				return true
-			}
+		if ok := enabledTeamsMap[team.Id]; ok {
+			return true
 		}
 	}
 	return false

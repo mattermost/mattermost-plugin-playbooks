@@ -67,11 +67,11 @@ const controlComponent = (ownProps: ControlProps<any>, filterName: string) => (
 );
 
 const OwnerControlComponent = (ownProps: ControlProps<any>) => {
-    return controlComponent(ownProps, 'Owners');
+    return controlComponent(ownProps, 'owners');
 };
 
 const TeamControlComponent = (ownProps: ControlProps<any>) => {
-    return controlComponent(ownProps, 'Teams');
+    return controlComponent(ownProps, 'teams');
 };
 
 const NoContentContainer = styled.div`
@@ -201,7 +201,7 @@ const BackstagePlaybookRunList = () => {
         setFetchParams((oldParams) => ({...oldParams, status: queryForTeamID || ''}));
     }, [query]);
 
-    // When the component is first mounted (or the team changes), determine if there are any
+    // When the component is first mounted, determine if there are any
     // playbook runs at all, ignoring filters. Decide once if we should show the "no playbook runs"
     // landing page.
     useEffect(() => {
@@ -438,8 +438,9 @@ const BackstagePlaybookRunList = () => {
                         <a className='col-sm-3 playbook-run-item__title'>
                             <TextWithTooltip
                                 id={playbookRun.id}
-                                text={playbookRun.name + (teams.length > 1 ? ' (' + getTeamName(playbookRun.team_id) + ')' : '')}
+                                text={playbookRun.name}
                             />
+                            <TeamName>{teams.length > 1 ? ' (' + getTeamName(playbookRun.team_id) + ')' : ''}</TeamName>
                         </a>
                         <div className='col-sm-2'>
                             <StatusBadge status={playbookRunCurrentStatus(playbookRun)}/>
@@ -496,3 +497,12 @@ const endedAt = (isActive: boolean, time: number) => {
 };
 
 export default BackstagePlaybookRunList;
+
+const TeamName = styled.div`
+    font-style: normal;
+    font-weight: normal;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--center-channel-color-72);
+    padding-left: 4px;
+`;

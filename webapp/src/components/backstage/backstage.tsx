@@ -10,6 +10,8 @@ import styled from 'styled-components';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
+import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+import {Theme} from 'mattermost-redux/types/preferences';
 
 import IncidentIcon from 'src/components/assets/icons/incident_icon';
 
@@ -31,6 +33,8 @@ import CloudModal from 'src/components/cloud_modal';
 
 import StatsView from './stats';
 import SettingsView from './settings';
+
+import {applyTheme} from './css_utils';
 
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
@@ -114,13 +118,19 @@ const Backstage = () => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
         document.body.classList.add('app__body');
+        const root = document.getElementById('root');
+        if (root) {
+            root.className += ' channel-view';
+        }
 
+        applyTheme(currentTheme);
         return function cleanUp() {
             document.body.classList.remove('app__body');
         };
     }, []);
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const currentTheme = useSelector<GlobalState, Theme>(getTheme);
 
     const match = useRouteMatch();
 

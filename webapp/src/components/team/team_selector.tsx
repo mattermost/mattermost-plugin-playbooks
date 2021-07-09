@@ -26,7 +26,6 @@ interface Props {
     selectedTeamId?: string;
     placeholder: React.ReactNode;
     placeholderButtonClass?: string;
-    profileButtonClass?: string;
     onlyPlaceholder?: boolean;
     enableEdit: boolean;
     isClearable?: boolean;
@@ -37,6 +36,8 @@ interface Props {
     customControlProps?: any;
     showOnRight?: boolean;
 }
+
+const dropdownYShift = 27;
 
 export default function TeamSelector(props: Props) {
     const [isOpen, setOpen] = useState(false);
@@ -77,6 +78,10 @@ export default function TeamSelector(props: Props) {
     }, []);
 
     const [selected, setSelected] = useState<Option | null>(null);
+
+    function getTeam(teamId: string) {
+        return props.teams.filter((team) => team.id === teamId)[0];
+    }
 
     // Whenever the selectedTeamId changes we have to set the selected, but we can only do this once we
     // have TeamOptions
@@ -119,26 +124,41 @@ export default function TeamSelector(props: Props) {
         const innerHeight = window.innerHeight;
         const numTeamsShown = Math.min(6, teamOptions.length);
         const spacePerProfile = 48;
-        const dropdownYShift = 27;
         const dropdownReqSpace = 80;
         const extraSpace = 10;
         const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numTeamsShown * spacePerProfile) + extraSpace;
         setMoveUp(Math.max(0, dropdownBottom - innerHeight));
     }, [rect, teamOptions.length]);
+    let target;
+    if (props.selectedTeamId) {
+        target = (
+            <TeamButton
+                onClick={() => {
+                    if (props.enableEdit) {
+                        toggleOpen();
+                    }
+                }}
+            >
+                <TeamWithIcon team={getTeam(props.selectedTeamId)}/>
 
-    let target = (
-        <button
-            onClick={() => {
-                if (props.enableEdit) {
-                    toggleOpen();
-                }
-            }}
-            className={props.placeholderButtonClass || 'PlaybookRunFilter-button'}
-        >
-            {selected === null ? props.placeholder : selected.label}
-            {<i className='icon-chevron-down icon--small ml-2'/>}
-        </button>
-    );
+                {<i className='icon-chevron-down ml-1 mr-2'/>}
+            </TeamButton>
+        );
+    } else {
+        target = (
+            <button
+                onClick={() => {
+                    if (props.enableEdit) {
+                        toggleOpen();
+                    }
+                }}
+                className={props.placeholderButtonClass || 'PlaybookRunFilter-button'}
+            >
+                {selected === null ? props.placeholder : selected.label}
+                {<i className='icon-chevron-down icon--small ml-2'/>}
+            </button>
+        );
+    }
 
     if (props.onlyPlaceholder) {
         target = (
@@ -237,7 +257,7 @@ interface ChildContainerProps {
 }
 
 const ChildContainer = styled.div<ChildContainerProps>`
-    top: ${(props) => 27 - (props.moveUp || 0)}px;
+    top: ${(props) => dropdownYShift - (props.moveUp || 0)}px;
 `;
 
 const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: DropdownProps) => {
@@ -261,3 +281,88 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
         </ProfileDropdown>
     );
 };
+
+const TeamButton = styled.button`
+    font-weight: 600;
+    height: 40px;
+    padding: 0 4px 0 12px;
+    border-radius: 4px;
+    color: var(--center-channel-color);
+
+    -webkit-transition: all 0.15s ease;
+    -webkit-transition-delay: 0s;
+    -moz-transition: all 0.15s ease;
+    -o-transition: all 0.15s ease;
+    transition: all 0.15s ease;
+
+    border: none;
+    background-color: unset;
+    cursor: unset;
+    display: flex;
+    align-items: center;
+    text-align: center;
+
+    &:hover {
+        background: var(--center-channel-color-08);
+        color: var(--center-channel-color-72);
+    }
+
+    .PlaybookRunProfile {
+        &:active {
+            background: var(--button-bg-08);
+            color: var(--button-bg);
+        }
+
+        &.active {
+            cursor: pointer;
+            color: var(--center-channel-color);
+        }
+    }
+    
+
+    .NoAssignee-button, .Assigned-button {
+        background-color: transparent;
+        border: none;
+        padding: 4px;
+        margin-top: 4px;
+        border-radius: 100px;
+        color: var(--center-channel-color-64);
+        cursor: pointer;
+        font-weight: normal;
+        font-size: 12px;
+        line-height: 16px;
+
+        -webkit-transition: all 0.15s ease;
+        -moz-transition: all 0.15s ease;
+        -o-transition: all 0.15s ease;
+        transition: all 0.15s ease;
+
+        &:hover {
+            background: var(--center-channel-color-08);
+            color: var(--center-channel-color-72);
+        }
+
+        &:active {
+            background: var(--button-bg-08);
+            color: var(--button-bg);
+        }
+
+        &.active {
+            cursor: pointer;
+        }
+
+        .icon-chevron-down {
+            &:before {
+                margin: 0;
+            }
+        }
+    }
+
+    .first-container .Assigned-button {
+        margin-top: 0;
+        padding: 2px 0;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--center-channel-color);
+    }
+`;
