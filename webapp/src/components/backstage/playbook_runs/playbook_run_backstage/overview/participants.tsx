@@ -43,25 +43,25 @@ interface Props {
 
 const Participants = (
     {
-        playbookRun: run,
-        playbookRun: {participant_ids: ids},
+        playbookRun,
+        playbookRun: {participant_ids},
     }: Props) => {
-    useEnsureProfiles(ids);
+    useEnsureProfiles(participant_ids);
 
-    const profilesExceptTwoMains = ids
-        .filter((id) => id !== run.owner_user_id && id !== run.reporter_user_id);
+    const profilesExceptTwoMains = participant_ids
+        .filter((id) => id !== playbookRun.owner_user_id && id !== playbookRun.reporter_user_id);
 
     return (
         <TabPageContainer>
-            <Title>{`Participants (${ids.length})`}</Title>
+            <Title>{`Participants (${participant_ids.length})`}</Title>
             <StyledContent>
                 <Heading>{'Owner'}</Heading>
                 <Participant
-                    userId={run.owner_user_id}
+                    userId={playbookRun.owner_user_id}
                     isOwner={true}
                 />
                 <Heading>{'Reporter'}</Heading>
-                <Participant userId={run.reporter_user_id}/>
+                <Participant userId={playbookRun.reporter_user_id}/>
                 {
                     profilesExceptTwoMains.length > 0 &&
                     <>
