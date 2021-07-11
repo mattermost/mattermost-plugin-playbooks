@@ -34,6 +34,7 @@ const CollapsibleChecklist = ({title, index, items, children}: Props) => {
     return (
         <Border>
             <Horizontal
+                data-testid={'checklistHeader'}
                 onClick={() => setExpanded(!expanded)}
                 onMouseEnter={() => setHover(true)}
                 onMouseLeave={() => setHover(false)}
@@ -50,6 +51,7 @@ const CollapsibleChecklist = ({title, index, items, children}: Props) => {
                 {
                     hover &&
                     <AddNewTask
+                        data-testid={'addNewTask'}
                         onClick={(e) => {
                             e.stopPropagation();
                             dispatch(addNewTask(index));

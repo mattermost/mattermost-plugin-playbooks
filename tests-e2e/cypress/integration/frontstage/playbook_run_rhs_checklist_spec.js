@@ -183,10 +183,10 @@ describe('playbook run rhs checklist', () => {
             cy.findByText('Step 1').should('not.exist');
         });
 
-        it('add new task', () => {
+        it.only('add new task', () => {
             const newTasktext = 'This is my new task' + Date.now();
 
-            cy.addNewTaskFromPostMenu(newTasktext);
+            cy.addNewTaskFromRHS(newTasktext);
 
             // Check that it was created
             cy.findByText(newTasktext).should('exist');
