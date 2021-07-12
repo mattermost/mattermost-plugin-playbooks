@@ -13,11 +13,11 @@ const ConvertEnterpriseNotice = () => (
                         target={'_blank'}
                         rel='noreferrer'
                     >
-                        {'Convert to Enterprise Edition.'}
+                        {'Convert to a commercial edition.'}
                     </a>
                 </li>
                 <li>
-                    {'Start a trial or upgrade to Mattermost Professional or Enterprise editions.'}
+                    {'Start a trial or upgrade your subscription.'}
                 </li>
             </StyledOl>
         </p>

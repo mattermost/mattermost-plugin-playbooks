@@ -5,10 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
+
+	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
 type BotHandler struct {
@@ -31,6 +32,8 @@ func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster,
 	notifyAdminsRouter := botRouter.PathPrefix("/notify-admins").Subrouter()
 	notifyAdminsRouter.HandleFunc("", handler.notifyAdmins).Methods(http.MethodPost)
 	notifyAdminsRouter.HandleFunc("/button-start-trial", handler.startTrial).Methods(http.MethodPost)
+
+	botRouter.HandleFunc("/prompt-for-feedback", handler.promptForFeedback).Methods(http.MethodPost)
 
 	return handler
 }
@@ -131,4 +134,20 @@ outer:
 	}
 
 	ReturnJSON(w, post, http.StatusOK)
+}
+
+func (h *BotHandler) promptForFeedback(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.config.SupportsGivingFeedback(); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "giving feedback not supported", err)
+		return
+	}
+
+	if err := h.poster.PromptForFeedback(userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

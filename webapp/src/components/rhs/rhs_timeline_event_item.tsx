@@ -121,11 +121,11 @@ const RHSTimelineEventItem = (props: Props) => {
     let timeSince: JSX.Element | null = <TimeDay>{'Time: ' + stamp}</TimeDay>;
 
     switch (props.event.event_type) {
-    case TimelineEventType.IncidentCreated:
+    case TimelineEventType.PlaybookRunCreated:
         iconClass = 'icon icon-shield-alert-outline';
-        summaryTitle = 'Incident Reported by ' + props.event.subject_display_name;
+        summaryTitle = 'Run started by ' + props.event.subject_display_name;
         timeSince = null;
-        testid = TimelineEventType.IncidentCreated;
+        testid = TimelineEventType.PlaybookRunCreated;
         break;
     case TimelineEventType.StatusUpdated:
         iconClass = 'icon icon-flag-outline';
@@ -136,10 +136,10 @@ const RHSTimelineEventItem = (props: Props) => {
         }
         testid = TimelineEventType.StatusUpdated;
         break;
-    case TimelineEventType.CommanderChanged:
+    case TimelineEventType.OwnerChanged:
         iconClass = 'icon icon-pencil-outline';
-        summaryTitle = 'Commander changed from ' + props.event.summary;
-        testid = TimelineEventType.CommanderChanged;
+        summaryTitle = 'Owner changed from ' + props.event.summary;
+        testid = TimelineEventType.OwnerChanged;
         break;
     case TimelineEventType.TaskStateModified:
         iconClass = 'icon icon-format-list-bulleted';
@@ -217,7 +217,7 @@ const RHSTimelineEventItem = (props: Props) => {
                 message={'Are you sure you want to delete this event? Deleted events will be permanently removed from the timeline.'}
                 confirmButtonText={'Delete Entry'}
                 onConfirm={() =>
-                    clientRemoveTimelineEvent(props.event.incident_id, props.event.id)
+                    clientRemoveTimelineEvent(props.event.playbook_run_id, props.event.id)
                 }
                 onCancel={() => setShowDeleteConfirm(false)}
             />

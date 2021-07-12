@@ -20,11 +20,12 @@ import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entiti
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
 
+import {StatusPost} from 'src/types/playbook_run';
+
 import {isMobile} from 'src/mobile';
 import {updateStatus, toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import ShowMore from 'src/components/rhs/show_more';
-import {StatusPost} from 'src/types/incident';
 import {UpdateBody} from 'src/components/rhs/rhs_shared';
 import PostText from 'src/components/post_text';
 

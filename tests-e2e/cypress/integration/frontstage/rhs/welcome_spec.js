@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('incident rhs > welcome', () => {
+describe('playbook run rhs > welcome', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
     let newTeamName;
@@ -52,34 +52,34 @@ describe('incident rhs > welcome', () => {
             // # Size the viewport to show plugin icons even when RHS is open
             cy.viewport('macbook-13');
 
-            // # Navigate to the team with no incidents.
+            // # Navigate to the team with no playbook runs.
             cy.visit(`/${newTeamName}/channels/town-square`);
 
-            // # Click the incident icon
+            // # Click the playbook run icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
             });
 
-            // * Verify the incident RHS is open.
+            // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('exist');
+                cy.findByText('Runs in progress').should('exist');
             });
 
             // # Wait for background request fetching playbooks to finish.
             cy.wait(1500);
 
-            // * Verify there is no prompt to create an incident.
-            cy.get('#rhsContainer').findByText('Start Incident').should('not.exist');
+            // * Verify there is no prompt to create a playbook run.
+            cy.get('#rhsContainer').findByText('Run playbook').should('not.exist');
 
             // # Click the prompt to create a playbook.
-            cy.get('#rhsContainer').findByText('Create Playbook').click();
+            cy.get('#rhsContainer').findByText('Create playbook').click();
 
             // * Verify we reached the playbook backstage
             cy.url().should('include', `/${newTeamName}/com.mattermost.plugin-incident-management/playbooks`);
         }));
     });
 
-    describe('prompts to start incident when a member of a playbook', () => {
+    describe('prompts to run playbook when a member of a playbook', () => {
         it('as user-2', () => {
             // # Login as user-2
             cy.apiLogin('user-2');
@@ -87,25 +87,25 @@ describe('incident rhs > welcome', () => {
             // # Size the viewport to show plugin icons even when RHS is open
             cy.viewport('macbook-13');
 
-            // # Navigate to the team with no incidents.
+            // # Navigate to the team with no playbook runs.
             cy.visit(`/${newTeamName}/channels/town-square`);
 
-            // # Click the incident icon
+            // # Click the playbook run icon
             cy.get('#channel-header').within(() => {
                 cy.get('#incidentIcon').should('exist').click();
             });
 
-            // * Verify the incident RHS is open.
+            // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Your Ongoing Incidents').should('exist');
+                cy.findByText('Runs in progress').should('exist');
             });
 
-            // # Click the prompt to create an incident
-            cy.get('#rhsContainer').findByText('Start Incident').click({force: true});
+            // # Click the prompt to create a playbook run.
+            cy.get('#rhsContainer').findByText('Run playbook').click({force: true});
 
-            // * Verify the incident creation dialog has opened
+            // * Verify the playbook run creation dialog has opened
             cy.get('#interactiveDialogModal').should('exist').within(() => {
-                cy.findByText('Incident Details').should('exist');
+                cy.findByText('Start run').should('exist');
             });
 
             // # Cancel the interactive dialog
@@ -115,7 +115,7 @@ describe('incident rhs > welcome', () => {
             cy.get('#interactiveDialogModal').should('not.exist');
 
             // # Click the prompt to create a playbook.
-            cy.get('#rhsContainer').findByText('Create Playbook').click();
+            cy.get('#rhsContainer').findByText('Create playbook').click();
 
             // * Verify we reached the playbook backstage
             cy.url().should('include', `/${newTeamName}/com.mattermost.plugin-incident-management/playbooks`);

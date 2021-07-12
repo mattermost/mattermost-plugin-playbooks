@@ -5,8 +5,9 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
+	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -188,23 +189,23 @@ var migrations = []Migration{
 				}
 			}
 
-			getIncidentsQuery := sqlStore.builder.
+			getPlaybookRunsQuery := sqlStore.builder.
 				Select("ID", "ActiveStage", "ChecklistsJSON").
 				From("IR_Incident")
 
-			var incidents []struct {
+			var playbookRuns []struct {
 				ID             string
 				ActiveStage    int
 				ChecklistsJSON json.RawMessage
 			}
-			if err := sqlStore.selectBuilder(e, &incidents, getIncidentsQuery); err != nil {
-				return errors.Wrapf(err, "failed getting incidents to update their ActiveStageTitle")
+			if err := sqlStore.selectBuilder(e, &playbookRuns, getPlaybookRunsQuery); err != nil {
+				return errors.Wrapf(err, "failed getting playbook runs to update their ActiveStageTitle")
 			}
 
-			for _, theIncident := range incidents {
-				var checklists []playbook.Checklist
-				if err := json.Unmarshal(theIncident.ChecklistsJSON, &checklists); err != nil {
-					return errors.Wrapf(err, "failed to unmarshal checklists json for incident id: '%s'", theIncident.ID)
+			for _, playbookRun := range playbookRuns {
+				var checklists []app.Checklist
+				if err := json.Unmarshal(playbookRun.ChecklistsJSON, &checklists); err != nil {
+					return errors.Wrapf(err, "failed to unmarshal checklists json for playbook run id: '%s'", playbookRun.ID)
 				}
 
 				numChecklists := len(checklists)
@@ -212,18 +213,18 @@ var migrations = []Migration{
 					continue
 				}
 
-				if theIncident.ActiveStage < 0 || theIncident.ActiveStage >= numChecklists {
-					sqlStore.log.Warnf("index %d out of bounds, incident '%s' has %d stages: setting ActiveStageTitle to the empty string", theIncident.ActiveStage, theIncident.ID, numChecklists)
+				if playbookRun.ActiveStage < 0 || playbookRun.ActiveStage >= numChecklists {
+					sqlStore.log.Warnf("index %d out of bounds, playbook ru n'%s' has %d stages: setting ActiveStageTitle to the empty string", playbookRun.ActiveStage, playbookRun.ID, numChecklists)
 					continue
 				}
 
-				incidentUpdate := sqlStore.builder.
+				playbookRunUpdate := sqlStore.builder.
 					Update("IR_Incident").
-					Set("ActiveStageTitle", checklists[theIncident.ActiveStage].Title).
-					Where(sq.Eq{"ID": theIncident.ID})
+					Set("ActiveStageTitle", checklists[playbookRun.ActiveStage].Title).
+					Where(sq.Eq{"ID": playbookRun.ID})
 
-				if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
-					return errors.Errorf("failed updating the ActiveStageTitle field of incident '%s'", theIncident.ID)
+				if _, err := sqlStore.execBuilder(e, playbookRunUpdate); err != nil {
+					return errors.Errorf("failed updating the ActiveStageTitle field of playbook run '%s'", playbookRun.ID)
 				}
 			}
 
@@ -797,6 +798,167 @@ var migrations = []Migration{
 	{
 		fromVersion: semver.MustParse("0.19.0"),
 		toVersion:   semver.MustParse("0.20.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET WebhookOnStatusUpdateURL = '' WHERE WebhookOnStatusUpdateURL IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column WebhookOnStatusUpdateURL of table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnStatusUpdateEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateEnabled to table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Incident", "WebhookOnStatusUpdateURL", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Incident")
+				}
+				if _, err := e.Exec("UPDATE IR_Incident SET WebhookOnStatusUpdateURL = '' WHERE WebhookOnStatusUpdateURL IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column WebhookOnStatusUpdateURL of table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "WebhookOnStatusUpdateEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateEnabled to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Incident", "WebhookOnStatusUpdateURL", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Incident")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.20.0"),
+		toVersion:   semver.MustParse("0.21.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ConcatenatedSignalAnyKeywords", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedSignalAnyKeywords to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET ConcatenatedSignalAnyKeywords = '' WHERE ConcatenatedSignalAnyKeywords IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column ConcatenatedSignalAnyKeywords of table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "SignalAnyKeywordsEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column SignalAnyKeywordsEnabled to table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "UpdateAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column UpdateAt to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET UpdateAt = CreateAt"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column UpdateAt of table IR_Playbook")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Playbook ADD INDEX IR_Playbook_UpdateAt (UpdateAt)`); err != nil {
+					me, ok := err.(*mysql.MySQLError)
+					if !ok || me.Number != 1061 { // not a Duplicate key name error
+						return errors.Wrapf(err, "failed creating index IR_Playbook_UpdateAt")
+					}
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "ConcatenatedSignalAnyKeywords", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedSignalAnyKeywords to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "SignalAnyKeywordsEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column SignalAnyKeywordsEnabled to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "UpdateAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column UpdateAt to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET UpdateAt = CreateAt"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column UpdateAt of table IR_Playbook")
+				}
+				if _, err := e.Exec(createPGIndex("IR_Playbook_UpdateAt", "IR_Playbook", "UpdateAt")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_Playbook_UpdateAt")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.21.0"),
+		toVersion:   semver.MustParse("0.22.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "LastStatusUpdateAt", "BIGINT DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column LastStatusUpdateAt to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "LastStatusUpdateAt", "BIGINT DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column LastStatusUpdateAt to table IR_Incident")
+				}
+			}
+
+			var lastUpdateAts []struct {
+				ID                 string
+				LastStatusUpdateAt int64
+			}
+
+			// Fill in the LastStatusUpdateAt column as either the most recent status post, or
+			// if no posts: the playbook run's CreateAt.
+			lastUpdateAtSelect := sqlStore.builder.
+				Select("i.Id as ID", "COALESCE(MAX(p.CreateAt), i.CreateAt) as LastStatusUpdateAt").
+				From("IR_Incident as i").
+				LeftJoin("IR_StatusPosts as sp on i.Id = sp.IncidentId").
+				LeftJoin("Posts as p on sp.PostId = p.Id").
+				GroupBy("i.Id")
+
+			if err := sqlStore.selectBuilder(e, &lastUpdateAts, lastUpdateAtSelect); err != nil {
+				return errors.Wrapf(err, "failed getting incidents to update their LastStatusUpdateAt")
+			}
+
+			for _, row := range lastUpdateAts {
+				incidentUpdate := sqlStore.builder.
+					Update("IR_Incident").
+					Set("LastStatusUpdateAt", row.LastStatusUpdateAt).
+					Where(sq.Eq{"ID": row.ID})
+
+				if _, err := sqlStore.execBuilder(e, incidentUpdate); err != nil {
+					return errors.Wrapf(err, "failed to update incident's LastStatusUpdateAt for id: %s", row.ID)
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+
+		fromVersion: semver.MustParse("0.22.0"),
+		toVersion:   semver.MustParse("0.23.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ExportChannelOnArchiveEnabled", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column ExportChannelOnArchiveEnabled to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ExportChannelOnArchiveEnabled", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column ExportChannelOnArchiveEnabled to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "ExportChannelOnArchiveEnabled", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column ExportChannelOnArchiveEnabled to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "ExportChannelOnArchiveEnabled", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column ExportChannelOnArchiveEnabled to table IR_Incident")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.23.0"),
+		toVersion:   semver.MustParse("0.24.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "CategorizeChannelEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {

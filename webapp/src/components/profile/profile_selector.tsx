@@ -190,7 +190,7 @@ export default function ProfileSelector(props: Props) {
                         toggleOpen();
                     }
                 }}
-                className={props.placeholderButtonClass || 'IncidentFilter-button'}
+                className={props.placeholderButtonClass || 'PlaybookRunFilter-button'}
             >
                 {props.placeholder}
                 {<i className='icon-chevron-down icon--small ml-2'/>}
@@ -244,8 +244,8 @@ export default function ProfileSelector(props: Props) {
                 tabSelectsValue={false}
                 value={selected}
                 onChange={(option, action) => onSelectedChange(option as Option, action as ActionObj)}
-                classNamePrefix='incident-user-select'
-                className='incident-user-select'
+                classNamePrefix='playbook-run-user-select'
+                className='playbook-run-user-select'
                 {...props.customControlProps}
             />
         </Dropdown>
@@ -303,14 +303,14 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
         return target;
     }
 
-    const classes = classNames('IncidentFilter', 'profile-dropdown',
-        'IncidentFilter--active', 'profile-dropdown--active', {'show-on-right': showOnRight});
+    const classes = classNames('PlaybookRunFilter', 'profile-dropdown',
+        'PlaybookRunFilter--active', 'profile-dropdown--active', {'show-on-right': showOnRight});
 
     return (
         <ProfileDropdown className={classes}>
             {target}
             <ChildContainer
-                className='IncidentFilter-select incident-user-select__container'
+                className='PlaybookRunFilter-select playbook-run-user-select__container'
                 moveUp={moveUp}
             >
                 {children}

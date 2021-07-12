@@ -18,14 +18,15 @@ import {Post} from 'mattermost-redux/types/posts';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
 
+import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
+
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel} from 'src/selectors';
-import {Incident, StatusPost} from 'src/types/incident';
 import {clientFetchPlaybooksCount} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
-import {isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from './license';
-import {currentTeamNumPlaybooks, globalSettings} from './selectors';
+import {isCloud, isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from './license';
+import {currentTeamNumPlaybooks, globalSettings, isCurrentUserAdmin} from './selectors';
 
 export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -158,6 +159,24 @@ export function useCanCreatePlaybooks() {
     return settings.playbook_creators_user_ids.includes(currentUserID);
 }
 
+export function useCanRestrictPlaybookCreation() {
+    const settings = useSelector(globalSettings);
+    const isAdmin = useSelector(isCurrentUserAdmin);
+    const currentUserID = useSelector(getCurrentUserId);
+
+    // This is really a loading state so just assume no.
+    if (!settings) {
+        return false;
+    }
+
+    // No restrictions if user is a system administrator.
+    if (isAdmin) {
+        return true;
+    }
+
+    return settings.playbook_creators_user_ids.includes(currentUserID);
+}
+
 const selectExperimentalFeatures = (state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features);
 
 export function useExperimentalFeaturesEnabled() {
@@ -213,8 +232,8 @@ export function usePost(postId: string) {
     return post;
 }
 
-export function useLatestUpdate(incident: Incident) {
-    const postId = getLatestPostId(incident.status_posts);
+export function useLatestUpdate(playbookRun: PlaybookRun) {
+    const postId = getLatestPostId(playbookRun.status_posts);
     return usePost(postId);
 }
 
@@ -268,6 +287,23 @@ export function useAllowPlaybookCreationRestriction() {
     return useSelector(isE20LicensedOrDevelopment);
 }
 
+// useAllowChannelExport returns whether exporting the channel is allowed
+export function useAllowChannelExport() {
+    return useSelector(isE20LicensedOrDevelopment);
+}
+
+// useAllowPlaybookStatsView returns whether the server is licensed to show
+// the stats in the playbook backstage dashboard
+export function useAllowPlaybookStatsView() {
+    return useSelector(isE20LicensedOrDevelopment);
+}
+
+// useAllowRetrospectiveAccess returns whether the server is licenced for
+// the retrospective feature.
+export function useAllowRetrospectiveAccess() {
+    return useSelector(isE10LicensedOrDevelopment);
+}
+
 export function useEnsureProfiles(userIds: string[]) {
     const dispatch = useDispatch();
     type StringToUserProfileFn = (id: string) => UserProfile;
@@ -284,4 +320,34 @@ export function useEnsureProfiles(userIds: string[]) {
     if (unknownIds.length > 0) {
         dispatch(getProfilesByIds(userIds));
     }
+}
+
+export function useOpenCloudModal() {
+    const dispatch = useDispatch();
+    const isServerCloud = useSelector(isCloud);
+
+    if (!isServerCloud) {
+        return () => { /*do nothing*/ };
+    }
+
+    // @ts-ignore
+    if (!window.WebappUtils?.modals?.openModal || !window.WebappUtils?.modals?.ModalIdentifiers?.CLOUD_PURCHASE || !window.Components?.PurchaseModal) {
+        // eslint-disable-next-line no-console
+        console.error('unable to open cloud modal');
+
+        return () => { /*do nothing*/ };
+    }
+
+    // @ts-ignore
+    const {openModal, ModalIdentifiers} = window.WebappUtils.modals;
+
+    // @ts-ignore
+    const PurchaseModal = window.Components.PurchaseModal;
+
+    return () => {
+        dispatch(openModal({
+            modalId: ModalIdentifiers.CLOUD_PURCHASE,
+            dialogType: PurchaseModal,
+        }));
+    };
 }

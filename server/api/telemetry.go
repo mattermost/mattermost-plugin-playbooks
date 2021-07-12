@@ -9,30 +9,34 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/permissions"
 )
 
 // TelemetryHandler is the API handler.
 type TelemetryHandler struct {
 	*ErrorHandler
-	incidentService   incident.Service
-	incidentTelemetry incident.Telemetry
-	botTelemetry      bot.Telemetry
-	pluginAPI         *pluginapi.Client
+	playbookRunService   app.PlaybookRunService
+	playbookRunTelemetry app.PlaybookRunTelemetry
+	playbookService      app.PlaybookService
+	playbookTelemetry    app.PlaybookTelemetry
+	botTelemetry         bot.Telemetry
+	pluginAPI            *pluginapi.Client
 }
 
 // NewTelemetryHandler Creates a new Plugin API handler.
-func NewTelemetryHandler(router *mux.Router, incidentService incident.Service,
-	api *pluginapi.Client, log bot.Logger, incidentTelemetry incident.Telemetry, botTelemetry bot.Telemetry, configService config.Service) *TelemetryHandler {
+func NewTelemetryHandler(router *mux.Router, playbookRunService app.PlaybookRunService,
+	api *pluginapi.Client, log bot.Logger, playbookRunTelemetry app.PlaybookRunTelemetry,
+	playbookService app.PlaybookService, playbookTelemetry app.PlaybookTelemetry,
+	botTelemetry bot.Telemetry) *TelemetryHandler {
 	handler := &TelemetryHandler{
-		ErrorHandler:      &ErrorHandler{log: log},
-		incidentService:   incidentService,
-		incidentTelemetry: incidentTelemetry,
-		botTelemetry:      botTelemetry,
-		pluginAPI:         api,
+		ErrorHandler:         &ErrorHandler{log: log},
+		playbookRunService:   playbookRunService,
+		playbookRunTelemetry: playbookRunTelemetry,
+		playbookService:      playbookService,
+		playbookTelemetry:    playbookTelemetry,
+		botTelemetry:         botTelemetry,
+		pluginAPI:            api,
 	}
 
 	telemetryRouter := router.PathPrefix("/telemetry").Subrouter()
@@ -40,26 +44,54 @@ func NewTelemetryHandler(router *mux.Router, incidentService incident.Service,
 	startTrialRouter := telemetryRouter.PathPrefix("/start-trial").Subrouter()
 	startTrialRouter.HandleFunc("", handler.startTrial).Methods(http.MethodPost)
 
-	incidentTelemetryRouterAuthorized := telemetryRouter.PathPrefix("/incident").Subrouter()
-	incidentTelemetryRouterAuthorized.Use(handler.checkViewPermissions)
-	incidentTelemetryRouterAuthorized.HandleFunc("/{id:[A-Za-z0-9]+}", handler.telemetryForIncident).Methods(http.MethodPost)
+	playbookRunTelemetryRouterAuthorized := telemetryRouter.PathPrefix("/run").Subrouter()
+	playbookRunTelemetryRouterAuthorized.Use(handler.checkPlaybookRunViewPermissions)
+	playbookRunTelemetryRouterAuthorized.HandleFunc("/{id:[A-Za-z0-9]+}", handler.telemetryForPlaybookRun).Methods(http.MethodPost)
+
+	playbookTelemetryRouterAuthorized := telemetryRouter.PathPrefix("/playbook").Subrouter()
+	playbookTelemetryRouterAuthorized.Use(handler.checkPlaybookViewPermissions)
+	playbookTelemetryRouterAuthorized.HandleFunc("/{id:[A-Za-z0-9]+}", handler.telemetryForPlaybook).Methods(http.MethodPost)
 
 	return handler
 }
 
-func (h *TelemetryHandler) checkViewPermissions(next http.Handler) http.Handler {
+func (h *TelemetryHandler) checkPlaybookRunViewPermissions(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		userID := r.Header.Get("Mattermost-User-ID")
 
-		incdnt, err := h.incidentService.GetIncident(vars["id"])
+		playbookRun, err := h.playbookRunService.GetPlaybookRun(vars["id"])
 		if err != nil {
 			h.HandleError(w, err)
 			return
 		}
 
-		if err := permissions.ViewIncidentFromChannelID(userID, incdnt.ChannelID, h.pluginAPI); err != nil {
-			if errors.Is(err, permissions.ErrNoPermissions) {
+		if err := app.ViewPlaybookRunFromChannelID(userID, playbookRun.ChannelID, h.pluginAPI); err != nil {
+			if errors.Is(err, app.ErrNoPermissions) {
+				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+				return
+			}
+			h.HandleError(w, err)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (h *TelemetryHandler) checkPlaybookViewPermissions(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		userID := r.Header.Get("Mattermost-User-ID")
+
+		playbook, err := h.playbookService.Get(vars["id"])
+		if err != nil {
+			h.HandleError(w, err)
+			return
+		}
+
+		if err := app.PlaybookAccess(userID, playbook, h.pluginAPI); err != nil {
+			if errors.Is(err, app.ErrNoPermissions) {
 				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
 			}
@@ -75,9 +107,9 @@ type TrackerPayload struct {
 	Action string `json:"action"`
 }
 
-// telemetryForIncident handles the /telemetry/incident/{id}?action=the_action endpoint. The frontend
-// can use this endpoint to track events that occur in the context of an incident
-func (h *TelemetryHandler) telemetryForIncident(w http.ResponseWriter, r *http.Request) {
+// telemetryForPlaybookRun handles the /telemetry/run/{id}?action=the_action endpoint. The frontend
+// can use this endpoint to track events that occur in the context of a playbook run.
+func (h *TelemetryHandler) telemetryForPlaybookRun(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -93,13 +125,13 @@ func (h *TelemetryHandler) telemetryForIncident(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	incdnt, err := h.incidentService.GetIncident(id)
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(id)
 	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
 
-	h.incidentTelemetry.FrontendTelemetryForIncident(incdnt, userID, params.Action)
+	h.playbookRunTelemetry.FrontendTelemetryForPlaybookRun(playbookRun, userID, params.Action)
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -113,21 +145,36 @@ func (h *TelemetryHandler) startTrial(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch params.Action {
-	case "start_trial_to_view_timeline":
-		h.botTelemetry.StartTrialToViewTimeline(userID)
-	case "start_trial_to_add_message_to_timeline":
-		h.botTelemetry.StartTrialToAddMessageToTimeline(userID)
-	case "start_trial_to_create_playbook":
-		h.botTelemetry.StartTrialToCreatePlaybook(userID)
-	case "start_trial_to_restrict_playbook_creation":
-		h.botTelemetry.StartTrialToRestrictPlaybookCreation(userID)
-	case "start_trial_to_restrict_playbook_access":
-		h.botTelemetry.StartTrialToRestrictPlaybookAccess(userID)
-	default:
-		h.HandleError(w, errors.New("unknown action"))
+	h.botTelemetry.StartTrial(userID, params.Action)
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// telemetryForPlaybook handles the /telemetry/playbook/{id}?action=the_action endpoint. The frontend
+// can use this endpoint to track events that occur in the context of a playbook.
+func (h *TelemetryHandler) telemetryForPlaybook(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var params TrackerPayload
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode post body", err)
 		return
 	}
+
+	if params.Action == "" {
+		h.HandleError(w, errors.New("must provide action"))
+		return
+	}
+
+	playbook, err := h.playbookService.Get(id)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	h.playbookTelemetry.FrontendTelemetryForPlaybook(playbook, userID, params.Action)
 
 	w.WriteHeader(http.StatusNoContent)
 }

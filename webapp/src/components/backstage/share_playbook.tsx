@@ -92,7 +92,7 @@ const SharePlaybook = (props: SharePlaybookProps) => {
             {enabled &&
                 <UserSelectorWrapper>
                     <BackstageSubheaderDescription>
-                        {'Only users who you select will be able to edit the playbook or create an incident from this playbook.'}
+                        {'Only users who you select will be able to edit or run this playbook.'}
                     </BackstageSubheaderDescription>
                     <SelectUsersBelow
                         userIds={props.playbook.member_ids}

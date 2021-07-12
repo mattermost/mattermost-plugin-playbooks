@@ -48,7 +48,7 @@ const Profile = (props: Props) => {
     }
 
     return (
-        <div className={classNames('IncidentProfile', props.classNames, props.className)}>
+        <div className={classNames('PlaybookRunProfile', props.classNames, props.className)}>
             {
                 !props.withoutProfilePic &&
                 <img

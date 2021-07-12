@@ -8,17 +8,18 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
 
 type sqlPlaybook struct {
-	playbook.Playbook
-	ChecklistsJSON              json.RawMessage
-	ConcatenatedInvitedUserIDs  string
-	ConcatenatedInvitedGroupIDs string
+	app.Playbook
+	ChecklistsJSON                json.RawMessage
+	ConcatenatedInvitedUserIDs    string
+	ConcatenatedInvitedGroupIDs   string
+	ConcatenatedSignalAnyKeywords string
 }
 
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
@@ -32,26 +33,80 @@ type playbookStore struct {
 }
 
 // Ensure playbookStore implements the playbook.Store interface.
-var _ playbook.Store = (*playbookStore)(nil)
+var _ app.PlaybookStore = (*playbookStore)(nil)
 
 type playbookMembers []struct {
 	PlaybookID string
 	MemberID   string
 }
 
+func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.PlaybookFilterOptions) (sq.SelectBuilder, error) {
+	var sort string
+	switch options.Sort {
+	case app.SortByID:
+		sort = "ID"
+	case app.SortByTitle:
+		sort = "Title"
+	case app.SortByStages:
+		sort = "NumStages"
+	case app.SortBySteps:
+		sort = "NumSteps"
+	case "":
+		// Default to a stable sort if none explicitly provided.
+		sort = "ID"
+	default:
+		return sq.SelectBuilder{}, errors.Errorf("unsupported sort parameter '%s'", options.Sort)
+	}
+
+	var direction string
+	switch options.Direction {
+	case app.DirectionAsc:
+		direction = "ASC"
+	case app.DirectionDesc:
+		direction = "DESC"
+	case "":
+		// Default to an ascending sort if none explicitly provided.
+		direction = "ASC"
+	default:
+		return sq.SelectBuilder{}, errors.Errorf("unsupported direction parameter '%s'", options.Direction)
+	}
+
+	builder = builder.OrderByClause(fmt.Sprintf("%s %s", sort, direction))
+
+	page := options.Page
+	perPage := options.PerPage
+	if page < 0 {
+		page = 0
+	}
+	if perPage < 0 {
+		perPage = 0
+	}
+
+	builder = builder.
+		Offset(uint64(page * perPage)).
+		Limit(uint64(perPage))
+
+	return builder, nil
+}
+
 // NewPlaybookStore creates a new store for playbook service.
-func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) playbook.Store {
+func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) app.PlaybookStore {
 	playbookSelect := sqlStore.builder.
-		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
-			"DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID",
+		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident AS CreatePublicPlaybookRun", "CreateAt",
+			"UpdateAt", "DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds",
 			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "InviteUsersEnabled",
-			"DefaultCommanderID", "DefaultCommanderEnabled",
+			"DefaultCommanderID AS DefaultOwnerID", "DefaultCommanderEnabled AS DefaultOwnerEnabled",
 			"AnnouncementChannelID", "AnnouncementChannelEnabled",
 			"WebhookOnCreationURL", "WebhookOnCreationEnabled",
 			"MessageOnJoin", "MessageOnJoinEnabled",
 			"RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveTemplate", "CategorizeChannelEnabled").
+			"RetrospectiveTemplate",
+			"WebhookOnStatusUpdateURL",
+			"WebhookOnStatusUpdateEnabled",
+			"ExportChannelOnArchiveEnabled",
+			"ConcatenatedSignalAnyKeywords", "SignalAnyKeywordsEnabled",
+			"CategorizeChannelEnabled").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -70,13 +125,13 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 }
 
 // Create creates a new playbook
-func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
-	if pbook.ID != "" {
+func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
+	if playbook.ID != "" {
 		return "", errors.New("ID should be empty")
 	}
-	pbook.ID = model.NewId()
+	playbook.ID = model.NewId()
 
-	rawPlaybook, err := toSQLPlaybook(pbook)
+	rawPlaybook, err := toSQLPlaybook(playbook)
 	if err != nil {
 		return "", err
 	}
@@ -94,8 +149,9 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"Title":                                rawPlaybook.Title,
 			"Description":                          rawPlaybook.Description,
 			"TeamID":                               rawPlaybook.TeamID,
-			"CreatePublicIncident":                 rawPlaybook.CreatePublicIncident,
+			"CreatePublicIncident":                 rawPlaybook.CreatePublicPlaybookRun,
 			"CreateAt":                             rawPlaybook.CreateAt,
+			"UpdateAt":                             rawPlaybook.UpdateAt,
 			"DeleteAt":                             rawPlaybook.DeleteAt,
 			"ChecklistsJSON":                       rawPlaybook.ChecklistsJSON,
 			"NumStages":                            len(rawPlaybook.Checklists),
@@ -106,8 +162,8 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"ConcatenatedInvitedUserIDs":           rawPlaybook.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":          rawPlaybook.ConcatenatedInvitedGroupIDs,
 			"InviteUsersEnabled":                   rawPlaybook.InviteUsersEnabled,
-			"DefaultCommanderID":                   rawPlaybook.DefaultCommanderID,
-			"DefaultCommanderEnabled":              rawPlaybook.DefaultCommanderEnabled,
+			"DefaultCommanderID":                   rawPlaybook.DefaultOwnerID,
+			"DefaultCommanderEnabled":              rawPlaybook.DefaultOwnerEnabled,
 			"AnnouncementChannelID":                rawPlaybook.AnnouncementChannelID,
 			"AnnouncementChannelEnabled":           rawPlaybook.AnnouncementChannelEnabled,
 			"WebhookOnCreationURL":                 rawPlaybook.WebhookOnCreationURL,
@@ -116,6 +172,11 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 			"MessageOnJoinEnabled":                 rawPlaybook.MessageOnJoinEnabled,
 			"RetrospectiveReminderIntervalSeconds": rawPlaybook.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
+			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
+			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
+			"ExportChannelOnArchiveEnabled":        rawPlaybook.ExportChannelOnArchiveEnabled,
+			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
+			"SignalAnyKeywordsEnabled":             rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":             rawPlaybook.CategorizeChannelEnabled,
 		}))
 	if err != nil {
@@ -134,14 +195,14 @@ func (p *playbookStore) Create(pbook playbook.Playbook) (id string, err error) {
 }
 
 // Get retrieves a playbook
-func (p *playbookStore) Get(id string) (out playbook.Playbook, err error) {
+func (p *playbookStore) Get(id string) (app.Playbook, error) {
 	if id == "" {
-		return out, errors.New("ID cannot be empty")
+		return app.Playbook{}, errors.New("ID cannot be empty")
 	}
 
 	tx, err := p.store.db.Beginx()
 	if err != nil {
-		return out, errors.Wrap(err, "could not begin transaction")
+		return app.Playbook{}, errors.Wrap(err, "could not begin transaction")
 	}
 	defer p.store.finalizeTransaction(tx)
 
@@ -152,49 +213,50 @@ func (p *playbookStore) Get(id string) (out playbook.Playbook, err error) {
 	var rawPlaybook sqlPlaybook
 	err = p.store.getBuilder(tx, &rawPlaybook, withChecklistsSelect.Where(sq.Eq{"ID": id}))
 	if err == sql.ErrNoRows {
-		return out, errors.Wrapf(playbook.ErrNotFound, "playbook does not exist for id '%s'", id)
+		return app.Playbook{}, errors.Wrapf(app.ErrNotFound, "playbook does not exist for id '%s'", id)
 	} else if err != nil {
-		return out, errors.Wrapf(err, "failed to get playbook by id '%s'", id)
+		return app.Playbook{}, errors.Wrapf(err, "failed to get playbook by id '%s'", id)
 	}
 
-	if out, err = toPlaybook(rawPlaybook); err != nil {
-		return out, err
+	playbook, err := toPlaybook(rawPlaybook)
+	if err != nil {
+		return app.Playbook{}, err
 	}
 
 	var memberIDs playbookMembers
 	err = p.store.selectBuilder(tx, &memberIDs, p.memberIDsSelect.Where(sq.Eq{"PlaybookID": id}))
 	if err != nil && err != sql.ErrNoRows {
-		return out, errors.Wrapf(err, "failed to get memberIDs for playbook with id '%s'", id)
+		return app.Playbook{}, errors.Wrapf(err, "failed to get memberIDs for playbook with id '%s'", id)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return out, errors.Wrap(err, "could not commit transaction")
+		return app.Playbook{}, errors.Wrap(err, "could not commit transaction")
 	}
 
 	for _, m := range memberIDs {
-		out.MemberIDs = append(out.MemberIDs, m.MemberID)
+		playbook.MemberIDs = append(playbook.MemberIDs, m.MemberID)
 	}
 
-	return out, nil
+	return playbook, nil
 }
 
 // GetPlaybooks retrieves all playbooks that are not deleted.
-func (p *playbookStore) GetPlaybooks() ([]playbook.Playbook, error) {
+func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 	tx, err := p.store.db.Beginx()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not begin transaction")
 	}
 	defer p.store.finalizeTransaction(tx)
 
-	var out []playbook.Playbook
-	err = p.store.selectBuilder(tx, &out, p.store.builder.
-		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
+	var playbooks []app.Playbook
+	err = p.store.selectBuilder(tx, &playbooks, p.store.builder.
+		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident AS CreatePublicPlaybookRun", "CreateAt",
 			"DeleteAt", "NumStages", "NumSteps").
 		From("IR_Playbook AS p").
 		Where(sq.Eq{"DeleteAt": 0}))
 
 	if err == sql.ErrNoRows {
-		return nil, errors.Wrap(playbook.ErrNotFound, "no playbooks found")
+		return nil, errors.Wrap(app.ErrNotFound, "no playbooks found")
 	} else if err != nil {
 		return nil, errors.Wrap(err, "failed to get playbooks")
 	}
@@ -209,15 +271,13 @@ func (p *playbookStore) GetPlaybooks() ([]playbook.Playbook, error) {
 		return nil, errors.Wrap(err, "could not commit transaction")
 	}
 
-	addMembersToPlaybooks(memberIDs, out)
+	addMembersToPlaybooks(memberIDs, playbooks)
 
-	return out, nil
+	return playbooks, nil
 }
 
 // GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options.
-func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo, teamID string, opts playbook.Options) (playbook.GetPlaybooksResults, error) {
-	correctPaginationOpts(&opts)
-
+func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, teamID string, opts app.PlaybookFilterOptions) (app.GetPlaybooksResults, error) {
 	// Check that you are a playbook member or there are no restrictions.
 	permissionsAndFilter := sq.Expr(`(
 			EXISTS(SELECT 1
@@ -230,27 +290,24 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo
 		)`, requesterInfo.UserID)
 
 	queryForResults := p.store.builder.
-		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident", "CreateAt",
+		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident AS CreatePublicPlaybookRun", "CreateAt",
 			"DeleteAt", "NumStages", "NumSteps").
 		From("IR_Playbook AS p").
 		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"TeamID": teamID}).
-		Where(permissionsAndFilter).
-		Offset(uint64(opts.Page * opts.PerPage)).
-		Limit(uint64(opts.PerPage))
+		Where(permissionsAndFilter)
 
-	if playbook.IsValidSort(opts.Sort) && playbook.IsValidDirection(opts.Direction) {
-		queryForResults = queryForResults.OrderBy(fmt.Sprintf("%s %s", sortOptionToSQL(opts.Sort), directionOptionToSQL(opts.Direction)))
-	} else if playbook.IsValidSort(opts.Sort) {
-		queryForResults = queryForResults.OrderBy(sortOptionToSQL(opts.Sort))
+	queryForResults, err := applyPlaybookFilterOptionsSort(queryForResults, opts)
+	if err != nil {
+		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to apply sort options")
 	}
 
-	var playbooks []playbook.Playbook
-	err := p.store.selectBuilder(p.store.db, &playbooks, queryForResults)
+	var playbooks []app.Playbook
+	err = p.store.selectBuilder(p.store.db, &playbooks, queryForResults)
 	if err == sql.ErrNoRows {
-		return playbook.GetPlaybooksResults{}, errors.Wrap(playbook.ErrNotFound, "no playbooks found")
+		return app.GetPlaybooksResults{}, errors.Wrap(app.ErrNotFound, "no playbooks found")
 	} else if err != nil {
-		return playbook.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbooks")
+		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbooks")
 	}
 
 	queryForTotal := p.store.builder.
@@ -262,12 +319,15 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo playbook.RequesterInfo
 
 	var total int
 	if err = p.store.getBuilder(p.store.db, &total, queryForTotal); err != nil {
-		return playbook.GetPlaybooksResults{}, errors.Wrap(err, "failed to get total count")
+		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get total count")
 	}
-	pageCount := int(math.Ceil(float64(total) / float64(opts.PerPage)))
+	pageCount := 0
+	if opts.PerPage > 0 {
+		pageCount = int(math.Ceil(float64(total) / float64(opts.PerPage)))
+	}
 	hasMore := opts.Page+1 < pageCount
 
-	return playbook.GetPlaybooksResults{
+	return app.GetPlaybooksResults{
 		TotalCount: total,
 		PageCount:  pageCount,
 		HasMore:    hasMore,
@@ -290,13 +350,94 @@ func (p *playbookStore) GetNumPlaybooksForTeam(teamID string) (int, error) {
 	return total, nil
 }
 
+// GetPlaybooksWithKeywords retrieves all playbooks with keywords enabled
+func (p *playbookStore) GetPlaybooksWithKeywords(opts app.PlaybookFilterOptions) ([]app.Playbook, error) {
+	queryForResults := p.store.builder.
+		Select("ID", "Title", "UpdateAt", "TeamID", "ConcatenatedSignalAnyKeywords").
+		From("IR_Playbook AS p").
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Eq{"SignalAnyKeywordsEnabled": true}).
+		Offset(uint64(opts.Page * opts.PerPage)).
+		Limit(uint64(opts.PerPage))
+
+	var rawPlaybooks []sqlPlaybook
+	err := p.store.selectBuilder(p.store.db, &rawPlaybooks, queryForResults)
+	if err == sql.ErrNoRows {
+		return []app.Playbook{}, nil
+	} else if err != nil {
+		return []app.Playbook{}, errors.Wrap(err, "failed to get playbooks")
+	}
+
+	playbooks := make([]app.Playbook, 0, len(rawPlaybooks))
+	for _, playbook := range rawPlaybooks {
+		out, err := toPlaybook(playbook)
+		if err != nil {
+			return nil, errors.Wrapf(err, "can't convert raw playbook to playbook type")
+		}
+		playbooks = append(playbooks, out)
+	}
+	return playbooks, nil
+}
+
+// GetTimeLastUpdated retrieves time last playbook was updated at.
+// Passed argument determins whether to include playbooks with
+// SignalAnyKeywordsEnabled flag or not.
+func (p *playbookStore) GetTimeLastUpdated(onlyPlaybooksWithKeywordsEnabled bool) (int64, error) {
+	queryForResults := p.store.builder.
+		Select("COALESCE(MAX(UpdateAt), 0)").
+		From("IR_Playbook AS p").
+		Where(sq.Eq{"DeleteAt": 0})
+	if onlyPlaybooksWithKeywordsEnabled {
+		queryForResults = queryForResults.Where(sq.Eq{"SignalAnyKeywordsEnabled": true})
+	}
+
+	var updateAt []int64
+	err := p.store.selectBuilder(p.store.db, &updateAt, queryForResults)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	} else if err != nil {
+		return 0, errors.Wrap(err, "failed to get playbooks")
+	}
+	return updateAt[0], nil
+}
+
+// GetPlaybookIDsForUser retrieves playbooks user can access
+// Notice that method is not checking weather or not user is member of a team
+func (p *playbookStore) GetPlaybookIDsForUser(userID string, teamID string) ([]string, error) {
+	// Check that you are a playbook member or there are no restrictions.
+	permissionsAndFilter := sq.Expr(`(
+		EXISTS(SELECT 1
+				FROM IR_PlaybookMember as pm
+				WHERE pm.PlaybookID = p.ID
+				AND pm.MemberID = ?)
+		OR NOT EXISTS(SELECT 1
+				FROM IR_PlaybookMember as pm
+				WHERE pm.PlaybookID = p.ID)
+	)`, userID)
+
+	queryForResults := p.store.builder.
+		Select("ID").
+		From("IR_Playbook AS p").
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(sq.Eq{"TeamID": teamID}).
+		Where(permissionsAndFilter)
+
+	var playbookIDs []string
+
+	err := p.store.selectBuilder(p.store.db, &playbookIDs, queryForResults)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, errors.Wrapf(err, "failed to get playbookIDs for a user - %v", userID)
+	}
+	return playbookIDs, nil
+}
+
 // Update updates a playbook
-func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
-	if updated.ID == "" {
+func (p *playbookStore) Update(playbook app.Playbook) (err error) {
+	if playbook.ID == "" {
 		return errors.New("id should not be empty")
 	}
 
-	rawPlaybook, err := toSQLPlaybook(updated)
+	rawPlaybook, err := toSQLPlaybook(playbook)
 	if err != nil {
 		return err
 	}
@@ -313,7 +454,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"Title":                                rawPlaybook.Title,
 			"Description":                          rawPlaybook.Description,
 			"TeamID":                               rawPlaybook.TeamID,
-			"CreatePublicIncident":                 rawPlaybook.CreatePublicIncident,
+			"CreatePublicIncident":                 rawPlaybook.CreatePublicPlaybookRun,
+			"UpdateAt":                             rawPlaybook.UpdateAt,
 			"DeleteAt":                             rawPlaybook.DeleteAt,
 			"ChecklistsJSON":                       rawPlaybook.ChecklistsJSON,
 			"NumStages":                            len(rawPlaybook.Checklists),
@@ -324,8 +466,8 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"ConcatenatedInvitedUserIDs":           rawPlaybook.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":          rawPlaybook.ConcatenatedInvitedGroupIDs,
 			"InviteUsersEnabled":                   rawPlaybook.InviteUsersEnabled,
-			"DefaultCommanderID":                   rawPlaybook.DefaultCommanderID,
-			"DefaultCommanderEnabled":              rawPlaybook.DefaultCommanderEnabled,
+			"DefaultCommanderID":                   rawPlaybook.DefaultOwnerID,
+			"DefaultCommanderEnabled":              rawPlaybook.DefaultOwnerEnabled,
 			"AnnouncementChannelID":                rawPlaybook.AnnouncementChannelID,
 			"AnnouncementChannelEnabled":           rawPlaybook.AnnouncementChannelEnabled,
 			"WebhookOnCreationURL":                 rawPlaybook.WebhookOnCreationURL,
@@ -334,6 +476,11 @@ func (p *playbookStore) Update(updated playbook.Playbook) (err error) {
 			"MessageOnJoinEnabled":                 rawPlaybook.MessageOnJoinEnabled,
 			"RetrospectiveReminderIntervalSeconds": rawPlaybook.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
+			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
+			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
+			"ExportChannelOnArchiveEnabled":        rawPlaybook.ExportChannelOnArchiveEnabled,
+			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
+			"SignalAnyKeywordsEnabled":             rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":             rawPlaybook.CategorizeChannelEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
@@ -372,16 +519,16 @@ func (p *playbookStore) Delete(id string) error {
 }
 
 // replacePlaybookMembers replaces the members of a playbook
-func (p *playbookStore) replacePlaybookMembers(q queryExecer, pbook playbook.Playbook) error {
-	// Delete existing members who are not in the new pbook.MemberIDs list
+func (p *playbookStore) replacePlaybookMembers(q queryExecer, playbook app.Playbook) error {
+	// Delete existing members who are not in the new playbook.MemberIDs list
 	delBuilder := sq.Delete("IR_PlaybookMember").
-		Where(sq.Eq{"PlaybookID": pbook.ID}).
-		Where(sq.NotEq{"MemberID": pbook.MemberIDs})
+		Where(sq.Eq{"PlaybookID": playbook.ID}).
+		Where(sq.NotEq{"MemberID": playbook.MemberIDs})
 	if _, err := p.store.execBuilder(q, delBuilder); err != nil {
 		return err
 	}
 
-	if len(pbook.MemberIDs) == 0 {
+	if len(playbook.MemberIDs) == 0 {
 		return nil
 	}
 
@@ -402,9 +549,9 @@ INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
     );`
 	}
 
-	for _, m := range pbook.MemberIDs {
+	for _, m := range playbook.MemberIDs {
 		rawInsert := sq.Expr(insertExpr,
-			pbook.ID, m, pbook.ID, m)
+			playbook.ID, m, playbook.ID, m)
 
 		if _, err := p.store.execBuilder(q, rawInsert); err != nil {
 			return err
@@ -414,43 +561,46 @@ INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
 	return nil
 }
 
-func addMembersToPlaybooks(memberIDs playbookMembers, out []playbook.Playbook) {
+func addMembersToPlaybooks(memberIDs playbookMembers, playbook []app.Playbook) {
 	pToM := make(map[string][]string)
 	for _, m := range memberIDs {
 		pToM[m.PlaybookID] = append(pToM[m.PlaybookID], m.MemberID)
 	}
-	for i, p := range out {
-		out[i].MemberIDs = pToM[p.ID]
+	for i, p := range playbook {
+		playbook[i].MemberIDs = pToM[p.ID]
 	}
 }
 
-func getSteps(pbook playbook.Playbook) int {
+func getSteps(playbook app.Playbook) int {
 	steps := 0
-	for _, p := range pbook.Checklists {
+	for _, p := range playbook.Checklists {
 		steps += len(p.Items)
 	}
 
 	return steps
 }
 
-func toSQLPlaybook(origPlaybook playbook.Playbook) (*sqlPlaybook, error) {
-	checklistsJSON, err := json.Marshal(origPlaybook.Checklists)
+func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
+	checklistsJSON, err := json.Marshal(playbook.Checklists)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to marshal checklist json for incident id: '%s'", origPlaybook.ID)
+		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook id: '%s'", playbook.ID)
 	}
 
 	return &sqlPlaybook{
-		Playbook:                    origPlaybook,
-		ChecklistsJSON:              checklistsJSON,
-		ConcatenatedInvitedUserIDs:  strings.Join(origPlaybook.InvitedUserIDs, ","),
-		ConcatenatedInvitedGroupIDs: strings.Join(origPlaybook.InvitedGroupIDs, ","),
+		Playbook:                      playbook,
+		ChecklistsJSON:                checklistsJSON,
+		ConcatenatedInvitedUserIDs:    strings.Join(playbook.InvitedUserIDs, ","),
+		ConcatenatedInvitedGroupIDs:   strings.Join(playbook.InvitedGroupIDs, ","),
+		ConcatenatedSignalAnyKeywords: strings.Join(playbook.SignalAnyKeywords, ","),
 	}, nil
 }
 
-func toPlaybook(rawPlaybook sqlPlaybook) (playbook.Playbook, error) {
+func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 	p := rawPlaybook.Playbook
-	if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
-		return playbook.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+	if len(rawPlaybook.ChecklistsJSON) > 0 {
+		if err := json.Unmarshal(rawPlaybook.ChecklistsJSON, &p.Checklists); err != nil {
+			return app.Playbook{}, errors.Wrapf(err, "failed to unmarshal checklists json for playbook id: '%s'", p.ID)
+		}
 	}
 
 	p.InvitedUserIDs = []string(nil)
@@ -463,38 +613,9 @@ func toPlaybook(rawPlaybook sqlPlaybook) (playbook.Playbook, error) {
 		p.InvitedGroupIDs = strings.Split(rawPlaybook.ConcatenatedInvitedGroupIDs, ",")
 	}
 
+	p.SignalAnyKeywords = []string(nil)
+	if rawPlaybook.ConcatenatedSignalAnyKeywords != "" {
+		p.SignalAnyKeywords = strings.Split(rawPlaybook.ConcatenatedSignalAnyKeywords, ",")
+	}
 	return p, nil
-}
-
-func sortOptionToSQL(sort playbook.SortField) string {
-	switch sort {
-	case playbook.SortByTitle, "":
-		return "Title"
-	case playbook.SortByStages:
-		return "NumStages"
-	case playbook.SortBySteps:
-		return "NumSteps"
-	default:
-		return ""
-	}
-}
-
-func directionOptionToSQL(direction playbook.SortDirection) string {
-	switch direction {
-	case playbook.DirectionAsc, "":
-		return "ASC"
-	case playbook.DirectionDesc:
-		return "DESC"
-	default:
-		return ""
-	}
-}
-
-func correctPaginationOpts(opts *playbook.Options) {
-	if opts.PerPage <= 0 {
-		opts.PerPage = 1000
-	}
-	if opts.Page < 0 {
-		opts.Page = 0
-	}
 }

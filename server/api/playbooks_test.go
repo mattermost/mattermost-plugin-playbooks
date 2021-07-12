@@ -12,11 +12,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
+	mock_app "github.com/mattermost/mattermost-plugin-incident-collaboration/server/app/mocks"
 	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
 	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
-	mock_playbook "github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/pkg/errors"
@@ -26,8 +26,8 @@ import (
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
 
-func jsonPlaybookReader(pbook playbook.Playbook) io.Reader {
-	jsonBytes, err := json.Marshal(pbook)
+func jsonPlaybookReader(playbook app.Playbook) io.Reader {
+	jsonBytes, err := json.Marshal(playbook)
 	if err != nil {
 		panic(err)
 	}
@@ -35,13 +35,13 @@ func jsonPlaybookReader(pbook playbook.Playbook) io.Reader {
 }
 
 func TestPlaybooks(t *testing.T) {
-	playbooktest := playbook.Playbook{
+	playbooktest := app.Playbook{
 		Title:  "My Playbook",
 		TeamID: "testteamid",
-		Checklists: []playbook.Checklist{
+		Checklists: []app.Checklist{
 			{
 				Title: "Do these things",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Do this",
 					},
@@ -52,14 +52,14 @@ func TestPlaybooks(t *testing.T) {
 		InvitedUserIDs:  []string{},
 		InvitedGroupIDs: []string{},
 	}
-	withid := playbook.Playbook{
+	withid := app.Playbook{
 		ID:     "testplaybookid",
 		Title:  "My Playbook",
 		TeamID: "testteamid",
-		Checklists: []playbook.Checklist{
+		Checklists: []app.Checklist{
 			{
 				Title: "Do these things",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Do this",
 					},
@@ -71,14 +71,14 @@ func TestPlaybooks(t *testing.T) {
 		InvitedGroupIDs: []string{},
 	}
 
-	withMember := playbook.Playbook{
+	withMember := app.Playbook{
 		ID:     "playbookwithmember",
 		Title:  "My Playbook",
 		TeamID: "testteamid",
-		Checklists: []playbook.Checklist{
+		Checklists: []app.Checklist{
 			{
 				Title: "Do these things",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Do this",
 					},
@@ -89,14 +89,14 @@ func TestPlaybooks(t *testing.T) {
 		InvitedUserIDs:  []string{},
 		InvitedGroupIDs: []string{},
 	}
-	withBroadcastChannel := playbook.Playbook{
+	withBroadcastChannel := app.Playbook{
 		ID:     "testplaybookid",
 		Title:  "My Playbook",
 		TeamID: "testteamid",
-		Checklists: []playbook.Checklist{
+		Checklists: []app.Checklist{
 			{
 				Title: "Do these things",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Do this",
 					},
@@ -114,7 +114,7 @@ func TestPlaybooks(t *testing.T) {
 	var logger *mock_poster.MockLogger
 	var poster *mock_poster.MockPoster
 	var configService *mock_config.MockService
-	var playbookService *mock_playbook.MockService
+	var playbookService *mock_app.MockPlaybookService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
 	mattermostUserID := "testuserid"
@@ -140,10 +140,10 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
+		playbookService = mock_app.NewMockPlaybookService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 
@@ -167,10 +167,10 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
+		playbookService = mock_app.NewMockPlaybookService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 
@@ -217,10 +217,10 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
+		playbookService = mock_app.NewMockPlaybookService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 
@@ -270,8 +270,8 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		playbookService = mock_app.NewMockPlaybookService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		handler = NewHandler(client, configService, logger)
@@ -329,8 +329,8 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		playbookService = mock_app.NewMockPlaybookService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		handler = NewHandler(client, configService, logger)
@@ -388,8 +388,8 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		playbookService = mock_app.NewMockPlaybookService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		handler = NewHandler(client, configService, logger)
@@ -442,8 +442,8 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		playbookService = mock_app.NewMockPlaybookService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		handler = NewHandler(client, configService, logger)
@@ -503,8 +503,8 @@ func TestPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		playbookService = mock_app.NewMockPlaybookService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		poster = mock_poster.NewMockPoster(mockCtrl)
 		handler = NewHandler(client, configService, logger)
@@ -628,10 +628,10 @@ func TestPlaybooks(t *testing.T) {
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
-			Checklists: toAPIChecklists([]playbook.Checklist{
+			Checklists: toAPIChecklists([]app.Checklist{
 				{
 					Title: "Do these things",
-					Items: []playbook.ChecklistItem{
+					Items: []app.ChecklistItem{
 						{
 							Title: "Do this",
 						},
@@ -647,13 +647,13 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("create playbook with invited users and groups", func(t *testing.T) {
 		reset(t)
 
-		pbook := playbook.Playbook{
+		playbook := app.Playbook{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
-			Checklists: []playbook.Checklist{
+			Checklists: []app.Checklist{
 				{
 					Title: "Do these things",
-					Items: []playbook.ChecklistItem{
+					Items: []app.ChecklistItem{
 						{
 							Title: "Do this",
 						},
@@ -667,7 +667,7 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		playbookService.EXPECT().
-			Create(pbook, "testuserid").
+			Create(playbook, "testuserid").
 			Return(model.NewId(), nil).
 			Times(1)
 
@@ -693,10 +693,10 @@ func TestPlaybooks(t *testing.T) {
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
-			Checklists: toAPIChecklists([]playbook.Checklist{
+			Checklists: toAPIChecklists([]app.Checklist{
 				{
 					Title: "Do these things",
-					Items: []playbook.ChecklistItem{
+					Items: []app.ChecklistItem{
 						{
 							Title: "Do this",
 						},
@@ -715,13 +715,13 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("create playbook with invited users and groups, invite disabled", func(t *testing.T) {
 		reset(t)
 
-		pbook := playbook.Playbook{
+		playbook := app.Playbook{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
-			Checklists: []playbook.Checklist{
+			Checklists: []app.Checklist{
 				{
 					Title: "Do these things",
-					Items: []playbook.ChecklistItem{
+					Items: []app.ChecklistItem{
 						{
 							Title: "Do this",
 						},
@@ -735,7 +735,7 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		playbookService.EXPECT().
-			Create(pbook, "testuserid").
+			Create(playbook, "testuserid").
 			Return(model.NewId(), nil).
 			Times(1)
 
@@ -761,10 +761,10 @@ func TestPlaybooks(t *testing.T) {
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
-			Checklists: toAPIChecklists([]playbook.Checklist{
+			Checklists: toAPIChecklists([]app.Checklist{
 				{
 					Title: "Do these things",
-					Items: []playbook.ChecklistItem{
+					Items: []app.ChecklistItem{
 						{
 							Title: "Do this",
 						},
@@ -784,13 +784,13 @@ func TestPlaybooks(t *testing.T) {
 		reset(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		pbook := playbook.Playbook{
+		playbook := app.Playbook{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
-			Checklists: []playbook.Checklist{
+			Checklists: []app.Checklist{
 				{
 					Title: "Do these things",
-					Items: []playbook.ChecklistItem{
+					Items: []app.ChecklistItem{
 						{
 							Title: "Do this",
 						},
@@ -804,7 +804,7 @@ func TestPlaybooks(t *testing.T) {
 		}
 
 		playbookService.EXPECT().
-			Create(pbook, "testuserid").
+			Create(playbook, "testuserid").
 			Return(model.NewId(), nil).
 			Times(1)
 
@@ -825,10 +825,10 @@ func TestPlaybooks(t *testing.T) {
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
-			Checklists: toAPIChecklists([]playbook.Checklist{
+			Checklists: toAPIChecklists([]app.Checklist{
 				{
 					Title: "Do these things",
-					Items: []playbook.ChecklistItem{
+					Items: []app.ChecklistItem{
 						{
 							Title: "Do this",
 						},
@@ -864,23 +864,23 @@ func TestPlaybooks(t *testing.T) {
 		reset(t)
 
 		playbookResult := struct {
-			TotalCount int                 `json:"total_count"`
-			PageCount  int                 `json:"page_count"`
-			HasMore    bool                `json:"has_more"`
-			Items      []playbook.Playbook `json:"items"`
+			TotalCount int            `json:"total_count"`
+			PageCount  int            `json:"page_count"`
+			HasMore    bool           `json:"has_more"`
+			Items      []app.Playbook `json:"items"`
 		}{
 			TotalCount: 2,
 			PageCount:  1,
 			HasMore:    false,
-			Items:      []playbook.Playbook{playbooktest, playbooktest},
+			Items:      []app.Playbook{playbooktest, playbooktest},
 		}
 
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
-				playbook.RequesterInfo{
-					UserID:          "testuserid",
-					TeamID:          "testteamid",
-					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+				app.RequesterInfo{
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: true,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -909,23 +909,23 @@ func TestPlaybooks(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
 		playbookResult := struct {
-			TotalCount int                 `json:"total_count"`
-			PageCount  int                 `json:"page_count"`
-			HasMore    bool                `json:"has_more"`
-			Items      []playbook.Playbook `json:"items"`
+			TotalCount int            `json:"total_count"`
+			PageCount  int            `json:"page_count"`
+			HasMore    bool           `json:"has_more"`
+			Items      []app.Playbook `json:"items"`
 		}{
 			TotalCount: 2,
 			PageCount:  1,
 			HasMore:    false,
-			Items:      []playbook.Playbook{playbooktest, playbooktest},
+			Items:      []app.Playbook{playbooktest, playbooktest},
 		}
 
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
-				playbook.RequesterInfo{
-					UserID:          "testuserid",
-					TeamID:          "testteamid",
-					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+				app.RequesterInfo{
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: true,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -946,24 +946,23 @@ func TestPlaybooks(t *testing.T) {
 		reset(t)
 
 		playbookResult := struct {
-			TotalCount int                 `json:"total_count"`
-			PageCount  int                 `json:"page_count"`
-			HasMore    bool                `json:"has_more"`
-			Items      []playbook.Playbook `json:"items"`
+			TotalCount int            `json:"total_count"`
+			PageCount  int            `json:"page_count"`
+			HasMore    bool           `json:"has_more"`
+			Items      []app.Playbook `json:"items"`
 		}{
 			TotalCount: 2,
 			PageCount:  1,
 			HasMore:    false,
-			Items:      []playbook.Playbook{playbooktest, playbooktest},
+			Items:      []app.Playbook{playbooktest, playbooktest},
 		}
 
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
-				playbook.RequesterInfo{
-					UserID:          "testuserid",
-					TeamID:          "testteamid",
-					UserIDtoIsAdmin: map[string]bool{"testuserid": true},
-					MemberOnly:      true,
+				app.RequesterInfo{
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: true,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -975,9 +974,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{
-			MemberOnly: true,
-		})
+		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{})
 		require.NoError(t, err)
 
 		expectedList := &icClient.GetPlaybooksResults{
@@ -1054,13 +1051,13 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("update playbook with invited users and groups", func(t *testing.T) {
 		reset(t)
 
-		pbook := playbook.Playbook{
+		playbook := app.Playbook{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
-			Checklists: []playbook.Checklist{
+			Checklists: []app.Checklist{
 				{
 					Title: "Do these things",
-					Items: []playbook.ChecklistItem{
+					Items: []app.ChecklistItem{
 						{
 							Title: "Do this",
 						},
@@ -1072,21 +1069,22 @@ func TestPlaybooks(t *testing.T) {
 			InviteUsersEnabled: true,
 			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
 			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:  []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(pbook))
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(playbook))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
-			Return(pbook, nil).
+			Return(playbook, nil).
 			Times(1)
 
-		pbook.ID = "testplaybookid"
+		playbook.ID = "testplaybookid"
 		playbookService.EXPECT().
-			Update(pbook, "testuserid").
+			Update(playbook, "testuserid").
 			Return(nil).
 			Times(1)
 
@@ -1111,13 +1109,13 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("update playbook with invited users and groups, invite disabled", func(t *testing.T) {
 		reset(t)
 
-		pbook := playbook.Playbook{
+		playbook := app.Playbook{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
-			Checklists: []playbook.Checklist{
+			Checklists: []app.Checklist{
 				{
 					Title: "Do these things",
-					Items: []playbook.ChecklistItem{
+					Items: []app.ChecklistItem{
 						{
 							Title: "Do this",
 						},
@@ -1129,21 +1127,22 @@ func TestPlaybooks(t *testing.T) {
 			InviteUsersEnabled: false,
 			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
 			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:  []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(pbook))
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(playbook))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
-			Return(pbook, nil).
+			Return(playbook, nil).
 			Times(1)
 
-		pbook.ID = "testplaybookid"
+		playbook.ID = "testplaybookid"
 		playbookService.EXPECT().
-			Update(pbook, "testuserid").
+			Update(playbook, "testuserid").
 			Return(nil).
 			Times(1)
 
@@ -1169,13 +1168,13 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("update playbook with invited users and groups, group disallowing mention", func(t *testing.T) {
 		reset(t)
 
-		pbook := playbook.Playbook{
+		playbook := app.Playbook{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
-			Checklists: []playbook.Checklist{
+			Checklists: []app.Checklist{
 				{
 					Title: "Do these things",
-					Items: []playbook.ChecklistItem{
+					Items: []app.ChecklistItem{
 						{
 							Title: "Do this",
 						},
@@ -1187,23 +1186,24 @@ func TestPlaybooks(t *testing.T) {
 			InviteUsersEnabled: false,
 			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
 			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:  []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(pbook))
+		testreq, err := http.NewRequest("PUT", "/api/v0/playbooks/testplaybookid", jsonPlaybookReader(playbook))
 		testreq.Header.Add("Mattermost-User-ID", "testuserid")
 		require.NoError(t, err)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
-			Return(pbook, nil).
+			Return(playbook, nil).
 			Times(1)
 
-		pbook.ID = "testplaybookid"
-		pbook.InvitedGroupIDs = []string{"testInvitedGroupID1"}
+		playbook.ID = "testplaybookid"
+		playbook.InvitedGroupIDs = []string{"testInvitedGroupID1"}
 
 		playbookService.EXPECT().
-			Update(pbook, "testuserid").
+			Update(playbook, "testuserid").
 			Return(nil).
 			Times(1)
 
@@ -1455,23 +1455,23 @@ func TestPlaybooks(t *testing.T) {
 		reset(t)
 
 		playbookResult := struct {
-			TotalCount int                 `json:"total_count"`
-			PageCount  int                 `json:"page_count"`
-			HasMore    bool                `json:"has_more"`
-			Items      []playbook.Playbook `json:"items"`
+			TotalCount int            `json:"total_count"`
+			PageCount  int            `json:"page_count"`
+			HasMore    bool           `json:"has_more"`
+			Items      []app.Playbook `json:"items"`
 		}{
 			TotalCount: 1,
 			PageCount:  1,
 			HasMore:    false,
-			Items:      []playbook.Playbook{withMember},
+			Items:      []app.Playbook{withMember},
 		}
 
 		playbookService.EXPECT().
 			GetPlaybooksForTeam(
-				playbook.RequesterInfo{
-					UserID:          "testuserid",
-					TeamID:          "testteamid",
-					UserIDtoIsAdmin: map[string]bool{"testuserid": false},
+				app.RequesterInfo{
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: false,
 				},
 				"testteamid",
 				gomock.Any(),
@@ -1497,13 +1497,13 @@ func TestPlaybooks(t *testing.T) {
 }
 
 func TestSortingPlaybooks(t *testing.T) {
-	playbooktest1 := playbook.Playbook{
+	playbooktest1 := app.Playbook{
 		Title:  "A",
 		TeamID: "testteamid",
-		Checklists: []playbook.Checklist{
+		Checklists: []app.Checklist{
 			{
 				Title: "A",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Do this1",
 					},
@@ -1511,13 +1511,13 @@ func TestSortingPlaybooks(t *testing.T) {
 			},
 		},
 	}
-	playbooktest2 := playbook.Playbook{
+	playbooktest2 := app.Playbook{
 		Title:  "B",
 		TeamID: "testteamid",
-		Checklists: []playbook.Checklist{
+		Checklists: []app.Checklist{
 			{
 				Title: "B",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Do this1",
 					},
@@ -1528,7 +1528,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			},
 			{
 				Title: "B",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Do this1",
 					},
@@ -1539,13 +1539,13 @@ func TestSortingPlaybooks(t *testing.T) {
 			},
 		},
 	}
-	playbooktest3 := playbook.Playbook{
+	playbooktest3 := app.Playbook{
 		Title:  "C",
 		TeamID: "testteamid",
-		Checklists: []playbook.Checklist{
+		Checklists: []app.Checklist{
 			{
 				Title: "C",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Do this1",
 					},
@@ -1559,7 +1559,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			},
 			{
 				Title: "C",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Do this1",
 					},
@@ -1573,7 +1573,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			},
 			{
 				Title: "C",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						Title: "Do this1",
 					},
@@ -1592,7 +1592,7 @@ func TestSortingPlaybooks(t *testing.T) {
 	var handler *Handler
 	var logger *mock_poster.MockLogger
 	var configService *mock_config.MockService
-	var playbookService *mock_playbook.MockService
+	var playbookService *mock_app.MockPlaybookService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
 
@@ -1616,10 +1616,10 @@ func TestSortingPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
+		playbookService = mock_app.NewMockPlaybookService(mockCtrl)
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 	}
@@ -1628,7 +1628,7 @@ func TestSortingPlaybooks(t *testing.T) {
 		testName           string
 		sortField          icClient.Sort
 		sortDirection      icClient.SortDirection
-		expectedList       []playbook.Playbook
+		expectedList       []app.Playbook
 		expectedErr        error
 		expectedStatusCode int
 	}{
@@ -1652,7 +1652,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			testName:           "get playbooks with no sort fields",
 			sortField:          "",
 			sortDirection:      "",
-			expectedList:       []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+			expectedList:       []app.Playbook{playbooktest1, playbooktest2, playbooktest3},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
 		},
@@ -1660,7 +1660,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			testName:           "get playbooks with sort=title direction=asc",
 			sortField:          icClient.SortByTitle,
 			sortDirection:      "asc",
-			expectedList:       []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+			expectedList:       []app.Playbook{playbooktest1, playbooktest2, playbooktest3},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
 		},
@@ -1668,7 +1668,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			testName:           "get playbooks with sort=title direction=desc",
 			sortField:          icClient.SortByTitle,
 			sortDirection:      "desc",
-			expectedList:       []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
+			expectedList:       []app.Playbook{playbooktest3, playbooktest2, playbooktest1},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
 		},
@@ -1676,7 +1676,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			testName:           "get playbooks with sort=stages direction=asc",
 			sortField:          icClient.SortByStages,
 			sortDirection:      "asc",
-			expectedList:       []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+			expectedList:       []app.Playbook{playbooktest1, playbooktest2, playbooktest3},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
 		},
@@ -1684,7 +1684,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			testName:           "get playbooks with sort=stages direction=desc",
 			sortField:          icClient.SortByStages,
 			sortDirection:      "desc",
-			expectedList:       []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
+			expectedList:       []app.Playbook{playbooktest3, playbooktest2, playbooktest1},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
 		},
@@ -1692,7 +1692,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			testName:           "get playbooks with sort=steps direction=asc",
 			sortField:          icClient.SortBySteps,
 			sortDirection:      "asc",
-			expectedList:       []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+			expectedList:       []app.Playbook{playbooktest1, playbooktest2, playbooktest3},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
 		},
@@ -1700,7 +1700,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			testName:           "get playbooks with sort=steps direction=desc",
 			sortField:          icClient.SortBySteps,
 			sortDirection:      "desc",
-			expectedList:       []playbook.Playbook{playbooktest3, playbooktest2, playbooktest1},
+			expectedList:       []app.Playbook{playbooktest3, playbooktest2, playbooktest1},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
 		},
@@ -1715,10 +1715,10 @@ func TestSortingPlaybooks(t *testing.T) {
 			}
 
 			playbookResult := struct {
-				TotalCount int                 `json:"total_count"`
-				PageCount  int                 `json:"page_count"`
-				HasMore    bool                `json:"has_more"`
-				Items      []playbook.Playbook `json:"items"`
+				TotalCount int            `json:"total_count"`
+				PageCount  int            `json:"page_count"`
+				HasMore    bool           `json:"has_more"`
+				Items      []app.Playbook `json:"items"`
 			}{
 				TotalCount: 3,
 				PageCount:  1,
@@ -1728,10 +1728,10 @@ func TestSortingPlaybooks(t *testing.T) {
 
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(
-					playbook.RequesterInfo{
-						UserID:          "testuserid",
-						TeamID:          "testteamid",
-						UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+					app.RequesterInfo{
+						UserID:  "testuserid",
+						TeamID:  "testteamid",
+						IsAdmin: true,
 					},
 					"testteamid",
 					gomock.Any(),
@@ -1768,26 +1768,26 @@ func TestSortingPlaybooks(t *testing.T) {
 }
 
 func TestPagingPlaybooks(t *testing.T) {
-	playbooktest1 := playbook.Playbook{
+	playbooktest1 := app.Playbook{
 		Title:           "A",
 		TeamID:          "testteamid",
-		Checklists:      []playbook.Checklist{},
+		Checklists:      []app.Checklist{},
 		MemberIDs:       []string{},
 		InvitedUserIDs:  []string{},
 		InvitedGroupIDs: []string{},
 	}
-	playbooktest2 := playbook.Playbook{
+	playbooktest2 := app.Playbook{
 		Title:           "B",
 		TeamID:          "testteamid",
-		Checklists:      []playbook.Checklist{},
+		Checklists:      []app.Checklist{},
 		MemberIDs:       []string{},
 		InvitedUserIDs:  []string{},
 		InvitedGroupIDs: []string{},
 	}
-	playbooktest3 := playbook.Playbook{
+	playbooktest3 := app.Playbook{
 		Title:           "C",
 		TeamID:          "testteamid",
-		Checklists:      []playbook.Checklist{},
+		Checklists:      []app.Checklist{},
 		MemberIDs:       []string{},
 		InvitedUserIDs:  []string{},
 		InvitedGroupIDs: []string{},
@@ -1797,7 +1797,7 @@ func TestPagingPlaybooks(t *testing.T) {
 	var handler *Handler
 	var configService *mock_config.MockService
 	var logger *mock_poster.MockLogger
-	var playbookService *mock_playbook.MockService
+	var playbookService *mock_app.MockPlaybookService
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
 
@@ -1821,10 +1821,10 @@ func TestPagingPlaybooks(t *testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
-		client = pluginapi.NewClient(pluginAPI)
+		client = pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
 		logger = mock_poster.NewMockLogger(mockCtrl)
 		handler = NewHandler(client, configService, logger)
-		playbookService = mock_playbook.NewMockService(mockCtrl)
+		playbookService = mock_app.NewMockPlaybookService(mockCtrl)
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 	}
 
@@ -1832,7 +1832,7 @@ func TestPagingPlaybooks(t *testing.T) {
 		testName           string
 		page               int
 		perPage            int
-		expectedResult     playbook.GetPlaybooksResults
+		expectedResult     app.GetPlaybooksResults
 		emptyStore         bool
 		expectedErr        error
 		expectedStatusCode int
@@ -1841,7 +1841,7 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName:           "get playbooks with negative page values",
 			page:               -1,
 			perPage:            -1,
-			expectedResult:     playbook.GetPlaybooksResults{},
+			expectedResult:     app.GetPlaybooksResults{},
 			expectedErr:        errors.New("bad parameter"),
 			expectedStatusCode: http.StatusBadRequest,
 		},
@@ -1849,11 +1849,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=0 per_page=0 with empty store",
 			page:     0,
 			perPage:  0,
-			expectedResult: playbook.GetPlaybooksResults{
+			expectedResult: app.GetPlaybooksResults{
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      []playbook.Playbook{},
+				Items:      []app.Playbook{},
 			},
 			emptyStore:         true,
 			expectedErr:        nil,
@@ -1863,11 +1863,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=1 per_page=1 with empty store",
 			page:     1,
 			perPage:  1,
-			expectedResult: playbook.GetPlaybooksResults{
+			expectedResult: app.GetPlaybooksResults{
 				TotalCount: 0,
 				PageCount:  0,
 				HasMore:    false,
-				Items:      []playbook.Playbook{},
+				Items:      []app.Playbook{},
 			},
 			emptyStore:         true,
 			expectedErr:        nil,
@@ -1877,11 +1877,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=0 per_page=0",
 			page:     0,
 			perPage:  0,
-			expectedResult: playbook.GetPlaybooksResults{
+			expectedResult: app.GetPlaybooksResults{
 				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+				Items:      []app.Playbook{playbooktest1, playbooktest2, playbooktest3},
 			},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
@@ -1890,11 +1890,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=0 per_page=3",
 			page:     0,
 			perPage:  3,
-			expectedResult: playbook.GetPlaybooksResults{
+			expectedResult: app.GetPlaybooksResults{
 				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []playbook.Playbook{playbooktest1, playbooktest2, playbooktest3},
+				Items:      []app.Playbook{playbooktest1, playbooktest2, playbooktest3},
 			},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
@@ -1903,11 +1903,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=0 per_page=2",
 			page:     0,
 			perPage:  2,
-			expectedResult: playbook.GetPlaybooksResults{
+			expectedResult: app.GetPlaybooksResults{
 				TotalCount: 3,
 				PageCount:  2,
 				HasMore:    true,
-				Items:      []playbook.Playbook{playbooktest1, playbooktest2},
+				Items:      []app.Playbook{playbooktest1, playbooktest2},
 			},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
@@ -1916,11 +1916,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=1 per_page=2",
 			page:     1,
 			perPage:  2,
-			expectedResult: playbook.GetPlaybooksResults{
+			expectedResult: app.GetPlaybooksResults{
 				TotalCount: 3,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      []playbook.Playbook{playbooktest3},
+				Items:      []app.Playbook{playbooktest3},
 			},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
@@ -1929,11 +1929,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=2 per_page=2",
 			page:     2,
 			perPage:  2,
-			expectedResult: playbook.GetPlaybooksResults{
+			expectedResult: app.GetPlaybooksResults{
 				TotalCount: 3,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      []playbook.Playbook{},
+				Items:      []app.Playbook{},
 			},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
@@ -1942,11 +1942,11 @@ func TestPagingPlaybooks(t *testing.T) {
 			testName: "get playbooks with page=9999 per_page=2",
 			page:     9999,
 			perPage:  2,
-			expectedResult: playbook.GetPlaybooksResults{
+			expectedResult: app.GetPlaybooksResults{
 				TotalCount: 3,
 				PageCount:  2,
 				HasMore:    false,
-				Items:      []playbook.Playbook{},
+				Items:      []app.Playbook{},
 			},
 			expectedErr:        nil,
 			expectedStatusCode: http.StatusOK,
@@ -1963,10 +1963,10 @@ func TestPagingPlaybooks(t *testing.T) {
 
 			playbookService.EXPECT().
 				GetPlaybooksForTeam(
-					playbook.RequesterInfo{
-						UserID:          "testuserid",
-						TeamID:          "testteamid",
-						UserIDtoIsAdmin: map[string]bool{"testuserid": true},
+					app.RequesterInfo{
+						UserID:  "testuserid",
+						TeamID:  "testteamid",
+						IsAdmin: true,
 					},
 					"testteamid",
 					gomock.Any(),

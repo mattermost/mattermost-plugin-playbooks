@@ -3,8 +3,9 @@
 
 import React from 'react';
 
-const UpgradeIllustrationSvg = () => (
+const UpgradeIllustrationSvg = ({className} : {className?: string}) => (
     <svg
+        className={className}
         width='256'
         height='156'
         viewBox='0 0 256 156'

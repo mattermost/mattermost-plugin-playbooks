@@ -8,18 +8,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
+
 	rudder "github.com/rudderlabs/analytics-go"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	diagnosticID    = "dummy_diagnostic_id"
-	pluginVersion   = "dummy_plugin_version"
-	serverVersion   = "dummy_server_version"
-	dummyIncidentID = "dummy_incident_id"
-	dummyUserID     = "dummy_user_id"
+	diagnosticID       = "dummy_diagnostic_id"
+	pluginVersion      = "dummy_plugin_version"
+	serverVersion      = "dummy_server_version"
+	dummyPlaybookRunID = "dummy_playbook_run_id"
+	dummyUserID        = "dummy_user_id"
 )
 
 func TestNewRudder(t *testing.T) {
@@ -80,23 +80,23 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 	}, server
 }
 
-var dummyIncident = &incident.Incident{
-	ID:              "id",
-	Name:            "name",
-	Description:     "description",
-	CommanderUserID: "commander_user_id",
-	ReporterUserID:  "reporter_user_id",
-	TeamID:          "team_id",
-	ChannelID:       "channel_id_1",
-	CreateAt:        1234,
-	EndAt:           5678,
-	DeleteAt:        9999,
-	PostID:          "post_id",
-	PlaybookID:      "playbookID1",
-	Checklists: []playbook.Checklist{
+var dummyPlaybookRun = &app.PlaybookRun{
+	ID:             "id",
+	Name:           "name",
+	Description:    "description",
+	OwnerUserID:    "owner_user_id",
+	ReporterUserID: "reporter_user_id",
+	TeamID:         "team_id",
+	ChannelID:      "channel_id_1",
+	CreateAt:       1234,
+	EndAt:          5678,
+	DeleteAt:       9999,
+	PostID:         "post_id",
+	PlaybookID:     "playbookID1",
+	Checklists: []app.Checklist{
 		{
 			Title: "Checklist",
-			Items: []playbook.ChecklistItem{
+			Items: []app.ChecklistItem{
 				{
 					ID:                     "task_id_1",
 					Title:                  "Test Item",
@@ -114,31 +114,31 @@ var dummyIncident = &incident.Incident{
 		},
 		{
 			Title: "Checklist 2",
-			Items: []playbook.ChecklistItem{
+			Items: []app.ChecklistItem{
 				{Title: "Test Item 2"},
 				{Title: "Test Item 3"},
 			},
 		},
 	},
-	StatusPosts: []incident.StatusPost{
-		{ID: "status_post_1", Status: incident.StatusActive},
-		{ID: "status_post_2", Status: incident.StatusReported},
+	StatusPosts: []app.StatusPost{
+		{ID: "status_post_1", Status: app.StatusActive},
+		{ID: "status_post_2", Status: app.StatusReported},
 	},
 	PreviousReminder: 5 * time.Second,
-	TimelineEvents: []incident.TimelineEvent{
+	TimelineEvents: []app.TimelineEvent{
 		{ID: "timeline_event_1"},
 		{ID: "timeline_event_2"},
 		{ID: "timeline_event_3"},
 	},
 }
 
-var dummyTask = dummyIncident.Checklists[0].Items[0]
+var dummyTask = dummyPlaybookRun.Checklists[0].Items[0]
 
 func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, expectedAction string) {
 	t.Helper()
 
-	incidentFromProperties := func(properties map[string]interface{}) *incident.Incident {
-		require.Contains(t, properties, "IncidentID")
+	playbookRunFromProperties := func(properties map[string]interface{}) *app.PlaybookRun {
+		require.Contains(t, properties, telemetryKeyPlaybookRunID)
 		require.Contains(t, properties, "HasDescription")
 		require.Contains(t, properties, "CommanderUserID")
 		require.Contains(t, properties, "ReporterUserID")
@@ -156,11 +156,11 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 		require.Contains(t, properties, "PreviousReminder")
 		require.Contains(t, properties, "NumTimelineEvents")
 
-		return &incident.Incident{
-			ID:               properties["IncidentID"].(string),
-			Name:             dummyIncident.Name, // not included in the tracked event
-			Description:      dummyIncident.Description,
-			CommanderUserID:  properties["CommanderUserID"].(string),
+		return &app.PlaybookRun{
+			ID:               properties[telemetryKeyPlaybookRunID].(string),
+			Name:             dummyPlaybookRun.Name, // not included in the tracked event
+			Description:      dummyPlaybookRun.Description,
+			OwnerUserID:      properties["CommanderUserID"].(string),
 			ReporterUserID:   properties["ReporterUserID"].(string),
 			TeamID:           properties["TeamID"].(string),
 			CreateAt:         int64(properties["CreateAt"].(float64)),
@@ -168,11 +168,11 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 			DeleteAt:         int64(properties["DeleteAt"].(float64)),
 			ChannelID:        "channel_id_1",
 			PostID:           properties["PostID"].(string),
-			PlaybookID:       dummyIncident.PlaybookID,
-			Checklists:       dummyIncident.Checklists, // not included as self in tracked event
-			StatusPosts:      dummyIncident.StatusPosts,
+			PlaybookID:       dummyPlaybookRun.PlaybookID,
+			Checklists:       dummyPlaybookRun.Checklists, // not included as self in tracked event
+			StatusPosts:      dummyPlaybookRun.StatusPosts,
 			PreviousReminder: time.Duration((properties["PreviousReminder"]).(float64)),
-			TimelineEvents:   dummyIncident.TimelineEvents,
+			TimelineEvents:   dummyPlaybookRun.TimelineEvents,
 		}
 	}
 
@@ -187,15 +187,15 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 	require.Contains(t, properties, "PluginVersion")
 	require.Equal(t, properties["PluginVersion"], pluginVersion)
 
-	if expectedEvent == eventIncident && expectedAction == actionCreate {
+	if expectedEvent == eventPlaybookRun && expectedAction == actionCreate {
 		require.Contains(t, properties, "Public")
 	}
 
-	if expectedEvent == eventIncident && (expectedAction == actionCreate || expectedAction == actionEnd) {
-		require.Equal(t, dummyIncident, incidentFromProperties(properties))
+	if expectedEvent == eventPlaybookRun && (expectedAction == actionCreate || expectedAction == actionEnd) {
+		require.Equal(t, dummyPlaybookRun, playbookRunFromProperties(properties))
 	} else {
-		require.Contains(t, properties, "IncidentID")
-		require.Equal(t, properties["IncidentID"], dummyIncidentID)
+		require.Contains(t, properties, telemetryKeyPlaybookRunID)
+		require.Equal(t, properties[telemetryKeyPlaybookRunID], dummyPlaybookRunID)
 		require.Contains(t, properties, "UserActualID")
 		require.Equal(t, properties["UserActualID"], dummyUserID)
 	}
@@ -211,26 +211,26 @@ func TestRudderTelemetry(t *testing.T) {
 		ExpectedAction string
 		FuncToTest     func()
 	}{
-		"create incident": {eventIncident, actionCreate, func() {
-			rudderClient.CreateIncident(dummyIncident, dummyUserID, true)
+		"create playbook run": {eventPlaybookRun, actionCreate, func() {
+			rudderClient.CreatePlaybookRun(dummyPlaybookRun, dummyUserID, true)
 		}},
-		"end incident": {eventIncident, actionEnd, func() {
-			rudderClient.EndIncident(dummyIncident, dummyUserID)
+		"end playbook run": {eventPlaybookRun, actionEnd, func() {
+			rudderClient.EndPlaybookRun(dummyPlaybookRun, dummyUserID)
 		}},
 		"add checklist item": {eventTasks, actionAddTask, func() {
-			rudderClient.AddTask(dummyIncidentID, dummyUserID, dummyTask)
+			rudderClient.AddTask(dummyPlaybookRunID, dummyUserID, dummyTask)
 		}},
 		"remove checklist item": {eventTasks, actionRemoveTask, func() {
-			rudderClient.RemoveTask(dummyIncidentID, dummyUserID, dummyTask)
+			rudderClient.RemoveTask(dummyPlaybookRunID, dummyUserID, dummyTask)
 		}},
 		"rename checklist item": {eventTasks, actionRenameTask, func() {
-			rudderClient.RenameTask(dummyIncidentID, dummyUserID, dummyTask)
+			rudderClient.RenameTask(dummyPlaybookRunID, dummyUserID, dummyTask)
 		}},
 		"modify checked checklist item": {eventTasks, actionModifyTaskState, func() {
-			rudderClient.ModifyCheckedState(dummyIncidentID, dummyUserID, dummyTask, true)
+			rudderClient.ModifyCheckedState(dummyPlaybookRunID, dummyUserID, dummyTask, true)
 		}},
 		"move checklist item": {eventTasks, actionMoveTask, func() {
-			rudderClient.MoveTask(dummyIncidentID, dummyUserID, dummyTask)
+			rudderClient.MoveTask(dummyPlaybookRunID, dummyUserID, dummyTask)
 		}},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -255,7 +255,7 @@ func TestDisableTelemetry(t *testing.T) {
 		err := rudderClient.Disable()
 		require.NoError(t, err)
 
-		rudderClient.CreateIncident(dummyIncident, dummyUserID, true)
+		rudderClient.CreatePlaybookRun(dummyPlaybookRun, dummyUserID, true)
 
 		select {
 		case <-data:
@@ -276,7 +276,7 @@ func TestDisableTelemetry(t *testing.T) {
 		err = rudderClient.Disable()
 		require.NoError(t, err)
 
-		rudderClient.CreateIncident(dummyIncident, dummyUserID, true)
+		rudderClient.CreatePlaybookRun(dummyPlaybookRun, dummyUserID, true)
 
 		select {
 		case <-data:
@@ -298,7 +298,7 @@ func TestDisableTelemetry(t *testing.T) {
 		err = rudderClient.Disable()
 		require.NoError(t, err)
 
-		rudderClient.CreateIncident(dummyIncident, dummyUserID, true)
+		rudderClient.CreatePlaybookRun(dummyPlaybookRun, dummyUserID, true)
 
 		select {
 		case <-data:
@@ -328,11 +328,11 @@ func TestDisableTelemetry(t *testing.T) {
 		err = rudderClient.Enable()
 		require.NoError(t, err)
 
-		rudderClient.CreateIncident(dummyIncident, dummyUserID, true)
+		rudderClient.CreatePlaybookRun(dummyPlaybookRun, dummyUserID, true)
 
 		select {
 		case payload := <-data:
-			assertPayload(t, payload, eventIncident, actionCreate)
+			assertPayload(t, payload, eventPlaybookRun, actionCreate)
 		case <-time.After(time.Second * 6):
 			require.Fail(t, "Did not receive Event message")
 		}
@@ -340,20 +340,20 @@ func TestDisableTelemetry(t *testing.T) {
 }
 
 func TestPlaybookProperties(t *testing.T) {
-	var dummyPlaybook = playbook.Playbook{
-		ID:                   "id",
-		Title:                "title",
-		Description:          "description",
-		TeamID:               "team_id",
-		CreatePublicIncident: true,
-		CreateAt:             1234,
-		DeleteAt:             9999,
-		NumStages:            2,
-		NumSteps:             3,
-		Checklists: []playbook.Checklist{
+	var dummyPlaybook = app.Playbook{
+		ID:                      "id",
+		Title:                   "title",
+		Description:             "description",
+		TeamID:                  "team_id",
+		CreatePublicPlaybookRun: true,
+		CreateAt:                1234,
+		DeleteAt:                9999,
+		NumStages:               2,
+		NumSteps:                3,
+		Checklists: []app.Checklist{
 			{
 				Title: "Checklist",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{
 						ID:                     "task_id_1",
 						Title:                  "Test Item",
@@ -371,7 +371,7 @@ func TestPlaybookProperties(t *testing.T) {
 			},
 			{
 				Title: "Checklist 2",
-				Items: []playbook.ChecklistItem{
+				Items: []app.ChecklistItem{
 					{Title: "Test Item 2"},
 					{Title: "Test Item 3"},
 				},
@@ -384,12 +384,14 @@ func TestPlaybookProperties(t *testing.T) {
 		InvitedUserIDs:              []string{"invited_user_id_1", "invited_user_id_2"},
 		InvitedGroupIDs:             []string{"invited_group_id_1", "invited_group_id_2"},
 		InviteUsersEnabled:          true,
-		DefaultCommanderID:          "default_commander_id",
-		DefaultCommanderEnabled:     false,
+		DefaultOwnerID:              "default_owner_id",
+		DefaultOwnerEnabled:         false,
 		AnnouncementChannelID:       "announcement_channel_id",
 		AnnouncementChannelEnabled:  true,
 		WebhookOnCreationURL:        "webhook_on_creation_url_1\nwebhook_on_creation_url_2",
 		WebhookOnCreationEnabled:    false,
+		SignalAnyKeywordsEnabled:    true,
+		SignalAnyKeywords:           []string{"SEV1, SEV2"},
 	}
 
 	properties := playbookProperties(dummyPlaybook, dummyUserID)
@@ -402,7 +404,7 @@ func TestPlaybookProperties(t *testing.T) {
 		"PlaybookID":                  dummyPlaybook.ID,
 		"HasDescription":              true,
 		"TeamID":                      dummyPlaybook.TeamID,
-		"IsPublic":                    dummyPlaybook.CreatePublicIncident,
+		"IsPublic":                    dummyPlaybook.CreatePublicPlaybookRun,
 		"CreateAt":                    dummyPlaybook.CreateAt,
 		"DeleteAt":                    dummyPlaybook.DeleteAt,
 		"NumChecklists":               len(dummyPlaybook.Checklists),
@@ -415,62 +417,64 @@ func TestPlaybookProperties(t *testing.T) {
 		"NumInvitedUserIDs":           len(dummyPlaybook.InvitedUserIDs),
 		"NumInvitedGroupIDs":          len(dummyPlaybook.InvitedGroupIDs),
 		"InviteUsersEnabled":          dummyPlaybook.InviteUsersEnabled,
-		"DefaultCommanderID":          dummyPlaybook.DefaultCommanderID,
-		"DefaultCommanderEnabled":     dummyPlaybook.DefaultCommanderEnabled,
+		"DefaultCommanderID":          dummyPlaybook.DefaultOwnerID,
+		"DefaultCommanderEnabled":     dummyPlaybook.DefaultOwnerEnabled,
 		"AnnouncementChannelID":       dummyPlaybook.AnnouncementChannelID,
 		"AnnouncementChannelEnabled":  dummyPlaybook.AnnouncementChannelEnabled,
 		"NumWebhookOnCreationURLs":    2,
 		"WebhookOnCreationEnabled":    dummyPlaybook.WebhookOnCreationEnabled,
+		"SignalAnyKeywordsEnabled":    dummyPlaybook.SignalAnyKeywordsEnabled,
+		"NumSignalAnyKeywords":        len(dummyPlaybook.SignalAnyKeywords),
 	}
 
 	require.Equal(t, expectedProperties, properties)
 }
 
-func TestIncidentProperties(t *testing.T) {
-	properties := incidentProperties(dummyIncident, dummyUserID)
+func TestPlaybookRunProperties(t *testing.T) {
+	properties := playbookRunProperties(dummyPlaybookRun, dummyUserID)
 
 	// ID field is reserved by Rudder to uniquely identify every event
 	require.NotContains(t, properties, "ID")
 
 	expectedProperties := map[string]interface{}{
-		"UserActualID":        dummyUserID,
-		"IncidentID":          dummyIncident.ID,
-		"HasDescription":      true,
-		"CommanderUserID":     dummyIncident.CommanderUserID,
-		"ReporterUserID":      dummyIncident.ReporterUserID,
-		"TeamID":              dummyIncident.TeamID,
-		"ChannelID":           dummyIncident.ChannelID,
-		"CreateAt":            dummyIncident.CreateAt,
-		"EndAt":               dummyIncident.EndAt,
-		"DeleteAt":            dummyIncident.DeleteAt,
-		"PostID":              dummyIncident.PostID,
-		"PlaybookID":          dummyIncident.PlaybookID,
-		"NumChecklists":       2,
-		"TotalChecklistItems": 3,
-		"NumStatusPosts":      2,
-		"CurrentStatus":       dummyIncident.CurrentStatus,
-		"PreviousReminder":    dummyIncident.PreviousReminder,
-		"NumTimelineEvents":   len(dummyIncident.TimelineEvents),
+		"UserActualID":            dummyUserID,
+		telemetryKeyPlaybookRunID: dummyPlaybookRun.ID,
+		"HasDescription":          true,
+		"CommanderUserID":         dummyPlaybookRun.OwnerUserID,
+		"ReporterUserID":          dummyPlaybookRun.ReporterUserID,
+		"TeamID":                  dummyPlaybookRun.TeamID,
+		"ChannelID":               dummyPlaybookRun.ChannelID,
+		"CreateAt":                dummyPlaybookRun.CreateAt,
+		"EndAt":                   dummyPlaybookRun.EndAt,
+		"DeleteAt":                dummyPlaybookRun.DeleteAt,
+		"PostID":                  dummyPlaybookRun.PostID,
+		"PlaybookID":              dummyPlaybookRun.PlaybookID,
+		"NumChecklists":           2,
+		"TotalChecklistItems":     3,
+		"NumStatusPosts":          2,
+		"CurrentStatus":           dummyPlaybookRun.CurrentStatus,
+		"PreviousReminder":        dummyPlaybookRun.PreviousReminder,
+		"NumTimelineEvents":       len(dummyPlaybookRun.TimelineEvents),
 	}
 
 	require.Equal(t, expectedProperties, properties)
 }
 
 func TestTaskProperties(t *testing.T) {
-	properties := taskProperties(dummyIncidentID, dummyUserID, dummyTask)
+	properties := taskProperties(dummyPlaybookRunID, dummyUserID, dummyTask)
 
 	// ID field is reserved by Rudder to uniquely identify every event
 	require.NotContains(t, properties, "ID")
 
 	expectedProperties := map[string]interface{}{
-		"IncidentID":     dummyIncidentID,
-		"UserActualID":   dummyUserID,
-		"TaskID":         dummyTask.ID,
-		"State":          dummyTask.State,
-		"AssigneeID":     dummyTask.AssigneeID,
-		"HasCommand":     true,
-		"CommandLastRun": dummyTask.CommandLastRun,
-		"HasDescription": true,
+		telemetryKeyPlaybookRunID: dummyPlaybookRunID,
+		"UserActualID":            dummyUserID,
+		"TaskID":                  dummyTask.ID,
+		"State":                   dummyTask.State,
+		"AssigneeID":              dummyTask.AssigneeID,
+		"HasCommand":              true,
+		"CommandLastRun":          dummyTask.CommandLastRun,
+		"HasDescription":          true,
 	}
 
 	require.Equal(t, expectedProperties, properties)

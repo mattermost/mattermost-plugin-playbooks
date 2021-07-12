@@ -36,10 +36,12 @@ type Client struct {
 	// User agent used when communicating with the Incident Collaboration API.
 	UserAgent string
 
-	// Incidents is a collection of methods used to interact with incidents.
-	Incidents *IncidentsService
+	// PlaybookRuns is a collection of methods used to interact with playbook runs.
+	PlaybookRuns *PlaybookRunService
 	// Playbooks is a collection of methods used to interact with playbooks.
 	Playbooks *PlaybooksService
+	// Settings is a collection of methods used to interact with settings.
+	Settings *SettingsService
 }
 
 // New creates a new instance of Client using the configuration from the given Mattermost Client.
@@ -60,8 +62,9 @@ func newClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 	}
 
 	c := &Client{client: httpClient, BaseURL: siteURL, UserAgent: userAgent}
-	c.Incidents = &IncidentsService{c}
+	c.PlaybookRuns = &PlaybookRunService{c}
 	c.Playbooks = &PlaybooksService{c}
+	c.Settings = &SettingsService{c}
 	return c, nil
 }
 

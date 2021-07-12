@@ -8,6 +8,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const maxAdminsToQueryForNotification = 1000
+
 // PostMessage posts a message to a specified channel.
 func (b *Bot) PostMessage(channelID, format string, args ...interface{}) (*model.Post, error) {
 	post := &model.Post{
@@ -50,19 +52,19 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 	return post, nil
 }
 
-// DM posts a simple Direct Message to the specified user
-func (b *Bot) DM(userID, format string, args ...interface{}) error {
-	return b.dm(userID, &model.Post{
-		Message: fmt.Sprintf(format, args...),
-	})
-}
-
-// DMWithAttachments posts a Direct Message that contains Slack attachments.
-// Often used to include post actions.
-func (b *Bot) DMWithAttachments(userID string, attachments ...*model.SlackAttachment) error {
-	post := model.Post{}
-	model.ParseSlackAttachment(&post, attachments)
-	return b.dm(userID, &post)
+// Post DM from the plugin bot to the specified user
+func (b *Bot) DM(userID string, post *model.Post) error {
+	channel, err := b.pluginAPI.Channel.GetDirect(userID, b.botUserID)
+	if err != nil {
+		b.pluginAPI.Log.Info("Couldn't get bot's DM channel", "user_id", userID)
+		return err
+	}
+	post.ChannelId = channel.Id
+	post.UserId = b.botUserID
+	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Ephemeral sends an ephemeral message to a user
@@ -70,6 +72,19 @@ func (b *Bot) EphemeralPost(userID, channelID string, post *model.Post) {
 	post.UserId = b.botUserID
 	post.ChannelId = channelID
 
+	b.pluginAPI.Post.SendEphemeralPost(userID, post)
+}
+
+// EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
+func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, attachments []*model.SlackAttachment, format string, args ...interface{}) {
+	post := &model.Post{
+		Message:   fmt.Sprintf(format, args...),
+		UserId:    b.botUserID,
+		ChannelId: channelID,
+		RootId:    postID,
+	}
+
+	model.ParseSlackAttachment(post, attachments)
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
 }
 
@@ -106,7 +121,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 	admins, err := b.pluginAPI.User.List(&model.UserGetOptions{
 		Role:    string(model.SYSTEM_ADMIN_ROLE_ID),
 		Page:    0,
-		PerPage: 1000,
+		PerPage: maxAdminsToQueryForNotification,
 	})
 
 	if err != nil {
@@ -117,31 +132,53 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		return fmt.Errorf("no admins found")
 	}
 
-	var message, title, text string
+	var postType, footer string
 
-	footer := "[Learn more](https://mattermost.com/pricing-self-managed/).\n\nWhen you select **Start 30-day trial**, you agree to the [Mattermost Software Evaluation Agreement](https://mattermost.com/software-evaluation-agreement/), [Privacy Policy](https://mattermost.com/privacy-policy/), and receiving product emails."
-	if isTeamEdition {
-		footer = "[Learn more](https://mattermost.com/pricing-self-managed/).\n\n[Convert to Mattermost Starter](https://docs.mattermost.com/install/ee-install.html#converting-team-edition-to-enterprise-edition) to unlock this feature. Then, start a trial or upgrade to Mattermost Professional or Enterprise."
+	isCloud := b.configService.IsCloud()
+
+	separator := "\n\n---\n\n"
+	if isCloud {
+		postType = "custom_cloud_upgrade"
+		footer = separator + "[Upgrade now](https://customers.mattermost.com)."
+	} else {
+		footer = "[Learn more](https://mattermost.com/pricing).\n\nWhen you select **Start 30-day trial**, you agree to the [Mattermost Software Evaluation Agreement](https://mattermost.com/software-evaluation-agreement/), [Privacy Policy](https://mattermost.com/privacy-policy/), and receiving product emails."
+
+		if isTeamEdition {
+			footer = "[Learn more](https://mattermost.com/pricing).\n\n[Convert to Mattermost Starter](https://docs.mattermost.com/install/ee-install.html#converting-team-edition-to-enterprise-edition) to unlock this feature. Then, start a trial or upgrade to Mattermost Professional or Enterprise."
+		}
 	}
+
+	var message, title, text string
 
 	switch messageType {
 	case "start_trial_to_create_playbook":
-		message = fmt.Sprintf("@%s requested access to create more playbooks in Incident Collaboration.", author.Username)
-		title = "Create multiple playbooks in Incident Collaboration with Mattermost Professional"
-		text = "Playbooks are workflows that provide guidance through an incident. Each playbook can be customized and refined over time, to improve time to resolution. In Mattermost Professional you can create an unlimited number of playbooks for your team.\n" + footer
-
+		message = fmt.Sprintf("@%s requested access to create more playbooks.", author.Username)
+		title = "Create multiple playbooks for all your use cases"
+		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. Each playbook can be customized and refined over time, to improve time to resolution. When you upgrade, you can create an unlimited number of playbooks for your team.\n" + footer
 	case "start_trial_to_add_message_to_timeline", "start_trial_to_view_timeline":
-		message = fmt.Sprintf("@%s requested access to the timeline in Incident Collaboration.", author.Username)
-		title = "Keep all your incident events in one place with Mattermost Professional"
-		text = "Your timeline lists all the events in your incident, separated by type. You can download your timeline and use it for your retrospectives to improve how you respond to incidents. Mattermost Professional includes access to timeline features such as adding messages from within the incident channel.\n" + footer
+		message = fmt.Sprintf("@%s requested access to the playbook run timeline.", author.Username)
+		title = "Keep a complete record of the playbook run timeline"
+		text = "The playbook run timeline automatically tracks key events and messages in chronological order so that they can be traced and reviewed afterwards. Teams use timeline to perform retrospectives and extract lessons for the next time that they run the playbook."
+	case "start_trial_to_access_retrospective":
+		message = fmt.Sprintf("@%s requested access to the retrospective.", author.Username)
+		title = "Publish retrospective report and access the timeline"
+		text = "Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes."
 	case "start_trial_to_restrict_playbook_access":
-		message = fmt.Sprintf("@%s requested access to configure who can access specific playbooks in Incident Collaboration.", author.Username)
-		title = "Control who can access specific playbooks in Incident Collaboration with Mattermost Enterprise"
-		text = "Playbooks are workflows that provide guidance through an incident. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+		message = fmt.Sprintf("@%s requested permission to configure who can access specific playbooks.", author.Username)
+		title = "Control who can access your team's playbooks"
+		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. When you upgrade, you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
 	case "start_trial_to_restrict_playbook_creation":
-		message = fmt.Sprintf("@%s requested access to configure who can create playbooks in Incident Collaboration.", author.Username)
-		title = "Control who can create playbooks in Incident Collaboration with Mattermost Enterprise"
-		text = "Playbooks are workflows that provide guidance through an incident. In Mattermost Enterprise you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+		message = fmt.Sprintf("@%s requested permission to configure who can create playbooks.", author.Username)
+		title = "Control who can create playbooks"
+		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. When you upgrade, you can set playbook permissions for specific users or set a global permission to control which team members can create playbooks.\n" + footer
+	case "start_trial_to_export_channel":
+		message = fmt.Sprintf("@%s requested access to export the playbook run channel.", author.Username)
+		title = "Save the message history of your playbook runs"
+		text = "Export the channel of your playbook run and save it for later analysis. When you upgrade, you can automatically generate and download a CSV file containing all the timestamped messages sent to the channel.\n" + footer
+	case "start_trial_to_access_playbook_dashboard":
+		message = fmt.Sprintf("@%s requested access to view playbook statistics", author.Username)
+		title = "All the statistics you need"
+		text = "View trends for total runs, active runs and participants involved in runs of this playbook. Notify your system admin to upgrade."
 	}
 
 	actions := []*model.PostAction{
@@ -163,40 +200,55 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 		},
 	}
 
-	if isTeamEdition {
+	if isTeamEdition || isCloud {
 		actions = []*model.PostAction{}
 	}
 
 	attachments := []*model.SlackAttachment{
 		{
 			Title:   title,
-			Text:    text,
+			Text:    separator + text,
 			Actions: actions,
 		},
 	}
 
 	for _, admin := range admins {
 		go func(adminID string) {
-			post := &model.Post{Message: message}
-			model.ParseSlackAttachment(post, attachments)
+			channel, err := b.pluginAPI.Channel.GetDirect(adminID, b.botUserID)
+			if err != nil {
+				b.pluginAPI.Log.Warn("failed to get Direct Message channel between user and bot", "user ID", adminID, "bot ID", b.botUserID, "error", err)
+				return
+			}
 
-			if err := b.dm(adminID, post); err != nil {
+			if _, err := b.PostCustomMessageWithAttachments(channel.Id, postType, attachments, message); err != nil {
 				b.pluginAPI.Log.Warn("failed to send a DM to user", "user ID", adminID, "error", err)
 			}
 		}(admin.Id)
 	}
 
-	switch messageType {
-	case "start_trial_to_create_playbook":
-		b.telemetry.NotifyAdminsToCreatePlaybook(authorUserID)
-	case "start_trial_to_view_timeline":
-		b.telemetry.NotifyAdminsToViewTimeline(authorUserID)
-	case "start_trial_to_add_message_to_timeline":
-		b.telemetry.NotifyAdminsToAddMessageToTimeline(authorUserID)
-	case "start_trial_to_restrict_playbook_access":
-		b.telemetry.NotifyAdminsToRestrictPlaybookAccess(authorUserID)
-	case "start_trial_to_restrict_playbook_creation":
-		b.telemetry.NotifyAdminsToRestrictPlaybookCreation(authorUserID)
+	b.telemetry.NotifyAdmins(authorUserID, messageType)
+
+	return nil
+}
+
+func (b *Bot) PromptForFeedback(userID string) error {
+	surveyBot, err := b.pluginAPI.User.GetByUsername("surveybot")
+	if err != nil {
+		return fmt.Errorf("unable to find surveybot user: %w", err)
+	}
+
+	channel, err := b.pluginAPI.Channel.GetDirect(userID, surveyBot.Id)
+	if err != nil {
+		return fmt.Errorf("failed to get direct message channel between user %s and surveybot %s: %w", userID, surveyBot.Id, err)
+	}
+
+	post := &model.Post{
+		ChannelId: channel.Id,
+		UserId:    surveyBot.Id,
+		Message:   "Have feedback about Incident Collaboration?",
+	}
+	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+		return fmt.Errorf("failed to create post: %w", err)
 	}
 
 	return nil
@@ -213,24 +265,10 @@ func (b *Bot) makePayloadMap(payload interface{}) map[string]interface{} {
 	return map[string]interface{}{"payload": string(payloadJSON)}
 }
 
-func (b *Bot) dm(userID string, post *model.Post) error {
-	channel, err := b.pluginAPI.Channel.GetDirect(userID, b.botUserID)
-	if err != nil {
-		b.pluginAPI.Log.Info("Couldn't get bot's DM channel", "user_id", userID)
-		return err
-	}
-	post.ChannelId = channel.Id
-	post.UserId = b.botUserID
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
-		return err
-	}
-	return nil
-}
-
 // DM posts a simple Direct Message to the specified user
 func (b *Bot) dmAdmins(format string, args ...interface{}) error {
 	for _, id := range b.configService.GetConfiguration().AllowedUserIDs {
-		err := b.dm(id, &model.Post{
+		err := b.DM(id, &model.Post{
 			Message: fmt.Sprintf(format, args...),
 		})
 		if err != nil {

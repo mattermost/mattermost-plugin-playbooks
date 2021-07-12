@@ -9,15 +9,15 @@ info:
 servers:
   - url: http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0
 paths:
-  /incidents:
+  /runs:
     get:
-      summary: List all incidents
-      description: Retrieve a paged list of incidents, filtered by team, status, commander, name and/or members, and sorted by ID, name, status, creation date, end date, team or commander ID.
-      operationId: listIncidents
+      summary: List all playbook runs
+      description: Retrieve a paged list of playbook runs, filtered by team, status, owner, name and/or members, and sorted by ID, name, status, creation date, end date, team or owner ID.
+      operationId: listPlaybookRuns
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: team_id
           in: query
@@ -37,7 +37,7 @@ paths:
             default: 0
         - name: per_page
           in: query
-          description: Number of incidents to return per page.
+          description: Number of playbook runs to return per page.
           required: false
           example: 50
           schema:
@@ -46,7 +46,7 @@ paths:
             default: 1000
         - name: sort
           in: query
-          description: Field to sort the returned incidents by.
+          description: Field to sort the returned playbook runs by.
           required: false
           example: end_at
           schema:
@@ -59,10 +59,10 @@ paths:
               - create_at
               - end_at
               - team_id
-              - commander_user_id
+              - owner_user_id
         - name: direction
           in: query
-          description: Direction (ascending or descending) followed by the sorting of the incidents.
+          description: Direction (ascending or descending) followed by the sorting of the playbook runs.
           required: false
           example: asc
           schema:
@@ -73,7 +73,7 @@ paths:
               - asc
         - name: status
           in: query
-          description: The returned list will contain only the incidents with this status.
+          description: The returned list will contain only the playbook runs with this status.
           required: false
           example: active
           schema:
@@ -84,23 +84,23 @@ paths:
               - Active
               - Resolved
               - Archived
-        - name: commander_user_id
+        - name: owner_user_id
           in: query
-          description: The returned list will contain only the incidents commanded by this user.
+          description: The returned list will contain only the playbook runs commanded by this user.
           required: false
           example: lpn2ogt9qzkc59lfvvad9t15v4
           schema:
             type: string
         - name: search_term
           in: query
-          description: The returned list will contain only the incidents whose name contains the search term.
+          description: The returned list will contain only the playbook runs whose name contains the search term.
           required: false
           example: "server down"
           schema:
             type: string
         - name: member_id
           in: query
-          description: The returned list will contain only the incidents this user is a member of.
+          description: The returned list will contain only the playbook runs this user is a member of.
           required: false
           example: bruhg1cs65retdbea798hrml4v
           schema:
@@ -108,15 +108,15 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: A paged list of incidents.
+          description: A paged list of playbook runs.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IncidentList"
+                $ref: "#/components/schemas/PlaybookRunList"
         400:
           $ref: "#/components/schemas/400"
         403:
@@ -124,69 +124,69 @@ paths:
         500:
           $ref: "#/components/schemas/500"
     post:
-      summary: Create a new incident
-      description: Create a new incident in a team, using a playbook as template, with a specific name and a specific commander.
-      operationId: createIncidentFromPost
+      summary: Create a new playbook run
+      description: Create a new playbook run in a team, using a playbook as template, with a specific name and a specific owner.
+      operationId: createPlaybookRunFromPost
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       requestBody:
-        description: Incident payload.
+        description: Playbook run payload.
         content:
           application/json:
             schema:
               type: object
               required:
                 - name
-                - commander_user_id
+                - owner_user_id
                 - team_id
                 - playbook_id
               properties:
                 name:
                   type: string
-                  description: The name of the incident.
+                  description: The name of the playbook run.
                   example: Server down in EU cluster
                 description:
                   type: string
-                  description: The description of the incident.
+                  description: The description of the playbook run.
                   example: There is one server in the EU cluster that is not responding since April 12.
-                commander_user_id:
+                owner_user_id:
                   type: string
-                  description: The identifier of the user who is commanding the incident.
+                  description: The identifier of the user who is commanding the playbook run.
                   example: bqnbdf8uc0a8yz4i39qrpgkvtg
                 team_id:
                   type: string
-                  description: The identifier of the team where the incident's channel is in.
+                  description: The identifier of the team where the playbook run's channel is in.
                   example: 61ji2mpflefup3cnuif80r5rde
                 post_id:
                   type: string
-                  description: If the incident was created from a post, this field contains the identifier of such post. If not, this field is empty.
+                  description: If the playbook run was created from a post, this field contains the identifier of such post. If not, this field is empty.
                   example: b2ntfcrl4ujivl456ab4b3aago
                 playbook_id:
                   type: string
-                  description: The identifier of the playbook with from which this incident was created.
+                  description: The identifier of the playbook with from which this playbook run was created.
                   example: 0y4a0ntte97cxvfont8y84wa7x
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents' \
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
-            -d '{"name": "Server down in EU cluster", "description": "There is one server in the EU cluster that is not responding since April 12.", "commander_user_id": "bqnbdf8uc0a8yz4i39qrpgkvtg", "team_id": "61ji2mpflefup3cnuif80r5rde", "playbook_id": "0y4a0ntte97cxvfont8y84wa7x"}'
+            -d '{"name": "Server down in EU cluster", "description": "There is one server in the EU cluster that is not responding since April 12.", "owner_user_id": "bqnbdf8uc0a8yz4i39qrpgkvtg", "team_id": "61ji2mpflefup3cnuif80r5rde", "playbook_id": "0y4a0ntte97cxvfont8y84wa7x"}'
       responses:
         201:
-          description: Created incident.
+          description: Created playbook run.
           headers:
             Location:
-              description: Location of the created incident.
+              description: Location of the created playbook run.
               schema:
                 type: string
-                example: /api/v0/incidents/nhkx1nbivu45lr84vtxxukp2vr
+                example: /api/v0/runs/nhkx1nbivu45lr84vtxxukp2vr
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Incident"
+                $ref: "#/components/schemas/PlaybookRun"
         400:
           $ref: "#/components/schemas/400"
         403:
@@ -194,11 +194,11 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/dialog:
+  /runs/dialog:
     post:
-      summary: Create a new incident from dialog
-      description: This is an internal endpoint to create an incident from the submission of an interactive dialog, filled by a user in the webapp. See [Interactive Dialogs](https://docs.mattermost.com/developer/interactive-dialogs.html) for more information.
-      operationId: createIncidentFromDialog
+      summary: Create a new playbook run from dialog
+      description: This is an internal endpoint to create an playbook run from the submission of an interactive dialog, filled by a user in the webapp. See [Interactive Dialogs](https://docs.mattermost.com/developer/interactive-dialogs.html) for more information.
+      operationId: createPlaybookRunFromDialog
       security:
         - BearerAuth: []
       tags:
@@ -235,36 +235,36 @@ paths:
                   description: Map of the dialog fields to their values
                   required:
                     - playbookID
-                    - incidentName
+                    - playbookRunName
                   properties:
                     playbookID:
                       type: string
-                      description: ID of the playbook to create the incident from.
+                      description: ID of the playbook to create the playbook run from.
                       example: ahz0s61gh275i7z2ag4g1ntvjm
-                    incidentName:
+                    playbookRunName:
                       type: string
-                      description: The name of the incident to be created.
+                      description: The name of the playbook run to be created.
                       example: Server down in EU cluster.
-                    incidentDescription:
+                    playbookRunDescription:
                       type: string
-                      description: An optional description of the incident.
+                      description: An optional description of the playbook run.
                       example: There is one server in the EU cluster that is not responding since April 12.
                 cancelled:
                   type: boolean
                   description: If the dialog was cancelled.
       responses:
         201:
-          description: Created incident.
+          description: Created playbook run.
           headers:
             Location:
-              description: Location of the created incident.
+              description: Location of the created playbook run.
               schema:
                 type: string
-                example: /api/v0/incidents/nhkx1nbivu45lr84vtxxukp2vr
+                example: /api/v0/runs/nhkx1nbivu45lr84vtxxukp2vr
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Incident"
+                $ref: "#/components/schemas/PlaybookRun"
         400:
           $ref: "#/components/schemas/400"
         403:
@@ -272,15 +272,15 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/commanders:
+  /runs/owners:
     get:
-      summary: Get all commanders
-      description: Get the commanders of all incidents, filtered by team.
-      operationId: getCommanders
+      summary: Get all owners
+      description: Get the owners of all playbook runs, filtered by team.
+      operationId: getOwners
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: team_id
           in: query
@@ -292,17 +292,17 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/commanders?team_id=ni8duypfe7bamprxqeffd563gy' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/owners?team_id=ni8duypfe7bamprxqeffd563gy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: A list of commanders.
+          description: A list of owners.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/CommanderInfo"
+                  $ref: "#/components/schemas/OwnerInfo"
         400:
           $ref: "#/components/schemas/400"
         403:
@@ -310,15 +310,15 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/channels:
+  /runs/channels:
     get:
-      summary: Get incident channels
-      description: Get all channels associated with an incident, filtered by team, status, commander, name and/or members, and sorted by ID, name, status, creation date, end date, team, or commander ID.
+      summary: Get playbook run channels
+      description: Get all channels associated with an playbook run, filtered by team, status, owner, name and/or members, and sorted by ID, name, status, creation date, end date, team, or owner ID.
       operationId: getChannels
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: team_id
           in: query
@@ -329,7 +329,7 @@ paths:
             type: string
         - name: sort
           in: query
-          description: Field to sort the returned channels by, according to their incident.
+          description: Field to sort the returned channels by, according to their playbook run.
           required: false
           example: end_at
           schema:
@@ -341,10 +341,10 @@ paths:
               - create_at
               - end_at
               - team_id
-              - commander_user_id
+              - owner_user_id
         - name: direction
           in: query
-          description: Direction (ascending or descending) followed by the sorting of the incidents associated to the channels.
+          description: Direction (ascending or descending) followed by the sorting of the playbook runs associated to the channels.
           required: false
           example: asc
           schema:
@@ -355,7 +355,7 @@ paths:
               - asc
         - name: status
           in: query
-          description: The returned list will contain only the channels whose incident has this status.
+          description: The returned list will contain only the channels whose playbook run has this status.
           required: false
           example: active
           schema:
@@ -365,16 +365,16 @@ paths:
               - all
               - active
               - ended
-        - name: commander_user_id
+        - name: owner_user_id
           in: query
-          description: The returned list will contain only the channels whose incident is commanded by this user.
+          description: The returned list will contain only the channels whose playbook run is commanded by this user.
           required: false
           example: lpn2ogt9qzkc59lfvvad9t15v4
           schema:
             type: string
         - name: search_term
           in: query
-          description: The returned list will contain only the channels associated to an incident whose name contains the search term.
+          description: The returned list will contain only the channels associated to an playbook run whose name contains the search term.
           required: false
           example: "server down"
           schema:
@@ -389,7 +389,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/channels?team_id=ni8duypfe7bamprxqeffd563gy' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/channels?team_id=ni8duypfe7bamprxqeffd563gy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -409,9 +409,9 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/checklist-autocomplete:
+  /runs/checklist-autocomplete:
     get:
-      summary: Get autocomplete data for /incident check
+      summary: Get autocomplete data for /playbook check
       description: This is an internal endpoint used by the autocomplete system to retrieve the data needed to show the list of items that the user can check.
       operationId: getChecklistAutocomplete
       security:
@@ -455,88 +455,88 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/channel/{channel_id}:
+  /runs/channel/{channel_id}:
     get:
-      summary: Find incident by channel ID
-      operationId: getIncidentByChannelId
+      summary: Find playbook run by channel ID
+      operationId: getPlaybookRunByChannelId
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: channel_id
           in: path
           required: true
-          description: ID of the channel associated to the incident to retrieve.
+          description: ID of the channel associated to the playbook run to retrieve.
           schema:
             type: string
             example: hwrmiyzj3kadcilh3ukfcnsbt6
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/channel/hwrmiyzj3kadcilh3ukfcnsbt6' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/channel/hwrmiyzj3kadcilh3ukfcnsbt6' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Incident associated to the channel.
+          description: Playbook run associated to the channel.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Incident"
+                $ref: "#/components/schemas/PlaybookRun"
         404:
           $ref: "#/components/schemas/404"
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}:
+  /runs/{id}:
     get:
-      summary: Get an incident
-      operationId: getIncident
+      summary: Get an playbook run
+      operationId: getPlaybookRun
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident to retrieve.
+          description: ID of the playbook run to retrieve.
           schema:
             type: string
             example: mx3xyzdojfgyfdx8sc8of1gdme
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/mx3xyzdojfgyfdx8sc8of1gdme' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Incident
+          description: Playbook run
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Incident"
+                $ref: "#/components/schemas/PlaybookRun"
         403:
           $ref: "#/components/schemas/403"
         500:
           $ref: "#/components/schemas/500"
     patch:
-      summary: Update an incident
-      operationId: updateIncident
+      summary: Update an playbook run
+      operationId: updatePlaybookRun
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident to retrieve.
+          description: ID of the playbook run to retrieve.
           schema:
             type: string
             example: mx3xyzdojfgyfdx8sc8of1gdme
       requestBody:
-        description: Incident update payload.
+        description: Playbook run update payload.
         content:
           application/json:
             schema:
@@ -549,81 +549,81 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PATCH 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/mx3xyzdojfgyfdx8sc8of1gdme' \
+            curl -X PATCH 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
             -d '{"active_stage": 2}'
       responses:
         200:
-          description: Incident successfully updated.
+          description: Playbook run successfully updated.
         400:
           $ref: "#/components/schemas/400"
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/metadata:
+  /runs/{id}/metadata:
     get:
-      summary: Get incident metadata
-      operationId: getIncidentMetadata
+      summary: Get playbook run metadata
+      operationId: getPlaybookRunMetadata
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident whose metadata will be retrieved.
+          description: ID of the playbook run whose metadata will be retrieved.
           schema:
             type: string
             example: mx3xyzdojfgyfdx8sc8of1gdme
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/details' \
+            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/details' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Incident metadata.
+          description: Playbook run metadata.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IncidentMetadata"
+                $ref: "#/components/schemas/PlaybookRunMetadata"
         403:
           $ref: "#/components/schemas/403"
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/end:
+  /runs/{id}/end:
     put:
-      summary: End an incident
-      operationId: endIncident
+      summary: End an playbook run
+      operationId: endPlaybookRun
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident to end.
+          description: ID of the playbook run to end.
           schema:
             type: string
             example: 1igmynxs77ywmcbwbsujzktter
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/end' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/end' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Incident ended
+          description: Playbook run ended
         500:
           $ref: "#/components/schemas/500"
     post:
-      summary: End an incident from dialog
-      description: This is an internal endpoint to end an incident via a confirmation dialog, submitted by a user in the webapp.
-      operationId: endIncidentDialog
+      summary: End an playbook run from dialog
+      description: This is an internal endpoint to end an playbook run via a confirmation dialog, submitted by a user in the webapp.
+      operationId: endPlaybookRunDialog
       security:
         - BearerAuth: []
       tags:
@@ -632,66 +632,66 @@ paths:
         - name: id
           in: path
           required: true
-          description: ID of the incident to end.
+          description: ID of the playbook run to end.
           schema:
             type: string
             example: 1igmynxs77ywmcbwbsujzktter
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/end' \
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/end' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Incident ended
+          description: Playbook run ended
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/restart:
+  /runs/{id}/restart:
     put:
-      summary: Restart an incident
-      operationId: restartIncident
+      summary: Restart an playbook run
+      operationId: restartPlaybookRun
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident to restart.
+          description: ID of the playbook run to restart.
           schema:
             type: string
             example: 1igmynxs77ywmcbwbsujzktter
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/end' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/end' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: Incident restarted.
+          description: Playbook run restarted.
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/status:
+  /runs/{id}/status:
     post:
-      summary: Update an incident's status
+      summary: Update an playbook run's status
       operationId: status
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident to update.
+          description: ID of the playbook run to update.
           schema:
             type: string
             example: 1igmynxs77ywmcbwbsujzktter
       requestBody:
-        description: Payload to change the incident's status.
+        description: Payload to change the playbook run's status.
         content:
           application/json:
             schema:
@@ -708,7 +708,7 @@ paths:
                   example: Active
                 description:
                   type: string
-                  description: The current description of the incident.
+                  description: The current description of the playbook run.
                   example: \# Summary\nA tl;dr of the current situation.
                 message:
                   type: string
@@ -716,7 +716,7 @@ paths:
                   example: Starting to investigate.
                 reminder:
                   type: number
-                  description: The number of seconds until the system will send a reminder to the commander to update the status. No reminder will be scheduled if reminder is 0 or omitted.
+                  description: The number of seconds until the system will send a reminder to the owner to update the status. No reminder will be scheduled if reminder is 0 or omitted.
                   example: 600
               required:
                 - status
@@ -725,12 +725,12 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/update-status' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/update-status' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
-            -d '{"status": "Resolved", "description": "Current situation has been solved, customers are satisfied.", "message": "Resolving incident because the issue was solved."}'
+            -d '{"status": "Resolved", "description": "Current situation has been solved, customers are satisfied.", "message": "Resolving playbook run because the issue was solved."}'
       responses:
         200:
-          description: Incident updated.
+          description: Playbook run updated.
         400:
           $ref: "#/components/schemas/400"
         403:
@@ -738,44 +738,44 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/commander:
+  /runs/{id}/owner:
     post:
-      summary: Update incident commander
-      operationId: changeCommander
+      summary: Update playbook run owner
+      operationId: changeOwner
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident whose commander will be changed.
+          description: ID of the playbook run whose owner will be changed.
           schema:
             type: string
             example: 1igmynxs77ywmcbwbsujzktter
       requestBody:
-        description: Payload to change the incident's commander.
+        description: Payload to change the playbook run's owner.
         content:
           application/json:
             schema:
               type: object
               properties:
-                commander_id:
+                owner_id:
                   type: string
-                  description: The user ID of the new commander.
+                  description: The user ID of the new owner.
                   example: hx7fqtqxp7nn8129t7e505ls6s
               required:
-                - commander_id
+                - owner_id
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/1igmynxs77ywmcbwbsujzktter/commander' \
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/owner' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
-            -d '{"commander_id": "hx7fqtqxp7nn8129t7e505ls6s"}'
+            -d '{"owner_id": "hx7fqtqxp7nn8129t7e505ls6s"}'
       responses:
         200:
-          description: Commander successfully changed.
+          description: Owner successfully changed.
         400:
           $ref: "#/components/schemas/400"
         403:
@@ -783,7 +783,7 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/next-stage-dialog:
+  /runs/{id}/next-stage-dialog:
     post:
       summary: Go to next stage from dialog
       description: This is an internal endpoint to go to the next stage via a confirmation dialog, submitted by a user in the webapp.
@@ -798,7 +798,7 @@ paths:
           schema:
             type: string
           required: true
-          description: The Incident ID
+          description: The PlaybookRun ID
       requestBody:
         description: Dialog submission payload.
         content:
@@ -812,26 +812,26 @@ paths:
                   example: "3"
       responses:
         200:
-          description: Incident stage update.
+          description: Playbook run stage update.
         400:
           $ref: "#/components/schemas/400"
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/checklists/{checklist}/add:
+  /runs/{id}/checklists/{checklist}/add:
     put:
-      summary: Add an item to an incident's checklist
+      summary: Add an item to an playbook run's checklist
       description: The most common pattern to add a new item is to only send its title as the request payload. By default, it is an open item, with no assignee and no slash command.
       operationId: addChecklistItem
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident whose checklist will be modified.
+          description: ID of the playbook run whose checklist will be modified.
           example: twcqg0a2m37ydi6ebge3j9ev5z
           schema:
             type: string
@@ -870,7 +870,7 @@ paths:
                   example: 1607774621321
                 state_modified_post_id:
                   type: string
-                  description: The identifier of the message posted by the Incident Response bot that informs of the latest modification of the item's state.
+                  description: The identifier of the message posted by the PlaybookRun Response bot that informs of the latest modification of the item's state.
                   example: 8nmjfgrkwvokrg13urvo10bx9j
                 assignee_id:
                   type: string
@@ -883,7 +883,7 @@ paths:
                   example: 1608897821125
                 assignee_modified_post_id:
                   type: string
-                  description: The identifier of the message posted by the Incident Response bot that informs of the latest modification of the item's assignee.
+                  description: The identifier of the message posted by the PlaybookRun Response bot that informs of the latest modification of the item's assignee.
                   example: ol7h83caow11xfbydhqvyg16b4
                 command:
                   type: string
@@ -901,7 +901,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/twcqg0a2m37ydi6ebge3j9ev5z/checklists/1/add' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/twcqg0a2m37ydi6ebge3j9ev5z/checklists/1/add' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"title": "Gather information from customer."}'
       responses:
@@ -914,19 +914,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /incidents/{id}/checklists/{checklist}/reorder:
+  /runs/{id}/checklists/{checklist}/reorder:
     put:
-      summary: Reorder an item in an incident's checklist
+      summary: Reorder an item in an playbook run's checklist
       operationId: reoderChecklistItem
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident whose checklist will be modified.
+          description: ID of the playbook run whose checklist will be modified.
           example: yj74zsk7dvtsv6ndsynsps3g5s
           schema:
             type: string
@@ -958,7 +958,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/yj74zsk7dvtsv6ndsynsps3g5s/checklists/1/reorder' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/yj74zsk7dvtsv6ndsynsps3g5s/checklists/1/reorder' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"item_num": 0, "new_location": 2}'
       responses:
@@ -969,20 +969,20 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/checklists/{checklist}/item/{item}:
+  /runs/{id}/checklists/{checklist}/item/{item}:
     put:
-      summary: Update an item of an incident's checklist
-      description: Update the title and the slash command of an item in one of the incident's checklists.
+      summary: Update an item of an playbook run's checklist
+      description: Update the title and the slash command of an item in one of the playbook run's checklists.
       operationId: itemRename
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident whose checklist will be modified.
+          description: ID of the playbook run whose checklist will be modified.
           example: 6t7jdgyqr7b5sk24zkauhmrb06
           schema:
             type: string
@@ -1021,7 +1021,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/6t7jdgyqr7b5sk24zkauhmrb06/checklists/1/item/0' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/6t7jdgyqr7b5sk24zkauhmrb06/checklists/1/item/0' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"title": "Gather information from server's logs.", "command": "/jira update ticket"}'
       responses:
@@ -1033,17 +1033,17 @@ paths:
           $ref: "#/components/schemas/500"
 
     delete:
-      summary: Delete an item of an incident's checklist
+      summary: Delete an item of an playbook run's checklist
       operationId: itemDelete
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident whose checklist will be modified.
+          description: ID of the playbook run whose checklist will be modified.
           example: zjy2q2iy2jafl0lo2oddos5xn7
           schema:
             type: string
@@ -1064,7 +1064,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/zjy2q2iy2jafl0lo2oddos5xn7/checklists/1/item/2' \
+            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/zjy2q2iy2jafl0lo2oddos5xn7/checklists/1/item/2' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         204:
@@ -1074,19 +1074,19 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/checklists/{checklist}/item/{item}/state:
+  /runs/{id}/checklists/{checklist}/item/{item}/state:
     put:
       summary: Update the state of an item
       operationId: itemSetState
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident whose checklist will be modified.
+          description: ID of the playbook run whose checklist will be modified.
           example: 7l37isroz4e63giev62hs318bn
           schema:
             type: string
@@ -1125,7 +1125,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/7l37isroz4e63giev62hs318bn/checklists/1/item/2/state' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/7l37isroz4e63giev62hs318bn/checklists/1/item/2/state' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
             -d '{"new_state": "closed"}'
       responses:
@@ -1136,19 +1136,19 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/checklists/{checklist}/item/{item}/assignee:
+  /runs/{id}/checklists/{checklist}/item/{item}/assignee:
     put:
       summary: Update the assignee of an item
       operationId: itemSetAssignee
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident whose item will get a new assignee.
+          description: ID of the playbook run whose item will get a new assignee.
           example: 7l37isroz4e63giev62hs318bn
           schema:
             type: string
@@ -1182,7 +1182,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/7l37isroz4e63giev62hs318bn/checklists/1/item/2/assignee' \
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/7l37isroz4e63giev62hs318bn/checklists/1/item/2/assignee' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
             -d '{"asignee_id": "ruu86intseidqdxjojia41u7l1"}'
       responses:
@@ -1193,19 +1193,19 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/checklists/{checklist}/item/{item}/run:
+  /runs/{id}/checklists/{checklist}/item/{item}/run:
     put:
       summary: Run an item's slash command
       operationId: itemRun
       security:
         - BearerAuth: []
       tags:
-        - Incidents
+        - PlaybookRuns
       parameters:
         - name: id
           in: path
           required: true
-          description: ID of the incident whose item will be executed.
+          description: ID of the playbook run whose item will be executed.
           example: 7l37isroz4e63giev62hs318bn
           schema:
             type: string
@@ -1226,7 +1226,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/7l37isroz4e63giev62hs318bn/checklists/1/item/2/run' \
+            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/7l37isroz4e63giev62hs318bn/checklists/1/item/2/run' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -1240,9 +1240,9 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
-  /incidents/{id}/timeline/{event-id}/:
+  /runs/{id}/timeline/{event-id}/:
     delete:
-      summary: Remove a timeline event from the incident
+      summary: Remove a timeline event from the playbook run
       operationId: removeTimelineEvent
       security:
         - BearerAuth: []
@@ -1252,7 +1252,7 @@ paths:
         - name: id
           in: path
           required: true
-          description: ID of the incident whose timeline event will be modified.
+          description: ID of the playbook run whose timeline event will be modified.
           example: zjy2q2iy2jafl0lo2oddos5xn7
           schema:
             type: string
@@ -1266,7 +1266,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/incidents/zjy2q2iy2jafl0lo2oddos5xn7/timeline/craxgf4r4trgzrtues3a1t74ac' \
+            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/zjy2q2iy2jafl0lo2oddos5xn7/timeline/craxgf4r4trgzrtues3a1t74ac' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         204:
@@ -1334,14 +1334,6 @@ paths:
             enum:
               - desc
               - asc
-        - name: member_only
-          in: query
-          description: Limit to playbooks of which the current user is a member. No effect unless the requesting user is a system administrator.
-          required: false
-          example: true
-          schema:
-            type: boolean
-            default: false
       x-codeSamples:
         - lang: curl
           source: |
@@ -1376,25 +1368,25 @@ paths:
               required:
                 - title
                 - team_id
-                - create_public_incident
+                - create_public_playbook_run
                 - checklists
                 - member_ids
               properties:
                 title:
                   type: string
                   description: The title of the playbook.
-                  example: Cloud Incidents
+                  example: Cloud PlaybookRuns
                 description:
                   type: string
                   description: The description of the playbook.
-                  example: A playbook to follow when there is an incident regarding the availability of the cloud service.
+                  example: A playbook to follow when there is an playbook run regarding the availability of the cloud service.
                 team_id:
                   type: string
                   description: The identifier of the team where the playbook is in.
                   example: p03rbi6viyztysbqnkvcqyel2i
-                create_public_incident:
+                create_public_playbook_run:
                   type: boolean
-                  description: A boolean indicating whether the incidents created from this playbook should be public or private.
+                  description: A boolean indicating whether the playbook runs created from this playbook should be public or private.
                   example: true
                 checklists:
                   type: array
@@ -1441,7 +1433,7 @@ paths:
                   type: string
                   example: 2zh7rpashwfwapwaqyslmhwbax
                 invited_user_ids:
-                  description: A list with the IDs of the members to be automatically invited to the incident's channel as soon as the incident is created.
+                  description: A list with the IDs of the members to be automatically invited to the playbook run's channel as soon as the playbook run is created.
                   type: array
                   items:
                     type: string
@@ -1451,28 +1443,36 @@ paths:
                   description: Boolean that indicates whether the members declared in invited_user_ids will be automatically invited.
                   type: boolean
                   example: true
-                default_commander_id:
-                  description: User ID of the member that will be automatically assigned as commander as soon as the incident is created. If the member is not part of the incident's channel or is not included in the invited_user_ids list, they will be automatically invited to the channel.
+                default_owner_id:
+                  description: User ID of the member that will be automatically assigned as owner as soon as the playbook run is created. If the member is not part of the playbook run's channel or is not included in the invited_user_ids list, they will be automatically invited to the channel.
                   type: string
                   example: 9dtruav6d9ce3oqnc5pwhtqtfq
-                default_commander_enabled:
-                  description: Boolean that indicates whether the member declared in default_commander_id will be automatically assigned as commander.
+                default_owner_enabled:
+                  description: Boolean that indicates whether the member declared in default_owner_id will be automatically assigned as owner.
                   type: string
                   example: true
                 announcement_channel_id:
-                  description: ID of the channel where the incident will be automatically announced as soon as the incident is created.
+                  description: ID of the channel where the playbook run will be automatically announced as soon as the playbook run is created.
                   type: string
                   example: 8iofau5swv32l6qtk3vlxgobta
                 announcement_channel_enabled:
-                  description: Boolean that indicates whether the incident creation will be announced in the channel declared in announcement_channel_id.
+                  description: Boolean that indicates whether the playbook run creation will be announced in the channel declared in announcement_channel_id.
                   type: boolean
                   example: true
                 webhook_on_creation_url:
-                  description: An absolute URL where a POST request will be sent as soon as the incident is created. The allowed protocols are HTTP and HTTPS.
+                  description: An absolute URL where a POST request will be sent as soon as the playbook run is created. The allowed protocols are HTTP and HTTPS.
                   type: string
                   example: https://httpbin.org/post
                 webhook_on_creation_enabled:
                   description: Boolean that indicates whether the webhook declared in webhook_on_creation_url will be automatically sent.
+                  type: boolean
+                  example: true
+                webhook_on_status_update_url:
+                  description: An absolute URL where a POST request will be sent as soon as the playbook run's status is updated. The allowed protocols are HTTP and HTTPS.
+                  type: string
+                  example: https://httpbin.org/post
+                webhook_on_status_update_enabled:
+                  description: Boolean that indicates whether the webhook declared in webhook_on_status_update_url will be automatically sent.
                   type: boolean
                   example: true
       x-codeSamples:
@@ -1480,13 +1480,13 @@ paths:
           source: |
             curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
-            -d '{"title": "Cloud Incidents", "description": "A playbook to follow when there is an incident regarding the availability of the cloud service.", "team_id": "p03rbi6viyztysbqnkvcqyel2i","create_public_incident": true,"checklists": [{"title": "Triage issue","items": [{"title": "Gather information from customer."}]}]}'
+            -d '{"title": "Cloud PlaybookRuns", "description": "A playbook to follow when there is an playbook run regarding the availability of the cloud service.", "team_id": "p03rbi6viyztysbqnkvcqyel2i","create_public_playbook_run": true,"checklists": [{"title": "Triage issue","items": [{"title": "Gather information from customer."}]}]}'
       callbacks:
-        incidentCreation:
+        playbookRunCreation:
           "{$request.body#/webhook_on_creation_url}":
             post:
-              summary: Incident's creation outgoing webhook.
-              description: When an incident is created with this playbook, a POST request is sent to the URL configured in webhook_on_creation_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the incident's channel. No retries are made.
+              summary: PlaybookRun's creation outgoing webhook.
+              description: When an playbook run is created with this playbook, a POST request is sent to the URL configured in webhook_on_creation_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the playbook run's channel. No retries are made.
               operationId: webhookOncreation
               requestBody:
                 required: true
@@ -1494,6 +1494,21 @@ paths:
                   application/json:
                     schema:
                       $ref: "#/components/schemas/WebhookOnCreationPayload"
+              responses:
+                "2XX":
+                  description: Your server returns a 2XX code if it successfully received the request.
+        playbookRunStatusUpdate:
+          "{$request.body#/webhook_on_status_update_url}":
+            post:
+              summary: PlaybookRun's status update outgoing webhook.
+              description: When an playbook run's status is updated, a POST request is sent to the URL configured in webhook_on_status_update_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the playbook run's channel. No retries are made.
+              operationId: webhookOnStatusUpdate
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/WebhookOnStatusUpdatePayload"
               responses:
                 "2XX":
                   description: Your server returns a 2XX code if it successfully received the request.
@@ -1581,7 +1596,7 @@ paths:
           source: |
             curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
-            -d '{"title": "Playbook","team_id": "ni8duypfe7bamprxqeffd563gy","create_public_incident": true,"checklists": [{"title": "Title","items": [{"title": "Title"}]}]}'
+            -d '{"title": "Playbook","team_id": "ni8duypfe7bamprxqeffd563gy","create_public_playbook_run": true,"checklists": [{"title": "Title","items": [{"title": "Title"}]}]}'
       responses:
         200:
           description: Playbook succesfully updated.
@@ -1649,51 +1664,51 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
       description: There was an internal error in the server.
-    Incident:
+    PlaybookRun:
       type: object
       properties:
         id:
           type: string
-          description: A unique, 26 characters long, alphanumeric identifier for the incident.
+          description: A unique, 26 characters long, alphanumeric identifier for the playbook run.
           example: mx3xyzdojfgyfdx8sc8of1gdme
         name:
           type: string
-          description: The name of the incident.
+          description: The name of the playbook run.
           example: Server down in EU cluster
         description:
           type: string
-          description: The description of the incident.
+          description: The description of the playbook run.
           example: There is one server in the EU cluster that is not responding since April 12.
         is_active:
           type: boolean
-          description: True if the incident is ongoing; false if the incident is ended.
+          description: True if the playbook run is ongoing; false if the playbook run is ended.
           example: false
-        commander_user_id:
+        owner_user_id:
           type: string
-          description: The identifier of the user that is commanding the incident.
+          description: The identifier of the user that is commanding the playbook run.
           example: bqnbdf8uc0a8yz4i39qrpgkvtg
         team_id:
           type: string
-          description: The identifier of the team where the incident's channel is in.
+          description: The identifier of the team where the playbook run's channel is in.
           example: 61ji2mpflefup3cnuif80r5rde
         channel_id:
           type: string
-          description: The identifier of the incident's channel.
+          description: The identifier of the playbook run's channel.
           example: hwrmiyzj3kadcilh3ukfcnsbt6
         create_at:
           type: integer
           format: int64
-          description: The incident creation timestamp, formatted as the number of milliseconds since the Unix epoch.
+          description: The playbook run creation timestamp, formatted as the number of milliseconds since the Unix epoch.
           example: 1606807976289
         end_at:
           type: integer
           format: int64
-          description: The incident finish timestamp, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the incident is not finished.
+          description: The playbook run finish timestamp, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the playbook run is not finished.
           example: 0
         delete_at:
           type: integer
           format: int64
-          description: The incident deletion timestamp, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the incident is not deleted.
+          description: The playbook run deletion timestamp, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the playbook run is not deleted.
           example: 0
         active_stage:
           type: integer
@@ -1706,52 +1721,52 @@ components:
           example: Triage issue
         post_id:
           type: string
-          description: If the incident was created from a post, this field contains the identifier of such post. If not, this field is empty.
+          description: If the playbook run was created from a post, this field contains the identifier of such post. If not, this field is empty.
           example: b2ntfcrl4ujivl456ab4b3aago
         playbook_id:
           type: string
-          description: The identifier of the playbook with from which this incident was created.
+          description: The identifier of the playbook with from which this playbook run was created.
           example: 0y4a0ntte97cxvfont8y84wa7x
         checklists:
           type: array
           items:
             $ref: "#/components/schemas/Checklist"
-    IncidentMetadata:
+    PlaybookRunMetadata:
       type: object
       properties:
         channel_name:
           type: string
-          description: Name of the channel associated to the incident.
+          description: Name of the channel associated to the playbook run.
           example: server-down-in-eu-cluster
         channel_display_name:
           type: string
-          description: Display name of the channel associated to the incident.
+          description: Display name of the channel associated to the playbook run.
           example: Server down in EU cluster
         team_name:
           type: string
-          description: Name of the team the incident is in.
+          description: Name of the team the playbook run is in.
           example: sre-staff
         num_members:
           type: integer
           format: int64
-          description: Number of users that have been members of the incident at any point.
+          description: Number of users that have been members of the playbook run at any point.
           example: 25
         total_posts:
           type: integer
           format: int64
-          description: Number of posts in the channel associated to the incident.
+          description: Number of posts in the channel associated to the playbook run.
           example: 202
-    IncidentList:
+    PlaybookRunList:
       type: object
       properties:
         total_count:
           type: integer
-          description: The total number of incidents in the list, regardless of the paging.
+          description: The total number of playbook runs in the list, regardless of the paging.
           format: int32
           example: 305
         page_count:
           type: integer
-          description: The total number of pages. This depends on the total number of incidents in the database and the per_page parameter sent with the request.
+          description: The total number of pages. This depends on the total number of playbook runs in the database and the per_page parameter sent with the request.
           format: int32
           example: 2
         has_more:
@@ -1760,10 +1775,10 @@ components:
           example: true
         items:
           type: array
-          description: The incidents in this page.
+          description: The playbook runs in this page.
           items:
-            $ref: "#/components/schemas/Incident"
-    CommanderInfo:
+            $ref: "#/components/schemas/PlaybookRun"
+    OwnerInfo:
       type: object
       required:
         - user_id
@@ -1771,11 +1786,11 @@ components:
       properties:
         user_id:
           type: string
-          description: A unique, 26 characters long, alphanumeric identifier for the commander.
+          description: A unique, 26 characters long, alphanumeric identifier for the owner.
           example: ahz0s61gh275i7z2ag4g1ntvjm
         username:
           type: string
-          description: Commander's username.
+          description: Owner's username.
           example: aaron.medina
     TriggerIdReturn:
       type: object
@@ -1796,18 +1811,18 @@ components:
         title:
           type: string
           description: The title of the playbook.
-          example: Cloud Incidents
+          example: Cloud PlaybookRuns
         description:
           type: string
           description: The description of the playbook.
-          example: A playbook to follow when there is an incident regarding the availability of the cloud service.
+          example: A playbook to follow when there is an playbook run regarding the availability of the cloud service.
         team_id:
           type: string
           description: The identifier of the team where the playbook is in.
           example: p03rbi6viyztysbqnkvcqyel2i
-        create_public_incident:
+        create_public_playbook_run:
           type: boolean
-          description: A boolean indicating whether the incidents created from this playbook should be public or private.
+          description: A boolean indicating whether the playbook runs created from this playbook should be public or private.
           example: true
         create_at:
           type: integer
@@ -1905,7 +1920,7 @@ components:
           example: 1607774621321
         state_modified_post_id:
           type: string
-          description: The identifier of the message posted by the Incident Response bot that informs of the latest modification of the item's state.
+          description: The identifier of the message posted by the PlaybookRun Response bot that informs of the latest modification of the item's state.
           example: 8nmjfgrkwvokrg13urvo10bx9j
         assignee_id:
           type: string
@@ -1918,7 +1933,7 @@ components:
           example: 1608897821125
         assignee_modified_post_id:
           type: string
-          description: The identifier of the message posted by the Incident Response bot that informs of the latest modification of the item's assignee.
+          description: The identifier of the message posted by the PlaybookRun Response bot that informs of the latest modification of the item's assignee.
           example: ol7h83caow11xfbydhqvyg16b4
         command:
           type: string
@@ -1949,14 +1964,27 @@ components:
           example: Specific details about the error, depending on the case.
     WebhookOnCreationPayload:
       allOf:
-        - $ref: "#/components/schemas/Incident"
+        - $ref: "#/components/schemas/PlaybookRun"
         - type: object
           properties:
             channel_url:
               type: string
-              description: Absolute URL to the incident's channel.
-              example: http://example.com/ad-1/channels/incident-channel-name
+              description: Absolute URL to the playbook run's channel.
+              example: http://example.com/ad-1/channels/channel-name
             details_url:
               type: string
-              description: Absolute URL to the incident's details.
-              example: http://example.com/ad-1/com.mattermost.plugin-incident-management/incidents/incidentID
+              description: Absolute URL to the playbook run's details.
+              example: http://example.com/ad-1/com.mattermost.plugin-incident-management/runs/playbookRunID
+    WebhookOnStatusUpdatePayload:
+      allOf:
+        - $ref: '#/components/schemas/PlaybookRun'
+        - type: object
+          properties:
+            channel_url:
+              type: string
+              description: Absolute URL to the playbook run's channel.
+              example: http://example.com/ad-1/channels/channel-name
+            details_url:
+              type: string
+              description: Absolute URL to the playbook run's details.
+              example: http://example.com/ad-1/com.mattermost.plugin-incident-management/runs/playbookRunID

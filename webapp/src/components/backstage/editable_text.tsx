@@ -35,21 +35,21 @@ const Input = styled.input`
     box-shadow: 0 2px 0 var(--button-bg);
     border: none;
     margin-top: -2px;
-    max-width: 450px;
+    max-width: 650px;
     padding: 0 0 2px;
 `;
 
 const Text = styled.span`
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 450px;
+    max-width: 650px;
     white-space: nowrap;
 `;
 
 const Placeholder = styled.span`
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 450px;
+    max-width: 650px;
     white-space: nowrap;
     font-style: italic;
 `;

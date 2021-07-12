@@ -12,17 +12,18 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 
-import {setTriggerId} from 'src/actions';
-import {CommanderInfo} from 'src/types/backstage';
 import {
-    FetchIncidentsParams,
+    FetchPlaybookRunsParams,
     FetchPlaybooksParams,
-    FetchIncidentsReturn,
-    Incident,
-    isIncident,
+    FetchPlaybookRunsReturn,
+    PlaybookRun,
+    isPlaybookRun,
     isMetadata,
     Metadata,
-} from 'src/types/incident';
+} from 'src/types/playbook_run';
+
+import {setTriggerId} from 'src/actions';
+import {OwnerInfo} from 'src/types/backstage';
 import {
     ChecklistItem,
     ChecklistItemState,
@@ -33,70 +34,70 @@ import {
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 
-import {Stats} from 'src/types/stats';
+import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 
 const apiUrl = `/plugins/${pluginId}/api/v0`;
 
-export async function fetchIncidents(params: FetchIncidentsParams) {
+export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
     const queryParams = qs.stringify(params, {addQueryPrefix: true});
 
-    let data = await doGet(`${apiUrl}/incidents${queryParams}`);
+    let data = await doGet(`${apiUrl}/runs${queryParams}`);
     if (!data) {
-        data = {items: [], total_count: 0, page_count: 0, has_more: false} as FetchIncidentsReturn;
+        data = {items: [], total_count: 0, page_count: 0, has_more: false} as FetchPlaybookRunsReturn;
     }
 
-    return data as FetchIncidentsReturn;
+    return data as FetchPlaybookRunsReturn;
 }
 
-export async function fetchIncident(id: string) {
-    const data = await doGet(`${apiUrl}/incidents/${id}`);
+export async function fetchPlaybookRun(id: string) {
+    const data = await doGet(`${apiUrl}/runs/${id}`);
     // eslint-disable-next-line no-process-env
     if (process.env.NODE_ENV !== 'production') {
-        if (!isIncident(data)) {
+        if (!isPlaybookRun(data)) {
             // eslint-disable-next-line no-console
-            console.error('expected an Incident in fetchIncident, received:', data);
+            console.error('expected an PlaybookRun in fetchPlaybookRun, received:', data);
         }
     }
 
-    return data as Incident;
+    return data as PlaybookRun;
 }
 
-export async function fetchIncidentMetadata(id: string) {
-    const data = await doGet(`${apiUrl}/incidents/${id}/metadata`);
+export async function fetchPlaybookRunMetadata(id: string) {
+    const data = await doGet(`${apiUrl}/runs/${id}/metadata`);
     // eslint-disable-next-line no-process-env
     if (process.env.NODE_ENV !== 'production') {
         if (!isMetadata(data)) {
             // eslint-disable-next-line no-console
-            console.error('expected a Metadata in fetchIncidentMetadata, received:', data);
+            console.error('expected a Metadata in fetchPlaybookRunMetadata, received:', data);
         }
     }
 
     return data as Metadata;
 }
 
-export async function fetchIncidentByChannel(channelId: string) {
-    const data = await doGet(`${apiUrl}/incidents/channel/${channelId}`);
+export async function fetchPlaybookRunByChannel(channelId: string) {
+    const data = await doGet(`${apiUrl}/runs/channel/${channelId}`);
     // eslint-disable-next-line no-process-env
     if (process.env.NODE_ENV !== 'production') {
-        if (!isIncident(data)) {
+        if (!isPlaybookRun(data)) {
             // eslint-disable-next-line no-console
-            console.error('expected an Incident in fetchIncident, received:', data);
+            console.error('expected an PlaybookRun in fetchPlaybookRun, received:', data);
         }
     }
 
-    return data as Incident;
+    return data as PlaybookRun;
 }
 
-export async function fetchCheckAndSendMessageOnJoin(incidentID: string, channelId: string) {
-    const data = await doGet(`${apiUrl}/incidents/${incidentID}/check-and-send-message-on-join/${channelId}`);
+export async function fetchCheckAndSendMessageOnJoin(playbookRunID: string, channelId: string) {
+    const data = await doGet(`${apiUrl}/runs/${playbookRunID}/check-and-send-message-on-join/${channelId}`);
     return Boolean(data.viewed);
 }
 
-export function fetchIncidentChannels(teamID: string, userID: string) {
-    return doGet(`${apiUrl}/incidents/channels?team_id=${teamID}&member_id=${userID}`);
+export function fetchPlaybookRunChannels(teamID: string, userID: string) {
+    return doGet(`${apiUrl}/runs/channels?team_id=${teamID}&member_id=${userID}`);
 }
 
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {
@@ -122,9 +123,9 @@ export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getSta
     }
 }
 
-export async function clientRunChecklistItemSlashCommand(dispatch: Dispatch, incidentId: string, checklistNumber: number, itemNumber: number) {
+export async function clientRunChecklistItemSlashCommand(dispatch: Dispatch, playbookRunId: string, checklistNumber: number, itemNumber: number) {
     try {
-        const data = await doPost(`${apiUrl}/incidents/${incidentId}/checklists/${checklistNumber}/item/${itemNumber}/run`);
+        const data = await doPost(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNumber}/item/${itemNumber}/run`);
         if (data.trigger_id) {
             dispatch({type: IntegrationTypes.RECEIVED_DIALOG_TRIGGER_ID, data: data.trigger_id});
         }
@@ -145,7 +146,6 @@ const clientHasPlaybooks = async (teamID: string): Promise<boolean> => {
     const result = await clientFetchPlaybooks(teamID, {
         page: 0,
         per_page: 1,
-        member_only: true,
     }) as FetchPlaybooksNoChecklistReturn;
 
     return result.items?.length > 0;
@@ -170,11 +170,11 @@ export async function savePlaybook(playbook: Playbook) {
         return data;
     }
 
-    const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbook.id}`, {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbook.id}`, {
         method: 'PUT',
         body: JSON.stringify(playbook),
     });
-    return data;
+    return {id: playbook.id};
 }
 
 export async function deletePlaybook(playbook: PlaybookNoChecklist) {
@@ -192,53 +192,53 @@ export async function fetchUsersInTeam(teamId: string): Promise<UserProfile[]> {
     return Client4.getProfilesInTeam(teamId, 0, 200);
 }
 
-export async function fetchCommandersInTeam(teamId: string): Promise<CommanderInfo[]> {
+export async function fetchOwnersInTeam(teamId: string): Promise<OwnerInfo[]> {
     const queryParams = qs.stringify({team_id: teamId}, {addQueryPrefix: true});
 
-    let data = await doGet(`${apiUrl}/incidents/commanders${queryParams}`);
+    let data = await doGet(`${apiUrl}/runs/owners${queryParams}`);
     if (!data) {
         data = [];
     }
-    return data as CommanderInfo[];
+    return data as OwnerInfo[];
 }
 
-export async function setCommander(incidentId: string, commanderId: string) {
-    const body = `{"commander_id": "${commanderId}"}`;
+export async function setOwner(playbookRunId: string, ownerId: string) {
+    const body = `{"owner_id": "${ownerId}"}`;
     try {
-        const data = await doPost(`${apiUrl}/incidents/${incidentId}/commander`, body);
+        const data = await doPost(`${apiUrl}/runs/${playbookRunId}/owner`, body);
         return data;
     } catch (error) {
         return {error};
     }
 }
 
-export async function setAssignee(incidentId: string, checklistNum: number, itemNum: number, assigneeId?: string) {
+export async function setAssignee(playbookRunId: string, checklistNum: number, itemNum: number, assigneeId?: string) {
     const body = JSON.stringify({assignee_id: assigneeId});
     try {
-        return await doPut(`${apiUrl}/incidents/${incidentId}/checklists/${checklistNum}/item/${itemNum}/assignee`, body);
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/assignee`, body);
     } catch (error) {
         return {error};
     }
 }
 
-export async function setChecklistItemState(incidentID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
-    return doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}/state`,
+export async function setChecklistItemState(playbookRunID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
+    return doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/state`,
         JSON.stringify({
             new_state: newState,
         }),
     );
 }
 
-export async function clientAddChecklistItem(incidentID: string, checklistNum: number, checklistItem: ChecklistItem) {
-    const data = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/add`,
+export async function clientAddChecklistItem(playbookRunID: string, checklistNum: number, checklistItem: ChecklistItem) {
+    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/add`,
         JSON.stringify(checklistItem),
     );
 
     return data;
 }
 
-export async function clientRemoveChecklistItem(incidentID: string, checklistNum: number, itemNum: number) {
-    await doFetchWithoutResponse(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`, {
+export async function clientRemoveChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}`, {
         method: 'delete',
         body: '',
     });
@@ -250,8 +250,8 @@ interface ChecklistItemUpdate {
     description: string
 }
 
-export async function clientEditChecklistItem(incidentID: string, checklistNum: number, itemNum: number, itemUpdate: ChecklistItemUpdate) {
-    const data = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/item/${itemNum}`,
+export async function clientEditChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number, itemUpdate: ChecklistItemUpdate) {
+    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}`,
         JSON.stringify({
             title: itemUpdate.title,
             command: itemUpdate.command,
@@ -261,8 +261,8 @@ export async function clientEditChecklistItem(incidentID: string, checklistNum: 
     return data;
 }
 
-export async function clientReorderChecklist(incidentID: string, checklistNum: number, itemNum: number, newLocation: number) {
-    const data = await doPut(`${apiUrl}/incidents/${incidentID}/checklists/${checklistNum}/reorder`,
+export async function clientReorderChecklist(playbookRunID: string, checklistNum: number, itemNum: number, newLocation: number) {
+    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/reorder`,
         JSON.stringify({
             item_num: itemNum,
             new_location: newLocation,
@@ -272,8 +272,8 @@ export async function clientReorderChecklist(incidentID: string, checklistNum: n
     return data;
 }
 
-export async function clientRemoveTimelineEvent(incidentID: string, entryID: string) {
-    await doFetchWithoutResponse(`${apiUrl}/incidents/${incidentID}/timeline/${entryID}`, {
+export async function clientRemoveTimelineEvent(playbookRunID: string, entryID: string) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/timeline/${entryID}`, {
         method: 'delete',
         body: '',
     });
@@ -288,8 +288,24 @@ export async function fetchStats(teamID: string): Promise<Stats | null> {
     return data as Stats;
 }
 
-export async function telemetryEventForIncident(incidentID: string, action: string) {
-    await doFetchWithoutResponse(`${apiUrl}/telemetry/incident/${incidentID}`, {
+export async function fetchPlaybookStats(playbookID: string): Promise<PlaybookStats> {
+    const data = await doGet(`${apiUrl}/stats/playbook?playbook_id=${playbookID}`);
+    if (!data) {
+        return EmptyPlaybookStats;
+    }
+
+    return data as PlaybookStats;
+}
+
+export async function telemetryEventForPlaybookRun(playbookRunID: string, action: string) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry/run/${playbookRunID}`, {
+        method: 'POST',
+        body: JSON.stringify({action}),
+    });
+}
+
+export async function telemetryEventForPlaybook(playbookID: string, action: string) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry/playbook/${playbookID}`, {
         method: 'POST',
         body: JSON.stringify({action}),
     });
@@ -297,7 +313,7 @@ export async function telemetryEventForIncident(incidentID: string, action: stri
 
 export async function setGlobalSettings(settings: GlobalSettings) {
     await doFetchWithoutResponse(`${apiUrl}/settings`, {
-        method: 'POST',
+        method: 'PUT',
         body: JSON.stringify(settings),
     });
 }
@@ -311,24 +327,24 @@ export async function fetchGlobalSettings(): Promise<GlobalSettings> {
     return globalSettingsSetDefaults(data);
 }
 
-export async function updateRetrospective(incidentID: string, updatedText: string) {
-    const data = await doPost(`${apiUrl}/incidents/${incidentID}/retrospective`,
+export async function updateRetrospective(playbookRunID: string, updatedText: string) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective`,
         JSON.stringify({
             retrospective: updatedText,
         }));
     return data;
 }
 
-export async function publishRetrospective(incidentID: string, currentText: string) {
-    const data = await doPost(`${apiUrl}/incidents/${incidentID}/retrospective/publish`,
+export async function publishRetrospective(playbookRunID: string, currentText: string) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective/publish`,
         JSON.stringify({
             retrospective: currentText,
         }));
     return data;
 }
 
-export async function noRetrospective(incidentID: string) {
-    await doFetchWithoutResponse(`${apiUrl}/incidents/${incidentID}/no-retrospective-button`, {
+export async function noRetrospective(playbookRunID: string) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/no-retrospective-button`, {
         method: 'POST',
     });
 }
@@ -368,6 +384,15 @@ export const postMessageToAdmins = async (messageType: AdminNotificationType, is
     const body = `{"message_type": "${messageType}", "is_team_edition": ${isServerTeamEdition}}`;
     try {
         const response = await doPost(`${apiUrl}/bot/notify-admins`, body);
+        return {data: response};
+    } catch (e) {
+        return {error: e.message};
+    }
+};
+
+export const promptForFeedback = async () => {
+    try {
+        const response = await doPost(`${apiUrl}/bot/prompt-for-feedback`);
         return {data: response};
     } catch (e) {
         return {error: e.message};

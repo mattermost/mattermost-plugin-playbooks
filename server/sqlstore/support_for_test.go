@@ -7,9 +7,9 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	mock_bot "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/store/storetest"
 	"github.com/stretchr/testify/require"
@@ -64,6 +64,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	require.NoError(t, err)
 
 	setupChannelsTable(t, db)
+	setupPostsTable(t, db)
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		err = sqlStore.Migrate(currentSchemaVersion)
@@ -340,7 +341,7 @@ func setupPostsTable(t testing.TB, db *sqlx.DB) {
 	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
 	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
 		_, err := db.Exec(`
-			CREATE TABLE public.posts (
+			CREATE TABLE IF NOT EXISTS public.posts (
 				id character varying(26) NOT NULL,
 				createat bigint,
 				updateat bigint,
@@ -368,7 +369,7 @@ func setupPostsTable(t testing.TB, db *sqlx.DB) {
 
 	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
 	_, err := db.Exec(`
-			CREATE TABLE Posts (
+			CREATE TABLE IF NOT EXISTS Posts (
 			  Id varchar(26) NOT NULL,
 			  CreateAt bigint(20) DEFAULT NULL,
 			  UpdateAt bigint(20) DEFAULT NULL,
@@ -463,14 +464,14 @@ func createChannels(t testing.TB, store *SQLStore, channels []model.Channel) {
 	require.NoError(t, err)
 }
 
-func createIncidentChannel(t testing.TB, store *SQLStore, i *incident.Incident) {
+func createPlaybookRunChannel(t testing.TB, store *SQLStore, playbookRun *app.PlaybookRun) {
 	t.Helper()
 
-	if i.CreateAt == 0 {
-		i.CreateAt = model.GetMillis()
+	if playbookRun.CreateAt == 0 {
+		playbookRun.CreateAt = model.GetMillis()
 	}
 
-	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "CreateAt", "DeleteAt").Values(i.ChannelID, i.Name, i.CreateAt, 0)
+	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "CreateAt", "DeleteAt").Values(playbookRun.ChannelID, playbookRun.Name, playbookRun.CreateAt, 0)
 
 	_, err := store.execBuilder(store.db, insertBuilder)
 	require.NoError(t, err)

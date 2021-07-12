@@ -3,15 +3,15 @@
 
 import endpoints from './endpoints.json';
 
-const incidentsEndpoint = endpoints.incidents;
+const playbookRunsEndpoint = endpoints.runs;
 
 /**
- * Get all incidents directly via API
+ * Get all playbook runs directly via API
  */
-Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
+Cypress.Commands.add('apiGetAllPlaybookRuns', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
         qs: {team_id: teamId, per_page: 10000},
         method: 'GET',
     }).then((response) => {
@@ -21,12 +21,12 @@ Cypress.Commands.add('apiGetAllIncidents', (teamId) => {
 });
 
 /**
- * Get all active incidents directly via API
+ * Get all active playbook runs directly via API
  */
-Cypress.Commands.add('apiGetAllActiveIncidents', (teamId, userId = '') => {
+Cypress.Commands.add('apiGetAllActivePlaybookRuns', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
         qs: {team_id: teamId, status: 'Active', member_id: userId},
         method: 'GET',
     }).then((response) => {
@@ -36,12 +36,12 @@ Cypress.Commands.add('apiGetAllActiveIncidents', (teamId, userId = '') => {
 });
 
 /**
- * Get all reported incidents directly via API
+ * Get all reported playbook runs directly via API
  */
-Cypress.Commands.add('apiGetAllReportedIncidents', (teamId, userId = '') => {
+Cypress.Commands.add('apiGetAllReportedPlaybookRuns', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
         qs: {team_id: teamId, status: 'Reported', member_id: userId},
         method: 'GET',
     }).then((response) => {
@@ -51,12 +51,12 @@ Cypress.Commands.add('apiGetAllReportedIncidents', (teamId, userId = '') => {
 });
 
 /**
- * Get incident by name directly via API
+ * Get playbook run by name directly via API
  */
-Cypress.Commands.add('apiGetIncidentByName', (teamId, name) => {
+Cypress.Commands.add('apiGetPlaybookRunByName', (teamId, name) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/incidents',
+        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
         qs: {team_id: teamId, search_term: name},
         method: 'GET',
     }).then((response) => {
@@ -66,14 +66,14 @@ Cypress.Commands.add('apiGetIncidentByName', (teamId, name) => {
 });
 
 /**
- * Get an incident directly via API
- * @param {String} incidentId
+ * Get an playbook run directly via API
+ * @param {String} playbookRunId
  * All parameters required
  */
-Cypress.Commands.add('apiGetIncident', (incidentId) => {
+Cypress.Commands.add('apiGetPlaybookRun', (playbookRunId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `${incidentsEndpoint}/${incidentId}`,
+        url: `${playbookRunsEndpoint}/${playbookRunId}`,
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -82,16 +82,16 @@ Cypress.Commands.add('apiGetIncident', (incidentId) => {
 });
 
 /**
- * Start an incident directly via API.
+ * Start an playbook run directly via API.
  */
-Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, commanderUserId, description = ''}) => {
+Cypress.Commands.add('apiRunPlaybook', ({teamId, playbookId, playbookRunName, ownerUserId, description = ''}) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: incidentsEndpoint,
+        url: playbookRunsEndpoint,
         method: 'POST',
         body: {
-            name: incidentName,
-            commander_user_id: commanderUserId,
+            name: playbookRunName,
+            owner_user_id: ownerUserId,
             team_id: teamId,
             playbook_id: playbookId,
             description,
@@ -102,9 +102,9 @@ Cypress.Commands.add('apiStartIncident', ({teamId, playbookId, incidentName, com
     });
 });
 
-// Update an incident's status programmatically.
+// Update an playbook run's status programmatically.
 Cypress.Commands.add('apiUpdateStatus', ({
-    incidentId,
+    playbookRunId,
     userId,
     channelId,
     teamId,
@@ -114,7 +114,7 @@ Cypress.Commands.add('apiUpdateStatus', ({
 }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `${incidentsEndpoint}/${incidentId}/update-status-dialog`,
+        url: `${playbookRunsEndpoint}/${playbookRunId}/update-status-dialog`,
         method: 'POST',
         body: {
             type: 'dialog_submission',
@@ -133,13 +133,13 @@ Cypress.Commands.add('apiUpdateStatus', ({
 });
 
 /**
- * Restart an incident directly via API
- * @param {String} incidentId
+ * Restart an playbook run directly via API
+ * @param {String} playbookRunId
  * All parameters required
  */
-Cypress.Commands.add('apiRestartIncident', (incidentId) => {
+Cypress.Commands.add('apiRestartPlaybookRun', (playbookRunId) => {
     return cy.apiUpdateStatus({
-        incidentId,
+        playbookRunId,
         userId: '',
         channelId: '',
         teamId: '',
@@ -151,18 +151,18 @@ Cypress.Commands.add('apiRestartIncident', (incidentId) => {
 });
 
 /**
- * Change the commander of an incident directly via API
- * @param {String} incidentId
+ * Change the owner of an playbook run directly via API
+ * @param {String} playbookRunId
  * @param {String} userId
  * All parameters required
  */
-Cypress.Commands.add('apiChangeIncidentCommander', (incidentId, userId) => {
+Cypress.Commands.add('apiChangePlaybookRunOwner', (playbookRunId, userId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: incidentsEndpoint + '/' + incidentId + '/commander',
+        url: playbookRunsEndpoint + '/' + playbookRunId + '/owner',
         method: 'POST',
         body: {
-            commander_id: userId,
+            owner_id: userId,
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -170,32 +170,32 @@ Cypress.Commands.add('apiChangeIncidentCommander', (incidentId, userId) => {
     });
 });
 
-// Verify incident is created
-Cypress.Commands.add('verifyIncidentActive', (teamId, incidentName, incidentDescription) => {
-    cy.apiGetIncidentByName(teamId, incidentName).then((response) => {
-        const returnedIncidents = response.body;
-        const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
-        assert.isDefined(incident);
-        assert.equal(incident.end_at, 0);
-        assert.equal(incident.name, incidentName);
+// Verify playbook run is created
+Cypress.Commands.add('verifyPlaybookRunActive', (teamId, playbookRunName, playbookRunDescription) => {
+    cy.apiGetPlaybookRunByName(teamId, playbookRunName).then((response) => {
+        const returnedPlaybookRuns = response.body;
+        const playbookRun = returnedPlaybookRuns.items.find((inc) => inc.name === playbookRunName);
+        assert.isDefined(playbookRun);
+        assert.equal(playbookRun.end_at, 0);
+        assert.equal(playbookRun.name, playbookRunName);
 
         cy.log('test 1');
 
         // Only check the description if provided. The server may supply a default depending
-        // on how the incident was started.
-        if (incidentDescription) {
-            assert.equal(incident.description, incidentDescription);
+        // on how the playbook run was started.
+        if (playbookRunDescription) {
+            assert.equal(playbookRun.description, playbookRunDescription);
         }
     });
 });
 
-// Verify incident exists but is not active
-Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
-    cy.apiGetIncidentByName(teamId, incidentName).then((response) => {
-        const returnedIncidents = response.body;
-        const incident = returnedIncidents.items.find((inc) => inc.name === incidentName);
-        assert.isDefined(incident);
-        assert.notEqual(incident.end_at, 0);
+// Verify playbook run exists but is not active
+Cypress.Commands.add('verifyPlaybookRunEnded', (teamId, playbookRunName) => {
+    cy.apiGetPlaybookRunByName(teamId, playbookRunName).then((response) => {
+        const returnedPlaybookRuns = response.body;
+        const playbookRun = returnedPlaybookRuns.items.find((inc) => inc.name === playbookRunName);
+        assert.isDefined(playbookRun);
+        assert.notEqual(playbookRun.end_at, 0);
     });
 });
 
@@ -203,7 +203,7 @@ Cypress.Commands.add('verifyIncidentEnded', (teamId, incidentName) => {
 Cypress.Commands.add('apiCreatePlaybook', ({
     teamId,
     title,
-    createPublicIncident,
+    createPublicPlaybookRun,
     checklists,
     memberIDs,
     broadcastChannelId,
@@ -211,14 +211,18 @@ Cypress.Commands.add('apiCreatePlaybook', ({
     reminderTimerDefaultSeconds,
     invitedUserIds,
     inviteUsersEnabled,
-    defaultCommanderId,
-    defaultCommanderEnabled,
+    defaultOwnerId,
+    defaultOwnerEnabled,
     announcementChannelId,
     announcementChannelEnabled,
     webhookOnCreationURL,
     webhookOnCreationEnabled,
+    webhookOnStatusUpdateURL,
+    webhookOnStatusUpdateEnabled,
     messageOnJoin,
     messageOnJoinEnabled,
+    signalAnyKeywords,
+    signalAnyKeywordsEnabled,
 }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -227,7 +231,7 @@ Cypress.Commands.add('apiCreatePlaybook', ({
         body: {
             title,
             team_id: teamId,
-            create_public_incident: createPublicIncident,
+            create_public_playbook_run: createPublicPlaybookRun,
             checklists,
             member_ids: memberIDs,
             broadcast_channel_id: broadcastChannelId,
@@ -235,14 +239,18 @@ Cypress.Commands.add('apiCreatePlaybook', ({
             reminder_timer_default_seconds: reminderTimerDefaultSeconds,
             invited_user_ids: invitedUserIds,
             invite_users_enabled: inviteUsersEnabled,
-            default_commander_id: defaultCommanderId,
-            default_commander_enabled: defaultCommanderEnabled,
+            default_owner_id: defaultOwnerId,
+            default_owner_enabled: defaultOwnerEnabled,
             announcement_channel_id: announcementChannelId,
             announcement_channel_enabled: announcementChannelEnabled,
             webhook_on_creation_url: webhookOnCreationURL,
             webhook_on_creation_enabled: webhookOnCreationEnabled,
+            webhook_on_status_update_url: webhookOnStatusUpdateURL,
+            webhook_on_status_update_enabled: webhookOnStatusUpdateEnabled,
             message_on_join: messageOnJoin,
             message_on_join_enabled: messageOnJoinEnabled,
+            signal_any_keywords: signalAnyKeywords,
+            signal_any_keywords_enabled: signalAnyKeywordsEnabled,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);

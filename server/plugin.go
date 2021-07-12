@@ -4,11 +4,10 @@ import (
 	"net/http"
 
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/api"
+	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/command"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/incident"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/playbook"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -33,11 +32,12 @@ var (
 type Plugin struct {
 	plugin.MattermostPlugin
 
-	handler         *api.Handler
-	config          *config.ServiceImpl
-	incidentService incident.Service
-	playbookService playbook.Service
-	bot             *bot.Bot
+	handler            *api.Handler
+	config             *config.ServiceImpl
+	playbookRunService app.PlaybookRunService
+	playbookService    app.PlaybookService
+	bot                *bot.Bot
+	pluginAPI          *pluginapi.Client
 }
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
@@ -47,20 +47,21 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
-	pluginAPIClient := pluginapi.NewClient(p.API)
+	pluginAPIClient := pluginapi.NewClient(p.API, p.Driver)
+	p.pluginAPI = pluginAPIClient
 
 	p.config = config.NewConfigService(pluginAPIClient, manifest)
 	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
 
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
-		Username:    "incident",
-		DisplayName: "Incident Bot",
+		Username:    "playbook",
+		DisplayName: "Playbook Bot",
 		Description: "Incident Collaboration plugin's bot.",
 	},
 		pluginapi.ProfileImagePath("assets/incident_plugin_icon.png"),
 	)
 	if err != nil {
-		return errors.Wrapf(err, "failed to ensure incident bot")
+		return errors.Wrapf(err, "failed to ensure bot")
 	}
 
 	err = p.config.UpdateConfiguration(func(c *config.Configuration) {
@@ -72,8 +73,8 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	var telemetryClient interface {
-		incident.Telemetry
-		playbook.Telemetry
+		app.PlaybookRunTelemetry
+		app.PlaybookTelemetry
 		bot.Telemetry
 		Enable() error
 		Disable() error
@@ -111,6 +112,7 @@ func (p *Plugin) OnActivate() error {
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
 	apiClient := sqlstore.NewClient(pluginAPIClient)
+	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, telemetryClient)
 	sqlStore, err := sqlstore.New(apiClient, p.bot)
 	if err != nil {
 		return errors.Wrapf(err, "failed creating the SQL store")
@@ -128,18 +130,17 @@ func (p *Plugin) OnActivate() error {
 	}
 	mutex.Unlock()
 
-	incidentStore := sqlstore.NewIncidentStore(apiClient, p.bot, sqlStore)
+	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, p.bot, sqlStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
-	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, telemetryClient)
 
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
-	p.incidentService = incident.NewService(
+	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,
-		incidentStore,
+		playbookRunStore,
 		p.bot,
 		p.bot,
 		p.config,
@@ -147,14 +148,16 @@ func (p *Plugin) OnActivate() error {
 		telemetryClient,
 	)
 
-	if err = scheduler.SetCallback(p.incidentService.HandleReminder); err != nil {
-		pluginAPIClient.Log.Error("JobOnceScheduler could not add the incidentService's HandleReminder", "error", err.Error())
+	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
+		pluginAPIClient.Log.Error("JobOnceScheduler could not add the playbookRunService's HandleReminder", "error", err.Error())
 	}
 	if err = scheduler.Start(); err != nil {
 		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
 	}
 
-	p.playbookService = playbook.NewService(playbookStore, p.bot, telemetryClient)
+	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
+
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
@@ -163,18 +166,20 @@ func (p *Plugin) OnActivate() error {
 		p.bot,
 		p.config,
 	)
-	api.NewIncidentHandler(
+	api.NewPlaybookRunHandler(
 		p.handler.APIRouter,
-		p.incidentService,
+		p.playbookRunService,
 		p.playbookService,
 		pluginAPIClient,
 		p.bot,
 		p.bot,
 		p.config,
 	)
-	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.config)
+	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config)
-	api.NewTelemetryHandler(p.handler.APIRouter, p.incidentService, pluginAPIClient, p.bot, telemetryClient, telemetryClient, p.config)
+	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, telemetryClient, p.playbookService, telemetryClient, telemetryClient)
+	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
+	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting
@@ -184,8 +189,6 @@ func (p *Plugin) OnActivate() error {
 	if err = command.RegisterCommands(p.API.RegisterCommand, isTestingEnabled); err != nil {
 		return errors.Wrapf(err, "failed register commands")
 	}
-
-	p.API.LogDebug("Incident collaboration plugin Activated")
 
 	// prevent a recursive OnConfigurationChange
 	go func() {
@@ -207,7 +210,7 @@ func (p *Plugin) OnConfigurationChange() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API), p.bot, p.bot, p.incidentService, p.playbookService, p.config)
+	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot, p.bot, p.playbookRunService, p.playbookService, p.config)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("IncidentCollaborationPlugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
@@ -221,7 +224,7 @@ func (p *Plugin) UserHasJoinedChannel(c *plugin.Context, channelMember *model.Ch
 	if actor != nil && actor.Id != channelMember.UserId {
 		actorID = actor.Id
 	}
-	p.incidentService.UserHasJoinedChannel(channelMember.UserId, channelMember.ChannelId, actorID)
+	p.playbookRunService.UserHasJoinedChannel(channelMember.UserId, channelMember.ChannelId, actorID)
 }
 
 func (p *Plugin) UserHasLeftChannel(c *plugin.Context, channelMember *model.ChannelMember, actor *model.User) {
@@ -229,5 +232,9 @@ func (p *Plugin) UserHasLeftChannel(c *plugin.Context, channelMember *model.Chan
 	if actor != nil && actor.Id != channelMember.UserId {
 		actorID = actor.Id
 	}
-	p.incidentService.UserHasLeftChannel(channelMember.UserId, channelMember.ChannelId, actorID)
+	p.playbookRunService.UserHasLeftChannel(channelMember.UserId, channelMember.ChannelId, actorID)
+}
+
+func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
+	p.playbookService.MessageHasBeenPosted(c.SessionId, post)
 }
