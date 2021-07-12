@@ -173,7 +173,7 @@ const BackstagePlaybookRunList = () => {
             per_page: BACKSTAGE_LIST_PER_PAGE,
             sort: 'create_at',
             direction: 'desc',
-            statuses: statusOptions.map((opt) => opt.value),
+            statuses: statusOptions.filter((opt) => opt.value !== 'Archived' && opt.value !== '').map((opt) => opt.value),
         },
     );
 

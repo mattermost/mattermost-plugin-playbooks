@@ -65,6 +65,12 @@ const Dropdown = styled.div`
     z-index: 1;
 `;
 
+const Divider = styled.div`
+    background: var(--center-channel-color-16);
+    height: 1px;
+    margin: 8px 0;
+`;
+
 interface Props{
     target: JSX.Element;
     options: SelectOption[];
@@ -89,7 +95,7 @@ export const MultiSelect = (props: Props) => {
 
     const onSelect = (value:any, checked:boolean) => {
         const opts = props.options.map((opt) =>
-            (opt.value === value ? {
+            (opt.value === value && !opt.disabled ? {
                 ...opt,
                 selected: checked,
             } : {...opt}),
@@ -107,6 +113,10 @@ export const MultiSelect = (props: Props) => {
                 isOpen &&
                 <Dropdown>
                     {props.options.map((option) => {
+                        if (option.value === 'divider') {
+                            return <Divider/>;
+                        }
+
                         return (
                             <FilterCheckboxContainer
                                 key={option.value}

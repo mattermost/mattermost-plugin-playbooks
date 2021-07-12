@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
+import { telemetryEventForPlaybookRun } from 'src/client';
 
 import {MultiSelect, SelectOption} from '../../../multi_select';
 import './status_filter.scss';
@@ -25,6 +26,14 @@ export function StatusFilter(props: Props) {
         disabled: false,
     }));
 
+    // add devider
+    opts.splice(1, 0, {
+        display: '',
+        value: 'divider',
+        selected: false,
+        disabled: false,
+    });
+
     const [options, setOptions] = useState<SelectOption[]>(opts);
 
     const onSelectedChange = async (newOpts: SelectOption[], lastAction: SelectOption) => {
@@ -33,16 +42,16 @@ export function StatusFilter(props: Props) {
         if (lastAction.value === '') {
             newOptions = newOptions.map((opt) => ({
                 ...opt,
-                selected: lastAction.selected,
+                disabled: lastAction.selected,
             }));
         }
 
         const selectCnt = newOptions
             .filter((opt) => opt.value !== '')
             .reduce((acm, opt) => (acm + (opt.selected ? 1 : 0)), 0);
-        const allCheckbox = newOptions.filter((opt) => opt.value === '')[0];
 
-        allCheckbox.selected = selectCnt === newOptions.length - 1;
+        const allCheckbox = newOptions.filter((opt) => opt.value === '')[0];
+        allCheckbox.disabled = false;
 
         setOptions(newOptions);
 
@@ -50,10 +59,12 @@ export function StatusFilter(props: Props) {
             props.onChange([]);
         } else if (selectCnt > 0) {
             props.onChange(
-                newOptions.filter((opt) => opt.selected && opt.value !== '').map((opt) => opt.value),
+                newOptions
+                    .filter((opt) => opt.selected && opt.value !== '' && opt.value !== 'divider')
+                    .map((opt) => opt.value),
             );
         } else {
-            props.onChange(['_']); // no status is selected, should return empty list
+            props.onChange(['None']); // no status is selected, should return empty list
         }
     };
 
