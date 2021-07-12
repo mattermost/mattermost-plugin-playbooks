@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 
-import {MultiSelect, SelectOption} from 'src/components/multi_select'
+import {MultiSelect, SelectOption} from 'src/components/multi_select';
 import './status_filter.scss';
 
 interface Props {
