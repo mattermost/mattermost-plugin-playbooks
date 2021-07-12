@@ -260,10 +260,16 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	playbookRun, err = s.store.CreatePlaybookRun(playbookRun)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create playbook run")
+		return nil, errors.Wrap(err, "failed to create playbook run")
 	}
 
 	s.telemetry.CreatePlaybookRun(playbookRun, userID, public)
+
+	// Add users to channel after creating playbook run so that all automations trigger.
+	err = s.addPlaybookRunUsers(playbookRun, channel)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to add users to playbook run channel")
+	}
 
 	invitedUserIDs := playbookRun.InvitedUserIDs
 
@@ -1675,21 +1681,25 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 		}
 	}
 
+	return channel, nil
+}
+
+func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, channel *model.Channel) error {
 	if _, err := s.pluginAPI.Team.CreateMember(channel.TeamId, s.configService.GetConfiguration().BotUserID); err != nil {
-		return nil, errors.Wrapf(err, "failed to add bot to the team")
+		return errors.Wrapf(err, "failed to add bot to the team")
 	}
 
 	if _, err := s.pluginAPI.Channel.AddMember(channel.Id, s.configService.GetConfiguration().BotUserID); err != nil {
-		return nil, errors.Wrapf(err, "failed to add bot to the channel")
+		return errors.Wrapf(err, "failed to add bot to the channel")
 	}
 
 	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, playbookRun.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
-		return nil, errors.Wrapf(err, "failed to add reporter to the channel")
+		return errors.Wrapf(err, "failed to add reporter to the channel")
 	}
 
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, playbookRun.OwnerUserID, s.configService.GetConfiguration().BotUserID); err != nil {
-			return nil, errors.Wrapf(err, "failed to add owner to channel")
+			return errors.Wrapf(err, "failed to add owner to channel")
 		}
 	}
 
@@ -1697,7 +1707,7 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 		s.pluginAPI.Log.Warn("failed to promote owner to admin", "ChannelID", channel.Id, "OwnerUserID", playbookRun.OwnerUserID, "err", err.Error())
 	}
 
-	return channel, nil
+	return nil
 }
 
 func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) (*model.Dialog, error) {
