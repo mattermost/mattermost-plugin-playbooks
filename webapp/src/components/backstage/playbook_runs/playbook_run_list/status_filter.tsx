@@ -2,9 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import { telemetryEventForPlaybookRun } from 'src/client';
 
-import {MultiSelect, SelectOption} from '../../../multi_select';
+import {MultiSelect, SelectOption} from 'src/components/multi_select'
 import './status_filter.scss';
 
 interface Props {
