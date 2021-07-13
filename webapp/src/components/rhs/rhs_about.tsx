@@ -11,6 +11,7 @@ import {setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import './playbook_run_details.scss';
 import PostCard from 'src/components/rhs/post_card';
+import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 import {useLatestUpdate, useProfilesInCurrentChannel} from 'src/hooks';
 import PostText from 'src/components/post_text';
 import {updateStatus} from 'src/actions';
@@ -52,58 +53,102 @@ const RHSAbout = (props: Props) => {
     };
 
     return (
-        <div className='PlaybookRunDetails'>
+        <Container>
+            <Title>
+                {props.playbookRun.name}
+            </Title>
             <Description>
-                <div className='title'>
-                    {'Description'}
-                </div>
                 {description}
             </Description>
             <Row>
-                <div className='side-by-side'>
-                    <div className='inner-container first-container'>
-                        <div className='first-title'>{'Owner'}</div>
-                        <ProfileSelector
-                            selectedUserId={props.playbookRun.owner_user_id}
-                            placeholder={'Assign the owner role'}
-                            placeholderButtonClass={'NoAssignee-button'}
-                            profileButtonClass={'Assigned-button'}
-                            enableEdit={true}
-                            getUsers={fetchUsers}
-                            onSelectedChange={onSelectedProfileChange}
-                            selfIsFirstOption={true}
-                        />
-                    </div>
-                    <div className='first-title'>
-                        {'Duration'}
-                        <Duration
-                            from={props.playbookRun.create_at}
-                            to={props.playbookRun.end_at}
-                        />
-                    </div>
-                </div>
+                <MemberSection>
+                    <MemberSectionTitle>{'Owner'}</MemberSectionTitle>
+                    <ProfileSelector
+                        selectedUserId={props.playbookRun.owner_user_id}
+                        placeholder={'Assign the owner role'}
+                        placeholderButtonClass={'NoAssignee-button'}
+                        profileButtonClass={'Assigned-button'}
+                        enableEdit={true}
+                        getUsers={fetchUsers}
+                        onSelectedChange={onSelectedProfileChange}
+                        selfIsFirstOption={true}
+                    />
+                </MemberSection>
+                <MemberSection>
+                    <MemberSectionTitle>{'Participants'}</MemberSectionTitle>
+                </MemberSection>
             </Row>
-            <div id={'playbookRunRHSUpdates'}>
-                <div className='title'>
-                    {'Recent update:'}
-                </div>
-                <PostCard post={latestUpdatePost}/>
-            </div>
-        </div>
+            <RHSPostUpdate playbookRun={props.playbookRun}/>
+        </Container>
     );
 };
 
-const Description = styled.div`
-    padding: 0 0 14px 0;
+const PaddedContent = styled.div`
+    padding: 0 8px; 
 `;
 
-const Row = styled.div`
-    padding: 0 0 24px 0;
+const Title = styled(PaddedContent)`
+    height: 30px;
+    line-height: 24px;
+
+    font-size: 18px;
+    font-weight: 600;
+
+    color: var(--center-channel-color);
+
+    :hover {
+        cursor: text;
+    }
+
+    border-radius: 5px;
+
+    margin-bottom: 2px;
+`;
+
+const Description = styled(PaddedContent)`
+    :hover {
+        cursor: text;
+    }
+
+    border-radius: 5px;
+
+    margin-bottom: 16px;
+`;
+
+const Row = styled(PaddedContent)`
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+
+    margin-bottom: 28px;
+`;
+
+const MemberSection = styled.div`
+    :not(:first-child) {
+        margin-left: 36px;
+    }
+`;
+
+const MemberSectionTitle = styled.div`
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 16px;
+
+    color: rgba(var(--center-channel-color-rgb), 0.72)
 `;
 
 const NoDescription = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
     margin-bottom: 10px;
+`;
+
+const Container = styled.div`
+    margin-top: 3px;
+    padding: 16px 12px;
+
+    :hover {
+        background-color: rgba(var(--center-channel-color-rgb), 0.04);
+    }
 `;
 
 export default RHSAbout;
