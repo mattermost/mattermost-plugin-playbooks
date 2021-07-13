@@ -193,7 +193,7 @@ export function useProfilesInChannel(channelId: string) {
         }
 
         dispatch(getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE));
-    }, [channelId, profilesInChannel]);
+    }, [channelId]);
 
     return profilesInChannel;
 }
