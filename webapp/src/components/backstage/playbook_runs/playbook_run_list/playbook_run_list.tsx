@@ -39,7 +39,7 @@ import {
 } from 'src/client';
 import Profile from 'src/components/profile/profile';
 import StatusBadge from '../status_badge';
-import {navigateToUrl, navigateToPluginUrl} from 'src/browser_routing';
+import {navigateToUrl, navigateToTeamPluginUrl} from 'src/browser_routing';
 import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import LeftDots from 'src/components/assets/left_dots';
@@ -198,7 +198,7 @@ const BackstagePlaybookRunList = () => {
 
     useEffect(() => {
         const queryForTeamID = new URLSearchParams(query).get('team_id');
-        setFetchParams((oldParams) => ({...oldParams, status: queryForTeamID || ''}));
+        setFetchParams((oldParams) => ({...oldParams, team_id: queryForTeamID || ''}));
     }, [query]);
 
     // When the component is first mounted, determine if there are any
@@ -279,7 +279,7 @@ const BackstagePlaybookRunList = () => {
     }
 
     function openPlaybookRunDetails(playbookRun: PlaybookRun) {
-        navigateToPluginUrl(`/runs/${playbookRun.id}`);
+        navigateToTeamPluginUrl(currentTeam.name, `/runs/${playbookRun.id}`);
     }
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);

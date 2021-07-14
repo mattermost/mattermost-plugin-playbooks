@@ -83,11 +83,6 @@ class RegistryWrapper {
         this.unregisterCallbacks.push(() => this.registry.unregisterComponent(id));
     }
 
-    registerCustomRoute = (...args: any[]) => {
-        const id = this.registry.registerCustomRoute(...args);
-        this.unregisterCallbacks.push(() => this.registry.unregisterComponent(id));
-    }
-
     registerRootComponent = (...args: any[]) => {
         const id = this.registry.registerRootComponent(...args);
         this.unregisterCallbacks.push(() => this.registry.unregisterComponent(id));

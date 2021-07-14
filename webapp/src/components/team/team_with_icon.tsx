@@ -58,11 +58,6 @@ const TeamWrapper = styled.div`
     display: flex;
     flex-direction: row;
     align-items: center;
-
-    &:active {
-        background: var(--button-bg-08);
-        color: var(--button-bg);
-    }
     
     &.active {
         cursor: pointer;

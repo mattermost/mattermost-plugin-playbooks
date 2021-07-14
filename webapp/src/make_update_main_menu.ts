@@ -5,11 +5,13 @@ import {GlobalState} from 'mattermost-redux/types/store';
 //@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+
 import {isDisabledOnCurrentTeam} from './selectors';
 import {isMobile} from './mobile';
 import {isE20LicensedOrDevelopment} from './license';
 
-import {navigateToPluginUrl} from './browser_routing';
+import {navigateToTeamPluginUrl} from './browser_routing';
 
 export function makeUpdateMainMenu(registry: PluginRegistry, store: Store<GlobalState>): () => Promise<void> {
     let mainMenuActionId: string | null;
@@ -29,7 +31,8 @@ export function makeUpdateMainMenu(registry: PluginRegistry, store: Store<Global
             mainMenuActionId = registry.registerMainMenuAction(
                 'Incident Collaboration',
                 () => {
-                    navigateToPluginUrl('');
+                    const team = getCurrentTeam(store.getState());
+                    navigateToTeamPluginUrl(team.name, '');
                 },
             );
         }
