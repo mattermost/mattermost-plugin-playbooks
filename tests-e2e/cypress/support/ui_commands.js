@@ -193,10 +193,10 @@ Cypress.Commands.add('updateStatus', (message, reminder, status, description) =>
  */
 Cypress.Commands.add('deletePost', (postId) => {
     // # Open the post dot menu.
-    cy.clickPostDotMenu(postId);
+    cy.clickPostDotMenu(postId, {scrollBehaviour: 'top'});
 
     // # Click on the Delete menu option.
-    cy.get(`#delete_post_${postId}`).click();
+    cy.get(`#delete_post_${postId}`, {scrollBehaviour: 'top'}).click();
 
     // # Confirm the deletion in the dialog.
     cy.get('#deletePostModalButton').click();
