@@ -271,7 +271,7 @@ const UpgradeOrPrimaryButton = (props: CreatePlaybookButtonProps) => {
     return <UpgradeButton {...rest}>{children}</UpgradeButton>;
 };
 
-const useUpgradeModalVisibility = (initialState: boolean): [boolean, () => void, () => void] => {
+export const useUpgradeModalVisibility = (initialState: boolean): [boolean, () => void, () => void] => {
     const [isModalShown, setShowModal] = useState(initialState);
 
     const showUpgradeModal = () => {

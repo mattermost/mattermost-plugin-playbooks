@@ -34,6 +34,7 @@ export const PresetTemplates: PresetTemplate[] = [
             reminder_message_template: '### Incident update\n\nDescribe progress and changes to the incident since the last update.\n\n' +
                 '### Change to customer impact\n\nDescribe any changes to customer impact since the last update.',
             message_on_join: defaultMessageOnJoin,
+            num_stages: 3,
             checklists: [
                 {
                     title: 'Triage',

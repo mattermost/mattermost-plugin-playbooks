@@ -6,26 +6,21 @@ import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
-
-import Icon from '@mdi/react';
-import {
-    mdiClipboardPlayOutline,
-    mdiCheckAll,
-    mdiSync,
-    mdiOpenInNew,
-} from '@mdi/js';
-
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
+
+import Icon from '@mdi/react';
+import {mdiClipboardPlayOutline, mdiCheckAll, mdiSync, mdiOpenInNew} from '@mdi/js';
+
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {startPlaybookRunById} from 'src/actions';
-import {Playbook} from 'src/types/playbook';
-import {usePlaybooksRouting} from 'src/hooks/routing';
-
-import {Timestamp} from 'src/webapp_globals';
 import {SubtlePrimaryButton} from 'src/components/assets/buttons';
+
+import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
+import {usePlaybooksRouting, useAllowPlaybookCreationInCurrentTeam} from 'src/hooks';
+import {startPlaybookRunById} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
+import {Timestamp} from 'src/webapp_globals';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 
 const Item = styled.div`
@@ -122,7 +117,7 @@ const MetaItem = styled(PillBox)`
     border-radius: 4px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
     svg {
-        margin-right: 2px;
+        margin-right: 4px;
     }
     .separator {
         margin: 0 0.35rem;
@@ -213,7 +208,7 @@ export const RHSHomePlaybook = ({
                     ) : null}
                     <span>
                         {formatMessage({
-                            id: 'rhs_home.rhs_home_item.num_runs',
+                            id: 'plugin-ic.rhs_home.rhs_home_item.num_runs',
                             defaultMessage: '{num_runs, plural, =0 {Not run yet} one {# run} other {# total runs}}',
                         }, {num_runs})}
                     </span>
@@ -222,29 +217,26 @@ export const RHSHomePlaybook = ({
                     <MetaItem>
                         <Icon
                             path={mdiCheckAll}
-                            size={1.15}
+                            size={1}
                         />
                         {formatMessage({
-                            id: 'rhs_home.rhs_home_item.num_checklists',
+                            id: 'plugin-ic.rhs_home.rhs_home_item.num_checklists',
                             defaultMessage: '{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}',
                         }, {num_checklists: num_stages})}
                     </MetaItem>
                     <MetaItem>
                         <Icon
                             path={mdiSync}
-                            size={1.15}
+                            size={1}
                         />
                         {formatMessage({
-                            id: 'rhs_home.rhs_home_item.num_actions',
+                            id: 'plugin-ic.rhs_home.rhs_home_item.num_actions',
                             defaultMessage: '{num_actions, plural, =0 {no actions} one {# action} other {# actions}}',
                         }, {num_actions})}
                     </MetaItem>
                 </Meta>
             </div>
-            <RunButton
-                title={`Run ${title}`}
-                onClick={() => dispatch(startPlaybookRunById(id))}
-            >
+            <RunButton onClick={() => dispatch(startPlaybookRunById(id))}>
                 <Icon
                     path={mdiClipboardPlayOutline}
                     size={1.5}
@@ -256,32 +248,35 @@ export const RHSHomePlaybook = ({
 };
 
 type RHSHomeTemplateProps = {
-    playbook: Playbook;
+    title: string;
+    template: DraftPlaybookWithChecklist;
+    onUse: (template: DraftPlaybookWithChecklist) => void;
 }
 
 export const RHSHomeTemplate = ({
-    playbook: {
-        id,
-        title,
-        num_stages,
-        num_actions,
-    },
+    title,
+    template,
+    onUse,
 }: RHSHomeTemplateProps) => {
-    const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-    const {view} = usePlaybooksRouting(currentTeam.name, {urlOnly: true});
+    const currentTeam = useSelector(getCurrentTeam);
+    const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
+    const {create} = usePlaybooksRouting(currentTeam.name, {urlOnly: true});
     const linkRef = useRef(null);
     return (
         <Item>
             <div>
-                <Title>
+                <Title ref={linkRef}>
                     <Link
-                        to={view(id)}
+                        to={allowPlaybookCreation ? create(template.title) : ''}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onUse(template);
+                        }}
                         ref={linkRef}
                     >
                         <TextWithTooltipWhenEllipsis
-                            id={`${id})_playbook_item`}
+                            id={`${title})_template_item`}
                             text={title}
                             parentRef={linkRef}
 
@@ -292,6 +287,7 @@ export const RHSHomeTemplate = ({
                         />
                     </Link>
                 </Title>
+                <Sub/>
                 <Meta>
                     <MetaItem>
                         <Icon
@@ -299,9 +295,9 @@ export const RHSHomeTemplate = ({
                             size={1}
                         />
                         {formatMessage({
-                            id: 'rhs_home.rhs_home_item.num_checklists',
+                            id: 'plugin-ic.rhs_home.rhs_home_item.num_checklists',
                             defaultMessage: '{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}',
-                        }, {num_checklists: num_stages})}
+                        }, {num_checklists: template.num_stages})}
                     </MetaItem>
                     <MetaItem>
                         <Icon
@@ -309,21 +305,18 @@ export const RHSHomeTemplate = ({
                             size={1}
                         />
                         {formatMessage({
-                            id: 'rhs_home.rhs_home_item.num_actions',
+                            id: 'plugin-ic.rhs_home.rhs_home_item.num_actions',
                             defaultMessage: '{num_actions, plural, =0 {no actions} one {# action} other {# actions}}',
-                        }, {num_actions})}
+                        }, {num_actions: template.num_actions})}
                     </MetaItem>
                 </Meta>
             </div>
-            <RunButton
-                title={`Run ${title}`}
-                onClick={() => dispatch(startPlaybookRunById(id))}
-            >
+            <RunButton onClick={() => onUse(template)}>
                 <Icon
                     path={mdiOpenInNew}
                     size={1.5}
                 />
-                {'Run'}
+                {'Use'}
             </RunButton>
         </Item>
     );

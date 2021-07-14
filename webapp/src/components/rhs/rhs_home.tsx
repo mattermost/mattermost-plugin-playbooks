@@ -11,7 +11,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import Icon from '@mdi/react';
 import {mdiArrowRight} from '@mdi/js';
 
-import {Playbook} from 'src/types/playbook';
+import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
 
 import {
     renderThumbVertical,
@@ -21,13 +21,20 @@ import {
 import {setRHSViewingPlaybookRun} from 'src/actions';
 import {currentPlaybookRun} from 'src/selectors';
 
-import {usePlaybooksCrud, getPlaybookOrFetch} from 'src/hooks';
+import {AdminNotificationType} from 'src/constants';
+
+import {usePlaybooksCrud, getPlaybookOrFetch, usePlaybooksRouting, useCanCreatePlaybooks, useAllowPlaybookCreationInCurrentTeam} from 'src/hooks';
 import {navigateToUrl} from 'src/browser_routing';
 
-import {RHSHomePlaybook} from 'src/components/rhs/rhs_home_item';
+import {RHSHomePlaybook, RHSHomeTemplate} from 'src/components/rhs/rhs_home_item';
 import BoxOpenSvg from 'src/components/assets/box_open_svg';
 import PageRunSvg from 'src/components/assets/page_run_svg';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+
+import {PresetTemplates} from 'src/components/backstage/template_selector';
+
+import UpgradeModal from 'src/components/backstage/upgrade_modal';
+import {useUpgradeModalVisibility} from 'src/components/backstage/playbook_list';
 
 const Header = styled.div`
     min-height: 8rem;
@@ -137,6 +144,19 @@ const RHSHome = () => {
     const [currentPlaybook, setCurrentPlaybook] = useState<Playbook | null>();
 
     const [playbooks, {hasMore}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
+    const {create} = usePlaybooksRouting<Playbook>(currentTeam.name);
+
+    const canCreatePlaybooks = useCanCreatePlaybooks();
+    const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
+    const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
+
+    const newPlaybook = (template: DraftPlaybookWithChecklist) => {
+        if (allowPlaybookCreation) {
+            create(template.title);
+        } else {
+            showUpgradeModal();
+        }
+    };
 
     useEffect(() => {
         (async () => {
@@ -190,6 +210,11 @@ const RHSHome = () => {
 
     return (
         <RHSContainer>
+            <UpgradeModal
+                messageType={AdminNotificationType.PLAYBOOK}
+                show={isUpgradeModalShown}
+                onHide={hideUpgradeModal}
+            />
             <RHSContent>
                 <Scrollbars
                     autoHide={true}
@@ -212,7 +237,6 @@ const RHSHome = () => {
                             />
                         ))}
                     </ListSection>
-                    {/* <Pagination {...{hasMore, page, setPage}}/> */}
                     {hasMore && (
                         <PaginationContainer>
                             <TertiaryButton
@@ -223,10 +247,21 @@ const RHSHome = () => {
                             </TertiaryButton>
                         </PaginationContainer>
                     )}
-
-                    <ListTitle>{'Playbook Templates'}</ListTitle>
-                    <ListSection/>
-
+                    {canCreatePlaybooks && (
+                        <>
+                            <ListTitle>{'Playbook Templates'}</ListTitle>
+                            <ListSection>
+                                {PresetTemplates.map(({title, template}) => (
+                                    <RHSHomeTemplate
+                                        key={title}
+                                        title={title}
+                                        template={template}
+                                        onUse={newPlaybook}
+                                    />
+                                ))}
+                            </ListSection>
+                        </>
+                    )}
                 </Scrollbars>
             </RHSContent>
         </RHSContainer>
