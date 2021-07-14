@@ -9,7 +9,7 @@ import styled, {css} from 'styled-components';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import Icon from '@mdi/react';
-import {mdiArrowRight} from '@mdi/js';
+import {mdiArrowDown, mdiArrowRight, mdiPlus} from '@mdi/js';
 
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
 
@@ -29,6 +29,7 @@ import {navigateToUrl} from 'src/browser_routing';
 import {RHSHomePlaybook, RHSHomeTemplate} from 'src/components/rhs/rhs_home_item';
 import BoxOpenSvg from 'src/components/assets/box_open_svg';
 import PageRunSvg from 'src/components/assets/page_run_svg';
+import PageRunCollaborationSvg from 'src/components/assets/page_run_collaboration_svg';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 import {PresetTemplates} from 'src/components/backstage/template_selector';
@@ -93,6 +94,45 @@ const RunDetailsButton = styled(PrimaryButton)`
 `;
 
 const WelcomeBlock = styled.div`
+    padding: 4rem 3rem 2rem;
+
+    div {
+        margin-top: 2rem;
+        button {
+            margin-right: 2rem;
+            margin-bottom: 1rem;
+            > svg {
+                margin-right: 0.5rem;
+            }
+        }
+        span {
+            display: inline-flex;
+            align-items: center;
+            vertical-align: top;
+            padding: 1rem 0;
+            > svg {
+                margin-left: 0.75em;
+            }
+        }
+    }
+`;
+
+const Heading = styled.h4`
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 700;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+`;
+
+const ListHeading = styled(Heading)`
+    padding-left: 2.75rem;
+`;
+
+const SubHeading = styled.h4`
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 400;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
 
 `;
 
@@ -109,13 +149,6 @@ const PaginationContainer = styled.div`
     }
 `;
 
-const ListTitle = styled.h4`
-    font-size: 18px;
-    line-height: 24px;
-    font-weight: 700;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    padding-left: 2.75rem;
-`;
 const ListSection = styled.div`
     margin-top: 1rem;
     margin-bottom: 5rem;
@@ -143,16 +176,17 @@ const RHSHome = () => {
     const runActive = Boolean(currentRun);
     const [currentPlaybook, setCurrentPlaybook] = useState<Playbook | null>();
 
-    const [playbooks, {hasMore}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
+    const [playbooks, {hasMore, isLoading}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
     const {create} = usePlaybooksRouting<Playbook>(currentTeam.name);
+    const shouldWelcome = playbooks?.length === 0;
 
     const canCreatePlaybooks = useCanCreatePlaybooks();
     const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
     const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
 
-    const newPlaybook = (template: DraftPlaybookWithChecklist) => {
+    const newPlaybook = (template?: DraftPlaybookWithChecklist) => {
         if (allowPlaybookCreation) {
-            create(template.title);
+            create(template?.title);
         } else {
             showUpgradeModal();
         }
@@ -169,9 +203,34 @@ const RHSHome = () => {
         navigateToUrl(`/${currentTeam.name}/channels/${currentRun.channel_id}`);
     };
 
-    const headerContent = playbooks?.length === 0 ? (
+    const headerContent = shouldWelcome ? (
         <WelcomeBlock>
-            {'Welcome'}
+            <PageRunCollaborationSvg/>
+            <Heading>
+                {'Welcome to Playbooks!'}
+            </Heading>
+            <SubHeading>
+                {'A playbook prescribes the checklists, automations, and templates for any repeatable procedures.'}
+                {'It helps teams reduce errors, earn trust with stakeholders, and become more effective with every iteration.'}
+            </SubHeading>
+            {canCreatePlaybooks && (
+                <div>
+                    <PrimaryButton onClick={() => newPlaybook()}>
+                        <Icon
+                            path={mdiPlus}
+                            size={1}
+                        />
+                        {'Create Playbook'}
+                    </PrimaryButton>
+                    <span>
+                        {'...or start with a template'}
+                        <Icon
+                            path={mdiArrowDown}
+                            size={1}
+                        />
+                    </span>
+                </div>
+            )}
         </WelcomeBlock>
     ) : (
         <RunDetail active={runActive}>
@@ -225,31 +284,35 @@ const RHSHome = () => {
                     renderTrackHorizontal={renderTrackHorizontal}
                     style={{position: 'absolute'}}
                 >
-                    {/* eslint-disable-next-line no-undefined */}
-                    <Header>{headerContent}</Header>
+                    {!isLoading && <Header>{headerContent}</Header>}
 
-                    <ListTitle>{'Your Playbooks'}</ListTitle>
-                    <ListSection>
-                        {playbooks?.map((p) => (
-                            <RHSHomePlaybook
-                                key={p.id}
-                                playbook={p}
-                            />
-                        ))}
-                    </ListSection>
-                    {hasMore && (
-                        <PaginationContainer>
-                            <TertiaryButton
-                                disabled={!hasMore}
-                                onClick={() => setPage()}
-                            >
-                                {'Show more'}
-                            </TertiaryButton>
-                        </PaginationContainer>
+                    {!shouldWelcome && !isLoading && (
+                        <>
+                            <ListHeading>{'Your Playbooks'}</ListHeading>
+                            <ListSection>
+                                {playbooks?.map((p) => (
+                                    <RHSHomePlaybook
+                                        key={p.id}
+                                        playbook={p}
+                                    />
+                                ))}
+                            </ListSection>
+                            {hasMore && (
+                                <PaginationContainer>
+                                    <TertiaryButton
+                                        disabled={!hasMore}
+                                        onClick={() => setPage()}
+                                    >
+                                        {'Show more'}
+                                    </TertiaryButton>
+                                </PaginationContainer>
+                            )}
+                        </>
                     )}
+
                     {canCreatePlaybooks && (
                         <>
-                            <ListTitle>{'Playbook Templates'}</ListTitle>
+                            <ListHeading>{'Playbook Templates'}</ListHeading>
                             <ListSection>
                                 {PresetTemplates.map(({title, template}) => (
                                     <RHSHomeTemplate
