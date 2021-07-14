@@ -16,6 +16,7 @@ import {useLatestUpdate, useProfilesInCurrentChannel} from 'src/hooks';
 import PostText from 'src/components/post_text';
 import {updateStatus} from 'src/actions';
 import Duration from '../duration';
+import RHSParticipants from 'src/components/rhs/rhs_participants';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -52,6 +53,10 @@ const RHSAbout = (props: Props) => {
         }
     };
 
+    const participantsIds = profilesInChannel
+        .filter((p) => p.id !== props.playbookRun.owner_user_id && !p.is_bot)
+        .map((p) => p.id);
+
     return (
         <Container>
             <Title>
@@ -76,6 +81,7 @@ const RHSAbout = (props: Props) => {
                 </MemberSection>
                 <MemberSection>
                     <MemberSectionTitle>{'Participants'}</MemberSectionTitle>
+                    <RHSParticipants userIds={participantsIds}/>
                 </MemberSection>
             </Row>
             <RHSPostUpdate playbookRun={props.playbookRun}/>
