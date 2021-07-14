@@ -46,7 +46,7 @@ describe('playbook creation button', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'New Playbook' button
-        cy.findByText('Create playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+        cy.findByText('Create playbook').should('be.visible').click().wait(TIMEOUTS.HALF_SEC);
 
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
@@ -63,7 +63,7 @@ describe('playbook creation button', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'Blank'
-        cy.findByText('Blank').should('be.visible').click().wait(TIMEOUTS.TINY);
+        cy.findByText('Blank').should('be.visible').click().wait(TIMEOUTS.HALF_SEC);
 
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
@@ -83,7 +83,7 @@ describe('playbook creation button', () => {
         cy.findByText('Service Outage Incident')
             .should('be.visible')
             .click()
-            .wait(TIMEOUTS.TINY);
+            .wait(TIMEOUTS.HALF_SEC);
 
         // * Verify a new 'Service Outage Incident' creation page is opened
         verifyPlaybookCreationPageOpened(url, playbookName);
@@ -97,13 +97,13 @@ describe('playbook creation button', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'Create playbook' button
-        cy.findByText('Create playbook').should('be.visible').click().wait(TIMEOUTS.TINY);
+        cy.findByText('Create playbook').should('be.visible').click().wait(TIMEOUTS.HALF_SEC);
 
         // # Click 'Permissions' tab
-        cy.findByText('Permissions').should('be.visible').click().wait(TIMEOUTS.TINY);
+        cy.findByText('Permissions').should('be.visible').click().wait(TIMEOUTS.HALF_SEC);
 
         // # Click 'only selected users can access'
-        cy.get('input[name="enabled"][value="enabled"]').should('be.visible').click().wait(TIMEOUTS.TINY);
+        cy.get('input[name="enabled"][value="enabled"]').should('be.visible').click().wait(TIMEOUTS.HALF_SEC);
 
         // * Verify that there is no Remove link when there is one member
         cy.findAllByTestId('user-line').should('have.length', 1);

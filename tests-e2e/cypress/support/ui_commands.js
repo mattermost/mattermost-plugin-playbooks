@@ -11,11 +11,11 @@ function waitUntilPermanentPost() {
 function clickPostHeaderItem(postId, location, item) {
     if (postId) {
         cy.get(`#post_${postId}`).trigger('mouseover', {force: true});
-        cy.wait(TIMEOUTS.TINY).get(`#${location}_${item}_${postId}`).click({force: true});
+        cy.wait(TIMEOUTS.HALF_SEC).get(`#${location}_${item}_${postId}`).click({force: true});
     } else {
         cy.getLastPostId().then((lastPostId) => {
             cy.get(`#post_${lastPostId}`).trigger('mouseover', {force: true});
-            cy.wait(TIMEOUTS.TINY).get(`#${location}_${item}_${lastPostId}`).click({force: true});
+            cy.wait(TIMEOUTS.HALF_SEC).get(`#${location}_${item}_${lastPostId}`).click({force: true});
         });
     }
 }
@@ -100,7 +100,7 @@ Cypress.Commands.add('getCurrentUserId', () => {
 
 // verifyPostedMessage verifies the receipt of a post containing the given message substring.
 Cypress.Commands.add('verifyPostedMessage', (message) => {
-    cy.wait(TIMEOUTS.TINY).getLastPostId().then((postId) => {
+    cy.wait(TIMEOUTS.HALF_SEC).getLastPostId().then((postId) => {
         cy.get(`#post_${postId}`).within(() => {
             cy.get(`#postMessageText_${postId}`).contains(message);
         });
@@ -118,7 +118,7 @@ Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode, needsToS
     }
 
     // # Checking if we got the ephemeral message with the selection we made
-    cy.wait(TIMEOUTS.TINY).getLastPostId().then((postId) => {
+    cy.wait(TIMEOUTS.HALF_SEC).getLastPostId().then((postId) => {
         cy.get(`#post_${postId}`).within(() => {
             if (isCompactMode) {
                 // * Check if Bot message only visible to you and has requisite message.

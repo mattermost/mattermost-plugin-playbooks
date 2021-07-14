@@ -8,7 +8,7 @@
 
 const BACKSTAGE_LIST_PER_PAGE = 15;
 
-import {TINY} from '../../fixtures/timeouts';
+import {HALF_SEC} from '../../fixtures/timeouts';
 
 describe('backstage playbook run list', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
@@ -227,7 +227,7 @@ describe('backstage playbook run list', () => {
             cy.get('#playbookRunList input').type(playbookRunTimestamps[0]);
 
             // # Wait for the playbook run list to update.
-            cy.wait(TINY);
+            cy.wait(HALF_SEC);
 
             // * Verify "Previous" no longer shown
             cy.findByText('Previous').should('not.exist');
@@ -242,7 +242,7 @@ describe('backstage playbook run list', () => {
                 .find('.PlaybookRunProfile').first().parent().click({force: true});
 
             // # Wait for the playbook run list to update.
-            cy.wait(TINY);
+            cy.wait(HALF_SEC);
 
             // * Verify "Previous" no longer shown
             cy.findByText('Previous').should('not.exist');
