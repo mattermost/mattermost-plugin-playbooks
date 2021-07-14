@@ -173,6 +173,7 @@ const BackstagePlaybookRunList = () => {
             per_page: BACKSTAGE_LIST_PER_PAGE,
             sort: 'create_at',
             direction: 'desc',
+            statuses: statusOptions.filter((opt) => opt.value !== 'Archived' && opt.value !== '').map((opt) => opt.value),
         },
     );
 
@@ -228,8 +229,8 @@ const BackstagePlaybookRunList = () => {
         setFetchParams({...fetchParams, search_term: term, page: 0});
     }
 
-    function setStatus(status: string) {
-        setFetchParams({...fetchParams, status, page: 0});
+    function setStatus(statuses: string[]) {
+        setFetchParams({...fetchParams, statuses, page: 0});
     }
 
     function setPage(page: number) {
@@ -331,7 +332,7 @@ const BackstagePlaybookRunList = () => {
                     />
                     <StatusFilter
                         options={statusOptions}
-                        default={fetchParams.status}
+                        default={fetchParams.statuses}
                         onChange={setStatus}
                     />
                 </div>
