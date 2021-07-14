@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useRef, ComponentProps} from 'react';
+import React, {useRef} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
