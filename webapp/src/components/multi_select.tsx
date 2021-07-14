@@ -75,22 +75,30 @@ interface Props{
     target: JSX.Element;
     options: SelectOption[];
     onChange?: (options: SelectOption[], lastAction: SelectOption) => void;
+    isOpenChange?: (isOpen: boolean) => void;
 }
 
 export const MultiSelect = (props: Props) => {
     const [isOpen, setOpen] = useState(false);
 
+    const setIsOpen = (open: boolean) => {
+        setOpen(open);
+        if (props.isOpenChange) {
+            props.isOpenChange(open);
+        }
+    };
+
     const toggleOpen = () => {
-        setOpen(!isOpen);
+        setIsOpen(!isOpen);
     };
 
     const rootRef = useRef<HTMLDivElement>(null);
     useClickOutsideRef(rootRef, () => {
-        setOpen(false);
+        setIsOpen(false);
     });
 
     useKeyPress('Escape', () => {
-        setOpen(false);
+        setIsOpen(false);
     });
 
     const onSelect = (value:any, checked:boolean) => {

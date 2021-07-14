@@ -34,6 +34,7 @@ export function StatusFilter(props: Props) {
     });
 
     const [options, setOptions] = useState<SelectOption[]>(opts);
+    const [filterOpen, setFilterOpen] = useState(false);
 
     const onSelectedChange = async (newOpts: SelectOption[], lastAction: SelectOption) => {
         let newOptions = newOpts;
@@ -67,16 +68,21 @@ export function StatusFilter(props: Props) {
         }
     };
 
+    const isOpenChange = async (isOpen: boolean) => {
+        setFilterOpen(isOpen);
+    };
+
     return (
         <MultiSelect
             target={
-                <button className='PlaybookRunFilter-button'>
+                <button className={'PlaybookRunFilter-button' + (filterOpen ? ' active' : '')}>
                     {'Status'}
                     {<i className='icon-chevron-down icon--small ml-2'/>}
                 </button>
             }
             options={options}
             onChange={onSelectedChange}
+            isOpenChange={isOpenChange}
         />
     );
 }
