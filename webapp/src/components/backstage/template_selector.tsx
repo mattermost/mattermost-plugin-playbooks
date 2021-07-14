@@ -4,7 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import {Playbook, emptyPlaybook, newChecklistItem, defaultMessageOnJoin} from 'src/types/playbook';
+import {DraftPlaybookWithChecklist, emptyPlaybook, newChecklistItem, defaultMessageOnJoin} from 'src/types/playbook';
 import FileIcon from 'src/components/assets/icons/file_icon';
 import AlertIcon from 'src/components/assets/icons/alert_icon';
 import {useAllowPlaybookCreationInCurrentTeam} from 'src/hooks';
@@ -14,7 +14,7 @@ import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 export interface PresetTemplate {
     title: string;
     icon: JSX.Element;
-    template: Playbook;
+    template: DraftPlaybookWithChecklist;
 }
 
 export const PresetTemplates: PresetTemplate[] = [
