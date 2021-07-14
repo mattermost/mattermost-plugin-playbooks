@@ -145,7 +145,7 @@ const RunButton = styled(SubtlePrimaryButton)`
     }
 `;
 
-const TIME_SPEC: ComponentProps<typeof Timestamp> = {
+const TIME_SPEC = {
     units: [
         'now',
         'minute',

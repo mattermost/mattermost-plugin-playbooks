@@ -189,7 +189,7 @@ const PlaybookRunBackstage = () => {
         const fetchData = async () => {
             if (playbookRun?.playbook_id) {
                 const fetchedPlaybook = await clientFetchPlaybook(playbookRun.playbook_id);
-                setPlaybook(fetchedPlaybook);
+                setPlaybook(fetchedPlaybook!);
             }
         };
 

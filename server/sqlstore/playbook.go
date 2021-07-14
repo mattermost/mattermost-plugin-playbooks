@@ -91,16 +91,6 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 	return builder, nil
 }
 
-var playbookActionBoolColumns = [7]string{
-	"AnnouncementChannelEnabled",
-	"DefaultCommanderEnabled",
-	"InviteUsersEnabled",
-	"MessageOnJoinEnabled",
-	"SignalAnyKeywordsEnabled",
-	"WebhookOnCreationEnabled",
-	"WebhookOnStatusUpdateEnabled",
-}
-
 // NewPlaybookStore creates a new store for playbook service.
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) app.PlaybookStore {
 	playbookSelect := sqlStore.builder.
