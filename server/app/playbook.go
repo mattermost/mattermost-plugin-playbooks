@@ -41,6 +41,7 @@ type Playbook struct {
 	RetrospectiveTemplate                string      `json:"retrospective_template"`
 	WebhookOnStatusUpdateURL             string      `json:"webhook_on_status_update_url"`
 	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
+	ExportChannelOnArchiveEnabled        bool        `json:"export_channel_on_archive_enabled"`
 	SignalAnyKeywords                    []string    `json:"signal_any_keywords"`
 	SignalAnyKeywordsEnabled             bool        `json:"signal_any_keywords_enabled"`
 }
@@ -223,6 +224,9 @@ type PlaybookTelemetry interface {
 
 	// DeletePlaybook tracks the deletion of a playbook.
 	DeletePlaybook(playbook Playbook, userID string)
+
+	// FrontendTelemetryForPlaybook tracks an event originating from the frontend
+	FrontendTelemetryForPlaybook(playbook Playbook, userID, action string)
 }
 
 const (

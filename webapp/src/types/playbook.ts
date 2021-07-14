@@ -27,6 +27,7 @@ export interface Playbook {
     message_on_join_enabled: boolean;
     retrospective_reminder_interval_seconds: number;
     retrospective_template: string;
+    export_channel_on_archive_enabled: boolean;
     signal_any_keywords_enabled: boolean;
     signal_any_keywords: string[];
 }
@@ -108,6 +109,7 @@ export function emptyPlaybook(): Playbook {
         message_on_join_enabled: false,
         retrospective_reminder_interval_seconds: 0,
         retrospective_template: defaultRetrospectiveTemplate,
+        export_channel_on_archive_enabled: false,
         signal_any_keywords: [],
         signal_any_keywords_enabled: false,
     };

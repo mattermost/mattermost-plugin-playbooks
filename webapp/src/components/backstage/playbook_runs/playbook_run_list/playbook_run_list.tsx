@@ -16,7 +16,6 @@ import {Team} from 'mattermost-redux/types/teams';
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import NoContentPlaybookRunSvg from 'src/components/assets/no_content_playbook_runs_svg';
-
 import {
     StatusFilter,
     StatusOption,
@@ -25,12 +24,9 @@ import {
 import TeamSelector from 'src/components/team/team_selector';
 
 import SearchInput from 'src/components/backstage/playbook_runs/playbook_run_list/search_input';
-
 import {FetchPlaybookRunsParams, PlaybookRun, playbookRunIsActive, playbookRunCurrentStatus} from 'src/types/playbook_run';
-
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {SortableColHeader} from 'src/components/sortable_col_header';
-
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {PaginationRow} from 'src/components/pagination_row';
 import {
@@ -44,11 +40,11 @@ import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
+import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
+import {startPlaybookRun} from 'src/actions';
 
 import './playbook_run_list.scss';
 import BackstageListHeader from '../../backstage_list_header';
-import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
-import {startPlaybookRun} from 'src/actions';
 
 const debounceDelay = 300; // in milliseconds
 
@@ -188,6 +184,7 @@ const BackstagePlaybookRunList = () => {
             per_page: BACKSTAGE_LIST_PER_PAGE,
             sort: 'create_at',
             direction: 'desc',
+            statuses: statusOptions.filter((opt) => opt.value !== 'Archived' && opt.value !== '').map((opt) => opt.value),
         },
     );
 
@@ -241,8 +238,8 @@ const BackstagePlaybookRunList = () => {
         setFetchParams({...fetchParams, search_term: term, page: 0});
     }
 
-    function setStatus(status: string) {
-        setFetchParams({...fetchParams, status, page: 0});
+    function setStatus(statuses: string[]) {
+        setFetchParams({...fetchParams, statuses, page: 0});
     }
 
     function setPage(page: number) {
@@ -381,7 +378,7 @@ const BackstagePlaybookRunList = () => {
                     />
                     <StatusFilter
                         options={statusOptions}
-                        default={fetchParams.status}
+                        default={fetchParams.statuses}
                         onChange={setStatus}
                     />
                     {teamSelector}

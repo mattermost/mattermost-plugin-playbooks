@@ -70,19 +70,14 @@
 
     &.active {
         cursor: pointer;
+        background: var(--button-bg-08);
+        color: var(--button-bg);
     }
 
     .icon-chevron-down {
         &:before {
             margin: 0;
         }
-    }
-}
-
-.PlaybookRunFilter--active {
-    .PlaybookRunFilter-button {
-        background: var(--button-bg-08);
-        color: var(--button-bg);
     }
 }
 

@@ -50,19 +50,9 @@ const (
 
 	eventFrontend = "frontend"
 
-	eventNotifyAdmins                            = "notify_admins"
-	actionNotifyAdminsToViewTimeline             = "notify_admins_to_view_timeline"
-	actionNotifyAdminsToAddMessageToTimeline     = "notify_admins_to_add_message_to_timeline"
-	actionNotifyAdminsToCreatePlaybook           = "notify_admins_to_create_playbook"
-	actionNotifyAdminsToRestrictPlaybookCreation = "notify_admins_to_restrict_playbook_creation"
-	actionNotifyAdminsToRestrictPlaybookAccess   = "notify_admins_to_restrict_playbook_access"
+	eventNotifyAdmins = "notify_admins"
 
-	eventStartTrial                            = "start_trial"
-	actionStartTrialToViewTimeline             = "start_trial_to_view_timeline"
-	actionStartTrialToAddMessageToTimeline     = "start_trial_to_add_message_to_timeline"
-	actionStartTrialToCreatePlaybook           = "start_trial_to_create_playbook"
-	actionStartTrialToRestrictPlaybookCreation = "start_trial_to_restrict_playbook_creation"
-	actionStartTrialToRestrictPlaybookAccess   = "start_trial_to_restrict_playbook_access"
+	eventStartTrial = "start_trial"
 
 	// telemetryKeyPlaybookRunID records the legacy name used to identify a playbook run via telemetry.
 	telemetryKeyPlaybookRunID = "IncidentID"
@@ -348,75 +338,29 @@ func (t *RudderTelemetry) DeletePlaybook(playbook app.Playbook, userID string) {
 	t.track(eventPlaybook, properties)
 }
 
+// FrontendTelemetryForPlaybook tracks an event originating from the frontend
+func (t *RudderTelemetry) FrontendTelemetryForPlaybook(playbook app.Playbook, userID, action string) {
+	properties := playbookProperties(playbook, userID)
+	properties["Action"] = action
+	t.track(eventFrontend, properties)
+}
+
 func commonProperties(userID string) map[string]interface{} {
 	return map[string]interface{}{
 		"UserActualID": userID,
 	}
 }
 
-func (t *RudderTelemetry) StartTrialToViewTimeline(userID string) {
+func (t *RudderTelemetry) StartTrial(userID string, action string) {
 	properties := commonProperties(userID)
-	properties["Action"] = actionStartTrialToViewTimeline
+	properties["Action"] = action
 	t.track(eventStartTrial, properties)
 }
 
-func (t *RudderTelemetry) StartTrialToAddMessageToTimeline(userID string) {
+func (t *RudderTelemetry) NotifyAdmins(userID string, action string) {
 	properties := commonProperties(userID)
-	properties["Action"] = actionStartTrialToAddMessageToTimeline
-	t.track(eventStartTrial, properties)
-}
-
-func (t *RudderTelemetry) StartTrialToCreatePlaybook(userID string) {
-	properties := commonProperties(userID)
-	properties["Action"] = actionStartTrialToCreatePlaybook
-	t.track(eventStartTrial, properties)
-}
-
-func (t *RudderTelemetry) StartTrialToRestrictPlaybookCreation(userID string) {
-	properties := commonProperties(userID)
-	properties["Action"] = actionStartTrialToRestrictPlaybookCreation
-	t.track(eventStartTrial, properties)
-}
-
-func (t *RudderTelemetry) StartTrialToRestrictPlaybookAccess(userID string) {
-	properties := commonProperties(userID)
-	properties["Action"] = actionStartTrialToRestrictPlaybookAccess
-	t.track(eventStartTrial, properties)
-}
-
-func (t *RudderTelemetry) NotifyAdminsToViewTimeline(userID string) {
-	properties := commonProperties(userID)
-	properties["Action"] = actionNotifyAdminsToViewTimeline
+	properties["Action"] = action
 	t.track(eventNotifyAdmins, properties)
-
-}
-
-func (t *RudderTelemetry) NotifyAdminsToAddMessageToTimeline(userID string) {
-	properties := commonProperties(userID)
-	properties["Action"] = actionNotifyAdminsToAddMessageToTimeline
-	t.track(eventNotifyAdmins, properties)
-
-}
-
-func (t *RudderTelemetry) NotifyAdminsToCreatePlaybook(userID string) {
-	properties := commonProperties(userID)
-	properties["Action"] = actionNotifyAdminsToCreatePlaybook
-	t.track(eventNotifyAdmins, properties)
-
-}
-
-func (t *RudderTelemetry) NotifyAdminsToRestrictPlaybookCreation(userID string) {
-	properties := commonProperties(userID)
-	properties["Action"] = actionNotifyAdminsToRestrictPlaybookCreation
-	t.track(eventNotifyAdmins, properties)
-
-}
-
-func (t *RudderTelemetry) NotifyAdminsToRestrictPlaybookAccess(userID string) {
-	properties := commonProperties(userID)
-	properties["Action"] = actionNotifyAdminsToRestrictPlaybookAccess
-	t.track(eventNotifyAdmins, properties)
-
 }
 
 // Enable creates a new client to track all future events. It does nothing if

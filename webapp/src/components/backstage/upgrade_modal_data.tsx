@@ -118,7 +118,7 @@ export const getUpgradeModalCopy = (
                 titleText: 'Your 30-day trial has started',
                 helpText: (
                     <span>
-                        {`Your Mattermost Enterprise license expires on ${expiryDate}. You can purchase a license at any time through the `}
+                        {`Your trial license expires on ${expiryDate}. You can purchase a license at any time through the `}
                         <a
                             href='https://customers.mattermost.com/signup'
                             target={'_blank'}
@@ -139,7 +139,7 @@ export const getUpgradeModalCopy = (
     case ModalActionState.Loading:
         switch (messageType) {
         case AdminNotificationType.PLAYBOOK:
-            titleText = 'Playbook limit reached';
+            titleText = 'A playbook for every process';
             helpText = 'Create multiple playbooks to prescribe different workflows for your teams.';
             break;
         case AdminNotificationType.VIEW_TIMELINE:
@@ -154,6 +154,10 @@ export const getUpgradeModalCopy = (
         case AdminNotificationType.PLAYBOOK_CREATION_RESTRICTION:
             titleText = 'Put your team in control';
             helpText = 'Every team\'s structure is different. You can manage which users in the team can create playbooks.';
+            break;
+        case AdminNotificationType.EXPORT_CHANNEL:
+            titleText = 'Save your playbook run history';
+            helpText = 'Export the channel of your playbook run and save it for later analysis.';
             break;
         }
 

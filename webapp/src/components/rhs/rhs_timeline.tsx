@@ -136,9 +136,7 @@ const RHSTimeline = (props: Props) => {
     }, [props.playbookRun.timeline_events, displayPreference]);
 
     if (!allowTimelineView) {
-        return (
-            <TimelineUpgradePlaceholder/>
-        );
+        return <TimelineUpgradePlaceholder/>;
     }
 
     if (props.playbookRun.timeline_events.length === 0) {

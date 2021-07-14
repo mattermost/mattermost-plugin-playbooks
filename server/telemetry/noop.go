@@ -93,47 +93,16 @@ func (t *NoopTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, userID
 func (t *NoopTelemetry) PublishRetrospective(playbookRun *app.PlaybookRun, userID string) {
 }
 
-// StartTrialToViewTimeline does nothing.
-func (t *NoopTelemetry) StartTrialToViewTimeline(userID string) {
+// StartTrial does nothing.
+func (t *NoopTelemetry) StartTrial(userID string, action string) {
 }
 
-// StartTrialToAddMessageToTimeline does nothing.
-func (t *NoopTelemetry) StartTrialToAddMessageToTimeline(userID string) {
-}
-
-// StartTrialToCreatePlaybook does nothing.
-func (t *NoopTelemetry) StartTrialToCreatePlaybook(userID string) {
-}
-
-// StartTrialToRestrictPlaybookCreation does nothing.
-func (t *NoopTelemetry) StartTrialToRestrictPlaybookCreation(userID string) {
-}
-
-// StartTrialToRestrictPlaybookAccess does nothing.
-func (t *NoopTelemetry) StartTrialToRestrictPlaybookAccess(userID string) {
-}
-
-// NotifyAdminsToViewTimeline does nothing.
-func (t *NoopTelemetry) NotifyAdminsToViewTimeline(userID string) {
+// NotifyAdmins does nothing.
+func (t *NoopTelemetry) NotifyAdmins(userID string, action string) {
 
 }
 
-// NotifyAdminsToAddMessageToTimeline does nothing.
-func (t *NoopTelemetry) NotifyAdminsToAddMessageToTimeline(userID string) {
-
-}
-
-// NotifyAdminsToCreatePlaybook does nothing.
-func (t *NoopTelemetry) NotifyAdminsToCreatePlaybook(userID string) {
-
-}
-
-// NotifyAdminsToRestrictPlaybookCreation does nothing.
-func (t *NoopTelemetry) NotifyAdminsToRestrictPlaybookCreation(userID string) {
-
-}
-
-// NotifyAdminsToRestrictPlaybookAccess does nothing.
-func (t *NoopTelemetry) NotifyAdminsToRestrictPlaybookAccess(userID string) {
+// FrontendTelemetryForPlaybook does nothing.
+func (t *NoopTelemetry) FrontendTelemetryForPlaybook(playbook app.Playbook, userID, action string) {
 
 }

@@ -143,7 +143,7 @@ export interface FetchPlaybookRunsParams {
     per_page?: number;
     sort?: string;
     direction?: string;
-    status?: string;
+    statuses?: string[];
     owner_user_id?: string;
     search_term?: string;
     member_id?: string;

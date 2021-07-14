@@ -407,6 +407,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.MessageOnJoin = pb.MessageOnJoin
 		}
 
+		if pb.ExportChannelOnArchiveEnabled {
+			playbookRun.ExportChannelOnArchiveEnabled = pb.ExportChannelOnArchiveEnabled
+		}
+
 		playbookRun.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
 		playbookRun.Retrospective = pb.RetrospectiveTemplate
 
@@ -1282,7 +1286,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, 
 	sort := u.Query().Get("sort")
 	direction := u.Query().Get("direction")
 
-	status := u.Query().Get("status")
+	statuses := u.Query()["statuses"]
 
 	ownerID := u.Query().Get("owner_user_id")
 	searchTerm := u.Query().Get("search_term")
@@ -1321,7 +1325,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, 
 		PerPage:    perPage,
 		Sort:       app.SortField(sort),
 		Direction:  app.SortDirection(direction),
-		Status:     status,
+		Statuses:   statuses,
 		OwnerID:    ownerID,
 		SearchTerm: searchTerm,
 		MemberID:   memberID,

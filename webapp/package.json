@@ -1,7 +1,7 @@
 {
   "private": true,
   "engines": {
-    "node" : ">=16.4.0",
+    "node": ">=16.4.0",
     "npm": ">=7.18.1"
   },
   "scripts": {
@@ -75,6 +75,8 @@
     "webpack-dev-server": "3.11.2"
   },
   "dependencies": {
+    "@mdi/js": "^5.9.55",
+    "@mdi/react": "^1.5.0",
     "core-js": "3.10.2",
     "debounce": "1.2.1",
     "mattermost-redux": "github:mattermost/mattermost-redux#3d1028034d7677adfda58e91b9a5dcaf1bc0ff99",

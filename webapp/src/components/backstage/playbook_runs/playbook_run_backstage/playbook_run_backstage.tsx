@@ -12,22 +12,23 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Channel} from 'mattermost-redux/types/channels';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
+import {
+    Badge,
+    SecondaryButtonLargerRight,
+} from 'src/components/backstage/playbook_runs/shared';
+
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
 import {clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookRunMetadata} from 'src/client';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
-import {
-    Badge,
-    SecondaryButtonLargerRight,
-} from 'src/components/backstage/playbook_runs/shared';
+import {useAllowRetrospectiveAccess} from 'src/hooks';
 
-import ExportLink from 'src/components/backstage/playbook_runs/playbook_run_details/export_link';
-
-import {useExperimentalFeaturesEnabled} from 'src/hooks';
-import {Playbook} from 'src/types/playbook';
+import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
+import {Playbook} from 'src/types/playbook';
+import ExportLink from '../playbook_run_details/export_link';
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
@@ -155,6 +156,11 @@ const FetchingStateType = {
     notFound: 'notfound',
 };
 
+const PositionedUpgradeBadge = styled(UpgradeBadge)`
+    margin-left: 8px;
+    vertical-align: sub;
+`;
+
 const PlaybookRunBackstage = () => {
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
@@ -162,9 +168,10 @@ const PlaybookRunBackstage = () => {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const channel = useSelector<GlobalState, Channel | null>((state) => (playbookRun ? getChannel(state, playbookRun.channel_id) : null));
     const match = useRouteMatch<MatchParams>();
-    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
+
+    const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
@@ -239,14 +246,13 @@ const PlaybookRunBackstage = () => {
                     >
                         {'Overview'}
                     </TabItem>
-                    {experimentalFeaturesEnabled &&
                     <TabItem
                         to={`${match.url}/retrospective`}
                         activeClassName={'active'}
                     >
                         {'Retrospective'}
+                        {!allowRetrospectiveAccess && <PositionedUpgradeBadge/>}
                     </TabItem>
-                    }
                 </SecondRow>
             </TopContainer>
             <BottomContainer>

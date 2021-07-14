@@ -12,14 +12,14 @@ import styled from 'styled-components';
 import {actionSetGlobalSettings} from 'src/actions';
 import {fetchGlobalSettings, setGlobalSettings} from 'src/client';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
-import {globalSettings} from 'src/selectors';
+import {globalSettings, isCurrentUserAdmin} from 'src/selectors';
 import {GlobalSettings} from 'src/types/settings';
 import ConfirmModal from '../widgets/confirmation_modal';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 
 import Profile from '../profile/profile';
 
-import {useCanCreatePlaybooks, useAllowPlaybookCreationRestriction} from 'src/hooks';
+import {useCanRestrictPlaybookCreation, useAllowPlaybookCreationRestriction} from 'src/hooks';
 
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 
@@ -69,8 +69,9 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
     const dispatch = useDispatch();
     const [enabled, setEnabled] = useState<boolean>(props.settings.playbook_creators_user_ids.length !== 0);
     const [confirmRemoveSelfOpen, setConfirmRemoveSelfOpen] = useState('');
-    const hasPermissions = useCanCreatePlaybooks();
+    const hasPermissions = useCanRestrictPlaybookCreation();
     const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
+    const isAdmin = useSelector(isCurrentUserAdmin);
 
     const userMaybeAdded = (userid: string) => {
         // Need to ignore double adds
@@ -128,9 +129,16 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
     };
 
     if (!hasPermissions) {
+        if (props.settings.playbook_creators_user_ids.length === 0) {
+            return (
+                <>
+                    <NoPermissionsTitle>{'Everyone in this workspace can create playbooks. System administrators may change this setting.'}</NoPermissionsTitle>
+                </>
+            );
+        }
         return (
             <>
-                <NoPermissionsTitle>{'Only the listed users can create playbooks:'}</NoPermissionsTitle>
+                <NoPermissionsTitle>{'Only the users below can create playbooks. These users, as well as system administrators, may change this setting.'}</NoPermissionsTitle>
                 <NoPermissionsUsers>
                     {props.settings.playbook_creators_user_ids.map((userId) => (
                         <NoPermissionsUserEntry
@@ -178,7 +186,7 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
                         userIds={props.settings.playbook_creators_user_ids}
                         onAddUser={userMaybeAdded}
                         onRemoveUser={(userid: string) => {
-                            if (userid === currentUserId) {
+                            if (!isAdmin && userid === currentUserId) {
                                 setConfirmRemoveSelfOpen(currentUserId);
                                 return;
                             }
