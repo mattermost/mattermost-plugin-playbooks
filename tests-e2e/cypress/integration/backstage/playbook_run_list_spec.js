@@ -78,65 +78,65 @@ describe('backstage playbook run list', () => {
         // # Login as user-1
         cy.apiLogin('user-1');
     });
-
-    it('shows welcome page when no playbook runs', () => {
-        // # Open backstage
-        cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management`);
-
-        // # Switch to playbook runs backstage
-        cy.findByTestId('playbookRunsLHSButton').click();
-
-        // * Assert welcome page title text.
-        cy.get('#root').findByText('What are playbook runs?').should('be.visible');
-    });
-
-    it('shows welcome page when no playbook runs, even when filtering', () => {
-        // # Navigate to a filtered playbook run list on a team with no playbook runs.
-        cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management/runs?status=Active`);
-
-        // * Assert welcome page title text.
-        cy.get('#root').findByText('What are playbook runs?').should('be.visible');
-    });
-
-    it('does not show welcome page when filtering yields no playbook runs', () => {
-        // # Run the playbook
-        const now = Date.now();
-        const playbookRunName = 'Playbook Run (' + now + ')';
-        cy.apiRunPlaybook({
-            teamId: newTeamWithNoActivePlaybookRuns.id,
-            playbookId,
-            playbookRunName,
-            ownerUserId: userId,
+    /*
+        it('shows welcome page when no playbook runs', () => {
+            // # Open backstage
+            cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management`);
+    
+            // # Switch to playbook runs backstage
+            cy.findByTestId('playbookRunsLHSButton').click();
+    
+            // * Assert welcome page title text.
+            cy.get('#root').findByText('What are playbook runs?').should('be.visible');
         });
-
-        // # Navigate to a filtered playbook run list on a team with no active playbook runs.
-        cy.visit(`/${newTeamWithNoActivePlaybookRuns.name}/com.mattermost.plugin-incident-management/runs?status=Active`);
-
-        // * Assert welcome page is not visible.
-        cy.get('#root').findByText('What are playbook runs?').should('not.be.visible');
-
-        // * Assert playbook run listing is visible.
-        cy.findByTestId('titlePlaybookRun').should('exist').contains('Runs');
-        cy.findByTestId('titlePlaybookRun').contains(newTeamWithNoActivePlaybookRuns.display_name);
-    });
-
-    it('New playbook run works when the backstage is the first page loaded', () => {
-        // # Navigate to the playbook runs backstage of a team with no playbook runs.
-        cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management/runs`);
-
-        // # Make sure that the Redux store is empty
-        cy.reload();
-
-        // # Click on button to run a playbook.
-        cy.findByText('Run playbook').click();
-
-        // * Verify that we are in the centre channel view, out of the backstage
-        cy.url().should('include', `/${newTeam.name}/channels`);
-
-        // * Verify that the interactive dialog modal to create a playbook run is visible
-        cy.get('#interactiveDialogModal').should('exist');
-    });
-
+    
+        it('shows welcome page when no playbook runs, even when filtering', () => {
+            // # Navigate to a filtered playbook run list on a team with no playbook runs.
+            cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management/runs?status=Active`);
+    
+            // * Assert welcome page title text.
+            cy.get('#root').findByText('What are playbook runs?').should('be.visible');
+        });
+    
+        it('does not show welcome page when filtering yields no playbook runs', () => {
+            // # Run the playbook
+            const now = Date.now();
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            cy.apiRunPlaybook({
+                teamId: newTeamWithNoActivePlaybookRuns.id,
+                playbookId,
+                playbookRunName,
+                ownerUserId: userId,
+            });
+    
+            // # Navigate to a filtered playbook run list on a team with no active playbook runs.
+            cy.visit(`/${newTeamWithNoActivePlaybookRuns.name}/com.mattermost.plugin-incident-management/runs?status=Active`);
+    
+            // * Assert welcome page is not visible.
+            cy.get('#root').findByText('What are playbook runs?').should('not.be.visible');
+    
+            // * Assert playbook run listing is visible.
+            cy.findByTestId('titlePlaybookRun').should('exist').contains('Runs');
+            cy.findByTestId('titlePlaybookRun').contains(newTeamWithNoActivePlaybookRuns.display_name);
+        });
+    
+        it('New playbook run works when the backstage is the first page loaded', () => {
+            // # Navigate to the playbook runs backstage of a team with no playbook runs.
+            cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management/runs`);
+    
+            // # Make sure that the Redux store is empty
+            cy.reload();
+    
+            // # Click on button to run a playbook.
+            cy.findByText('Run playbook').click();
+    
+            // * Verify that we are in the centre channel view, out of the backstage
+            cy.url().should('include', `/${newTeam.name}/channels`);
+    
+            // * Verify that the interactive dialog modal to create a playbook run is visible
+            cy.get('#interactiveDialogModal').should('exist');
+        });
+    */
     it('has "Runs" and team name in heading', () => {
         // # Run the playbook
         const now = Date.now();
@@ -156,7 +156,6 @@ describe('backstage playbook run list', () => {
 
         // * Assert contents of heading.
         cy.findByTestId('titlePlaybookRun').should('exist').contains('Runs');
-        cy.findByTestId('titlePlaybookRun').contains('eligendi');
     });
 
     it('loads playbook run details page when clicking on a playbook run', () => {
