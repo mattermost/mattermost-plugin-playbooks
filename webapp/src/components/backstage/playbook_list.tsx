@@ -120,15 +120,7 @@ const PlaybookList = () => {
                     />
                 </a>
                 <div className='col-sm-2'>{p.num_stages}</div>
-                <div
-                    className='col-sm-2'
-                >
-                    {
-
-                        /* Calculate all steps for this playbook */
-                        p.num_steps
-                    }
-                </div>
+                <div className='col-sm-2'>{p.num_steps}</div>
                 <div className='col-sm-2'>{p.num_runs}</div>
                 <div className='col-sm-2 action-col'>
                     <PlaybookActionMenu

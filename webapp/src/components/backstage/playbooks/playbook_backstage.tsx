@@ -11,6 +11,10 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import Icon from '@mdi/react';
 import {mdiClipboardPlayOutline} from '@mdi/js';
 
+const RightMarginedIcon = styled(Icon)`
+    margin-right: 0.5rem;
+`;
+
 import {DefaultFetchPlaybookRunsParamsTime} from 'src/types/playbook_run';
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
 import {clientFetchPlaybook, fetchPlaybookStats, telemetryEventForPlaybook} from 'src/client';
@@ -127,9 +131,9 @@ const PlaybookBackstage = () => {
                         {'Edit'}
                     </SecondaryButtonLargerRight>
                     <PrimaryButtonLarger onClick={runPlaybook}>
-                        <Icon
+                        <RightMarginedIcon
                             path={mdiClipboardPlayOutline}
-                            size={1}
+                            size={1.25}
                         />
                         {'Run'}
                     </PrimaryButtonLarger>

@@ -111,7 +111,7 @@ const WelcomeBlock = styled.div`
             vertical-align: top;
             padding: 1rem 0;
             > svg {
-                margin-left: 0.75em;
+                margin-left: 0.5em;
             }
         }
     }
@@ -133,7 +133,6 @@ const SubHeading = styled.h4`
     line-height: 21px;
     font-weight: 400;
     color: rgba(var(--center-channel-color-rgb), 0.72);
-
 `;
 
 const PaginationContainer = styled.div`
