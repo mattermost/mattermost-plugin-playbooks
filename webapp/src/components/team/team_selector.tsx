@@ -152,7 +152,7 @@ export default function TeamSelector(props: Props) {
                         toggleOpen();
                     }
                 }}
-                className={props.placeholderButtonClass || 'PlaybookRunFilter-button'}
+                className={props.placeholderButtonClass || 'PlaybookRunFilter-button' + (isOpen ? ' active' : '')}
             >
                 {selected === null ? props.placeholder : selected.label}
                 {<i className='icon-chevron-down icon--small ml-2'/>}
