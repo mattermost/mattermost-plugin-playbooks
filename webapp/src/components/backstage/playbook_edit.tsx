@@ -20,7 +20,7 @@ import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import {BackstageNavbar} from 'src/components/backstage/backstage';
+import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
@@ -181,6 +181,10 @@ const retrospectiveReminderOptions = [
 
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
+
+const PlaybookNavbar = styled(BackstageNavbar)`
+    top: 80px;
+`;
 
 const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
@@ -489,7 +493,7 @@ const PlaybookEdit = (props: Props) => {
 
     return (
         <OuterContainer>
-            <BackstageNavbar
+            <PlaybookNavbar
                 data-testid='backstage-nav-bar'
             >
                 <EditableTexts>
@@ -520,7 +524,7 @@ const PlaybookEdit = (props: Props) => {
                         {'Save'}
                     </span>
                 </PrimaryButton>
-            </BackstageNavbar>
+            </PlaybookNavbar>
             <Container>
                 <EditView>
                     <TabsHeader>
