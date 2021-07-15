@@ -113,7 +113,7 @@ describe('backstage playbook run list', () => {
         cy.visit(`/${newTeamWithNoActivePlaybookRuns.name}/com.mattermost.plugin-incident-management/runs?status=Active`);
 
         // * Assert welcome page is not visible.
-        cy.get('#root').findByText('What are playbook runs?').should('not.be.visible');
+        cy.get('#root').findByText('What are playbook runs?').should('not.exist');
 
         // * Assert playbook run listing is visible.
         cy.findByTestId('titlePlaybookRun').should('exist').contains('Runs');
