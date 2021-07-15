@@ -13,11 +13,13 @@ import './api/preference';
 import './api/user';
 import './test_commands';
 
+import fixtureUsers from '../fixtures/users';
+
 require('cypress-terminal-report/src/installLogsCollector')();
 
 before(() => {
     // Disable the tutorial, cloud onboarding, and whats new modal for specific users.
-    const userNames = ['sysadmin', 'user-1', 'user-2'];
+    const userNames = Object.values(fixtureUsers).map((user) => user.username);
 
     cy.apiAdminLogin().then(() => {
         cy.apiGetUsersByUsernames(userNames).then(({users}) => users.forEach((user) => {
