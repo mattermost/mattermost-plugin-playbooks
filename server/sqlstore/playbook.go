@@ -282,13 +282,13 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 			"COUNT(i.ID) AS NumRuns",
 			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
 			`(
-				p.InviteUsersEnabled::int +
-				p.DefaultCommanderEnabled::int +
-				p.AnnouncementChannelEnabled::int +
-				p.WebhookOnCreationEnabled::int +
-				p.MessageOnJoinEnabled::int +
-				p.WebhookOnStatusUpdateEnabled::int +
-				p.SignalAnyKeywordsEnabled::int
+				CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.AnnouncementChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 		).
 		From("IR_Playbook AS p").
@@ -343,13 +343,13 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 			"COUNT(i.ID) AS NumRuns",
 			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
 			`(
-				p.InviteUsersEnabled::int +
-				p.DefaultCommanderEnabled::int +
-				p.AnnouncementChannelEnabled::int +
-				p.WebhookOnCreationEnabled::int +
-				p.MessageOnJoinEnabled::int +
-				p.WebhookOnStatusUpdateEnabled::int +
-				p.SignalAnyKeywordsEnabled::int
+				CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.AnnouncementChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 		).
 		From("IR_Playbook AS p").
