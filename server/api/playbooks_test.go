@@ -1708,7 +1708,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 		},
 		{
-			testName:           "get playbooks with sort=steps direction=asc",
+			testName:           "get playbooks with sort=runs direction=asc",
 			sortField:          icClient.SortByRuns,
 			sortDirection:      "asc",
 			expectedList:       []app.Playbook{playbooktest1, playbooktest2, playbooktest3},
@@ -1716,7 +1716,7 @@ func TestSortingPlaybooks(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 		},
 		{
-			testName:           "get playbooks with sort=steps direction=desc",
+			testName:           "get playbooks with sort=runs direction=desc",
 			sortField:          icClient.SortByRuns,
 			sortDirection:      "desc",
 			expectedList:       []app.Playbook{playbooktest3, playbooktest2, playbooktest1},
