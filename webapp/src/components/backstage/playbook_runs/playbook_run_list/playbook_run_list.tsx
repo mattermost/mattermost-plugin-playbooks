@@ -9,7 +9,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {useLocation} from 'react-router-dom';
 
-import {getCurrentTeam, getTeamsList} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeam, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
@@ -175,7 +175,7 @@ const BackstagePlaybookRunList = () => {
     const [totalCount, setTotalCount] = useState(0);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => UserProfile;
-    const teams = useSelector<GlobalState, Team[]>(getTeamsList);
+    const teams = useSelector<GlobalState, Team[]>(getMyTeams);
 
     const query = useLocation().search;
     const [fetchParams, setFetchParams] = useState<FetchPlaybookRunsParams>(
