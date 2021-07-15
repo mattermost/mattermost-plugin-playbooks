@@ -95,7 +95,7 @@ export const ChecklistItemDescription = (props: ChecklistItemDescriptionProps) =
         descriptionBox = (
             <>
                 <StyledTextarea
-                    autoFocus={true}
+                    autoFocus={!description}
                     value={description}
                     onBlur={save}
                     placeholder={'Description'}
