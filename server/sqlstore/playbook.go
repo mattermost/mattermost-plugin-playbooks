@@ -307,11 +307,12 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 	if err != nil && err != sql.ErrNoRows {
 		return nil, errors.Wrapf(err, "failed to get memberIDs")
 	}
-	addMembersToPlaybooks(memberIDs, playbooks)
 
 	if err = tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "could not commit transaction")
 	}
+
+	addMembersToPlaybooks(memberIDs, playbooks)
 
 	return playbooks, nil
 }
