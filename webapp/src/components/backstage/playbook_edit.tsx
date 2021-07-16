@@ -466,6 +466,14 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleToggleCategorizePlaybookRun = () => {
+        setPlaybook({
+            ...playbook,
+            categorize_channel_enabled: !playbook.categorize_channel_enabled,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
@@ -703,6 +711,8 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleSignalAnyKeywords={handleToggleSignalAnyKeywords}
                                     signalAnyKeywordsChange={handleSignalAnyKeywordsChange}
                                     signalAnyKeywords={playbook.signal_any_keywords}
+                                    categorizePlaybookRun={playbook.categorize_channel_enabled}
+                                    onToggleCategorizePlaybookRun={handleToggleCategorizePlaybookRun}
                                 />
                             </TabContainer>
                             <TabContainer>

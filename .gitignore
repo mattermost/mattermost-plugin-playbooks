@@ -1,6 +1,7 @@
 .DS_Store
 
 .vscode
+.idea/
 
 dist
 tests-e2e/node_modules

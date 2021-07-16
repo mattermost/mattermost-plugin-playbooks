@@ -1,8 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import * as TIMEOUTS from '../fixtures/timeouts';
-
 const playbookRunStartCommand = '/playbook start';
 
 // function startPlaybookRun(playbookRunName) {
@@ -86,7 +84,7 @@ Cypress.Commands.add('startPlaybookRunFromPostMenu', (playbookName, playbookRunN
 });
 
 Cypress.Commands.add('openBackstage', () => {
-    cy.get('#lhsHeader', {timeout: TIMEOUTS.TWO_MIN}).should('exist').within(() => {
+    cy.get('#lhsHeader', {timeout: 120000}).should('exist').within(() => {
         // # Wait until the channel loads enough to show the post textbox.
         cy.get('#post-create').should('exist');
         cy.wait(2000);
@@ -106,7 +104,7 @@ Cypress.Commands.add('openBackstage', () => {
 Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
     cy.visit(`/${teamName}/com.mattermost.plugin-incident-management/playbooks/new`);
 
-    cy.findByTestId('save_playbook', {timeout: TIMEOUTS.HALF_MIN}).should('exist');
+    cy.findByTestId('save_playbook', {timeout: 30000}).should('exist');
 
     // # Type playbook name
     cy.get('#playbook-name .editable-trigger').click();
@@ -114,9 +112,9 @@ Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
     cy.get('#playbook-name .editable-input').type('{enter}');
 
     // # Save playbook
-    cy.findByTestId('save_playbook', {timeout: TIMEOUTS.HALF_MIN}).should('not.be.disabled').click();
+    cy.findByTestId('save_playbook', {timeout: 30000}).should('not.be.disabled').click();
     cy.wait(2000);
-    cy.findByTestId('save_playbook', {timeout: TIMEOUTS.HALF_MIN}).should('not.be.disabled').click();
+    cy.findByTestId('save_playbook', {timeout: 30000}).should('not.be.disabled').click();
 });
 
 // Select the playbook from the dropdown menu
