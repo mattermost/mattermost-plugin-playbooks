@@ -379,6 +379,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.Description = pb.Description
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
+		playbookRun.CategorizeChannelEnabled = pb.CategorizeChannelEnabled
 
 		playbookRun.InvitedUserIDs = []string{}
 		playbookRun.InvitedGroupIDs = []string{}
