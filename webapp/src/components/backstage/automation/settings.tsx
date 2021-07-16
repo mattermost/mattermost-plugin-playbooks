@@ -155,12 +155,13 @@ export const AutomationSettings = (props: Props) => {
                         message={props.messageOnJoin}
                         onChange={props.messageOnJoinChange}
                     />
+                </Setting>
+                <Setting id={'user-joins-channel-categorize'}>
                     <CategorizePlaybookRun
                         enabled={props.categorizePlaybookRun}
                         onToggle={props.onToggleCategorizePlaybookRun}
                     />
                 </Setting>
-
             </Section>
             <Section>
                 <SectionTitle>
