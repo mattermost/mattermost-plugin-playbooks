@@ -53,17 +53,6 @@ type PlaybookStats struct {
 	ActiveParticipantsPerDayLabels []string  `json:"active_participants_per_day_labels"`
 }
 
-func parseStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
-	teamID := u.Query().Get("team_id")
-	if teamID == "" {
-		return nil, errors.New("bad parameter 'team_id'; 'team_id' is required")
-	}
-
-	return &sqlstore.StatsFilters{
-		TeamID: teamID,
-	}, nil
-}
-
 func parsePlaybookStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
 	playbookID := u.Query().Get("playbook_id")
 	if playbookID == "" {
