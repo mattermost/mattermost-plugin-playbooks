@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -11,6 +11,7 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 
 interface Props {
     playbookRun: PlaybookRun;
+    collapsed: boolean;
 }
 
 const RHSPostUpdate = (props: Props) => {
@@ -19,19 +20,19 @@ const RHSPostUpdate = (props: Props) => {
     return (
         <PostUpdate>
             <Timer>
-                <IconWrapper>
+                <IconWrapper collapsed={props.collapsed}>
                     {icon}
                 </IconWrapper>
-                <UpdateNotice>
+                <UpdateNotice collapsed={props.collapsed}>
                     <UpdateNoticePretext>
                         {'Update due in'}
                     </UpdateNoticePretext>
-                    <UpdateNoticeTime>
+                    <UpdateNoticeTime collapsed={props.collapsed}>
                         {'50 min'}
                     </UpdateNoticeTime>
                 </UpdateNotice>
             </Timer>
-            <Button>
+            <Button collapsed={props.collapsed}>
                 {'Post update'}
             </Button>
         </PostUpdate>
@@ -44,7 +45,8 @@ const PostUpdate = styled.div`
     flex-wrap: nowrap;
 
     justify-content: space-between;
-    padding: 12px;
+    padding: ${(props) => (props.collapsed ? '12px' : '8px')};
+    padding-left: 12px;
 
     background: var(--channel-bg);
 
@@ -55,37 +57,50 @@ const PostUpdate = styled.div`
 const Timer = styled.div`
     display: flex;
     flex-direction: row;
+    align-items: center
 `;
 
-const IconWrapper = styled.span`
+const IconWrapper = styled.span<{collapsed: boolean}>`
     display: flex;
     justify-content: center;
     align-items: center;
 
-    width: 48px;
+    width: ${(props) => (props.collapsed ? '14px' : '48px')};
 `;
 
-const UpdateNotice = styled.div`
+const UpdateNotice = styled.div<{collapsed: boolean}>`
+    display: flex;
+    flex-direction: ${(props) => (props.collapsed ? 'row' : 'column')};
     margin-left: 4px;
     padding: 0;
     color: rgba(var(--center-channel-color-rgb), 0.72);
-`;
 
-const UpdateNoticePretext = styled.div`
-    font-weight: 400;
     font-size: 12px;
     line-height: 16px;
 `;
 
-const UpdateNoticeTime = styled.div`
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
+const UpdateNoticePretext = styled.div`
+    font-weight: 400;
+    margin-right: 3px;
 `;
 
-const Button = styled(PrimaryButton)`
+const UpdateNoticeTime = styled.div<{collapsed: boolean}>`
+    font-weight: 600;
+
+    ${(props) => !props.collapsed && css`
+        font-size: 16px;
+        line-height: 24px;
+    `}
+`;
+
+const Button = styled(PrimaryButton)<{collapsed: boolean}>`
     justify-content: center;
     width: 176px;
+    ${(props) => props.collapsed && css`
+        height: 32px;
+        font-size: 12px;
+        font-height: 9.5px;
+    `}
 `;
 
 const ClockIcon = () => (

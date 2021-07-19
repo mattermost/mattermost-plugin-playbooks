@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import {useDispatch} from 'react-redux';
 
@@ -17,6 +17,7 @@ import PostText from 'src/components/post_text';
 import {updateStatus} from 'src/actions';
 import Duration from '../duration';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
+import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -26,6 +27,31 @@ const RHSAbout = (props: Props) => {
     const dispatch = useDispatch();
     const profilesInChannel = useProfilesInCurrentChannel();
     const latestUpdatePost = useLatestUpdate(props.playbookRun);
+
+    const [collapsed, setCollapsed] = useState(false);
+    const [hovered, setHovered] = useState(false);
+
+    if (collapsed) {
+        return (
+            <Container
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+            >
+                {true &&
+                <Buttons
+                    collapsed={collapsed}
+                    setCollapsed={setCollapsed}
+                /> }
+                <Title>
+                    {props.playbookRun.name}
+                </Title>
+                <RHSPostUpdate
+                    playbookRun={props.playbookRun}
+                    collapsed={collapsed}
+                />
+            </Container>
+        );
+    }
 
     let description = <PostText text={props.playbookRun.description}/>;
     if (props.playbookRun.status_posts.length === 0) {
@@ -58,7 +84,15 @@ const RHSAbout = (props: Props) => {
         .map((p) => p.id);
 
     return (
-        <Container>
+        <Container
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+        >
+            {hovered &&
+            <Buttons
+                collapsed={collapsed}
+                setCollapsed={setCollapsed}
+            /> }
             <Title>
                 {props.playbookRun.name}
             </Title>
@@ -88,6 +122,34 @@ const RHSAbout = (props: Props) => {
         </Container>
     );
 };
+
+interface ButtonsProps {
+    collapsed: boolean;
+    setCollapsed: () => void;
+}
+
+const Buttons = ({collapsed, setCollapsed} : ButtonsProps) => {
+    return (
+        <ButtonsRow>
+            <HoverMenuButton
+                title={'More'}
+                className={'icon-dots-vertical icon-16 btn-icon'}
+                onClick={() => {}}
+            />
+            <HoverMenuButton
+                title={collapsed ? 'Expand' : 'Collapse'}
+                className={(collapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
+                onClick={() => setCollapsed(!collapsed)}
+            />
+        </ButtonsRow>
+    );
+};
+
+const ButtonsRow = styled(HoverMenu)`
+    position: absolute;
+    top: 9px;
+    right: 12px;
+`;
 
 const PaddedContent = styled.div`
     padding: 0 8px; 
