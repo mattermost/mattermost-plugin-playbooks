@@ -9,7 +9,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {useLocation} from 'react-router-dom';
 
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeam, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
@@ -20,6 +20,9 @@ import {
     StatusFilter,
     StatusOption,
 } from 'src/components/backstage/playbook_runs/playbook_run_list/status_filter';
+
+import TeamSelector from 'src/components/team/team_selector';
+
 import SearchInput from 'src/components/backstage/playbook_runs/playbook_run_list/search_input';
 import {FetchPlaybookRunsParams, PlaybookRun, playbookRunIsActive, playbookRunCurrentStatus} from 'src/types/playbook_run';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
@@ -45,7 +48,7 @@ import BackstageListHeader from '../../backstage_list_header';
 
 const debounceDelay = 300; // in milliseconds
 
-const ControlComponent = (ownProps: ControlProps<any>) => (
+const controlComponent = (ownProps: ControlProps<any>, filterName: string) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
@@ -53,11 +56,19 @@ const ControlComponent = (ownProps: ControlProps<any>) => (
                 className='PlaybookRunFilter-reset'
                 onClick={ownProps.selectProps.onCustomReset}
             >
-                {'Reset to all owners'}
+                {'Reset to all ' + filterName}
             </a>
         )}
     </div>
 );
+
+const OwnerControlComponent = (ownProps: ControlProps<any>) => {
+    return controlComponent(ownProps, 'owners');
+};
+
+const TeamControlComponent = (ownProps: ControlProps<any>) => {
+    return controlComponent(ownProps, 'teams');
+};
 
 const NoContentContainer = styled.div`
     display: flex;
@@ -164,11 +175,11 @@ const BackstagePlaybookRunList = () => {
     const [totalCount, setTotalCount] = useState(0);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => UserProfile;
+    const teams = useSelector<GlobalState, Team[]>(getMyTeams);
 
     const query = useLocation().search;
     const [fetchParams, setFetchParams] = useState<FetchPlaybookRunsParams>(
         {
-            team_id: currentTeam.id,
             page: 0,
             per_page: BACKSTAGE_LIST_PER_PAGE,
             sort: 'create_at',
@@ -183,18 +194,16 @@ const BackstagePlaybookRunList = () => {
     }, [query]);
 
     useEffect(() => {
-        setFetchParams((oldParams) => {
-            return {...oldParams, team_id: currentTeam.id};
-        });
-    }, [currentTeam.id]);
+        const queryForTeamID = new URLSearchParams(query).get('team_id');
+        setFetchParams((oldParams) => ({...oldParams, team_id: queryForTeamID || ''}));
+    }, [query]);
 
-    // When the component is first mounted (or the team changes), determine if there are any
+    // When the component is first mounted, determine if there are any
     // playbook runs at all, ignoring filters. Decide once if we should show the "no playbook runs"
     // landing page.
     useEffect(() => {
         async function checkForPlaybookRuns() {
             const playbookRunsReturn = await fetchPlaybookRuns({
-                team_id: currentTeam.id,
                 page: 0,
                 per_page: 1,
             });
@@ -205,7 +214,7 @@ const BackstagePlaybookRunList = () => {
         }
 
         checkForPlaybookRuns();
-    }, [currentTeam.id]);
+    }, []);
 
     useEffect(() => {
         let isCanceled = false;
@@ -254,7 +263,7 @@ const BackstagePlaybookRunList = () => {
     }
 
     async function fetchOwners() {
-        const owners = await fetchOwnersInTeam(currentTeam.id);
+        const owners = await fetchOwnersInTeam(fetchParams.team_id || '');
         return owners.map((c) => selectUser(c.user_id) || {id: c.user_id} as UserProfile);
     }
 
@@ -262,16 +271,35 @@ const BackstagePlaybookRunList = () => {
         setFetchParams({...fetchParams, owner_user_id: userId, page: 0});
     }
 
+    function setTeamId(teamId?: string) {
+        setFetchParams({...fetchParams, team_id: teamId, page: 0});
+    }
+
     function openPlaybookRunDetails(playbookRun: PlaybookRun) {
         navigateToTeamPluginUrl(currentTeam.name, `/runs/${playbookRun.id}`);
     }
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
+    const [teamSelectorToggle, setTeamSelectorToggle] = useState(false);
 
     const resetOwner = () => {
         setOwnerId();
         setProfileSelectorToggle(!profileSelectorToggle);
     };
+
+    const resetTeam = () => {
+        setTeamId();
+        setTeamSelectorToggle(!teamSelectorToggle);
+    };
+
+    function getTeamName(id: string): string {
+        for (const team in teams) {
+            if (teams[team].id === id) {
+                return teams[team].display_name;
+            }
+        }
+        return '';
+    }
 
     const goToMattermost = () => {
         navigateToUrl(`/${currentTeam.name}`);
@@ -293,6 +321,27 @@ const BackstagePlaybookRunList = () => {
         );
     }
 
+    let teamSelector = null;
+    if (teams.length > 1) {
+        teamSelector = (
+            <TeamSelector
+                testId={'team-filter'}
+                selectedTeamId={fetchParams.team_id}
+                placeholder={'Team'}
+                enableEdit={true}
+                isClearable={true}
+                customControl={TeamControlComponent}
+                customControlProps={{
+                    showCustomReset: Boolean(fetchParams.team_id),
+                    onCustomReset: resetTeam,
+                }}
+                controlledOpenToggle={teamSelectorToggle}
+                teams={teams}
+                onSelectedChange={setTeamId}
+            />
+        );
+    }
+
     return (<>
         <div className='PlaybookRunList container-medium'>
             <div className='Backstage__header'>
@@ -301,9 +350,6 @@ const BackstagePlaybookRunList = () => {
                     data-testid='titlePlaybookRun'
                 >
                     {'Runs'}
-                    <div className='light'>
-                        {'(' + currentTeam.display_name + ')'}
-                    </div>
                 </div>
             </div>
             <div
@@ -321,7 +367,7 @@ const BackstagePlaybookRunList = () => {
                         placeholder={'Owner'}
                         enableEdit={true}
                         isClearable={true}
-                        customControl={ControlComponent}
+                        customControl={OwnerControlComponent}
                         customControlProps={{
                             showCustomReset: Boolean(fetchParams.owner_user_id),
                             onCustomReset: resetOwner,
@@ -335,6 +381,7 @@ const BackstagePlaybookRunList = () => {
                         default={fetchParams.statuses}
                         onChange={setStatus}
                     />
+                    {teamSelector}
                 </div>
                 <BackstageListHeader>
                     <div className='row'>
@@ -376,9 +423,7 @@ const BackstagePlaybookRunList = () => {
 
                 {playbookRuns.length === 0 &&
                     <div className='text-center pt-8'>
-                        {'There are no runs for '}
-                        <i>{currentTeam.display_name}</i>
-                        {' matching those filters.'}
+                        {'There are no runs matching those filters.'}
                     </div>
                 }
                 {playbookRuns.map((playbookRun) => (
@@ -392,6 +437,7 @@ const BackstagePlaybookRunList = () => {
                                 id={playbookRun.id}
                                 text={playbookRun.name}
                             />
+                            <TeamName>{teams.length > 1 ? ' (' + getTeamName(playbookRun.team_id) + ')' : ''}</TeamName>
                         </a>
                         <div className='col-sm-2'>
                             <StatusBadge status={playbookRunCurrentStatus(playbookRun)}/>
@@ -448,3 +494,12 @@ const endedAt = (isActive: boolean, time: number) => {
 };
 
 export default BackstagePlaybookRunList;
+
+const TeamName = styled.div`
+    font-style: normal;
+    font-weight: normal;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--center-channel-color-72);
+    padding-left: 4px;
+`;
