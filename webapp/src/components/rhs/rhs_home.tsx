@@ -184,7 +184,7 @@ const RHSHome = () => {
 
     const [playbooks, {hasMore, isLoading}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
     const {create} = usePlaybooksRouting<Playbook>(currentTeam.name);
-    const shouldWelcome = playbooks?.length === 0;
+    const shouldWelcome = playbooks?.length === 0 && !currentPlaybook;
 
     const canCreatePlaybooks = useCanCreatePlaybooks();
     const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
@@ -294,7 +294,7 @@ const RHSHome = () => {
                 >
                     {!isLoading && <Header>{headerContent}</Header>}
 
-                    {!shouldWelcome && !isLoading && (
+                    {playbooks && playbooks.length !== 0 && (
                         <>
                             <ListHeading>{'Your Playbooks'}</ListHeading>
                             <ListSection>
