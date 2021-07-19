@@ -280,9 +280,21 @@ describe('timeline', () => {
             removeTimelineEvent('incident_created', 1, 0, 'Run started by user-1');
 
             // * Verify user joined message is visible in the timeline
+            verifyTimelineEvent('user_joined_left', 3, 0, '@playbook joined the channel');
+
+            // * Delete the user joined message
+            removeTimelineEvent('user_joined_left', 3, 0, '@playbook joined the channel');
+
+            // * Verify user joined message is visible in the timeline
+            verifyTimelineEvent('user_joined_left', 2, 0, '@user-1 joined the channel');
+
+            // * Delete the user joined message
+            removeTimelineEvent('user_joined_left', 2, 0, '@user-1 joined the channel');
+
+            // * Verify user joined message is visible in the timeline
             verifyTimelineEvent('user_joined_left', 1, 0, '@aaron.peterson joined the channel');
 
-            // * Delete the playbook run created event
+            // * Delete the user joined message
             removeTimelineEvent('user_joined_left', 1, 0, '@aaron.peterson joined the channel');
 
             // * Verify notice is shown
@@ -384,8 +396,8 @@ describe('timeline', () => {
             // * Verify we can see all events:
             clickOnFilterOption('All events');
 
-            // * Verify all events are shown (incl. one user_joined_left event)
-            cy.findAllByTestId(/timeline-item .*/).should('have.length', 10);
+            // * Verify all events are shown (incl. 3 user_joined_left events)
+            cy.findAllByTestId(/timeline-item .*/).should('have.length', 12);
             verifyTimelineEvent('status_updated', 2, 0, 'user-1 posted a status update');
             verifyTimelineEvent('owner_changed', 2, 0, 'Owner changed from @user-1 to @aaron.peterson');
             verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');
