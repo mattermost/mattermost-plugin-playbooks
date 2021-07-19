@@ -253,7 +253,7 @@ const PlaybookList = () => {
 
 type CreatePlaybookButtonProps = UpgradeButtonProps & {allowPlaybookCreation: boolean};
 
-const UpgradeOrPrimaryButton = (props: CreatePlaybookButtonProps) => {
+export const UpgradeOrPrimaryButton = (props: CreatePlaybookButtonProps) => {
     const {children, allowPlaybookCreation, ...rest} = props;
 
     if (allowPlaybookCreation) {

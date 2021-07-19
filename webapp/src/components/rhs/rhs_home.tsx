@@ -35,7 +35,7 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
-import {useUpgradeModalVisibility} from 'src/components/backstage/playbook_list';
+import {UpgradeOrPrimaryButton, useUpgradeModalVisibility} from 'src/components/backstage/playbook_list';
 
 const Header = styled.div`
     min-height: 8rem;
@@ -49,7 +49,7 @@ const RunDetail = styled.div<{
     display: flex;
     place-content: flex-start;
     place-items: center;
-    padding: 2rem 4rem;
+    padding: 2rem 2rem 2rem 4rem;
     background:
         linear-gradient(
             180deg,
@@ -66,6 +66,7 @@ const RunDetail = styled.div<{
             font-weight: 400;
             margin-right: auto;
             display: inline-block;
+            margin-right: 2rem;
             ${({active}) => (active ? css`
                 font-size: 14px;
                 line-height: 20px;
@@ -80,6 +81,7 @@ const RunDetail = styled.div<{
 
     button {
         margin-top: 1rem;
+        margin-right: 2rem;
     }
 `;
 
@@ -101,6 +103,7 @@ const WelcomeBlock = styled.div`
         button {
             margin-right: 2rem;
             margin-bottom: 1rem;
+            padding: 0 2rem 0rem 1rem;
             > svg {
                 margin-right: 0.5rem;
             }
@@ -126,13 +129,6 @@ const Heading = styled.h4`
 
 const ListHeading = styled(Heading)`
     padding-left: 2.75rem;
-`;
-
-const SubHeading = styled.h4`
-    font-size: 14px;
-    line-height: 21px;
-    font-weight: 400;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
 const PaginationContainer = styled.div`
@@ -166,6 +162,17 @@ const ListSection = styled.div`
         bottom: 0;
         box-shadow: 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.08);
     }
+`;
+
+const Description = styled.p`
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 400;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+`;
+
+const DescriptionWarn = styled(Description)`
+    color: rgba(var(--error-text-color-rgb), 0.72);
 `;
 
 const RHSHome = () => {
@@ -208,19 +215,19 @@ const RHSHome = () => {
             <Heading>
                 {'Welcome to Playbooks!'}
             </Heading>
-            <SubHeading>
+            <Description>
                 {'A playbook prescribes the checklists, automations, and templates for any repeatable procedures.'}
                 {'It helps teams reduce errors, earn trust with stakeholders, and become more effective with every iteration.'}
-            </SubHeading>
-            {canCreatePlaybooks && (
+            </Description>
+            {canCreatePlaybooks ? (
                 <div>
-                    <PrimaryButton onClick={() => newPlaybook()}>
-                        <Icon
-                            path={mdiPlus}
-                            size={1}
-                        />
-                        {'Create Playbook'}
-                    </PrimaryButton>
+                    <UpgradeOrPrimaryButton
+                        onClick={() => newPlaybook()}
+                        allowPlaybookCreation={allowPlaybookCreation}
+                    >
+                        <i className='icon-plus mr-2'/>
+                        {'Create playbook'}
+                    </UpgradeOrPrimaryButton>
                     <span>
                         {'...or start with a template'}
                         <Icon
@@ -229,6 +236,8 @@ const RHSHome = () => {
                         />
                     </span>
                 </div>
+            ) : (
+                <DescriptionWarn>{"There are no playbooks to view. You don't have permission to create playbooks in this workspace."}</DescriptionWarn>
             )}
         </WelcomeBlock>
     ) : (
