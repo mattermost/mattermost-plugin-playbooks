@@ -32,12 +32,19 @@ const RHSPostUpdate = (props: Props) => {
                     </UpdateNoticeTime>
                 </UpdateNotice>
             </Timer>
+            <Spacer/>
             <Button collapsed={props.collapsed}>
                 {'Post update'}
             </Button>
         </PostUpdate>
     );
 };
+
+const Spacer = styled.div`
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 44px;
+`;
 
 const PostUpdate = styled.div`
     display: flex;
@@ -48,13 +55,15 @@ const PostUpdate = styled.div`
     padding: ${(props) => (props.collapsed ? '12px' : '8px')};
     padding-left: 12px;
 
-    background: var(--channel-bg);
+    background-color: var(--center-channel-bg);
 
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
 `;
 
 const Timer = styled.div`
+    flex-grow: 0;
+    flex-shrink: 0;
     display: flex;
     flex-direction: row;
     align-items: center
@@ -95,7 +104,7 @@ const UpdateNoticeTime = styled.div<{collapsed: boolean}>`
 
 const Button = styled(PrimaryButton)<{collapsed: boolean}>`
     justify-content: center;
-    width: 176px;
+    flex: 1;
     ${(props) => props.collapsed && css`
         height: 32px;
         font-size: 12px;
