@@ -292,8 +292,10 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 			"DeleteAt", "NumStages", "NumSteps").
 		From("IR_Playbook AS p").
 		Where(sq.Eq{"DeleteAt": 0}).
-		Where(sq.Eq{"TeamID": teamID}).
 		Where(permissionsAndFilter)
+	if teamID != "" {
+		queryForResults = queryForResults.Where(sq.Eq{"TeamID": teamID})
+	}
 
 	queryForResults, err := applyPlaybookFilterOptionsSort(queryForResults, opts)
 	if err != nil {
@@ -312,8 +314,10 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		Select("COUNT(*)").
 		From("IR_Playbook AS p").
 		Where(sq.Eq{"DeleteAt": 0}).
-		Where(sq.Eq{"TeamID": teamID}).
 		Where(permissionsAndFilter)
+	if teamID != "" {
+		queryForTotal = queryForTotal.Where(sq.Eq{"TeamID": teamID})
+	}
 
 	var total int
 	if err = p.store.getBuilder(p.store.db, &total, queryForTotal); err != nil {
@@ -337,9 +341,11 @@ func (p *playbookStore) GetNumPlaybooksForTeam(teamID string) (int, error) {
 	query := p.store.builder.
 		Select("COUNT(*)").
 		From("IR_Playbook").
-		Where(sq.Eq{"DeleteAt": 0}).
-		Where(sq.Eq{"TeamID": teamID})
+		Where(sq.Eq{"DeleteAt": 0})
 
+	if teamID != "" {
+		query = query.Where(sq.Eq{"TeamID": teamID})
+	}
 	var total int
 	if err := p.store.getBuilder(p.store.db, &total, query); err != nil {
 		return 0, errors.Wrap(err, "failed to get number of playbooks")

@@ -912,6 +912,26 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
+		{
+			name:   "all teams from Andrew",
+			teamID: "",
+			requesterInfo: app.RequesterInfo{
+				UserID: andrew.ID,
+				TeamID: "",
+			},
+			options: app.PlaybookFilterOptions{
+				Sort:    app.SortByTitle,
+				Page:    0,
+				PerPage: 1000,
+			},
+			expected: app.GetPlaybooksResults{
+				TotalCount: 5,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []app.Playbook{pb01, pb02, pb05, pb07, pb09},
+			},
+			expectedErr: nil,
+		},
 	}
 
 	for _, driverName := range driverNames {
