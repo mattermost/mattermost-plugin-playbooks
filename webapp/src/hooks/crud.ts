@@ -10,7 +10,7 @@ export async function getPlaybookOrFetch(id: string, playbooks: Playbook[] | nul
 }
 
 export function usePlaybooksCrud(
-    defaultParams: Omit<Partial<FetchPlaybooksParams>, 'team_id'> & {team_id: string},
+    defaultParams: Partial<FetchPlaybooksParams>,
     {infinitePaging} = {infinitePaging: false},
 ) {
     const [playbooks, setPlaybooks] = useState<Playbook[] | null>(null);
@@ -19,6 +19,7 @@ export function usePlaybooksCrud(
     const [totalCount, setTotalCount] = useState(0);
     const [selectedPlaybook, setSelectedPlaybookState] = useState<Playbook | null>();
     const [params, setParamsState] = useState<ParamsState>({
+        team_id: '',
         sort: 'title',
         direction: 'asc',
         page: 0,
