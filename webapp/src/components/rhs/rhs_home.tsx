@@ -16,14 +16,22 @@ import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
 import {
     renderThumbVertical,
     renderTrackHorizontal,
-    renderView, RHSContainer, RHSContent,
+    renderView,
+    RHSContainer,
+    RHSContent,
 } from 'src/components/rhs/rhs_shared';
 import {setRHSViewingPlaybookRun} from 'src/actions';
 import {currentPlaybookRun} from 'src/selectors';
 
 import {AdminNotificationType} from 'src/constants';
 
-import {usePlaybooksCrud, getPlaybookOrFetch, usePlaybooksRouting, useCanCreatePlaybooks, useAllowPlaybookCreationInCurrentTeam} from 'src/hooks';
+import {
+    usePlaybooksCrud,
+    getPlaybookOrFetch,
+    usePlaybooksRouting,
+    useCanCreatePlaybooks,
+    useAllowPlaybookCreationInCurrentTeam,
+} from 'src/hooks';
 import {navigateToUrl} from 'src/browser_routing';
 
 import {RHSHomePlaybook, RHSHomeTemplate} from 'src/components/rhs/rhs_home_item';
@@ -36,6 +44,7 @@ import {PresetTemplates} from 'src/components/backstage/template_selector';
 
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {UpgradeOrPrimaryButton, useUpgradeModalVisibility} from 'src/components/backstage/playbook_list';
+import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 const Header = styled.div`
     min-height: 8rem;
@@ -44,6 +53,7 @@ const Header = styled.div`
 `;
 
 const RunDetail = styled.div<{
+    exists: boolean;
     active: boolean;
 }>`
     display: flex;
@@ -56,7 +66,7 @@ const RunDetail = styled.div<{
             rgba(var(--center-channel-bg-rgb), 0.85) 0%,
             rgba(var(--center-channel-bg-rgb), 0.25) 100%
         ),
-        rgba(var(${({active}) => (active ? '--button-bg-rgb' : '--center-channel-color-rgb')}), 0.08);
+        rgba(var(${({exists}) => (exists ? '--button-bg-rgb' : '--center-channel-color-rgb')}), 0.08);
 
     > div {
         margin-left: 2rem;
@@ -67,7 +77,7 @@ const RunDetail = styled.div<{
             margin-right: auto;
             display: inline-block;
             margin-right: 2rem;
-            ${({active}) => (active ? css`
+            ${({exists}) => (exists ? css`
                 font-size: 14px;
                 line-height: 20px;
                 color: var(--mention-color);
@@ -103,7 +113,7 @@ const WelcomeBlock = styled.div`
         button {
             margin-right: 2rem;
             margin-bottom: 1rem;
-            padding: 0 2rem 0rem 1rem;
+            padding: 0 2rem;
             > svg {
                 margin-right: 0.5rem;
             }
@@ -179,7 +189,11 @@ const RHSHome = () => {
     const dispatch = useDispatch();
     const currentTeam = useSelector(getCurrentTeam);
     const currentRun = useSelector(currentPlaybookRun);
-    const runActive = Boolean(currentRun);
+    const hasCurrentRun = Boolean(currentRun);
+    const currentRunActive =
+        currentRun &&
+        currentRun.current_status !== PlaybookRunStatus.Archived &&
+        currentRun.current_status !== PlaybookRunStatus.Old;
     const [currentPlaybook, setCurrentPlaybook] = useState<Playbook | null>();
 
     const [playbooks, {hasMore, isLoading}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
@@ -225,7 +239,10 @@ const RHSHome = () => {
                         onClick={() => newPlaybook()}
                         allowPlaybookCreation={allowPlaybookCreation}
                     >
-                        <i className='icon-plus mr-2'/>
+                        <Icon
+                            path={mdiPlus}
+                            size={1}
+                        />
                         {'Create playbook'}
                     </UpgradeOrPrimaryButton>
                     <span>
@@ -241,12 +258,15 @@ const RHSHome = () => {
             )}
         </WelcomeBlock>
     ) : (
-        <RunDetail active={runActive}>
-            {runActive ? <PageRunSvg/> : <BoxOpenSvg/>}
+        <RunDetail
+            exists={hasCurrentRun}
+            active={currentRunActive}
+        >
+            {hasCurrentRun ? <PageRunSvg/> : <BoxOpenSvg/>}
             <div>
                 <span>
                     {
-                        runActive ? (
+                        hasCurrentRun ? (
                             <>
                                 <span>{'Currently running the '}</span>
                                 <strong>{currentPlaybook?.title}</strong>
@@ -260,7 +280,7 @@ const RHSHome = () => {
                     }
                 </span>
                 {
-                    runActive &&
+                    hasCurrentRun &&
                     <RunDetailsButton onClick={viewCurrentPlaybookRun}>
                         <span>
                             {'View run details '}
