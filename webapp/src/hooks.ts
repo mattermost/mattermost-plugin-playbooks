@@ -28,12 +28,6 @@ import {receivedTeamNumPlaybooks} from 'src/actions';
 import {isCloud, isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from './license';
 import {currentTeamNumPlaybooks, globalSettings, isCurrentUserAdmin} from './selectors';
 
-export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-    options.team = currentTeam.id;
-    return useSelector<GlobalState, boolean>((state) => haveITeamPermission(state, options));
-}
-
 /**
  * Hook that calls handler when targetKey is pressed.
  */

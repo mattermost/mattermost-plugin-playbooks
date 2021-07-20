@@ -51,11 +51,6 @@ export interface FetchPlaybooksNoChecklistReturn {
     items: PlaybookNoChecklist[];
 }
 
-export interface FetchPlaybookRunsParams {
-    sort?: string;
-    direction?: string;
-}
-
 export interface FetchPlaybooksCountReturn {
     count: number;
 }
