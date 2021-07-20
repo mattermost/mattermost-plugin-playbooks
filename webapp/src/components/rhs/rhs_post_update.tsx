@@ -2,9 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
 
 import {PlaybookRun} from 'src/types/playbook_run';
+import {updateStatus} from 'src/actions';
 
 import './playbook_run_details.scss';
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -15,6 +17,7 @@ interface Props {
 }
 
 const RHSPostUpdate = (props: Props) => {
+    const dispatch = useDispatch();
     const icon = <ClockIcon/>;
 
     return (
@@ -33,7 +36,10 @@ const RHSPostUpdate = (props: Props) => {
                 </UpdateNotice>
             </Timer>
             <Spacer/>
-            <Button collapsed={props.collapsed}>
+            <Button
+                collapsed={props.collapsed}
+                onClick={() => dispatch(updateStatus())}
+            >
                 {'Post update'}
             </Button>
         </PostUpdate>
