@@ -30,7 +30,6 @@ export interface Playbook {
     export_channel_on_archive_enabled: boolean;
     signal_any_keywords_enabled: boolean;
     signal_any_keywords: string[];
-    categorize_channel_enabled: boolean;
 }
 
 export interface PlaybookNoChecklist {
@@ -108,7 +107,6 @@ export function emptyPlaybook(): Playbook {
         export_channel_on_archive_enabled: false,
         signal_any_keywords: [],
         signal_any_keywords_enabled: false,
-        categorize_channel_enabled: false,
     };
 }
 

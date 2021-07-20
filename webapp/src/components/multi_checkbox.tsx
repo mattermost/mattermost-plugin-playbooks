@@ -44,8 +44,8 @@ const Divider = styled.div`
 export interface CheckboxOption {
     display: string;
     value: string;
-    selected?: boolean;
-    disabled?: boolean;
+    selected: boolean;
+    disabled: boolean;
 }
 
 interface Props {
@@ -65,21 +65,18 @@ const MultiCheckbox = (props: Props) => (
     >
         {props.options.map((option) => {
             if (option.value === 'divider') {
-                return <Divider key={'divider'}/>;
+                return <Divider/>;
             }
-
-            const onClick = () => props.onselect(option.value, !option.selected);
 
             return (
                 <FilterCheckboxContainer
                     key={option.value}
-                    onClick={onClick}
+                    onClick={() => props.onselect(option.value, !option.selected)}
                 >
                     <input
                         type='checkbox'
                         checked={option.selected}
                         disabled={option.disabled}
-                        onChange={onClick}
                     />
                     <OptionDisplay>{option.display}</OptionDisplay>
                 </FilterCheckboxContainer>

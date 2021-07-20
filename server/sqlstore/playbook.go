@@ -105,8 +105,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"WebhookOnStatusUpdateURL",
 			"WebhookOnStatusUpdateEnabled",
 			"ExportChannelOnArchiveEnabled",
-			"ConcatenatedSignalAnyKeywords", "SignalAnyKeywordsEnabled",
-			"CategorizeChannelEnabled").
+			"ConcatenatedSignalAnyKeywords", "SignalAnyKeywordsEnabled").
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -177,7 +176,6 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"ExportChannelOnArchiveEnabled":        rawPlaybook.ExportChannelOnArchiveEnabled,
 			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
 			"SignalAnyKeywordsEnabled":             rawPlaybook.SignalAnyKeywordsEnabled,
-			"CategorizeChannelEnabled":             rawPlaybook.CategorizeChannelEnabled,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -481,7 +479,6 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"ExportChannelOnArchiveEnabled":        rawPlaybook.ExportChannelOnArchiveEnabled,
 			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
 			"SignalAnyKeywordsEnabled":             rawPlaybook.SignalAnyKeywordsEnabled,
-			"CategorizeChannelEnabled":             rawPlaybook.CategorizeChannelEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

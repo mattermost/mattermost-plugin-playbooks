@@ -117,8 +117,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL", "ExportChannelOnArchiveEnabled",
-			"CategorizeChannelEnabled").
+			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL", "ExportChannelOnArchiveEnabled").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
@@ -359,7 +358,6 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"RetrospectiveWasCanceled":             rawPlaybookRun.RetrospectiveWasCanceled,
 			"WebhookOnStatusUpdateURL":             rawPlaybookRun.WebhookOnStatusUpdateURL,
 			"ExportChannelOnArchiveEnabled":        rawPlaybookRun.ExportChannelOnArchiveEnabled,
-			"CategorizeChannelEnabled":             rawPlaybookRun.CategorizeChannelEnabled,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",

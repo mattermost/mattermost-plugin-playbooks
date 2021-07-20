@@ -156,7 +156,6 @@ const RHSTimeline = (props: Props) => {
         },
         {
             value: 'divider',
-            display: '',
         } as CheckboxOption,
         {
             display: 'Role changes',
