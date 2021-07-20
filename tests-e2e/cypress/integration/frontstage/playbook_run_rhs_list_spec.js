@@ -943,7 +943,7 @@ describe('rhs playbook run list', () => {
             });
         });
 
-        it('playbook run should be removed from list when user is removed from channel', () => {
+        it.skip('playbook run should be removed from list when user is removed from channel', () => {
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${teamName1}/channels/town-square`);
 
