@@ -95,6 +95,8 @@ const UserRow = styled.div`
         outline: 6px solid rgba(var(--center-channel-color-rgb), 0.08);
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
+
+    margin-top: 6px;
 `;
 
 const UserPic = styled.div<{length: number, idx: number}>`
