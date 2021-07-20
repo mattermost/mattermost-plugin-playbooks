@@ -3,7 +3,9 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {useDispatch} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
+
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -14,6 +16,15 @@ interface Props {
 }
 
 const RHSParticipants: FC<Props> = (props: Props) => {
+    if (props.userIds.length === 0) {
+        return (
+            <NoParticipants>
+                {'Nobody yet. '}
+                <AddParticipants/>
+            </NoParticipants>
+        );
+    }
+
     return (
         <UserRow>
             {props.userIds.slice(0, 6).map((userId: string, idx: number) => (
@@ -34,6 +45,44 @@ const RHSParticipants: FC<Props> = (props: Props) => {
         </UserRow>
     );
 };
+
+const AddParticipants = () => {
+    const dispatch = useDispatch();
+    const channel = useSelector(getCurrentChannel);
+
+    // @ts-ignore
+    if (!window.WebappUtils?.modals?.openModal || !window.WebappUtils?.modals?.ModalIdentifiers?.CHANNEL_INVITE || !window.Components?.ChannelInviteModal) {
+        return null;
+    }
+
+    // @ts-ignore
+    const {openModal, ModalIdentifiers} = window.WebappUtils.modals;
+
+    // @ts-ignore
+    const ChannelInviteModal = window.Components.ChannelInviteModal;
+
+    return (
+        <a
+            onClick={() => {
+                dispatch(openModal({
+                    modalId: ModalIdentifiers.CHANNEL_INVITE,
+                    dialogType: ChannelInviteModal,
+                    dialogProps: {channel},
+                }));
+            }}
+        >
+            {'Add participants?'}
+        </a>
+    );
+};
+
+const NoParticipants = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-size: 11px;
+    line-height: 16px;
+
+    margin-top: 12px;
+`;
 
 const UserRow = styled.div`
     padding: 0;
