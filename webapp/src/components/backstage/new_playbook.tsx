@@ -19,7 +19,7 @@ export const NewPlaybook = (props: Props) => {
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
 
     function getTeam(teamId: string) {
-        return teams.filter((team) => team.id === teamId)[0];
+        return teams.find((team) => team.id === teamId);
     }
     const searchParams = new URLSearchParams(location.search);
     const teamId = searchParams.get('team_id');

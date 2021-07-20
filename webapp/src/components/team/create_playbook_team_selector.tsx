@@ -7,21 +7,19 @@ import classNames from 'classnames';
 import styled from 'styled-components';
 import {Team} from 'mattermost-redux/types/teams';
 
-import {PrimaryButton} from 'src/components/assets/buttons';
-
 import {useClientRect} from 'src/hooks';
 
 import TeamWithIcon from './team_with_icon';
 
 interface Option {
     value: string;
-    label: JSX.Element | string;
+    label: React.ReactNode;
     teamId: string;
 }
 
 interface Props {
     testId?: string
-    placeholder: React.ReactNode;
+    children: React.ReactNode;
     enableEdit: boolean;
     teams: Team[];
     allowPlaybookCreationInTeams: Map<string, boolean>;
@@ -31,25 +29,20 @@ interface Props {
 
 const dropdownYShift = 27;
 
-interface Position {
+interface DropdownPosition {
     x: number;
-    y: number
+    y: number;
+    isOpen: boolean;
 }
 
 export default function CreatePlaybookTeamSelector(props: Props) {
-    const [isOpen, setOpen] = useState(false);
-    const [position, setPosition] = useState({x: 0, y: 0});
+    const teamOptions = getTeamOptionList();
+    const [dropdownPosition, setDropdownPosition] = useState({x: 0, y: 0, isOpen: false});
     const toggleOpen = (x: number, y: number) => {
-        if (!isOpen) {
-            updateTeamOptions();
-        }
-        setPosition({x, y});
-        setOpen(!isOpen);
+        setDropdownPosition({x, y, isOpen: !dropdownPosition.isOpen});
     };
 
-    const [teamOptions, setTeamOptions] = useState<Option[]>([]);
-
-    function updateTeamOptions() {
+    function getTeamOptionList() {
         const optionList = props.teams.map((team: Team) => {
             return ({
                 value: team.display_name,
@@ -63,23 +56,20 @@ export default function CreatePlaybookTeamSelector(props: Props) {
             } as Option);
         });
 
-        setTeamOptions(optionList);
+        return optionList;
     }
 
-    // Fill in the userOptions on mount.
-    useEffect(() => {
-        updateTeamOptions();
-    }, []);
-
     function getTeam(teamId: string) {
-        return props.teams.filter((team) => team.id === teamId)[0];
+        return props.teams.find((team) => team.id === teamId);
     }
 
     const onSelectedChange = async (value: Option | undefined) => {
         toggleOpen(0, 0);
 
         const team = getTeam(value?.teamId || '');
-        props.onSelectedChange(team);
+        if (team) {
+            props.onSelectedChange(team);
+        }
     };
 
     // Decide where to open the team selector
@@ -99,33 +89,19 @@ export default function CreatePlaybookTeamSelector(props: Props) {
         const extraSpace = 10;
         const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numTeamsShown * spacePerProfile) + extraSpace;
         setMoveUp(Math.max(0, dropdownBottom - innerHeight));
-    }, [rect, teamOptions.length]);
-    let target;
-    if (props.withButton) {
-        target = (
-            <PrimaryButton
-                onClick={(event) => {
-                    if (props.enableEdit) {
-                        toggleOpen(event.clientX, event.clientY);
-                    }
-                }}
-            >
-                {props.placeholder}
-            </PrimaryButton>
-        );
-    } else {
-        target = (
-            <div
-                onClick={(event) => {
-                    if (props.enableEdit) {
-                        toggleOpen(event.clientX, event.clientY);
-                    }
-                }}
-            >
-                {props.placeholder}
-            </div>
-        );
-    }
+    }, []);
+
+    const target = (
+        <div
+            onClick={(event) => {
+                if (props.enableEdit) {
+                    toggleOpen(event.clientX, event.clientY);
+                }
+            }}
+        >
+            {props.children}
+        </div>
+    );
 
     const targetWrapped = (
         <div
@@ -138,12 +114,11 @@ export default function CreatePlaybookTeamSelector(props: Props) {
 
     return (
         <Dropdown
-            isOpen={isOpen}
             onClose={() => toggleOpen(0, 0)}
             target={targetWrapped}
             moveUp={moveUp}
             dependsOnMousePosition={!props.withButton}
-            position={position}
+            position={dropdownPosition}
         >
             <ReactSelect
                 autoFocus={true}
@@ -180,14 +155,13 @@ const selectStyles: StylesConfig = {
 
 // styled components
 interface DropdownProps {
-    children: JSX.Element;
-    isOpen: boolean;
+    children: React.ReactNode;
     showOnRight?: boolean;
     moveUp?: number;
     target: JSX.Element;
     onClose: () => void;
     dependsOnMousePosition: boolean;
-    position: Position;
+    position: DropdownPosition;
 }
 
 const ProfileDropdown = styled.div`
@@ -205,7 +179,7 @@ const Blanket = styled.div`
 
 interface ChildContainerProps {
     moveUp?: number
-    position?: Position
+    position?: DropdownPosition
     dependsOnPosition: boolean;
 }
 
@@ -226,8 +200,8 @@ const ChildContainer = styled.div<ChildContainerProps>`
     z-index: 2;
 `;
 
-const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose, dependsOnMousePosition, position}: DropdownProps) => {
-    if (!isOpen) {
+const Dropdown = ({children, showOnRight, moveUp, target, onClose, dependsOnMousePosition, position}: DropdownProps) => {
+    if (!position.isOpen) {
         return target;
     }
 

@@ -288,16 +288,15 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 					FROM IR_PlaybookMember as pm
 					WHERE pm.PlaybookID = p.ID)
 		)`, requesterInfo.UserID)
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, teamID, "p")
 
 	queryForResults := p.store.builder.
 		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident AS CreatePublicPlaybookRun", "CreateAt",
 			"DeleteAt", "NumStages", "NumSteps").
 		From("IR_Playbook AS p").
 		Where(sq.Eq{"DeleteAt": 0}).
-		Where(permissionsAndFilter)
-	if teamID != "" {
-		queryForResults = queryForResults.Where(sq.Eq{"TeamID": teamID})
-	}
+		Where(permissionsAndFilter).
+		Where(teamLimitExpr)
 
 	queryForResults, err := applyPlaybookFilterOptionsSort(queryForResults, opts)
 	if err != nil {
@@ -316,10 +315,8 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		Select("COUNT(*)").
 		From("IR_Playbook AS p").
 		Where(sq.Eq{"DeleteAt": 0}).
-		Where(permissionsAndFilter)
-	if teamID != "" {
-		queryForTotal = queryForTotal.Where(sq.Eq{"TeamID": teamID})
-	}
+		Where(permissionsAndFilter).
+		Where(teamLimitExpr)
 
 	var total int
 	if err = p.store.getBuilder(p.store.db, &total, queryForTotal); err != nil {

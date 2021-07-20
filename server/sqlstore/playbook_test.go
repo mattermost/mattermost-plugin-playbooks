@@ -925,10 +925,10 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PerPage: 1000,
 			},
 			expected: app.GetPlaybooksResults{
-				TotalCount: 5,
+				TotalCount: 3,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []app.Playbook{pb01, pb02, pb05, pb07, pb09},
+				Items:      []app.Playbook{pb01, pb02, pb05},
 			},
 			expectedErr: nil,
 		},
@@ -979,7 +979,11 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 					testCase.expected.Items[i].MemberIDs = nil
 				}
 
-				require.Equal(t, testCase.expected, actual)
+				require.ElementsMatch(t, testCase.expected.Items, actual.Items)
+				require.Equal(t, testCase.expected.HasMore, actual.HasMore)
+				require.Equal(t, testCase.expected.PageCount, actual.PageCount)
+				require.Equal(t, testCase.expected.TotalCount, actual.TotalCount)
+				require.Len(t, actual.Items, len(testCase.expected.Items))
 			})
 		}
 	}

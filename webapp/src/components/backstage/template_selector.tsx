@@ -156,13 +156,6 @@ const TemplateSelector = ({templates = PresetTemplates, onSelect, teams, allowPl
                                 <CreatePlaybookTeamSelector
                                     key={template.title}
                                     testId={'template-item-team-selector'}
-                                    placeholder={
-                                        <TemplateItem
-                                            title={template.title}
-                                        >
-                                            {template.icon}
-                                        </TemplateItem>
-                                    }
                                     enableEdit={true}
                                     teams={teams}
                                     allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
@@ -170,7 +163,13 @@ const TemplateSelector = ({templates = PresetTemplates, onSelect, teams, allowPl
                                         onSelect(team, template);
                                     }}
                                     withButton={false}
-                                />
+                                >
+                                    <TemplateItem
+                                        title={template.title}
+                                    >
+                                        {template.icon}
+                                    </TemplateItem>
+                                </CreatePlaybookTeamSelector>
                             ))
                         }
                     </TemplateItemDiv>

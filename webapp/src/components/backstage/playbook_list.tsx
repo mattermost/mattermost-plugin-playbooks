@@ -35,7 +35,7 @@ import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
-import {UpgradeButtonProps} from 'src/components/assets/buttons';
+import {PrimaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
 
 import {useAllowPlaybookCreationInCurrentTeam, useCanCreatePlaybooks, useAllowPlaybookCreationInTeams} from 'src/hooks';
 
@@ -315,23 +315,22 @@ const TeamSelectorButton = (props: CreatePlaybookButtonProps) => {
     return (
         <CreatePlaybookTeamSelector
             testId={'create-playbook-team-selector'}
-            placeholder={
-                <CreatePlaybookButton>
-                    <i className='icon-plus mr-2'/>
-                    {'Create playbook'}
-                </CreatePlaybookButton>
-            }
             enableEdit={true}
             teams={teams}
             allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
             onSelectedChange={props.onClick}
             withButton={true}
             {...rest}
-        />
+        >
+            <CreatePlaybookButton>
+                <i className='icon-plus mr-2'/>
+                {'Create playbook'}
+            </CreatePlaybookButton>
+        </CreatePlaybookTeamSelector>
     );
 };
 
-const CreatePlaybookButton = styled.div`
+const CreatePlaybookButton = styled(PrimaryButton)`
     display: flex;
     align-items: center;
 `;
