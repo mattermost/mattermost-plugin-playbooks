@@ -32,7 +32,6 @@ import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backs
 import {useExperimentalFeaturesEnabled} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 
-import StatsView from './stats';
 import SettingsView from './settings';
 import {BackstageNavbar, BackstageNavbarIcon} from './backstage_navbar';
 
@@ -101,18 +100,6 @@ const Backstage = () => {
         <BackstageContainer>
             <BackstageNavbar className='flex justify-content-between'>
                 <div className='d-flex items-center'>
-                    {experimentalFeaturesEnabled &&
-                        <BackstageTitlebarItem
-                            to={`${match.url}/stats`}
-                            activeClassName={'active'}
-                            data-testid='statsLHSButton'
-                        >
-                            <span className='mr-3 d-flex items-center'>
-                                <div className={'fa fa-line-chart'}/>
-                            </span>
-                            {'Stats'}
-                        </BackstageTitlebarItem>
-                    }
                     <BackstageTitlebarItem
                         to={`${match.url}/runs`}
                         activeClassName={'active'}
@@ -200,9 +187,6 @@ const Backstage = () => {
                     <Route path={`${match.url}/runs`}>
                         <BackstagePlaybookRunList/>
                     </Route>
-                    <Route path={`${match.url}/stats`}>
-                        <StatsView/>
-                    </Route>
                     <Route path={`${match.url}/settings`}>
                         <SettingsView/>
                     </Route>
@@ -210,7 +194,7 @@ const Backstage = () => {
                         exact={true}
                         path={`${match.url}/`}
                     >
-                        <Redirect to={experimentalFeaturesEnabled ? `${match.url}/stats` : `${match.url}/runs`}/>
+                        <Redirect to={`${match.url}/runs`}/>
                     </Route>
                     <Route>
                         <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>
