@@ -16,6 +16,8 @@ interface Props {
 }
 
 const RHSParticipants: FC<Props> = (props: Props) => {
+    const openMembersModal = useOpenMembersModalIfPresent();
+
     if (props.userIds.length === 0) {
         return (
             <NoParticipants>
@@ -26,7 +28,7 @@ const RHSParticipants: FC<Props> = (props: Props) => {
     }
 
     return (
-        <UserRow>
+        <UserRow onClick={openMembersModal}>
             {props.userIds.slice(0, 6).map((userId: string, idx: number) => (
                 <UserPic
                     key={userId}
@@ -44,6 +46,30 @@ const RHSParticipants: FC<Props> = (props: Props) => {
             }
         </UserRow>
     );
+};
+
+const useOpenMembersModalIfPresent = () => {
+    const dispatch = useDispatch();
+    const channel = useSelector(getCurrentChannel);
+
+    // @ts-ignore
+    if (!window.WebappUtils?.modals?.openModal || !window.WebappUtils?.modals?.ModalIdentifiers?.CHANNEL_MEMBERS || !window.Components?.ChannelMembersModal) {
+        return () => {/* do nothing */};
+    }
+
+    // @ts-ignore
+    const {openModal, ModalIdentifiers} = window.WebappUtils.modals;
+
+    // @ts-ignore
+    const ChannelMembersModal = window.Components.ChannelMembersModal;
+
+    return () => {
+        dispatch(openModal({
+            modalId: ModalIdentifiers.CHANNEL_MEMBERS,
+            dialogType: ChannelMembersModal,
+            dialogProps: {channel},
+        }));
+    };
 };
 
 const AddParticipants = () => {
