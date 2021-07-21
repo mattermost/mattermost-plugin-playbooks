@@ -80,18 +80,6 @@ export function startPlaybookRunById(playbookId: string) {
     };
 }
 
-export function endPlaybookRun() {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/playbook end');
-    };
-}
-
-export function restartPlaybookRun() {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/playbook restart');
-    };
-}
-
 export function updateStatus() {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         await clientExecuteCommand(dispatch, getState, '/playbook update');

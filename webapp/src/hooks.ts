@@ -1,5 +1,5 @@
 import {MutableRefObject, useCallback, useEffect, useRef, useState} from 'react';
-import {useDispatch, useSelector, useStore} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
@@ -27,12 +27,6 @@ import {receivedTeamNumPlaybooks} from 'src/actions';
 
 import {isCloud, isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from './license';
 import {currentTeamNumPlaybooks, globalSettings, isCurrentUserAdmin} from './selectors';
-
-export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-    options.team = currentTeam.id;
-    return useSelector<GlobalState, boolean>((state) => haveITeamPermission(state, options));
-}
 
 /**
  * Hook that calls handler when targetKey is pressed.
@@ -193,7 +187,7 @@ export function useProfilesInChannel(channelId: string) {
         }
 
         dispatch(getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE));
-    }, [channelId, profilesInChannel]);
+    }, [channelId]);
 
     return profilesInChannel;
 }

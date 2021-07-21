@@ -32,8 +32,8 @@ import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backs
 import {useExperimentalFeaturesEnabled} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 
-import StatsView from './stats';
 import SettingsView from './settings';
+import {BackstageNavbar, BackstageNavbarIcon} from './backstage_navbar';
 
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
@@ -41,45 +41,6 @@ const BackstageContainer = styled.div`
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-`;
-
-export const BackstageNavbarIcon = styled.button`
-    border: none;
-    outline: none;
-    background: transparent;
-    border-radius: 4px;
-    font-size: 24px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: var(--center-channel-color-56);
-
-    &:hover {
-        background: var(--button-bg-08);
-        text-decoration: unset;
-        color: var(--button-bg);
-    }
-`;
-
-export const BackstageNavbar = styled.div`
-    position: sticky;
-    width: 100%;
-    top: 0;
-    z-index: 2;
-
-    display: flex;
-    align-items: center;
-    padding: 28px 31px;
-    background: var(--center-channel-bg);
-    color: var(--center-channel-color);
-    font-family: 'compass-icons';
-    box-shadow: inset 0px -1px 0px var(--center-channel-color-16);
-
-    font-family: 'Open Sans';
-    font-style: normal;
-    font-weight: 600;
 `;
 
 const BackstageTitlebarItem = styled(NavLink)`
@@ -139,18 +100,6 @@ const Backstage = () => {
         <BackstageContainer>
             <BackstageNavbar className='flex justify-content-between'>
                 <div className='d-flex items-center'>
-                    {experimentalFeaturesEnabled &&
-                        <BackstageTitlebarItem
-                            to={`${match.url}/stats`}
-                            activeClassName={'active'}
-                            data-testid='statsLHSButton'
-                        >
-                            <span className='mr-3 d-flex items-center'>
-                                <div className={'fa fa-line-chart'}/>
-                            </span>
-                            {'Stats'}
-                        </BackstageTitlebarItem>
-                    }
                     <BackstageTitlebarItem
                         to={`${match.url}/runs`}
                         activeClassName={'active'}
@@ -224,14 +173,19 @@ const Backstage = () => {
                     <Route path={`${match.url}/playbooks`}>
                         <PlaybookList/>
                     </Route>
+                    <Redirect
+                        from={`${match.url}/incidents/:playbookRunId`}
+                        to={`${match.url}/runs/:playbookRunId`}
+                    />
                     <Route path={`${match.url}/runs/:playbookRunId`}>
                         <PlaybookRunBackstage/>
                     </Route>
+                    <Redirect
+                        from={`${match.url}/incidents`}
+                        to={`${match.url}/runs`}
+                    />
                     <Route path={`${match.url}/runs`}>
                         <BackstagePlaybookRunList/>
-                    </Route>
-                    <Route path={`${match.url}/stats`}>
-                        <StatsView/>
                     </Route>
                     <Route path={`${match.url}/settings`}>
                         <SettingsView/>
@@ -240,7 +194,7 @@ const Backstage = () => {
                         exact={true}
                         path={`${match.url}/`}
                     >
-                        <Redirect to={experimentalFeaturesEnabled ? `${match.url}/stats` : `${match.url}/runs`}/>
+                        <Redirect to={`${match.url}/runs`}/>
                     </Route>
                     <Route>
                         <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>

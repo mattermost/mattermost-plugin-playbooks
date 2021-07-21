@@ -15,7 +15,7 @@ import {
 } from 'react-beautiful-dnd';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-import {toggleRHS, playbookRunUpdated} from 'src/actions';
+import {toggleRHS, addNewTask, playbookRunUpdated} from 'src/actions';
 import {ChecklistItem, ChecklistItemState, Checklist} from 'src/types/playbook';
 import {setChecklistItemState, clientReorderChecklist} from 'src/client';
 import {ChecklistItemDetails} from 'src/components/checklist_item';
