@@ -529,6 +529,50 @@ func TestGetPlaybookRuns(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
+			Name: "team1 - status = archived ",
+			RequesterInfo: app.RequesterInfo{
+				UserID:  lucy.ID,
+				IsAdmin: true,
+			},
+			Options: app.PlaybookRunFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Statuses:  []string{app.StatusArchived},
+				Page:      0,
+				PerPage:   1000,
+			},
+			Want: app.GetPlaybookRunsResults{
+				TotalCount: 2,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []app.PlaybookRun{inc03, inc04},
+			},
+			ExpectedErr: nil,
+		},
+		{
+			Name: "team1 - status = archived or reported ",
+			RequesterInfo: app.RequesterInfo{
+				UserID:  lucy.ID,
+				IsAdmin: true,
+			},
+			Options: app.PlaybookRunFilterOptions{
+				TeamID:    team1id,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+				Statuses:  []string{app.StatusArchived, app.StatusReported},
+				Page:      0,
+				PerPage:   1000,
+			},
+			Want: app.GetPlaybookRunsResults{
+				TotalCount: 5,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05},
+			},
+			ExpectedErr: nil,
+		},
+		{
 			Name: "team1 - search for horse - admin",
 			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,

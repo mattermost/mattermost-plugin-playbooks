@@ -2,24 +2,19 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import classNames from 'classnames';
 import styled from 'styled-components';
+import {Team} from 'mattermost-redux/types/teams';
 
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {UserProfile} from 'mattermost-redux/types/users';
-
-import './profile_selector.scss';
-import Profile from 'src/components/profile/profile';
-import ProfileButton from 'src/components/profile/profile_button';
 import {useClientRect} from 'src/hooks';
+
+import TeamWithIcon from './team_with_icon';
 
 interface Option {
     value: string;
     label: JSX.Element | string;
-    userId: string;
+    teamId: string;
 }
 
 interface ActionObj {
@@ -28,31 +23,27 @@ interface ActionObj {
 
 interface Props {
     testId?: string
-    selectedUserId?: string;
+    selectedTeamId?: string;
     placeholder: React.ReactNode;
     placeholderButtonClass?: string;
-    profileButtonClass?: string;
     onlyPlaceholder?: boolean;
     enableEdit: boolean;
     isClearable?: boolean;
     customControl?: (props: ControlProps<any>) => React.ReactElement;
     controlledOpenToggle?: boolean;
-    withoutProfilePic?: boolean;
-    defaultValue?: string;
-    selfIsFirstOption?: boolean;
-    getUsers: () => Promise<UserProfile[]>;
-    onSelectedChange?: (userId?: string) => void;
+    teams: Team[];
+    onSelectedChange?: (teamId?: string) => void;
     customControlProps?: any;
     showOnRight?: boolean;
 }
 
-export default function ProfileSelector(props: Props) {
-    const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
+const dropdownYShift = 27;
 
+export default function TeamSelector(props: Props) {
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         if (!isOpen) {
-            fetchUsers();
+            updateTeamOptions();
         }
         setOpen(!isOpen);
     };
@@ -67,91 +58,60 @@ export default function ProfileSelector(props: Props) {
         }
     }, [props.controlledOpenToggle]);
 
-    const [userOptions, setUserOptions] = useState<Option[]>([]);
+    const [teamOptions, setTeamOptions] = useState<Option[]>([]);
 
-    async function fetchUsers() {
-        const formatName = (descriptionSuffix: string) => {
-            return (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => {
-                const name = '@' + userName;
-                const description = getUserDescription(firstName, lastName, nickName) + descriptionSuffix;
-                return (
-                    <>
-                        <span>{name}</span>
-                        {description && <span className={'description'}>{description}</span>}
-                    </>
-                );
-            };
-        };
-
-        const nameAsText = (userName: string, firstName: string, lastName: string, nickName: string): string => {
-            return '@' + userName + getUserDescription(firstName, lastName, nickName);
-        };
-
-        const needsSuffix = (userId: string) => {
-            return props.selfIsFirstOption && userId === currentUserId;
-        };
-
-        const users = await props.getUsers();
-        const optionList = users.map((user: UserProfile) => {
+    function updateTeamOptions() {
+        const optionList = props.teams.map((team: Team) => {
             return ({
-                value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
-                label: (
-                    <Profile
-                        userId={user.id}
-                        nameFormatter={needsSuffix(user.id) ? formatName(' (assign to me)') : formatName('')}
-                    />
-                ),
-                userId: user.id,
+                value: team.display_name,
+                label: <TeamWithIcon team={team}/>,
+                teamId: team.id,
             } as Option);
         });
 
-        if (props.selfIsFirstOption) {
-            const idx = optionList.findIndex((elem) => elem.userId === currentUserId);
-            if (idx > 0) {
-                const currentUser = optionList.splice(idx, 1);
-                optionList.unshift(currentUser[0]);
-            }
-        }
-
-        setUserOptions(optionList);
+        setTeamOptions(optionList);
     }
 
     // Fill in the userOptions on mount.
     useEffect(() => {
-        fetchUsers();
+        updateTeamOptions();
     }, []);
 
     const [selected, setSelected] = useState<Option | null>(null);
 
-    // Whenever the selectedUserId changes we have to set the selected, but we can only do this once we
-    // have userOptions
+    function getTeam(teamId: string) {
+        return props.teams.filter((team) => team.id === teamId)[0];
+    }
+
+    // Whenever the selectedTeamId changes we have to set the selected, but we can only do this once we
+    // have TeamOptions
     useEffect(() => {
-        if (userOptions === []) {
+        if (teamOptions === []) {
             return;
         }
 
-        const user = userOptions.find((option: Option) => option.userId === props.selectedUserId);
-        if (user) {
-            setSelected(user);
+        const team = teamOptions.find((option: Option) => option.teamId === props.selectedTeamId);
+        if (team) {
+            setSelected(team);
         } else {
             setSelected(null);
         }
-    }, [userOptions, props.selectedUserId]);
+    }, [teamOptions, props.selectedTeamId]);
 
     const onSelectedChange = async (value: Option | undefined, action: ActionObj) => {
         if (action.action === 'clear') {
             return;
         }
         toggleOpen();
-        if (value?.userId === selected?.userId) {
+        if (value?.teamId === selected?.teamId) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.userId);
+            props.onSelectedChange(value?.teamId);
         }
     };
 
-    // Decide where to open the profile selector
+    // Decide where to open the team selector
     const [rect, ref] = useClientRect();
     const [moveUp, setMoveUp] = useState(0);
 
@@ -162,25 +122,27 @@ export default function ProfileSelector(props: Props) {
         }
 
         const innerHeight = window.innerHeight;
-        const numProfilesShown = Math.min(6, userOptions.length);
+        const numTeamsShown = Math.min(6, teamOptions.length);
         const spacePerProfile = 48;
-        const dropdownYShift = 27;
         const dropdownReqSpace = 80;
         const extraSpace = 10;
-        const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numProfilesShown * spacePerProfile) + extraSpace;
+        const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numTeamsShown * spacePerProfile) + extraSpace;
         setMoveUp(Math.max(0, dropdownBottom - innerHeight));
-    }, [rect, userOptions.length]);
-
+    }, [rect, teamOptions.length]);
     let target;
-    if (props.selectedUserId) {
+    if (props.selectedTeamId) {
         target = (
-            <ProfileButton
-                enableEdit={props.enableEdit}
-                userId={props.selectedUserId}
-                withoutProfilePic={props.withoutProfilePic}
-                profileButtonClass={props.profileButtonClass}
-                onClick={props.enableEdit ? toggleOpen : () => null}
-            />
+            <TeamButton
+                onClick={() => {
+                    if (props.enableEdit) {
+                        toggleOpen();
+                    }
+                }}
+            >
+                <TeamWithIcon team={getTeam(props.selectedTeamId)}/>
+
+                {<i className='icon-chevron-down ml-1 mr-2'/>}
+            </TeamButton>
         );
     } else {
         target = (
@@ -192,7 +154,7 @@ export default function ProfileSelector(props: Props) {
                 }}
                 className={props.placeholderButtonClass || 'PlaybookRunFilter-button' + (isOpen ? ' active' : '')}
             >
-                {props.placeholder}
+                {selected === null ? props.placeholder : selected.label}
                 {<i className='icon-chevron-down icon--small ml-2'/>}
             </button>
         );
@@ -238,7 +200,7 @@ export default function ProfileSelector(props: Props) {
                 hideSelectedOptions={false}
                 isClearable={props.isClearable}
                 menuIsOpen={true}
-                options={userOptions}
+                options={teamOptions}
                 placeholder={'Search'}
                 styles={selectStyles}
                 tabSelectsValue={false}
@@ -295,7 +257,7 @@ interface ChildContainerProps {
 }
 
 const ChildContainer = styled.div<ChildContainerProps>`
-    top: ${(props) => 27 - (props.moveUp || 0)}px;
+    top: ${(props) => dropdownYShift - (props.moveUp || 0)}px;
 `;
 
 const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: DropdownProps) => {
@@ -320,18 +282,87 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
     );
 };
 
-const getFullName = (firstName: string, lastName: string): string => {
-    return (firstName + ' ' + lastName).trim();
-};
+const TeamButton = styled.button`
+    font-weight: 600;
+    height: 40px;
+    padding: 0 4px 0 12px;
+    border-radius: 4px;
+    color: var(--center-channel-color);
 
-const getUserDescription = (firstName: string, lastName: string, nickName: string): string => {
-    if ((firstName || lastName) && nickName) {
-        return ` ${getFullName(firstName, lastName)} (${nickName})`;
-    } else if (nickName) {
-        return ` (${nickName})`;
-    } else if (firstName || lastName) {
-        return ` ${getFullName(firstName, lastName)}`;
+    -webkit-transition: all 0.15s ease;
+    -webkit-transition-delay: 0s;
+    -moz-transition: all 0.15s ease;
+    -o-transition: all 0.15s ease;
+    transition: all 0.15s ease;
+
+    border: none;
+    background-color: unset;
+    cursor: unset;
+    display: flex;
+    align-items: center;
+    text-align: center;
+
+    &:hover {
+        background: var(--center-channel-color-08);
+        color: var(--center-channel-color-72);
     }
 
-    return '';
-};
+    .PlaybookRunProfile {
+        &:active {
+            background: var(--button-bg-08);
+            color: var(--button-bg);
+        }
+
+        &.active {
+            cursor: pointer;
+            color: var(--center-channel-color);
+        }
+    }
+    
+
+    .NoAssignee-button, .Assigned-button {
+        background-color: transparent;
+        border: none;
+        padding: 4px;
+        margin-top: 4px;
+        border-radius: 100px;
+        color: var(--center-channel-color-64);
+        cursor: pointer;
+        font-weight: normal;
+        font-size: 12px;
+        line-height: 16px;
+
+        -webkit-transition: all 0.15s ease;
+        -moz-transition: all 0.15s ease;
+        -o-transition: all 0.15s ease;
+        transition: all 0.15s ease;
+
+        &:hover {
+            background: var(--center-channel-color-08);
+            color: var(--center-channel-color-72);
+        }
+
+        &:active {
+            background: var(--button-bg-08);
+            color: var(--button-bg);
+        }
+
+        &.active {
+            cursor: pointer;
+        }
+
+        .icon-chevron-down {
+            &:before {
+                margin: 0;
+            }
+        }
+    }
+
+    .first-container .Assigned-button {
+        margin-top: 0;
+        padding: 2px 0;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--center-channel-color);
+    }
+`;

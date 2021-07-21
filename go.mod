@@ -10,9 +10,9 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/lib/pq v1.10.2
-	github.com/mattermost/mattermost-plugin-api v0.0.16
+	github.com/mattermost/mattermost-plugin-api v0.0.17
 	github.com/mattermost/mattermost-plugin-incident-collaboration/client v0.3.1
-	github.com/mattermost/mattermost-server/v5 v5.3.2-0.20210621071817-df224571d8a1
+	github.com/mattermost/mattermost-server/v5 v5.3.2-0.20210625165209-b4f6cb8cb70f
 	github.com/pkg/errors v0.9.1
 	github.com/rudderlabs/analytics-go v3.3.1+incompatible
 	github.com/sirupsen/logrus v1.8.1
