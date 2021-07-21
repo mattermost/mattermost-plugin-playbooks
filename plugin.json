@@ -1,10 +1,10 @@
 {
-    "id": "com.mattermost.plugin-incident-management",
-    "name": "Incident Collaboration",
-    "description": "This plugin allows users to coordinate and manage incidents within Mattermost.",
-    "homepage_url": "https://github.com/mattermost/mattermost-plugin-incident-collaboration/",
-    "support_url": "https://github.com/mattermost/mattermost-plugin-incident-collaboration/issues",
-    "icon_path": "assets/incident_plugin_icon.svg",
+    "id": "playbooks",
+    "name": "Playbooks",
+    "description": "The playbooks plugin",
+    "homepage_url": "https://github.com/mattermost/mattermost-plugin-playbooks/",
+    "support_url": "https://github.com/mattermost/mattermost-plugin-playbooks/issues",
+    "icon_path": "assets/plugin_icon.svg",
     "min_server_version": "5.38.0",
     "server": {
         "executables": {

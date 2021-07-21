@@ -6,7 +6,7 @@ package sqlstore
 import (
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/stretchr/testify/require"
 )

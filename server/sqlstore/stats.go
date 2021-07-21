@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
