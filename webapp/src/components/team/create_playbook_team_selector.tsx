@@ -27,7 +27,7 @@ interface Props {
     onSelectedChange: (team: Team) => void;
 }
 
-const dropdownYShift = 27;
+const dropdownYShift = 40;
 
 interface DropdownPosition {
     x: number;
@@ -86,7 +86,7 @@ export default function CreatePlaybookTeamSelector(props: Props) {
         const numTeamsShown = Math.min(6, teamOptions.length);
         const spacePerProfile = 48;
         const dropdownReqSpace = 80;
-        const extraSpace = 10;
+        const extraSpace = 20;
         const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numTeamsShown * spacePerProfile) + extraSpace;
         setMoveUp(Math.max(0, dropdownBottom - innerHeight));
     }, []);
@@ -122,6 +122,7 @@ export default function CreatePlaybookTeamSelector(props: Props) {
         >
             <ReactSelect
                 autoFocus={true}
+                components={{DropdownIndicator: null, IndicatorSeparator: null}}
                 backspaceRemovesValue={false}
                 controlShouldRenderValue={false}
                 hideSelectedOptions={false}

@@ -123,4 +123,5 @@ const InitialWrapper = styled.div`
 const NotAllowedIcon = styled.i`
     position: absolute;
     right: 10px;
+    color: 'var(--online-indicator)';
 `;
