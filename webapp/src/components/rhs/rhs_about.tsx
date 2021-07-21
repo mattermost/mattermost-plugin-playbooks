@@ -132,11 +132,6 @@ const Buttons = ({collapsed, setCollapsed} : ButtonsProps) => {
     return (
         <ButtonsRow>
             <HoverMenuButton
-                title={'More'}
-                className={'icon-dots-vertical icon-16 btn-icon'}
-                onClick={() => {}}
-            />
-            <HoverMenuButton
                 title={collapsed ? 'Expand' : 'Collapse'}
                 className={(collapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
                 onClick={() => setCollapsed(!collapsed)}
