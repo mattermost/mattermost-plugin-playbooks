@@ -92,7 +92,37 @@ func NewPlaybookRunService(pluginAPI *pluginapi.Client, store PlaybookRunStore, 
 
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) (*GetPlaybookRunsResults, error) {
-	return s.store.GetPlaybookRuns(requesterInfo, options)
+	results, err := s.store.GetPlaybookRuns(requesterInfo, options)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get playbook runs from the store")
+	}
+	enabledTeams := s.configService.GetConfiguration().EnabledTeams
+
+	if len(enabledTeams) == 0 { // no filter required
+		return results, nil
+	}
+
+	enabledTeamsMap := fromSliceToMap(enabledTeams)
+	filteredItems := []PlaybookRun{}
+	for _, item := range results.Items {
+		if ok := enabledTeamsMap[item.TeamID]; ok {
+			filteredItems = append(filteredItems, item)
+		}
+	}
+	return &GetPlaybookRunsResults{
+		TotalCount: results.TotalCount,
+		PageCount:  results.PageCount,
+		HasMore:    results.HasMore,
+		Items:      filteredItems,
+	}, nil
+}
+
+func fromSliceToMap(slice []string) map[string]bool {
+	result := make(map[string]bool, len(slice))
+	for _, item := range slice {
+		result[item] = true
+	}
+	return result
 }
 
 func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbook *Playbook, playbookRun *PlaybookRun, owner *model.User) error {
@@ -260,10 +290,16 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	playbookRun, err = s.store.CreatePlaybookRun(playbookRun)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create playbook run")
+		return nil, errors.Wrap(err, "failed to create playbook run")
 	}
 
 	s.telemetry.CreatePlaybookRun(playbookRun, userID, public)
+
+	// Add users to channel after creating playbook run so that all automations trigger.
+	err = s.addPlaybookRunUsers(playbookRun, channel)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to add users to playbook run channel")
+	}
 
 	invitedUserIDs := playbookRun.InvitedUserIDs
 
@@ -949,7 +985,37 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunIDForChannel(channelID string) (s
 
 // GetOwners returns all the owners of the playbook runs selected by options
 func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) ([]OwnerInfo, error) {
-	return s.store.GetOwners(requesterInfo, options)
+	owners, err := s.store.GetOwners(requesterInfo, options)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't get owners from the store")
+	}
+	enabledTeams := s.configService.GetConfiguration().EnabledTeams
+	if len(enabledTeams) == 0 {
+		return owners, nil
+	}
+
+	enabledTeamsMap := fromSliceToMap(enabledTeams)
+
+	filteredOwners := []OwnerInfo{}
+	for _, owner := range owners {
+		teams, err := s.pluginAPI.Team.List(pluginapi.FilterTeamsByUser(owner.UserID))
+		if err != nil {
+			return nil, errors.Wrap(err, "can't get teams for user")
+		}
+		if containsTeam(teams, enabledTeamsMap) {
+			filteredOwners = append(filteredOwners, owner)
+		}
+	}
+	return filteredOwners, nil
+}
+
+func containsTeam(teams []*model.Team, enabledTeamsMap map[string]bool) bool {
+	for _, team := range teams {
+		if ok := enabledTeamsMap[team.Id]; ok {
+			return true
+		}
+	}
+	return false
 }
 
 // IsOwner returns true if the userID is the owner for playbookRunID.
@@ -1481,6 +1547,59 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	}
 
 	_ = s.sendPlaybookRunToClient(playbookRunID)
+
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return
+	}
+
+	if playbookRun.CategorizeChannelEnabled {
+		err = s.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId)
+		if err != nil {
+			s.logger.Errorf("failed to categorize channel; error: %s", err.Error())
+		}
+	}
+}
+
+// createOrUpdatePlaybookRunSidebarCategory creates or updates a "Playbook Runs" sidebar category if
+// it does not already exist and adds the channel within the sidebar category
+func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID string) error {
+	sidebar, err := s.pluginAPI.Channel.GetSidebarCategories(userID, teamID)
+	if err != nil {
+		return err
+	}
+
+	var categoryID string
+	for _, category := range sidebar.Categories {
+		if strings.ToLower(category.DisplayName) == "playbook runs" {
+			categoryID = category.Id
+			category.Channels = append(category.Channels, channelID)
+		}
+	}
+
+	if categoryID == "" {
+		err = s.pluginAPI.Channel.CreateSidebarCategory(userID, teamID, &model.SidebarCategoryWithChannels{
+			SidebarCategory: model.SidebarCategory{
+				UserId:      userID,
+				TeamId:      teamID,
+				DisplayName: "Playbook Runs",
+				Muted:       false,
+			},
+			Channels: []string{channelID},
+		})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	err = s.pluginAPI.Channel.UpdateSidebarCategories(userID, teamID, sidebar.Categories)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
@@ -1622,21 +1741,25 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 		}
 	}
 
+	return channel, nil
+}
+
+func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, channel *model.Channel) error {
 	if _, err := s.pluginAPI.Team.CreateMember(channel.TeamId, s.configService.GetConfiguration().BotUserID); err != nil {
-		return nil, errors.Wrapf(err, "failed to add bot to the team")
+		return errors.Wrapf(err, "failed to add bot to the team")
 	}
 
 	if _, err := s.pluginAPI.Channel.AddMember(channel.Id, s.configService.GetConfiguration().BotUserID); err != nil {
-		return nil, errors.Wrapf(err, "failed to add bot to the channel")
+		return errors.Wrapf(err, "failed to add bot to the channel")
 	}
 
 	if _, err := s.pluginAPI.Channel.AddUser(channel.Id, playbookRun.ReporterUserID, s.configService.GetConfiguration().BotUserID); err != nil {
-		return nil, errors.Wrapf(err, "failed to add reporter to the channel")
+		return errors.Wrapf(err, "failed to add reporter to the channel")
 	}
 
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		if _, err := s.pluginAPI.Channel.AddUser(channel.Id, playbookRun.OwnerUserID, s.configService.GetConfiguration().BotUserID); err != nil {
-			return nil, errors.Wrapf(err, "failed to add owner to channel")
+			return errors.Wrapf(err, "failed to add owner to channel")
 		}
 	}
 
@@ -1644,7 +1767,7 @@ func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookR
 		s.pluginAPI.Log.Warn("failed to promote owner to admin", "ChannelID", channel.Id, "OwnerUserID", playbookRun.OwnerUserID, "err", err.Error())
 	}
 
-	return channel, nil
+	return nil
 }
 
 func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) (*model.Dialog, error) {

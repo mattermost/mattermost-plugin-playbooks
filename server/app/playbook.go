@@ -44,6 +44,7 @@ type Playbook struct {
 	ExportChannelOnArchiveEnabled        bool        `json:"export_channel_on_archive_enabled"`
 	SignalAnyKeywords                    []string    `json:"signal_any_keywords"`
 	SignalAnyKeywordsEnabled             bool        `json:"signal_any_keywords_enabled"`
+	CategorizeChannelEnabled             bool        `json:"categorize_channel_enabled"`
 }
 
 func (p Playbook) Clone() Playbook {

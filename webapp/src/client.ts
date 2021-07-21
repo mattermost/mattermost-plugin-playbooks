@@ -42,7 +42,7 @@ import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 const apiUrl = `/plugins/${pluginId}/api/v0`;
 
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
-    const queryParams = qs.stringify(params, {addQueryPrefix: true});
+    const queryParams = qs.stringify(params, {addQueryPrefix: true, indices: false});
 
     let data = await doGet(`${apiUrl}/runs${queryParams}`);
     if (!data) {

@@ -141,7 +141,8 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL", "ExportChannelOnArchiveEnabled").
+			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL", "ExportChannelOnArchiveEnabled",
+			"CategorizeChannelEnabled").
 		Column(participantsCol).
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
@@ -192,17 +193,18 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
 func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, options app.PlaybookRunFilterOptions) (*app.GetPlaybookRunsResults, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, options.TeamID)
 
 	queryForResults := s.playbookRunSelect.
 		Where(permissionsExpr).
-		Where(sq.Eq{"i.TeamID": options.TeamID})
+		Where(teamLimitExpr)
 
 	queryForTotal := s.store.builder.
 		Select("COUNT(*)").
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)").
 		Where(permissionsExpr).
-		Where(sq.Eq{"i.TeamID": options.TeamID})
+		Where(teamLimitExpr)
 
 	if options.Status != "" && len(options.Statuses) != 0 {
 		return nil, errors.New("options Status and Statuses cannot both be set")
@@ -382,6 +384,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"RetrospectiveWasCanceled":             rawPlaybookRun.RetrospectiveWasCanceled,
 			"WebhookOnStatusUpdateURL":             rawPlaybookRun.WebhookOnStatusUpdateURL,
 			"ExportChannelOnArchiveEnabled":        rawPlaybookRun.ExportChannelOnArchiveEnabled,
+			"CategorizeChannelEnabled":             rawPlaybookRun.CategorizeChannelEnabled,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -688,13 +691,14 @@ func (s *playbookRunStore) GetAllPlaybookRunMembersCount(channelID string) (int6
 // GetOwners returns the owners of the playbook runs selected by options
 func (s *playbookRunStore) GetOwners(requesterInfo app.RequesterInfo, options app.PlaybookRunFilterOptions) ([]app.OwnerInfo, error) {
 	permissionsExpr := s.buildPermissionsExpr(requesterInfo)
+	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, options.TeamID)
 
 	// At the moment, the options only includes teamID
 	query := s.queryBuilder.
 		Select("DISTINCT u.Id AS UserID", "u.Username").
 		From("IR_Incident AS i").
 		Join("Users AS u ON i.CommanderUserID = u.Id").
-		Where(sq.Eq{"i.TeamID": options.TeamID}).
+		Where(teamLimitExpr).
 		Where(permissionsExpr)
 
 	var owners []app.OwnerInfo
@@ -826,6 +830,20 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 							WHERE c.Id = i.ChannelID
 							  AND c.Type = 'O')
 		  )`, info.UserID)
+}
+
+func buildTeamLimitExpr(userID, teamID string) sq.Sqlizer {
+	if teamID != "" {
+		return sq.Eq{"i.TeamID": teamID}
+	}
+
+	return sq.Expr(`
+		EXISTS(SELECT 1
+					FROM TeamMembers as tm
+					WHERE tm.TeamId = i.TeamID
+					  AND tm.DeleteAt = 0
+		  	  		  AND tm.UserId = ?)
+		`, userID)
 }
 
 func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.PlaybookRun, error) {

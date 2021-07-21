@@ -126,8 +126,8 @@ const PlaybookRunList = (props: Props) => {
         setFetchParams({...fetchParams, search_term: term, page: 0});
     }
 
-    function setStatus(status: string) {
-        setFetchParams({...fetchParams, status, page: 0});
+    function setStatus(statuses: string[]) {
+        setFetchParams({...fetchParams, statuses, page: 0});
     }
 
     function setPage(page: number) {
@@ -168,7 +168,7 @@ const PlaybookRunList = (props: Props) => {
 
     const isFiltering = (
         (fetchParams?.search_term?.length ?? 0) > 0 ||
-        (fetchParams?.status?.length ?? 0) > 0 ||
+        (fetchParams?.statuses?.length ?? 0) > 0 ||
         (fetchParams?.owner_user_id?.length ?? 0) > 0
     );
 
@@ -205,7 +205,7 @@ const PlaybookRunList = (props: Props) => {
                     />
                     <StatusFilter
                         options={statusOptions}
-                        default={fetchParams.status}
+                        default={fetchParams.statuses}
                         onChange={setStatus}
                     />
                 </div>
