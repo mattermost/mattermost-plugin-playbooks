@@ -5,8 +5,7 @@ import Integrations from 'mattermost-redux/action_types/integrations';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
-import {RHSState, RHSTabState, TimelineEventsFilter} from 'src/types/rhs';
-import {Playbook} from 'src/types/playbook';
+import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
 import {pluginId} from 'src/manifest';
 
 import {GlobalSettings} from './settings';
@@ -23,7 +22,6 @@ export const RECEIVED_TEAM_PLAYBOOK_RUNS = pluginId + '_received_team_playbook_r
 export const RECEIVED_TEAM_DISABLED = pluginId + '_received_team_disabled';
 export const REMOVED_FROM_CHANNEL = pluginId + '_removed_from_playbook_run_channel';
 export const SET_RHS_STATE = pluginId + '_set_rhs_state';
-export const SET_RHS_TAB_STATE = pluginId + '_set_rhs_tab_state';
 export const SET_RHS_EVENTS_FILTER = pluginId + '_set_rhs_events_filter';
 export const RECEIVED_GLOBAL_SETTINGS = pluginId + '_received_global_settings';
 export const SHOW_POST_MENU_MODAL = pluginId + '_show_post_menu_modal';
@@ -94,12 +92,6 @@ export interface RemovedFromChannel {
 export interface SetRHSState {
     type: typeof SET_RHS_STATE;
     nextState: RHSState;
-}
-
-export interface SetRHSTabState {
-    type: typeof SET_RHS_TAB_STATE;
-    channelId: string;
-    nextState: RHSTabState;
 }
 
 export interface SetRHSEventsFilter {

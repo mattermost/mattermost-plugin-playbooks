@@ -18,12 +18,7 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {pluginId} from 'src/manifest';
 
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
-import {
-    RHSState,
-    RHSTabState,
-    TimelineEventsFilter,
-    TimelineEventsFilterDefault,
-} from 'src/types/rhs';
+import {RHSState, TimelineEventsFilter, TimelineEventsFilterDefault} from 'src/types/rhs';
 import {findLastUpdated} from 'src/utils';
 
 import {GlobalSettings} from './types/settings';
@@ -88,11 +83,6 @@ export const myPlaybookRunsMap = (state: GlobalState) => {
 };
 
 export const currentRHSState = (state: GlobalState): RHSState => pluginState(state).rhsState;
-
-export const currentRHSTabState = (state: GlobalState): RHSTabState => {
-    const channelId = getCurrentChannelId(state);
-    return pluginState(state).tabStateByChannel[channelId] || RHSTabState.ViewingAbout;
-};
 
 export const currentRHSEventsFilter = (state: GlobalState): TimelineEventsFilter => {
     const channelId = getCurrentChannelId(state);

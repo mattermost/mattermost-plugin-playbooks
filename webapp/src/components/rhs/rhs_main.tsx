@@ -12,7 +12,7 @@ import RHSListView from 'src/components/rhs/rhs_list_view';
 import {currentRHSState, inPlaybookRunChannel} from 'src/selectors';
 import {RHSState} from 'src/types/rhs';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
-import RHSDetailsView from 'src/components/rhs/rhs_details_view';
+import RHSRunDetails from 'src/components/rhs/rhs_run_details';
 
 const RightHandSidebar = () => {
     const dispatch = useDispatch();
@@ -41,7 +41,7 @@ const RightHandSidebar = () => {
 
     if (rhsState === RHSState.ViewingPlaybookRun) {
         if (inPlaybookRun) {
-            return <RHSDetailsView/>;
+            return <RHSRunDetails/>;
         }
         return <RHSWelcomeView/>;
     }
