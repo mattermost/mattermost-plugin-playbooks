@@ -39,7 +39,7 @@ func TestAPI(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			configService := mock_config.NewMockService(mockCtrl)
 			pluginAPI := &plugintest.API{}
-			client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+			client := pluginapi.NewClient(pluginAPI)
 			logger := mock_poster.NewMockLogger(mockCtrl)
 			handler := NewHandler(client, configService, logger)
 

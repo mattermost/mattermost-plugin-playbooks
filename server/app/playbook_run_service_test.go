@@ -30,7 +30,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 	t.Run("invalid channel name has only invalid characters", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		client := pluginapi.NewClient(pluginAPI)
 		store := mock_app.NewMockPlaybookRunStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -60,7 +60,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 	t.Run("invalid channel name has only invalid characters", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		client := pluginapi.NewClient(pluginAPI)
 		store := mock_app.NewMockPlaybookRunStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -90,7 +90,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 	t.Run("channel name already exists, fixed on second try", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		client := pluginapi.NewClient(pluginAPI)
 		store := mock_app.NewMockPlaybookRunStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -139,7 +139,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 	t.Run("channel name already exists, failed second try", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		client := pluginapi.NewClient(pluginAPI)
 		store := mock_app.NewMockPlaybookRunStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -170,7 +170,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 	t.Run("channel admin fails promotion fails", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		client := pluginapi.NewClient(pluginAPI)
 		store := mock_app.NewMockPlaybookRunStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -213,7 +213,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 	t.Run("channel name has multibyte characters", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		client := pluginapi.NewClient(pluginAPI)
 		store := mock_app.NewMockPlaybookRunStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -259,7 +259,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 	t.Run("webhook is sent on playbook run create", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		client := pluginapi.NewClient(pluginAPI)
 		store := mock_app.NewMockPlaybookRunStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -346,7 +346,7 @@ func TestUpdateStatus(t *testing.T) {
 	t.Run("webhook is sent on status update", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		client := pluginapi.NewClient(pluginAPI)
 		store := mock_app.NewMockPlaybookRunStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -547,7 +547,7 @@ func TestOpenCreatePlaybookRunDialog(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			controller := gomock.NewController(t)
 			api := &plugintest.API{}
-			client := pluginapi.NewClient(api, &plugintest.Driver{})
+			client := pluginapi.NewClient(api)
 			store := mock_app.NewMockPlaybookRunStore(controller)
 			poster := mock_bot.NewMockPoster(controller)
 			logger := mock_bot.NewMockLogger(controller)
@@ -571,7 +571,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 	t.Run("should add the new channel into the 'Playbook Run' sidebar category if it already exists", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		client := pluginapi.NewClient(pluginAPI)
 		store := mock_app.NewMockPlaybookRunStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)
@@ -621,7 +621,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		client := pluginapi.NewClient(pluginAPI)
 		store := mock_app.NewMockPlaybookRunStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		logger := mock_bot.NewMockLogger(controller)

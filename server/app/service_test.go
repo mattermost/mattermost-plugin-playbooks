@@ -468,7 +468,7 @@ func TestMessageHasBeenPosted(t *testing.T) {
 	t.Run("suggest a playbook", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
-		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		client := pluginapi.NewClient(pluginAPI)
 		store := mock_playbook.NewMockPlaybookStore(controller)
 		poster := mock_bot.NewMockPoster(controller)
 		telemetryService := &telemetry.NoopTelemetry{}
@@ -528,7 +528,7 @@ func TestMessageHasBeenPosted(t *testing.T) {
 func getMockPlaybookService(t *testing.T) (app.PlaybookService, *mock_playbook.MockPlaybookStore, *plugintest.API, *mock_playbook.MockKeywordsThreadIgnorer) {
 	controller := gomock.NewController(t)
 	pluginAPI := &plugintest.API{}
-	client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+	client := pluginapi.NewClient(pluginAPI)
 	store := mock_playbook.NewMockPlaybookStore(controller)
 	poster := mock_bot.NewMockPoster(controller)
 	telemetryService := &telemetry.NoopTelemetry{}
