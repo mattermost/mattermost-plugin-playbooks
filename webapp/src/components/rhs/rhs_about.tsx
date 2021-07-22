@@ -194,7 +194,7 @@ const Row = styled(PaddedContent)`
     flex-direction: row;
     flex-wrap: nowrap;
 
-    margin-bottom: 24px;
+    margin-bottom: 30px;
 `;
 
 const MemberSection = styled.div`
