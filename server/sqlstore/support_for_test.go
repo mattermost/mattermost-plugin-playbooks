@@ -44,6 +44,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 
 	mockCtrl := gomock.NewController(t)
 	logger := mock_bot.NewMockLogger(mockCtrl)
+	logger.EXPECT().Warnf(gomock.Any(), gomock.Any()).AnyTimes()
 
 	driverName := db.DriverName()
 
