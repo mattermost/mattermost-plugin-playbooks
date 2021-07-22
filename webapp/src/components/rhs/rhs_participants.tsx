@@ -8,8 +8,6 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {PlaybookRun} from 'src/types/playbook_run';
-
 import Profile from 'src/components/profile/profile';
 
 import {OVERLAY_DELAY} from 'src/constants';
@@ -20,7 +18,7 @@ interface Props {
     userIds: string[];
 }
 
-const RHSParticipants: FC<Props> = (props: Props) => {
+const RHSParticipants = (props: Props) => {
     const openMembersModal = useOpenMembersModalIfPresent();
 
     if (props.userIds.length === 0) {
@@ -35,10 +33,9 @@ const RHSParticipants: FC<Props> = (props: Props) => {
     return (
         <UserRow onClick={openMembersModal}>
             <SvgMaskDefinitions/>
-            {props.userIds.slice(0, 6).map((userId: string, idx: number) => (
+            {props.userIds.slice(0, 6).map((userId: string) => (
                 <User
                     key={userId}
-                    idx={idx}
                     userId={userId}
                 />
             ))}
@@ -57,7 +54,7 @@ const User = (props: UserPicProps) => {
     const name = useFormattedUsernameByID(props.userId);
 
     const tooltip = (
-        <Tooltip>
+        <Tooltip id={'username-' + props.userId}>
             {name}
         </Tooltip>
     );
@@ -216,7 +213,7 @@ const UserRow = styled.div`
     margin-left: 5px;
 `;
 
-const UserPic = styled.div<{length: number}>`
+const UserPic = styled.div`
     .IncidentProfile {
         flex-direction: column;
 

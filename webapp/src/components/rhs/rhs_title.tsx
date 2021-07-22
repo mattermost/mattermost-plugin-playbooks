@@ -55,7 +55,7 @@ const ExternalLinkButton = ({playbookRunID} : {playbookRunID: string}) => {
     const currentTeam = useSelector(getCurrentTeam);
 
     const tooltip = (
-        <Tooltip>
+        <Tooltip id={'view-run-overview'}>
             {'View run overview'}
         </Tooltip>
     );

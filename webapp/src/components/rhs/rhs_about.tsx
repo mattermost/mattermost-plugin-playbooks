@@ -31,6 +31,8 @@ const RHSAbout = (props: Props) => {
     const [collapsed, setCollapsed] = useState(false);
     const [hovered, setHovered] = useState(false);
 
+    const toggleCollapsed = () => setCollapsed(!collapsed);
+
     if (collapsed) {
         return (
             <Container
@@ -40,15 +42,12 @@ const RHSAbout = (props: Props) => {
                 {true &&
                 <Buttons
                     collapsed={collapsed}
-                    setCollapsed={setCollapsed}
+                    toggleCollapsed={toggleCollapsed}
                 /> }
                 <Title>
                     {props.playbookRun.name}
                 </Title>
-                <RHSPostUpdate
-                    playbookRun={props.playbookRun}
-                    collapsed={collapsed}
-                />
+                <RHSPostUpdate collapsed={collapsed}/>
             </Container>
         );
     }
@@ -91,7 +90,7 @@ const RHSAbout = (props: Props) => {
             {hovered &&
             <Buttons
                 collapsed={collapsed}
-                setCollapsed={setCollapsed}
+                toggleCollapsed={toggleCollapsed}
             /> }
             <Title>
                 {props.playbookRun.name}
@@ -118,13 +117,13 @@ const RHSAbout = (props: Props) => {
                     <RHSParticipants userIds={participantsIds}/>
                 </MemberSection>
             </Row>
-            <RHSPostUpdate playbookRun={props.playbookRun}/>
+            <RHSPostUpdate collapsed={collapsed}/>
         </Container>
     );
 };
 
 const StyledProfileSelector = styled(ProfileSelector)`
-    margin-top: 7px;
+    margin-top: 8px;
 
     .Assigned-button {
         padding: 2px;
@@ -136,16 +135,16 @@ const StyledProfileSelector = styled(ProfileSelector)`
 
 interface ButtonsProps {
     collapsed: boolean;
-    setCollapsed: () => void;
+    toggleCollapsed: () => void;
 }
 
-const Buttons = ({collapsed, setCollapsed} : ButtonsProps) => {
+const Buttons = ({collapsed, toggleCollapsed} : ButtonsProps) => {
     return (
         <ButtonsRow>
             <HoverMenuButton
                 title={collapsed ? 'Expand' : 'Collapse'}
                 className={(collapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
-                onClick={() => setCollapsed(!collapsed)}
+                onClick={toggleCollapsed}
             />
         </ButtonsRow>
     );

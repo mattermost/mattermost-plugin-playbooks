@@ -5,14 +5,12 @@ import React from 'react';
 import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
 
-import {PlaybookRun} from 'src/types/playbook_run';
 import {updateStatus} from 'src/actions';
 
 import './playbook_run_details.scss';
 import {PrimaryButton} from 'src/components/assets/buttons';
 
 interface Props {
-    playbookRun: PlaybookRun;
     collapsed: boolean;
 }
 
@@ -20,7 +18,7 @@ const RHSPostUpdate = (props: Props) => {
     const dispatch = useDispatch();
 
     return (
-        <PostUpdate>
+        <PostUpdate collapsed={props.collapsed}>
             <Button
                 collapsed={props.collapsed}
                 onClick={() => dispatch(updateStatus())}
@@ -31,7 +29,7 @@ const RHSPostUpdate = (props: Props) => {
     );
 };
 
-const PostUpdate = styled.div`
+const PostUpdate = styled.div<{collapsed: boolean}>`
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
