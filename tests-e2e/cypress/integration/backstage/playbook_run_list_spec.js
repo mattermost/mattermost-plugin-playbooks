@@ -13,8 +13,6 @@ import {TINY} from '../../fixtures/timeouts';
 describe('backstage playbook run list', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
-    let newTeam;
-    let newTeamWithNoActivePlaybookRuns;
     let userId;
     let playbookId;
 
@@ -24,8 +22,6 @@ describe('backstage playbook run list', () => {
 
         // # Create a new team for the welcome page test
         cy.apiCreateTeam('team', 'Team').then(({team}) => {
-            newTeam = team;
-
             // # Add user-1 to team
             cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
                 cy.apiAddUserToTeam(team.id, user.id);
@@ -34,8 +30,6 @@ describe('backstage playbook run list', () => {
 
         // # Create a new team for the welcome page test when filtering
         cy.apiCreateTeam('team', 'Team With No Active Playbook Runs').then(({team}) => {
-            newTeamWithNoActivePlaybookRuns = team;
-
             // # Add user-1 to team
             cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
                 cy.apiAddUserToTeam(team.id, user.id);
