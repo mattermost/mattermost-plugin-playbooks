@@ -58,6 +58,7 @@ type PlaybookRun struct {
 	RetrospectiveReminderIntervalSeconds int64           `json:"retrospective_reminder_interval_seconds"`
 	MessageOnJoin                        string          `json:"message_on_join"`
 	ExportChannelOnArchiveEnabled        bool            `json:"export_channel_on_archive_enabled"`
+	ParticipantIDs                       []string        `json:"participant_ids"`
 	CategorizeChannelEnabled             bool            `json:"categorize_channel_enabled"`
 }
 
@@ -73,6 +74,7 @@ func (i *PlaybookRun) Clone() *PlaybookRun {
 	newPlaybookRun.TimelineEvents = append([]TimelineEvent(nil), i.TimelineEvents...)
 	newPlaybookRun.InvitedUserIDs = append([]string(nil), i.InvitedUserIDs...)
 	newPlaybookRun.InvitedGroupIDs = append([]string(nil), i.InvitedGroupIDs...)
+	newPlaybookRun.ParticipantIDs = append([]string(nil), i.ParticipantIDs...)
 
 	return &newPlaybookRun
 }
@@ -101,6 +103,9 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	}
 	if old.TimelineEvents == nil {
 		old.TimelineEvents = []TimelineEvent{}
+	}
+	if old.ParticipantIDs == nil {
+		old.ParticipantIDs = []string{}
 	}
 
 	return json.Marshal(old)
