@@ -52,6 +52,7 @@ func (sqlStore *SQLStore) RunMigrations() error {
 	}
 
 	if currentSchemaVersion.LT(LatestVersion()) {
+		sqlStore.log.Warnf("<><> migrating from %s", currentSchemaVersion.String())
 		if err := sqlStore.Migrate(currentSchemaVersion); err != nil {
 			return errors.Wrapf(err, "failed to complete migrations")
 		}

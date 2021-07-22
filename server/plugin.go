@@ -118,17 +118,25 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed creating the SQL store")
 	}
 
+	p.bot.Warnf("<><> creating IR_dbMutex")
 	mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
+	p.bot.Warnf("<><> created IR_dbMutex")
 	if err != nil {
 		return errors.Wrapf(err, "failed creating cluster mutex")
 	}
 
+	p.bot.Warnf("<><> locking IR_dbMutex")
 	mutex.Lock()
+	p.bot.Warnf("<><> locked IR_dbMutex. Running migrations")
 	if err = sqlStore.RunMigrations(); err != nil {
+		p.bot.Warnf("<><> error in migrations: %v. Unlocking IR_dbMutex.", err)
 		mutex.Unlock()
+		p.bot.Warnf("<><> from error in migrations, unlocked IR_dbMutex.")
 		return errors.Wrapf(err, "failed to run migrations")
 	}
+	p.bot.Warnf("<><> migrations finished. Unlocking IR_dbMutex")
 	mutex.Unlock()
+	p.bot.Warnf("<><> Unlocked IR_dbMutex. Finished migrations.")
 
 	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, p.bot, sqlStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
