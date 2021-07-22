@@ -102,7 +102,7 @@ const RHSAbout = (props: Props) => {
             <Row>
                 <MemberSection>
                     <MemberSectionTitle>{'Owner'}</MemberSectionTitle>
-                    <ProfileSelector
+                    <StyledProfileSelector
                         selectedUserId={props.playbookRun.owner_user_id}
                         placeholder={'Assign the owner role'}
                         placeholderButtonClass={'NoAssignee-button'}
@@ -122,6 +122,17 @@ const RHSAbout = (props: Props) => {
         </Container>
     );
 };
+
+const StyledProfileSelector = styled(ProfileSelector)`
+    margin-top: 7px;
+
+    .Assigned-button {
+        padding: 2px;
+        margin-top: 0;
+        background: var(--center-channel-color-08);
+        color: var(--center-channel-color-72);
+    }
+`;
 
 interface ButtonsProps {
     collapsed: boolean;
