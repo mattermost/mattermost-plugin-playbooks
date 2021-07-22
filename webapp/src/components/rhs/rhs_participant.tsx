@@ -65,8 +65,13 @@ const UserPic = styled.div`
 
     position: relative;
 
-    div:hover + &&& {
+    div:hover + &&&:not(:last-child) {
         mask-image: url(#bothHoles);
+    }
+
+
+    div:hover + &&&:last-child {
+        mask-image: url(#leftHole);
     }
 `;
 
