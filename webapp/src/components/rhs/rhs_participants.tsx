@@ -29,6 +29,7 @@ const RHSParticipants: FC<Props> = (props: Props) => {
 
     return (
         <UserRow onClick={openMembersModal}>
+            <SvgMaskDefinitions/>
             {props.userIds.slice(0, 6).map((userId: string, idx: number) => (
                 <UserPic
                     key={userId}
@@ -47,6 +48,64 @@ const RHSParticipants: FC<Props> = (props: Props) => {
         </UserRow>
     );
 };
+
+const SvgMaskDefinitions = () => (
+    <svg
+        height='0'
+        width='0'
+    >
+        <defs>
+            <mask id='rightHole'>
+                <circle
+                    r='16'
+                    cx='16'
+                    cy='16'
+                    fill='white'
+                />
+                <circle
+                    r='18'
+                    cx='40'
+                    cy='16'
+                    fill='black'
+                />
+            </mask>
+            <mask id='leftHole'>
+                <circle
+                    r='16'
+                    cx='16'
+                    cy='16'
+                    fill='white'
+                />
+                <circle
+                    r='18'
+                    cx='-8'
+                    cy='16'
+                    fill='black'
+                />
+            </mask>
+            <mask id='bothHoles'>
+                <circle
+                    r='16'
+                    cx='16'
+                    cy='16'
+                    fill='white'
+                />
+                <circle
+                    r='18'
+                    cx='40'
+                    cy='16'
+                    fill='black'
+                />
+                <circle
+                    r='18'
+                    cx='-8'
+                    cy='16'
+                    fill='black'
+                />
+            </mask>
+        </defs>
+    </svg>
+);
 
 const useOpenMembersModalIfPresent = () => {
     const dispatch = useDispatch();
@@ -111,6 +170,7 @@ const NoParticipants = styled.div`
 `;
 
 const UserRow = styled.div`
+    width: max-content;
     padding: 0;
     display: flex;
     flex-direction: row;
@@ -125,7 +185,7 @@ const UserRow = styled.div`
     margin-top: 6px;
 `;
 
-const UserPic = styled.div<{length: number, idx: number}>`
+const UserPic = styled.div<{length: number}>`
     .IncidentProfile {
         flex-direction: column;
 
@@ -142,19 +202,19 @@ const UserPic = styled.div<{length: number, idx: number}>`
         margin-left: -8px;
     }
 
+    :not(:last-child):not(:hover) {
+        mask-image: url(#rightHole);
+    }
+
     position: relative;
     transition: transform .4s;
-
-    z-index: ${(props) => props.length - props.idx};
 
     :hover {
         z-index: ${(props) => props.length};
     }
 
-    && img {
-        // We need both background-color and border color to imitate the color in the background
-        background-color: var(--center-channel-bg);
-        border: 2px solid var(--center-channel-color-04);
+    div:hover + &&& {
+        mask-image: url(#bothHoles);
     }
 `;
 
@@ -162,7 +222,6 @@ const Rest = styled.div`
     width: 32px;
     height: 32x;
     margin-left: -8px;
-    border: 2px solid var(--center-channel-bg);
     border-radius: 50%;
 
     background-color: rgba(var(--center-channel-color-rgb), 0.16);
@@ -174,6 +233,12 @@ const Rest = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
+
+    z-index: 6;
+
+    div:hover + &&& {
+        mask-image: url(#leftHole);
+    }
 `;
 
 export default RHSParticipants;
