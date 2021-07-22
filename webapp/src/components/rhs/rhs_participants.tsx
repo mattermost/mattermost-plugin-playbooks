@@ -57,49 +57,49 @@ const SvgMaskDefinitions = () => (
         <defs>
             <mask id='rightHole'>
                 <circle
-                    r='16'
-                    cx='16'
-                    cy='16'
+                    r='14'
+                    cx='14'
+                    cy='14'
                     fill='white'
                 />
                 <circle
-                    r='18'
-                    cx='40'
-                    cy='16'
+                    r='16'
+                    cx='37'
+                    cy='14'
                     fill='black'
                 />
             </mask>
             <mask id='leftHole'>
                 <circle
-                    r='16'
-                    cx='16'
-                    cy='16'
+                    r='14'
+                    cx='14'
+                    cy='14'
                     fill='white'
                 />
                 <circle
-                    r='18'
-                    cx='-8'
-                    cy='16'
+                    r='16'
+                    cx='-9'
+                    cy='14'
                     fill='black'
                 />
             </mask>
             <mask id='bothHoles'>
                 <circle
-                    r='16'
-                    cx='16'
-                    cy='16'
+                    r='14'
+                    cx='14'
+                    cy='14'
                     fill='white'
                 />
                 <circle
-                    r='18'
-                    cx='40'
-                    cy='16'
+                    r='16'
+                    cx='37'
+                    cy='14'
                     fill='black'
                 />
                 <circle
-                    r='18'
-                    cx='-8'
-                    cy='16'
+                    r='16'
+                    cx='-9'
+                    cy='14'
                     fill='black'
                 />
             </mask>
@@ -183,6 +183,8 @@ const UserRow = styled.div`
     }
 
     margin-top: 6px;
+
+    margin-left: 5px;
 `;
 
 const UserPic = styled.div<{length: number}>`
@@ -196,10 +198,12 @@ const UserPic = styled.div<{length: number}>`
 
     && .image {
         margin: 0;
+        width: 28px;
+        height: 28px;
     }
 
     :not(:first-child) {
-        margin-left: -8px;
+        margin-left: -5px;
     }
 
     :not(:last-child):not(:hover) {
@@ -219,16 +223,16 @@ const UserPic = styled.div<{length: number}>`
 `;
 
 const Rest = styled.div`
-    width: 32px;
-    height: 32x;
-    margin-left: -8px;
+    width: 28px;
+    height: 28px;
+    margin-left: -5px;
     border-radius: 50%;
 
     background-color: rgba(var(--center-channel-color-rgb), 0.16);
     color: rgba(var(--center-channel-color-rgb), 0.72);
 
     font-weight: 600;
-    font-size: 11;
+    font-size: 11px;
 
     display: flex;
     align-items: center;
