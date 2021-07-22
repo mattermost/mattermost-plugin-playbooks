@@ -4,12 +4,17 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useSelector, useDispatch} from 'react-redux';
+import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import Profile from 'src/components/profile/profile';
+
+import {OVERLAY_DELAY} from 'src/constants';
+
+import {useFormattedUsernameByID} from 'src/hooks';
 
 interface Props {
     userIds: string[];
@@ -31,21 +36,45 @@ const RHSParticipants: FC<Props> = (props: Props) => {
         <UserRow onClick={openMembersModal}>
             <SvgMaskDefinitions/>
             {props.userIds.slice(0, 6).map((userId: string, idx: number) => (
-                <UserPic
+                <User
                     key={userId}
-                    length={props.userIds.length}
                     idx={idx}
-                >
-                    <Profile
-                        userId={userId}
-                        withoutName={true}
-                    />
-                </UserPic>
+                    userId={userId}
+                />
             ))}
             {props.userIds.length > 6 &&
             <Rest>{'+' + (props.userIds.length - 6)}</Rest>
             }
         </UserRow>
+    );
+};
+
+interface UserPicProps {
+    userId: string;
+}
+
+const User = (props: UserPicProps) => {
+    const name = useFormattedUsernameByID(props.userId);
+
+    const tooltip = (
+        <Tooltip>
+            {name}
+        </Tooltip>
+    );
+
+    return (
+        <OverlayTrigger
+            placement={'bottom'}
+            delay={OVERLAY_DELAY}
+            overlay={tooltip}
+        >
+            <UserPic>
+                <Profile
+                    userId={props.userId}
+                    withoutName={true}
+                />
+            </UserPic>
+        </OverlayTrigger>
     );
 };
 
@@ -212,10 +241,6 @@ const UserPic = styled.div<{length: number}>`
 
     position: relative;
     transition: transform .4s;
-
-    :hover {
-        z-index: ${(props) => props.length};
-    }
 
     div:hover + &&& {
         mask-image: url(#bothHoles);

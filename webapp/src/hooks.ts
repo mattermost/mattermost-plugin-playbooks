@@ -17,6 +17,8 @@ import {Client4} from 'mattermost-redux/client';
 import {Post} from 'mattermost-redux/types/posts';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
+import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
+import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
 
@@ -344,4 +346,16 @@ export function useOpenCloudModal() {
             dialogType: PurchaseModal,
         }));
     };
+}
+
+export function useFormattedUsername(user: UserProfile) {
+    const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
+
+    return displayUsername(user, teamnameNameDisplaySetting);
+}
+
+export function useFormattedUsernameByID(userId: string) {
+    const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userId));
+
+    return useFormattedUsername(user);
 }
