@@ -35,14 +35,14 @@ const PostUpdate = styled.div<{collapsed: boolean}>`
     flex-wrap: nowrap;
 
     justify-content: space-between;
-    padding: ${(props) => (props.collapsed ? '12px' : '8px')};
-    padding-left: 12px;
+    padding: ${(props) => (props.collapsed ? '8px' : '12px')};
 
     background-color: var(--center-channel-bg);
 
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
 `;
+
 const Button = styled(PrimaryButton)<{collapsed: boolean}>`
     justify-content: center;
     flex: 1;

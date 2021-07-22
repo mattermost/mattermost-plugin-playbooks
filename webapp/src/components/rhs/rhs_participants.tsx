@@ -4,15 +4,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useSelector, useDispatch} from 'react-redux';
-import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import Profile from 'src/components/profile/profile';
-
-import {OVERLAY_DELAY} from 'src/constants';
-
-import {useFormattedUsernameByID} from 'src/hooks';
+import RHSParticipant from 'src/components/rhs/rhs_participant';
 
 interface Props {
     userIds: string[];
@@ -34,7 +29,7 @@ const RHSParticipants = (props: Props) => {
         <UserRow onClick={openMembersModal}>
             <SvgMaskDefinitions/>
             {props.userIds.slice(0, 6).map((userId: string) => (
-                <User
+                <RHSParticipant
                     key={userId}
                     userId={userId}
                 />
@@ -43,35 +38,6 @@ const RHSParticipants = (props: Props) => {
             <Rest>{'+' + (props.userIds.length - 6)}</Rest>
             }
         </UserRow>
-    );
-};
-
-interface UserPicProps {
-    userId: string;
-}
-
-const User = (props: UserPicProps) => {
-    const name = useFormattedUsernameByID(props.userId);
-
-    const tooltip = (
-        <Tooltip id={'username-' + props.userId}>
-            {name}
-        </Tooltip>
-    );
-
-    return (
-        <OverlayTrigger
-            placement={'bottom'}
-            delay={OVERLAY_DELAY}
-            overlay={tooltip}
-        >
-            <UserPic>
-                <Profile
-                    userId={props.userId}
-                    withoutName={true}
-                />
-            </UserPic>
-        </OverlayTrigger>
     );
 };
 
@@ -132,7 +98,6 @@ const SvgMaskDefinitions = () => (
         </defs>
     </svg>
 );
-
 const useOpenMembersModalIfPresent = () => {
     const dispatch = useDispatch();
     const channel = useSelector(getCurrentChannel);
@@ -209,39 +174,7 @@ const UserRow = styled.div`
     }
 
     margin-top: 6px;
-
     margin-left: 5px;
-`;
-
-const UserPic = styled.div`
-    .IncidentProfile {
-        flex-direction: column;
-
-        .name {
-            display: none;
-        }
-    }
-
-    && .image {
-        margin: 0;
-        width: 28px;
-        height: 28px;
-    }
-
-    :not(:first-child) {
-        margin-left: -5px;
-    }
-
-    :not(:last-child):not(:hover) {
-        mask-image: url(#rightHole);
-    }
-
-    position: relative;
-    transition: transform .4s;
-
-    div:hover + &&& {
-        mask-image: url(#bothHoles);
-    }
 `;
 
 const Rest = styled.div`
