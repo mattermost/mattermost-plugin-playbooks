@@ -40,6 +40,10 @@ interface UserPicProps {
     userId: string;
 }
 
+const leftHoleSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><path d="M 3.8043 4.4058 A 14 14 0 1 1 3.8043 23.5942 A 16 16 0 0 0 3.8043 4.4058 Z"/></svg>';
+const rightHoleSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><path d="M 24.1957 4.4058 A 14 14 0 1 0 24.1957 23.5942 A 16 16 0 0 1 24.1957 4.4058 Z"/></svg>';
+const bothHolesSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><path d="M 3.8043 4.4058 A 14 14 0 0 1 24.1957 4.4058 A 16 16 0 0 0 24.1957 23.5942 A 14 14 0 0 1 3.8043 23.5942 A 16 16 0 0 0 3.8043 4.4058 Z"/></svg>';
+
 const UserPic = styled.div`
     .IncidentProfile {
         flex-direction: column;
@@ -60,18 +64,18 @@ const UserPic = styled.div`
     }
 
     :not(:last-child):not(:hover) {
-        mask-image: url(#rightHole);
+        mask-image: url('${rightHoleSvg}');
     }
 
     position: relative;
 
     div:hover + &&&:not(:last-child) {
-        mask-image: url(#bothHoles);
+        mask-image: url('${bothHolesSvg}');
     }
 
 
     div:hover + &&&:last-child {
-        mask-image: url(#leftHole);
+        mask-image: url('${leftHoleSvg}');
     }
 `;
 

@@ -27,7 +27,6 @@ const RHSParticipants = (props: Props) => {
 
     return (
         <UserRow onClick={openMembersModal}>
-            <SvgMaskDefinitions/>
             {props.userIds.slice(0, 6).map((userId: string) => (
                 <RHSParticipant
                     key={userId}
@@ -41,63 +40,6 @@ const RHSParticipants = (props: Props) => {
     );
 };
 
-const SvgMaskDefinitions = () => (
-    <svg
-        height='0'
-        width='0'
-    >
-        <defs>
-            <mask id='rightHole'>
-                <circle
-                    r='14'
-                    cx='14'
-                    cy='14'
-                    fill='white'
-                />
-                <circle
-                    r='16'
-                    cx='37'
-                    cy='14'
-                    fill='black'
-                />
-            </mask>
-            <mask id='leftHole'>
-                <circle
-                    r='14'
-                    cx='14'
-                    cy='14'
-                    fill='white'
-                />
-                <circle
-                    r='16'
-                    cx='-9'
-                    cy='14'
-                    fill='black'
-                />
-            </mask>
-            <mask id='bothHoles'>
-                <circle
-                    r='14'
-                    cx='14'
-                    cy='14'
-                    fill='white'
-                />
-                <circle
-                    r='16'
-                    cx='37'
-                    cy='14'
-                    fill='black'
-                />
-                <circle
-                    r='16'
-                    cx='-9'
-                    cy='14'
-                    fill='black'
-                />
-            </mask>
-        </defs>
-    </svg>
-);
 const useOpenMembersModalIfPresent = () => {
     const dispatch = useDispatch();
     const channel = useSelector(getCurrentChannel);
@@ -177,6 +119,8 @@ const UserRow = styled.div`
     margin-left: 5px;
 `;
 
+const leftHoleSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><path d="M 3.8043 4.4058 A 14 14 0 1 1 3.8043 23.5942 A 16 16 0 0 0 3.8043 4.4058 Z"/></svg>';
+
 const Rest = styled.div`
     width: 28px;
     height: 28px;
@@ -196,7 +140,7 @@ const Rest = styled.div`
     z-index: 6;
 
     div:hover + &&& {
-        mask-image: url(#leftHole);
+        mask-image: url('${leftHoleSvg}');
     }
 `;
 
