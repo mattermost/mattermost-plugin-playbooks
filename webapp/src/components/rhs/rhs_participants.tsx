@@ -110,13 +110,18 @@ const UserRow = styled.div`
 
     border-radius: 44px;
 
-    :hover {
-        outline: 6px solid rgba(var(--center-channel-color-rgb), 0.08);
-        background-color: rgba(var(--center-channel-color-rgb), 0.08);
-    }
-
     margin-top: 6px;
-    margin-left: 5px;
+    margin-left: 2px;
+
+    :hover {
+        border: 6px solid rgba(var(--center-channel-color-rgb), 0.08);
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
+        background-clip: padding-box;
+
+        margin-top: 0;
+        margin-left: -4px;
+        margin-bottom: -6px;
+    }
 `;
 
 export default RHSParticipants;
