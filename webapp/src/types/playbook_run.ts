@@ -30,6 +30,8 @@ export interface PlaybookRun {
     retrospective_was_canceled: boolean;
     retrospective_reminder_interval_seconds: number;
     participant_ids: string[];
+    last_status_update_at: number;
+    previous_reminder: number;
 }
 
 export interface StatusPost {
@@ -85,7 +87,9 @@ export function isPlaybookRun(arg: any): arg is PlaybookRun {
         typeof arg.reminder_post_id === 'string' &&
         typeof arg.broadcast_channel_id === 'string' &&
         arg.timeline_events && Array.isArray(arg.timeline_events) && arg.timeline_events.every(isTimelineEvent) &&
-        arg.participant_ids && Array.isArray(arg.participant_ids) && arg.participant_ids.every(isString));
+        arg.participant_ids && Array.isArray(arg.participant_ids) && arg.participant_ids.every(isString)) &&
+        arg.last_status_update_at && typeof arg.last_status_update_at === 'number' &&
+        arg.previous_reminder && typeof arg.previous_reminder === 'number';
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

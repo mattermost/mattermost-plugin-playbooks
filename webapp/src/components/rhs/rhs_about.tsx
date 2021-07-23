@@ -39,7 +39,10 @@ const RHSAbout = (props: Props) => {
                 <Title>
                     {props.playbookRun.name}
                 </Title>
-                <RHSPostUpdate collapsed={collapsed}/>
+                <RHSPostUpdate
+                    collapsed={collapsed}
+                    playbookRun={props.playbookRun}
+                />
             </Container>
         );
     }
@@ -116,7 +119,10 @@ const RHSAbout = (props: Props) => {
                     <RHSParticipants userIds={participantsIds}/>
                 </MemberSection>
             </Row>
-            <RHSPostUpdate collapsed={collapsed}/>
+            <RHSPostUpdate
+                collapsed={collapsed}
+                playbookRun={props.playbookRun}
+            />
         </Container>
     );
 };
