@@ -47,7 +47,7 @@ import {UpgradeOrPrimaryButton, useUpgradeModalVisibility} from 'src/components/
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 const Header = styled.div`
-    min-height: 8rem;
+    min-height: 13rem;
     margin-bottom: 4rem;
     display: grid;
 `;
@@ -67,6 +67,7 @@ const RunDetail = styled.div<{
             rgba(var(--center-channel-bg-rgb), 0.25) 100%
         ),
         rgba(var(${({exists}) => (exists ? '--button-bg-rgb' : '--center-channel-color-rgb')}), 0.08);
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="calc(100% - 15px)" viewBox="0 0 400 137" preserveAspectRatio="none"><path d="M0 0H400V122.629C400 122.629 312 137 200 137C101.5 137 0 122.629 0 122.629V0Z"/></svg>');
 
     > div {
         margin-left: 2rem;
