@@ -1,8 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
-import {useDispatch} from 'react-redux';
+import React, {useState} from 'react';
+import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {
     DragDropContext,
@@ -14,13 +14,26 @@ import {
     DraggableStateSnapshot,
 } from 'react-beautiful-dnd';
 
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+
 import {PlaybookRun} from 'src/types/playbook_run';
-import {toggleRHS, addNewTask, playbookRunUpdated} from 'src/actions';
+import {
+    toggleRHS,
+    playbookRunUpdated,
+    setAllChecklistsCollapsedState,
+    setChecklistCollapsedState,
+} from 'src/actions';
 import {ChecklistItem, ChecklistItemState, Checklist} from 'src/types/playbook';
 import {setChecklistItemState, clientReorderChecklist} from 'src/client';
 import {ChecklistItemDetails} from 'src/components/checklist_item';
 import {isMobile} from 'src/mobile';
 import CollapsibleChecklist from 'src/components/rhs/collapsible_checklist';
+import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
+import {currentChecklistCollapsedState} from 'src/selectors';
+
+// disable all react-beautiful-dnd development warnings
+// @ts-ignore
+window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -28,11 +41,35 @@ interface Props {
 
 const RHSChecklists = (props: Props) => {
     const dispatch = useDispatch();
-
+    const channelId = useSelector(getCurrentChannelId);
+    const checklistsState = useSelector(currentChecklistCollapsedState);
+    const [showMenu, setShowMenu] = useState(false);
     const checklists = props.playbookRun.checklists || [];
 
+    const allCollapsed = (() => {
+        for (let i = 0; i < checklists.length; i++) {
+            if (!checklistsState[i]) {
+                return false;
+            }
+        }
+        return true;
+    })();
+
     return (
-        <InnerContainer>
+        <InnerContainer
+            onMouseEnter={() => setShowMenu(true)}
+            onMouseLeave={() => setShowMenu(false)}
+        >
+            {
+                showMenu &&
+                <HoverRow>
+                    <HoverMenuButton
+                        title={allCollapsed ? 'Expand' : 'Collapse'}
+                        className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
+                        onClick={() => dispatch(setAllChecklistsCollapsedState(channelId, !allCollapsed, checklists.length))}
+                    />
+                </HoverRow>
+            }
             <MainTitle>{'Checklists'}</MainTitle>
             {checklists.map((checklist: Checklist, checklistIndex: number) => (
                 <CollapsibleChecklist
@@ -40,6 +77,8 @@ const RHSChecklists = (props: Props) => {
                     title={checklist.title}
                     items={checklist.items}
                     index={checklistIndex}
+                    collapsed={Boolean(checklistsState[checklistIndex])}
+                    setCollapsed={(now) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, now))}
                 >
                     <ChecklistContainer className='checklist'>
                         <DragDropContext
@@ -120,9 +159,14 @@ const RHSChecklists = (props: Props) => {
 };
 
 const InnerContainer = styled.div`
+    position: relative;
     display: flex;
     flex-direction: column;
     padding: 12px 12px 24px 12px;
+
+    &:hover {
+        background-color: var(--center-channel-color-04);
+    }
 `;
 
 const MainTitle = styled.div`
@@ -135,6 +179,11 @@ const MainTitle = styled.div`
 const ChecklistContainer = styled.div`
     background-color: var(--center-channel-bg);
     padding: 16px 12px;
+`;
+
+const HoverRow = styled(HoverMenu)`
+    top: 6px;
+    right: 15px;
 `;
 
 export default RHSChecklists;

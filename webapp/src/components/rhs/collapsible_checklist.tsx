@@ -12,22 +12,26 @@ import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_toolti
 export interface Props {
     title: string;
     index: number;
+    collapsed: boolean;
+    setCollapsed: (now: boolean) => void;
     items: ChecklistItem[];
     children: React.ReactNode;
 }
 
-const CollapsibleChecklist = ({title, index, items, children}: Props) => {
+const CollapsibleChecklist = (
+    {
+        title,
+        index,
+        collapsed,
+        setCollapsed,
+        items,
+        children,
+    }: Props) => {
     const dispatch = useDispatch();
     const titleRef = useRef(null);
+    const [showMenu, setShowMenu] = useState(false);
 
-    // TODO: per-user state in redux
-    const [expanded, setExpanded] = useState(true);
-    const [hover, setHover] = useState(false);
-
-    let icon = 'icon-chevron-down';
-    if (!expanded) {
-        icon = 'icon-chevron-right';
-    }
+    const icon = collapsed ? 'icon-chevron-right' : 'icon-chevron-down';
     const [completed, total] = tasksCompleted(items);
     const percentage = total === 0 ? 0 : (completed / total) * 100;
 
@@ -35,9 +39,9 @@ const CollapsibleChecklist = ({title, index, items, children}: Props) => {
         <Border>
             <Horizontal
                 data-testid={'checklistHeader'}
-                onClick={() => setExpanded(!expanded)}
-                onMouseEnter={() => setHover(true)}
-                onMouseLeave={() => setHover(false)}
+                onClick={() => setCollapsed(!collapsed)}
+                onMouseEnter={() => setShowMenu(true)}
+                onMouseLeave={() => setShowMenu(false)}
             >
                 <Icon className={icon}/>
                 <Title ref={titleRef}>
@@ -49,7 +53,7 @@ const CollapsibleChecklist = ({title, index, items, children}: Props) => {
                 </Title>
                 <TasksCompleted>{`${completed} / ${total} done`}</TasksCompleted>
                 {
-                    hover &&
+                    showMenu &&
                     <AddNewTask
                         data-testid={'addNewTask'}
                         onClick={(e) => {
@@ -65,7 +69,7 @@ const CollapsibleChecklist = ({title, index, items, children}: Props) => {
             <ProgressBackground>
                 <ProgressLine width={percentage}/>
             </ProgressBackground>
-            {expanded && children}
+            {!collapsed && children}
         </Border>
     );
 };
@@ -88,7 +92,7 @@ const ProgressBackground = styled.div`
     }
 `;
 
-const ProgressLine = styled.div<{width: number}>`
+const ProgressLine = styled.div<{ width: number }>`
     position: absolute;
     width: 100%;
 

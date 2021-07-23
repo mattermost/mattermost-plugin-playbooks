@@ -62,6 +62,14 @@ export const currentPlaybookRun = createSelector(
     },
 );
 
+export const currentChecklistCollapsedState = createSelector(
+    getCurrentChannelId,
+    pluginState,
+    (channelId, plugin) => {
+        return plugin.checklistCollapsedState[channelId] ?? {} as Record<number, boolean>;
+    },
+);
+
 export const myActivePlaybookRunsList = createSelector(
     getCurrentTeamId,
     myPlaybookRunsByTeam,
