@@ -20,7 +20,7 @@ import {deletePlaybook, clientFetchPlaybooks} from 'src/client';
 import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import TemplateSelector, {PresetTemplate} from 'src/components/backstage/template_selector';
+import TemplateSelector, {isPlaybookCreationAllowed, PresetTemplate} from 'src/components/backstage/template_selector';
 
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import './playbook.scss';
@@ -37,7 +37,7 @@ import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
 import {PrimaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
 
-import {useAllowPlaybookCreationInCurrentTeam, useCanCreatePlaybooks, useAllowPlaybookCreationInTeams} from 'src/hooks';
+import {useCanCreatePlaybooks, useAllowPlaybookCreationInTeams} from 'src/hooks';
 
 import CreatePlaybookTeamSelector from 'src/components/team/create_playbook_team_selector';
 
@@ -217,6 +217,7 @@ const PlaybookList = () => {
                     }}
                     teams={teams}
                     allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
+                    showUpgradeModal={showUpgradeModal}
                 />
             }
             {
@@ -252,6 +253,7 @@ const PlaybookList = () => {
                                         onClick={(team: Team) => newPlaybook(team)}
                                         teams={teams}
                                         allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
+                                        showUpgradeModal={showUpgradeModal}
                                     />
                                 </div>
                             }
@@ -307,32 +309,49 @@ const PlaybookList = () => {
     );
 };
 
-type CreatePlaybookButtonProps = UpgradeButtonProps & {teams: Team[], allowPlaybookCreationInTeams:Map<string, boolean>};
+type CreatePlaybookButtonProps = UpgradeButtonProps & {teams: Team[], allowPlaybookCreationInTeams:Map<string, boolean>, showUpgradeModal?: () => void};
 
 const TeamSelectorButton = (props: CreatePlaybookButtonProps) => {
-    const {teams, allowPlaybookCreationInTeams, ...rest} = props;
-
+    const {teams, allowPlaybookCreationInTeams, showUpgradeModal, ...rest} = props;
+    if (isPlaybookCreationAllowed(allowPlaybookCreationInTeams)) {
+        return (
+            <CreatePlaybookTeamSelector
+                testId={'create-playbook-team-selector'}
+                enableEdit={true}
+                teams={teams}
+                allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
+                onSelectedChange={props.onClick}
+                withButton={true}
+                {...rest}
+            >
+                <CreatePlaybookButton>
+                    <i className='icon-plus mr-2'/>
+                    {'Create playbook'}
+                </CreatePlaybookButton>
+            </CreatePlaybookTeamSelector>
+        );
+    }
     return (
-        <CreatePlaybookTeamSelector
-            testId={'create-playbook-team-selector'}
-            enableEdit={true}
-            teams={teams}
-            allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
-            onSelectedChange={props.onClick}
-            withButton={true}
-            {...rest}
+        <CreatePlaybookButton
+            onClick={showUpgradeModal}
         >
-            <CreatePlaybookButton>
-                <i className='icon-plus mr-2'/>
-                {'Create playbook'}
-            </CreatePlaybookButton>
-        </CreatePlaybookTeamSelector>
+            <i className='icon-plus mr-2'/>
+            {'Create playbook'}
+            <NotAllowedIcon className='icon icon-key-variant-circle'/>
+        </CreatePlaybookButton>
     );
 };
 
 const CreatePlaybookButton = styled(PrimaryButton)`
     display: flex;
     align-items: center;
+`;
+
+const NotAllowedIcon = styled.i`
+    color: var(--online-indicator);
+    position: absolute;
+    top: -4px;
+    right: -6px;
 `;
 
 const useUpgradeModalVisibility = (initialState: boolean): [boolean, () => void, () => void] => {

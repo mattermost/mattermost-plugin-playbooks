@@ -9,9 +9,6 @@ import {Team} from 'mattermost-redux/types/teams';
 import {Playbook, emptyPlaybook, newChecklistItem, defaultMessageOnJoin} from 'src/types/playbook';
 import FileIcon from 'src/components/assets/icons/file_icon';
 import AlertIcon from 'src/components/assets/icons/alert_icon';
-import {useAllowPlaybookCreationInCurrentTeam} from 'src/hooks';
-
-import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 
 import CreatePlaybookTeamSelector from 'src/components/team/create_playbook_team_selector';
 
@@ -128,50 +125,68 @@ const TemplateItemDiv = styled.div`
     }
 `;
 
-const PositionedUpgradeBadge = styled(UpgradeBadge)`
-    margin-left: 8px;
-`;
-
 interface Props {
     templates?: PresetTemplate[];
     teams: Team[];
     allowPlaybookCreationInTeams: Map<string, boolean>;
-    onSelect: (team: Team, t: PresetTemplate) => void
+    onSelect: (team: Team, t: PresetTemplate) => void;
+    showUpgradeModal: () => void;
 }
 
-const TemplateSelector = ({templates = PresetTemplates, onSelect, teams, allowPlaybookCreationInTeams}: Props) => {
-    const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
+export function isPlaybookCreationAllowed(allowPlaybookCreationInTeams: Map<string, boolean>) {
+    for (const [key, value] of allowPlaybookCreationInTeams) {
+        if (value) {
+            return true;
+        }
+    }
+    return false;
+}
 
+const TemplateSelector = ({templates = PresetTemplates, onSelect, teams, allowPlaybookCreationInTeams, showUpgradeModal}: Props) => {
+    const allowPlaybookCreation = isPlaybookCreationAllowed(allowPlaybookCreationInTeams);
     return (
         <BackgroundColorContainer>
             <RootContainer>
                 <InnerContainer>
                     <Title>
                         {'Create a playbook'}
-                        {!allowPlaybookCreation && <PositionedUpgradeBadge/>}
+                        {!allowPlaybookCreation && <NotAllowedIcon className='icon icon-key-variant-circle'/>}
                     </Title>
                     <TemplateItemDiv>
-                        {
-                            templates.map((template: PresetTemplate) => (
-                                <CreatePlaybookTeamSelector
-                                    key={template.title}
-                                    testId={'template-item-team-selector'}
-                                    enableEdit={true}
-                                    teams={teams}
-                                    allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
-                                    onSelectedChange={(team) => {
-                                        onSelect(team, template);
-                                    }}
-                                    withButton={false}
-                                >
-                                    <TemplateItem
-                                        title={template.title}
+                        {templates.map((template: PresetTemplate) => {
+                            if (allowPlaybookCreation) {
+                                return (
+                                    <CreatePlaybookTeamSelector
+                                        key={template.title}
+                                        testId={'template-item-team-selector'}
+                                        enableEdit={true}
+                                        teams={teams}
+                                        allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
+                                        onSelectedChange={(team) => {
+                                            onSelect(team, template);
+                                        }}
+                                        withButton={false}
                                     >
-                                        {template.icon}
-                                    </TemplateItem>
-                                </CreatePlaybookTeamSelector>
-                            ))
-                        }
+                                        <TemplateItem
+                                            title={template.title}
+                                        >
+                                            {template.icon}
+                                        </TemplateItem>
+                                    </CreatePlaybookTeamSelector>
+                                );
+                            }
+                            return (
+                                <TemplateItem
+                                    key={template.title}
+                                    title={template.title}
+                                    onClick={() => {
+                                        showUpgradeModal();
+                                    }}
+                                >
+                                    {template.icon}
+                                </TemplateItem>
+                            );
+                        })}
                     </TemplateItemDiv>
                 </InnerContainer>
             </RootContainer>
@@ -179,9 +194,15 @@ const TemplateSelector = ({templates = PresetTemplates, onSelect, teams, allowPl
     );
 };
 
+const NotAllowedIcon = styled.i`
+    margin: 8px;
+    color: var(--online-indicator);
+`;
+
 interface TemplateItemProps {
     title: string;
     children: JSX.Element[] | JSX.Element;
+    onClick?: () => void;
 }
 
 const IconContainer = styled.div`
@@ -208,7 +229,9 @@ const TemplateTitle = styled.div`
 
 const TemplateItem = (props: TemplateItemProps) => {
     return (
-        <TemplateItemContainer>
+        <TemplateItemContainer
+            onClick={props.onClick}
+        >
             <IconContainer>{props.children}</IconContainer>
             <TemplateTitle>{props.title}</TemplateTitle>
         </TemplateItemContainer>

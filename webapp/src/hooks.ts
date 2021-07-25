@@ -279,6 +279,14 @@ export function useAllowPlaybookCreationInTeams() {
     return allowPlaybookCreationInTeams;
 }
 
+export function useDropdownPosition() {
+    const [dropdownPosition, setDropdownPosition] = useState({x: 0, y: 0, isOpen: false});
+    const toggleOpen = (x: number, y: number) => {
+        setDropdownPosition({x, y, isOpen: !dropdownPosition.isOpen});
+    };
+    return [dropdownPosition, toggleOpen] as const;
+}
+
 // useAllowPlaybookCreationInCurrentTeam returns whether a user can create
 // a playbook in the current team
 export function useAllowPlaybookCreationInCurrentTeam() {

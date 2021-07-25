@@ -67,7 +67,7 @@ export default function TeamSelector(props: Props) {
                 label: (
                     <TeamWithIcon
                         team={team}
-                        allowed={true}
+                        showNotLicensedIcon={false}
                     />
                 ),
                 teamId: team.id,
@@ -146,7 +146,7 @@ export default function TeamSelector(props: Props) {
             >
                 <TeamWithIcon
                     team={getTeam(props.selectedTeamId)}
-                    allowed={true}
+                    showNotLicensedIcon={false}
                 />
 
                 {<i className='icon-chevron-down ml-1 mr-2'/>}

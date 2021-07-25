@@ -1,20 +1,19 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import ReactSelect, {StylesConfig} from 'react-select';
 import classNames from 'classnames';
 import styled from 'styled-components';
 import {Team} from 'mattermost-redux/types/teams';
 
-import {useClientRect} from 'src/hooks';
+import {useClientRect, useDropdownPosition} from 'src/hooks';
 
 import TeamWithIcon from './team_with_icon';
 
 interface Option {
-    value: string;
+    value: Team;
     label: React.ReactNode;
-    teamId: string;
 }
 
 interface Props {
@@ -36,37 +35,24 @@ interface DropdownPosition {
 }
 
 export default function CreatePlaybookTeamSelector(props: Props) {
-    const teamOptions = getTeamOptionList();
-    const [dropdownPosition, setDropdownPosition] = useState({x: 0, y: 0, isOpen: false});
-    const toggleOpen = (x: number, y: number) => {
-        setDropdownPosition({x, y, isOpen: !dropdownPosition.isOpen});
-    };
+    const teamOptions = props.teams.map((team: Team) => {
+        return ({
+            value: team,
+            label: (
+                <TeamWithIcon
+                    team={team}
+                    showNotLicensedIcon={!(props.allowPlaybookCreationInTeams.get(team.id))}
+                />
+            ),
+        } as Option);
+    });
 
-    function getTeamOptionList() {
-        const optionList = props.teams.map((team: Team) => {
-            return ({
-                value: team.display_name,
-                label: (
-                    <TeamWithIcon
-                        team={team}
-                        allowed={Boolean(props.allowPlaybookCreationInTeams.get(team.id))}
-                    />
-                ),
-                teamId: team.id,
-            } as Option);
-        });
+    const [dropdownPosition, toggleOpen] = useDropdownPosition();
 
-        return optionList;
-    }
-
-    function getTeam(teamId: string) {
-        return props.teams.find((team) => team.id === teamId);
-    }
-
-    const onSelectedChange = async (value: Option | undefined) => {
+    const onSelectedChange = async (value: Option | undefined | null | readonly Option[]) => {
         toggleOpen(0, 0);
 
-        const team = getTeam(value?.teamId || '');
+        const team = (value as Option).value;
         if (team) {
             props.onSelectedChange(team);
         }
@@ -74,22 +60,17 @@ export default function CreatePlaybookTeamSelector(props: Props) {
 
     // Decide where to open the team selector
     const [rect, ref] = useClientRect();
-    const [moveUp, setMoveUp] = useState(0);
 
-    useEffect(() => {
-        if (!rect) {
-            setMoveUp(0);
-            return;
-        }
-
+    let moveUp = 0;
+    if (rect) {
         const innerHeight = window.innerHeight;
         const numTeamsShown = Math.min(6, teamOptions.length);
         const spacePerProfile = 48;
         const dropdownReqSpace = 80;
         const extraSpace = 20;
         const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numTeamsShown * spacePerProfile) + extraSpace;
-        setMoveUp(Math.max(0, dropdownBottom - innerHeight));
-    }, []);
+        moveUp = (Math.max(0, dropdownBottom - innerHeight));
+    }
 
     const target = (
         <div
@@ -131,7 +112,7 @@ export default function CreatePlaybookTeamSelector(props: Props) {
                 placeholder={'Search'}
                 styles={selectStyles}
                 tabSelectsValue={false}
-                onChange={(option) => onSelectedChange(option as Option)}
+                onChange={onSelectedChange}
                 classNamePrefix='playbook-run-user-select'
                 className='playbook-run-user-select'
             />

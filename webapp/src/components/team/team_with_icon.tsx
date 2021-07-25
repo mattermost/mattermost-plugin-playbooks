@@ -8,7 +8,7 @@ import {Client4} from 'mattermost-redux/client';
 import styled from 'styled-components';
 interface Props {
     team: Team;
-    allowed: boolean;
+    showNotLicensedIcon: boolean;
 }
 
 /**
@@ -49,7 +49,7 @@ const TeamWithIcon = (props: Props) => {
             <NameWrapper>
                 {props.team.display_name}
             </NameWrapper>
-            {props.allowed ? '' : <NotAllowedIcon className='icon icon-key-variant-circle'/>}
+            {props.showNotLicensedIcon ? <NotAllowedIcon className='icon icon-key-variant-circle'/> : ''}
         </TeamWrapper>
     );
 };
@@ -123,5 +123,5 @@ const InitialWrapper = styled.div`
 const NotAllowedIcon = styled.i`
     position: absolute;
     right: 10px;
-    color: 'var(--online-indicator)';
+    color: var(--online-indicator);
 `;
