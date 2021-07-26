@@ -47,7 +47,7 @@ Cypress.Commands.add('requireIncidentCollaborationPlugin', (version) => {
             }
         }
 
-        expect(isInstalled, `Incident Collaboration plugin should be installed with version ${version}`).to.equal(true);
+        expect(isInstalled, `Playbooks plugin should be installed with version ${version}`).to.equal(true);
     });
 });
 

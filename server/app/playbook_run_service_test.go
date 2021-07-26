@@ -112,7 +112,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 			Type:        model.CHANNEL_PRIVATE,
 			DisplayName: "###",
 			Name:        "",
-			Header:      "The channel was created by the Incident Collaboration plugin.",
+			Header:      "The channel was created by the Playbooks plugin.",
 		}).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()
