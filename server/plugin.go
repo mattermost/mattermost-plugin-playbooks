@@ -56,7 +56,7 @@ func (p *Plugin) OnActivate() error {
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "playbook",
 		DisplayName: "Playbook Bot",
-		Description: "Incident Collaboration plugin's bot.",
+		Description: "Playbook's bot.",
 	},
 		pluginapi.ProfileImagePath("assets/incident_plugin_icon.png"),
 	)
