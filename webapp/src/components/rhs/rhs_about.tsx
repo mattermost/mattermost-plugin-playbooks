@@ -36,11 +36,11 @@ const RHSAbout = (props: Props) => {
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
             >
-                {true &&
+                {hovered &&
                 <Buttons
                     collapsed={collapsed}
                     toggleCollapsed={toggleCollapsed}
-                /> }
+                />}
                 <Title>
                     {props.playbookRun.name}
                 </Title>
