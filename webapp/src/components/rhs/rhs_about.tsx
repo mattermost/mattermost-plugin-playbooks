@@ -10,12 +10,10 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import './playbook_run_details.scss';
-import PostCard from 'src/components/rhs/post_card';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
-import {useLatestUpdate, useProfilesInCurrentChannel} from 'src/hooks';
+import {useProfilesInCurrentChannel} from 'src/hooks';
 import PostText from 'src/components/post_text';
 import {updateStatus} from 'src/actions';
-import Duration from '../duration';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
@@ -26,7 +24,6 @@ interface Props {
 const RHSAbout = (props: Props) => {
     const dispatch = useDispatch();
     const profilesInChannel = useProfilesInCurrentChannel();
-    const latestUpdatePost = useLatestUpdate(props.playbookRun);
 
     const [collapsed, setCollapsed] = useState(false);
     const [hovered, setHovered] = useState(false);
