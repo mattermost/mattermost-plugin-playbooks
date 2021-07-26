@@ -148,7 +148,6 @@ const Buttons = ({collapsed, toggleCollapsed} : ButtonsProps) => {
 };
 
 const ButtonsRow = styled(HoverMenu)`
-    position: absolute;
     top: 9px;
     right: 12px;
 `;
