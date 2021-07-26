@@ -4,9 +4,7 @@
 import {combineReducers} from 'redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
-
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedToggleRHSAction,
@@ -45,10 +43,10 @@ import {
     SetChecklistCollapsedState,
     SetAllChecklistsCollapsedState,
     SET_CHECKLIST_COLLAPSED_STATE,
-    SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    SET_ALL_CHECKLISTS_COLLAPSED_STATE, SetChecklistItemsFilter, SET_CHECKLIST_ITEMS_FILTER,
 } from 'src/types/actions';
-
-import {GlobalSettings} from './types/settings';
+import {GlobalSettings} from 'src/types/settings';
+import {ChecklistItemsFilter} from 'src/types/playbook';
 
 function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
     switch (action.type) {
@@ -284,6 +282,18 @@ const checklistCollapsedState = (
     }
 };
 
+const checklistItemsFilterByChannel = (state: Record<string, ChecklistItemsFilter> = {}, action: SetChecklistItemsFilter) => {
+    switch (action.type) {
+    case SET_CHECKLIST_ITEMS_FILTER:
+        return {
+            ...state,
+            [action.channelId]: action.nextState,
+        };
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -296,4 +306,5 @@ export default combineReducers({
     postMenuModalVisibility,
     hasViewedByChannel,
     checklistCollapsedState,
+    checklistItemsFilterByChannel,
 });

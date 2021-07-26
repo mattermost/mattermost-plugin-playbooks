@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useRef} from 'react';
-import styled, {css} from 'styled-components';
+import styled, {css, StyledComponentBase} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
@@ -10,7 +10,7 @@ interface DotMenuButtonProps {
     right?: boolean;
 }
 
-const DotMenuButton = styled.div<DotMenuButtonProps>`
+export const DotMenuButton = styled.div<DotMenuButtonProps>`
     display: inline-flex;
     padding: 0;
     background: transparent;
@@ -26,10 +26,6 @@ const DotMenuButton = styled.div<DotMenuButtonProps>`
        background: rgba(var(--center-channel-color-rgb), 0.08);
        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
-
-    ${(props) => (props.right && css`
-        margin: 0 16px 0 auto;
-    `)}
 `;
 
 const DropdownMenuWrapper = styled.div`
@@ -83,6 +79,7 @@ interface DotMenuProps {
     left?: boolean;
     wide?: boolean;
     buttonRight?: boolean;
+    dotMenuButton?: StyledComponentBase<'div', any>;
 }
 
 const DotMenu = (props: DotMenuProps) => {
@@ -100,14 +97,15 @@ const DotMenu = (props: DotMenuProps) => {
         setOpen(false);
     });
 
+    const MenuButton = props.dotMenuButton ?? DotMenuButton;
+
     return (
-        <DotMenuButton
+        <MenuButton
             ref={rootRef}
             onClick={(e) => {
                 e.stopPropagation();
                 toggleOpen();
             }}
-            right={props.buttonRight}
         >
             {props.icon}
             <DropdownMenuWrapper>
@@ -123,7 +121,7 @@ const DotMenu = (props: DotMenuProps) => {
                     </DropdownMenu>
                 }
             </DropdownMenuWrapper>
-        </DotMenuButton>
+        </MenuButton>
     );
 };
 

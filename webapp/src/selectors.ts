@@ -16,12 +16,11 @@ import {$ID, IDMappedObjects, Dictionary} from 'mattermost-redux/types/utilities
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {pluginId} from 'src/manifest';
-
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter, TimelineEventsFilterDefault} from 'src/types/rhs';
 import {findLastUpdated} from 'src/utils';
-
-import {GlobalSettings} from './types/settings';
+import {GlobalSettings} from 'src/types/settings';
+import {ChecklistItemsFilter, ChecklistItemsFilterDefault} from 'src/types/playbook';
 
 //@ts-ignore GlobalState is not complete
 const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
@@ -84,6 +83,11 @@ export const currentChecklistAllCollapsed = createSelector(
         return true;
     },
 );
+
+export const currentChecklistItemsFilter = (state: GlobalState): ChecklistItemsFilter => {
+    const channelId = getCurrentChannelId(state);
+    return pluginState(state).checklistItemsFilterByChannel[channelId] || ChecklistItemsFilterDefault;
+};
 
 export const myActivePlaybookRunsList = createSelector(
     getCurrentTeamId,
