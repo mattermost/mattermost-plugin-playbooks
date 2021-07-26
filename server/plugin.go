@@ -194,7 +194,7 @@ func (p *Plugin) OnActivate() error {
 	go func() {
 		// Remove the prepackaged old versions of the plugin
 		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
-		_ = pluginAPIClient.Plugin.Remove("playbooks")
+		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-management")
 	}()
 
 	return nil
