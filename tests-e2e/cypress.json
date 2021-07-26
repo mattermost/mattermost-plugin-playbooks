@@ -18,6 +18,7 @@
         "numberOfTrialUsers": 100,
         "resetBeforeTest": false
     },
+    "testFiles": "**/*_spec.js",
     "reporter": "cypress-multi-reporters",
     "reporterOptions": {
         "configFile": "reporter-config.json"

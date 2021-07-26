@@ -1379,43 +1379,26 @@ func TestPlaybookRuns(t *testing.T) {
 
 	t.Run("get empty list of playbook runs", func(t *testing.T) {
 		reset(t)
-		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
-		setDefaultExpectations(t)
 
 		teamID := model.NewId()
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, teamID, model.PERMISSION_VIEW_TEAM).Return(false)
 
-		resultPlaybookRun, err := c.PlaybookRuns.List(context.TODO(), 0, 100, icClient.PlaybookRunListOptions{
-			TeamID: teamID,
-		})
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		require.Nil(t, resultPlaybookRun)
-	})
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("GetUser", "testUserID").Return(&model.User{}, nil)
 
-	t.Run("get disabled list of playbook runs", func(t *testing.T) {
-		reset(t)
-
-		disabledTeamID := model.NewId()
-		enabledTeamID := model.NewId()
-		configService.EXPECT().
-			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{enabledTeamID},
-			})
-
-		setDefaultExpectations(t)
-
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, disabledTeamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		result := &app.GetPlaybookRunsResults{
+			TotalCount: 0,
+			PageCount:  0,
+			HasMore:    false,
+			Items:      []app.PlaybookRun{},
+		}
+		playbookRunService.EXPECT().GetPlaybookRuns(gomock.Any(), gomock.Any()).Return(result, nil)
 
 		actualList, err := c.PlaybookRuns.List(context.TODO(), 0, 100, icClient.PlaybookRunListOptions{
-			TeamID: disabledTeamID,
+			TeamID: teamID,
 		})
 		require.NoError(t, err)
 
-		expectedList := &icClient.GetPlaybookRunsResults{
-			Disabled: true,
-		}
-		assert.Equal(t, expectedList, actualList)
+		assert.Len(t, actualList.Items, 0)
 	})
 
 	t.Run("checklist autocomplete for a channel without permission to view", func(t *testing.T) {
