@@ -13,7 +13,7 @@ export interface Props {
     title: string;
     index: number;
     collapsed: boolean;
-    setCollapsed: (now: boolean) => void;
+    setCollapsed: (newState: boolean) => void;
     items: ChecklistItem[];
     children: React.ReactNode;
 }

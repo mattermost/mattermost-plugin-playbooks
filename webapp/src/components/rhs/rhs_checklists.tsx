@@ -70,7 +70,7 @@ const RHSChecklists = (props: Props) => {
                     items={checklist.items}
                     index={checklistIndex}
                     collapsed={Boolean(checklistsState[checklistIndex])}
-                    setCollapsed={(now) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, now))}
+                    setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
                 >
                     <ChecklistContainer className='checklist'>
                         <DragDropContext
