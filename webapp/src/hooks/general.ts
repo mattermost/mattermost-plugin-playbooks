@@ -364,11 +364,7 @@ export function useOpenCloudModal() {
     }
 
     // @ts-ignore
-    if (
-        !window.WebappUtils?.modals?.openModal ||
-        !window.WebappUtils?.modals?.ModalIdentifiers?.CLOUD_PURCHASE ||
-        !window.Components?.PurchaseModal
-    ) {
+    if (!window.WebappUtils?.modals?.openModal || !window.WebappUtils?.modals?.ModalIdentifiers?.CLOUD_PURCHASE || !window.Components?.PurchaseModal) {
         // eslint-disable-next-line no-console
         console.error('unable to open cloud modal');
 
