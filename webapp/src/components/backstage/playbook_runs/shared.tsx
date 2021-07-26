@@ -42,15 +42,6 @@ export const Content = styled.div`
     border-radius: 8px;
 `;
 
-export const Heading = styled.div`
-    margin: 10px 0 0 0;
-    font-weight: 600;
-`;
-
-export const Body = styled.p`
-    margin: 8px 0;
-`;
-
 export const EmptyBody = styled.div`
     margin: 16px 0 24px 0;
     font-size: 14px;
@@ -89,9 +80,3 @@ export const Badge = styled(StatusBadge)`
     height: unset;
     white-space: nowrap;
 `;
-
-export const SpacedSmallBadge = styled(Badge)<{space?: number}>`
-    line-height: 18px;
-    margin-left: ${(props) => (props.space ? props.space : 10)}px;
-`;
-

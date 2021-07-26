@@ -1,5 +1,5 @@
 import {MutableRefObject, useCallback, useEffect, useRef, useState} from 'react';
-import {useDispatch, useSelector, useStore} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
@@ -25,14 +25,8 @@ import {getProfileSetForChannel} from 'src/selectors';
 import {clientFetchPlaybooksCount} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
-import {isCloud, isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from './license';
-import {currentTeamNumPlaybooks, globalSettings, isCurrentUserAdmin, numPlaybooksByTeam} from './selectors';
-
-export function useCurrentTeamPermission(options: PermissionsOptions): boolean {
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-    options.team = currentTeam.id;
-    return useSelector<GlobalState, boolean>((state) => haveITeamPermission(state, options));
-}
+import {isCloud, isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from '../license';
+import {currentTeamNumPlaybooks, globalSettings, isCurrentUserAdmin, numPlaybooksByTeam} from '../selectors';
 
 /**
  * Hook that calls handler when targetKey is pressed.
@@ -245,7 +239,7 @@ export function useNumPlaybooksInCurrentTeam() {
     useEffect(() => {
         const fetch = async () => {
             const response = await clientFetchPlaybooksCount(team.id);
-            dispatch(receivedTeamNumPlaybooks(team.id, response.count));
+            dispatch(receivedTeamNumPlaybooks(team.id, response?.count ?? 0));
         };
 
         fetch();
@@ -264,7 +258,7 @@ export function useAllowPlaybookCreationInTeams() {
         for (const team of myTeams) {
             const fetch = async () => {
                 const response = await clientFetchPlaybooksCount(team.id);
-                dispatch(receivedTeamNumPlaybooks(team.id, response.count));
+                dispatch(receivedTeamNumPlaybooks(team.id, response?.count ?? 0));
             };
             fetch();
         }
@@ -384,3 +378,4 @@ export function useOpenCloudModal() {
         }));
     };
 }
+

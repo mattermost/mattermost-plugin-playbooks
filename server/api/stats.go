@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
 	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore"
-	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -35,21 +34,8 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 
 	statsRouter := router.PathPrefix("/stats").Subrouter()
 	statsRouter.HandleFunc("/playbook", handler.playbookStats).Methods(http.MethodGet)
-	statsRouter.HandleFunc("", handler.stats).Methods(http.MethodGet)
 
 	return handler
-}
-
-type Stats struct {
-	TotalReportedPlaybookRuns                int `json:"total_reported_playbook_runs"`
-	TotalActivePlaybookRuns                  int `json:"total_active_playbook_runs"`
-	TotalActiveParticipants                  int `json:"total_active_participants"`
-	AverageDurationActivePlaybookRunsMinutes int `json:"average_duration_active_playbook_runs_minutes"`
-
-	ActivePlaybookRuns     []int `json:"active_playbook_runs"`
-	PeopleInPlaybookRuns   []int `json:"people_in_playbook_runs"`
-	AverageStartToActive   []int `json:"average_start_to_active"`
-	AverageStartToResolved []int `json:"average_start_to_resolved"`
 }
 
 type PlaybookStats struct {
@@ -67,17 +53,6 @@ type PlaybookStats struct {
 	ActiveParticipantsPerDayLabels []string  `json:"active_participants_per_day_labels"`
 }
 
-func parseStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
-	teamID := u.Query().Get("team_id")
-	if teamID == "" {
-		return nil, errors.New("bad parameter 'team_id'; 'team_id' is required")
-	}
-
-	return &sqlstore.StatsFilters{
-		TeamID: teamID,
-	}, nil
-}
-
 func parsePlaybookStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
 	playbookID := u.Query().Get("playbook_id")
 	if playbookID == "" {
@@ -87,36 +62,6 @@ func parsePlaybookStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
 	return &sqlstore.StatsFilters{
 		PlaybookID: playbookID,
 	}, nil
-}
-
-func (h *StatsHandler) stats(w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	filters, err := parseStatsFilters(r.URL)
-	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Bad filters", err)
-		return
-	}
-
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, filters.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
-			"userID %s does not have view permission for teamID %s", userID, filters.TeamID))
-		return
-	}
-
-	stats := Stats{
-		TotalReportedPlaybookRuns:                h.statsStore.TotalReportedPlaybookRuns(filters),
-		TotalActivePlaybookRuns:                  h.statsStore.TotalActivePlaybookRuns(filters),
-		TotalActiveParticipants:                  h.statsStore.TotalActiveParticipants(filters),
-		AverageDurationActivePlaybookRunsMinutes: h.statsStore.AverageDurationActivePlaybookRunsMinutes(filters),
-
-		ActivePlaybookRuns:     h.statsStore.CountActivePlaybookRunsByDay(filters),
-		PeopleInPlaybookRuns:   h.statsStore.UniquePeopleInPlaybookRuns(filters),
-		AverageStartToActive:   h.statsStore.AverageStartToActive(filters),
-		AverageStartToResolved: h.statsStore.AverageStartToResolved(filters),
-	}
-
-	ReturnJSON(w, stats, http.StatusOK)
 }
 
 func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
