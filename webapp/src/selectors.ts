@@ -70,6 +70,19 @@ export const currentChecklistCollapsedState = createSelector(
     },
 );
 
+export const currentChecklistAllCollapsed = createSelector(
+    currentPlaybookRun,
+    currentChecklistCollapsedState,
+    (playbookRun, checklistsState) => {
+        for (let i = 0; i < playbookRun?.checklists.length; i++) {
+            if (!checklistsState[i]) {
+                return false;
+            }
+        }
+        return true;
+    },
+);
+
 export const myActivePlaybookRunsList = createSelector(
     getCurrentTeamId,
     myPlaybookRunsByTeam,

@@ -29,7 +29,7 @@ import {ChecklistItemDetails} from 'src/components/checklist_item';
 import {isMobile} from 'src/mobile';
 import CollapsibleChecklist from 'src/components/rhs/collapsible_checklist';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import {currentChecklistCollapsedState} from 'src/selectors';
+import {currentChecklistAllCollapsed, currentChecklistCollapsedState} from 'src/selectors';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -43,17 +43,9 @@ const RHSChecklists = (props: Props) => {
     const dispatch = useDispatch();
     const channelId = useSelector(getCurrentChannelId);
     const checklistsState = useSelector(currentChecklistCollapsedState);
+    const allCollapsed = useSelector(currentChecklistAllCollapsed);
     const [showMenu, setShowMenu] = useState(false);
     const checklists = props.playbookRun.checklists || [];
-
-    const allCollapsed = (() => {
-        for (let i = 0; i < checklists.length; i++) {
-            if (!checklistsState[i]) {
-                return false;
-            }
-        }
-        return true;
-    })();
 
     return (
         <InnerContainer
