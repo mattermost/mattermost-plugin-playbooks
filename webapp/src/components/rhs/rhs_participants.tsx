@@ -7,7 +7,7 @@ import {useSelector, useDispatch} from 'react-redux';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import RHSParticipant from 'src/components/rhs/rhs_participant';
+import {RHSParticipant, Rest} from 'src/components/rhs/rhs_participant';
 
 interface Props {
     userIds: string[];
@@ -117,31 +117,6 @@ const UserRow = styled.div`
 
     margin-top: 6px;
     margin-left: 5px;
-`;
-
-const leftHoleSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><path d="M 3.8043 4.4058 A 14 14 0 1 1 3.8043 23.5942 A 16 16 0 0 0 3.8043 4.4058 Z"/></svg>';
-
-const Rest = styled.div`
-    width: 28px;
-    height: 28px;
-    margin-left: -5px;
-    border-radius: 50%;
-
-    background-color: rgba(var(--center-channel-color-rgb), 0.16);
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-
-    font-weight: 600;
-    font-size: 11px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    z-index: 6;
-
-    div:hover + &&& {
-        mask-image: url('${leftHoleSvg}');
-    }
 `;
 
 export default RHSParticipants;
