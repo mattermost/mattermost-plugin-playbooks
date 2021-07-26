@@ -299,7 +299,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		store.EXPECT().UpdatePlaybookRun(gomock.Any()).Return(nil)
 
-		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
 		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), "channel_id")
@@ -331,7 +331,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 				"http://example.com/ad-1/channels/channel-name",
 				payload.ChannelURL)
 			require.Equal(t,
-				"http://example.com/ad-1/com.mattermost.plugin-incident-management/runs/"+createdPlaybookRun.ID,
+				"http://example.com/ad-1/playbooks/runs/"+createdPlaybookRun.ID,
 				payload.DetailsURL)
 
 		case <-time.After(time.Second * 5):
@@ -401,7 +401,7 @@ func TestUpdateStatus(t *testing.T) {
 		store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&app.SQLStatusPost{})).Return(nil)
 		store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(2)
 
-		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
 
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), channelID)
 		poster.EXPECT().PostMessage("broadcast_channel_id", gomock.Any()).Return(&model.Post{}, nil)
@@ -429,7 +429,7 @@ func TestUpdateStatus(t *testing.T) {
 				"http://example.com/team_name/channels/channel_name",
 				payload.ChannelURL)
 			require.Equal(t,
-				fmt.Sprintf("http://example.com/team_name/com.mattermost.plugin-incident-management/runs/%s", playbookRunID),
+				fmt.Sprintf("http://example.com/team_name/playbooks/runs/%s", playbookRunID),
 				payload.DetailsURL)
 
 		case <-time.After(time.Second * 5):

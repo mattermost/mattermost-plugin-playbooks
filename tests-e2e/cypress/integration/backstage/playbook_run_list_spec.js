@@ -85,7 +85,7 @@ describe('backstage playbook run list', () => {
         });
 
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit('/ad-1/playbooks');
 
         // # Switch to playbook runs backstage
         cy.findByTestId('playbookRunsLHSButton').click();
@@ -106,7 +106,7 @@ describe('backstage playbook run list', () => {
         });
 
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit('/ad-1/playbooks');
 
         // # Switch to playbook runs backstage
         cy.findByTestId('playbookRunsLHSButton').click();
@@ -145,7 +145,7 @@ describe('backstage playbook run list', () => {
             cy.apiLogin('user-1');
 
             // # Open backstage
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+            cy.visit('/ad-1/playbooks');
 
             // # Switch to playbook runs backstage
             cy.findByTestId('playbookRunsLHSButton').click();

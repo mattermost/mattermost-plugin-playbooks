@@ -1165,7 +1165,7 @@ d5nfnt7t93g4ppnf59uhp81gga	1618524854513	9tpix9qyajd1fxmbicpd1drz6w	/api/v4/plug
 --
 
 COPY public.bots (userid, description, ownerid, lasticonupdate, createat, updateat, deleteat) FROM stdin;
-pof5bezjni8ymkar3qtesd5z3w	Incident Collaboration plugin's bot.	com.mattermost.plugin-incident-management	0	1618524215600	1618529994516	0
+pof5bezjni8ymkar3qtesd5z3w	Incident Collaboration plugin's bot.	playbooks	0	1618524215600	1618529994516	0
 \.
 
 
@@ -2759,7 +2759,7 @@ COPY public.outgoingwebhooks (id, token, createat, updateat, deleteat, creatorid
 --
 
 COPY public.pluginkeyvaluestore (pluginid, pkey, pvalue, expireat) FROM stdin;
-com.mattermost.plugin-incident-management	mmi_botid	\\x706f663562657a6a6e6938796d6b6172337174657364357a3377	0
+playbooks	mmi_botid	\\x706f663562657a6a6e6938796d6b6172337174657364357a3377	0
 \.
 
 

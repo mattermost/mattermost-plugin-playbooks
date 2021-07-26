@@ -104,7 +104,7 @@ Cypress.Commands.add('openBackstage', () => {
 
 // Create playbook
 Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
-    cy.visit(`/${teamName}/com.mattermost.plugin-incident-management/playbooks/new`);
+    cy.visit(`/${teamName}/playbooks/playbooks/new`);
 
     cy.findByTestId('save_playbook', {timeout: 30000}).should('exist');
 

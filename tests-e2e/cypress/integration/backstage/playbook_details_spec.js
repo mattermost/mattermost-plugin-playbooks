@@ -14,17 +14,17 @@ describe('backstage playbook details', () => {
 
     it('redirects to not found error if the playbook is unknown', () => {
         // # Visit the URL of a non-existing playbook
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/an_unknown_id');
+        cy.visit('/ad-1/playbooks/playbooks/an_unknown_id');
 
         // * Verify that the user has been redirected to the playbooks not found error page
-        cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-management/error?type=playbooks');
+        cy.url().should('include', '/ad-1/playbooks/error?type=playbooks');
     });
 
     describe('tasks', () => {
         describe('slash command', () => {
             it('autocompletes after clicking Add a slash command', () => {
                 // # Visit the playbook backstage
-                cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
+                cy.visit('/ad-1/playbooks/playbooks');
 
                 // # Start a blank playbook
                 cy.get('#root').findByText('Blank').click();
@@ -44,7 +44,7 @@ describe('backstage playbook details', () => {
 
             it('removes the input prompt when blurring with an empty slash command', () => {
                 // # Visit the playbook backstage
-                cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
+                cy.visit('/ad-1/playbooks/playbooks');
 
                 // # Start a blank playbook
                 cy.get('#root').findByText('Blank').click();
@@ -67,7 +67,7 @@ describe('backstage playbook details', () => {
 
             it('removes the input prompt when blurring with an invalid slash command', () => {
                 // # Visit the playbook backstage
-                cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
+                cy.visit('/ad-1/playbooks/playbooks');
 
                 // # Start a blank playbook
                 cy.get('#root').findByText('Blank').click();
@@ -124,7 +124,7 @@ describe('backstage playbook details', () => {
 
         it('shows "Select a channel" when no broadcast channel configured', () => {
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -135,7 +135,7 @@ describe('backstage playbook details', () => {
 
         it('shows channel name when public broadcast channel configured', () => {
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -147,7 +147,7 @@ describe('backstage playbook details', () => {
             cy.findByTestId('save_playbook').click();
 
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -158,7 +158,7 @@ describe('backstage playbook details', () => {
 
         it('shows channel name when private broadcast channel configured and user is a member', () => {
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -170,7 +170,7 @@ describe('backstage playbook details', () => {
             cy.findByTestId('save_playbook').click();
 
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -181,7 +181,7 @@ describe('backstage playbook details', () => {
 
         it('shows "Unknown channel" when private broadcast channel configured and user is not a member', () => {
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -200,7 +200,7 @@ describe('backstage playbook details', () => {
             cy.get('#confirmModalButton').click();
 
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -242,7 +242,7 @@ describe('backstage playbook details', () => {
             describe('invite members setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -253,7 +253,7 @@ describe('backstage playbook details', () => {
 
                 it('can be enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -272,7 +272,7 @@ describe('backstage playbook details', () => {
 
                 it('does not let add users when disabled', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -288,7 +288,7 @@ describe('backstage playbook details', () => {
 
                 it('allows adding users when enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -323,7 +323,7 @@ describe('backstage playbook details', () => {
 
                 it('allows adding new users to an already populated list', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -367,7 +367,7 @@ describe('backstage playbook details', () => {
 
                 it('allows removing users', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -414,7 +414,7 @@ describe('backstage playbook details', () => {
 
                 it('persists the list of users even if the toggle is off', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -452,7 +452,7 @@ describe('backstage playbook details', () => {
                     cy.findByTestId('save_playbook').click();
 
                     // # Navigate again to the playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -511,7 +511,7 @@ describe('backstage playbook details', () => {
                         cy.apiLogin('user-1');
 
                         // # Navigate again to the playbook
-                        cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                        cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();
@@ -523,7 +523,7 @@ describe('backstage playbook details', () => {
                         cy.url().should('not.include', playbookId + '/edit');
 
                         // # Navigate again to the playbook
-                        cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                        cy.visit('/ad-1/playbooks/playbooks/' + playbookId + '/edit');
 
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();
@@ -542,7 +542,7 @@ describe('backstage playbook details', () => {
             describe('assign owner setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -553,7 +553,7 @@ describe('backstage playbook details', () => {
 
                 it('can be enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -572,7 +572,7 @@ describe('backstage playbook details', () => {
 
                 it('does not let add a owner when disabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -588,7 +588,7 @@ describe('backstage playbook details', () => {
 
                 it('allows adding users when enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -616,7 +616,7 @@ describe('backstage playbook details', () => {
 
                 it('allows changing the owner', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -653,7 +653,7 @@ describe('backstage playbook details', () => {
 
                 it('persists the assign owner even if the toggle is off', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -688,7 +688,7 @@ describe('backstage playbook details', () => {
                     cy.findByTestId('save_playbook').click();
 
                     // # Navigate again to the playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -740,7 +740,7 @@ describe('backstage playbook details', () => {
                         cy.apiLogin('user-1');
 
                         // # Navigate again to the playbook
-                        cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                        cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();
@@ -752,7 +752,7 @@ describe('backstage playbook details', () => {
                         cy.url().should('not.include', playbookId + '/edit');
 
                         // # Navigate again to the playbook
-                        cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                        cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();
@@ -776,7 +776,7 @@ describe('backstage playbook details', () => {
             describe('announcement channel setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -787,7 +787,7 @@ describe('backstage playbook details', () => {
 
                 it('can be enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -806,7 +806,7 @@ describe('backstage playbook details', () => {
 
                 it('does not let select a channel when disabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -822,7 +822,7 @@ describe('backstage playbook details', () => {
 
                 it('allows selecting a channel when enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -850,7 +850,7 @@ describe('backstage playbook details', () => {
 
                 it('allows changing the channel', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -887,7 +887,7 @@ describe('backstage playbook details', () => {
 
                 it('persists the channel even if the toggle is off', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -922,7 +922,7 @@ describe('backstage playbook details', () => {
                     cy.findByTestId('save_playbook').click();
 
                     // # Navigate again to the playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -967,7 +967,7 @@ describe('backstage playbook details', () => {
                         cy.apiLogin('user-1');
 
                         // # Navigate again to the playbook
-                        cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                        cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();
@@ -979,7 +979,7 @@ describe('backstage playbook details', () => {
                         cy.url().should('not.include', playbookId + '/edit');
 
                         // # Navigate again to the playbook
-                        cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                        cy.visit(`/ad-1/playbooks/playbooks/${playbookId}/edit`);
 
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();
