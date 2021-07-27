@@ -23,7 +23,7 @@ import (
 
 const (
 	apiVersion = "v0"
-	manifestID = "playbooks"
+	manifestID = "com.mattermost.plugin-incident-management"
 	userAgent  = "go-client/" + apiVersion
 )
 

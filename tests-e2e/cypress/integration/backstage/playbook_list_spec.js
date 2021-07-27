@@ -35,7 +35,7 @@ describe('backstage playbook list', () => {
 
     it('has "Playbooks" and team name in heading', () => {
         // # Open backstage
-        cy.visit('/ad-1/playbooks');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to Playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();

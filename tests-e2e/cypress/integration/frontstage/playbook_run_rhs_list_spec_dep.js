@@ -1268,7 +1268,7 @@ describe('rhs playbook run list', () => {
 
             // * Verify we reached the playbook backstage
             cy.url()
-                .should('include', `/${teamName1}/playbooks/playbooks`);
+                .should('include', `/${teamName1}/com.mattermost.plugin-incident-management/playbooks`);
         });
 
         it('should be able to go to playbook run backstage from three dot menu', () => {
@@ -1293,7 +1293,7 @@ describe('rhs playbook run list', () => {
 
             // * Verify we reached the playbook backstage
             cy.url()
-                .should('include', `/${teamName1}/playbooks/runs`);
+                .should('include', `/${teamName1}/com.mattermost.plugin-incident-management/runs`);
         });
 
         it('should be able to see all playbook runs (runs backstage list)', () => {
@@ -1317,7 +1317,7 @@ describe('rhs playbook run list', () => {
 
             // * Verify we reached the playbook backstage
             cy.url()
-                .should('include', `/${teamName1}/playbooks/runs`);
+                .should('include', `/${teamName1}/com.mattermost.plugin-incident-management/runs`);
         });
     });
 

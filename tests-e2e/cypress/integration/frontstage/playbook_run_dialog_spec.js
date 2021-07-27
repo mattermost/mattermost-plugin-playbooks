@@ -67,7 +67,7 @@ describe('playbook run creation dialog', () => {
             cy.findByText('Click here').click();
 
             // * Verify it's the new playbook page
-            cy.url().should('include', '/playbooks/playbooks/new');
+            cy.url().should('include', '/com.mattermost.plugin-incident-management/playbooks/new');
         });
     });
 

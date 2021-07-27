@@ -31,11 +31,11 @@ describe('playbook creation button', () => {
     });
 
     it('opens playbook creation page with New Playbook button', () => {
-        const url = 'playbooks/playbooks/new';
+        const url = 'com.mattermost.plugin-incident-management/playbooks/new';
         const playbookName = 'Untitled playbook';
 
         // # Open backstage
-        cy.visit('/ad-1/playbooks');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -48,11 +48,11 @@ describe('playbook creation button', () => {
     });
 
     it('opens playbook creation page with "Blank" template option', () => {
-        const url = 'playbooks/playbooks/new';
+        const url = 'com.mattermost.plugin-incident-management/playbooks/new';
         const playbookName = 'Untitled playbook';
 
         // # Open backstage
-        cy.visit('/ad-1/playbooks');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -69,7 +69,7 @@ describe('playbook creation button', () => {
         const playbookName = 'Service Outage Incident';
 
         // # Open backstage
-        cy.visit('/ad-1/playbooks');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -83,7 +83,7 @@ describe('playbook creation button', () => {
 
     it('shows remove beside members when > 1 member', () => {
         // # Open backstage
-        cy.visit('/ad-1/playbooks');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -120,7 +120,7 @@ describe('playbook creation button', () => {
 });
 
 function verifyPlaybookCreationPageOpened(url, playbookName) {
-    // * Verify the page url contains 'playbooks/playbooks/new'
+    // * Verify the page url contains 'com.mattermost.plugin-incident-management/playbooks/new'
     cy.url().should('include', url);
 
     // * Verify the playbook name matches the one provided

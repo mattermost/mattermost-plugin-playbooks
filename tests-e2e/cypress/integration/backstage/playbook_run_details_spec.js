@@ -14,9 +14,9 @@ describe('backstage playbook run details', () => {
 
     it('redirects to not found error if the playbook run is unknown', () => {
         // # Visit the URL of a non-existing playbook run
-        cy.visit('/ad-1/playbooks/runs/an_unknown_id');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management/runs/an_unknown_id');
 
         // * Verify that the user has been redirected to the playbook runs not found error page
-        cy.url().should('include', '/ad-1/playbooks/error?type=playbook_runs');
+        cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-management/error?type=playbook_runs');
     });
 });

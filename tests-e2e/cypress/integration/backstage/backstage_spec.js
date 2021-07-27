@@ -44,7 +44,7 @@ describe('backstage', () => {
 
     // it('opens statistics view by default', () => {
     //     // # Open the backstage
-    //     cy.visit('/ad-1/playbooks/stats');
+    //     cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
 
     //     // * Verify that when backstage loads, the heading is visible and contains "Statistics"
     //     cy.findByTestId('titleStats').should('exist').contains('Statistics');
@@ -52,7 +52,7 @@ describe('backstage', () => {
 
     it('switches to playbooks list view via header button', () => {
         // # Open backstage
-        cy.visit('/ad-1/playbooks');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -63,7 +63,7 @@ describe('backstage', () => {
 
     it('switches to playbook runs list view via header button', () => {
         // # Open backstage
-        cy.visit('/ad-1/playbooks');
+        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();

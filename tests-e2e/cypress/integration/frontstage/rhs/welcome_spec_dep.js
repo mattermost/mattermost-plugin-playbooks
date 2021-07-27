@@ -95,7 +95,7 @@ describe('playbook run rhs > welcome', () => {
             cy.get('#rhsContainer').findByText('Create playbook').click();
 
             // * Verify we reached the playbook backstage
-            cy.url().should('include', `/${newTeamName}/playbooks/playbooks`);
+            cy.url().should('include', `/${newTeamName}/com.mattermost.plugin-incident-management/playbooks`);
         }));
     });
 
@@ -138,7 +138,7 @@ describe('playbook run rhs > welcome', () => {
             cy.get('#rhsContainer').findByText('Create playbook').click();
 
             // * Verify we reached the playbook backstage
-            cy.url().should('include', `/${newTeamName}/playbooks/playbooks`);
+            cy.url().should('include', `/${newTeamName}/com.mattermost.plugin-incident-management/playbooks`);
         });
     });
 });
