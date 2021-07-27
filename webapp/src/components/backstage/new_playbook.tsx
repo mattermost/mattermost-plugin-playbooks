@@ -3,11 +3,11 @@ import {Redirect} from 'react-router-dom';
 
 import {useSelector} from 'react-redux';
 import {Team} from 'mattermost-redux/types/teams';
-import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
-import {useAllowPlaybookCreationInCurrentTeam} from 'src/hooks';
+import {useAllowPlaybookCreationInTeams} from 'src/hooks';
 import {teamPluginUrl} from 'src/browser_routing';
 
 interface Props {
@@ -15,18 +15,13 @@ interface Props {
 }
 
 export const NewPlaybook = (props: Props) => {
-    const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
-    const teams = useSelector<GlobalState, Team[]>(getMyTeams);
+    const allowedTeams = useAllowPlaybookCreationInTeams();
 
-    function getTeam(teamId: string) {
-        return teams.find((team) => team.id === teamId);
-    }
     const searchParams = new URLSearchParams(location.search);
     const teamId = searchParams.get('team_id');
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, teamId || ''));
 
-    const team = teamId ? getTeam(teamId) : null;
-
-    if (!allowPlaybookCreation) {
+    if (teamId && !allowedTeams.get(teamId)) {
         return <Redirect to={teamPluginUrl(team ? team.name : props.currentTeam.name, '/playbooks')}/>;
     }
 

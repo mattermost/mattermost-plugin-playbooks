@@ -35,7 +35,6 @@ import CreatePlaybookTeamSelector from 'src/components/team/create_playbook_team
 
 import {TeamName, getTeamName} from 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list';
 import {
-    useAllowPlaybookCreationInCurrentTeam,
     useAllowPlaybookCreationInTeams,
     useCanCreatePlaybooks,
     usePlaybooksCrud,
@@ -163,7 +162,7 @@ const PlaybookList = () => {
                 (playbooks?.length === 0) &&
                 <>
                     <NoContentPage
-                        onNewPlaybook={(team: Team) => newPlaybook(team)}
+                        onNewPlaybook={newPlaybook}
                         canCreatePlaybooks={canCreatePlaybooks}
                         teams={teams}
                         allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
