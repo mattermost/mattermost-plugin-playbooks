@@ -26,7 +26,17 @@ const RHSParticipants = (props: Props) => {
     }
 
     return (
-        <UserRow onClick={openMembersModal}>
+        <UserRow
+            tabIndex={0}
+            role={'button'}
+            onClick={openMembersModal}
+            onKeyDown={(e) => {
+                // Handle Enter and Space as clicking on the button
+                if (e.keyCode === 13 || e.keyCode === 32) {
+                    openMembersModal();
+                }
+            }}
+        >
             {props.userIds.slice(0, 6).map((userId: string) => (
                 <RHSParticipant
                     key={userId}
@@ -81,7 +91,11 @@ const AddParticipants = () => {
 
     return (
         <a
-            onClick={() => {
+            href={'#'}
+            tabIndex={0}
+            role={'button'}
+            onClick={(e) => {
+                e.preventDefault();
                 dispatch(openModal({
                     modalId: ModalIdentifiers.CHANNEL_INVITE,
                     dialogType: ChannelInviteModal,

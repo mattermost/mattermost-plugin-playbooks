@@ -26,21 +26,16 @@ const RHSAbout = (props: Props) => {
     const profilesInChannel = useProfilesInCurrentChannel();
 
     const [collapsed, setCollapsed] = useState(false);
-    const [hovered, setHovered] = useState(false);
 
     const toggleCollapsed = () => setCollapsed(!collapsed);
 
     if (collapsed) {
         return (
-            <Container
-                onMouseEnter={() => setHovered(true)}
-                onMouseLeave={() => setHovered(false)}
-            >
-                {hovered &&
+            <Container tabIndex={0} >
                 <Buttons
                     collapsed={collapsed}
                     toggleCollapsed={toggleCollapsed}
-                />}
+                />
                 <Title>
                     {props.playbookRun.name}
                 </Title>
@@ -54,7 +49,18 @@ const RHSAbout = (props: Props) => {
         description = (
             <NoDescription>
                 {'No description yet. '}
-                <a onClick={() => dispatch(updateStatus())}>{'Click here'}</a>
+                <a
+                    href={'#'}
+                    tabIndex={0}
+                    role={'button'}
+                    onClick={() => dispatch(updateStatus())}
+                    onKeyDown={(e) => {
+                        // Handle Enter and Space as clicking on the button
+                        if (e.keyCode === 13 || e.keyCode === 32) {
+                            dispatch(updateStatus());
+                        }
+                    }}
+                >{'Click here'}</a>
                 {' to update status.'}
             </NoDescription>
         );
@@ -80,15 +86,11 @@ const RHSAbout = (props: Props) => {
         .map((p) => p.id);
 
     return (
-        <Container
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-        >
-            {hovered &&
+        <Container tabIndex={0} >
             <Buttons
                 collapsed={collapsed}
                 toggleCollapsed={toggleCollapsed}
-            /> }
+            />
             <Title>
                 {props.playbookRun.name}
             </Title>
@@ -119,6 +121,15 @@ const RHSAbout = (props: Props) => {
     );
 };
 
+const Container = styled.div`
+    margin-top: 3px;
+    padding: 16px 12px;
+
+    :hover, :focus-within {
+        background-color: rgba(var(--center-channel-color-rgb), 0.04);
+    }
+`;
+
 const StyledProfileSelector = styled(ProfileSelector)`
     margin-top: 8px;
 
@@ -141,7 +152,15 @@ const Buttons = ({collapsed, toggleCollapsed} : ButtonsProps) => {
             <HoverMenuButton
                 title={collapsed ? 'Expand' : 'Collapse'}
                 className={(collapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
+                tabIndex={0}
+                role={'button'}
                 onClick={toggleCollapsed}
+                onKeyDown={(e) => {
+                    // Handle Enter and Space as clicking on the button
+                    if (e.keyCode === 13 || e.keyCode === 32) {
+                        toggleCollapsed();
+                    }
+                }}
             />
         </ButtonsRow>
     );
@@ -150,6 +169,12 @@ const Buttons = ({collapsed, toggleCollapsed} : ButtonsProps) => {
 const ButtonsRow = styled(HoverMenu)`
     top: 9px;
     right: 12px;
+
+    display: none;
+
+    ${Container}:focus-within &, ${Container}:hover & {
+        display: block;
+    }
 `;
 
 const PaddedContent = styled.div`
@@ -209,15 +234,6 @@ const MemberSectionTitle = styled.div`
 const NoDescription = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
     margin-bottom: 10px;
-`;
-
-const Container = styled.div`
-    margin-top: 3px;
-    padding: 16px 12px;
-
-    :hover {
-        background-color: rgba(var(--center-channel-color-rgb), 0.04);
-    }
 `;
 
 export default RHSAbout;
