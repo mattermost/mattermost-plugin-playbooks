@@ -41,7 +41,7 @@ describe('playbook creation button', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'New Playbook' button
-        cy.findByText('Create playbook').should('be.visible').click({force: true}).wait(TIMEOUTS.TINY);
+        cy.findByText('Create playbook').click();
 
         // #  Select team
         cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
@@ -100,7 +100,7 @@ describe('playbook creation button', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'Create playbook' button
-        cy.findByText('Create playbook').should('be.visible').click({force: true}).wait(TIMEOUTS.TINY);
+        cy.findByText('Create playbook').click();
 
         // #  Select team
         cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
