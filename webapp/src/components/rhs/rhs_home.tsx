@@ -38,12 +38,12 @@ import {RHSHomePlaybook, RHSHomeTemplate} from 'src/components/rhs/rhs_home_item
 import BoxOpenSvg from 'src/components/assets/box_open_svg';
 import PageRunSvg from 'src/components/assets/page_run_svg';
 import PageRunCollaborationSvg from 'src/components/assets/page_run_collaboration_svg';
-import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton, UpgradeButton, UpgradeButtonProps} from 'src/components/assets/buttons';
 
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
-import {UpgradeOrPrimaryButton, useUpgradeModalVisibility} from 'src/components/backstage/playbook_list';
+import {useUpgradeModalVisibility} from 'src/components/backstage/playbook_list';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 const Header = styled.div`
@@ -360,3 +360,15 @@ const RHSHome = () => {
 };
 
 export default RHSHome;
+
+type CreatePlaybookButtonProps = UpgradeButtonProps & {allowPlaybookCreation: boolean};
+
+const UpgradeOrPrimaryButton = (props: CreatePlaybookButtonProps) => {
+    const {children, allowPlaybookCreation, ...rest} = props;
+
+    if (allowPlaybookCreation) {
+        return <PrimaryButton {...rest}>{children}</PrimaryButton>;
+    }
+
+    return <UpgradeButton {...rest}>{children}</UpgradeButton>;
+};
