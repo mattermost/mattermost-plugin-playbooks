@@ -15,6 +15,7 @@ import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import TemplateSelector, {PresetTemplate} from 'src/components/backstage/template_selector';
+import {telemetryEventForTemplate} from 'src/client';
 
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import './playbook.scss';
@@ -147,6 +148,7 @@ const PlaybookList = () => {
             {canCreatePlaybooks &&
                 <TemplateSelector
                     onSelect={(template: PresetTemplate) => {
+                        telemetryEventForTemplate(template.title, 'click_template_icon');
                         create(template.title);
                     }}
                 />
