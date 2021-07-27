@@ -75,7 +75,6 @@ export const SubtlePrimaryButton = styled(Button)`
 `;
 
 export const TertiaryButton = styled.button`
-    background: transparent;
     display: inline-flex;
     align-items: center;
     height: 40px;
@@ -88,8 +87,10 @@ export const TertiaryButton = styled.button`
     padding: 0 20px;
     transition: all 0.15s ease-out;
 
+    background: rgba(var(--button-bg-rgb), 0.08);
+
     &:hover:enabled {
-        background: rgba(var(--button-bg-rgb), 0.08);
+        background: rgba(var(--button-bg-rgb), 0.12);
     }
 
     &:active  {
@@ -97,7 +98,7 @@ export const TertiaryButton = styled.button`
     }
 
     &:disabled {
-        color: rgba(var(--center-channel-color-rgb), 0.32);
+        color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     i {
