@@ -74,10 +74,10 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	update.AddNamedStaticListArgument("next-status",
 		"The default status for the update dialog.",
 		false, []model.AutocompleteListItem{
-			{"Reported", "", ""},
-			{"Active", "", ""},
-			{"Resolved", "", ""},
-			{"Archived", "", ""}})
+			{Item: "Reported", Hint: "", HelpText: ""},
+			{Item: "Active", Hint: "", HelpText: ""},
+			{Item: "Resolved", Hint: "", HelpText: ""},
+			{Item: "Archived", Hint: "", HelpText: ""}})
 	command.AddCommand(update)
 
 	restart := model.NewAutocompleteData("restart", "",
