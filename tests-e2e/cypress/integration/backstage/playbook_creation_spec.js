@@ -6,8 +6,6 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import * as TIMEOUTS from '../../fixtures/timeouts';
-
 describe('playbook creation button', () => {
     before(() => {
         // # Login as user-1
@@ -30,9 +28,6 @@ describe('playbook creation button', () => {
 
         // # Login as user-1
         cy.apiLogin('user-1');
-
-        // # Navigate to the application
-        cy.visit('/ad-1/');
     });
 
     it('opens playbook creation page with New Playbook button', () => {
@@ -66,7 +61,7 @@ describe('playbook creation button', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'Blank'
-        cy.findByText('Blank').should('be.visible').click().wait(TIMEOUTS.TINY);
+        cy.findByText('Blank').click();
 
         // #  Select team
         cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
@@ -87,10 +82,7 @@ describe('playbook creation button', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'Service Outage Incident'
-        cy.findByText('Service Outage Incident')
-            .should('be.visible')
-            .click()
-            .wait(TIMEOUTS.TINY);
+        cy.findByText('Service Outage Incident').click();
 
         // #  Select team
         cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
@@ -114,10 +106,10 @@ describe('playbook creation button', () => {
         cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
 
         // # Click 'Permissions' tab
-        cy.findByText('Permissions').should('be.visible').click().wait(TIMEOUTS.TINY);
+        cy.findByText('Permissions').click();
 
         // # Click 'only selected users can access'
-        cy.get('input[name="enabled"][value="enabled"]').should('be.visible').click().wait(TIMEOUTS.TINY);
+        cy.get('input[name="enabled"][value="enabled"]').click();
 
         // * Verify that there is no Remove link when there is one member
         cy.findAllByTestId('user-line').should('have.length', 1);
@@ -146,7 +138,7 @@ function verifyPlaybookCreationPageOpened(url, playbookName) {
     cy.url().should('include', url);
 
     // * Verify the playbook name matches the one provided
-    cy.get('#playbook-name').scrollIntoView().should('be.visible').within(() => {
+    cy.get('#playbook-name').within(() => {
         cy.findByText(playbookName).should('be.visible');
     });
 
