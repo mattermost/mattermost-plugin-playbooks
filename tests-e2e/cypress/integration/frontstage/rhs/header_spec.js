@@ -58,9 +58,7 @@ describe('playbook run rhs > header', () => {
             cy.visit('/ad-1/channels/' + playbookRunChannelName);
 
             // * Verify the title is displayed
-            cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains(playbookRunName);
-            });
+            cy.get('#rhsContainer').contains(playbookRunName);
         });
 
         it('of renamed playbook run', () => {
@@ -79,9 +77,7 @@ describe('playbook run rhs > header', () => {
             cy.visit('/ad-1/channels/' + playbookRunChannelName);
 
             // * Verify the existing title is displayed
-            cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains(playbookRunName);
-            });
+            cy.get('#rhsContainer').contains(playbookRunName);
 
             cy.apiGetChannelByName('ad-1', playbookRunChannelName).then(({channel}) => {
                 // # Rename the channel
@@ -92,115 +88,7 @@ describe('playbook run rhs > header', () => {
             });
 
             // * Verify the updated title is displayed
-            cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Updated');
-            });
-        });
-    });
-
-    describe('shows status', () => {
-        it('when ongoing', () => {
-            // # Run the playbook
-            const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
-            const playbookRunChannelName = 'playbook-run-' + now;
-            cy.apiRunPlaybook({
-                teamId,
-                playbookId,
-                playbookRunName,
-                ownerUserId: userId,
-            });
-
-            // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
-
-            // * Verify the title shows "Reported"
-            cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Reported');
-            });
-        });
-
-        it('when Resolved', () => {
-            // # Run the playbook
-            const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
-            const playbookRunChannelName = 'playbook-run-' + now;
-            cy.apiRunPlaybook({
-                teamId,
-                playbookId,
-                playbookRunName,
-                ownerUserId: userId,
-            }).then((playbookRun) => {
-                // # End the playbook run
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId,
-                    teamId,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Resolved',
-                });
-            });
-
-            // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
-
-            // * Verify the title shows "Resolved"
-            cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Resolved');
-            });
-        });
-
-        it('when Archived', () => {
-            // # Run the playbook
-            const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
-            const playbookRunChannelName = 'playbook-run-' + now;
-            cy.apiRunPlaybook({
-                teamId,
-                playbookId,
-                playbookRunName,
-                ownerUserId: userId,
-            }).then((playbookRun) => {
-                // # End the playbook run
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId,
-                    teamId,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Archived',
-                });
-            });
-
-            // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
-
-            // * Verify the title shows "Archived"
-            cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Archived');
-            });
-        });
-
-        it('for a playbook run with a long title name', () => {
-            // # Run the playbook
-            const now = Date.now();
-            const playbookRunName = 'Playbook run with a really long name (' + now + ')';
-            const playbookRunChannelName = 'playbook-run-with-a-really-long-name-' + now;
-            cy.apiRunPlaybook({
-                teamId,
-                playbookId,
-                playbookRunName,
-                ownerUserId: userId,
-            });
-
-            // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
-
-            // * Verify the title shows "Ongoing"
-            cy.get('#rhsContainer').within(() => {
-                cy.get('.sidebar--right__title').contains('Reported');
-            });
+            cy.get('#rhsContainer').contains(playbookRunName);
         });
     });
 });

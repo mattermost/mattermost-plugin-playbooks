@@ -6,12 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	mock_poster "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
 
 	"github.com/golang/mock/gomock"
-	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
+	icClient "github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	mock_config "github.com/mattermost/mattermost-plugin-playbooks/server/config/mocks"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

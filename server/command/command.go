@@ -9,10 +9,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/timeutils"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -20,7 +20,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
-const helpText = "###### Mattermost Incident Collaboration Plugin - Slash Command Help\n" +
+const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	"* `/playbook start` - Run a playbook. \n" +
 	"* `/playbook end` - Close the playbook run in this channel. \n" +
 	"* `/playbook update` - Provide a status update. \n" +
@@ -50,7 +50,7 @@ func getCommand(addTestCommands bool) *model.Command {
 	return &model.Command{
 		Trigger:          "playbook",
 		DisplayName:      "Playbook",
-		Description:      "Incident Collaboration Plugin",
+		Description:      "Playbooks",
 		AutoComplete:     true,
 		AutoCompleteDesc: "Available commands: start, end, update, restart, check, list, owner, info",
 		AutoCompleteHint: "[command]",
@@ -1488,7 +1488,7 @@ var dummyListPlaybooks = []app.Playbook{
 		},
 	},
 	{
-		Title:       "Incident Collaboration Playbook",
+		Title:       "Playbooks Playbook",
 		Description: "Sample playbook",
 		Checklists: []app.Checklist{
 			{

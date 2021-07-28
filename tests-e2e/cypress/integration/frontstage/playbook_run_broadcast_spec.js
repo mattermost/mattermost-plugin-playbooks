@@ -95,11 +95,6 @@ describe('playbook run broadcast', () => {
         const updateMessage = 'Update - ' + now;
         cy.updateStatus(updateMessage, 0, 'Active');
 
-        // * Verify that the RHS shows the status update
-        cy.get('div[class^=UpdateSection-]').within(() => {
-            cy.findByText(updateMessage).should('exist');
-        });
-
         // # Navigate to the broadcast channel
         cy.visit(`/ad-1/channels/${publicBroadcastChannelName}`);
 
@@ -129,11 +124,6 @@ describe('playbook run broadcast', () => {
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
         cy.updateStatus(updateMessage, 0, 'Active');
-
-        // * Verify that the RHS shows the status update
-        cy.get('div[class^=UpdateSection-]').within(() => {
-            cy.findByText(updateMessage).should('exist');
-        });
 
         // # Navigate to the broadcast channel
         cy.visit('/ad-1/channels/' + privateBroadcastChannelName);

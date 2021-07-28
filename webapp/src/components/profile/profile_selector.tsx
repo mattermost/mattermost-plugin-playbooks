@@ -44,6 +44,7 @@ interface Props {
     onSelectedChange?: (userId?: string) => void;
     customControlProps?: any;
     showOnRight?: boolean;
+    className?: string;
 }
 
 export default function ProfileSelector(props: Props) {
@@ -211,6 +212,7 @@ export default function ProfileSelector(props: Props) {
         <div
             data-testid={props.testId}
             ref={ref}
+            className={props.className}
         >
             {target}
         </div>

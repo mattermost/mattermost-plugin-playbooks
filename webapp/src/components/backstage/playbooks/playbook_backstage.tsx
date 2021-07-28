@@ -8,12 +8,19 @@ import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
+import Icon from '@mdi/react';
+import {mdiClipboardPlayOutline} from '@mdi/js';
+
+const RightMarginedIcon = styled(Icon)`
+    margin-right: 0.5rem;
+`;
+
 import {DefaultFetchPlaybookRunsParamsTime} from 'src/types/playbook_run';
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
 import {clientFetchPlaybook, fetchPlaybookStats, telemetryEventForPlaybook} from 'src/client';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
-import {Playbook} from 'src/types/playbook';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 import PlaybookRunList
     from 'src/components/backstage/playbooks/playbook_run_list/playbook_run_list';
 import {EmptyPlaybookStats} from 'src/types/stats';
@@ -37,7 +44,7 @@ const PlaybookBackstage = () => {
     const match = useRouteMatch<MatchParams>();
     const location = useLocation();
     const currentTeam = useSelector(getCurrentTeam);
-    const [playbook, setPlaybook] = useState<Playbook | null>(null);
+    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const [fetchParamsTime, setFetchParamsTime] = useState(DefaultFetchPlaybookRunsParamsTime);
     const [filterPill, setFilterPill] = useState<JSX.Element | null>(null);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
@@ -49,7 +56,7 @@ const PlaybookBackstage = () => {
             if (playbookId) {
                 try {
                     const fetchedPlaybook = await clientFetchPlaybook(playbookId);
-                    setPlaybook(fetchedPlaybook);
+                    setPlaybook(fetchedPlaybook!);
                     setFetchingState(FetchingStateType.fetched);
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
@@ -60,8 +67,13 @@ const PlaybookBackstage = () => {
         const fetchStats = async () => {
             const playbookId = match.params.playbookId;
             if (playbookId) {
-                const ret = await fetchPlaybookStats(playbookId);
-                setStats(ret);
+                try {
+                    const ret = await fetchPlaybookStats(playbookId);
+                    setStats(ret);
+                } catch {
+                    // Ignore any errors here. If it fails, it's most likely also failed to fetch
+                    // the playbook above.
+                }
             }
         };
 
@@ -124,7 +136,10 @@ const PlaybookBackstage = () => {
                         {'Edit'}
                     </SecondaryButtonLargerRight>
                     <PrimaryButtonLarger onClick={runPlaybook}>
-                        <ClipboardsPlaySmall/>
+                        <RightMarginedIcon
+                            path={mdiClipboardPlayOutline}
+                            size={1.25}
+                        />
                         {'Run'}
                     </PrimaryButtonLarger>
                 </TitleRow>
