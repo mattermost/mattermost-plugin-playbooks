@@ -7,7 +7,7 @@ import {useSelector} from 'react-redux';
 
 import styled from 'styled-components';
 import Icon from '@mdi/react';
-import {mdiThumbsUpDown} from '@mdi/js';
+import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -106,7 +106,11 @@ const Backstage = () => {
                         data-testid='playbookRunsLHSButton'
                     >
                         <span className='mr-3 d-flex items-center'>
-                            <IncidentIcon/>
+                            <Icon
+                                path={mdiClipboardPlayMultipleOutline}
+                                title='Runs'
+                                size={1.4}
+                            />
                         </span>
                         {'Runs'}
                     </BackstageTitlebarItem>

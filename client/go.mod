@@ -1,4 +1,4 @@
-module github.com/mattermost/mattermost-plugin-incident-collaboration/client
+module github.com/mattermost/mattermost-plugin-playbooks/client
 
 go 1.15
 
