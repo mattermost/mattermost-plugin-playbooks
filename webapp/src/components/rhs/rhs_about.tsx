@@ -88,7 +88,7 @@ const RHSAbout = (props: Props) => {
                     {description}
                 </Description>
                 <Row>
-                    <MemberSection>
+                    <OwnerSection>
                         <MemberSectionTitle>{'Owner'}</MemberSectionTitle>
                         <StyledProfileSelector
                             selectedUserId={props.playbookRun.owner_user_id}
@@ -100,11 +100,11 @@ const RHSAbout = (props: Props) => {
                             onSelectedChange={onSelectedProfileChange}
                             selfIsFirstOption={true}
                         />
-                    </MemberSection>
-                    <MemberSection>
+                    </OwnerSection>
+                    <ParticipantsSection>
                         <MemberSectionTitle>{'Participants'}</MemberSectionTitle>
                         <RHSParticipants userIds={participantsIds}/>
-                    </MemberSection>
+                    </ParticipantsSection>
                 </Row>
             </>
             }
@@ -130,13 +130,20 @@ const StyledProfileSelector = styled(ProfileSelector)`
     margin-top: 8px;
 
     .Assigned-button {
+        max-width: 100%;
+        height: 28px;
         padding: 2px;
         margin-top: 0;
         background: var(--center-channel-color-08);
-        color: var(--center-channel-color-72);
+        color: var(--center-channel-color);
 
         :hover {
             background: rgba(var(--center-channel-color-rgb), 0.16);
+        }
+
+        .image {
+            width: 24px;
+            height: 24px;
         }
     }
 `;
@@ -196,6 +203,13 @@ const MemberSection = styled.div`
     :not(:first-child) {
         margin-left: 36px;
     }
+`;
+
+const OwnerSection = styled(MemberSection)`
+    max-width: calc(100% - 205px);
+`;
+
+const ParticipantsSection = styled(MemberSection)`
 `;
 
 const MemberSectionTitle = styled.div`
