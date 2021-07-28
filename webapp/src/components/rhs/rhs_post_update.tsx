@@ -44,7 +44,7 @@ const RHSPostUpdate = (props: Props) => {
 
     return (
         <PostUpdate collapsed={props.collapsed}>
-            {props.updatesExist &&
+            {(props.updatesExist || isNextUpdateScheduled) &&
             <>
                 <Timer>
                     <IconWrapper collapsed={props.collapsed}>
