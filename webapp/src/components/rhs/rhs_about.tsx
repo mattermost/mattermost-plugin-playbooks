@@ -138,6 +138,10 @@ const StyledProfileSelector = styled(ProfileSelector)`
         margin-top: 0;
         background: var(--center-channel-color-08);
         color: var(--center-channel-color-72);
+
+        :hover {
+            background: rgba(var(--center-channel-color-rgb), 0.16);
+        }
     }
 `;
 
