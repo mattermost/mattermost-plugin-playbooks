@@ -8,6 +8,8 @@ import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
 interface DotMenuButtonProps {
     right?: boolean;
+    active?: boolean;
+    buttonSize?: string;
 }
 
 const DotMenuButton = styled.div<DotMenuButtonProps>`
@@ -16,8 +18,8 @@ const DotMenuButton = styled.div<DotMenuButtonProps>`
     background: transparent;
     border: none;
     border-radius: 4px;
-    width: 3.2rem;
-    height: 3.2rem;
+    width: ${(props) => (props.buttonSize || '3.2rem')};
+    height: ${(props) => (props.buttonSize || '3.2rem')};
     fill: var(--center-channel-color-56);
     color: var(--center-channel-color-56);
     cursor: pointer;
@@ -30,6 +32,15 @@ const DotMenuButton = styled.div<DotMenuButtonProps>`
     ${(props) => (props.right && css`
         margin: 0 16px 0 auto;
     `)}
+
+    ${(props) => (props.active && css`
+        &, &:hover {
+            background: rgba(var(--button-bg-rgb), 0.08);
+            color: var(--button-bg);
+        }
+    `)}
+
+
 `;
 
 const DropdownMenuWrapper = styled.div`
@@ -83,6 +94,8 @@ interface DotMenuProps {
     left?: boolean;
     wide?: boolean;
     buttonRight?: boolean;
+    activeState?: boolean;
+    buttonSize?: string;
 }
 
 const DotMenu = (props: DotMenuProps) => {
@@ -108,6 +121,8 @@ const DotMenu = (props: DotMenuProps) => {
                 toggleOpen();
             }}
             right={props.buttonRight}
+            active={props.activeState && isOpen}
+            buttonSize={props.buttonSize}
         >
             {props.icon}
             <DropdownMenuWrapper>
