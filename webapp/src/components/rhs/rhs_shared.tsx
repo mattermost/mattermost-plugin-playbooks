@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {forwardRef, HTMLAttributes, Ref} from 'react';
 import styled, {css} from 'styled-components';
 
 import Profile from 'src/components/profile/profile';
@@ -112,7 +112,22 @@ export const HoverMenu = styled.div`
     z-index: 2;
 `;
 
-export const HoverMenuButton = styled.i`
+type IconButtonProps = {iconClassName: string} & HTMLAttributes<HTMLButtonElement>;
+
+const IconButton = forwardRef((
+    {iconClassName, ...attrs}: IconButtonProps,
+    ref: Ref<HTMLButtonElement>,
+) => (
+    <button
+        ref={ref}
+        {...attrs}
+        className={'btn-icon ' + attrs.className}
+    >
+        <i className={iconClassName}/>
+    </button>
+));
+
+export const HoverMenuButton = styled(IconButton)`
     display: inline-block;
     cursor: pointer;
     width: 28px;

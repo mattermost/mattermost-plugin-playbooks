@@ -32,6 +32,8 @@ import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 
+import {visuallyHidden} from 'src/styles';
+
 import CommandInput from './command_input';
 import GenericModal from './widgets/generic_modal';
 import {BaseInput} from './assets/inputs';
@@ -79,6 +81,14 @@ const ItemContainer = styled.div`
     :first-child {
         padding-top: 0.4rem;
     }
+
+    &:not(.dragging):not(:hover) ${HoverMenu}:not(:focus-within) {
+        ${visuallyHidden}
+    }
+
+    [data-rbd-scroll-container-context-id] & ${HoverMenu} {
+        display: none;
+    }
 `;
 
 const ExtrasRow = styled.div`
@@ -109,7 +119,7 @@ export const CheckboxContainer = styled.div`
     display: flex;
     position: relative;
 
-    button {
+    button:not(.btn-icon) {
         width: 53px;
         height: 29px;
         border: 1px solid #166DE0;
@@ -125,13 +135,13 @@ export const CheckboxContainer = styled.div`
         color: #166DE0;
         cursor: pointer;
         margin-right: 13px;
-    }
 
-    button:disabled {
-        border: 0px;
-        color: var(--button-color);
-        background: var(--center-channel-color-56);
-        cursor: default;
+        &:disabled {
+            border: 0px;
+            color: var(--button-color);
+            background: var(--center-channel-color-56);
+            cursor: default;
+        }
     }
 
     &:hover {
@@ -256,8 +266,7 @@ const StepDescription = (props: StepDescriptionProps): React.ReactElement<StepDe
         <>
             <HoverMenuButton
                 title={'Description'}
-                tabIndex={0}
-                className={'icon-information-outline icon-16 btn-icon'}
+                iconClassName={'icon-information-outline icon-16 btn-icon'}
                 ref={target}
                 onClick={() => setShowTooltip(!showTooltip)}
             />
@@ -326,7 +335,6 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
 
     const [running, setRunning] = useState(false);
     const [lastRun, setLastRun] = useState(props.checklistItem.command_last_run);
-    const [showMenu, setShowMenu] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -369,14 +377,27 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             <ItemContainer
                 ref={props.draggableProvided.innerRef}
                 {...props.draggableProvided.draggableProps}
-                onMouseEnter={() => setShowMenu(true)}
-                onMouseLeave={() => setShowMenu(false)}
                 data-testid='checkbox-item-container'
+                className={props.dragging ? 'dragging' : ''}
             >
                 <CheckboxContainer>
-                    {showMenu &&
+                    <ChecklistItemButton
+                        item={props.checklistItem}
+                        onChange={(item: ChecklistItemState) => {
+                            if (props.onChange) {
+                                props.onChange(item);
+                            }
+                        }}
+                    />
+                    <label title={title}>
+                        <div
+                            onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
+                        >
+                            {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                        </div>
+                    </label>
                     <HoverMenu>
-                        <HoverMenuButton
+                        <i
                             title={'Drag me to reorder'}
                             className={'icon icon-menu'}
                             {...props.draggableProvided.dragHandleProps}
@@ -394,7 +415,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             placeholder={
                                 <HoverMenuButton
                                     title={'Assign'}
-                                    className={'icon-account-plus-outline icon-16 btn-icon'}
+                                    iconClassName={'icon-account-plus-outline icon-16'}
                                 />
                             }
                             enableEdit={true}
@@ -411,35 +432,19 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                         />
                         <HoverMenuButton
                             title={'Edit'}
-                            className={'icon-pencil-outline icon-16 btn-icon'}
+                            iconClassName={'icon-pencil-outline icon-16'}
                             onClick={() => {
                                 setShowEditDialog(true);
                             }}
                         />
                         <HoverMenuButton
                             title={'Delete'}
-                            className={'icon-trash-can-outline icon-16 btn-icon'}
+                            iconClassName={'icon-trash-can-outline icon-16'}
                             onClick={() => {
                                 setShowDeleteConfirm(true);
                             }}
                         />
                     </HoverMenu>
-                    }
-                    <ChecklistItemButton
-                        item={props.checklistItem}
-                        onChange={(item: ChecklistItemState) => {
-                            if (props.onChange) {
-                                props.onChange(item);
-                            }
-                        }}
-                    />
-                    <label title={title}>
-                        <div
-                            onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
-                        >
-                            {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
-                        </div>
-                    </label>
                 </CheckboxContainer>
                 <ExtrasRow>
                     {props.checklistItem.assignee_id &&

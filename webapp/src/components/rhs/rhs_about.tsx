@@ -17,6 +17,8 @@ import {updateStatus} from 'src/actions';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
+import {visuallyHidden} from 'src/styles';
+
 interface Props {
     playbookRun: PlaybookRun;
 }
@@ -53,11 +55,14 @@ const RHSAbout = (props: Props) => {
                     href={'#'}
                     tabIndex={0}
                     role={'button'}
-                    onClick={() => dispatch(updateStatus())}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        dispatch(updateStatus());
+                    }}
                     onKeyDown={(e) => {
                         // Handle Enter and Space as clicking on the button
-                        if (e.keyCode === 13 || e.keyCode === 32) {
-                            dispatch(updateStatus());
+                        if (e.keyCode === 32) {
+                            e.currentTarget.click();
                         }
                     }}
                 >{'Click here'}</a>
@@ -86,7 +91,7 @@ const RHSAbout = (props: Props) => {
         .map((p) => p.id);
 
     return (
-        <Container tabIndex={0} >
+        <Container>
             <Buttons
                 collapsed={collapsed}
                 toggleCollapsed={toggleCollapsed}
@@ -155,16 +160,8 @@ const Buttons = ({collapsed, toggleCollapsed} : ButtonsProps) => {
         <ButtonsRow>
             <HoverMenuButton
                 title={collapsed ? 'Expand' : 'Collapse'}
-                className={(collapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
-                tabIndex={0}
-                role={'button'}
+                iconClassName={(collapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
                 onClick={toggleCollapsed}
-                onKeyDown={(e) => {
-                    // Handle Enter and Space as clicking on the button
-                    if (e.keyCode === 13 || e.keyCode === 32) {
-                        toggleCollapsed();
-                    }
-                }}
             />
         </ButtonsRow>
     );
@@ -174,15 +171,13 @@ const ButtonsRow = styled(HoverMenu)`
     top: 9px;
     right: 12px;
 
-    display: none;
-
-    ${Container}:focus-within &, ${Container}:hover & {
-        display: block;
+    ${Container}:not(:focus-within):not(:hover) &:not(:focus):not(:hover) {
+        ${visuallyHidden}
     }
 `;
 
 const PaddedContent = styled.div`
-    padding: 0 8px; 
+    padding: 0 8px;
 `;
 
 const Title = styled(PaddedContent)`
