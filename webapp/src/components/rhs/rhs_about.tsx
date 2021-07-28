@@ -1,13 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useState, useRef} from 'react';
 import styled from 'styled-components';
 import {useDispatch} from 'react-redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
-import {setOwner} from 'src/client';
+import {setOwner, changeChannelName} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 import {useProfilesInCurrentChannel} from 'src/hooks';
@@ -16,6 +16,7 @@ import {updateStatus} from 'src/actions';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import {HoverMenu} from 'src/components/rhs/rhs_shared';
 import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';
+import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -70,6 +71,10 @@ const RHSAbout = (props: Props) => {
         .filter((p) => p.id !== props.playbookRun.owner_user_id && !p.is_bot)
         .map((p) => p.id);
 
+    const onTitleEdit = async (value: string) => {
+        changeChannelName(props.playbookRun.channel_id, value);
+    };
+
     return (
         <Container tabIndex={0} >
             <ButtonsRow>
@@ -79,9 +84,10 @@ const RHSAbout = (props: Props) => {
                     toggleCollapsed={toggleCollapsed}
                 />
             </ButtonsRow>
-            <Title>
-                {props.playbookRun.name}
-            </Title>
+            <Title
+                value={props.playbookRun.name}
+                onEdit={onTitleEdit}
+            />
             {!collapsed &&
             <>
                 <Description>
@@ -163,7 +169,66 @@ const PaddedContent = styled.div`
     padding: 0 8px; 
 `;
 
-const Title = styled(PaddedContent)`
+interface TitleProps {
+    onEdit: (newTitle: string) => void;
+    value: string;
+}
+
+const Title = (props: TitleProps) => {
+    const [editing, setEditing] = useState(false);
+    const [editedValue, setEditedValue] = useState(props.value);
+
+    const inputRef = useRef(null);
+
+    const saveAndClose = () => {
+        props.onEdit(editedValue);
+        setEditing(false);
+    };
+
+    useClickOutsideRef(inputRef, saveAndClose);
+    useKeyPress('Enter', saveAndClose);
+
+    if (!editing) {
+        return (
+            <RenderedTitle onClick={() => setEditing(true)}>
+                {editedValue}
+            </RenderedTitle>
+        );
+    }
+
+    return (
+        <TitleInput
+            type={'text'}
+            ref={inputRef}
+            onChange={(e) => setEditedValue(e.target.value)}
+            value={editedValue}
+        />
+    );
+};
+
+const TitleInput = styled.input`
+    width: 100%;
+    height: 30px;
+    padding: 4px 8px;
+    margin-bottom: 2px;
+
+    border: none;
+    border-radius: 5px;
+    box-shadow: none;
+
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+
+    &:focus {
+        box-shadow: none;
+    }
+
+    color: var(--center-channel-color);
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 600;
+`;
+
+const RenderedTitle = styled(PaddedContent)`
     height: 30px;
     line-height: 24px;
 
