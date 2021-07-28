@@ -6,6 +6,7 @@ import {
     useState,
 } from 'react';
 import {useDispatch, useSelector} from 'react-redux';
+import moment from 'moment';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
 import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
@@ -404,4 +405,21 @@ export function useFormattedUsernameByID(userId: string) {
     );
 
     return useFormattedUsername(user);
+}
+
+export function useNow(refreshIntervalMillis = 1000) {
+    const [now, setNow] = useState(moment());
+
+    useEffect(() => {
+        const tick = () => {
+            setNow(moment());
+        };
+        const timerId = setInterval(tick, refreshIntervalMillis);
+
+        return () => {
+            clearInterval(timerId);
+        };
+    }, [refreshIntervalMillis]);
+
+    return now;
 }
