@@ -130,6 +130,35 @@ export const SecondaryButton = styled(TertiaryButton)`
     border: 1px solid var(--button-bg);
 `;
 
+export const DestructiveButton = styled.button`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    font-weight: 600;
+    font-size: 14px;
+
+    padding: 0 20px;
+
+    border-radius: 4px;
+    border: 0px;
+
+    background: var(--dnd-indicator);
+    color: var(--button-color);
+
+    :hover:enabled {
+        background: linear-gradient(0deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08)), var(--dnd-indicator);
+    }
+
+    :active, :hover:active {
+        background: linear-gradient(0deg, rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.16)), var(--dnd-indicator);
+    }
+
+    :disabled {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+`;
+
 export type UpgradeButtonProps = React.ComponentProps<typeof PrimaryButton>;
 
 export const UpgradeButton = (props: UpgradeButtonProps) => {
