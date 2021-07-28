@@ -120,7 +120,16 @@ const DotMenu = (props: DotMenuProps) => {
                 e.stopPropagation();
                 toggleOpen();
             }}
+            onKeyDown={(e) => {
+                // Handle Enter and Space as clicking on the button
+                if (e.keyCode === 13 || e.keyCode === 32) {
+                    e.stopPropagation();
+                    toggleOpen();
+                }
+            }}
             right={props.buttonRight}
+            tabIndex={0}
+            role={'button'}
             active={props.activeState && isOpen}
             buttonSize={props.buttonSize}
         >
