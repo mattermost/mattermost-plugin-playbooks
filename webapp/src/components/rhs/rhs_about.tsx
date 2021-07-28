@@ -29,27 +29,6 @@ const RHSAbout = (props: Props) => {
 
     const toggleCollapsed = () => setCollapsed(!collapsed);
 
-    if (collapsed) {
-        return (
-            <Container tabIndex={0}>
-                <ButtonsRow>
-                    <RHSAboutButtons
-                        playbookRun={props.playbookRun}
-                        collapsed={collapsed}
-                        toggleCollapsed={toggleCollapsed}
-                    />
-                </ButtonsRow>
-                <Title>
-                    {props.playbookRun.name}
-                </Title>
-                <RHSPostUpdate
-                    collapsed={collapsed}
-                    playbookRun={props.playbookRun}
-                />
-            </Container>
-        );
-    }
-
     let description = <PostText text={props.playbookRun.description}/>;
     if (props.playbookRun.status_posts.length === 0) {
         description = (
@@ -103,28 +82,32 @@ const RHSAbout = (props: Props) => {
             <Title>
                 {props.playbookRun.name}
             </Title>
-            <Description>
-                {description}
-            </Description>
-            <Row>
-                <MemberSection>
-                    <MemberSectionTitle>{'Owner'}</MemberSectionTitle>
-                    <StyledProfileSelector
-                        selectedUserId={props.playbookRun.owner_user_id}
-                        placeholder={'Assign the owner role'}
-                        placeholderButtonClass={'NoAssignee-button'}
-                        profileButtonClass={'Assigned-button'}
-                        enableEdit={true}
-                        getUsers={fetchUsers}
-                        onSelectedChange={onSelectedProfileChange}
-                        selfIsFirstOption={true}
-                    />
-                </MemberSection>
-                <MemberSection>
-                    <MemberSectionTitle>{'Participants'}</MemberSectionTitle>
-                    <RHSParticipants userIds={participantsIds}/>
-                </MemberSection>
-            </Row>
+            {!collapsed &&
+            <>
+                <Description>
+                    {description}
+                </Description>
+                <Row>
+                    <MemberSection>
+                        <MemberSectionTitle>{'Owner'}</MemberSectionTitle>
+                        <StyledProfileSelector
+                            selectedUserId={props.playbookRun.owner_user_id}
+                            placeholder={'Assign the owner role'}
+                            placeholderButtonClass={'NoAssignee-button'}
+                            profileButtonClass={'Assigned-button'}
+                            enableEdit={true}
+                            getUsers={fetchUsers}
+                            onSelectedChange={onSelectedProfileChange}
+                            selfIsFirstOption={true}
+                        />
+                    </MemberSection>
+                    <MemberSection>
+                        <MemberSectionTitle>{'Participants'}</MemberSectionTitle>
+                        <RHSParticipants userIds={participantsIds}/>
+                    </MemberSection>
+                </Row>
+            </>
+            }
             <RHSPostUpdate
                 collapsed={collapsed}
                 playbookRun={props.playbookRun}
