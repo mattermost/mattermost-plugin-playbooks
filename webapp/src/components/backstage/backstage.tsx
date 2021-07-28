@@ -29,7 +29,7 @@ import {navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 
 import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
-import {useExperimentalFeaturesEnabled} from 'src/hooks';
+import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 
 import SettingsView from './settings';
@@ -85,6 +85,8 @@ const Backstage = () => {
             document.body.classList.remove('app__body');
         };
     }, []);
+
+    useForceDocumentTitle('Playbooks');
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 

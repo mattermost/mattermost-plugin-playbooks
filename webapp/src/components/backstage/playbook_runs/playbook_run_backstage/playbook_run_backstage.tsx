@@ -23,7 +23,7 @@ import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run
 import {clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookRunMetadata} from 'src/client';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
-import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
 
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
@@ -172,6 +172,8 @@ const PlaybookRunBackstage = () => {
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
+
+    useForceDocumentTitle(playbookRun?.name ? (playbookRun.name + ' - Playbooks') : 'Playbooks');
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
