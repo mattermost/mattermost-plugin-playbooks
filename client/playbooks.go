@@ -10,7 +10,7 @@ import (
 )
 
 // PlaybooksService handles communication with the playbook related
-// methods of the Playbook Collaboration API.
+// methods of the Playbook API.
 type PlaybooksService struct {
 	client *Client
 }

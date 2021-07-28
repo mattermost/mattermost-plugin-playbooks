@@ -231,6 +231,9 @@ type PlaybookTelemetry interface {
 
 	// FrontendTelemetryForPlaybook tracks an event originating from the frontend
 	FrontendTelemetryForPlaybook(playbook Playbook, userID, action string)
+
+	// FrontendTelemetryForPlaybookTemplate tracks an event originating from the frontend
+	FrontendTelemetryForPlaybookTemplate(templateName string, userID, action string)
 }
 
 const (

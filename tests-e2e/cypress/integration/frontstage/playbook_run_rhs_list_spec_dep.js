@@ -263,11 +263,8 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
-
-                // * Verify the title shows "Reported"
-                cy.get('.sidebar--right__title').contains('Reported');
             });
 
             // # bring up the playbook run list
@@ -540,11 +537,8 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
-
-                // * Verify the title shows "Reported"
-                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -575,11 +569,8 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
-
-                // * Verify the title shows "Reported"
-                cy.get('.sidebar--right__title').contains('Reported');
 
                 // # Click the back button
                 cy.findByTestId('back-button').should('exist').click();
@@ -595,15 +586,12 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
-
-                // * Verify the title shows "Reported"
-                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
-        it('after going to an playbook run channel, closing rhs, and clicking on LHS of another playbook run channel', () => {
+        it('after going to a playbook run channel, closing rhs, and clicking on LHS of another playbook run channel', () => {
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${teamName1}/channels/town-square`);
 
@@ -642,11 +630,8 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(secondPlaybookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
-
-                // * Verify the title shows "Reported"
-                cy.get('.sidebar--right__title').contains('Reported');
             });
 
             // # Close the RHS
@@ -663,11 +648,8 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
-
-                // * Verify the title shows "Reported"
-                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -760,7 +742,7 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
             });
 
@@ -787,11 +769,8 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
-
-                // * Verify the title shows "Reported"
-                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
 
@@ -822,7 +801,7 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
             });
 
@@ -848,11 +827,8 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
-
-                // * Verify the title shows "Reported"
-                cy.get('.sidebar--right__title').contains('Reported');
             });
         });
     });
@@ -927,11 +903,8 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
-
-                // * Verify the title shows "Reported"
-                cy.get('.sidebar--right__title').contains('Reported');
 
                 // # Click the back button
                 cy.findByTestId('back-button').should('exist').click();
@@ -1221,7 +1194,7 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
             });
 
@@ -1349,7 +1322,7 @@ describe('rhs playbook run list', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByTestId('rhs-title').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
+                    cy.findByText('Run details').should('exist');
                 });
 
                 // # Click the back button
@@ -1417,7 +1390,7 @@ describe('rhs playbook run list', () => {
                     // * Verify the playbook run RHS is open.
                     cy.get('#rhsContainer').should('exist').within(() => {
                         cy.findByTestId('rhs-title').should('exist').within(() => {
-                            cy.findByText(playbookRunName).should('exist');
+                            cy.findByText('Run details').should('exist');
                         });
 
                         // # Click the back button

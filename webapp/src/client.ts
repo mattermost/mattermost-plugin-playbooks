@@ -312,6 +312,13 @@ export async function telemetryEventForPlaybook(playbookID: string, action: stri
     });
 }
 
+export async function telemetryEventForTemplate(templateName: string, action: string) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry/template`, {
+        method: 'POST',
+        body: JSON.stringify({template_name: templateName, action}),
+    });
+}
+
 export async function setGlobalSettings(settings: GlobalSettings) {
     await doFetchWithoutResponse(`${apiUrl}/settings`, {
         method: 'PUT',

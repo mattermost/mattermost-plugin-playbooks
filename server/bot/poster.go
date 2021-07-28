@@ -245,7 +245,7 @@ func (b *Bot) PromptForFeedback(userID string) error {
 	post := &model.Post{
 		ChannelId: channel.Id,
 		UserId:    surveyBot.Id,
-		Message:   "Have feedback about Incident Collaboration?",
+		Message:   "Have feedback about Playbooks?",
 	}
 	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
 		return fmt.Errorf("failed to create post: %w", err)

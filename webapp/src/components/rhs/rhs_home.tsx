@@ -22,6 +22,7 @@ import {
 } from 'src/components/rhs/rhs_shared';
 import {setRHSViewingPlaybookRun} from 'src/actions';
 import {currentPlaybookRun} from 'src/selectors';
+import {telemetryEventForTemplate} from 'src/client';
 
 import {AdminNotificationType} from 'src/constants';
 
@@ -195,6 +196,9 @@ const RHSHome = () => {
     const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
 
     const newPlaybook = (template?: DraftPlaybookWithChecklist) => {
+        if (template) {
+            telemetryEventForTemplate(template.title, 'use_template_option');
+        }
         if (allowPlaybookCreation) {
             create(template?.title);
         } else {
