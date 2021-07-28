@@ -10,7 +10,7 @@ import (
 )
 
 // PlaybookRunService handles communication with the playbook run related
-// methods of the Incident Collaboration API.
+// methods of the Playbooks API.
 type PlaybookRunService struct {
 	client *Client
 }

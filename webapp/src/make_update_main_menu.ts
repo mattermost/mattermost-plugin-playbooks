@@ -26,7 +26,7 @@ export function makeUpdateMainMenu(registry: PluginRegistry, store: Store<Global
         } else if (!mainMenuActionId && show) {
             mainMenuActionId = 'notnull';
             mainMenuActionId = registry.registerMainMenuAction(
-                'Incident Collaboration',
+                'Playbooks',
                 () => {
                     const team = getCurrentTeam(store.getState());
                     navigateToTeamPluginUrl(team.name, '');
