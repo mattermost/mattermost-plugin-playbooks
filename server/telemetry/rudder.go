@@ -317,6 +317,13 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 	}
 }
 
+func playbookTemplateProperties(templateName string, userID string) map[string]interface{} {
+	return map[string]interface{}{
+		"UserActualID": userID,
+		"TemplateName": templateName,
+	}
+}
+
 // CreatePlaybook tracks the creation of a playbook.
 func (t *RudderTelemetry) CreatePlaybook(playbook app.Playbook, userID string) {
 	properties := playbookProperties(playbook, userID)
@@ -341,6 +348,13 @@ func (t *RudderTelemetry) DeletePlaybook(playbook app.Playbook, userID string) {
 // FrontendTelemetryForPlaybook tracks an event originating from the frontend
 func (t *RudderTelemetry) FrontendTelemetryForPlaybook(playbook app.Playbook, userID, action string) {
 	properties := playbookProperties(playbook, userID)
+	properties["Action"] = action
+	t.track(eventFrontend, properties)
+}
+
+// FrontendTelemetryForPlaybookTemplate tracks a playbook template event originating from the frontend
+func (t *RudderTelemetry) FrontendTelemetryForPlaybookTemplate(templateName string, userID, action string) {
+	properties := playbookTemplateProperties(templateName, userID)
 	properties["Action"] = action
 	t.track(eventFrontend, properties)
 }
