@@ -352,6 +352,9 @@ type PlaybookRunService interface {
 	// RemoveReminderPost will remove the reminder in the playbook run channel (if any).
 	RemoveReminderPost(playbookRunID string) error
 
+	// ResetReminderTimer sets the previous reminder timer to 0.
+	ResetReminderTimer(playbookRunID string) error
+
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
 

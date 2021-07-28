@@ -841,6 +841,12 @@ func (h *PlaybookRunHandler) reminderButtonDismiss(w http.ResponseWriter, r *htt
 		return
 	}
 
+	if err = h.playbookRunService.ResetReminderTimer(playbookRunID); err != nil {
+		h.log.Errorf("reminderButtonDismiss: error resetting reminder for channelID: %s; error: %s", requestData.ChannelId, err.Error())
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error resetting reminder", err)
+		return
+	}
+
 	ReturnJSON(w, nil, http.StatusOK)
 }
 
