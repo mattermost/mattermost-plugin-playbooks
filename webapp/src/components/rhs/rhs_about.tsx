@@ -9,13 +9,13 @@ import {PlaybookRun} from 'src/types/playbook_run';
 
 import {setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
-import PostCard from 'src/components/rhs/post_card';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 import {useProfilesInCurrentChannel} from 'src/hooks';
 import PostText from 'src/components/post_text';
 import {updateStatus} from 'src/actions';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
-import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
+import {HoverMenu} from 'src/components/rhs/rhs_shared';
+import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -31,11 +31,14 @@ const RHSAbout = (props: Props) => {
 
     if (collapsed) {
         return (
-            <Container tabIndex={0} >
-                <Buttons
-                    collapsed={collapsed}
-                    toggleCollapsed={toggleCollapsed}
-                />
+            <Container tabIndex={0}>
+                <ButtonsRow>
+                    <RHSAboutButtons
+                        playbookRun={props.playbookRun}
+                        collapsed={collapsed}
+                        toggleCollapsed={toggleCollapsed}
+                    />
+                </ButtonsRow>
                 <Title>
                     {props.playbookRun.name}
                 </Title>
@@ -90,10 +93,13 @@ const RHSAbout = (props: Props) => {
 
     return (
         <Container tabIndex={0} >
-            <Buttons
-                collapsed={collapsed}
-                toggleCollapsed={toggleCollapsed}
-            />
+            <ButtonsRow>
+                <RHSAboutButtons
+                    playbookRun={props.playbookRun}
+                    collapsed={collapsed}
+                    toggleCollapsed={toggleCollapsed}
+                />
+            </ButtonsRow>
             <Title>
                 {props.playbookRun.name}
             </Title>
@@ -150,31 +156,6 @@ const StyledProfileSelector = styled(ProfileSelector)`
         }
     }
 `;
-
-interface ButtonsProps {
-    collapsed: boolean;
-    toggleCollapsed: () => void;
-}
-
-const Buttons = ({collapsed, toggleCollapsed} : ButtonsProps) => {
-    return (
-        <ButtonsRow>
-            <HoverMenuButton
-                title={collapsed ? 'Expand' : 'Collapse'}
-                className={(collapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
-                tabIndex={0}
-                role={'button'}
-                onClick={toggleCollapsed}
-                onKeyDown={(e) => {
-                    // Handle Enter and Space as clicking on the button
-                    if (e.keyCode === 13 || e.keyCode === 32) {
-                        toggleCollapsed();
-                    }
-                }}
-            />
-        </ButtonsRow>
-    );
-};
 
 const ButtonsRow = styled(HoverMenu)`
     top: 9px;
