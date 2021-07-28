@@ -26,9 +26,6 @@ import {pluginId} from 'src/manifest';
 
 import {OVERLAY_DELAY} from 'src/constants';
 
-// @ts-ignore
-const {Link} = window.ReactRouterDom;
-
 const RHSTitle = () => {
     const dispatch = useDispatch();
     const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>(currentPlaybookRun);
@@ -36,6 +33,12 @@ const RHSTitle = () => {
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     if (rhsState === RHSState.ViewingPlaybookRun) {
+        const tooltip = (
+            <Tooltip id={'view-run-overview'}>
+                {'View run overview'}
+            </Tooltip>
+        );
+
         return (
             <RHSTitleContainer>
                 <Button
@@ -44,8 +47,30 @@ const RHSTitle = () => {
                 >
                     <LeftChevron/>
                 </Button>
-                <RHSTitleText data-testid='rhs-title'>{'Run details' || 'Runs'}</RHSTitleText>
-                {playbookRun && <ExternalLinkButton playbookRunID={playbookRun?.id || ''}/> }
+
+                <OverlayTrigger
+                    placement={'top'}
+                    delay={OVERLAY_DELAY}
+                    overlay={tooltip}
+                >
+                    <RHSTitleText
+                        data-testid='rhs-title'
+                        role={'button'}
+                        tabIndex={0}
+                        onClick={() => navigateToUrl(`/${currentTeam.name}/${pluginId}/runs/${playbookRun?.id}`)}
+                        onKeyDown={(e) => {
+                            // Handle Enter and Space as clicking on the button
+                            if (e.keyCode === 13 || e.keyCode === 32) {
+                                navigateToUrl(`/${currentTeam.name}/${pluginId}/runs/${playbookRun?.id}`);
+                            }
+                        }}
+                    >
+                        {'Run details'}
+                        <StyledButtonIcon >
+                            <ExternalLink/>
+                        </StyledButtonIcon>
+                    </RHSTitleText>
+                </OverlayTrigger>
             </RHSTitleContainer>
         );
     }
@@ -57,30 +82,6 @@ const RHSTitle = () => {
     );
 };
 
-const ExternalLinkButton = ({playbookRunID} : {playbookRunID: string}) => {
-    const currentTeam = useSelector(getCurrentTeam);
-
-    const tooltip = (
-        <Tooltip id={'view-run-overview'}>
-            {'View run overview'}
-        </Tooltip>
-    );
-
-    return (
-        <OverlayTrigger
-            placement={'top'}
-            delay={OVERLAY_DELAY}
-            overlay={tooltip}
-        >
-            <StyledButtonIcon
-                onClick={() => navigateToUrl(`/${currentTeam.name}/${pluginId}/runs/${playbookRunID}`)}
-            >
-                <ExternalLink/>
-            </StyledButtonIcon>
-        </OverlayTrigger>
-    );
-};
-
 const RHSTitleContainer = styled.div`
     display: flex;
     justify-content: space-between;
@@ -89,9 +90,29 @@ const RHSTitleContainer = styled.div`
 `;
 
 const RHSTitleText = styled.div`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-right: 8px;
+
+    border-radius: 4px;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        fill: var(--center-channel-color-72);
+    }
+
+    &:active,
+    &--active,
+    &--active:hover {
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
+        fill: var(--button-bg);
+    }
 `;
 
 const Button = styled.button`
@@ -102,9 +123,21 @@ const Button = styled.button`
     align-items: center;
 `;
 
-const StyledButtonIcon = styled(ButtonIcon)`
-    width: 24px;
-    height: 24px;
+const StyledButtonIcon = styled.i`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-left: 4px;
+
+    width: 18px;
+    height: 18px;
+
+    color: rgba(var(--center-channel-color-rgb), 0.48);
+
+    ${RHSTitleText}:hover & {
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
 `;
 
 export default RHSTitle;
