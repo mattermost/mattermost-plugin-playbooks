@@ -145,13 +145,14 @@ const DropdownMenuItemStyled = styled.a`
 }
 `;
 
-export const DropdownMenuItem = (props: { text: string, onClick: () => void }) => {
+export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string }) => {
     return (
         <DropdownMenuItemStyled
             href='#'
             onClick={props.onClick}
+            className={props.className}
         >
-            {props.text}
+            {props.children}
         </DropdownMenuItemStyled>
     );
 };
