@@ -18,6 +18,7 @@ import {useNow} from 'src/hooks';
 interface Props {
     collapsed: boolean;
     playbookRun: PlaybookRun;
+    updatesExist: boolean;
 }
 
 const RHSPostUpdate = (props: Props) => {
@@ -43,30 +44,35 @@ const RHSPostUpdate = (props: Props) => {
 
     return (
         <PostUpdate collapsed={props.collapsed}>
-            <Timer>
-                <IconWrapper collapsed={props.collapsed}>
-                    {isDue ? <Exclamation/> : <Clock/>}
-                </IconWrapper>
-                <UpdateNotice
-                    collapsed={props.collapsed}
-                    isDue={isDue}
-                >
-                    <UpdateNoticePretext>
-                        {pretext}
-                    </UpdateNoticePretext>
-                    <UpdateNoticeTime collapsed={props.collapsed}>
-                        <Timestamp
-                            value={timestamp.toDate()}
-                            units={timespec}
-                            useTime={false}
-                        />
-                    </UpdateNoticeTime>
-                </UpdateNotice>
-            </Timer>
-            <Spacer/>
+            {props.updatesExist &&
+            <>
+                <Timer>
+                    <IconWrapper collapsed={props.collapsed}>
+                        {isDue ? <Exclamation/> : <Clock/>}
+                    </IconWrapper>
+                    <UpdateNotice
+                        collapsed={props.collapsed}
+                        isDue={isDue}
+                    >
+                        <UpdateNoticePretext>
+                            {pretext}
+                        </UpdateNoticePretext>
+                        <UpdateNoticeTime collapsed={props.collapsed}>
+                            <Timestamp
+                                value={timestamp.toDate()}
+                                units={timespec}
+                                useTime={false}
+                            />
+                        </UpdateNoticeTime>
+                    </UpdateNotice>
+                </Timer>
+                <Spacer/>
+            </>
+            }
             <RHSPostUpdateButton
                 collapsed={props.collapsed}
                 isNextUpdateScheduled={isNextUpdateScheduled}
+                updatesExist={props.updatesExist}
                 onClick={() => dispatch(updateStatus())}
                 isDue={isDue}
             />

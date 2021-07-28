@@ -6,19 +6,20 @@ import styled, {css} from 'styled-components';
 
 import {PrimaryButton, TertiaryButton, DestructiveButton} from 'src/components/assets/buttons';
 
-interface ButtonProps {
+interface Props {
     collapsed: boolean;
     isDue: boolean;
     isNextUpdateScheduled: boolean;
+    updatesExist: boolean;
     onClick: () => void;
 }
 
-const RHSPostUpdateButton = (props: ButtonProps) => {
+const RHSPostUpdateButton = (props: Props) => {
     let ButtonComponent = PostUpdatePrimaryButton;
 
     if (props.isDue) {
         ButtonComponent = PostUpdateDestructiveButton;
-    } else if (!props.isNextUpdateScheduled) {
+    } else if (!props.isNextUpdateScheduled && props.updatesExist) {
         ButtonComponent = PostUpdateTertiaryButton;
     }
 

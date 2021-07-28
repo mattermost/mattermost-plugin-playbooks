@@ -111,6 +111,7 @@ const RHSAbout = (props: Props) => {
             <RHSPostUpdate
                 collapsed={collapsed}
                 playbookRun={props.playbookRun}
+                updatesExist={props.playbookRun.status_posts.length !== 0}
             />
         </Container>
     );
