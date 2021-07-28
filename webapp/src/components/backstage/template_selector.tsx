@@ -83,6 +83,7 @@ export const PresetTemplates: PresetTemplate[] = [
                     ],
                 },
             ],
+            num_actions: 2,
             create_public_playbook_run: false,
             message_on_join_enabled: true,
             message_on_join:
@@ -175,6 +176,7 @@ export const PresetTemplates: PresetTemplate[] = [
                     ],
                 },
             ],
+            num_actions: 2,
             create_public_playbook_run: false,
             message_on_join_enabled: true,
             message_on_join:
@@ -244,6 +246,7 @@ export const PresetTemplates: PresetTemplate[] = [
                     ],
                 },
             ],
+            num_actions: 3,
             create_public_playbook_run: false,
             message_on_join_enabled: true,
             message_on_join:
