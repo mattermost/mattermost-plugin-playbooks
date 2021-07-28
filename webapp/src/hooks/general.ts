@@ -1,4 +1,10 @@
-import {MutableRefObject, useCallback, useEffect, useRef, useState} from 'react';
+import {
+    MutableRefObject,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 
 import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
@@ -8,15 +14,21 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {
     getProfilesInCurrentChannel,
-    getCurrentUserId, getUser,
+    getCurrentUserId,
+    getUser,
 } from 'mattermost-redux/selectors/entities/users';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
-import {getProfilesByIds, getProfilesInChannel} from 'mattermost-redux/actions/users';
+import {
+    getProfilesByIds,
+    getProfilesInChannel,
+} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
 import {Post} from 'mattermost-redux/types/posts';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
+import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
+import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
 
@@ -25,8 +37,16 @@ import {getProfileSetForChannel} from 'src/selectors';
 import {clientFetchPlaybooksCount} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
-import {isCloud, isE10LicensedOrDevelopment, isE20LicensedOrDevelopment} from '../license';
-import {currentTeamNumPlaybooks, globalSettings, isCurrentUserAdmin} from '../selectors';
+import {
+    isCloud,
+    isE10LicensedOrDevelopment,
+    isE20LicensedOrDevelopment,
+} from '../license';
+import {
+    currentTeamNumPlaybooks,
+    globalSettings,
+    isCurrentUserAdmin,
+} from '../selectors';
 
 /**
  * Hook that calls handler when targetKey is pressed.
@@ -53,11 +73,18 @@ export function useKeyPress(targetKey: string, handler: () => void) {
 /**
  * Hook that alerts clicks outside of the passed ref.
  */
-export function useClickOutsideRef(ref: MutableRefObject<HTMLElement | null>, handler: () => void) {
+export function useClickOutsideRef(
+    ref: MutableRefObject<HTMLElement | null>,
+    handler: () => void,
+) {
     useEffect(() => {
         function onMouseDown(event: MouseEvent) {
             const target = event.target as any;
-            if (ref.current && target instanceof Node && !ref.current.contains(target)) {
+            if (
+                ref.current &&
+                target instanceof Node &&
+                !ref.current.contains(target)
+            ) {
                 handler();
             }
         }
@@ -93,7 +120,10 @@ export function useTimeout(callback: () => void, delay: number | null) {
     // Set up the timeout:
     useEffect(() => {
         if (typeof delay === 'number') {
-            timeoutRef.current = window.setTimeout(() => callbackRef.current(), delay);
+            timeoutRef.current = window.setTimeout(
+                () => callbackRef.current(),
+                delay,
+            );
 
             // Clear timeout if the component is unmounted or the delay changes:
             return () => window.clearTimeout(timeoutRef.current);
@@ -171,7 +201,8 @@ export function useCanRestrictPlaybookCreation() {
     return settings.playbook_creators_user_ids.includes(currentUserID);
 }
 
-const selectExperimentalFeatures = (state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features);
+const selectExperimentalFeatures = (state: GlobalState) =>
+    Boolean(globalSettings(state)?.enable_experimental_features);
 
 export function useExperimentalFeaturesEnabled() {
     return useSelector(selectExperimentalFeatures);
@@ -179,7 +210,9 @@ export function useExperimentalFeaturesEnabled() {
 
 export function useProfilesInChannel(channelId: string) {
     const dispatch = useDispatch() as DispatchFunc;
-    const profilesInChannel = useSelector((state) => getProfileSetForChannel(state as GlobalState, channelId));
+    const profilesInChannel = useSelector((state) =>
+        getProfileSetForChannel(state as GlobalState, channelId),
+    );
 
     useEffect(() => {
         if (profilesInChannel.length > 0) {
@@ -201,7 +234,9 @@ function getLatestPostId(statusPosts: StatusPost[]) {
 }
 
 export function usePost(postId: string) {
-    const postFromState = useSelector<GlobalState, Post | null>((state) => getPostFromState(state, postId || ''));
+    const postFromState = useSelector<GlobalState, Post | null>((state) =>
+        getPostFromState(state, postId || ''),
+    );
     const [post, setPost] = useState<Post | null>(null);
 
     useEffect(() => {
@@ -301,7 +336,9 @@ export function useAllowRetrospectiveAccess() {
 export function useEnsureProfiles(userIds: string[]) {
     const dispatch = useDispatch();
     type StringToUserProfileFn = (id: string) => UserProfile;
-    const getUserFromStore = useSelector<GlobalState, StringToUserProfileFn>((state) => (id: string) => getUser(state, id));
+    const getUserFromStore = useSelector<GlobalState, StringToUserProfileFn>(
+        (state) => (id: string) => getUser(state, id),
+    );
 
     const unknownIds = [];
     for (const id of userIds) {
@@ -321,7 +358,9 @@ export function useOpenCloudModal() {
     const isServerCloud = useSelector(isCloud);
 
     if (!isServerCloud) {
-        return () => { /*do nothing*/ };
+        return () => {
+            /*do nothing*/
+        };
     }
 
     // @ts-ignore
@@ -329,7 +368,9 @@ export function useOpenCloudModal() {
         // eslint-disable-next-line no-console
         console.error('unable to open cloud modal');
 
-        return () => { /*do nothing*/ };
+        return () => {
+            /*do nothing*/
+        };
     }
 
     // @ts-ignore
@@ -339,10 +380,28 @@ export function useOpenCloudModal() {
     const PurchaseModal = window.Components.PurchaseModal;
 
     return () => {
-        dispatch(openModal({
-            modalId: ModalIdentifiers.CLOUD_PURCHASE,
-            dialogType: PurchaseModal,
-        }));
+        dispatch(
+            openModal({
+                modalId: ModalIdentifiers.CLOUD_PURCHASE,
+                dialogType: PurchaseModal,
+            }),
+        );
     };
 }
 
+export function useFormattedUsername(user: UserProfile) {
+    const teamnameNameDisplaySetting =
+        useSelector<GlobalState, string | undefined>(
+            getTeammateNameDisplaySetting,
+        ) || '';
+
+    return displayUsername(user, teamnameNameDisplaySetting);
+}
+
+export function useFormattedUsernameByID(userId: string) {
+    const user = useSelector<GlobalState, UserProfile>((state) =>
+        getUser(state, userId),
+    );
+
+    return useFormattedUsername(user);
+}
