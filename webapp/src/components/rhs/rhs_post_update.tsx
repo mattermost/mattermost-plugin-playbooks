@@ -7,8 +7,6 @@ import styled, {css} from 'styled-components';
 
 import {updateStatus} from 'src/actions';
 
-import './playbook_run_details.scss';
-import {PrimaryButton} from 'src/components/assets/buttons';
 
 interface Props {
     collapsed: boolean;

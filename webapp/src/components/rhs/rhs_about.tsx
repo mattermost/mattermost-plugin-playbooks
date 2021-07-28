@@ -9,7 +9,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 
 import {setOwner} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
-import './playbook_run_details.scss';
+import PostCard from 'src/components/rhs/post_card';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 import {useProfilesInCurrentChannel} from 'src/hooks';
 import PostText from 'src/components/post_text';
