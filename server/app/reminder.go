@@ -168,7 +168,7 @@ func (s *PlaybookRunServiceImpl) ResetReminderTimer(playbookRunID string) error 
 
 	playbookRunToModify.PreviousReminder = 0
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-		return errors.Wrapf(err, "failed to update playbook run after removing reminder post id")
+		return errors.Wrapf(err, "failed to update playbook run after resetting reminder timer")
 	}
 
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
