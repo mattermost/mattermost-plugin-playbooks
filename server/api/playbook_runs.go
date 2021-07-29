@@ -918,7 +918,6 @@ func (h *PlaybookRunHandler) updateDescription(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	playbookRun.Description = requestBody.Description
 	if err := h.playbookRunService.UpdateDescription(playbookRunID, requestBody.Description); err != nil {
 		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to update description", err)
 		return
