@@ -80,8 +80,14 @@ const usePlaybookName = (playbookId: string) => {
 
     useEffect(() => {
         const getPlaybookName = async () => {
-            const playbook = await clientFetchPlaybook(playbookId);
-            setPlaybookName(playbook?.title || '');
+            if (playbookId !== '') {
+                try {
+                    const playbook = await clientFetchPlaybook(playbookId);
+                    setPlaybookName(playbook?.title || '');
+                } catch {
+                    setPlaybookName('');
+                }
+            }
         };
 
         getPlaybookName();
