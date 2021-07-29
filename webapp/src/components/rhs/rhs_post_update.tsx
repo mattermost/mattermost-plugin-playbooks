@@ -23,7 +23,8 @@ interface Props {
 
 const RHSPostUpdate = (props: Props) => {
     const dispatch = useDispatch();
-    const now = useNow();
+    const fiveSeconds = 5000;
+    const now = useNow(fiveSeconds);
 
     //@ts-ignore
     const Timestamp = window.Components?.Timestamp;
