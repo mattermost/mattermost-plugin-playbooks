@@ -108,7 +108,7 @@ const Container = styled.div`
     margin-top: 3px;
     padding: 16px 12px;
 
-    :hover, :focus-within {
+    :hover {
         background-color: rgba(var(--center-channel-color-rgb), 0.04);
     }
 `;
@@ -141,13 +141,13 @@ const ButtonsRow = styled(HoverMenu)`
 
     display: none;
 
-    ${Container}:focus-within &, ${Container}:hover & {
+    ${Container}:hover & {
         display: block;
     }
 `;
 
 const RenderedTitle = styled(DefaultRenderedTitle)`
-    ${Container}:focus-within &, ${Container}:hover & {
+    ${Container}:hover & {
         max-width: calc(100% - 75px);
     }
 `;
