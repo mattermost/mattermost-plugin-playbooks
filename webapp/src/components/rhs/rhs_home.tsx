@@ -45,18 +45,46 @@ import {PresetTemplates} from 'src/components/backstage/template_selector';
 
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import {UpgradeOrPrimaryButton, useUpgradeModalVisibility} from 'src/components/backstage/playbook_list';
-import {PlaybookRunStatus} from 'src/types/playbook_run';
 
-const Header = styled.div`
-    min-height: 8rem;
-    margin-bottom: 4rem;
-    display: grid;
+const WelcomeBlock = styled.div`
+    padding: 4rem 3rem 2rem;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
-const RunDetail = styled.div<{
-    exists: boolean;
-    active: boolean;
-}>`
+const WelcomeDesc = styled.p`
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 400;
+    margin-bottom: 3rem;
+`;
+
+const WelcomeCreateAlt = styled.span`
+    display: inline-flex;
+    align-items: center;
+    vertical-align: top;
+    padding: 1rem 0;
+    > svg {
+        margin-left: 0.5em;
+    }
+`;
+
+const WelcomeButtonCreate = styled(UpgradeOrPrimaryButton)`
+    margin-right: 2rem;
+    margin-bottom: 1rem;
+    padding: 0 2rem;
+    > svg {
+        margin-right: 0.5rem;
+    }
+`;
+
+const WelcomeWarn = styled(WelcomeDesc)`
+    color: rgba(var(--error-text-color-rgb), 0.72);
+`;
+
+const RunDetailMaskSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="calc(100% - 15px)" viewBox="0 0 400 137" preserveAspectRatio="none"><path d="M0 0H400V122.629C400 122.629 312 137 200 137C101.5 137 0 122.629 0 122.629V0Z"/></svg>';
+type RunDetailProps = {exists: boolean;};
+
+const RunDetail = styled.div<RunDetailProps>`
     display: flex;
     place-content: flex-start;
     place-items: center;
@@ -68,67 +96,46 @@ const RunDetail = styled.div<{
             rgba(var(--center-channel-bg-rgb), 0.25) 100%
         ),
         rgba(var(${({exists}) => (exists ? '--button-bg-rgb' : '--center-channel-color-rgb')}), 0.08);
+    mask-image: url('${RunDetailMaskSvg}');
 
     > div {
         margin-left: 2rem;
-
-        > span {
-            font-family: Open Sans;
-            font-weight: 400;
-            margin-right: auto;
-            display: inline-block;
-            margin-right: 2rem;
-            ${({exists}) => (exists ? css`
-                font-size: 14px;
-                line-height: 20px;
-                color: var(--mention-color);
-            ` : css`
-                color: '#6F6F73';
-                font-size: 16px;
-                line-height: 24px;
-            `)}
-        }
-    }
-
-    button {
-        margin-top: 1rem;
-        margin-right: 2rem;
     }
 `;
 
-const RunDetailsButton = styled(PrimaryButton)`
+const RunDetailDesc = styled.span<RunDetailProps>`
+    font-weight: 400;
+    margin-right: auto;
+    display: inline-block;
+    margin-right: 2rem;
+    ${({exists}) => (exists ? css`
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--mention-color);
+    ` : css`
+        color: '#6F6F73';
+        font-size: 16px;
+        line-height: 24px;
+    `)}
+`;
+
+const RunDetailButton = styled(PrimaryButton)`
     height: 3.25rem;
     font-size: 12px;
     padding: 0 1.6rem;
+
+    margin-top: 1rem;
+    margin-right: 2rem;
 
     svg {
         margin-left: 0.5rem;
     }
 `;
 
-const WelcomeBlock = styled.div`
-    padding: 4rem 3rem 2rem;
-
-    div {
-        margin-top: 2rem;
-        button {
-            margin-right: 2rem;
-            margin-bottom: 1rem;
-            padding: 0 2rem;
-            > svg {
-                margin-right: 0.5rem;
-            }
-        }
-        span {
-            display: inline-flex;
-            align-items: center;
-            vertical-align: top;
-            padding: 1rem 0;
-            > svg {
-                margin-left: 0.5em;
-            }
-        }
-    }
+const Header = styled.div`
+    min-height: 13rem;
+    margin-bottom: 4rem;
+    display: grid;
 `;
 
 const Heading = styled.h4`
@@ -175,31 +182,15 @@ const ListSection = styled.div`
     }
 `;
 
-const Description = styled.p`
-    font-size: 14px;
-    line-height: 21px;
-    font-weight: 400;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-`;
-
-const DescriptionWarn = styled(Description)`
-    color: rgba(var(--error-text-color-rgb), 0.72);
-`;
-
 const RHSHome = () => {
     const dispatch = useDispatch();
     const currentTeam = useSelector(getCurrentTeam);
     const currentRun = useSelector(currentPlaybookRun);
     const hasCurrentRun = Boolean(currentRun);
-    const currentRunActive =
-        currentRun &&
-        currentRun.current_status !== PlaybookRunStatus.Archived &&
-        currentRun.current_status !== PlaybookRunStatus.Old;
     const [currentPlaybook, setCurrentPlaybook] = useState<Playbook | null>();
 
     const [playbooks, {hasMore, isLoading}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
     const {create} = usePlaybooksRouting<Playbook>(currentTeam.name);
-    const shouldWelcome = playbooks?.length === 0 && !currentPlaybook;
 
     const canCreatePlaybooks = useCanCreatePlaybooks();
     const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
@@ -227,77 +218,78 @@ const RHSHome = () => {
         navigateToUrl(`/${currentTeam.name}/channels/${currentRun.channel_id}`);
     };
 
-    const headerContent = shouldWelcome ? (
-        <WelcomeBlock>
-            <PageRunCollaborationSvg/>
-            <Heading>
-                {'Welcome to Playbooks!'}
-            </Heading>
-            <Description>
-                {'A playbook prescribes the checklists, automations, and templates for any repeatable procedures.'}
-                {'It helps teams reduce errors, earn trust with stakeholders, and become more effective with every iteration.'}
-            </Description>
-            {canCreatePlaybooks ? (
+    let headerContent;
+    if (playbooks?.length === 0 && !currentPlaybook) {
+        headerContent = (
+            <WelcomeBlock>
+                <PageRunCollaborationSvg/>
+                <Heading>
+                    {'Welcome to Playbooks!'}
+                </Heading>
+                <WelcomeDesc>
+                    {'A playbook prescribes the checklists, automations, and templates for any repeatable procedures.'}
+                    {'It helps teams reduce errors, earn trust with stakeholders, and become more effective with every iteration.'}
+                </WelcomeDesc>
+                {canCreatePlaybooks ? (
+                    <div>
+                        <WelcomeButtonCreate
+                            onClick={() => newPlaybook()}
+                            allowPlaybookCreation={allowPlaybookCreation}
+                        >
+                            <Icon
+                                path={mdiPlus}
+                                size={1}
+                            />
+                            {'Create playbook'}
+                        </WelcomeButtonCreate>
+                        <WelcomeCreateAlt>
+                            {'...or start with a template'}
+                            <Icon
+                                path={mdiArrowDown}
+                                size={1}
+                            />
+                        </WelcomeCreateAlt>
+                    </div>
+                ) : (
+                    <WelcomeWarn>{"There are no playbooks to view. You don't have permission to create playbooks in this workspace."}</WelcomeWarn>
+                )}
+            </WelcomeBlock>
+        );
+    } else {
+        headerContent = (
+            <RunDetail exists={hasCurrentRun}>
+                {hasCurrentRun ? <PageRunSvg/> : <BoxOpenSvg/>}
                 <div>
-                    <UpgradeOrPrimaryButton
-                        onClick={() => newPlaybook()}
-                        allowPlaybookCreation={allowPlaybookCreation}
-                    >
-                        <Icon
-                            path={mdiPlus}
-                            size={1}
-                        />
-                        {'Create playbook'}
-                    </UpgradeOrPrimaryButton>
-                    <span>
-                        {'...or start with a template'}
-                        <Icon
-                            path={mdiArrowDown}
-                            size={1}
-                        />
-                    </span>
-                </div>
-            ) : (
-                <DescriptionWarn>{"There are no playbooks to view. You don't have permission to create playbooks in this workspace."}</DescriptionWarn>
-            )}
-        </WelcomeBlock>
-    ) : (
-        <RunDetail
-            exists={hasCurrentRun}
-            active={currentRunActive}
-        >
-            {hasCurrentRun ? <PageRunSvg/> : <BoxOpenSvg/>}
-            <div>
-                <span>
-                    {
-                        hasCurrentRun ? (
-                            <>
-                                <span>{'Currently running the '}</span>
-                                <strong>{currentPlaybook?.title}</strong>
-                                <span>{' playbook'}</span>
-                            </>
-                        ) : (
+                    <RunDetailDesc exists={hasCurrentRun}>
+                        {
+                            hasCurrentRun ? (
+                                <>
+                                    <span>{'Currently running the '}</span>
+                                    <strong>{currentPlaybook?.title}</strong>
+                                    <span>{' playbook'}</span>
+                                </>
+                            ) : (
+                                <span>
+                                    {'This channel is not running any playbook.'}
+                                </span>
+                            )
+                        }
+                    </RunDetailDesc>
+                    {hasCurrentRun && (
+                        <RunDetailButton onClick={viewCurrentPlaybookRun}>
                             <span>
-                                {'This channel is not running any playbook.'}
+                                {'View run details '}
                             </span>
-                        )
-                    }
-                </span>
-                {
-                    hasCurrentRun &&
-                    <RunDetailsButton onClick={viewCurrentPlaybookRun}>
-                        <span>
-                            {'View run details '}
-                        </span>
-                        <Icon
-                            path={mdiArrowRight}
-                            size={1}
-                        />
-                    </RunDetailsButton>
-                }
-            </div>
-        </RunDetail>
-    );
+                            <Icon
+                                path={mdiArrowRight}
+                                size={1}
+                            />
+                        </RunDetailButton>
+                    )}
+                </div>
+            </RunDetail>
+        );
+    }
 
     return (
         <RHSContainer>
@@ -318,7 +310,7 @@ const RHSHome = () => {
                 >
                     {!isLoading && <Header>{headerContent}</Header>}
 
-                    {playbooks && playbooks.length !== 0 && (
+                    {Boolean(playbooks?.length) && (
                         <>
                             <ListHeading>{'Your Playbooks'}</ListHeading>
                             <ListSection>
@@ -332,7 +324,6 @@ const RHSHome = () => {
                             {hasMore && (
                                 <PaginationContainer>
                                     <TertiaryButton
-                                        disabled={!hasMore}
                                         onClick={() => setPage()}
                                     >
                                         {'Show more'}
