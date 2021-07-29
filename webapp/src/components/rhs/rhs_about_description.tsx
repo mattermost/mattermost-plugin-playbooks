@@ -42,6 +42,11 @@ const RHSAboutDescription = (props: DescriptionProps) => {
         );
     }
 
+    const computeHeight = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+        e.target.style.height = '5px';
+        e.target.style.height = (e.target.scrollHeight) + 'px';
+    };
+
     return (
         <DescriptionTextArea
             value={editedValue}
@@ -52,8 +57,9 @@ const RHSAboutDescription = (props: DescriptionProps) => {
                 const val = e.target.value;
                 e.target.value = '';
                 e.target.value = val;
+                computeHeight(e);
             }}
-            rows={editedValue.split('\n').length}
+            onInput={computeHeight}
         />
     );
 };
@@ -77,7 +83,7 @@ const DescriptionTextArea = styled.textarea`
     }
 
     font-size: 14px;
-    line-height: 15px;
+    line-height: 20px;
     color: var(--center-channel-color);
 `;
 
