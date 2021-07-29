@@ -47,7 +47,10 @@ import {
     ShowPostMenuModal,
     HIDE_POST_MENU_MODAL,
     HidePostMenuModal,
-    SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
+    SetHasViewedChannel,
+    SET_HAS_VIEWED_CHANNEL,
+    SetRHSAboutCollapsedState,
+    SET_RHS_ABOUT_COLLAPSED_STATE,
 } from './types/actions';
 
 import {clientExecuteCommand} from './client';
@@ -214,4 +217,10 @@ export const setHasViewedChannel = (channelId: string): SetHasViewedChannel => (
     type: SET_HAS_VIEWED_CHANNEL,
     channelId,
     hasViewed: true,
+});
+
+export const setRHSAboutCollapsedState = (channelId: string, collapsed: boolean): SetRHSAboutCollapsedState => ({
+    type: SET_RHS_ABOUT_COLLAPSED_STATE,
+    channelId,
+    collapsed,
 });

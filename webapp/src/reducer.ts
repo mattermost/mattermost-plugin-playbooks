@@ -34,10 +34,16 @@ import {
     PlaybookDeleted,
     ReceivedTeamNumPlaybooks,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
-    ReceivedGlobalSettings, RECEIVED_GLOBAL_SETTINGS,
-    ShowPostMenuModal, HidePostMenuModal,
-    SHOW_POST_MENU_MODAL, HIDE_POST_MENU_MODAL,
-    SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
+    ReceivedGlobalSettings,
+    RECEIVED_GLOBAL_SETTINGS,
+    ShowPostMenuModal,
+    HidePostMenuModal,
+    SHOW_POST_MENU_MODAL,
+    HIDE_POST_MENU_MODAL,
+    SetHasViewedChannel,
+    SET_HAS_VIEWED_CHANNEL,
+    SetRHSAboutCollapsedState,
+    SET_RHS_ABOUT_COLLAPSED_STATE,
 } from 'src/types/actions';
 
 import {GlobalSettings} from './types/settings';
@@ -244,6 +250,18 @@ const hasViewedByChannel = (state: Record<string, boolean> = {}, action: SetHasV
     }
 };
 
+const rhsAboutCollapsedByChannel = (state: Record<string, boolean> = {}, action: SetRHSAboutCollapsedState) => {
+    switch (action.type) {
+    case SET_RHS_ABOUT_COLLAPSED_STATE:
+        return {
+            ...state,
+            [action.channelId]: action.collapsed,
+        };
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -255,4 +273,5 @@ export default combineReducers({
     globalSettings,
     postMenuModalVisibility,
     hasViewedByChannel,
+    rhsAboutCollapsedByChannel,
 });

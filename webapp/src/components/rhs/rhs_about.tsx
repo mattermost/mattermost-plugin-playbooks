@@ -1,11 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useRef, useEffect} from 'react';
+import React from 'react';
+import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
+import {PlaybookRun} from 'src/types/playbook_run';
 import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
@@ -15,17 +17,20 @@ import {HoverMenu} from 'src/components/rhs/rhs_shared';
 import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';
 import RHSAboutTitle, {DefaultRenderedTitle} from 'src/components/rhs/rhs_about_title';
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
+import {currentRHSAboutCollapsedState} from 'src/selectors';
+import {setRHSAboutCollapsedState} from 'src/actions';
 
 interface Props {
     playbookRun: PlaybookRun;
 }
 
 const RHSAbout = (props: Props) => {
+    const dispatch = useDispatch();
+    const channelId = useSelector(getCurrentChannelId);
     const profilesInChannel = useProfilesInCurrentChannel();
+    const collapsed = useSelector(currentRHSAboutCollapsedState);
 
-    const [collapsed, setCollapsed] = useState(false);
-
-    const toggleCollapsed = () => setCollapsed(!collapsed);
+    const toggleCollapsed = () => dispatch(setRHSAboutCollapsedState(channelId, !collapsed));
 
     const fetchUsers = async () => {
         return profilesInChannel;
@@ -55,7 +60,7 @@ const RHSAbout = (props: Props) => {
     };
 
     return (
-        <Container tabIndex={0} >
+        <Container tabIndex={0}>
             <ButtonsRow>
                 <RHSAboutButtons
                     playbookRun={props.playbookRun}

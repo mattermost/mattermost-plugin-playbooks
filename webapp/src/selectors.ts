@@ -164,3 +164,13 @@ export const isTeamEdition = createSelector(
     getConfig,
     (config) => config.BuildEnterpriseReady !== 'true',
 );
+
+const rhsAboutCollapsedState = (state: GlobalState): Record<string, boolean> => pluginState(state).rhsAboutCollapsedByChannel;
+
+export const currentRHSAboutCollapsedState = createSelector(
+    getCurrentChannelId,
+    rhsAboutCollapsedState,
+    (channelId, stateByChannel) => {
+        return stateByChannel[channelId] ?? false;
+    },
+);
