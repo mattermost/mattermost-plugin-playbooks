@@ -119,7 +119,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 				FROM IR_Incident as i2
 					JOIN ChannelMembers as cm on cm.ChannelId = i2.ChannelId
 				WHERE i2.Id = i.Id
-				AND cm.UserId NOT IN (SELECT UserId FROM bots)
+				AND cm.UserId NOT IN (SELECT UserId FROM Bots)
 			), ''
         ) AS ConcatenatedParticipantIDs`
 	if sqlStore.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
@@ -129,7 +129,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 				FROM IR_Incident as i2
 					JOIN ChannelMembers as cm on cm.ChannelId = i2.ChannelId
 				WHERE i2.Id = i.Id
-				AND cm.UserId NOT IN (SELECT UserId FROM bots)
+				AND cm.UserId NOT IN (SELECT UserId FROM Bots)
 			), ''
         ) AS ConcatenatedParticipantIDs`
 	}
