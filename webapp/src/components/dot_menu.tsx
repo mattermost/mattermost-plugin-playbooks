@@ -6,20 +6,14 @@ import styled, {css, StyledComponentBase} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
-interface DotMenuButtonProps {
-    right?: boolean;
-    active?: boolean;
-    buttonSize?: string;
-}
-
-export const DotMenuButton = styled.div<DotMenuButtonProps>`
+export const DotMenuButton = styled.div`
     display: inline-flex;
     padding: 0;
     background: transparent;
     border: none;
     border-radius: 4px;
-    width: ${(props) => (props.buttonSize || '3.2rem')};
-    height: ${(props) => (props.buttonSize || '3.2rem')};
+    width: 3.2rem;
+    height: 3.2rem;
     fill: var(--center-channel-color-56);
     color: var(--center-channel-color-56);
     cursor: pointer;
@@ -28,12 +22,6 @@ export const DotMenuButton = styled.div<DotMenuButtonProps>`
        background: rgba(var(--center-channel-color-rgb), 0.08);
        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
-    ${(props) => (props.active && css`
-        &, &:hover {
-            background: rgba(var(--button-bg-rgb), 0.08);
-            color: var(--button-bg);
-        }
-    `)}
 `;
 
 const DropdownMenuWrapper = styled.div`
@@ -86,9 +74,7 @@ interface DotMenuProps {
     top?: boolean;
     left?: boolean;
     wide?: boolean;
-    buttonRight?: boolean;
-    activeState?: boolean;
-    buttonSize?: string;
+    dotMenuButton?: StyledComponentBase<'div', any>;
 }
 
 const DotMenu = (props: DotMenuProps) => {
@@ -124,8 +110,6 @@ const DotMenu = (props: DotMenuProps) => {
             }}
             tabIndex={0}
             role={'button'}
-            active={props.activeState && isOpen}
-            buttonSize={props.buttonSize}
         >
             {props.icon}
             <DropdownMenuWrapper>

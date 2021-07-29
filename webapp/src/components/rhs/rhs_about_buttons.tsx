@@ -16,7 +16,7 @@ import {pluginId} from 'src/manifest';
 import {navigateToUrl} from 'src/browser_routing';
 import {clientFetchPlaybook} from 'src/client';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
+import DotMenu, {DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 
 interface Props {
@@ -37,8 +37,7 @@ const RHSAboutButtons = (props: Props) => {
             <DotMenu
                 icon={<ThreeDotsIcon/>}
                 left={true}
-                activeState={true}
-                buttonSize={'28px'}
+                dotMenuButton={StyledDotMenuButton}
             >
                 <StyledDropdownMenuItem onClick={() => navigateToUrl(overviewURL)}>
                     <DropdownIcon
@@ -95,6 +94,16 @@ const usePlaybookName = (playbookId: string) => {
 
     return playbookName;
 };
+
+const StyledDotMenuButton = styled(DotMenuButton)`
+    &:hover {
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
+    }
+
+    width: 28px;
+    height: 28px;
+`;
 
 const ExpandCollapseButton = styled(HoverMenuButton)`
     margin-left: 2px
