@@ -1,9 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import styled from 'styled-components';
-import {useDispatch} from 'react-redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -118,12 +117,18 @@ const Description = (props: DescriptionProps) => {
     const textareaRef = useRef(null);
 
     const saveAndClose = () => {
-        props.onEdit(editedValue);
+        const newValue = editedValue.trim();
+        setEditedValue(newValue);
+        props.onEdit(newValue);
         setEditing(false);
     };
 
     useClickOutsideRef(textareaRef, saveAndClose);
-    useKeyPress('Contrl+Enter', saveAndClose);
+    useKeyPress((e: KeyboardEvent) => e.ctrlKey && e.key === 'Enter', saveAndClose);
+
+    useEffect(() => {
+        setEditedValue(props.value || placeholder);
+    }, [props.value]);
 
     if (!editing) {
         return (
@@ -138,15 +143,24 @@ const Description = (props: DescriptionProps) => {
             value={editedValue}
             ref={textareaRef}
             onChange={(e) => setEditedValue(e.target.value)}
+            autoFocus={true}
+            onFocus={(e) => {
+                const val = e.target.value;
+                e.target.value = '';
+                e.target.value = val;
+            }}
+            rows={editedValue.split('\n').length}
         />
     );
 };
 
 const DescriptionTextArea = styled.textarea`
+    resize: none;
     width: 100%;
-    height: 100px;
+    height: max-content;
     padding: 4px 8px;
-    margin-bottom: 2px;
+    margin-top: -2px;
+    margin-bottom: 9px;
 
     border: none;
     border-radius: 5px;
@@ -158,6 +172,8 @@ const DescriptionTextArea = styled.textarea`
         box-shadow: none;
     }
 
+    font-size: 14px;
+    line-height: 15px;
     color: var(--center-channel-color);
 `;
 
@@ -218,6 +234,10 @@ const Title = (props: TitleProps) => {
 
     const inputRef = useRef(null);
 
+    useEffect(() => {
+        setEditedValue(props.value);
+    }, [props.value]);
+
     const saveAndClose = () => {
         props.onEdit(editedValue);
         setEditing(false);
@@ -228,7 +248,7 @@ const Title = (props: TitleProps) => {
 
     if (!editing) {
         return (
-            <RenderedTitle onClick={() => setEditing(true)}>
+            <RenderedTitle onClick={() => setEditing(true)} >
                 {editedValue}
             </RenderedTitle>
         );
@@ -240,15 +260,23 @@ const Title = (props: TitleProps) => {
             ref={inputRef}
             onChange={(e) => setEditedValue(e.target.value)}
             value={editedValue}
+            maxLength={59}
+            autoFocus={true}
+            onFocus={(e) => {
+                const val = e.target.value;
+                e.target.value = '';
+                e.target.value = val;
+            }}
         />
     );
 };
 
 const TitleInput = styled.input`
-    width: 100%;
+    width: calc(100% - 75px);
     height: 30px;
     padding: 4px 8px;
-    margin-bottom: 2px;
+    margin-bottom: 5px;
+    margin-top: -3px;
 
     border: none;
     border-radius: 5px;
@@ -267,6 +295,15 @@ const TitleInput = styled.input`
 `;
 
 const RenderedTitle = styled(PaddedContent)`
+    max-width: 100%;
+    ${Container}:focus-within &, ${Container}:hover & {
+        max-width: calc(100% - 75px);
+    }
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
     height: 30px;
     line-height: 24px;
 
@@ -292,6 +329,7 @@ const RenderedDescription = styled(PaddedContent)`
     border-radius: 5px;
 
     margin-bottom: 16px;
+    line-height: 20px;
 `;
 
 const Row = styled(PaddedContent)`
