@@ -266,7 +266,7 @@ type PlaybookRunService interface {
 	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the playbook run's status.
-	OpenUpdateStatusDialog(playbookRunID, triggerID string) error
+	OpenUpdateStatusDialog(playbookRunID, triggerID, defaultStatus string) error
 
 	// OpenAddToTimelineDialog opens an interactive dialog so the user can add a post to the playbook run timeline.
 	OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error

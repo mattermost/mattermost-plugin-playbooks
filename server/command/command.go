@@ -23,7 +23,7 @@ import (
 const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	"* `/playbook start` - Run a playbook. \n" +
 	"* `/playbook end` - Close the playbook run in this channel. \n" +
-	"* `/playbook update` - Provide a status update. \n" +
+	"* `/playbook update [next status]` - Provide a status update. \n" +
 	"* `/playbook check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
 	"* `/playbook checkadd [checklist #] [item text]` - add a checklist item. \n" +
 	"* `/playbook checkremove [checklist #] [item #]` - remove a checklist item. \n" +
@@ -69,8 +69,15 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 		"Ends the playbook run associated with the current channel")
 	command.AddCommand(end)
 
-	update := model.NewAutocompleteData("update", "",
+	update := model.NewAutocompleteData("update", "[next status]",
 		"Provide a status update.")
+	update.AddNamedStaticListArgument("next-status",
+		"The default status for the update dialog.",
+		false, []model.AutocompleteListItem{
+			{Item: "Reported", Hint: "", HelpText: ""},
+			{Item: "Active", Hint: "", HelpText: ""},
+			{Item: "Resolved", Hint: "", HelpText: ""},
+			{Item: "Archived", Hint: "", HelpText: ""}})
 	command.AddCommand(update)
 
 	restart := model.NewAutocompleteData("restart", "",
@@ -633,10 +640,10 @@ func (r *Runner) actionInfo() {
 }
 
 func (r *Runner) actionEnd() {
-	r.actionUpdate()
+	r.actionUpdate([]string{"Resolved"})
 }
 
-func (r *Runner) actionUpdate() {
+func (r *Runner) actionUpdate(args []string) {
 	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
@@ -656,7 +663,14 @@ func (r *Runner) actionUpdate() {
 		return
 	}
 
-	err = r.playbookRunService.OpenUpdateStatusDialog(playbookRunID, r.args.TriggerId)
+	defaultStatus := ""
+	if len(args) == 1 {
+		defaultStatus = args[0]
+	} else if len(args) == 2 && args[0] == "--next-status" {
+		defaultStatus = args[1]
+	}
+
+	err = r.playbookRunService.OpenUpdateStatusDialog(playbookRunID, r.args.TriggerId, defaultStatus)
 	switch {
 	case errors.Is(err, app.ErrPlaybookRunNotActive):
 		r.postCommandResponse("This playbook run has already been closed.")
@@ -668,7 +682,7 @@ func (r *Runner) actionUpdate() {
 }
 
 func (r *Runner) actionRestart() {
-	r.actionUpdate()
+	r.actionUpdate(nil)
 }
 
 func (r *Runner) actionAdd(args []string) {
@@ -1770,7 +1784,7 @@ func (r *Runner) Execute() error {
 	case "end":
 		r.actionEnd()
 	case "update":
-		r.actionUpdate()
+		r.actionUpdate(parameters)
 	case "check":
 		r.actionCheck(parameters)
 	case "checkadd":

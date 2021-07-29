@@ -88,9 +88,9 @@ export function startPlaybookRunById(playbookId: string) {
     };
 }
 
-export function updateStatus() {
+export function updateStatus(defaultStatus?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/playbook update');
+        await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`);
     };
 }
 

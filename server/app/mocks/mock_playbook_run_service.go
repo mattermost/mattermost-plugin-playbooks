@@ -364,17 +364,17 @@ func (mr *MockPlaybookRunServiceMockRecorder) OpenCreatePlaybookRunDialog(arg0, 
 }
 
 // OpenUpdateStatusDialog mocks base method
-func (m *MockPlaybookRunService) OpenUpdateStatusDialog(arg0, arg1 string) error {
+func (m *MockPlaybookRunService) OpenUpdateStatusDialog(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenUpdateStatusDialog", arg0, arg1)
+	ret := m.ctrl.Call(m, "OpenUpdateStatusDialog", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // OpenUpdateStatusDialog indicates an expected call of OpenUpdateStatusDialog
-func (mr *MockPlaybookRunServiceMockRecorder) OpenUpdateStatusDialog(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockPlaybookRunServiceMockRecorder) OpenUpdateStatusDialog(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenUpdateStatusDialog", reflect.TypeOf((*MockPlaybookRunService)(nil).OpenUpdateStatusDialog), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenUpdateStatusDialog", reflect.TypeOf((*MockPlaybookRunService)(nil).OpenUpdateStatusDialog), arg0, arg1, arg2)
 }
 
 // PublishRetrospective mocks base method
