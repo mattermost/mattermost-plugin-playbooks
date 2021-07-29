@@ -2,9 +2,9 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import styled from 'styled-components';
+import styled, {StyledComponentBase} from 'styled-components';
 
-import DotMenu from 'src/components/dot_menu';
+import DotMenu, {DotMenuButton} from 'src/components/dot_menu';
 import {CheckboxContainer} from 'src/components/checklist_item';
 
 const IconWrapper = styled.div`
@@ -14,7 +14,7 @@ const IconWrapper = styled.div`
 
 const FilterCheckboxContainer = styled(CheckboxContainer)`
     margin: 0 34px 0 20px;
-    line-height: 30px;
+    line-height: 32px;
     align-items: center;
 
     input[type='checkbox'] {
@@ -36,9 +36,17 @@ const OptionDisplay = styled.div`
 `;
 
 const Divider = styled.div`
-    background: var(--center-channel-color-16);
+    background: var(--center-channel-color-08);
     height: 1px;
     margin: 8px 0;
+`;
+
+const Title = styled.div`
+    margin: 0 0 0 20px;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 28px;
+    color: var(--center-channel-color-56);
 `;
 
 export interface CheckboxOption {
@@ -51,21 +59,27 @@ export interface CheckboxOption {
 interface Props {
     options: CheckboxOption[];
     onselect: (value: string, checked: boolean) => void;
+    dotMenuButton?: StyledComponentBase<'div', any>;
+    icon?: JSX.Element;
 }
 
 const MultiCheckbox = (props: Props) => (
     <DotMenu
+        dotMenuButton={props.dotMenuButton ?? DotMenuButtonRight}
         icon={
+            props.icon ??
             <IconWrapper>
                 <i className='icon icon-filter-variant'/>
             </IconWrapper>
         }
         wide={true}
-        buttonRight={true}
     >
-        {props.options.map((option) => {
+        {props.options.map((option, idx) => {
             if (option.value === 'divider') {
-                return <Divider key={'divider'}/>;
+                return <Divider key={'divider' + idx}/>;
+            }
+            if (option.value === 'title') {
+                return <Title key={'title' + idx}>{option.display}</Title>;
             }
 
             const onClick = () => props.onselect(option.value, !option.selected);
@@ -87,5 +101,9 @@ const MultiCheckbox = (props: Props) => (
         })}
     </DotMenu>
 );
+
+const DotMenuButtonRight = styled(DotMenuButton)`
+    margin: 0 16px 0 auto;
+`;
 
 export default MultiCheckbox;
