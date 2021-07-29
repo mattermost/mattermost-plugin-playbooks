@@ -154,10 +154,9 @@ type UpdateOptions struct {
 // StatusUpdateOptions encapsulates the fields that can be set when updating an playbook run's status
 // NOTE: changes made to this should be reflected in the client package.
 type StatusUpdateOptions struct {
-	Status      string        `json:"status"`
-	Description string        `json:"description"`
-	Message     string        `json:"message"`
-	Reminder    time.Duration `json:"reminder"`
+	Status   string        `json:"status"`
+	Message  string        `json:"message"`
+	Reminder time.Duration `json:"reminder"`
 }
 
 // Metadata tracks ancillary metadata about a playbook run.

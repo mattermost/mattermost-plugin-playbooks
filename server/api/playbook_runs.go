@@ -665,12 +665,6 @@ func (h *PlaybookRunHandler) status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	options.Description = strings.TrimSpace(options.Description)
-	if options.Description == "" {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "description must not be empty", errors.New("description field empty"))
-		return
-	}
-
 	options.Message = strings.TrimSpace(options.Message)
 	if options.Message == "" {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "message must not be empty", errors.New("message field empty"))
@@ -735,15 +729,6 @@ func (h *PlaybookRunHandler) updateStatusDialog(w http.ResponseWriter, r *http.R
 	if options.Message == "" {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(fmt.Sprintf(`{"errors": {"%s":"This field is required."}}`, app.DialogFieldMessageKey)))
-		return
-	}
-
-	if description, ok := request.Submission[app.DialogFieldDescriptionKey]; ok {
-		options.Description = strings.TrimSpace(description.(string))
-	}
-	if options.Description == "" {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(fmt.Sprintf(`{"errors": {"%s":"This field is required."}}`, app.DialogFieldDescriptionKey)))
 		return
 	}
 

@@ -759,7 +759,6 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		})
 
 	playbookRunToModify.PreviousReminder = options.Reminder
-	playbookRunToModify.Description = options.Description
 	playbookRunToModify.LastStatusUpdateAt = post.CreateAt
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
@@ -1924,12 +1923,6 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 				Options:     statusOptions,
 				Optional:    false,
 				Default:     status,
-			},
-			{
-				DisplayName: "Description",
-				Name:        DialogFieldDescriptionKey,
-				Type:        "textarea",
-				Default:     description,
 			},
 			{
 				DisplayName: "Change since last update",
