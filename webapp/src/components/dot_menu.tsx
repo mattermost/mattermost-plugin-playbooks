@@ -6,11 +6,7 @@ import styled, {css, StyledComponentBase} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
-interface DotMenuButtonProps {
-    right?: boolean;
-}
-
-export const DotMenuButton = styled.div<DotMenuButtonProps>`
+export const DotMenuButton = styled.div`
     display: inline-flex;
     padding: 0;
     background: transparent;
@@ -78,7 +74,6 @@ interface DotMenuProps {
     top?: boolean;
     left?: boolean;
     wide?: boolean;
-    buttonRight?: boolean;
     dotMenuButton?: StyledComponentBase<'div', any>;
 }
 
@@ -106,6 +101,15 @@ const DotMenu = (props: DotMenuProps) => {
                 e.stopPropagation();
                 toggleOpen();
             }}
+            onKeyDown={(e) => {
+                // Handle Enter and Space as clicking on the button
+                if (e.keyCode === 13 || e.keyCode === 32) {
+                    e.stopPropagation();
+                    toggleOpen();
+                }
+            }}
+            tabIndex={0}
+            role={'button'}
         >
             {props.icon}
             <DropdownMenuWrapper>
@@ -143,13 +147,14 @@ const DropdownMenuItemStyled = styled.a`
 }
 `;
 
-export const DropdownMenuItem = (props: { text: string, onClick: () => void }) => {
+export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string }) => {
     return (
         <DropdownMenuItemStyled
             href='#'
             onClick={props.onClick}
+            className={props.className}
         >
-            {props.text}
+            {props.children}
         </DropdownMenuItemStyled>
     );
 };

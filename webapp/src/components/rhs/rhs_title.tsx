@@ -18,7 +18,6 @@ import ExternalLink from 'src/components/assets/icons/external_link';
 import {RHSState} from 'src/types/rhs';
 import {setRHSViewingList} from 'src/actions';
 import {currentPlaybookRun, currentRHSState} from 'src/selectors';
-import {ButtonIcon} from 'src/components/assets/buttons';
 
 import {navigateToUrl} from 'src/browser_routing';
 

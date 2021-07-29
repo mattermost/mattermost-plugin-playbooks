@@ -4,14 +4,13 @@ import {
     useEffect,
     useRef,
     useState,
+    useMemo,
 } from 'react';
 import {useDispatch, useSelector} from 'react-redux';
+import moment from 'moment';
 
-import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
-import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
 import {
     getProfilesInCurrentChannel,
     getCurrentUserId,
@@ -51,12 +50,20 @@ import {
 /**
  * Hook that calls handler when targetKey is pressed.
  */
-export function useKeyPress(targetKey: string, handler: () => void) {
+export function useKeyPress(targetKey: string | ((e: KeyboardEvent) => boolean), handler: () => void) {
+    const predicate: (e: KeyboardEvent) => boolean = useMemo(() => {
+        if (typeof targetKey === 'string') {
+            return (e: KeyboardEvent) => e.key === targetKey;
+        }
+
+        return targetKey;
+    }, [targetKey]);
+
     // Add event listeners
     useEffect(() => {
         // If pressed key is our target key then set to true
-        function downHandler({key}: KeyboardEvent) {
-            if (key === targetKey) {
+        function downHandler(e: KeyboardEvent) {
+            if (predicate(e)) {
                 handler();
             }
         }
@@ -67,7 +74,7 @@ export function useKeyPress(targetKey: string, handler: () => void) {
         return () => {
             window.removeEventListener('keydown', downHandler);
         };
-    }, [handler, targetKey]);
+    }, [handler, predicate]);
 }
 
 /**
@@ -404,4 +411,21 @@ export function useFormattedUsernameByID(userId: string) {
     );
 
     return useFormattedUsername(user);
+}
+
+export function useNow(refreshIntervalMillis = 1000) {
+    const [now, setNow] = useState(moment());
+
+    useEffect(() => {
+        const tick = () => {
+            setNow(moment());
+        };
+        const timerId = setInterval(tick, refreshIntervalMillis);
+
+        return () => {
+            clearInterval(timerId);
+        };
+    }, [refreshIntervalMillis]);
+
+    return now;
 }

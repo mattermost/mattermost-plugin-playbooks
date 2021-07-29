@@ -40,6 +40,8 @@ import {
     HIDE_POST_MENU_MODAL,
     SetHasViewedChannel,
     SET_HAS_VIEWED_CHANNEL,
+    SetRHSAboutCollapsedState,
+    SET_RHS_ABOUT_COLLAPSED_STATE,
     SetChecklistCollapsedState,
     SetAllChecklistsCollapsedState,
     SET_CHECKLIST_COLLAPSED_STATE,
@@ -250,6 +252,18 @@ const hasViewedByChannel = (state: Record<string, boolean> = {}, action: SetHasV
     }
 };
 
+const rhsAboutCollapsedByChannel = (state: Record<string, boolean> = {}, action: SetRHSAboutCollapsedState) => {
+    switch (action.type) {
+    case SET_RHS_ABOUT_COLLAPSED_STATE:
+        return {
+            ...state,
+            [action.channelId]: action.collapsed,
+        };
+    default:
+        return state;
+    }
+};
+
 // checklistCollapsedState keeps a map of channelId -> checklist number -> collapsed
 const checklistCollapsedState = (
     state: Record<string, Record<number, boolean>> = {},
@@ -305,6 +319,7 @@ export default combineReducers({
     globalSettings,
     postMenuModalVisibility,
     hasViewedByChannel,
+    rhsAboutCollapsedByChannel,
     checklistCollapsedState,
     checklistItemsFilterByChannel,
 });

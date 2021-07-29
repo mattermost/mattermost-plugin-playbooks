@@ -158,3 +158,20 @@ func (s *PlaybookRunServiceImpl) removeReminderPost(playbookRunToModify *Playboo
 
 	return nil
 }
+
+// ResetReminderTimer sets the previous reminder timer to 0.
+func (s *PlaybookRunServiceImpl) ResetReminderTimer(playbookRunID string) error {
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve playbook run")
+	}
+
+	playbookRunToModify.PreviousReminder = 0
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run after resetting reminder timer")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+
+	return nil
+}

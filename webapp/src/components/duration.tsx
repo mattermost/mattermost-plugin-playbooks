@@ -1,8 +1,10 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
 import moment from 'moment';
+import React from 'react';
+
+import {useNow} from 'src/hooks';
 
 interface DurationProps {
     from: number;
@@ -30,19 +32,7 @@ export const renderDuration = (duration: moment.Duration) => {
 };
 
 const Duration = (props: DurationProps) => {
-    const [now, setNow] = useState(moment());
-
-    useEffect(() => {
-        const tick = () => {
-            setNow(moment());
-        };
-        const everySecond = 1000;
-        const timerId = setInterval(tick, everySecond);
-
-        return () => {
-            clearInterval(timerId);
-        };
-    }, []);
+    const now = useNow();
 
     if (!props.from) {
         return <div className='time'>{'-'}</div>;

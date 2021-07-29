@@ -759,7 +759,6 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		})
 
 	playbookRunToModify.PreviousReminder = options.Reminder
-	playbookRunToModify.Description = options.Description
 	playbookRunToModify.LastStatusUpdateAt = post.CreateAt
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
@@ -1642,6 +1641,22 @@ func (s *PlaybookRunServiceImpl) CheckAndSendMessageOnJoin(userID, givenPlaybook
 	return true
 }
 
+func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description string) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get playbook run")
+	}
+
+	playbookRun.Description = description
+	if err = s.store.UpdatePlaybookRun(playbookRun); err != nil {
+		return errors.Wrap(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
+
+	return nil
+}
+
 // UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
 // was removed from the channel by actorID.
 func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
@@ -1924,12 +1939,6 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 				Options:     statusOptions,
 				Optional:    false,
 				Default:     status,
-			},
-			{
-				DisplayName: "Description",
-				Name:        DialogFieldDescriptionKey,
-				Type:        "textarea",
-				Default:     description,
 			},
 			{
 				DisplayName: "Change since last update",
