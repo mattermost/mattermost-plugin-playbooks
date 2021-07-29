@@ -516,6 +516,20 @@ func (mr *MockPlaybookRunServiceMockRecorder) ToggleCheckedState(arg0, arg1, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToggleCheckedState", reflect.TypeOf((*MockPlaybookRunService)(nil).ToggleCheckedState), arg0, arg1, arg2, arg3)
 }
 
+// UpdateDescription mocks base method
+func (m *MockPlaybookRunService) UpdateDescription(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateDescription", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateDescription indicates an expected call of UpdateDescription
+func (mr *MockPlaybookRunServiceMockRecorder) UpdateDescription(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDescription", reflect.TypeOf((*MockPlaybookRunService)(nil).UpdateDescription), arg0, arg1)
+}
+
 // UpdateRetrospective mocks base method
 func (m *MockPlaybookRunService) UpdateRetrospective(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
