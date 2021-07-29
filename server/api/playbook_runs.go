@@ -900,9 +900,9 @@ func (h *PlaybookRunHandler) updateDescription(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	requestBody := struct {
+	var requestBody struct {
 		Description string `json:"description"`
-	}{}
+	}
 
 	if err2 := json.NewDecoder(r.Body).Decode(&requestBody); err2 != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook run description", err2)
