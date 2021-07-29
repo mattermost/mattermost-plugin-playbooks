@@ -18,15 +18,14 @@ export interface Props {
     children: React.ReactNode;
 }
 
-const CollapsibleChecklist = (
-    {
-        title,
-        index,
-        collapsed,
-        setCollapsed,
-        items,
-        children,
-    }: Props) => {
+const CollapsibleChecklist = ({
+    title,
+    index,
+    collapsed,
+    setCollapsed,
+    items,
+    children,
+}: Props) => {
     const dispatch = useDispatch();
     const titleRef = useRef(null);
     const [showMenu, setShowMenu] = useState(false);

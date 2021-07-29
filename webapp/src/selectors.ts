@@ -62,11 +62,13 @@ export const currentPlaybookRun = createSelector(
     },
 );
 
+const emptyChecklistState = {} as Record<number, boolean>;
+
 export const currentChecklistCollapsedState = createSelector(
     getCurrentChannelId,
     pluginState,
     (channelId, plugin) => {
-        return plugin.checklistCollapsedState[channelId] ?? {} as Record<number, boolean>;
+        return plugin.checklistCollapsedState[channelId] ?? emptyChecklistState;
     },
 );
 
