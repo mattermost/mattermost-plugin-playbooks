@@ -46,11 +46,11 @@ const RHSAbout = (props: Props) => {
         .filter((p) => p.id !== props.playbookRun.owner_user_id && !p.is_bot)
         .map((p) => p.id);
 
-    const onTitleEdit = async (value: string) => {
+    const onTitleEdit = (value: string) => {
         changeChannelName(props.playbookRun.channel_id, value);
     };
 
-    const onDescriptionEdit = async (value: string) => {
+    const onDescriptionEdit = (value: string) => {
         updatePlaybookRunDescription(props.playbookRun.id, value);
     };
 
@@ -105,7 +105,7 @@ const RHSAbout = (props: Props) => {
 
 interface DescriptionProps {
     value: string;
-    onEdit: () => void;
+    onEdit: (value: string) => void;
 }
 
 const Description = (props: DescriptionProps) => {
