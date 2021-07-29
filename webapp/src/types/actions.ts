@@ -27,6 +27,8 @@ export const RECEIVED_GLOBAL_SETTINGS = pluginId + '_received_global_settings';
 export const SHOW_POST_MENU_MODAL = pluginId + '_show_post_menu_modal';
 export const HIDE_POST_MENU_MODAL = pluginId + '_hide_post_menu_modal';
 export const SET_HAS_VIEWED_CHANNEL = pluginId + '_set_has_viewed';
+export const SET_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_checklist_collapsed_state';
+export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = pluginId + '_set_all_checklists_collapsed_state';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -117,4 +119,18 @@ export interface SetHasViewedChannel {
     type: typeof SET_HAS_VIEWED_CHANNEL;
     channelId: string;
     hasViewed: boolean;
+}
+
+export interface SetChecklistCollapsedState {
+    type: typeof SET_CHECKLIST_COLLAPSED_STATE;
+    channelId: string;
+    checklistIndex: number;
+    collapsed: boolean;
+}
+
+export interface SetAllChecklistsCollapsedState {
+    type: typeof SET_ALL_CHECKLISTS_COLLAPSED_STATE;
+    channelId: string;
+    numOfChecklists: number;
+    collapsed: boolean;
 }

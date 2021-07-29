@@ -47,7 +47,10 @@ import {
     ShowPostMenuModal,
     HIDE_POST_MENU_MODAL,
     HidePostMenuModal,
-    SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
+    SetHasViewedChannel,
+    SET_HAS_VIEWED_CHANNEL,
+    SET_CHECKLIST_COLLAPSED_STATE,
+    SetChecklistCollapsedState, SetAllChecklistsCollapsedState, SET_ALL_CHECKLISTS_COLLAPSED_STATE,
 } from './types/actions';
 
 import {clientExecuteCommand} from './client';
@@ -214,4 +217,18 @@ export const setHasViewedChannel = (channelId: string): SetHasViewedChannel => (
     type: SET_HAS_VIEWED_CHANNEL,
     channelId,
     hasViewed: true,
+});
+
+export const setChecklistCollapsedState = (channelId: string, checklistIndex: number, collapsed: boolean): SetChecklistCollapsedState => ({
+    type: SET_CHECKLIST_COLLAPSED_STATE,
+    channelId,
+    checklistIndex,
+    collapsed,
+});
+
+export const setAllChecklistsCollapsedState = (channelId: string, collapsed: boolean, numOfChecklists: number): SetAllChecklistsCollapsedState => ({
+    type: SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    channelId,
+    numOfChecklists,
+    collapsed,
 });

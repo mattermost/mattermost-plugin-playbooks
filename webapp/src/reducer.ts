@@ -34,10 +34,18 @@ import {
     PlaybookDeleted,
     ReceivedTeamNumPlaybooks,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
-    ReceivedGlobalSettings, RECEIVED_GLOBAL_SETTINGS,
-    ShowPostMenuModal, HidePostMenuModal,
-    SHOW_POST_MENU_MODAL, HIDE_POST_MENU_MODAL,
-    SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
+    ReceivedGlobalSettings,
+    RECEIVED_GLOBAL_SETTINGS,
+    ShowPostMenuModal,
+    HidePostMenuModal,
+    SHOW_POST_MENU_MODAL,
+    HIDE_POST_MENU_MODAL,
+    SetHasViewedChannel,
+    SET_HAS_VIEWED_CHANNEL,
+    SetChecklistCollapsedState,
+    SetAllChecklistsCollapsedState,
+    SET_CHECKLIST_COLLAPSED_STATE,
+    SET_ALL_CHECKLISTS_COLLAPSED_STATE,
 } from 'src/types/actions';
 
 import {GlobalSettings} from './types/settings';
@@ -244,6 +252,38 @@ const hasViewedByChannel = (state: Record<string, boolean> = {}, action: SetHasV
     }
 };
 
+// checklistCollapsedState keeps a map of channelId -> checklist number -> collapsed
+const checklistCollapsedState = (
+    state: Record<string, Record<number, boolean>> = {},
+    action: SetChecklistCollapsedState | SetAllChecklistsCollapsedState,
+) => {
+    switch (action.type) {
+    case SET_CHECKLIST_COLLAPSED_STATE: {
+        const setAction = action as SetChecklistCollapsedState;
+        return {
+            ...state,
+            [setAction.channelId]: {
+                ...state[setAction.channelId],
+                [setAction.checklistIndex]: setAction.collapsed,
+            },
+        };
+    }
+    case SET_ALL_CHECKLISTS_COLLAPSED_STATE: {
+        const setAction = action as SetAllChecklistsCollapsedState;
+        const newState: Record<number, boolean> = {};
+        for (let i = 0; i < setAction.numOfChecklists; i++) {
+            newState[i] = setAction.collapsed;
+        }
+        return {
+            ...state,
+            [setAction.channelId]: newState,
+        };
+    }
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -255,4 +295,5 @@ export default combineReducers({
     globalSettings,
     postMenuModalVisibility,
     hasViewedByChannel,
+    checklistCollapsedState,
 });
