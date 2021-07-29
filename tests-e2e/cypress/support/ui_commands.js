@@ -136,7 +136,7 @@ Cypress.Commands.add('verifyEphemeralMessage', (message, isCompactMode, needsToS
 /**
  * Update the status of the current playbook run through the slash command.
  */
-Cypress.Commands.add('updateStatus', (message, reminder, status, description) => {
+Cypress.Commands.add('updateStatus', (message, reminder, status) => {
     // # Run the slash command to update status.
     cy.executeSlashCommand('/playbook update');
 
@@ -164,15 +164,6 @@ Cypress.Commands.add('updateStatus', (message, reminder, status, description) =>
                 cy.get('input').type(reminder, {delay: 200}).type('{enter}');
             });
         }
-
-        let actualDescription = description;
-        if (!description) {
-            actualDescription = 'description ' + Date.now();
-        }
-
-        // # remove and enter new description
-        cy.findByTestId('descriptioninput').clear();
-        cy.findByTestId('descriptioninput').type(actualDescription);
 
         // # Submit the dialog.
         cy.get('#interactiveDialogSubmit').click();

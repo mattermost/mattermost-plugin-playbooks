@@ -388,10 +388,9 @@ func TestUpdateStatus(t *testing.T) {
 			WebhookOnStatusUpdateURL: server.URL,
 		}
 		statusUpdateOptions := app.StatusUpdateOptions{
-			Status:      app.StatusActive,
-			Description: "latest-description",
-			Message:     "latest-message",
-			Reminder:    0,
+			Status:   app.StatusActive,
+			Message:  "latest-message",
+			Reminder: 0,
 		}
 		siteURL := "http://example.com"
 		channelID := "channel_id"

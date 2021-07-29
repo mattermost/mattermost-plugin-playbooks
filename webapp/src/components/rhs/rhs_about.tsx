@@ -1,21 +1,24 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React from 'react';
+import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
-import {useDispatch} from 'react-redux';
+
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
-import {setOwner} from 'src/client';
+import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 import {useProfilesInCurrentChannel} from 'src/hooks';
-import PostText from 'src/components/post_text';
-import {updateStatus} from 'src/actions';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import {HoverMenu} from 'src/components/rhs/rhs_shared';
 import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';
+import RHSAboutTitle, {DefaultRenderedTitle} from 'src/components/rhs/rhs_about_title';
+import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
+import {currentRHSAboutCollapsedState} from 'src/selectors';
+import {setRHSAboutCollapsedState} from 'src/actions';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -23,33 +26,11 @@ interface Props {
 
 const RHSAbout = (props: Props) => {
     const dispatch = useDispatch();
+    const channelId = useSelector(getCurrentChannelId);
     const profilesInChannel = useProfilesInCurrentChannel();
+    const collapsed = useSelector(currentRHSAboutCollapsedState);
 
-    const [collapsed, setCollapsed] = useState(false);
-
-    const toggleCollapsed = () => setCollapsed(!collapsed);
-
-    let description = <PostText text={props.playbookRun.description}/>;
-    if (props.playbookRun.status_posts.length === 0) {
-        description = (
-            <NoDescription>
-                {'No description yet. '}
-                <a
-                    href={'#'}
-                    tabIndex={0}
-                    role={'button'}
-                    onClick={() => dispatch(updateStatus())}
-                    onKeyDown={(e) => {
-                        // Handle Enter and Space as clicking on the button
-                        if (e.keyCode === 13 || e.keyCode === 32) {
-                            dispatch(updateStatus());
-                        }
-                    }}
-                >{'Click here'}</a>
-                {' to update status.'}
-            </NoDescription>
-        );
-    }
+    const toggleCollapsed = () => dispatch(setRHSAboutCollapsedState(channelId, !collapsed));
 
     const fetchUsers = async () => {
         return profilesInChannel;
@@ -70,8 +51,16 @@ const RHSAbout = (props: Props) => {
         .filter((p) => p.id !== props.playbookRun.owner_user_id && !p.is_bot)
         .map((p) => p.id);
 
+    const onTitleEdit = (value: string) => {
+        changeChannelName(props.playbookRun.channel_id, value);
+    };
+
+    const onDescriptionEdit = (value: string) => {
+        updatePlaybookRunDescription(props.playbookRun.id, value);
+    };
+
     return (
-        <Container tabIndex={0} >
+        <Container tabIndex={0}>
             <ButtonsRow>
                 <RHSAboutButtons
                     playbookRun={props.playbookRun}
@@ -79,14 +68,17 @@ const RHSAbout = (props: Props) => {
                     toggleCollapsed={toggleCollapsed}
                 />
             </ButtonsRow>
-            <Title>
-                {props.playbookRun.name}
-            </Title>
+            <RHSAboutTitle
+                value={props.playbookRun.name}
+                onEdit={onTitleEdit}
+                renderedTitle={RenderedTitle}
+            />
             {!collapsed &&
             <>
-                <Description>
-                    {description}
-                </Description>
+                <RHSAboutDescription
+                    value={props.playbookRun.description}
+                    onEdit={onDescriptionEdit}
+                />
                 <Row>
                     <OwnerSection>
                         <MemberSectionTitle>{'Owner'}</MemberSectionTitle>
@@ -121,7 +113,7 @@ const Container = styled.div`
     margin-top: 3px;
     padding: 16px 12px;
 
-    :hover, :focus-within {
+    :hover {
         background-color: rgba(var(--center-channel-color-rgb), 0.04);
     }
 `;
@@ -154,48 +146,23 @@ const ButtonsRow = styled(HoverMenu)`
 
     display: none;
 
-    ${Container}:focus-within &, ${Container}:hover & {
+    ${Container}:hover & {
         display: block;
     }
 `;
 
-const PaddedContent = styled.div`
-    padding: 0 8px; 
-`;
-
-const Title = styled(PaddedContent)`
-    height: 30px;
-    line-height: 24px;
-
-    font-size: 18px;
-    font-weight: 600;
-
-    color: var(--center-channel-color);
-
-    :hover {
-        cursor: text;
+const RenderedTitle = styled(DefaultRenderedTitle)`
+    ${Container}:hover & {
+        max-width: calc(100% - 75px);
     }
-
-    border-radius: 5px;
-
-    margin-bottom: 2px;
 `;
 
-const Description = styled(PaddedContent)`
-    :hover {
-        cursor: text;
-    }
-
-    border-radius: 5px;
-
-    margin-bottom: 16px;
-`;
-
-const Row = styled(PaddedContent)`
+const Row = styled.div`
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
 
+    padding: 0 8px;
     margin-bottom: 30px;
 `;
 
@@ -218,11 +185,6 @@ const MemberSectionTitle = styled.div`
     line-height: 16px;
 
     color: rgba(var(--center-channel-color-rgb), 0.72)
-`;
-
-const NoDescription = styled.div`
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-    margin-bottom: 10px;
 `;
 
 export default RHSAbout;
