@@ -255,7 +255,7 @@ const IconWrapper = styled.div`
 
 export default RHSChecklists;
 
-const makeFilterOptions = (filter: ChecklistItemsFilter, name: string) => {
+const makeFilterOptions = (filter: ChecklistItemsFilter, name: string): CheckboxOption[] => {
     return [
         {
             display: 'All tasks',
@@ -266,11 +266,11 @@ const makeFilterOptions = (filter: ChecklistItemsFilter, name: string) => {
         {
             value: 'divider',
             display: '',
-        } as CheckboxOption,
+        },
         {
             value: 'title',
             display: 'TASK STATE',
-        } as CheckboxOption,
+        },
         {
             display: 'Show checked tasks',
             value: 'checked',
@@ -280,11 +280,11 @@ const makeFilterOptions = (filter: ChecklistItemsFilter, name: string) => {
         {
             value: 'divider',
             display: '',
-        } as CheckboxOption,
+        },
         {
             value: 'title',
             display: 'ASSIGNEE',
-        } as CheckboxOption,
+        },
         {
             display: `Me (${name})`,
             value: 'me',
