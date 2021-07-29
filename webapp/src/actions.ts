@@ -51,10 +51,15 @@ import {
     SET_HAS_VIEWED_CHANNEL,
     SetRHSAboutCollapsedState,
     SET_RHS_ABOUT_COLLAPSED_STATE,
-} from './types/actions';
-
-import {clientExecuteCommand} from './client';
-import {GlobalSettings} from './types/settings';
+    SET_CHECKLIST_COLLAPSED_STATE,
+    SetChecklistCollapsedState,
+    SetAllChecklistsCollapsedState,
+    SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    SET_CHECKLIST_ITEMS_FILTER, SetChecklistItemsFilter,
+} from 'src/types/actions';
+import {clientExecuteCommand} from 'src/client';
+import {GlobalSettings} from 'src/types/settings';
+import {ChecklistItemsFilter} from 'src/types/playbook';
 
 export function startPlaybookRun(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -223,4 +228,24 @@ export const setRHSAboutCollapsedState = (channelId: string, collapsed: boolean)
     type: SET_RHS_ABOUT_COLLAPSED_STATE,
     channelId,
     collapsed,
+});
+
+export const setChecklistCollapsedState = (channelId: string, checklistIndex: number, collapsed: boolean): SetChecklistCollapsedState => ({
+    type: SET_CHECKLIST_COLLAPSED_STATE,
+    channelId,
+    checklistIndex,
+    collapsed,
+});
+
+export const setAllChecklistsCollapsedState = (channelId: string, collapsed: boolean, numOfChecklists: number): SetAllChecklistsCollapsedState => ({
+    type: SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    channelId,
+    numOfChecklists,
+    collapsed,
+});
+
+export const setChecklistItemsFilter = (channelId: string, nextState: ChecklistItemsFilter): SetChecklistItemsFilter => ({
+    type: SET_CHECKLIST_ITEMS_FILTER,
+    channelId,
+    nextState,
 });

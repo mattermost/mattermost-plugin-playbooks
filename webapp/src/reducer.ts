@@ -4,9 +4,7 @@
 import {combineReducers} from 'redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
-
 import {
     RECEIVED_TOGGLE_RHS_ACTION,
     ReceivedToggleRHSAction,
@@ -44,9 +42,13 @@ import {
     SET_HAS_VIEWED_CHANNEL,
     SetRHSAboutCollapsedState,
     SET_RHS_ABOUT_COLLAPSED_STATE,
+    SetChecklistCollapsedState,
+    SetAllChecklistsCollapsedState,
+    SET_CHECKLIST_COLLAPSED_STATE,
+    SET_ALL_CHECKLISTS_COLLAPSED_STATE, SetChecklistItemsFilter, SET_CHECKLIST_ITEMS_FILTER,
 } from 'src/types/actions';
-
-import {GlobalSettings} from './types/settings';
+import {GlobalSettings} from 'src/types/settings';
+import {ChecklistItemsFilter} from 'src/types/playbook';
 
 function toggleRHSFunction(state = null, action: ReceivedToggleRHSAction) {
     switch (action.type) {
@@ -262,6 +264,50 @@ const rhsAboutCollapsedByChannel = (state: Record<string, boolean> = {}, action:
     }
 };
 
+// checklistCollapsedState keeps a map of channelId -> checklist number -> collapsed
+const checklistCollapsedState = (
+    state: Record<string, Record<number, boolean>> = {},
+    action: SetChecklistCollapsedState | SetAllChecklistsCollapsedState,
+) => {
+    switch (action.type) {
+    case SET_CHECKLIST_COLLAPSED_STATE: {
+        const setAction = action as SetChecklistCollapsedState;
+        return {
+            ...state,
+            [setAction.channelId]: {
+                ...state[setAction.channelId],
+                [setAction.checklistIndex]: setAction.collapsed,
+            },
+        };
+    }
+    case SET_ALL_CHECKLISTS_COLLAPSED_STATE: {
+        const setAction = action as SetAllChecklistsCollapsedState;
+        const newState: Record<number, boolean> = {};
+        for (let i = 0; i < setAction.numOfChecklists; i++) {
+            newState[i] = setAction.collapsed;
+        }
+        return {
+            ...state,
+            [setAction.channelId]: newState,
+        };
+    }
+    default:
+        return state;
+    }
+};
+
+const checklistItemsFilterByChannel = (state: Record<string, ChecklistItemsFilter> = {}, action: SetChecklistItemsFilter) => {
+    switch (action.type) {
+    case SET_CHECKLIST_ITEMS_FILTER:
+        return {
+            ...state,
+            [action.channelId]: action.nextState,
+        };
+    default:
+        return state;
+    }
+};
+
 export default combineReducers({
     toggleRHSFunction,
     rhsOpen,
@@ -274,4 +320,6 @@ export default combineReducers({
     postMenuModalVisibility,
     hasViewedByChannel,
     rhsAboutCollapsedByChannel,
+    checklistCollapsedState,
+    checklistItemsFilterByChannel,
 });
