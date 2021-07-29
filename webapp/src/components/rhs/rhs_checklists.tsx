@@ -68,9 +68,9 @@ const RHSChecklists = (props: Props) => {
     const checklistItemsFilter = useSelector(currentChecklistItemsFilter);
     const myUser = useSelector(getCurrentUser);
     const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
+    const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
 
-    const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const checklists = props.playbookRun.checklists || [];
     const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
     const active = props.playbookRun.current_status !== PlaybookRunStatus.Resolved && props.playbookRun.current_status !== PlaybookRunStatus.Archived;
@@ -276,9 +276,6 @@ const StyledPrimaryButton = styled(PrimaryButton)`
 
 export default RHSChecklists;
 
-//
-// The code below are all helper functions.
-//
 const allComplete = (checklists: Checklist[]) => {
     return outstandingTasks(checklists) === 0;
 };
