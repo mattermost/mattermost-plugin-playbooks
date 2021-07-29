@@ -178,3 +178,134 @@ Cypress.Commands.add('selectChannel', (channelName) => {
         cy.findByText(channelName).click({force: true});
     });
 });
+
+/**
+ * Update the status of the current playbook run through the slash command.
+ */
+Cypress.Commands.add('updateStatus', (message, reminder, status, description) => {
+    // # Run the slash command to update status.
+    cy.executeSlashCommand('/playbook update');
+
+    // # Get the interactive dialog modal.
+    cy.get('#interactiveDialogModal').within(() => {
+        // # remove what's there (if this is a second update)
+        cy.findByTestId('messageinput').clear();
+
+        // # Type the new update in the text box.
+        cy.findByTestId('messageinput').type(message);
+
+        let actualStatus = status;
+        if (!actualStatus) {
+            actualStatus = 'reported';
+        }
+
+        actualStatus = actualStatus.toLowerCase();
+
+        cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
+            cy.get('input').type(actualStatus, {delay: 200}).type('{enter}');
+        });
+
+        if (reminder) {
+            cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.get('input').type(reminder, {delay: 200}).type('{enter}');
+            });
+        }
+
+        let actualDescription = description;
+        if (!description) {
+            actualDescription = 'description ' + Date.now();
+        }
+
+        // # remove and enter new description
+        cy.findByTestId('descriptioninput').clear();
+        cy.findByTestId('descriptioninput').type(actualDescription);
+
+        // # Submit the dialog.
+        cy.get('#interactiveDialogSubmit').click();
+    });
+
+    // * Verify that the interactive dialog has gone.
+    cy.get('#interactiveDialogModal').should('not.exist');
+
+    // # Return the post ID of the status update.
+    return cy.getLastPostId();
+});
+
+/**
+ * Edit a post through the post dot menu.
+ * @param {String} postId - ID of the post to delete.
+ * @param {String} newMessage - New content of the post.
+ */
+Cypress.Commands.add('editPost', (postId, newMessage) => {
+    // # Open the post dot menu.
+    cy.clickPostDotMenu(postId);
+
+    // # Click on the Edit menu option.
+    cy.get(`#edit_post_${postId}`).click();
+
+    // # Overwrite the post content with the new message provided.
+    cy.get('#edit_textbox').clear().type(newMessage);
+
+    // # Confirm the edit in the dialog.
+    cy.get('#editButton').click();
+});
+
+/**
+ * Switch channel through the channel switcher
+ * @param {String} channelName - Display name of the channel.
+ */
+Cypress.Commands.add('uiSwitchChannel', (channelName) => {
+    if (Cypress.platform === 'darwin') {
+        cy.get('body').type('{cmd}k');
+    } else {
+        cy.get('body').type('{ctrl}k');
+    }
+    cy.get('#quickSwitchInput').type(channelName);
+    cy.get('#suggestionList > div:first-child').should('contain', channelName).click();
+    cy.get('#channelHeaderTitle').contains(channelName);
+});
+
+Cypress.Commands.add('getStyledComponent', (className) => {
+    cy.get(`[class^="${className}"]`);
+});
+
+/**
+ * Get the provided pseudo-class from the previous element and return the property passed as argument
+ * @param {String} pseudoClass - CSS pseudo class to get.
+ * @param {String} property - Property that will be returned.
+ *
+ * Stolen from https://stackoverflow.com/questions/55516990/cypress-testing-pseudo-css-class-before
+ */
+Cypress.Commands.add('cssPseudoClass', {prevSubject: 'element'}, (el, pseudoClass, property) => {
+    const win = el[0].ownerDocument.defaultView;
+    const pseudoElem = win.getComputedStyle(el[0], pseudoClass);
+    return pseudoElem.getPropertyValue(property).replace(/(^")|("$)/g, '');
+});
+
+/**
+ * Get the :before pseudo-class from the previous element and return the property passed as argument
+ * @param {String} property - Property that will be returned.
+ */
+Cypress.Commands.add('before', {prevSubject: 'element'}, (el, property) => {
+    return cy.wrap(el).cssPseudoClass('before', property);
+});
+
+/**
+ * Get the :after pseudo-class from the previous element and return the property passed as argument
+ * @param {String} property - Property that will be returned.
+ */
+Cypress.Commands.add('after', {prevSubject: 'element'}, (el, property) => {
+    return cy.wrap(el).cssPseudoClass('after', property);
+});
+
+function waitUntilPermanentPost() {
+    cy.get('#postListContent').should('exist');
+    cy.waitUntil(() => cy.findAllByTestId('postView').last().then((el) => !(el[0].id.includes(':'))));
+}
+
+Cypress.Commands.add('getFirstPostId', () => {
+    waitUntilPermanentPost();
+
+    cy.findAllByTestId('postView').first().should('have.attr', 'id').and('not.include', ':')
+        .invoke('replace', 'post_', '');
+});

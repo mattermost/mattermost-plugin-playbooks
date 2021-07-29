@@ -9,11 +9,11 @@
 describe('playbook creation button', () => {
     before(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Create a playbook
-        cy.apiGetTeamByName('ad-1').then((team) => {
-            cy.apiGetCurrentUser().then((user) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 cy.apiCreateTestPlaybook({
                     teamId: team.id,
                     userId: user.id,
@@ -27,7 +27,7 @@ describe('playbook creation button', () => {
         cy.viewport('macbook-13');
 
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
     });
 
     it('opens playbook creation page with New Playbook button', () => {

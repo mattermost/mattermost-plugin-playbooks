@@ -16,14 +16,14 @@ describe('playbook run rhs checklist', () => {
 
     before(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Switch to clean display mode
         cy.apiSaveMessageDisplayPreference('clean');
 
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 userId = user.id;
 
                 // # Create a playbook
@@ -62,7 +62,7 @@ describe('playbook run rhs checklist', () => {
         cy.viewport('macbook-13');
 
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
     });
 
     describe('rhs stuff', () => {
@@ -81,35 +81,35 @@ describe('playbook run rhs checklist', () => {
                 ownerUserId: userId,
             });
 
-            cy.apiGetChannelByName('ad-1', playbookRunChannelName).then(({channel}) => {
+            cy.legacyApiGetChannelByName('ad-1', playbookRunChannelName).then(({channel}) => {
                 // # Add @aaron.peterson
                 cy.apiGetUserByEmail('user-7@sample.mattermost.com').then(({user}) => {
-                    cy.apiAddUserToChannel(channel.id, user.id);
+                    cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
 
                 // # Add @christina.wilson
                 cy.apiGetUserByEmail('user-6@sample.mattermost.com').then(({user}) => {
-                    cy.apiAddUserToChannel(channel.id, user.id);
+                    cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
 
                 // # Add @diana.wells
                 cy.apiGetUserByEmail('user-8@sample.mattermost.com').then(({user}) => {
-                    cy.apiAddUserToChannel(channel.id, user.id);
+                    cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
 
                 // # Add @emily.meyer
                 cy.apiGetUserByEmail('user-14@sample.mattermost.com').then(({user}) => {
-                    cy.apiAddUserToChannel(channel.id, user.id);
+                    cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
 
                 // # Add @frances.elliot
                 cy.apiGetUserByEmail('user-24@sample.mattermost.com').then(({user}) => {
-                    cy.apiAddUserToChannel(channel.id, user.id);
+                    cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
 
                 // # Add @jack.wheeler
                 cy.apiGetUserByEmail('user-3@sample.mattermost.com').then(({user}) => {
-                    cy.apiAddUserToChannel(channel.id, user.id);
+                    cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
             });
         });

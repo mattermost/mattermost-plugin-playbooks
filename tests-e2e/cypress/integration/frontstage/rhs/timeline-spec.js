@@ -15,28 +15,28 @@
 
 //     before(() => {
 //         // # Login as the sysadmin
-//         cy.apiLogin('sysadmin');
+//         cy.legacyApiLogin('sysadmin');
 
 //         // # Create a new team for the welcome page test
-//         cy.apiCreateTeam('team', 'Team').then(({team}) => {
+//         cy.legacyApiCreateTeam('team', 'Team').then(({team}) => {
 //             teamName = team.name;
 //             teamId = team.id;
 
 //             // # Add user-1 to team
 //             cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
-//                 cy.apiAddUserToTeam(team.id, user.id);
+//                 cy.legacyApiAddUserToTeam(team.id, user.id);
 //             });
 
 //             // # Add aaron.peterson to team
 //             cy.apiGetUserByEmail('user-7@sample.mattermost.com').then(({user}) => {
-//                 cy.apiAddUserToTeam(team.id, user.id);
+//                 cy.legacyApiAddUserToTeam(team.id, user.id);
 //             });
 
 //             // # Login as user-1
-//             cy.apiLogin('user-1');
+//             cy.legacyApiLogin('user-1');
 
 //             // # Create a playbook
-//             cy.apiGetCurrentUser().then((user) => {
+//             cy.legacyApiGetCurrentUser().then((user) => {
 //                 userId = user.id;
 
 //                 cy.apiCreatePlaybook({
@@ -64,7 +64,7 @@
 //         cy.viewport('macbook-13');
 
 //         // # Login as user-1
-//         cy.apiLogin('user-1');
+//         cy.legacyApiLogin('user-1');
 
 //         // # Create a new playbook run
 //         const now = Date.now();
@@ -77,7 +77,7 @@
 //             ownerUserId: userId,
 //         });
 
-//         cy.apiGetChannelByName(teamName, channelName).then(({channel}) => {
+//         cy.legacyApiGetChannelByName(teamName, channelName).then(({channel}) => {
 //             channelId = channel.id;
 //         });
 
@@ -86,7 +86,7 @@
 
 //         // # Add @aaron.peterson
 //         cy.apiGetUserByEmail('user-7@sample.mattermost.com').then(({user: aaron}) => {
-//             cy.apiAddUserToChannel(channelId, aaron.id);
+//             cy.legacyApiAddUserToChannel(channelId, aaron.id);
 //         });
 
 //         // * Verify the playbook run RHS is open.
@@ -145,7 +145,7 @@
 //     describe('events from posts in the playbook run channel ', () => {
 //         it('show up at the end and in the middle of the timeline', () => {
 //             // # Post the first message we'll click on
-//             cy.apiCreatePost(channelId, 'this is the first post').then(({post}) => {
+//             cy.legacyApiCreatePost(channelId, 'this is the first post').then(({post}) => {
 //                 // # Change owner, to create a timeline event
 //                 cy.executeSlashCommand('/playbook owner @aaron.peterson');
 
@@ -177,11 +177,11 @@
 //             const summary1 = 'This is the playbook run summary 1';
 //             const summary2 = 'This is the playbook run summary 2';
 
-//             cy.apiCreateChannel(teamId, 'test-channel', 'Test Channel', 'O').then(({channel}) => {
+//             cy.legacyApiCreateChannel(teamId, 'test-channel', 'Test Channel', 'O').then(({channel}) => {
 //                 // # Navigate to our new channel
 //                 cy.visit(`/${teamName}/channels/${channel.name}`);
 
-//                 cy.apiCreatePost(channel.id, 'this is the first post').then(({post}) => {
+//                 cy.legacyApiCreatePost(channel.id, 'this is the first post').then(({post}) => {
 //                     // # Post the second message we'll click on
 //                     cy.createPost('this is the second post we\'ll click on');
 
@@ -280,21 +280,9 @@
 //             removeTimelineEvent('incident_created', 1, 0, 'Run started by user-1');
 
 //             // * Verify user joined message is visible in the timeline
-//             verifyTimelineEvent('user_joined_left', 3, 0, '@playbook joined the channel');
-
-//             // * Delete the user joined message
-//             removeTimelineEvent('user_joined_left', 3, 0, '@playbook joined the channel');
-
-//             // * Verify user joined message is visible in the timeline
-//             verifyTimelineEvent('user_joined_left', 2, 0, '@user-1 joined the channel');
-
-//             // * Delete the user joined message
-//             removeTimelineEvent('user_joined_left', 2, 0, '@user-1 joined the channel');
-
-//             // * Verify user joined message is visible in the timeline
 //             verifyTimelineEvent('user_joined_left', 1, 0, '@aaron.peterson joined the channel');
 
-//             // * Delete the user joined message
+//             // * Delete the playbook run created event
 //             removeTimelineEvent('user_joined_left', 1, 0, '@aaron.peterson joined the channel');
 
 //             // * Verify notice is shown
@@ -396,8 +384,8 @@
 //             // * Verify we can see all events:
 //             clickOnFilterOption('All events');
 
-//             // * Verify all events are shown (incl. 3 user_joined_left events)
-//             cy.findAllByTestId(/timeline-item .*/).should('have.length', 12);
+//             // * Verify all events are shown (incl. one user_joined_left event)
+//             cy.findAllByTestId(/timeline-item .*/).should('have.length', 10);
 //             verifyTimelineEvent('status_updated', 2, 0, 'user-1 posted a status update');
 //             verifyTimelineEvent('owner_changed', 2, 0, 'Owner changed from @user-1 to @aaron.peterson');
 //             verifyTimelineEvent('status_updated', 2, 1, 'user-1 changed status from Reported to Active');

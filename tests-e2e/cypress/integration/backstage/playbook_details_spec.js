@@ -9,7 +9,7 @@
 describe('backstage playbook details', () => {
     beforeEach(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
     });
 
     it('redirects to not found error if the playbook is unknown', () => {
@@ -96,13 +96,13 @@ describe('backstage playbook details', () => {
 
         before(() => {
             // # Login as user-1
-            cy.apiLogin('user-1');
+            cy.legacyApiLogin('user-1');
 
             // # Create a playbook
-            cy.apiGetTeamByName('ad-1').then((team) => {
+            cy.legacyApiGetTeamByName('ad-1').then((team) => {
                 teamId = team.id;
 
-                cy.apiGetCurrentUser().then((user) => {
+                cy.legacyApiGetCurrentUser().then((user) => {
                     cy.apiCreateTestPlaybook({
                         teamId: team.id,
                         title: playbookName,
@@ -115,7 +115,7 @@ describe('backstage playbook details', () => {
                 });
 
                 // # Create a private channel
-                cy.apiCreateChannel(teamId, 'private-channel', 'Private Channel', 'P').then(({channel}) => {
+                cy.legacyApiCreateChannel(teamId, 'private-channel', 'Private Channel', 'P').then(({channel}) => {
                     privateChannelId = channel.id;
                     privateChannelName = channel.name;
                 });
@@ -218,12 +218,12 @@ describe('backstage playbook details', () => {
 
         before(() => {
             // # Login as user-1
-            cy.apiLogin('user-1');
+            cy.legacyApiLogin('user-1');
 
             // # Create a playbook
-            cy.apiGetTeamByName('ad-1').then((team) => {
+            cy.legacyApiGetTeamByName('ad-1').then((team) => {
                 teamId = team.id;
-                cy.apiGetCurrentUser().then((user) => {
+                cy.legacyApiGetCurrentUser().then((user) => {
                     userId = user.id;
                     cy.apiCreateTestPlaybook({
                         teamId,
@@ -487,10 +487,10 @@ describe('backstage playbook details', () => {
                     let userToRemove;
 
                     // # Create a playbook with a user that is later removed from the team
-                    cy.apiLogin('sysadmin').then(() => {
+                    cy.legacyApiLogin('sysadmin').then(() => {
                         cy.apiCreateUser().then((result) => {
                             userToRemove = result.user;
-                            cy.apiAddUserToTeam(teamId, userToRemove.id);
+                            cy.legacyApiAddUserToTeam(teamId, userToRemove.id);
 
                             // # Create a playbook with the user that will be removed from the team.
                             cy.apiCreatePlaybook({
@@ -505,10 +505,10 @@ describe('backstage playbook details', () => {
                             });
 
                             // # Remove user from the team
-                            cy.apiRemoveUserFromTeam(teamId, userToRemove.id);
+                            cy.legacyApiRemoveUserFromTeam(teamId, userToRemove.id);
                         });
                     }).then(() => {
-                        cy.apiLogin('user-1');
+                        cy.legacyApiLogin('user-1');
 
                         // # Navigate again to the playbook
                         cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
@@ -712,13 +712,13 @@ describe('backstage playbook details', () => {
                     let userToRemove;
 
                     // # Create a playbook with a user that is later removed from the team
-                    cy.apiLogin('sysadmin').then(() => {
+                    cy.legacyApiLogin('sysadmin').then(() => {
                         // # We need to increase the maximum number of users per team; otherwise,
                         // adding a new member to the team fails in CI
 
                         cy.apiCreateUser().then((result) => {
                             userToRemove = result.user;
-                            cy.apiAddUserToTeam(teamId, userToRemove.id);
+                            cy.legacyApiAddUserToTeam(teamId, userToRemove.id);
 
                             // # Create a playbook with the user that will be removed from the team as
                             // the default owner
@@ -734,10 +734,10 @@ describe('backstage playbook details', () => {
                             });
 
                             // # Remove user from the team
-                            cy.apiRemoveUserFromTeam(teamId, userToRemove.id);
+                            cy.legacyApiRemoveUserFromTeam(teamId, userToRemove.id);
                         });
                     }).then(() => {
-                        cy.apiLogin('user-1');
+                        cy.legacyApiLogin('user-1');
 
                         // # Navigate again to the playbook
                         cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
@@ -944,10 +944,10 @@ describe('backstage playbook details', () => {
 
                 it('removes the channel and disables the setting if the channel no longer exists', () => {
                     // # Create a playbook with a user that is later removed from the team
-                    cy.apiLogin('sysadmin').then(() => {
+                    cy.legacyApiLogin('sysadmin').then(() => {
                         const channelDisplayName = String('Channel to delete ' + Date.now());
                         const channelName = channelDisplayName.replace(/ /g, '-').toLowerCase();
-                        cy.apiCreateChannel(teamId, channelName, channelDisplayName).then(({channel}) => {
+                        cy.legacyApiCreateChannel(teamId, channelName, channelDisplayName).then(({channel}) => {
                             // # Create a playbook with the channel to be deleted as the announcement channel
                             cy.apiCreatePlaybook({
                                 teamId,
@@ -961,10 +961,10 @@ describe('backstage playbook details', () => {
                             });
 
                             // # Delete channel
-                            cy.apiDeleteChannel(channel.id);
+                            cy.legacyApiDeleteChannel(channel.id);
                         });
                     }).then(() => {
-                        cy.apiLogin('user-1');
+                        cy.legacyApiLogin('user-1');
 
                         // # Navigate again to the playbook
                         cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
