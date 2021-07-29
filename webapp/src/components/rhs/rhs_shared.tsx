@@ -117,7 +117,7 @@ export const HoverMenuButton = styled.i`
     cursor: pointer;
     width: 28px;
     height: 28px;
-    padding: 2px 0 0 2px;
+    padding: 1px 0 0 1px;
 `;
 
 export const SmallerProfile = styled(Profile)`

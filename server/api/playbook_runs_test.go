@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
+	icClient "github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/pkg/errors"
@@ -21,11 +21,11 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	mock_app "github.com/mattermost/mattermost-plugin-incident-collaboration/server/app/mocks"
-	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
+	mock_poster "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	mock_config "github.com/mattermost/mattermost-plugin-playbooks/server/config/mocks"
 )
 
 func TestPlaybookRuns(t *testing.T) {

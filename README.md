@@ -1,12 +1,12 @@
-# Mattermost Incident Collaboration
+# Mattermost Playbooks
 
-[![Build Status](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-incident-collaboration/master.svg)](https://circleci.com/gh/mattermost/mattermost-plugin-incident-collaboration)
-[![Code Coverage](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-incident-collaboration/master.svg)](https://codecov.io/gh/mattermost/mattermost-plugin-incident-collaboration)
-[![Release](https://img.shields.io/github/v/release/mattermost/mattermost-plugin-incident-collaboration)](https://github.com/mattermost/mattermost-plugin-incident-collaboration/releases/latest)
+[![Build Status](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-playbooks/master.svg)](https://circleci.com/gh/mattermost/mattermost-plugin-playbooks)
+[![Code Coverage](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-playbooks/master.svg)](https://codecov.io/gh/mattermost/mattermost-plugin-playbooks)
+[![Release](https://img.shields.io/github/v/release/mattermost/mattermost-plugin-playbooks)](https://github.com/mattermost/mattermost-plugin-playbooks/releases/latest)
 
-Mattermost Incident Collaboration allows your team to coordinate, manage, and resolve incidents from within Mattermost. For configuration and administration information visit our [documentation](https://docs.mattermost.com/administration/devops-command-center.html).
+Mattermost Playbooks allows your team to create and run playbooks from within Mattermost. For configuration and administration information visit our [documentation](https://docs.mattermost.com/administration/devops-command-center.html).
 
-![Mattermost Incident Collaboration](assets/incident_response.png)
+![Mattermost Playbooks](assets/incident_response.png)
 
 ## License
 
@@ -24,13 +24,13 @@ If you're uncertain whether your PR requires documentation, or you'd like some e
 
 ## Generating test data
 
-To quickly test Mattermost Incident Collaboration, use the following test commands to create playbook runs populated with random data:
+To quickly test Mattermost Playbooks, use the following test commands to create playbook runs populated with random data:
 
-- `/incident test create-playbooks [total playbooks]` - Provide a number of total playbooks that will be created. The command creates one or more playbooks based on the given parameter.
+- `/playbook test create-playbooks [total playbooks]` - Provide a number of total playbooks that will be created. The command creates one or more playbooks based on the given parameter.
 
   * An example command looks like: `/playbook test create-playbooks 5`
 
-- `/incident test create-playbook-run [playbook ID] [timestamp] [playbook run name]` - Provide the ID of an existing playbook to which the current user has access, a timestamp, and an playbook run name. The command creates an ongoing playbook run with the creation date set to the specified timestamp.
+- `/playbook test create-playbook-run [playbook ID] [timestamp] [playbook run name]` - Provide the ID of an existing playbook to which the current user has access, a timestamp, and an playbook run name. The command creates an ongoing playbook run with the creation date set to the specified timestamp.
 
   * An example command looks like: `/playbook test create-playbook-run 6utgh6qg7p8ndeef9edc583cpc 2020-11-23 PR-Testing`
 

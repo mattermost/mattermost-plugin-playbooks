@@ -35,22 +35,6 @@ beforeEach(() => {
     Cypress.Cookies.preserveOnce('MMAUTHTOKEN', 'MMUSERID', 'MMCSRF');
 });
 
-Cypress.Commands.add('requireIncidentCollaborationPlugin', (version) => {
-    cy.apiGetWebappPlugins().then((response) => {
-        const plugins = response.body;
-
-        let isInstalled = false;
-        for (const plugin of plugins) {
-            if (plugin.id === 'com.mattermost.plugin-incident-management' && plugin.version === version) {
-                isInstalled = true;
-                break;
-            }
-        }
-
-        expect(isInstalled, `Incident Collaboration plugin should be installed with version ${version}`).to.equal(true);
-    });
-});
-
 /**
  * End all active playbook runs directly from API with sysadmin. Need to login after this.
  */

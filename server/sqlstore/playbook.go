@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -51,6 +51,8 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 		sort = "NumStages"
 	case app.SortBySteps:
 		sort = "NumSteps"
+	case app.SortByRuns:
+		sort = "NumRuns"
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
@@ -92,21 +94,51 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 // NewPlaybookStore creates a new store for playbook service.
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) app.PlaybookStore {
 	playbookSelect := sqlStore.builder.
-		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident AS CreatePublicPlaybookRun", "CreateAt",
-			"UpdateAt", "DeleteAt", "NumStages", "NumSteps", "BroadcastChannelID",
-			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds",
-			"ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "InviteUsersEnabled",
-			"DefaultCommanderID AS DefaultOwnerID", "DefaultCommanderEnabled AS DefaultOwnerEnabled",
-			"AnnouncementChannelID", "AnnouncementChannelEnabled",
-			"WebhookOnCreationURL", "WebhookOnCreationEnabled",
-			"MessageOnJoin", "MessageOnJoinEnabled",
+		Select(
+			"ID",
+			"Title",
+			"Description",
+			"TeamID",
+			"CreatePublicIncident AS CreatePublicPlaybookRun",
+			"CreateAt",
+			"UpdateAt",
+			"DeleteAt",
+			"NumStages",
+			"NumSteps",
+			`(
+				CASE WHEN InviteUsersEnabled THEN 1 ELSE 0 END +
+				CASE WHEN DefaultCommanderEnabled THEN 1 ELSE 0 END +
+				CASE WHEN AnnouncementChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN WebhookOnCreationEnabled THEN 1 ELSE 0 END +
+				CASE WHEN MessageOnJoinEnabled THEN 1 ELSE 0 END +
+				CASE WHEN WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
+				CASE WHEN SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
+				CASE WHEN CategorizeChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN ExportChannelOnArchiveEnabled THEN 1 ELSE 0 END
+			) AS NumActions`,
+			"BroadcastChannelID",
+			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate",
+			"ReminderTimerDefaultSeconds",
+			"ConcatenatedInvitedUserIDs",
+			"ConcatenatedInvitedGroupIDs",
+			"InviteUsersEnabled",
+			"DefaultCommanderID AS DefaultOwnerID",
+			"DefaultCommanderEnabled AS DefaultOwnerEnabled",
+			"AnnouncementChannelID",
+			"AnnouncementChannelEnabled",
+			"WebhookOnCreationURL",
+			"WebhookOnCreationEnabled",
+			"MessageOnJoin",
+			"MessageOnJoinEnabled",
 			"RetrospectiveReminderIntervalSeconds",
 			"RetrospectiveTemplate",
 			"WebhookOnStatusUpdateURL",
 			"WebhookOnStatusUpdateEnabled",
 			"ExportChannelOnArchiveEnabled",
-			"ConcatenatedSignalAnyKeywords", "SignalAnyKeywordsEnabled",
-			"CategorizeChannelEnabled").
+			"ConcatenatedSignalAnyKeywords",
+			"SignalAnyKeywordsEnabled",
+			"CategorizeChannelEnabled",
+		).
 		From("IR_Playbook")
 
 	memberIDsSelect := sqlStore.builder.
@@ -250,10 +282,34 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 
 	var playbooks []app.Playbook
 	err = p.store.selectBuilder(tx, &playbooks, p.store.builder.
-		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident AS CreatePublicPlaybookRun", "CreateAt",
-			"DeleteAt", "NumStages", "NumSteps").
+		Select(
+			"p.ID",
+			"p.Title",
+			"p.Description",
+			"p.TeamID",
+			"p.CreatePublicIncident AS CreatePublicPlaybookRun",
+			"p.CreateAt",
+			"p.DeleteAt",
+			"p.NumStages",
+			"p.NumSteps",
+			"COUNT(i.ID) AS NumRuns",
+			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
+			`(
+				CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.AnnouncementChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.ExportChannelOnArchiveEnabled THEN 1 ELSE 0 END
+			) AS NumActions`,
+		).
 		From("IR_Playbook AS p").
-		Where(sq.Eq{"DeleteAt": 0}))
+		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
+		Where(sq.Eq{"p.DeleteAt": 0}).
+		GroupBy("p.ID"))
 
 	if err == sql.ErrNoRows {
 		return nil, errors.Wrap(app.ErrNotFound, "no playbooks found")
@@ -290,11 +346,35 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		)`, requesterInfo.UserID)
 
 	queryForResults := p.store.builder.
-		Select("ID", "Title", "Description", "TeamID", "CreatePublicIncident AS CreatePublicPlaybookRun", "CreateAt",
-			"DeleteAt", "NumStages", "NumSteps").
+		Select(
+			"p.ID",
+			"p.Title",
+			"p.Description",
+			"p.TeamID",
+			"p.CreatePublicIncident AS CreatePublicPlaybookRun",
+			"p.CreateAt",
+			"p.DeleteAt",
+			"p.NumStages",
+			"p.NumSteps",
+			"COUNT(i.ID) AS NumRuns",
+			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
+			`(
+				CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.AnnouncementChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.ExportChannelOnArchiveEnabled THEN 1 ELSE 0 END
+			) AS NumActions`,
+		).
 		From("IR_Playbook AS p").
-		Where(sq.Eq{"DeleteAt": 0}).
-		Where(sq.Eq{"TeamID": teamID}).
+		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
+		GroupBy("p.ID").
+		Where(sq.Eq{"p.DeleteAt": 0}).
+		Where(sq.Eq{"p.TeamID": teamID}).
 		Where(permissionsAndFilter)
 
 	queryForResults, err := applyPlaybookFilterOptionsSort(queryForResults, opts)
@@ -321,6 +401,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 	if err = p.store.getBuilder(p.store.db, &total, queryForTotal); err != nil {
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get total count")
 	}
+
 	pageCount := 0
 	if opts.PerPage > 0 {
 		pageCount = int(math.Ceil(float64(total) / float64(opts.PerPage)))

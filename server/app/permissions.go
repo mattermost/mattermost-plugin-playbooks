@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
