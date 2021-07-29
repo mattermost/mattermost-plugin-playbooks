@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
-	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
@@ -1570,13 +1569,6 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 // createOrUpdatePlaybookRunSidebarCategory creates or updates a "Playbook Runs" sidebar category if
 // it does not already exist and adds the channel within the sidebar category
 func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID string) error {
-	m, err := cluster.NewMutex(s.api, "playbook_run_categories")
-	if err != nil {
-		return err
-	}
-	m.Lock()
-	defer m.Unlock()
-
 	sidebar, err := s.pluginAPI.Channel.GetSidebarCategories(userID, teamID)
 	if err != nil {
 		return err
