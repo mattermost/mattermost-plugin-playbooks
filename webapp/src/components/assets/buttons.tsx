@@ -147,3 +147,33 @@ const PositionedUpgradeBadge = styled(UpgradeBadge)`
     top: -4px;
     right: -6px;
 `;
+
+export const ButtonIcon = styled.button`
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    color: var(--center-channel-color-56);
+    fill: var(--center-channel-color-56);
+    font-size: 1.6rem;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: var(--center-channel-color-72);
+        fill: var(--center-channel-color-72);
+    }
+
+    &:active,
+    &--active,
+    &--active:hover {
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
+        fill: var(--button-bg);
+    }
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+`;

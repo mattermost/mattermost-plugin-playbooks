@@ -153,6 +153,22 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     state,
 });
 
+export interface ChecklistItemsFilter extends Record<string, boolean> {
+    all: boolean;
+    checked: boolean;
+    me: boolean;
+    unassigned: boolean;
+    others: boolean;
+}
+
+export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
+    all: false,
+    checked: false,
+    me: true,
+    unassigned: true,
+    others: true,
+};
+
 // eslint-disable-next-line
 export function isPlaybook(arg: any): arg is PlaybookWithChecklist {
     return (

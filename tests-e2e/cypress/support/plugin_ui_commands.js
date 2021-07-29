@@ -97,7 +97,7 @@ Cypress.Commands.add('openBackstage', () => {
         // * Dropdown menu should be visible
         cy.get('.dropdown-menu').should('exist').within(() => {
             // Click main menu option
-            cy.findByText('Incident Collaboration').should('exist').click();
+            cy.findByText('Playbooks').should('exist').click();
         });
     });
 });

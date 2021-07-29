@@ -1,6 +1,6 @@
 package telemetry
 
-import "github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
+import "github.com/mattermost/mattermost-plugin-playbooks/server/app"
 
 // NoopTelemetry satisfies the Telemetry interface with no-op implementations.
 type NoopTelemetry struct{}
@@ -99,10 +99,12 @@ func (t *NoopTelemetry) StartTrial(userID string, action string) {
 
 // NotifyAdmins does nothing.
 func (t *NoopTelemetry) NotifyAdmins(userID string, action string) {
-
 }
 
 // FrontendTelemetryForPlaybook does nothing.
 func (t *NoopTelemetry) FrontendTelemetryForPlaybook(playbook app.Playbook, userID, action string) {
+}
 
+// FrontendTelemetryForPlaybookTemplate does nothing.
+func (t *NoopTelemetry) FrontendTelemetryForPlaybookTemplate(templateName string, userID, action string) {
 }

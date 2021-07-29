@@ -7,9 +7,9 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	mock_bot "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/store/storetest"
 	"github.com/stretchr/testify/require"
@@ -426,10 +426,10 @@ func setupBotsTable(t testing.TB, db *sqlx.DB) {
 
 	// handmade
 	_, err := db.Exec(`
-			CREATE TABLE IF NOT EXISTS bots (
-				userid varchar(26) NOT NULL,
-				description varchar(1024),
-			    ownerid varchar(190)
+			CREATE TABLE IF NOT EXISTS Bots (
+				UserId varchar(26) NOT NULL,
+				Description varchar(1024),
+			    OwnerId varchar(190)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 		`)
 	require.NoError(t, err)
