@@ -7,12 +7,11 @@ import {useDispatch} from 'react-redux';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
-import {setOwner, changeChannelName} from 'src/client';
+import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 import {useProfilesInCurrentChannel} from 'src/hooks';
 import PostText from 'src/components/post_text';
-import {updateStatus} from 'src/actions';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import {HoverMenu} from 'src/components/rhs/rhs_shared';
 import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';
@@ -23,34 +22,11 @@ interface Props {
 }
 
 const RHSAbout = (props: Props) => {
-    const dispatch = useDispatch();
     const profilesInChannel = useProfilesInCurrentChannel();
 
     const [collapsed, setCollapsed] = useState(false);
 
     const toggleCollapsed = () => setCollapsed(!collapsed);
-
-    let description = <PostText text={props.playbookRun.description}/>;
-    if (props.playbookRun.status_posts.length === 0) {
-        description = (
-            <NoDescription>
-                {'No description yet. '}
-                <a
-                    href={'#'}
-                    tabIndex={0}
-                    role={'button'}
-                    onClick={() => dispatch(updateStatus())}
-                    onKeyDown={(e) => {
-                        // Handle Enter and Space as clicking on the button
-                        if (e.keyCode === 13 || e.keyCode === 32) {
-                            dispatch(updateStatus());
-                        }
-                    }}
-                >{'Click here'}</a>
-                {' to update status.'}
-            </NoDescription>
-        );
-    }
 
     const fetchUsers = async () => {
         return profilesInChannel;
@@ -75,6 +51,10 @@ const RHSAbout = (props: Props) => {
         changeChannelName(props.playbookRun.channel_id, value);
     };
 
+    const onDescriptionEdit = async (value: string) => {
+        updatePlaybookRunDescription(props.playbookRun.id, value);
+    };
+
     return (
         <Container tabIndex={0} >
             <ButtonsRow>
@@ -90,9 +70,10 @@ const RHSAbout = (props: Props) => {
             />
             {!collapsed &&
             <>
-                <Description>
-                    {description}
-                </Description>
+                <Description
+                    value={props.playbookRun.description}
+                    onEdit={onDescriptionEdit}
+                />
                 <Row>
                     <OwnerSection>
                         <MemberSectionTitle>{'Owner'}</MemberSectionTitle>
@@ -122,6 +103,63 @@ const RHSAbout = (props: Props) => {
         </Container>
     );
 };
+
+interface DescriptionProps {
+    value: string;
+    onEdit: () => void;
+}
+
+const Description = (props: DescriptionProps) => {
+    const placeholder = 'No description yet. Click here to edit it.';
+
+    const [editing, setEditing] = useState(false);
+    const [editedValue, setEditedValue] = useState(props.value || placeholder);
+
+    const textareaRef = useRef(null);
+
+    const saveAndClose = () => {
+        props.onEdit(editedValue);
+        setEditing(false);
+    };
+
+    useClickOutsideRef(textareaRef, saveAndClose);
+    useKeyPress('Contrl+Enter', saveAndClose);
+
+    if (!editing) {
+        return (
+            <RenderedDescription onClick={() => setEditing(true)}>
+                <PostText text={editedValue}/>
+            </RenderedDescription>
+        );
+    }
+
+    return (
+        <DescriptionTextArea
+            value={editedValue}
+            ref={textareaRef}
+            onChange={(e) => setEditedValue(e.target.value)}
+        />
+    );
+};
+
+const DescriptionTextArea = styled.textarea`
+    width: 100%;
+    height: 100px;
+    padding: 4px 8px;
+    margin-bottom: 2px;
+
+    border: none;
+    border-radius: 5px;
+    box-shadow: none;
+
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+
+    &:focus {
+        box-shadow: none;
+    }
+
+    color: var(--center-channel-color);
+`;
 
 const Container = styled.div`
     margin-top: 3px;
@@ -246,7 +284,7 @@ const RenderedTitle = styled(PaddedContent)`
     margin-bottom: 2px;
 `;
 
-const Description = styled(PaddedContent)`
+const RenderedDescription = styled(PaddedContent)`
     :hover {
         cursor: text;
     }

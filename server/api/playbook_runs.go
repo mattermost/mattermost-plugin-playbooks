@@ -71,6 +71,7 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	playbookRunRouterAuthorized.HandleFunc("/no-retrospective-button", handler.noRetrospectiveButton).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/check-and-send-message-on-join/{channel_id:[A-Za-z0-9]+}", handler.checkAndSendMessageOnJoin).Methods(http.MethodGet)
+	playbookRunRouterAuthorized.HandleFunc("/update-description", handler.updateDescription).Methods(http.MethodPatch)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
@@ -887,6 +888,43 @@ func (h *PlaybookRunHandler) checkAndSendMessageOnJoin(w http.ResponseWriter, r 
 
 	hasViewed := h.playbookRunService.CheckAndSendMessageOnJoin(userID, playbookRunID, channelID)
 	ReturnJSON(w, map[string]interface{}{"viewed": hasViewed}, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) updateDescription(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	requestBody := struct {
+		Description string `json:"description"`
+	}{}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook run description", err)
+		return
+	}
+
+	if err = app.EditPlaybookRun(userID, playbookRun.ChannelID, h.pluginAPI); err != nil {
+		if errors.Is(err, app.ErrNoPermissions) {
+			ReturnJSON(w, nil, http.StatusForbidden)
+			return
+		}
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error getting permissions", err)
+		return
+	}
+
+	playbookRun.Description = requestBody.Description
+	if err := h.playbookRunService.UpdateDescription(playbookRunID, requestBody.Description); err != nil {
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to update description", err)
+		return
+	}
+
+	ReturnJSON(w, nil, http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) getChecklistAutocompleteItem(w http.ResponseWriter, r *http.Request) {

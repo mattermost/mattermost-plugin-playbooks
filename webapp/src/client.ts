@@ -414,6 +414,13 @@ export const changeChannelName = async (channelId: string, newName: string) => {
     });
 };
 
+export const updatePlaybookRunDescription = async (playbookRunId: string, newDescription: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/update-description`, {
+        method: 'PATCH',
+        body: JSON.stringify({description: newDescription}),
+    });
+};
+
 export const doGet = async <TData = any>(url: string) => {
     const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 

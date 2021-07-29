@@ -377,6 +377,9 @@ type PlaybookRunService interface {
 	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
 	// playbooRun.MessageOnJoin if it exists. Returns true if the message was sent.
 	CheckAndSendMessageOnJoin(userID, playbookRunID, channelID string) bool
+
+	// UpdateDescription updates the description of the specified playbook run.
+	UpdateDescription(playbookRunID, description string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
