@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React from 'react';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {
@@ -22,7 +22,6 @@ import {ChecklistItemDetails} from 'src/components/checklist_item';
 import {isMobile} from 'src/mobile';
 import CollapsibleChecklist from 'src/components/rhs/collapsible_checklist';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -30,26 +29,10 @@ interface Props {
 
 const RHSChecklists = (props: Props) => {
     const dispatch = useDispatch();
-    const [showFinishConfirm, setShowFinishConfirm] = useState(false);
 
     const checklists = props.playbookRun.checklists || [];
     const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
     const active = props.playbookRun.current_status !== PlaybookRunStatus.Resolved && props.playbookRun.current_status !== PlaybookRunStatus.Archived;
-    const tasks = outstandingTasks(props.playbookRun.checklists);
-    const confirmMessage = (
-        <>
-            <span>{'Are you sure you want to finish the run?'}</span>
-            {
-                (tasks !== 0) &&
-                <>
-                    <span>{` There ${(tasks === 1) ? 'is' : 'are'} `}</span>
-                    <EmphasisText>{`${tasks} outstanding task${(tasks === 1) ? '' : 's'}`}</EmphasisText>
-                    <span>{` and ${(tasks === 1) ? 'it' : 'they'} will be automatically marked as skipped.`}</span>
-                </>
-            }
-            <span>{' You will not be able to add or change tasks and checklists once you finish the run.'}</span>
-        </>
-    );
 
     return (
         <InnerContainer>
@@ -137,21 +120,10 @@ const RHSChecklists = (props: Props) => {
             ))}
             {
                 active &&
-                <FinishButton onClick={() => setShowFinishConfirm(true)}>
+                <FinishButton onClick={() => dispatch(updateStatus('Resolved'))}>
                     {'Finish run'}
                 </FinishButton>
             }
-            <ConfirmModal
-                show={showFinishConfirm}
-                title={'Confirm finish run'}
-                message={confirmMessage}
-                confirmButtonText={'Finish run'}
-                onConfirm={() => {
-                    dispatch(updateStatus('Resolved'));
-                    setShowFinishConfirm(false);
-                }}
-                onCancel={() => setShowFinishConfirm(false)}
-            />
         </InnerContainer>
     );
 };
