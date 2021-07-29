@@ -26,6 +26,7 @@ import {
     setChecklistCollapsedState,
     setChecklistItemsFilter,
     toggleRHS,
+    updateStatus,
 } from 'src/actions';
 import {
     Checklist,
@@ -51,7 +52,6 @@ import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
-
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
 window['__react-beautiful-dnd-disable-dev-warnings'] = true;
@@ -68,8 +68,9 @@ const RHSChecklists = (props: Props) => {
     const checklistItemsFilter = useSelector(currentChecklistItemsFilter);
     const myUser = useSelector(getCurrentUser);
     const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
-    const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
+
+    const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const checklists = props.playbookRun.checklists || [];
     const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
     const active = props.playbookRun.current_status !== PlaybookRunStatus.Resolved && props.playbookRun.current_status !== PlaybookRunStatus.Archived;
@@ -273,13 +274,11 @@ const StyledPrimaryButton = styled(PrimaryButton)`
     margin: 12px 0;
 `;
 
-const EmphasisText = styled.span`
-    font-weight: 600;
-    color: var(--button-bg)
-`;
-
 export default RHSChecklists;
 
+//
+// The code below are all helper functions.
+//
 const allComplete = (checklists: Checklist[]) => {
     return outstandingTasks(checklists) === 0;
 };
