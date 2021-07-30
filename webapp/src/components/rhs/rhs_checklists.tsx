@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {
     DragDropContext,
     Draggable,
@@ -127,6 +127,7 @@ const RHSChecklists = (props: Props) => {
                     collapsed={Boolean(checklistsState[checklistIndex])}
                     setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
                 >
+                    {visibleTasks(checklist, checklistItemsFilter, myUser.id) &&
                     <ChecklistContainer className='checklist'>
                         <DragDropContext
                             onDragEnd={(result: DropResult) => {
@@ -208,6 +209,7 @@ const RHSChecklists = (props: Props) => {
                             </Droppable>
                         </DragDropContext>
                     </ChecklistContainer>
+                    }
                 </CollapsibleChecklist>
             ))}
             {
@@ -360,6 +362,10 @@ const showItem = (checklistItem: ChecklistItem, filter: ChecklistItemsFilter, my
         return false;
     }
     return true;
+};
+
+const visibleTasks = (list: Checklist, filter: ChecklistItemsFilter, myId: string) => {
+    return list.items.some((item) => showItem(item, filter, myId));
 };
 
 // isLastCheckedValueInBottomCategory returns true only if this value is in the bottom category and
