@@ -43,6 +43,9 @@ describe('playbook creation button', () => {
         // # Click 'New Playbook' button
         cy.findByText('Create playbook').click();
 
+        // #  Select team
+        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
+
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
@@ -60,12 +63,16 @@ describe('playbook creation button', () => {
         // # Click 'Blank'
         cy.findByText('Blank').click();
 
+        // #  Select team
+        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
+
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
 
-    it('opens Service Reliability Incident page from its template option', () => {
-        const url = 'playbooks/new?template_title=Service%20Reliability%20Incident';
+    it('opens Service Outage Incident page from its template option', () => {
+        const url1 = 'playbooks/new?team_id='
+        const url2 = '&template_title=Service%20Reliability%20Incident';
         const playbookName = 'Service Reliability Incident';
 
         // # Open backstage
@@ -77,8 +84,12 @@ describe('playbook creation button', () => {
         // # Click 'Service Reliability Incident'
         cy.findByText('Service Reliability Incident').click();
 
-        // * Verify a new 'Service Reliability Incident' creation page is opened
-        verifyPlaybookCreationPageOpened(url, playbookName);
+        // #  Select team
+        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
+
+        // * Verify a new 'Service Outage Incident' creation page is opened
+        verifyPlaybookCreationPageOpened(url1, playbookName);
+        verifyPlaybookCreationPageOpened(url2, playbookName);
     });
 
     it('shows remove beside members when > 1 member', () => {
@@ -90,6 +101,9 @@ describe('playbook creation button', () => {
 
         // # Click 'Create playbook' button
         cy.findByText('Create playbook').click();
+
+        // #  Select team
+        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
 
         // # Click 'Permissions' tab
         cy.findByText('Permissions').click();
