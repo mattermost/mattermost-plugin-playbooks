@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {
     DragDropContext,
     Draggable,
@@ -127,7 +127,10 @@ const RHSChecklists = (props: Props) => {
                     collapsed={Boolean(checklistsState[checklistIndex])}
                     setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
                 >
-                    <ChecklistContainer className='checklist'>
+                    <ChecklistContainer
+                        className='checklist'
+                        empty={noVisibleTasks(checklist, checklistItemsFilter, myUser.id)}
+                    >
                         <DragDropContext
                             onDragEnd={(result: DropResult) => {
                                 if (!result.destination) {
@@ -238,9 +241,13 @@ const MainTitle = styled.div`
     margin: 0 0 0 8px;
 `;
 
-const ChecklistContainer = styled.div`
+const ChecklistContainer = styled.div<{empty: boolean}>`
     background-color: var(--center-channel-bg);
     padding: 16px 12px;
+
+    ${(props) => props.empty && css`
+        padding: 0px;
+    `}
 `;
 
 const HoverRow = styled(HoverMenu)`
@@ -360,6 +367,10 @@ const showItem = (checklistItem: ChecklistItem, filter: ChecklistItemsFilter, my
         return false;
     }
     return true;
+};
+
+const noVisibleTasks = (list: Checklist, filter: ChecklistItemsFilter, myId: string) => {
+    return !list.items.some((item) => showItem(item, filter, myId));
 };
 
 // isLastCheckedValueInBottomCategory returns true only if this value is in the bottom category and
