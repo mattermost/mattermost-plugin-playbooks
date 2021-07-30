@@ -127,10 +127,8 @@ const RHSChecklists = (props: Props) => {
                     collapsed={Boolean(checklistsState[checklistIndex])}
                     setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
                 >
-                    <ChecklistContainer
-                        className='checklist'
-                        empty={noVisibleTasks(checklist, checklistItemsFilter, myUser.id)}
-                    >
+                    {visibleTasks(checklist, checklistItemsFilter, myUser.id) &&
+                    <ChecklistContainer className='checklist'>
                         <DragDropContext
                             onDragEnd={(result: DropResult) => {
                                 if (!result.destination) {
@@ -211,6 +209,7 @@ const RHSChecklists = (props: Props) => {
                             </Droppable>
                         </DragDropContext>
                     </ChecklistContainer>
+                    }
                 </CollapsibleChecklist>
             ))}
             {
@@ -241,13 +240,9 @@ const MainTitle = styled.div`
     margin: 0 0 0 8px;
 `;
 
-const ChecklistContainer = styled.div<{empty: boolean}>`
+const ChecklistContainer = styled.div`
     background-color: var(--center-channel-bg);
     padding: 16px 12px;
-
-    ${(props) => props.empty && css`
-        padding: 0px;
-    `}
 `;
 
 const HoverRow = styled(HoverMenu)`
@@ -369,8 +364,8 @@ const showItem = (checklistItem: ChecklistItem, filter: ChecklistItemsFilter, my
     return true;
 };
 
-const noVisibleTasks = (list: Checklist, filter: ChecklistItemsFilter, myId: string) => {
-    return !list.items.some((item) => showItem(item, filter, myId));
+const visibleTasks = (list: Checklist, filter: ChecklistItemsFilter, myId: string) => {
+    return list.items.some((item) => showItem(item, filter, myId));
 };
 
 // isLastCheckedValueInBottomCategory returns true only if this value is in the bottom category and
