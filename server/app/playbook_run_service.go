@@ -13,9 +13,9 @@ import (
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/timeutils"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -469,7 +469,7 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, ownerID, tr
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID string, triggerID string) error {
+func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, triggerID, defaultStatus string) error {
 	currentPlaybookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -488,7 +488,12 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID string, tr
 		message = currentPlaybookRun.ReminderMessageTemplate
 	}
 
-	dialog, err := s.newUpdatePlaybookRunDialog(currentPlaybookRun.Description, message, currentPlaybookRun.BroadcastChannelID, currentPlaybookRun.CurrentStatus, currentPlaybookRun.PreviousReminder)
+	status := currentPlaybookRun.CurrentStatus
+	if defaultStatus != "" {
+		status = defaultStatus
+	}
+
+	dialog, err := s.newUpdatePlaybookRunDialog(currentPlaybookRun.Description, message, currentPlaybookRun.BroadcastChannelID, status, currentPlaybookRun.PreviousReminder)
 	if err != nil {
 		return errors.Wrap(err, "failed to create update status dialog")
 	}
@@ -759,7 +764,6 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		})
 
 	playbookRunToModify.PreviousReminder = options.Reminder
-	playbookRunToModify.Description = options.Description
 	playbookRunToModify.LastStatusUpdateAt = post.CreateAt
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
@@ -1642,6 +1646,22 @@ func (s *PlaybookRunServiceImpl) CheckAndSendMessageOnJoin(userID, givenPlaybook
 	return true
 }
 
+func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description string) error {
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get playbook run")
+	}
+
+	playbookRun.Description = description
+	if err = s.store.UpdatePlaybookRun(playbookRun); err != nil {
+		return errors.Wrap(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRun, playbookRun.ChannelID)
+
+	return nil
+}
+
 // UserHasLeftChannel is called when userID has left channelID. If actorID is not blank, userID
 // was removed from the channel by actorID.
 func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID string) {
@@ -1924,12 +1944,6 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 				Options:     statusOptions,
 				Optional:    false,
 				Default:     status,
-			},
-			{
-				DisplayName: "Description",
-				Name:        DialogFieldDescriptionKey,
-				Type:        "textarea",
-				Default:     description,
 			},
 			{
 				DisplayName: "Change since last update",

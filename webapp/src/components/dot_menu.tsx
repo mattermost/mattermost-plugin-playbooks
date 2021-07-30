@@ -2,15 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useRef} from 'react';
-import styled, {css} from 'styled-components';
+import styled, {css, StyledComponentBase} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
-interface DotMenuButtonProps {
-    right?: boolean;
-}
-
-const DotMenuButton = styled.div<DotMenuButtonProps>`
+export const DotMenuButton = styled.div`
     display: inline-flex;
     padding: 0;
     background: transparent;
@@ -26,10 +22,6 @@ const DotMenuButton = styled.div<DotMenuButtonProps>`
        background: rgba(var(--center-channel-color-rgb), 0.08);
        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
-
-    ${(props) => (props.right && css`
-        margin: 0 16px 0 auto;
-    `)}
 `;
 
 const DropdownMenuWrapper = styled.div`
@@ -82,7 +74,7 @@ interface DotMenuProps {
     top?: boolean;
     left?: boolean;
     wide?: boolean;
-    buttonRight?: boolean;
+    dotMenuButton?: StyledComponentBase<'div', any>;
 }
 
 const DotMenu = (props: DotMenuProps) => {
@@ -100,14 +92,24 @@ const DotMenu = (props: DotMenuProps) => {
         setOpen(false);
     });
 
+    const MenuButton = props.dotMenuButton ?? DotMenuButton;
+
     return (
-        <DotMenuButton
+        <MenuButton
             ref={rootRef}
             onClick={(e) => {
                 e.stopPropagation();
                 toggleOpen();
             }}
-            right={props.buttonRight}
+            onKeyDown={(e) => {
+                // Handle Enter and Space as clicking on the button
+                if (e.keyCode === 13 || e.keyCode === 32) {
+                    e.stopPropagation();
+                    toggleOpen();
+                }
+            }}
+            tabIndex={0}
+            role={'button'}
         >
             {props.icon}
             <DropdownMenuWrapper>
@@ -123,7 +125,7 @@ const DotMenu = (props: DotMenuProps) => {
                     </DropdownMenu>
                 }
             </DropdownMenuWrapper>
-        </DotMenuButton>
+        </MenuButton>
     );
 };
 
@@ -145,13 +147,14 @@ const DropdownMenuItemStyled = styled.a`
 }
 `;
 
-export const DropdownMenuItem = (props: { text: string, onClick: () => void }) => {
+export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: () => void, className?: string }) => {
     return (
         <DropdownMenuItemStyled
             href='#'
             onClick={props.onClick}
+            className={props.className}
         >
-            {props.text}
+            {props.children}
         </DropdownMenuItemStyled>
     );
 };

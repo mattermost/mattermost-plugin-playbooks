@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 )
@@ -105,6 +105,17 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"DeleteAt",
 			"NumStages",
 			"NumSteps",
+			`(
+				CASE WHEN InviteUsersEnabled THEN 1 ELSE 0 END +
+				CASE WHEN DefaultCommanderEnabled THEN 1 ELSE 0 END +
+				CASE WHEN AnnouncementChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN WebhookOnCreationEnabled THEN 1 ELSE 0 END +
+				CASE WHEN MessageOnJoinEnabled THEN 1 ELSE 0 END +
+				CASE WHEN WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
+				CASE WHEN SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
+				CASE WHEN CategorizeChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN ExportChannelOnArchiveEnabled THEN 1 ELSE 0 END
+			) AS NumActions`,
 			"BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate",
 			"ReminderTimerDefaultSeconds",
@@ -290,7 +301,9 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 				CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END
+				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.ExportChannelOnArchiveEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 		).
 		From("IR_Playbook AS p").
@@ -353,7 +366,9 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 				CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END
+				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.ExportChannelOnArchiveEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 		).
 		From("IR_Playbook AS p").

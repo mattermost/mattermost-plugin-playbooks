@@ -10,7 +10,7 @@ import (
 )
 
 // PlaybookRunService handles communication with the playbook run related
-// methods of the Incident Collaboration API.
+// methods of the Playbooks API.
 type PlaybookRunService struct {
 	client *Client
 }
@@ -118,11 +118,10 @@ func (s *PlaybookRunService) Create(ctx context.Context, opts PlaybookRunCreateO
 	return playbookRun, nil
 }
 
-func (s *PlaybookRunService) UpdateStatus(ctx context.Context, playbookRunID string, status Status, description, message string, reminderInSeconds int64) error {
+func (s *PlaybookRunService) UpdateStatus(ctx context.Context, playbookRunID string, status Status, message string, reminderInSeconds int64) error {
 	updateURL := fmt.Sprintf("runs/%s/status", playbookRunID)
 	opts := StatusUpdateOptions{
 		Status:            status,
-		Description:       description,
 		Message:           message,
 		ReminderInSeconds: reminderInSeconds,
 	}

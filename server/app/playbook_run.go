@@ -154,10 +154,9 @@ type UpdateOptions struct {
 // StatusUpdateOptions encapsulates the fields that can be set when updating an playbook run's status
 // NOTE: changes made to this should be reflected in the client package.
 type StatusUpdateOptions struct {
-	Status      string        `json:"status"`
-	Description string        `json:"description"`
-	Message     string        `json:"message"`
-	Reminder    time.Duration `json:"reminder"`
+	Status   string        `json:"status"`
+	Message  string        `json:"message"`
+	Reminder time.Duration `json:"reminder"`
 }
 
 // Metadata tracks ancillary metadata about a playbook run.
@@ -267,7 +266,7 @@ type PlaybookRunService interface {
 	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the playbook run's status.
-	OpenUpdateStatusDialog(playbookRunID, triggerID string) error
+	OpenUpdateStatusDialog(playbookRunID, triggerID, defaultStatus string) error
 
 	// OpenAddToTimelineDialog opens an interactive dialog so the user can add a post to the playbook run timeline.
 	OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error
@@ -352,6 +351,9 @@ type PlaybookRunService interface {
 	// RemoveReminderPost will remove the reminder in the playbook run channel (if any).
 	RemoveReminderPost(playbookRunID string) error
 
+	// ResetReminderTimer sets the previous reminder timer to 0.
+	ResetReminderTimer(playbookRunID string) error
+
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
 
@@ -375,6 +377,9 @@ type PlaybookRunService interface {
 	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
 	// playbooRun.MessageOnJoin if it exists. Returns true if the message was sent.
 	CheckAndSendMessageOnJoin(userID, playbookRunID, channelID string) bool
+
+	// UpdateDescription updates the description of the specified playbook run.
+	UpdateDescription(playbookRunID, description string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.

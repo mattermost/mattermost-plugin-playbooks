@@ -15,6 +15,7 @@ import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import TemplateSelector, {isPlaybookCreationAllowed, PresetTemplate} from 'src/components/backstage/template_selector';
+import {telemetryEventForTemplate} from 'src/client';
 
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import './playbook.scss';
@@ -151,6 +152,7 @@ const PlaybookList = () => {
             {canCreatePlaybooks &&
                 <TemplateSelector
                     onSelect={(team: Team, template: PresetTemplate) => {
+                        telemetryEventForTemplate(template.title, 'click_template_icon');
                         newPlaybook(team, template.title);
                     }}
                     teams={teams}
@@ -385,13 +387,15 @@ const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
             }
         >
             <DropdownMenuItem
-                text='Edit'
                 onClick={props.onEdit}
-            />
+            >
+                {'Edit'}
+            </DropdownMenuItem>
             <DropdownMenuItem
-                text='Delete'
                 onClick={props.onDelete}
-            />
+            >
+                {'Delete'}
+            </DropdownMenuItem>
         </DotMenu>
     );
 };

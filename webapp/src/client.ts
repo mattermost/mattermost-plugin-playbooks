@@ -312,6 +312,13 @@ export async function telemetryEventForPlaybook(playbookID: string, action: stri
     });
 }
 
+export async function telemetryEventForTemplate(templateName: string, action: string) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry/template`, {
+        method: 'POST',
+        body: JSON.stringify({template_name: templateName, action}),
+    });
+}
+
 export async function setGlobalSettings(settings: GlobalSettings) {
     await doFetchWithoutResponse(`${apiUrl}/settings`, {
         method: 'PUT',
@@ -398,6 +405,20 @@ export const promptForFeedback = async () => {
     } catch (e) {
         return {error: e.message};
     }
+};
+
+export const changeChannelName = async (channelId: string, newName: string) => {
+    await doFetchWithoutResponse(`/api/v4/channels/${channelId}/patch`, {
+        method: 'PUT',
+        body: JSON.stringify({display_name: newName}),
+    });
+};
+
+export const updatePlaybookRunDescription = async (playbookRunId: string, newDescription: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/update-description`, {
+        method: 'PUT',
+        body: JSON.stringify({description: newDescription}),
+    });
 };
 
 export const doGet = async <TData = any>(url: string) => {

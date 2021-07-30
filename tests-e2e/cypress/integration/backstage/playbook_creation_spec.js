@@ -72,8 +72,8 @@ describe('playbook creation button', () => {
 
     it('opens Service Outage Incident page from its template option', () => {
         const url1 = 'playbooks/new?team_id='
-        const url2 = '&template_title=Service%20Outage%20Incident';
-        const playbookName = 'Service Outage Incident';
+        const url2 = '&template_title=Service%20Reliability%20Incident';
+        const playbookName = 'Service Reliability Incident';
 
         // # Open backstage
         cy.visit('/ad-1/com.mattermost.plugin-incident-management');
@@ -81,8 +81,8 @@ describe('playbook creation button', () => {
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Click 'Service Outage Incident'
-        cy.findByText('Service Outage Incident').click();
+        // # Click 'Service Reliability Incident'
+        cy.findByText('Service Reliability Incident').click();
 
         // #  Select team
         cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})

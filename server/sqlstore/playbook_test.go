@@ -7,8 +7,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore/mocks"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	mock_sqlstore "github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -125,6 +125,7 @@ func TestGetPlaybook(t *testing.T) {
 		WithCreateAt(1300).
 		WithChecklists([]int{1}).
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
+		WithKeywords([]string{"keyword"}).
 		ToPlaybook()
 
 	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
@@ -303,6 +304,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
+		WithKeywords([]string{"keyword"}).
 		ToPlaybook()
 
 	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
@@ -370,11 +372,14 @@ func TestGetPlaybooks(t *testing.T) {
 					actual[i].ID = ""
 				}
 
-				// remove the checklists from the expected playbooks--we don't return them in getPlaybooks
+				// remove data we don't bulk fetch from the expected playbooks
 				var expected []app.Playbook
 				for _, p := range testCase.expected {
 					tmp := p.Clone()
 					tmp.Checklists = nil
+					tmp.SignalAnyKeywords = nil
+					tmp.SignalAnyKeywordsEnabled = false
+					tmp.Clone()
 					expected = append(expected, tmp)
 				}
 
@@ -1745,6 +1750,7 @@ func (p *PlaybookBuilder) WithMembers(members []userInfo) *PlaybookBuilder {
 func (p *PlaybookBuilder) WithKeywords(keywords []string) *PlaybookBuilder {
 	p.SignalAnyKeywordsEnabled = true
 	p.SignalAnyKeywords = keywords
+	p.NumActions++
 
 	return p
 }

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	icClient "github.com/mattermost/mattermost-plugin-incident-collaboration/client"
+	icClient "github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
 	"github.com/pkg/errors"
@@ -21,11 +21,11 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	mock_app "github.com/mattermost/mattermost-plugin-incident-collaboration/server/app/mocks"
-	mock_poster "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	mock_config "github.com/mattermost/mattermost-plugin-incident-collaboration/server/config/mocks"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
+	mock_poster "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	mock_config "github.com/mattermost/mattermost-plugin-playbooks/server/config/mocks"
 )
 
 func TestPlaybookRuns(t *testing.T) {
@@ -1452,14 +1452,13 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
 		updateOptions := app.StatusUpdateOptions{
-			Status:      "Active",
-			Message:     "test message",
-			Description: "test description",
-			Reminder:    600 * time.Second,
+			Status:   "Active",
+			Message:  "test message",
+			Reminder: 600 * time.Second,
 		}
 		playbookRunService.EXPECT().UpdateStatus("playbookRunID", "testUserID", updateOptions).Return(nil)
 
-		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", icClient.StatusActive, "test description", "test message", 600)
+		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", icClient.StatusActive, "test message", 600)
 		require.NoError(t, err)
 	})
 
@@ -1483,7 +1482,7 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
-		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", "Arrrrrrrctive", "test description", "test message", 600)
+		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", "Arrrrrrrctive", "test message", 600)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
@@ -1507,7 +1506,7 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(false)
 
-		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", icClient.StatusActive, "test description", "test message", 600)
+		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", icClient.StatusActive, "test message", 600)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
@@ -1531,7 +1530,7 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
-		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", icClient.StatusActive, "test description", "  \t   \r   \t  \r\r  ", 600)
+		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", icClient.StatusActive, "  \t   \r   \t  \r\r  ", 600)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
@@ -1555,31 +1554,7 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
-		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", "\t   \r  ", "test description", "test message", 600)
-		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
-	})
-
-	t.Run("update playbook run status, description empty", func(t *testing.T) {
-		reset(t)
-		setDefaultExpectations(t)
-		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
-
-		teamID := model.NewId()
-		testPlaybookRun := app.PlaybookRun{
-			ID:          "playbookRunID",
-			OwnerUserID: "testUserID",
-			TeamID:      teamID,
-			Name:        "playbookRunName",
-			ChannelID:   "channelID",
-		}
-
-		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil).Times(2)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
-
-		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", "Active", "  \r \n  ", "test message", 600)
+		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", "\t   \r  ", "test message", 600)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 }
