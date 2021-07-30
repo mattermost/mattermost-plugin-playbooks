@@ -149,13 +149,15 @@ const ThreeDotMenu = (props: ThreeDotMenuProps) => (
         left={true}
     >
         <DropdownMenuItem
-            text='Create playbook'
             onClick={props.onCreatePlaybook}
-        />
+        >
+            {'Create playbook'}
+        </DropdownMenuItem>
         <DropdownMenuItem
-            text='See all runs'
             onClick={props.onSeeAllPlaybookRuns}
-        />
+        >
+            {'See all runs'}
+        </DropdownMenuItem>
     </DotMenu>
 );
 

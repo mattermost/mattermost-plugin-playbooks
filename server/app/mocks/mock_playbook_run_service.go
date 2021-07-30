@@ -364,17 +364,17 @@ func (mr *MockPlaybookRunServiceMockRecorder) OpenCreatePlaybookRunDialog(arg0, 
 }
 
 // OpenUpdateStatusDialog mocks base method
-func (m *MockPlaybookRunService) OpenUpdateStatusDialog(arg0, arg1 string) error {
+func (m *MockPlaybookRunService) OpenUpdateStatusDialog(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenUpdateStatusDialog", arg0, arg1)
+	ret := m.ctrl.Call(m, "OpenUpdateStatusDialog", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // OpenUpdateStatusDialog indicates an expected call of OpenUpdateStatusDialog
-func (mr *MockPlaybookRunServiceMockRecorder) OpenUpdateStatusDialog(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockPlaybookRunServiceMockRecorder) OpenUpdateStatusDialog(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenUpdateStatusDialog", reflect.TypeOf((*MockPlaybookRunService)(nil).OpenUpdateStatusDialog), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenUpdateStatusDialog", reflect.TypeOf((*MockPlaybookRunService)(nil).OpenUpdateStatusDialog), arg0, arg1, arg2)
 }
 
 // PublishRetrospective mocks base method
@@ -445,6 +445,20 @@ func (mr *MockPlaybookRunServiceMockRecorder) RemoveTimelineEvent(arg0, arg1, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTimelineEvent", reflect.TypeOf((*MockPlaybookRunService)(nil).RemoveTimelineEvent), arg0, arg1, arg2)
 }
 
+// ResetReminderTimer mocks base method
+func (m *MockPlaybookRunService) ResetReminderTimer(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResetReminderTimer", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ResetReminderTimer indicates an expected call of ResetReminderTimer
+func (mr *MockPlaybookRunServiceMockRecorder) ResetReminderTimer(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetReminderTimer", reflect.TypeOf((*MockPlaybookRunService)(nil).ResetReminderTimer), arg0)
+}
+
 // RunChecklistItemSlashCommand mocks base method
 func (m *MockPlaybookRunService) RunChecklistItemSlashCommand(arg0, arg1 string, arg2, arg3 int) (string, error) {
 	m.ctrl.T.Helper()
@@ -500,6 +514,20 @@ func (m *MockPlaybookRunService) ToggleCheckedState(arg0, arg1 string, arg2, arg
 func (mr *MockPlaybookRunServiceMockRecorder) ToggleCheckedState(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToggleCheckedState", reflect.TypeOf((*MockPlaybookRunService)(nil).ToggleCheckedState), arg0, arg1, arg2, arg3)
+}
+
+// UpdateDescription mocks base method
+func (m *MockPlaybookRunService) UpdateDescription(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateDescription", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateDescription indicates an expected call of UpdateDescription
+func (mr *MockPlaybookRunServiceMockRecorder) UpdateDescription(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDescription", reflect.TypeOf((*MockPlaybookRunService)(nil).UpdateDescription), arg0, arg1)
 }
 
 // UpdateRetrospective mocks base method

@@ -100,8 +100,8 @@ Cypress.Commands.add('postMessageReplyInRHS', (message) => {
 });
 
 Cypress.Commands.add('uiPostMessageQuickly', (message) => {
-    cy.get('#post_textbox', {timeout: TIMEOUTS.HALF_MIN}).should('be.visible').clear().
-        invoke('val', message).wait(TIMEOUTS.HALF_SEC).type(' {backspace}{enter}');
+    cy.get('#post_textbox', {timeout: TIMEOUTS.HALF_MIN}).should('be.visible').clear()
+        .invoke('val', message).wait(TIMEOUTS.HALF_SEC).type(' {backspace}{enter}');
     cy.waitUntil(() => {
         return cy.get('#post_textbox').then((el) => {
             return el[0].textContent === '';
@@ -146,9 +146,9 @@ function waitForCommentDraft(message) {
         const keys = await localforage.keys();
 
         // Get all draft comments matching the predefined prefix
-        const draftPromises = keys.
-            filter((key) => key.includes(draftPrefix)).
-            map((key) => localforage.getItem(key));
+        const draftPromises = keys
+            .filter((key) => key.includes(draftPrefix))
+            .map((key) => localforage.getItem(key));
         const draftItems = await Promise.all(draftPromises);
 
         // Get the exact draft comment
@@ -183,8 +183,8 @@ Cypress.Commands.add('getLastPost', () => {
 Cypress.Commands.add('getLastPostId', () => {
     waitUntilPermanentPost();
 
-    cy.findAllByTestId('postView').last().should('have.attr', 'id').and('not.include', ':').
-        invoke('replace', 'post_', '');
+    cy.findAllByTestId('postView').last().should('have.attr', 'id').and('not.include', ':')
+        .invoke('replace', 'post_', '');
 });
 
 /**
@@ -211,8 +211,8 @@ Cypress.Commands.add('uiWaitUntilMessagePostedIncludes', (message) => {
 Cypress.Commands.add('getLastPostIdRHS', () => {
     waitUntilPermanentPost();
 
-    cy.get('#rhsContainer .post-right-comments-container > div').last().should('have.attr', 'id').and('not.include', ':').
-        invoke('replace', 'rhsPost_', '');
+    cy.get('#rhsContainer .post-right-comments-container > div').last().should('have.attr', 'id').and('not.include', ':')
+        .invoke('replace', 'rhsPost_', '');
 });
 
 /**
@@ -225,8 +225,8 @@ Cypress.Commands.add('getLastPostIdRHS', () => {
 Cypress.Commands.add('getNthPostId', (index = 0) => {
     waitUntilPermanentPost();
 
-    cy.findAllByTestId('postView').eq(index).should('have.attr', 'id').and('not.include', ':').
-        invoke('replace', 'post_', '');
+    cy.findAllByTestId('postView').eq(index).should('have.attr', 'id').and('not.include', ':')
+        .invoke('replace', 'post_', '');
 });
 
 Cypress.Commands.add('uiGetNthPost', (index) => {
@@ -278,19 +278,19 @@ Cypress.Commands.add('sendDirectMessageToUser', (user, message) => {
     cy.findByRole('dialog', {name: 'Direct Messages'}).should('be.visible').wait(TIMEOUTS.ONE_SEC);
 
     // # Type username
-    cy.findByRole('textbox', {name: 'Search for people'}).click({force: true}).
-        type(user.username).wait(TIMEOUTS.ONE_SEC);
+    cy.findByRole('textbox', {name: 'Search for people'}).click({force: true})
+        .type(user.username).wait(TIMEOUTS.ONE_SEC);
 
     // * Expect user count in the list to be 1
-    cy.get('#multiSelectList').
-        should('be.visible').
-        children().
-        should('have.length', 1);
+    cy.get('#multiSelectList')
+        .should('be.visible')
+        .children()
+        .should('have.length', 1);
 
     // # Select first user in the list
-    cy.get('body').
-        type('{downArrow}').
-        type('{enter}');
+    cy.get('body')
+        .type('{downArrow}')
+        .type('{enter}');
 
     // # Click on "Go" in the group message's dialog to begin the conversation
     cy.get('#saveItems').click();
@@ -300,9 +300,9 @@ Cypress.Commands.add('sendDirectMessageToUser', (user, message) => {
     cy.get('#channelHeaderTitle').should('be.visible').and('contain.text', user.username);
 
     // # Type message and send it to the user
-    cy.get('#post_textbox').
-        type(message).
-        type('{enter}');
+    cy.get('#post_textbox')
+        .type(message)
+        .type('{enter}');
 });
 
 /**
@@ -319,15 +319,15 @@ Cypress.Commands.add('sendDirectMessageToUsers', (users, message) => {
         cy.get('#selectItems input').should('be.enabled').type(`@${user.username}`, {force: true});
 
         // * Expect user count in the list to be 1
-        cy.get('#multiSelectList').
-            should('be.visible').
-            children().
-            should('have.length', 1);
+        cy.get('#multiSelectList')
+            .should('be.visible')
+            .children()
+            .should('have.length', 1);
 
         // # Select first user in the list
-        cy.get('body').
-            type('{downArrow}').
-            type('{enter}');
+        cy.get('body')
+            .type('{downArrow}')
+            .type('{enter}');
     });
 
     // # Click on "Go" in the group message's dialog to begin the conversation
@@ -340,9 +340,9 @@ Cypress.Commands.add('sendDirectMessageToUsers', (users, message) => {
     });
 
     // # Type message and send it to the user
-    cy.get('#post_textbox').
-        type(message).
-        type('{enter}');
+    cy.get('#post_textbox')
+        .type(message)
+        .type('{enter}');
 });
 
 // ***********************************************************
@@ -543,18 +543,18 @@ Cypress.Commands.add('getCurrentChannelId', () => {
  * @param {String} text - Text to set the header to
  */
 Cypress.Commands.add('updateChannelHeader', (text) => {
-    cy.get('#channelHeaderDropdownIcon').
-        should('be.visible').
-        click();
-    cy.get('.Menu__content').
-        should('be.visible').
-        find('#channelEditHeader').
-        click();
-    cy.get('#edit_textbox').
-        clear().
-        type(text).
-        type('{enter}').
-        wait(TIMEOUTS.HALF_SEC);
+    cy.get('#channelHeaderDropdownIcon')
+        .should('be.visible')
+        .click();
+    cy.get('.Menu__content')
+        .should('be.visible')
+        .find('#channelEditHeader')
+        .click();
+    cy.get('#edit_textbox')
+        .clear()
+        .type(text)
+        .type('{enter}')
+        .wait(TIMEOUTS.HALF_SEC);
 });
 
 /**
@@ -578,10 +578,10 @@ Cypress.Commands.add('checkRunLDAPSync', () => {
             cy.findByText('AD/LDAP Synchronize Now').click().wait(TIMEOUTS.ONE_SEC);
 
             // * Get the First row
-            cy.findByTestId('jobTable').
-                find('tbody > tr').
-                eq(0).
-                as('firstRow');
+            cy.findByTestId('jobTable')
+                .find('tbody > tr')
+                .eq(0)
+                .as('firstRow');
 
             // * Wait until first row updates to say Success
             cy.waitUntil(() => {

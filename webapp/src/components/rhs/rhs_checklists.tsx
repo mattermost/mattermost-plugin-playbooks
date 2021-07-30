@@ -19,13 +19,14 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
     playbookRunUpdated,
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
     setChecklistItemsFilter,
     toggleRHS,
+    updateStatus,
 } from 'src/actions';
 import {
     Checklist,
@@ -49,6 +50,7 @@ import {
 } from 'src/selectors';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -68,7 +70,10 @@ const RHSChecklists = (props: Props) => {
     const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
+
     const checklists = props.playbookRun.checklists || [];
+    const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
+    const active = props.playbookRun.current_status !== PlaybookRunStatus.Resolved && props.playbookRun.current_status !== PlaybookRunStatus.Archived;
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
 
     const selectOption = (value: string, checked: boolean) => {
@@ -205,6 +210,12 @@ const RHSChecklists = (props: Props) => {
                     </ChecklistContainer>
                 </CollapsibleChecklist>
             ))}
+            {
+                active &&
+                <FinishButton onClick={() => dispatch(updateStatus('Resolved'))}>
+                    {'Finish run'}
+                </FinishButton>
+            }
         </InnerContainer>
     );
 };
@@ -253,7 +264,33 @@ const IconWrapper = styled.div`
     margin: 0;
 `;
 
+const StyledTertiaryButton = styled(TertiaryButton)`
+    display: inline-block;
+    margin: 12px 0;
+`;
+
+const StyledPrimaryButton = styled(PrimaryButton)`
+    display: inline-block;
+    margin: 12px 0;
+`;
+
 export default RHSChecklists;
+
+const allComplete = (checklists: Checklist[]) => {
+    return outstandingTasks(checklists) === 0;
+};
+
+const outstandingTasks = (checklists: Checklist[]) => {
+    let count = 0;
+    for (const list of checklists) {
+        for (const item of list.items) {
+            if (item.state !== ChecklistItemState.Closed) {
+                count++;
+            }
+        }
+    }
+    return count;
+};
 
 const makeFilterOptions = (filter: ChecklistItemsFilter, name: string): CheckboxOption[] => {
     return [

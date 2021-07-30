@@ -96,8 +96,6 @@ export const Rest = styled.div`
     align-items: center;
     justify-content: center;
 
-    z-index: 6;
-
     div:hover + &&& {
         mask-image: url('${leftHoleSvg}');
     }

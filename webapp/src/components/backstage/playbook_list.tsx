@@ -352,13 +352,15 @@ const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
             }
         >
             <DropdownMenuItem
-                text='Edit'
                 onClick={props.onEdit}
-            />
+            >
+                {'Edit'}
+            </DropdownMenuItem>
             <DropdownMenuItem
-                text='Delete'
                 onClick={props.onDelete}
-            />
+            >
+                {'Delete'}
+            </DropdownMenuItem>
         </DotMenu>
     );
 };

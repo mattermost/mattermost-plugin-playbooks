@@ -26,6 +26,7 @@ export const RECEIVED_GLOBAL_SETTINGS = pluginId + '_received_global_settings';
 export const SHOW_POST_MENU_MODAL = pluginId + '_show_post_menu_modal';
 export const HIDE_POST_MENU_MODAL = pluginId + '_hide_post_menu_modal';
 export const SET_HAS_VIEWED_CHANNEL = pluginId + '_set_has_viewed';
+export const SET_RHS_ABOUT_COLLAPSED_STATE = pluginId + '_set_rhs_about_collapsed_state';
 export const SET_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_checklist_collapsed_state';
 export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = pluginId + '_set_all_checklists_collapsed_state';
 export const SET_CHECKLIST_ITEMS_FILTER = pluginId + '_set_checklist_items_filter';
@@ -119,6 +120,12 @@ export interface SetHasViewedChannel {
     type: typeof SET_HAS_VIEWED_CHANNEL;
     channelId: string;
     hasViewed: boolean;
+}
+
+export interface SetRHSAboutCollapsedState {
+    type: typeof SET_RHS_ABOUT_COLLAPSED_STATE;
+    channelId: string;
+    collapsed: boolean;
 }
 
 export interface SetChecklistCollapsedState {

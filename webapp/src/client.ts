@@ -407,6 +407,20 @@ export const promptForFeedback = async () => {
     }
 };
 
+export const changeChannelName = async (channelId: string, newName: string) => {
+    await doFetchWithoutResponse(`/api/v4/channels/${channelId}/patch`, {
+        method: 'PUT',
+        body: JSON.stringify({display_name: newName}),
+    });
+};
+
+export const updatePlaybookRunDescription = async (playbookRunId: string, newDescription: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/update-description`, {
+        method: 'PUT',
+        body: JSON.stringify({description: newDescription}),
+    });
+};
+
 export const doGet = async <TData = any>(url: string) => {
     const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 

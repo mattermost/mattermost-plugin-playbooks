@@ -203,7 +203,6 @@ type GetPlaybookRunsResults struct {
 // StatusUpdateOptions are the fields required to update a playbook run's status
 type StatusUpdateOptions struct {
 	Status            Status `json:"status"`
-	Description       string `json:"description"`
 	Message           string `json:"message"`
 	ReminderInSeconds int64  `json:"reminder"`
 }

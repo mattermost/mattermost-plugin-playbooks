@@ -146,6 +146,7 @@ func (p *Plugin) OnActivate() error {
 		p.config,
 		scheduler,
 		telemetryClient,
+		p.API,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
