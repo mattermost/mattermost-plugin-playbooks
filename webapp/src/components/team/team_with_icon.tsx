@@ -124,4 +124,8 @@ const NotAllowedIcon = styled.i`
     position: absolute;
     right: 10px;
     color: var(--online-indicator);
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
 `;

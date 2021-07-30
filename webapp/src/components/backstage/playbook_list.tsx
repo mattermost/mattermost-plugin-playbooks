@@ -300,6 +300,10 @@ const NotAllowedIcon = styled.i`
     position: absolute;
     top: -4px;
     right: -6px;
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
 `;
 
 export const useUpgradeModalVisibility = (initialState: boolean): [boolean, () => void, () => void] => {

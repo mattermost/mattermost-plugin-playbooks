@@ -427,6 +427,10 @@ const TemplateSelector = ({templates = PresetTemplates, onSelect, teams, allowPl
 const NotAllowedIcon = styled.i`
     margin: 8px;
     color: var(--online-indicator);
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
 `;
 
 interface TemplateItemProps {
