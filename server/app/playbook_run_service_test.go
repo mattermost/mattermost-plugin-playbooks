@@ -51,7 +51,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService)
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
 		_, err := s.CreatePlaybookRun(playbookRun, nil, "testUserID", true)
 		require.Equal(t, err, app.ErrChannelDisplayNameInvalid)
@@ -81,7 +81,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
 		pluginAPI.On("CreateChannel", mock.Anything).Return(nil, &model.AppError{Id: "model.channel.is_valid.2_or_more.app_error"})
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService)
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
 		_, err := s.CreatePlaybookRun(playbookRun, nil, "testUserID", true)
 		require.Equal(t, err, app.ErrChannelDisplayNameInvalid)
@@ -130,7 +130,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		poster.EXPECT().PostMessage("channel_id", "This run has been started by @username.").
 			Return(&model.Post{Id: "testId"}, nil)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService)
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
 		_, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
 		require.NoError(t, err)
@@ -161,7 +161,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
 		pluginAPI.On("CreateChannel", mock.Anything).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService)
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
 		_, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
 		require.EqualError(t, err, "failed to create channel: : , ")
@@ -204,7 +204,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		poster.EXPECT().PostMessage("channel_id", "This run has been started by @username.").
 			Return(&model.Post{Id: "testid"}, nil)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService)
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
 		_, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
 		require.NoError(t, err)
@@ -249,7 +249,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		poster.EXPECT().PostMessage("channel_id", "This run has been started by @username.").
 			Return(&model.Post{Id: "testId"}, nil)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService)
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
 		_, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
 		pluginAPI.AssertExpectations(t)
@@ -319,7 +319,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Id: "channel_id", Name: "channel-name"}, nil)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService)
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
 		createdPlaybookRun, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
 		require.NoError(t, err)
@@ -416,7 +416,7 @@ func TestUpdateStatus(t *testing.T) {
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 		pluginAPI.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService)
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
 		err := s.UpdateStatus(playbookRun.ID, "user_id", statusUpdateOptions)
 		require.NoError(t, err)
@@ -553,7 +553,7 @@ func TestOpenCreatePlaybookRunDialog(t *testing.T) {
 			configService := mock_config.NewMockService(controller)
 			telemetryService := &telemetry.NoopTelemetry{}
 			scheduler := mock_app.NewMockJobOnceScheduler(controller)
-			service := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService)
+			service := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, api)
 
 			tt.prepMocks(t, store, poster, api, configService)
 
@@ -596,6 +596,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		poster.EXPECT().PublishWebsocketEventToChannel(gomock.Any(), gomock.Any(), gomock.Any())
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 		pluginAPI.On("GetChannel", "channel_id").Return(&model.Channel{TeamId: "team_id"}, nil)
+		pluginAPI.On("KVSetWithOptions", "mutex_playbook_run_categories", mock.Anything, mock.Anything).Return(true, nil)
 		pluginAPI.On("GetChannelSidebarCategories", "user_id", "team_id").Return(orderedSidebarCategories, nil)
 		pluginAPI.On(
 			"UpdateChannelSidebarCategories",
@@ -604,7 +605,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 			[]*model.SidebarCategoryWithChannels(orderedSidebarCategories.Categories),
 		).Return(sidebarCategories, nil)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService)
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
 		userID := "user_id"
 		channelID := "channel_id"
@@ -653,6 +654,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		poster.EXPECT().PublishWebsocketEventToChannel(gomock.Any(), gomock.Any(), gomock.Any())
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 		pluginAPI.On("GetChannel", "channel_id").Return(&model.Channel{TeamId: "team_id"}, nil)
+		pluginAPI.On("KVSetWithOptions", "mutex_playbook_run_categories", mock.Anything, mock.Anything).Return(true, nil)
 		pluginAPI.On("GetChannelSidebarCategories", "user_id", "team_id").Return(orderedSidebarCategories, nil)
 		pluginAPI.On(
 			"CreateChannelSidebarCategory",
@@ -661,7 +663,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 			newSidebarCategory,
 		).Return(newSidebarCategory, nil)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService)
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
 		userID := "user_id"
 		channelID := "channel_id"

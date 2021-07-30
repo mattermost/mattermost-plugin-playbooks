@@ -17,6 +17,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -26,6 +27,8 @@ const (
 	PlaybookRunCreatedWSEvent = "playbook_run_created"
 	playbookRunUpdatedWSEvent = "playbook_run_updated"
 	noAssigneeName            = "No Assignee"
+
+	playbookRunsCategoryName = "Playbook Runs"
 )
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
@@ -38,6 +41,7 @@ type PlaybookRunServiceImpl struct {
 	logger        bot.Logger
 	scheduler     JobOnceScheduler
 	telemetry     PlaybookRunTelemetry
+	api           plugin.API
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -77,7 +81,7 @@ const DialogFieldItemCommandKey = "command"
 
 // NewPlaybookRunService creates a new PlaybookRunServiceImpl.
 func NewPlaybookRunService(pluginAPI *pluginapi.Client, store PlaybookRunStore, poster bot.Poster, logger bot.Logger,
-	configService config.Service, scheduler JobOnceScheduler, telemetry PlaybookRunTelemetry) *PlaybookRunServiceImpl {
+	configService config.Service, scheduler JobOnceScheduler, telemetry PlaybookRunTelemetry, api plugin.API) *PlaybookRunServiceImpl {
 	return &PlaybookRunServiceImpl{
 		pluginAPI:     pluginAPI,
 		store:         store,
@@ -87,6 +91,7 @@ func NewPlaybookRunService(pluginAPI *pluginapi.Client, store PlaybookRunStore, 
 		scheduler:     scheduler,
 		telemetry:     telemetry,
 		httpClient:    &http.Client{Timeout: 30 * time.Second},
+		api:           api,
 	}
 }
 
@@ -1575,9 +1580,12 @@ func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID
 
 	var categoryID string
 	for _, category := range sidebar.Categories {
-		if strings.ToLower(category.DisplayName) == "playbook runs" {
+		if category.DisplayName == playbookRunsCategoryName {
 			categoryID = category.Id
-			category.Channels = append(category.Channels, channelID)
+			if !sliceContains(category.Channels, channelID) {
+				category.Channels = append(category.Channels, channelID)
+			}
+			break
 		}
 	}
 
@@ -1586,7 +1594,7 @@ func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID
 			SidebarCategory: model.SidebarCategory{
 				UserId:      userID,
 				TeamId:      teamID,
-				DisplayName: "Playbook Runs",
+				DisplayName: playbookRunsCategoryName,
 				Muted:       false,
 			},
 			Channels: []string{channelID},
@@ -1598,12 +1606,34 @@ func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID
 		return nil
 	}
 
+	// remove channel from previous category
+	for _, category := range sidebar.Categories {
+		if category.DisplayName == playbookRunsCategoryName {
+			continue
+		}
+		for i, channel := range category.Channels {
+			if channel == channelID {
+				category.Channels = append(category.Channels[:i], category.Channels[i+1:]...)
+				break
+			}
+		}
+	}
+
 	err = s.pluginAPI.Channel.UpdateSidebarCategories(userID, teamID, sidebar.Categories)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func sliceContains(strs []string, target string) bool {
+	for _, s := range strs {
+		if s == target {
+			return true
+		}
+	}
+	return false
 }
 
 // CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
