@@ -13,10 +13,10 @@ interface DescriptionProps {
 }
 
 const RHSAboutDescription = (props: DescriptionProps) => {
-    const placeholder = 'No description yet. Click here to edit it.';
+    const placeholder = 'Add a description...';
 
     const [editing, setEditing] = useState(false);
-    const [editedValue, setEditedValue] = useState(props.value || placeholder);
+    const [editedValue, setEditedValue] = useState(props.value);
 
     const textareaRef = useRef(null);
 
@@ -31,13 +31,17 @@ const RHSAboutDescription = (props: DescriptionProps) => {
     useKeyPress((e: KeyboardEvent) => e.ctrlKey && e.key === 'Enter', saveAndClose);
 
     useEffect(() => {
-        setEditedValue(props.value || placeholder);
+        setEditedValue(props.value);
     }, [props.value]);
 
     if (!editing) {
         return (
             <RenderedDescription onClick={() => setEditing(true)}>
-                <PostText text={editedValue}/>
+                {editedValue ? (
+                    <PostText text={editedValue}/>
+                ) : (
+                    <PlaceholderText>{placeholder}</PlaceholderText>
+                )}
             </RenderedDescription>
         );
     }
@@ -50,6 +54,7 @@ const RHSAboutDescription = (props: DescriptionProps) => {
     return (
         <DescriptionTextArea
             value={editedValue}
+            placeholder={placeholder}
             ref={textareaRef}
             onChange={(e) => setEditedValue(e.target.value)}
             autoFocus={true}
@@ -87,9 +92,13 @@ const DescriptionTextArea = styled.textarea`
     color: var(--center-channel-color);
 `;
 
+const PlaceholderText = styled.span`
+    opacity: 0.5;
+`;
+
 const RenderedDescription = styled.div`
     margin-bottom: 16px;
-    padding: 0 8px;
+    padding: 2px 8px;
 
     line-height: 20px;
 
