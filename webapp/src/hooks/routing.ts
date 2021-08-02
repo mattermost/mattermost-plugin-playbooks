@@ -57,6 +57,10 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
                 const queryParams = qs.stringify({[TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
                 return go(`/playbooks/new${queryParams}`);
             },
+            createInTeam: (team:Team, templateTitle?: string) => {
+                const queryParams = qs.stringify({team_id: team.id, [TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
+                navigateToTeamPluginUrl(team.name, `/playbooks/new${queryParams}`);
+            },
         };
     }, [teamName, onGo, urlOnly]);
 }

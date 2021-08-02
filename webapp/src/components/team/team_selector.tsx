@@ -64,7 +64,12 @@ export default function TeamSelector(props: Props) {
         const optionList = props.teams.map((team: Team) => {
             return ({
                 value: team.display_name,
-                label: <TeamWithIcon team={team}/>,
+                label: (
+                    <TeamWithIcon
+                        team={team}
+                        showNotLicensedIcon={false}
+                    />
+                ),
                 teamId: team.id,
             } as Option);
         });
@@ -139,7 +144,10 @@ export default function TeamSelector(props: Props) {
                     }
                 }}
             >
-                <TeamWithIcon team={getTeam(props.selectedTeamId)}/>
+                <TeamWithIcon
+                    team={getTeam(props.selectedTeamId)}
+                    showNotLicensedIcon={false}
+                />
 
                 {<i className='icon-chevron-down ml-1 mr-2'/>}
             </TeamButton>

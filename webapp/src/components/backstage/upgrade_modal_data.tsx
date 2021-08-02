@@ -140,7 +140,7 @@ export const getUpgradeModalCopy = (
         switch (messageType) {
         case AdminNotificationType.PLAYBOOK:
             titleText = 'A playbook for every process';
-            helpText = 'Create multiple playbooks to prescribe different workflows for your teams.';
+            helpText = 'Your subscription allows one playbook per team. Upgrade your subscription and create multiple playbooks with unique workflows for each team.';
             break;
         case AdminNotificationType.VIEW_TIMELINE:
         case AdminNotificationType.MESSAGE_TO_TIMELINE:

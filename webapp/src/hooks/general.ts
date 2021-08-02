@@ -9,7 +9,9 @@ import {
 import {useDispatch, useSelector} from 'react-redux';
 import moment from 'moment';
 
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
+import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
+import {getCurrentTeam, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {
     getProfilesInCurrentChannel,
@@ -45,6 +47,7 @@ import {
     currentTeamNumPlaybooks,
     globalSettings,
     isCurrentUserAdmin,
+    numPlaybooksByTeam,
 } from '../selectors';
 
 /**
@@ -288,6 +291,39 @@ export function useNumPlaybooksInCurrentTeam() {
     }, [team.id]);
 
     return numPlaybooks;
+}
+
+export function useAllowPlaybookCreationInTeams() {
+    const dispatch = useDispatch();
+    const numPlaybooks = useSelector(numPlaybooksByTeam);
+    const myTeams = useSelector(getMyTeams);
+    const isLicensed = useSelector(isE10LicensedOrDevelopment);
+
+    useEffect(() => {
+        for (const team of myTeams) {
+            const fetch = async () => {
+                const response = await clientFetchPlaybooksCount(team.id);
+                dispatch(receivedTeamNumPlaybooks(team.id, response?.count ?? 0));
+            };
+            fetch();
+        }
+    }, []);
+
+    const allowPlaybookCreationInTeams = new Map<string, boolean>();
+    for (const team of myTeams) {
+        const num = numPlaybooks[team.id] || 0;
+        allowPlaybookCreationInTeams.set(team.id, isLicensed || num === 0);
+    }
+
+    return allowPlaybookCreationInTeams;
+}
+
+export function useDropdownPosition() {
+    const [dropdownPosition, setDropdownPosition] = useState({x: 0, y: 0, isOpen: false});
+    const toggleOpen = (x: number, y: number) => {
+        setDropdownPosition({x, y, isOpen: !dropdownPosition.isOpen});
+    };
+    return [dropdownPosition, toggleOpen] as const;
 }
 
 // useAllowPlaybookCreationInCurrentTeam returns whether a user can create
