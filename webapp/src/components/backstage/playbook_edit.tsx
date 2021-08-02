@@ -2,19 +2,16 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useEffect} from 'react';
-import {Redirect, useParams, useLocation} from 'react-router-dom';
+import {Redirect, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {Team} from 'mattermost-redux/types/teams';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
-import {navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
+import {navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {DraftPlaybookWithChecklist, PlaybookWithChecklist, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
@@ -127,11 +124,8 @@ const OuterContainer = styled.div`
 `;
 
 interface Props {
+    teamId: string;
     isNew: boolean;
-    currentTeam: Team;
-}
-
-interface URLParams {
     playbookId?: string;
     tabId?: string;
 }
@@ -189,24 +183,22 @@ const PlaybookNavbar = styled(BackstageNavbar)`
 const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const currentUserId = useSelector(getCurrentUserId);
 
     const [playbook, setPlaybook] = useState<DraftPlaybookWithChecklist | PlaybookWithChecklist>({
         ...emptyPlaybook(),
-        team_id: props.currentTeam.id,
+        team_id: props.teamId,
     });
     const [changesMade, setChangesMade] = useState(false);
 
-    const urlParams = useParams<URLParams>();
     const location = useLocation();
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
     let tab = 0;
-    if (urlParams.tabId) {
+    if (props.tabId) {
         for (let i = 0; i < tabInfo.length; i++) {
-            if (urlParams.tabId === tabInfo[i].id) {
+            if (props.tabId === tabInfo[i].id) {
                 tab = i;
             }
         }
@@ -235,16 +227,16 @@ const PlaybookEdit = (props: Props) => {
 
                     setPlaybook({
                         ...template.template,
-                        team_id: props.currentTeam.id,
+                        team_id: props.teamId,
                     });
                     setChangesMade(true);
                 }
                 return;
             }
 
-            if (urlParams.playbookId) {
+            if (props.playbookId) {
                 try {
-                    const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
+                    const fetchedPlaybook = await clientFetchPlaybook(props.playbookId);
                     if (fetchedPlaybook) {
                         fetchedPlaybook.member_ids ??= [currentUserId];
                         setPlaybook(fetchedPlaybook);
@@ -256,7 +248,7 @@ const PlaybookEdit = (props: Props) => {
             }
         };
         fetchData();
-    }, [urlParams.playbookId, props.isNew]);
+    }, [props.playbookId, props.isNew]);
 
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
@@ -286,11 +278,11 @@ const PlaybookEdit = (props: Props) => {
     };
 
     const onClose = (id?: string) => {
-        const playbookId = urlParams.playbookId || id;
+        const playbookId = props.playbookId || id;
         if (playbookId) {
-            navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbookId}`);
+            navigateToPluginUrl(`/playbooks/${playbookId}`);
         } else {
-            navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
+            navigateToPluginUrl('/playbooks');
         }
     };
 
@@ -477,11 +469,11 @@ const PlaybookEdit = (props: Props) => {
     };
 
     const searchUsers = (term: string) => {
-        return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
+        return dispatch(searchProfiles(term, {team_id: props.teamId}));
     };
 
     const getUsers = () => {
-        return dispatch(getProfilesInTeam(props.currentTeam.id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
+        return dispatch(getProfilesInTeam(props.teamId, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
     };
 
     const handleBroadcastInput = (channelId: string | undefined) => {
@@ -495,7 +487,7 @@ const PlaybookEdit = (props: Props) => {
     if (!props.isNew) {
         switch (fetchingState) {
         case FetchingStateType.notFound:
-            return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)}/>;
+            return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
         case FetchingStateType.loading:
             return null;
         }
@@ -757,6 +749,7 @@ const PlaybookEdit = (props: Props) => {
                                         getProfiles={getUsers}
                                         memberIds={playbook.member_ids}
                                         onClear={handleClearUsers}
+                                        teamId={props.teamId}
                                     />
                                 </SidebarBlock>
                             </TabContainer>

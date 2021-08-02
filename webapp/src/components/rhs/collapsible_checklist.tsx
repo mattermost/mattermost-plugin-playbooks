@@ -16,6 +16,7 @@ export interface Props {
     setCollapsed: (newState: boolean) => void;
     items: ChecklistItem[];
     children: React.ReactNode;
+    teamId: string;
 }
 
 const CollapsibleChecklist = ({
@@ -25,6 +26,7 @@ const CollapsibleChecklist = ({
     setCollapsed,
     items,
     children,
+    teamId,
 }: Props) => {
     const dispatch = useDispatch();
     const titleRef = useRef(null);
@@ -57,7 +59,7 @@ const CollapsibleChecklist = ({
                         data-testid={'addNewTask'}
                         onClick={(e) => {
                             e.stopPropagation();
-                            dispatch(addNewTask(index));
+                            dispatch(addNewTask(teamId, index));
                         }}
                     >
                         <i className='icon-18 icon-plus'/>

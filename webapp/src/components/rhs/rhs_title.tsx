@@ -7,9 +7,6 @@ import styled from 'styled-components';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-
-import {Team} from 'mattermost-redux/types/teams';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -19,9 +16,7 @@ import {RHSState} from 'src/types/rhs';
 import {setRHSViewingList} from 'src/actions';
 import {currentPlaybookRun, currentRHSState} from 'src/selectors';
 
-import {navigateToUrl} from 'src/browser_routing';
-
-import {pluginId} from 'src/manifest';
+import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {OVERLAY_DELAY} from 'src/constants';
 
@@ -29,7 +24,6 @@ const RHSTitle = () => {
     const dispatch = useDispatch();
     const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>(currentPlaybookRun);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     if (rhsState === RHSState.ViewingPlaybookRun) {
         const tooltip = (
@@ -56,11 +50,11 @@ const RHSTitle = () => {
                         data-testid='rhs-title'
                         role={'button'}
                         tabIndex={0}
-                        onClick={() => navigateToUrl(`/${currentTeam.name}/${pluginId}/runs/${playbookRun?.id}`)}
+                        onClick={() => navigateToPluginUrl(`/runs/${playbookRun?.id}`)}
                         onKeyDown={(e) => {
                             // Handle Enter and Space as clicking on the button
                             if (e.keyCode === 13 || e.keyCode === 32) {
-                                navigateToUrl(`/${currentTeam.name}/${pluginId}/runs/${playbookRun?.id}`);
+                                navigateToPluginUrl(`/runs/${playbookRun?.id}`);
                             }
                         }}
                     >

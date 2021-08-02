@@ -111,6 +111,9 @@ export default class Plugin {
             r.registerNeedsTeamRoute('/error', ErrorPage);
             r.registerNeedsTeamRoute('/', Backstage);
 
+            r.registerCustomRoute('/error', ErrorPage);
+            r.registerCustomRoute('/', Backstage);
+
             r.registerPostTypeComponent('custom_retro_rem_first', RetrospectiveFirstReminder);
             r.registerPostTypeComponent('custom_retro_rem', RetrospectiveReminder);
             r.registerPostTypeComponent('custom_cloud_upgrade', CloudUpgradePost);

@@ -6,8 +6,6 @@ import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-
 import Icon from '@mdi/react';
 import {mdiClipboardPlayOutline} from '@mdi/js';
 
@@ -15,10 +13,14 @@ const RightMarginedIcon = styled(Icon)`
     margin-right: 0.5rem;
 `;
 
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {Team} from 'mattermost-redux/types/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
+
 import {DefaultFetchPlaybookRunsParamsTime} from 'src/types/playbook_run';
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
 import {clientFetchPlaybook, fetchPlaybookStats, telemetryEventForPlaybook} from 'src/client';
-import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
+import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import PlaybookRunList
@@ -43,7 +45,6 @@ const PlaybookBackstage = () => {
     const dispatch = useDispatch();
     const match = useRouteMatch<MatchParams>();
     const location = useLocation();
-    const currentTeam = useSelector(getCurrentTeam);
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const [fetchParamsTime, setFetchParamsTime] = useState(DefaultFetchPlaybookRunsParamsTime);
     const [filterPill, setFilterPill] = useState<JSX.Element | null>(null);
@@ -81,16 +82,18 @@ const PlaybookBackstage = () => {
         fetchStats();
     }, [match.params.playbookId]);
 
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
+
     if (fetchingState === FetchingStateType.loading) {
         return null;
     }
 
     if (fetchingState === FetchingStateType.notFound || playbook === null) {
-        return <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.PLAYBOOKS)}/>;
+        return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
     }
 
     const goToPlaybooks = () => {
-        navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
+        navigateToPluginUrl('/playbooks');
     };
 
     const goToEdit = () => {
@@ -98,11 +101,11 @@ const PlaybookBackstage = () => {
     };
 
     const runPlaybook = () => {
-        navigateToUrl(`/${currentTeam.name}`);
+        navigateToUrl(`/${team.name || ''}`);
 
         if (playbook?.id) {
             telemetryEventForPlaybook(playbook.id, 'playbook_dashboard_run_clicked');
-            dispatch(startPlaybookRunById(playbook.id));
+            dispatch(startPlaybookRunById(team.id, playbook.id));
         }
     };
 

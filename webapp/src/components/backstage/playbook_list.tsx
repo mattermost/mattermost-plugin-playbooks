@@ -5,7 +5,7 @@ import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 
-import {getCurrentTeam, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 
@@ -53,7 +53,6 @@ const PlaybookList = () => {
     const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
     const allowPlaybookCreationInTeams = useAllowPlaybookCreationInTeams();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const [
         playbooks,
@@ -61,11 +60,11 @@ const PlaybookList = () => {
         {setPage, sortBy, setSelectedPlaybook, deletePlaybook},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
-    const {view, edit, createInTeam} = usePlaybooksRouting<Playbook>(currentTeam.name, {onGo: setSelectedPlaybook});
+    const {view, edit, create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
     const newPlaybook = (team: Team, templateTitle?: string | undefined) => {
         if (allowPlaybookCreationInTeams.get(team.id)) {
-            createInTeam(team, templateTitle);
+            create(team, templateTitle);
         } else {
             showUpgradeModal();
         }

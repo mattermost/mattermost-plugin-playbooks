@@ -10,7 +10,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 
 import {startPlaybookRun} from 'src/actions';
-import {navigateToTeamPluginUrl} from 'src/browser_routing';
+import {navigateToPluginUrl} from 'src/browser_routing';
 import {clientHasPlaybooks} from 'src/client';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import NoContentPlaybookSvgRhs from 'src/components/assets/no_content_playbooks_rhs_svg';
@@ -67,7 +67,7 @@ const RHSWelcomeView = () => {
                         </p>
                         <div className='header-button-div mb-4'>
                             <PrimaryButton
-                                onClick={() => dispatch(startPlaybookRun())}
+                                onClick={() => dispatch(startPlaybookRun(currentTeam.id))}
                             >
                                 <SideBySide>
                                     <i className='icon-plus icon--no-spacing mr-2'/>
@@ -79,7 +79,7 @@ const RHSWelcomeView = () => {
                             {'You can also create a playbook ahead of time so it’s available when you need it.'}
                         </p>
                         <TertiaryButton
-                            onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
+                            onClick={() => navigateToPluginUrl('/playbooks')}
                         >
                             {'Create playbook'}
                         </TertiaryButton>
@@ -102,7 +102,7 @@ const RHSWelcomeView = () => {
                     </p>
                     <div className='header-button-div mb-4'>
                         <PrimaryButton
-                            onClick={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
+                            onClick={() => navigateToPluginUrl('/playbooks')}
                         >
                             {'Create playbook'}
                         </PrimaryButton>

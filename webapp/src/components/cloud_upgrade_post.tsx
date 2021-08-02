@@ -1,8 +1,15 @@
 import React from 'react';
 
+import {useSelector} from 'react-redux';
+
 import styled from 'styled-components';
 
 import {Post} from 'mattermost-redux/types/posts';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {Channel} from 'mattermost-redux/types/channels';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {Team} from 'mattermost-redux/types/teams';
 
 import UpgradeIllustrationSvg from 'src/components/assets/upgrade_illustration_svg';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
@@ -22,13 +29,19 @@ export const CloudUpgradePost = (props: Props) => {
     const openCloudModal = useOpenCloudModal();
     const attachments = props.post.props.attachments[0];
 
+    const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel.team_id));
+
     // Remove the footer (which starts with the Upgrade now link),
     // and the separator, both used as fallback for mobile
     const text = attachments.text.split('[Upgrade now]')[0].replace(/---/g, '');
 
     return (
         <>
-            <StyledPostText text={props.post.message}/>
+            <StyledPostText
+                text={props.post.message}
+                team={team}
+            />
             <CustomPostContainer>
                 <CustomPostContent>
                     <CustomPostHeader>

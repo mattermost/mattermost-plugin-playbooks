@@ -61,7 +61,7 @@ import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 
-export function startPlaybookRun(postId?: string) {
+export function startPlaybookRun(teamId:string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
@@ -72,11 +72,11 @@ export function startPlaybookRun(postId?: string) {
             command = `${command} ${postId}`;
         }
 
-        await clientExecuteCommand(dispatch, getState, command);
+        await clientExecuteCommand(dispatch, getState, command, teamId);
     };
 }
 
-export function startPlaybookRunById(playbookId: string) {
+export function startPlaybookRunById(teamId: string, playbookId: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
@@ -84,25 +84,25 @@ export function startPlaybookRunById(playbookId: string) {
 
         const command = `/playbook start-playbook ${playbookId} ${clientId}`;
 
-        await clientExecuteCommand(dispatch, getState, command);
+        await clientExecuteCommand(dispatch, getState, command, teamId);
     };
 }
 
-export function updateStatus(defaultStatus?: string) {
+export function updateStatus(teamId: string, defaultStatus?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`);
+        await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`, teamId);
     };
 }
 
-export function addToTimeline(postId: string) {
+export function addToTimeline(teamId: string, postId: string) {
     return async (dispatch: Dispatch, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, `/playbook add ${postId}`);
+        await clientExecuteCommand(dispatch, getState, `/playbook add ${postId}`, teamId);
     };
 }
 
-export function addNewTask(checklist: number) {
+export function addNewTask(teamId: string, checklist: number) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`);
+        await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, teamId);
     };
 }
 

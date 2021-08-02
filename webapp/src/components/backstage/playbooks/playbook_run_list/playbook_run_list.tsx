@@ -7,8 +7,6 @@ import {components, ControlProps} from 'react-select';
 import {debounce} from 'debounce';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {UserProfile} from 'mattermost-redux/types/users';
 import styled from 'styled-components';
@@ -79,11 +77,9 @@ const PlaybookRunList = (props: Props) => {
     const [playbookRuns, setPlaybookRuns] = useState<PlaybookRun[] | null>(null);
     const [totalCount, setTotalCount] = useState(0);
     const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => UserProfile;
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-
     const [fetchParams, setFetchParams] = useState<FetchPlaybookRunsParams>(
         {
-            team_id: currentTeam.id,
+            team_id: props.playbook?.team_id,
             page: 0,
             per_page: BACKSTAGE_LIST_PER_PAGE,
             sort: 'last_status_update_at',
@@ -91,12 +87,6 @@ const PlaybookRunList = (props: Props) => {
             playbook_id: props.playbook?.id,
         },
     );
-
-    useEffect(() => {
-        setFetchParams((oldParams) => {
-            return {...oldParams, team_id: currentTeam.id};
-        });
-    }, [currentTeam.id]);
 
     useEffect(() => {
         let isCanceled = false;
@@ -151,7 +141,7 @@ const PlaybookRunList = (props: Props) => {
     }
 
     async function fetchOwners() {
-        const owners = await fetchOwnersInTeam(currentTeam.id);
+        const owners = await fetchOwnersInTeam(props.playbook?.team_id || ''); //TODO verify
         return owners.map((c) => selectUser(c.user_id) || {id: c.user_id} as UserProfile);
     }
 
