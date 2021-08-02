@@ -98,6 +98,8 @@ const RenderedDescription = styled.div`
     :hover {
         cursor: text;
     }
+
+    white-space: pre-wrap;
 `;
 
 export default RHSAboutDescription;
