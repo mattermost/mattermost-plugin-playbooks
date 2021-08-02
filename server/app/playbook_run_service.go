@@ -852,22 +852,28 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		}()
 	}
 
-	if previousStatus != StatusArchived && options.Status == StatusArchived && playbookRunToModify.ExportChannelOnArchiveEnabled {
-
-		fileID, err := s.exportChannelToFile(playbookRunToModify.Name, playbookRunToModify.OwnerUserID, playbookRunToModify.ChannelID)
+	if previousStatus != StatusArchived && options.Status == StatusArchived {
+		err := s.ResetReminderTimer(playbookRunToModify.ID)
 		if err != nil {
-			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
-			return nil
+			s.pluginAPI.Log.Warn("failed to reset the reminder timer when updating status to Archived", "playbook ID", playbookRunToModify.ID, "error", err)
 		}
 
-		channel, err := s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
-		if err != nil {
-			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
-			return nil
-		}
+		if playbookRunToModify.ExportChannelOnArchiveEnabled {
+			fileID, err := s.exportChannelToFile(playbookRunToModify.Name, playbookRunToModify.OwnerUserID, playbookRunToModify.ChannelID)
+			if err != nil {
+				_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
+				return nil
+			}
 
-		if err = s.poster.DM(playbookRunToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Playbook run ~%s exported successfully", channel.Name), FileIds: []string{fileID}}); err != nil {
-			return errors.Wrap(err, "failed to send exported channel result to playbook owner")
+			channel, err := s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
+			if err != nil {
+				_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
+				return nil
+			}
+
+			if err = s.poster.DM(playbookRunToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Playbook run ~%s exported successfully", channel.Name), FileIds: []string{fileID}}); err != nil {
+				return errors.Wrap(err, "failed to send exported channel result to playbook owner")
+			}
 		}
 
 	}
