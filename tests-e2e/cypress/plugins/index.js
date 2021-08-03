@@ -1,26 +1,63 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-/// <reference types="cypress" />
-// ***********************************************************
-// This example plugins/index.js can be used to load plugins
-//
-// You can change the location of this file or turn off loading
-// the plugins file with the 'pluginsFile' configuration option.
-//
-// You can read more here:
-// https://on.cypress.io/plugins-guide
-// ***********************************************************
+/* eslint-disable no-console */
 
-// This function is called when a project is opened or re-opened (e.g. due to
-// the project's config changing)
+const {
+    dbGetActiveUserSessions,
+    dbGetUser,
+    dbGetUserSession,
+    dbUpdateUserSession,
+} = require('./db_request');
+const clientRequest = require('./client_request');
+const externalRequest = require('./external_request');
+const fileExist = require('./file_exist');
+const getRecentEmail = require('./get_recent_email');
+const keycloakRequest = require('./keycloak_request');
+const oktaRequest = require('./okta_request');
+const postBotMessage = require('./post_bot_message');
+const postIncomingWebhook = require('./post_incoming_webhook');
+const postMessageAs = require('./post_message_as');
+const urlHealthCheck = require('./url_health_check');
+const reactToMessageAs = require('./react_to_message_as');
+const logging = require('./logging');
 
-/**
- * @type {Cypress.PluginConfig}
- */
-module.exports = (on) => {
-    // `on` is used to hook into various events Cypress emits
-    // `config` is the resolved Cypress config
-    //eslint-disable-next-line global-require
+const log = (message) => {
+    console.log(message);
+    return null;
+};
+
+module.exports = (on, config) => {
+    on('task', {
+        clientRequest,
+        dbGetActiveUserSessions,
+        dbGetUser,
+        dbGetUserSession,
+        dbUpdateUserSession,
+        externalRequest,
+        fileExist,
+        getRecentEmail,
+        keycloakRequest,
+        log,
+        oktaRequest,
+        postBotMessage,
+        postIncomingWebhook,
+        postMessageAs,
+        urlHealthCheck,
+        reactToMessageAs,
+        logging,
+    });
+
+    on('before:browser:launch', (browser = {}, launchOptions) => {
+        if (browser.name === 'chrome' && !config.chromeWebSecurity) {
+            launchOptions.args.push('--disable-features=CrossSiteDocumentBlockingIfIsolating,CrossSiteDocumentBlockingAlways,IsolateOrigins,site-per-process');
+            launchOptions.args.push('--load-extension=cypress/extensions/Ignore-X-Frame-headers');
+        }
+
+        return launchOptions;
+    });
+
     require('cypress-terminal-report/src/installLogsPrinter')(on);
+
+    return config;
 };

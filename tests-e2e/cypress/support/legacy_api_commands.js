@@ -41,7 +41,7 @@ Cypress.Commands.add('legacyApiLogin', (username = 'user-1', password = null) =>
  * @param {String} type - 'O' for open (default), 'I' for invite only
  * All parameters required
  */
-Cypress.Commands.add('apiCreateTeam', (name, displayName, type = 'O') => {
+Cypress.Commands.add('legacyApiCreateTeam', (name, displayName, type = 'O') => {
     const uniqueName = `${name}-${getRandomInt(9999).toString()}`;
 
     return cy.request({
@@ -62,7 +62,7 @@ Cypress.Commands.add('apiCreateTeam', (name, displayName, type = 'O') => {
 /**
  * Gets the team matching the given name;
  */
-Cypress.Commands.add('apiGetTeamByName', (name) => {
+Cypress.Commands.add('legacyApiGetTeamByName', (name) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/api/v4/teams/name/' + name,
@@ -80,7 +80,7 @@ Cypress.Commands.add('apiGetTeamByName', (name) => {
  * @param {String} userId - ID of user to be added into a team
  * All parameter required
  */
-Cypress.Commands.add('apiAddUserToTeam', (teamId, userId) => {
+Cypress.Commands.add('legacyApiAddUserToTeam', (teamId, userId) => {
     cy.request({
         method: 'POST',
         url: `/api/v4/teams/${teamId}/members`,
@@ -99,7 +99,7 @@ Cypress.Commands.add('apiAddUserToTeam', (teamId, userId) => {
  * @param {String} userId - The user ID
  * All parameter required
  */
-Cypress.Commands.add('apiRemoveUserFromTeam', (teamId, userId) => {
+Cypress.Commands.add('legacyApiRemoveUserFromTeam', (teamId, userId) => {
     cy.request({
         method: 'DELETE',
         url: `/api/v4/teams/${teamId}/members/${userId}`,
@@ -110,24 +110,7 @@ Cypress.Commands.add('apiRemoveUserFromTeam', (teamId, userId) => {
     });
 });
 
-// *****************************************************************************
-// Channels
-// https://api.mattermost.com/#tag/channels
-// *****************************************************************************
-
-Cypress.Commands.add('apiCreateGroupChannel', (userList = [], teamName) => {
-    cy.apiGetUsers(userList).then((res) => {
-        const userIds = res.body.map((user) => user.id);
-        cy.apiCreateGroup(userIds).then((resp) => {
-            cy.apiGetTeams().then((response) => {
-                const teamNameUrl = teamName || response.body[0].name;
-                cy.visit(`/${teamNameUrl}/messages/${resp.body.name}`);
-            });
-        });
-    });
-});
-
-Cypress.Commands.add('apiGetChannelByName', (teamName, channelName) => {
+Cypress.Commands.add('legacyApiGetChannelByName', (teamName, channelName) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: `/api/v4/teams/name/${teamName}/channels/name/${channelName}`,
@@ -137,7 +120,7 @@ Cypress.Commands.add('apiGetChannelByName', (teamName, channelName) => {
     });
 });
 
-Cypress.Commands.add('apiAddUserToChannel', (channelId, userId) => {
+Cypress.Commands.add('legacyApiAddUserToChannel', (channelId, userId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/api/v4/channels/' + channelId + '/members',
@@ -157,7 +140,7 @@ Cypress.Commands.add('apiAddUserToChannel', (channelId, userId) => {
  * @param {String} userId - The user ID
  * All parameter required
  */
-Cypress.Commands.add('removeUserFromChannel', (channelId, userId) => {
+Cypress.Commands.add('legacyRemoveUserFromChannel', (channelId, userId) => {
     //Remove a User from a Channel
     cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -169,7 +152,7 @@ Cypress.Commands.add('removeUserFromChannel', (channelId, userId) => {
     });
 });
 
-Cypress.Commands.add('apiCreateChannel', (teamId, name, displayName, type = 'O', purpose = '', header = '', unique = true) => {
+Cypress.Commands.add('legacyApiCreateChannel', (teamId, name, displayName, type = 'O', purpose = '', header = '', unique = true) => {
     const randomSuffix = getRandomId();
 
     return cy.request({
@@ -190,7 +173,7 @@ Cypress.Commands.add('apiCreateChannel', (teamId, name, displayName, type = 'O',
     });
 });
 
-Cypress.Commands.add('apiPatchChannel', (channelId, channelData) => {
+Cypress.Commands.add('legacyApiPatchChannel', (channelId, channelData) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         method: 'PUT',
@@ -202,7 +185,7 @@ Cypress.Commands.add('apiPatchChannel', (channelId, channelData) => {
     });
 });
 
-Cypress.Commands.add('apiDeleteChannel', (channelId) => {
+Cypress.Commands.add('legacyApiDeleteChannel', (channelId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         method: 'DELETE',
@@ -218,27 +201,12 @@ Cypress.Commands.add('apiDeleteChannel', (channelId) => {
 // *****************************************************************************
 
 /**
- * Get webapp plugins directly via API
- * This API assume that the user is logged in and has permission to access
- */
-Cypress.Commands.add('apiGetWebappPlugins', () => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/api/v4/plugins/webapp',
-        method: 'GET',
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        cy.wrap(response);
-    });
-});
-
-/**
  * Creates a group channel directly via API
  * This API assume that the user is logged in and has cookie to access
  * @param {String} userIds - IDs of users as member of the group
  * All parameters required except purpose and header
  */
-Cypress.Commands.add('apiCreateGroup', (userIds = []) => {
+Cypress.Commands.add('legacyApiCreateGroup', (userIds = []) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/api/v4/channels/group',
@@ -257,7 +225,7 @@ Cypress.Commands.add('apiCreateGroup', (userIds = []) => {
  * @param {String} userBID - ID of the second user in the DM
  * All parameters required except purpose and header
  */
-Cypress.Commands.add('apiCreateDM', (userAID, userBID) => {
+Cypress.Commands.add('legacyApiCreateDM', (userAID, userBID) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/api/v4/channels/direct',
@@ -270,24 +238,9 @@ Cypress.Commands.add('apiCreateDM', (userAID, userBID) => {
 });
 
 /**
- * Gets current user's teams
- */
-
-Cypress.Commands.add('apiGetTeams', () => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: 'api/v4/users/me/teams',
-        method: 'GET',
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        return cy.wrap(response);
-    });
-});
-
-/**
  * Gets users
  */
-Cypress.Commands.add('apiGetUsers', (usernames = []) => {
+Cypress.Commands.add('legacyApiGetUsers', (usernames = []) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/api/v4/users/usernames',
@@ -302,7 +255,7 @@ Cypress.Commands.add('apiGetUsers', (usernames = []) => {
 /**
  * Gets the current user.
  */
-Cypress.Commands.add('apiGetCurrentUser', () => {
+Cypress.Commands.add('legacyApiGetCurrentUser', () => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/api/v4/users/me',
@@ -313,15 +266,7 @@ Cypress.Commands.add('apiGetCurrentUser', () => {
     });
 });
 
-Cypress.Commands.add('apiGetConfig', () => {
-    // # Get current settings
-    return cy.request('/api/v4/config').then((response) => {
-        expect(response.status).to.equal(200);
-        return cy.wrap({config: response.body});
-    });
-});
-
-Cypress.Commands.add('apiUpdateConfig', (newConfig = {}) => {
+Cypress.Commands.add('legacyApiUpdateConfig', (newConfig = {}) => {
     // # Get current settings
     return cy.request('/api/v4/config').then((response) => {
         const oldConfig = response.body;
@@ -350,7 +295,7 @@ Cypress.Commands.add('apiUpdateConfig', (newConfig = {}) => {
 * @param {Object} props - Post props
 * @param {String} token - Optional token to use for auth. If not provided - posts as current user
 */
-Cypress.Commands.add('apiCreatePost', (channelId, message, rootId, props, token = '', failOnStatusCode = true) => {
+Cypress.Commands.add('legacyApiCreatePost', (channelId, message, rootId, props, token = '', failOnStatusCode = true) => {
     const headers = {'X-Requested-With': 'XMLHttpRequest'};
     if (token !== '') {
         headers.Authorization = `Bearer ${token}`;
@@ -377,7 +322,7 @@ Cypress.Commands.add('apiCreatePost', (channelId, message, rootId, props, token 
 * This API assume that the user is logged in and has cookie to access
 * @param {String} postId - ID of the post to delete
 */
-Cypress.Commands.add('apiDeletePost', (postId) => {
+Cypress.Commands.add('legacyApiDeletePost', (postId) => {
     const headers = {'X-Requested-With': 'XMLHttpRequest'};
     return cy.request({
         url: `/api/v4/posts/${postId}`,
@@ -392,7 +337,7 @@ Cypress.Commands.add('apiDeletePost', (postId) => {
 * @param {String} postId - ID of the post to edit
 * @param {String} message - What to post
 */
-Cypress.Commands.add('apiEditPost', (postId, message) => {
+Cypress.Commands.add('legacyApiEditPost', (postId, message) => {
     const headers = {'X-Requested-With': 'XMLHttpRequest'};
     return cy.request({
         url: `/api/v4/posts/${postId}`,

@@ -9,7 +9,7 @@
 describe('backstage playbook run details', () => {
     beforeEach(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
     });
 
     it('redirects to not found error if the playbook run is unknown', () => {
