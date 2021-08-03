@@ -97,7 +97,7 @@ const PlaybookBackstage = () => {
     };
 
     const goToEdit = () => {
-        navigateToUrl(location.pathname + '/edit');
+        navigateToUrl(location.pathname + `/edit?teamId=${team.id}`);
     };
 
     const runPlaybook = () => {

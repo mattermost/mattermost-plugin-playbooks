@@ -129,7 +129,7 @@ const PlaybookList = () => {
                 <div className='col-sm-2 action-col'>
                     <PlaybookActionMenu
                         onEdit={() => {
-                            edit(p);
+                            edit(p, p.team_id);
                         }}
                         onDelete={() => {
                             onConfirmDelete(p);

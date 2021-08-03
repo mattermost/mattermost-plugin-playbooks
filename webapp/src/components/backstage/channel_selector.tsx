@@ -1,11 +1,7 @@
 import React from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
-import {useSelector} from 'react-redux';
-import {getMyChannels, getChannel} from 'mattermost-redux/selectors/entities/channels';
-import General from 'mattermost-redux/constants/general';
 
 import {Channel} from 'mattermost-redux/types/channels';
-import {GlobalState} from 'mattermost-redux/types/store';
 
 import {StyledSelect} from './styles';
 
@@ -19,17 +15,11 @@ export interface Props {
     captureMenuScroll: boolean;
     shouldRenderValue: boolean;
     placeholder?: string;
+    selectableChannels: Channel[];
 }
 
-const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(state).filter((channel) =>
-    channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL,
-);
-
 const ChannelSelector = (props: Props & { className?: string }) => {
-    const selectableChannels = useSelector(getMyPublicAndPrivateChannels);
-
-    type GetChannelType = (channelID: string) => Channel
-    const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID) || {display_name: 'Unknown Channel', id: channelID});
+    const getChannelFromID = (channelId: string) => props.selectableChannels.find((channel) => channel.id === channelId) || {display_name: 'Unknown Channel', id: channelId};
 
     const onChange = (channel: Channel | null, {action}: {action: string}) => {
         if (action === 'clear') {
@@ -73,7 +63,7 @@ const ChannelSelector = (props: Props & { className?: string }) => {
             id={props.id}
             isMulti={false}
             controlShouldRenderValue={props.shouldRenderValue}
-            options={selectableChannels}
+            options={props.selectableChannels}
             filterOption={filterOption}
             onChange={onChange}
             getOptionValue={getOptionValue}

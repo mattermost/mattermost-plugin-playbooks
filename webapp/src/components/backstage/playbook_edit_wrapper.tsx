@@ -1,22 +1,29 @@
 import React from 'react';
-import {useParams} from 'react-router-dom';
+import {Redirect, useParams} from 'react-router-dom';
 
-import './playbook.scss';
+import {pluginUrl} from 'src/browser_routing';
 
 import PlaybookEdit from './playbook_edit';
 
 interface URLParams {
-    teamId: string;
     playbookId?: string;
     tabId?: string;
 }
 
 const PlaybookEditWrapper = () => {
     const urlParams = useParams<URLParams>();
+
+    const searchParams = new URLSearchParams(location.search);
+    const teamId = searchParams.get('teamId');
+
+    if (!teamId || !urlParams.playbookId) {
+        return <Redirect to={pluginUrl('/playbooks')}/>;
+    }
+
     return (
         <PlaybookEdit
             isNew={false}
-            teamId={urlParams.teamId}
+            teamId={teamId}
             playbookId={urlParams.playbookId}
             tabId={urlParams.tabId}
         />

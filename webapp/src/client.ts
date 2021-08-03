@@ -7,6 +7,7 @@ import qs from 'qs';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from 'mattermost-redux/types/users';
+import {Channel} from 'mattermost-redux/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
@@ -186,6 +187,10 @@ export async function deletePlaybook(playbookId: Playbook['id']) {
 
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
     return Client4.getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE);
+}
+
+export async function fetchMyChannels(teamId: string): Promise<Channel[]> {
+    return Client4.getMyChannels(teamId);
 }
 
 export async function fetchUsersInTeam(teamId: string): Promise<UserProfile[]> {

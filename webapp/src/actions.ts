@@ -4,7 +4,7 @@ import {AnyAction, Dispatch} from 'redux';
 
 import {generateId} from 'mattermost-redux/utils/helpers';
 
-import {IntegrationTypes} from 'mattermost-redux/action_types';
+import {IntegrationTypes, TeamTypes} from 'mattermost-redux/action_types';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
@@ -55,13 +55,13 @@ import {
     SetChecklistCollapsedState,
     SetAllChecklistsCollapsedState,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
-    SET_CHECKLIST_ITEMS_FILTER, SetChecklistItemsFilter,
+    SET_CHECKLIST_ITEMS_FILTER, SetChecklistItemsFilter, SetCurrentTeamId,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 
-export function startPlaybookRun(teamId:string, postId?: string) {
+export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
@@ -248,4 +248,9 @@ export const setChecklistItemsFilter = (channelId: string, nextState: ChecklistI
     type: SET_CHECKLIST_ITEMS_FILTER,
     channelId,
     nextState,
+});
+
+export const setCurrentTeamId = (teamId: string): SetCurrentTeamId => ({
+    type: TeamTypes.SELECT_TEAM,
+    data: teamId,
 });

@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import Integrations from 'mattermost-redux/action_types/integrations';
+import Teams from 'mattermost-redux/action_types/teams';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
@@ -146,4 +147,9 @@ export interface SetChecklistItemsFilter {
     type: typeof SET_CHECKLIST_ITEMS_FILTER;
     channelId: string;
     nextState: ChecklistItemsFilter;
+}
+
+export interface SetCurrentTeamId {
+    type: typeof Teams.SELECT_TEAM;
+    data: string;
 }

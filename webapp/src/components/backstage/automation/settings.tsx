@@ -110,6 +110,7 @@ export const AutomationSettings = (props: Props) => {
                         onToggle={props.onToggleAnnouncementChannel}
                         channelId={props.announcementChannelID}
                         onChannelSelected={props.onAnnouncementChannelSelected}
+                        teamId={props.teamID}
                     />
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>

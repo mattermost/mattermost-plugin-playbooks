@@ -192,7 +192,7 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 			Style: "primary",
 		}
 
-		url := fmt.Sprintf("%s/%s/edit/automation", playbooksURL, playbooks[0].ID) // automation tab
+		url := fmt.Sprintf("%s/%s/edit/automation?teamId=%s", playbooksURL, playbooks[0].ID, playbooks[0].TeamID) // automation tab
 
 		attachment := &model.SlackAttachment{
 			Actions: []*model.PostAction{yesButton, ignoreButton},
