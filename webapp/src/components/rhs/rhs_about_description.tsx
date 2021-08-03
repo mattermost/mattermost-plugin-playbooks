@@ -43,7 +43,15 @@ const RHSAboutDescription = (props: DescriptionProps) => {
 
     if (!editing) {
         return (
-            <RenderedDescription onClick={() => setEditing(true)}>
+            <RenderedDescription
+                onClick={(event) => {
+                    // Enter edit mode only if the user is not clicking a link
+                    const targetNode = event.target as Node;
+                    if (targetNode.nodeName !== 'A') {
+                        setEditing(true);
+                    }
+                }}
+            >
                 <PostText
                     text={editedValue}
                     team={currentTeam}
@@ -108,6 +116,8 @@ const RenderedDescription = styled.div`
     :hover {
         cursor: text;
     }
+
+    white-space: pre-wrap;
 `;
 
 export default RHSAboutDescription;

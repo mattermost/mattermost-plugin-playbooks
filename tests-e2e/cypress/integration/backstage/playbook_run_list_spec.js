@@ -18,25 +18,25 @@ describe('backstage playbook run list', () => {
 
     before(() => {
         // # Login as the sysadmin
-        cy.apiLogin('sysadmin');
+        cy.legacyApiLogin('sysadmin');
 
         // # Create a new team for the welcome page test
-        cy.apiCreateTeam('team', 'Team').then(({team}) => {
+        cy.legacyApiCreateTeam('team', 'Team').then(({team}) => {
             // # Add user-1 to team
             cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
-                cy.apiAddUserToTeam(team.id, user.id);
+                cy.legacyApiAddUserToTeam(team.id, user.id);
             });
         });
 
         // # Create a new team for the welcome page test when filtering
-        cy.apiCreateTeam('team', 'Team With No Active Playbook Runs').then(({team}) => {
+        cy.legacyApiCreateTeam('team', 'Team With No Active Playbook Runs').then(({team}) => {
             // # Add user-1 to team
             cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
-                cy.apiAddUserToTeam(team.id, user.id);
+                cy.legacyApiAddUserToTeam(team.id, user.id);
             });
 
             // # Create a playbook
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 cy.apiCreateTestPlaybook({
                     teamId: team.id,
                     title: playbookName,
@@ -46,12 +46,12 @@ describe('backstage playbook run list', () => {
         });
 
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Create a playbook
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 userId = user.id;
 
                 cy.apiCreateTestPlaybook({
@@ -70,7 +70,7 @@ describe('backstage playbook run list', () => {
         cy.viewport('macbook-13');
 
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
     });
 
     it('has "Runs" and team name in heading', () => {
@@ -125,7 +125,7 @@ describe('backstage playbook run list', () => {
 
         before(() => {
             // # Login as user-1
-            cy.apiLogin('user-1');
+            cy.legacyApiLogin('user-1');
 
             // # Start sufficient playbook runs to ensure pagination is possible.
             for (let i = 0; i < BACKSTAGE_LIST_PER_PAGE + 1; i++) {
@@ -142,7 +142,7 @@ describe('backstage playbook run list', () => {
 
         beforeEach(() => {
             // # Login as user-1
-            cy.apiLogin('user-1');
+            cy.legacyApiLogin('user-1');
 
             // # Open backstage
             cy.visit('/plug/com.mattermost.plugin-incident-management');

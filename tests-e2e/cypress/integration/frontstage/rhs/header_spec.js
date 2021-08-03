@@ -14,11 +14,11 @@ describe('playbook run rhs > header', () => {
 
     before(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 userId = user.id;
 
                 // # Create a playbook
@@ -38,7 +38,7 @@ describe('playbook run rhs > header', () => {
         cy.viewport('macbook-13');
 
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
     });
 
     describe('shows name', () => {
@@ -79,9 +79,9 @@ describe('playbook run rhs > header', () => {
             // * Verify the existing title is displayed
             cy.get('#rhsContainer').contains(playbookRunName);
 
-            cy.apiGetChannelByName('ad-1', playbookRunChannelName).then(({channel}) => {
+            cy.legacyApiGetChannelByName('ad-1', playbookRunChannelName).then(({channel}) => {
                 // # Rename the channel
-                cy.apiPatchChannel(channel.id, {
+                cy.legacyApiPatchChannel(channel.id, {
                     id: channel.id,
                     display_name: 'Updated',
                 });
