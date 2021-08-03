@@ -37,7 +37,7 @@ const RHSAboutDescription = (props: DescriptionProps) => {
     if (!editing) {
         return (
             <RenderedDescription
-                onClick={(event: React.MouseEvent<HTMLElement>) => {
+                onClick={(event) => {
                     // Enter edit mode only if the user is not clicking a link
                     const targetNode = event.target as Node;
                     if (targetNode.nodeName !== 'A') {
