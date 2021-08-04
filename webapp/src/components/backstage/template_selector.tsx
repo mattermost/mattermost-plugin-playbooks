@@ -19,10 +19,6 @@ export interface PresetTemplate {
     template: DraftPlaybookWithChecklist;
 }
 
-const TemplateIcon = styled(Icon)`
-    color: var(--mention-highlight-link);
-`;
-
 export const PresetTemplates: PresetTemplate[] = [
     {
         title: 'Blank',
@@ -32,7 +28,7 @@ export const PresetTemplates: PresetTemplate[] = [
     {
         title: 'Product Release',
         icon: (
-            <TemplateIcon
+            <Icon
                 path={mdiRocketLaunchOutline}
                 size={2.5}
             />
@@ -117,7 +113,7 @@ export const PresetTemplates: PresetTemplate[] = [
     {
         title: 'Customer Onboarding',
         icon: (
-            <TemplateIcon
+            <Icon
                 path={mdiHandshakeOutline}
                 size={2.5}
             />
@@ -293,7 +289,7 @@ export const PresetTemplates: PresetTemplate[] = [
     {
         title: 'Feature Swimlane',
         icon: (
-            <TemplateIcon
+            <Icon
                 path={mdiCodeBraces}
                 size={2.5}
             />
@@ -406,6 +402,7 @@ const IconContainer = styled.div`
     align-items: center;
     justify-content: center;
     background: var(--center-channel-bg);
+    color: var(--button-bg);
     height: 156px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     box-sizing: border-box;
