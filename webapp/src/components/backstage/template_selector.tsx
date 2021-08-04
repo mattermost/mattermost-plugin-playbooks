@@ -284,7 +284,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 '### Follow-up tasks\n' +
                 'This section lists the action items to turn learnings into changes that help the team become more proficient with iterations. It could include tweaking the playbook, publishing the retrospective, or other improvements. The best follow-ups will have a clear owner assigned as well as due date.\n' +
                 '\n' +
-                '### Timeline Highlights\n' +
+                '### Timeline highlights\n' +
                 'This section is a curated log that details the most important moments. It can contain key communications, screen shots, or other artifacts. Use the built-in timeline feature to help you retrace and replay the sequence of events.\n',
             retrospective_reminder_interval_seconds: 24 * 60 * 60, // 24 hours
             signal_any_keywords_enabled: true,
