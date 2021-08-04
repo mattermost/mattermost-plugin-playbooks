@@ -15,29 +15,29 @@ describe('playbook run rhs > welcome', () => {
 
     before(() => {
         // # Login as the sysadmin
-        cy.apiLogin('sysadmin');
+        cy.legacyApiLogin('sysadmin');
 
         // # Create a new team for the welcome page test
-        cy.apiCreateTeam('team', 'Team').then(({team}) => {
+        cy.legacyApiCreateTeam('team', 'Team').then(({team}) => {
             teamId = team.id;
             newTeamName = team.name;
 
             // # Add user-1 to team
             cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
-                cy.apiAddUserToTeam(team.id, user.id);
+                cy.legacyApiAddUserToTeam(team.id, user.id);
             });
 
             // # Add user-2 to team
             cy.apiGetUserByEmail('user-2@sample.mattermost.com').then(({user}) => {
-                cy.apiAddUserToTeam(team.id, user.id);
+                cy.legacyApiAddUserToTeam(team.id, user.id);
             });
         });
 
         // # Login as user-2
-        cy.apiLogin('user-2');
+        cy.legacyApiLogin('user-2');
 
         // # Create a playbook as user-2
-        cy.apiGetCurrentUser().then((user) => {
+        cy.legacyApiGetCurrentUser().then((user) => {
             cy.apiCreateTestPlaybook({
                 teamId,
                 title: playbookName,
@@ -67,7 +67,7 @@ describe('playbook run rhs > welcome', () => {
     describe('prompts to create playbook when not a member of a playbook', () => {
         ['sysadmin', 'user-1'].forEach((username) => it(`as ${username}`, () => {
             // # Login as the user
-            cy.apiLogin(username);
+            cy.legacyApiLogin(username);
 
             // # Size the viewport to show plugin icons even when RHS is open
             cy.viewport('macbook-13');
@@ -102,7 +102,7 @@ describe('playbook run rhs > welcome', () => {
     describe('prompts to run playbook when a member of a playbook', () => {
         it('as user-2', () => {
             // # Login as user-2
-            cy.apiLogin('user-2');
+            cy.legacyApiLogin('user-2');
 
             // # Size the viewport to show plugin icons even when RHS is open
             cy.viewport('macbook-13');

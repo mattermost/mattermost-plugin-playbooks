@@ -12,13 +12,13 @@ describe('playbook run creation dialog', () => {
 
     before(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Create a playbook
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
 
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 cy.apiCreateTestPlaybook({
                     teamId: team.id,
                     title: playbookName,
@@ -30,7 +30,7 @@ describe('playbook run creation dialog', () => {
 
     beforeEach(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Navigate to the application
         cy.visit('/ad-1/');

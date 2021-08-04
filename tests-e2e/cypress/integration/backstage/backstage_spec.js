@@ -11,11 +11,11 @@ describe('backstage', () => {
 
     before(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Create and run a playbook.
-        cy.apiGetTeamByName('ad-1').then((team) => {
-            cy.apiGetCurrentUser().then((user) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 cy.apiCreateTestPlaybook({
                     teamId: team.id,
                     title: playbookName,
@@ -36,7 +36,7 @@ describe('backstage', () => {
 
     beforeEach(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Navigate to the application
         cy.visit('/ad-1/');

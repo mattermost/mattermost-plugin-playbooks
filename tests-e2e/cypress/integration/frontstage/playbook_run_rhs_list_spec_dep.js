@@ -20,37 +20,37 @@ describe('rhs playbook run list', () => {
 
     before(() => {
         // # Login as the sysadmin
-        cy.apiLogin('sysadmin');
+        cy.legacyApiLogin('sysadmin');
 
         // # Create Team 1
-        cy.apiCreateTeam('team', 'Team').then(({team}) => {
+        cy.legacyApiCreateTeam('team', 'Team').then(({team}) => {
             teamId1 = team.id;
             teamName1 = team.name;
 
             // # Add user-1 to team
             cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
-                cy.apiAddUserToTeam(team.id, user.id);
+                cy.legacyApiAddUserToTeam(team.id, user.id);
 
                 // # Create a private channel
-                cy.apiCreateChannel(team.id, 'private-channel', 'Private Channel', 'P')
+                cy.legacyApiCreateChannel(team.id, 'private-channel', 'Private Channel', 'P')
                     .then(({channel}) => {
                         privateChannelName = channel.name;
 
                         // # Add user-1 to that channel
-                        cy.apiAddUserToChannel(channel.id, user.id);
+                        cy.legacyApiAddUserToChannel(channel.id, user.id);
                     });
             });
 
             // # Add user-1 to team
             cy.apiGetUserByEmail('user-2@sample.mattermost.com').then(({user}) => {
-                cy.apiAddUserToTeam(team.id, user.id);
+                cy.legacyApiAddUserToTeam(team.id, user.id);
             });
 
             // # Login as user-1
-            cy.apiLogin('user-1');
+            cy.legacyApiLogin('user-1');
 
             // # Create a playbook
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 userId = user.id;
 
                 cy.apiCreateTestPlaybook({
@@ -63,9 +63,9 @@ describe('rhs playbook run list', () => {
             });
 
             // # Login as user-2
-            cy.apiLogin('user-2');
+            cy.legacyApiLogin('user-2');
 
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 user2Id = user.id;
 
                 // # Create a playbook
@@ -80,23 +80,23 @@ describe('rhs playbook run list', () => {
         });
 
         // # Login as the sysadmin
-        cy.apiLogin('sysadmin');
+        cy.legacyApiLogin('sysadmin');
 
         // # Create Team 2
-        cy.apiCreateTeam('team', 'Team').then(({team}) => {
+        cy.legacyApiCreateTeam('team', 'Team').then(({team}) => {
             teamId2 = team.id;
             teamName2 = team.name;
 
             // # Add user-1 to team
             cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
-                cy.apiAddUserToTeam(team.id, user.id);
+                cy.legacyApiAddUserToTeam(team.id, user.id);
             });
 
             // # Login as user-1
-            cy.apiLogin('user-1');
+            cy.legacyApiLogin('user-1');
 
             // # Create a playbook
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 userId = user.id;
 
                 cy.apiCreateTestPlaybook({
@@ -115,12 +115,12 @@ describe('rhs playbook run list', () => {
         cy.viewport('macbook-13');
 
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
     });
 
     describe('should show welcome screen', () => {
         it('when user has no active playbook runs', () => {
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 expect(user.id).to.equal(userId);
             });
 
@@ -847,7 +847,7 @@ describe('rhs playbook run list', () => {
             });
 
             // # Login as user-2
-            cy.apiLogin('user-2');
+            cy.legacyApiLogin('user-2');
 
             // # start new playbook run
             const now = Date.now();
@@ -863,9 +863,9 @@ describe('rhs playbook run list', () => {
 
             // # add user-1 to the playbook run
             let channelId;
-            cy.apiGetChannelByName(teamName1, playbookRunChannelName).then(({channel}) => {
+            cy.legacyApiGetChannelByName(teamName1, playbookRunChannelName).then(({channel}) => {
                 channelId = channel.id;
-                cy.apiAddUserToChannel(channelId, userId);
+                cy.legacyApiAddUserToChannel(channelId, userId);
             });
 
             // * Verify the rhs list is open and we can see the new playbook run
@@ -931,7 +931,7 @@ describe('rhs playbook run list', () => {
             });
 
             // # Login as user-2
-            cy.apiLogin('user-2');
+            cy.legacyApiLogin('user-2');
 
             // # start new playbook run
             const now = Date.now();
@@ -946,9 +946,9 @@ describe('rhs playbook run list', () => {
             cy.verifyPlaybookRunActive(teamId1, playbookRunName);
 
             // # add user-1 to the playbook run
-            cy.apiGetChannelByName(teamName1, playbookRunChannelName).then(({channel}) => {
+            cy.legacyApiGetChannelByName(teamName1, playbookRunChannelName).then(({channel}) => {
                 const channelId = channel.id;
-                cy.apiAddUserToChannel(channelId, userId);
+                cy.legacyApiAddUserToChannel(channelId, userId);
 
                 // * Verify the rhs list is open and we can see the new playbook run
                 cy.get('#rhsContainer').should('exist').within(() => {
@@ -958,7 +958,7 @@ describe('rhs playbook run list', () => {
                 });
 
                 // # remove user-1 from the playbook run
-                cy.removeUserFromChannel(channelId, userId);
+                cy.legacyRemoveUserFromChannel(channelId, userId);
 
                 // * Verify the playbook run is not listed
                 cy.get('#rhsContainer').should('exist').within(() => {
@@ -982,7 +982,7 @@ describe('rhs playbook run list', () => {
             });
 
             // # Login as user-2
-            cy.apiLogin('user-2');
+            cy.legacyApiLogin('user-2');
 
             // # start new playbook run
             const now = Date.now();
@@ -1000,8 +1000,8 @@ describe('rhs playbook run list', () => {
             cy.verifyPlaybookRunActive(teamId1, playbookRunName);
 
             // # add user-1 to the playbook run
-            cy.apiGetChannelByName(teamName1, playbookRunChannelName).then(({channel}) => {
-                cy.apiAddUserToChannel(channel.id, userId);
+            cy.legacyApiGetChannelByName(teamName1, playbookRunChannelName).then(({channel}) => {
+                cy.legacyApiAddUserToChannel(channel.id, userId);
 
                 // * Verify the rhs list is open and we can see the new playbook run
                 cy.get('#rhsContainer').should('exist').within(() => {
@@ -1111,7 +1111,7 @@ describe('rhs playbook run list', () => {
             });
 
             // # Login as user-2
-            cy.apiLogin('user-2');
+            cy.legacyApiLogin('user-2');
 
             // # start new playbook run
             const now = Date.now();
@@ -1127,8 +1127,8 @@ describe('rhs playbook run list', () => {
                 cy.verifyPlaybookRunActive(teamId1, playbookRunName);
 
                 // # add user-1 to the playbook run
-                cy.apiGetChannelByName(teamName1, playbookRunChannelName).then(({channel}) => {
-                    cy.apiAddUserToChannel(channel.id, userId);
+                cy.legacyApiGetChannelByName(teamName1, playbookRunChannelName).then(({channel}) => {
+                    cy.legacyApiAddUserToChannel(channel.id, userId);
                 });
 
                 // * Verify the rhs list is open and we can see the new playbook run
@@ -1411,7 +1411,7 @@ describe('rhs playbook run list', () => {
                     });
 
                     // # Update the status
-                    cy.apiGetChannelByName(teamName1, playbookRunChannelName).then(({channel}) => {
+                    cy.legacyApiGetChannelByName(teamName1, playbookRunChannelName).then(({channel}) => {
                         const channelId = channel.id;
 
                         cy.apiUpdateStatus({

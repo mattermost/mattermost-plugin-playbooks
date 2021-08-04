@@ -66,7 +66,8 @@ func (s *StatsStore) TotalActiveParticipants(filters *StatsFilters) int {
 		Select("COUNT(DISTINCT cm.UserId)").
 		From("ChannelMembers as cm").
 		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
-		Where("i.EndAt = 0")
+		Where("i.EndAt = 0").
+		Where(sq.Expr("cm.UserId NOT IN (SELECT UserId FROM Bots)"))
 
 	query = applyFilters(query, filters)
 
