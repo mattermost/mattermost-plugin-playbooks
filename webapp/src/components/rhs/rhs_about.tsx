@@ -173,7 +173,7 @@ const MemberSection = styled.div`
 `;
 
 const OwnerSection = styled(MemberSection)`
-    max-width: calc(100% - 205px);
+    max-width: calc(100% - 210px);
 `;
 
 const ParticipantsSection = styled(MemberSection)`
