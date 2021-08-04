@@ -486,12 +486,16 @@ const endedAt = (isActive: boolean, time: number) => {
 
 export default BackstagePlaybookRunList;
 
-export const TeamName = styled.div`
+const TeamName = styled.div`
     font-style: normal;
     font-weight: normal;
     font-size: 14px;
     line-height: 20px;
     color: var(--center-channel-color-72);
+`;
+
+export const TeamNameWithPadding = styled(TeamName)`
+    padding-left: 4px;
 `;
 
 export function getTeamName(teams: Team[], id: string): string {

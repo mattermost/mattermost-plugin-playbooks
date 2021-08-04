@@ -34,7 +34,7 @@ import {PrimaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
 
 import CreatePlaybookTeamSelector from 'src/components/team/create_playbook_team_selector';
 
-import {TeamName, getTeamName} from 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list';
+import {TeamNameWithPadding, getTeamName} from 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list';
 import {
     useAllowPlaybookCreationInTeams,
     useCanCreatePlaybooks,
@@ -122,7 +122,7 @@ const PlaybookList = () => {
                         id={p.title}
                         text={p.title}
                     />
-                    <TeamName>{teams.length > 1 ? ' (' + getTeamName(teams, p.team_id) + ')' : ''}</TeamName>
+                    <TeamNameWithPadding>{teams.length > 1 ? ' (' + getTeamName(teams, p.team_id) + ')' : ''}</TeamNameWithPadding>
                 </a>
                 <div className='col-sm-2'>{p.num_stages}</div>
                 <div className='col-sm-2'>{p.num_steps}</div>
