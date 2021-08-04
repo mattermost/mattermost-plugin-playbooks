@@ -34,7 +34,7 @@ import {PrimaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
 
 import CreatePlaybookTeamSelector from 'src/components/team/create_playbook_team_selector';
 
-import {TeamNameWithPadding, getTeamName} from 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list';
+import {TeamName, getTeamName} from 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list';
 import {
     useAllowPlaybookCreationInTeams,
     useCanCreatePlaybooks,
@@ -256,6 +256,10 @@ const PlaybookList = () => {
         </div>
     );
 };
+
+const TeamNameWithPadding = styled(TeamName)`
+    padding-left: 4px;
+`;
 
 type CreatePlaybookButtonProps = UpgradeButtonProps & {teams: Team[], allowPlaybookCreationInTeams:Map<string, boolean>, showUpgradeModal?: () => void};
 
