@@ -16,6 +16,8 @@ const RHSAboutTitle = (props: Props) => {
     const [editing, setEditing] = useState(false);
     const [editedValue, setEditedValue] = useState(props.value);
 
+    const invalidValue = editedValue.length < 2;
+
     const inputRef = useRef(null);
 
     useEffect(() => {
@@ -23,12 +25,20 @@ const RHSAboutTitle = (props: Props) => {
     }, [props.value]);
 
     const saveAndClose = () => {
-        props.onEdit(editedValue);
+        if (!invalidValue) {
+            props.onEdit(editedValue);
+            setEditing(false);
+        }
+    };
+
+    const discardAndClose = () => {
+        setEditedValue(props.value);
         setEditing(false);
     };
 
     useClickOutsideRef(inputRef, saveAndClose);
     useKeyPress('Enter', saveAndClose);
+    useKeyPress('Escape', discardAndClose);
 
     if (!editing) {
         const RenderedTitle = props.renderedTitle ?? DefaultRenderedTitle;
@@ -41,19 +51,26 @@ const RHSAboutTitle = (props: Props) => {
     }
 
     return (
-        <TitleInput
-            type={'text'}
-            ref={inputRef}
-            onChange={(e) => setEditedValue(e.target.value)}
-            value={editedValue}
-            maxLength={59}
-            autoFocus={true}
-            onFocus={(e) => {
-                const val = e.target.value;
-                e.target.value = '';
-                e.target.value = val;
-            }}
-        />
+        <>
+            <TitleInput
+                type={'text'}
+                ref={inputRef}
+                onChange={(e) => setEditedValue(e.target.value)}
+                value={editedValue}
+                maxLength={59}
+                autoFocus={true}
+                onFocus={(e) => {
+                    const val = e.target.value;
+                    e.target.value = '';
+                    e.target.value = val;
+                }}
+            />
+            {invalidValue &&
+            <ErrorMessage>
+                {'Run name must have at least two characters'}
+            </ErrorMessage>
+            }
+        </>
     );
 };
 
@@ -78,6 +95,16 @@ const TitleInput = styled.input`
     font-size: 18px;
     line-height: 24px;
     font-weight: 600;
+`;
+
+const ErrorMessage = styled.div`
+    color: var(--dnd-indicator);
+
+    font-size: 12px;
+    line-height: 16px;
+
+    margin-bottom: 12px;
+    margin-left: 8px;
 `;
 
 export const DefaultRenderedTitle = styled.div`
