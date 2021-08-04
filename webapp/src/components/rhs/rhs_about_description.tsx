@@ -107,7 +107,9 @@ const RenderedDescription = styled.div`
         cursor: text;
     }
 
-    white-space: pre-wrap;
+    p {
+        white-space: pre-wrap;
+    }
 `;
 
 export default RHSAboutDescription;
