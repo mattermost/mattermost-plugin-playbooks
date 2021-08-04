@@ -423,13 +423,13 @@ const BackstagePlaybookRunList = () => {
                         key={playbookRun.id}
                         onClick={() => openPlaybookRunDetails(playbookRun)}
                     >
-                        <a className='col-sm-3 playbook-run-item__title'>
+                        <div className='col-sm-3 playbook-run-item__title'>
                             <TextWithTooltip
                                 id={playbookRun.id}
                                 text={playbookRun.name}
                             />
-                            <TeamName>{teams.length > 1 ? ' (' + getTeamName(teams, playbookRun.team_id) + ')' : ''}</TeamName>
-                        </a>
+                            <TeamName>{teams.length > 1 ? getTeamName(teams, playbookRun.team_id) : ''}</TeamName>
+                        </div>
                         <div className='col-sm-2'>
                             <StatusBadge status={playbookRunCurrentStatus(playbookRun)}/>
                         </div>
@@ -492,7 +492,6 @@ export const TeamName = styled.div`
     font-size: 14px;
     line-height: 20px;
     color: var(--center-channel-color-72);
-    padding-left: 4px;
 `;
 
 export function getTeamName(teams: Team[], id: string): string {
