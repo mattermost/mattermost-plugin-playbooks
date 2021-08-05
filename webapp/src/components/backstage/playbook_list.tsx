@@ -117,13 +117,13 @@ const PlaybookList = () => {
                 key={p.id}
                 onClick={() => view(p)}
             >
-                <a className='col-sm-4 title'>
+                <div className='col-sm-4 title'>
                     <TextWithTooltip
                         id={p.title}
                         text={p.title}
                     />
-                    <TeamNameWithPadding>{teams.length > 1 ? ' (' + getTeamName(teams, p.team_id) + ')' : ''}</TeamNameWithPadding>
-                </a>
+                    {teams.length > 1 ? <TeamName>{getTeamName(teams, p.team_id)}</TeamName> : '' }
+                </div>
                 <div className='col-sm-2'>{p.num_stages}</div>
                 <div className='col-sm-2'>{p.num_steps}</div>
                 <div className='col-sm-2'>{p.num_runs}</div>
@@ -256,10 +256,6 @@ const PlaybookList = () => {
         </div>
     );
 };
-
-const TeamNameWithPadding = styled(TeamName)`
-    padding-left: 4px;
-`;
 
 type CreatePlaybookButtonProps = UpgradeButtonProps & {teams: Team[], allowPlaybookCreationInTeams:Map<string, boolean>, showUpgradeModal?: () => void};
 
