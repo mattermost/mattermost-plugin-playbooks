@@ -307,7 +307,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 {
                     title: 'Plan',
                     items: [
-                        newChecklistItem('Explain what the problem is and why it is important'),
+                        newChecklistItem('Explain what the problem is and why it\'s important'),
                         newChecklistItem('Explain proposal for potential solutions'),
                         newChecklistItem('List out open questions and assumptions'),
                         newChecklistItem('Set the target release date'),
@@ -382,7 +382,7 @@ export const PresetTemplates: PresetTemplate[] = [
             categorize_channel_enabled: true,
             description:
                 '**One-liner**\n' +
-                '<ie. Enable users to prescribe a description template so it is consistent for every run and therefore easier to read.>\n' +
+                '<ie. Enable users to prescribe a description template so it\'s consistent for every run and therefore easier to read.>\n' +
                 '\n' +
                 '**Targets release**\n' +
                 '- Code complete: date\n' +
