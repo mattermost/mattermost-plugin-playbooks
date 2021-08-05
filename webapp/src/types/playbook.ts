@@ -245,5 +245,5 @@ This section should include perspective from everyone that was involved to celeb
 ### Follow-up tasks
 This section lists the action items to turn learnings into changes that help the team become more proficient with iterations. It could include tweaking the playbook, publishing the retrospective, or other improvements. The best follow-ups will have a clear owner as well as due date.
 
-### Timeline Highlights
+### Timeline highlights
 This section is a curated log that details the most important moments. It can contain key communications, screen shots, or other artifacts. Use the built-in timeline feature to help you retrace and replay the sequence of events.`;
