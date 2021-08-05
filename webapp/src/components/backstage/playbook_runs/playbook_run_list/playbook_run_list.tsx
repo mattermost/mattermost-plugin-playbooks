@@ -428,7 +428,7 @@ const BackstagePlaybookRunList = () => {
                                 id={playbookRun.id}
                                 text={playbookRun.name}
                             />
-                            {teams.length > 1 ? <TeamName>{getTeamName(teams, playbookRun.team_id)}</TeamName> : ''}
+                            {teams.length > 1 && <TeamName>{getTeamName(teams, playbookRun.team_id)}</TeamName>}
                         </div>
                         <div className='col-sm-2'>
                             <StatusBadge status={playbookRunCurrentStatus(playbookRun)}/>

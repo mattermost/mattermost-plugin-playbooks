@@ -122,7 +122,7 @@ const PlaybookList = () => {
                         id={p.title}
                         text={p.title}
                     />
-                    {teams.length > 1 ? <TeamName>{getTeamName(teams, p.team_id)}</TeamName> : '' }
+                    {teams.length > 1 && <TeamName>{getTeamName(teams, p.team_id)}</TeamName>}
                 </div>
                 <div className='col-sm-2'>{p.num_stages}</div>
                 <div className='col-sm-2'>{p.num_steps}</div>
