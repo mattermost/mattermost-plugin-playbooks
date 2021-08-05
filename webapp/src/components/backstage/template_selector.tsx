@@ -378,7 +378,7 @@ export const PresetTemplates: PresetTemplate[] = [
             message_on_join_enabled: true,
             message_on_join:
                 'Hello and welcome!\n\n' +
-                'This channel was created as part of the **Feature Lifecycle** playbook and is where conversations related to developing this feature are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.',
+                'This channel was created as part of the **Feature Lifecycle** playbook and is where conversations related to developing this feature are held. You can customize this message using Markdown so that every new channel member can be welcomed with helpful context and resources.',
             categorize_channel_enabled: true,
             description:
                 '**One-liner**\n' +
