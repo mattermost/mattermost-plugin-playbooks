@@ -111,7 +111,7 @@ const RunDetailDesc = styled.span<RunDetailProps>`
     ${({exists}) => (exists ? css`
         font-size: 14px;
         line-height: 20px;
-        color: var(--mention-color);
+        color: var(--button-bg);
     ` : css`
         color: '#6F6F73';
         font-size: 16px;
