@@ -141,7 +141,7 @@ const PlaybookRunList = (props: Props) => {
     }
 
     async function fetchOwners() {
-        const owners = await fetchOwnersInTeam(props.playbook?.team_id || ''); //TODO verify
+        const owners = await fetchOwnersInTeam(props.playbook?.team_id || '');
         return owners.map((c) => selectUser(c.user_id) || {id: c.user_id} as UserProfile);
     }
 

@@ -148,8 +148,3 @@ export interface SetChecklistItemsFilter {
     channelId: string;
     nextState: ChecklistItemsFilter;
 }
-
-export interface SetCurrentTeamId {
-    type: typeof Teams.SELECT_TEAM;
-    data: string;
-}

@@ -55,7 +55,7 @@ import {
     SetChecklistCollapsedState,
     SetAllChecklistsCollapsedState,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
-    SET_CHECKLIST_ITEMS_FILTER, SetChecklistItemsFilter, SetCurrentTeamId,
+    SET_CHECKLIST_ITEMS_FILTER, SetChecklistItemsFilter,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
@@ -248,9 +248,4 @@ export const setChecklistItemsFilter = (channelId: string, nextState: ChecklistI
     type: SET_CHECKLIST_ITEMS_FILTER,
     channelId,
     nextState,
-});
-
-export const setCurrentTeamId = (teamId: string): SetCurrentTeamId => ({
-    type: TeamTypes.SELECT_TEAM,
-    data: teamId,
 });
