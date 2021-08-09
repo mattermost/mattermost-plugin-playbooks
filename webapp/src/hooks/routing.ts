@@ -1,7 +1,13 @@
 import qs from 'qs';
-import {useMemo} from 'react';
+import {useEffect, useMemo} from 'react';
 
 import {Team} from 'mattermost-redux/types/teams';
+
+import {GlobalState} from 'mattermost-redux/types/store';
+
+import {getConfig} from 'mattermost-redux/selectors/entities/general';
+
+import {useSelector} from 'react-redux';
 
 import {navigateToTeamPluginUrl, teamPluginUrl} from 'src/browser_routing';
 import {TEMPLATE_TITLE_KEY} from 'src/constants';
@@ -63,4 +69,23 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
             },
         };
     }, [teamName, onGo, urlOnly]);
+}
+
+const selectSiteName = (state: GlobalState) => getConfig(state).SiteName;
+
+export function useForceDocumentTitle(title: string) {
+    const siteName = useSelector(selectSiteName);
+
+    // Restore original title
+    useEffect(() => {
+        const original = document.title;
+        return () => {
+            document.title = original;
+        };
+    }, []);
+
+    // Update title
+    useEffect(() => {
+        document.title = title + ' - ' + siteName;
+    }, [title, siteName]);
 }
