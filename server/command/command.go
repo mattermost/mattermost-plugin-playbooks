@@ -9,10 +9,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/timeutils"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -20,10 +20,10 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
-const helpText = "###### Mattermost Incident Collaboration Plugin - Slash Command Help\n" +
+const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	"* `/playbook start` - Run a playbook. \n" +
 	"* `/playbook end` - Close the playbook run in this channel. \n" +
-	"* `/playbook update` - Provide a status update. \n" +
+	"* `/playbook update [next status]` - Provide a status update. \n" +
 	"* `/playbook check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
 	"* `/playbook checkadd [checklist #] [item text]` - add a checklist item. \n" +
 	"* `/playbook checkremove [checklist #] [item #]` - remove a checklist item. \n" +
@@ -50,7 +50,7 @@ func getCommand(addTestCommands bool) *model.Command {
 	return &model.Command{
 		Trigger:          "playbook",
 		DisplayName:      "Playbook",
-		Description:      "Incident Collaboration Plugin",
+		Description:      "Playbooks",
 		AutoComplete:     true,
 		AutoCompleteDesc: "Available commands: start, end, update, restart, check, list, owner, info",
 		AutoCompleteHint: "[command]",
@@ -69,8 +69,15 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 		"Ends the playbook run associated with the current channel")
 	command.AddCommand(end)
 
-	update := model.NewAutocompleteData("update", "",
+	update := model.NewAutocompleteData("update", "[next status]",
 		"Provide a status update.")
+	update.AddNamedStaticListArgument("next-status",
+		"The default status for the update dialog.",
+		false, []model.AutocompleteListItem{
+			{Item: "Reported", Hint: "", HelpText: ""},
+			{Item: "Active", Hint: "", HelpText: ""},
+			{Item: "Resolved", Hint: "", HelpText: ""},
+			{Item: "Archived", Hint: "", HelpText: ""}})
 	command.AddCommand(update)
 
 	restart := model.NewAutocompleteData("restart", "",
@@ -231,6 +238,66 @@ func (r *Runner) actionStart(args []string) {
 	}
 
 	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, postID, clientID, playbooksResults.Items, session.IsMobileApp()); err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+}
+
+// actionStartPlaybook is intended for scripting use, not use by the end user (they would have
+// to type in the correct playbookID).
+func (r *Runner) actionStartPlaybook(args []string) {
+	if len(args) != 2 {
+		r.postCommandResponse("Usage: `/playbook start-playbook <playbookID> <clientID>`")
+		return
+	}
+
+	playbookID := args[0]
+	clientID := args[1]
+
+	if !app.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI) {
+		r.postCommandResponse("Must be a member of the team to run playbooks.")
+		return
+	}
+
+	requesterInfo := app.RequesterInfo{
+		UserID:  r.args.UserId,
+		TeamID:  r.args.TeamId,
+		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
+	}
+
+	// Using the GetPlaybooksForTeam so that requesterInfo and the expected security restrictions
+	// are respected.
+	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
+		app.PlaybookFilterOptions{
+			Sort:      app.SortByTitle,
+			Direction: app.DirectionAsc,
+			Page:      0,
+			PerPage:   app.PerPageDefault,
+		})
+	if err != nil {
+		r.warnUserAndLogErrorf("Error: %v", err)
+		return
+	}
+
+	var playbook []app.Playbook
+	for _, pb := range playbooksResults.Items {
+		if pb.ID == playbookID {
+			playbook = append(playbook, pb)
+			break
+		}
+	}
+	if len(playbook) == 0 {
+		r.postCommandResponse("Playbook not found for id: " + playbookID)
+		return
+	}
+
+	session, err := r.pluginAPI.Session.Get(r.context.SessionId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error retrieving session: %v", err)
+		return
+	}
+
+	if err := r.playbookRunService.OpenCreatePlaybookRunDialog(r.args.TeamId, r.args.UserId, r.args.TriggerId, "", clientID, playbook, session.IsMobileApp()); err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
@@ -573,10 +640,10 @@ func (r *Runner) actionInfo() {
 }
 
 func (r *Runner) actionEnd() {
-	r.actionUpdate()
+	r.actionUpdate([]string{"Resolved"})
 }
 
-func (r *Runner) actionUpdate() {
+func (r *Runner) actionUpdate(args []string) {
 	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
@@ -596,7 +663,14 @@ func (r *Runner) actionUpdate() {
 		return
 	}
 
-	err = r.playbookRunService.OpenUpdateStatusDialog(playbookRunID, r.args.TriggerId)
+	defaultStatus := ""
+	if len(args) == 1 {
+		defaultStatus = args[0]
+	} else if len(args) == 2 && args[0] == "--next-status" {
+		defaultStatus = args[1]
+	}
+
+	err = r.playbookRunService.OpenUpdateStatusDialog(playbookRunID, r.args.TriggerId, defaultStatus)
 	switch {
 	case errors.Is(err, app.ErrPlaybookRunNotActive):
 		r.postCommandResponse("This playbook run has already been closed.")
@@ -608,7 +682,7 @@ func (r *Runner) actionUpdate() {
 }
 
 func (r *Runner) actionRestart() {
-	r.actionUpdate()
+	r.actionUpdate(nil)
 }
 
 func (r *Runner) actionAdd(args []string) {
@@ -1428,7 +1502,7 @@ var dummyListPlaybooks = []app.Playbook{
 		},
 	},
 	{
-		Title:       "Incident Collaboration Playbook",
+		Title:       "Playbooks Playbook",
 		Description: "Sample playbook",
 		Checklists: []app.Checklist{
 			{
@@ -1705,10 +1779,12 @@ func (r *Runner) Execute() error {
 	switch cmd {
 	case "start":
 		r.actionStart(parameters)
+	case "start-playbook":
+		r.actionStartPlaybook(parameters)
 	case "end":
 		r.actionEnd()
 	case "update":
-		r.actionUpdate()
+		r.actionUpdate(parameters)
 	case "check":
 		r.actionCheck(parameters)
 	case "checkadd":

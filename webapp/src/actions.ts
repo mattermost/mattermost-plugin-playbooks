@@ -11,7 +11,7 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import {selectToggleRHS} from 'src/selectors';
-import {RHSState, RHSTabState, TimelineEventsFilter} from 'src/types/rhs';
+import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
 
 import {
     PLAYBOOK_RUN_CREATED,
@@ -28,12 +28,10 @@ import {
     SET_RHS_EVENTS_FILTER,
     SET_RHS_OPEN,
     SET_RHS_STATE,
-    SET_RHS_TAB_STATE,
     SetClientId,
     SetRHSEventsFilter,
     SetRHSOpen,
     SetRHSState,
-    SetRHSTabState,
     SetTriggerId,
     RECEIVED_TEAM_DISABLED,
     ReceivedTeamDisabled,
@@ -49,11 +47,19 @@ import {
     ShowPostMenuModal,
     HIDE_POST_MENU_MODAL,
     HidePostMenuModal,
-    SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
-} from './types/actions';
-
-import {clientExecuteCommand} from './client';
-import {GlobalSettings} from './types/settings';
+    SetHasViewedChannel,
+    SET_HAS_VIEWED_CHANNEL,
+    SetRHSAboutCollapsedState,
+    SET_RHS_ABOUT_COLLAPSED_STATE,
+    SET_CHECKLIST_COLLAPSED_STATE,
+    SetChecklistCollapsedState,
+    SetAllChecklistsCollapsedState,
+    SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    SET_CHECKLIST_ITEMS_FILTER, SetChecklistItemsFilter,
+} from 'src/types/actions';
+import {clientExecuteCommand} from 'src/client';
+import {GlobalSettings} from 'src/types/settings';
+import {ChecklistItemsFilter} from 'src/types/playbook';
 
 export function startPlaybookRun(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -70,21 +76,21 @@ export function startPlaybookRun(postId?: string) {
     };
 }
 
-export function endPlaybookRun() {
+export function startPlaybookRunById(playbookId: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/playbook end');
+        // Add unique id
+        const clientId = generateId();
+        dispatch(setClientId(clientId));
+
+        const command = `/playbook start-playbook ${playbookId} ${clientId}`;
+
+        await clientExecuteCommand(dispatch, getState, command);
     };
 }
 
-export function restartPlaybookRun() {
+export function updateStatus(defaultStatus?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/playbook restart');
-    };
-}
-
-export function updateStatus() {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/playbook update');
+        await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`);
     };
 }
 
@@ -193,12 +199,6 @@ export const removedFromPlaybookRunChannel = (channelId: string): RemovedFromCha
     channelId,
 });
 
-export const setRHSTabState = (channelId: string, nextState: RHSTabState): SetRHSTabState => ({
-    type: SET_RHS_TAB_STATE,
-    channelId,
-    nextState,
-});
-
 export const setRHSEventsFilter = (channelId: string, nextState: TimelineEventsFilter): SetRHSEventsFilter => ({
     type: SET_RHS_EVENTS_FILTER,
     channelId,
@@ -222,4 +222,30 @@ export const setHasViewedChannel = (channelId: string): SetHasViewedChannel => (
     type: SET_HAS_VIEWED_CHANNEL,
     channelId,
     hasViewed: true,
+});
+
+export const setRHSAboutCollapsedState = (channelId: string, collapsed: boolean): SetRHSAboutCollapsedState => ({
+    type: SET_RHS_ABOUT_COLLAPSED_STATE,
+    channelId,
+    collapsed,
+});
+
+export const setChecklistCollapsedState = (channelId: string, checklistIndex: number, collapsed: boolean): SetChecklistCollapsedState => ({
+    type: SET_CHECKLIST_COLLAPSED_STATE,
+    channelId,
+    checklistIndex,
+    collapsed,
+});
+
+export const setAllChecklistsCollapsedState = (channelId: string, collapsed: boolean, numOfChecklists: number): SetAllChecklistsCollapsedState => ({
+    type: SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    channelId,
+    numOfChecklists,
+    collapsed,
+});
+
+export const setChecklistItemsFilter = (channelId: string, nextState: ChecklistItemsFilter): SetChecklistItemsFilter => ({
+    type: SET_CHECKLIST_ITEMS_FILTER,
+    channelId,
+    nextState,
 });

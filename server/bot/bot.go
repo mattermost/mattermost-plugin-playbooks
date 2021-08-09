@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -39,12 +39,8 @@ type Poster interface {
 	// PostCustomMessageWithAttachments posts a custom message with the specified type. Falling back to attachments for mobile.
 	PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error)
 
-	// DM posts a simple Direct Message to the specified user.
-	DM(userID, format string, args ...interface{}) error
-
-	// DMWithAttachments posts a Direct Message that contains Slack attachments.
-	// Often used to include post actions.
-	DMWithAttachments(userID string, attachments ...*model.SlackAttachment) error
+	// Post DM from the plugin bot to the specified user
+	DM(userID string, post *model.Post) error
 
 	// Ephemeral sends an ephemeral message to a user.
 	EphemeralPost(userID, channelID string, post *model.Post)
@@ -63,6 +59,9 @@ type Poster interface {
 
 	// NotifyAdmins sends a DM with the message to each admins
 	NotifyAdmins(message, authorUserID string, isTeamEdition bool) error
+
+	// PromptForFeedback sends a DM as the surveybot to the given user, prompting for product feedback.
+	PromptForFeedback(userID string) error
 }
 
 type Telemetry interface {

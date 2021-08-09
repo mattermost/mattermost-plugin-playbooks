@@ -21,18 +21,18 @@ describe('playbook run broadcast', () => {
 
     before(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Get the current team and user
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
         }).then(() => {
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 userId = user.id;
             });
         }).then(() => {
             // # Create a public channel
-            cy.apiCreateChannel(teamId, 'public-channel', 'Public Channel', 'O').then(({channel}) => {
+            cy.legacyApiCreateChannel(teamId, 'public-channel', 'Public Channel', 'O').then(({channel}) => {
                 publicBroadcastChannelName = channel.name;
                 publicBroadcastChannelId = channel.id;
 
@@ -48,7 +48,7 @@ describe('playbook run broadcast', () => {
             });
 
             // # Create a private channel
-            cy.apiCreateChannel(teamId, 'private-channel', 'Private Channel', 'P').then(({channel}) => {
+            cy.legacyApiCreateChannel(teamId, 'private-channel', 'Private Channel', 'P').then(({channel}) => {
                 privateBroadcastChannelName = channel.name;
                 privateBroadcastChannelId = channel.id;
 
@@ -70,7 +70,7 @@ describe('playbook run broadcast', () => {
         cy.viewport('macbook-13');
 
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Go to Town Square
         cy.visit('/ad-1/channels/town-square');
@@ -94,11 +94,6 @@ describe('playbook run broadcast', () => {
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
         cy.updateStatus(updateMessage, 0, 'Active');
-
-        // * Verify that the RHS shows the status update
-        cy.get('div[class^=UpdateSection-]').within(() => {
-            cy.findByText(updateMessage).should('exist');
-        });
 
         // # Navigate to the broadcast channel
         cy.visit(`/ad-1/channels/${publicBroadcastChannelName}`);
@@ -129,11 +124,6 @@ describe('playbook run broadcast', () => {
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
         cy.updateStatus(updateMessage, 0, 'Active');
-
-        // * Verify that the RHS shows the status update
-        cy.get('div[class^=UpdateSection-]').within(() => {
-            cy.findByText(updateMessage).should('exist');
-        });
 
         // # Navigate to the broadcast channel
         cy.visit('/ad-1/channels/' + privateBroadcastChannelName);

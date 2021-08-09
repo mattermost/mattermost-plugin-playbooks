@@ -21,6 +21,9 @@ type Playbook struct {
 	DeleteAt                             int64       `json:"delete_at"`
 	NumStages                            int64       `json:"num_stages"`
 	NumSteps                             int64       `json:"num_steps"`
+	NumRuns                              int64       `json:"num_runs"`
+	NumActions                           int64       `json:"num_actions"`
+	LastRunAt                            int64       `json:"last_run_at"`
 	Checklists                           []Checklist `json:"checklists"`
 	MemberIDs                            []string    `json:"member_ids"`
 	BroadcastChannelID                   string      `json:"broadcast_channel_id"`
@@ -41,8 +44,10 @@ type Playbook struct {
 	RetrospectiveTemplate                string      `json:"retrospective_template"`
 	WebhookOnStatusUpdateURL             string      `json:"webhook_on_status_update_url"`
 	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
+	ExportChannelOnArchiveEnabled        bool        `json:"export_channel_on_archive_enabled"`
 	SignalAnyKeywords                    []string    `json:"signal_any_keywords"`
 	SignalAnyKeywordsEnabled             bool        `json:"signal_any_keywords_enabled"`
+	CategorizeChannelEnabled             bool        `json:"categorize_channel_enabled"`
 }
 
 func (p Playbook) Clone() Playbook {
@@ -223,6 +228,12 @@ type PlaybookTelemetry interface {
 
 	// DeletePlaybook tracks the deletion of a playbook.
 	DeletePlaybook(playbook Playbook, userID string)
+
+	// FrontendTelemetryForPlaybook tracks an event originating from the frontend
+	FrontendTelemetryForPlaybook(playbook Playbook, userID, action string)
+
+	// FrontendTelemetryForPlaybookTemplate tracks an event originating from the frontend
+	FrontendTelemetryForPlaybookTemplate(templateName string, userID, action string)
 }
 
 const (

@@ -23,11 +23,11 @@ import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run
 import {clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookRunMetadata} from 'src/client';
 import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
-import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
 
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
-import {Playbook} from 'src/types/playbook';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 import ExportLink from '../playbook_run_details/export_link';
 
 const OuterContainer = styled.div`
@@ -164,7 +164,7 @@ const PositionedUpgradeBadge = styled(UpgradeBadge)`
 const PlaybookRunBackstage = () => {
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
-    const [playbook, setPlaybook] = useState<Playbook | null>(null);
+    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const channel = useSelector<GlobalState, Channel | null>((state) => (playbookRun ? getChannel(state, playbookRun.channel_id) : null));
     const match = useRouteMatch<MatchParams>();
@@ -172,6 +172,8 @@ const PlaybookRunBackstage = () => {
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
+
+    useForceDocumentTitle(playbookRun?.name ? (playbookRun.name + ' - Playbooks') : 'Playbooks');
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
@@ -189,7 +191,7 @@ const PlaybookRunBackstage = () => {
         const fetchData = async () => {
             if (playbookRun?.playbook_id) {
                 const fetchedPlaybook = await clientFetchPlaybook(playbookRun.playbook_id);
-                setPlaybook(fetchedPlaybook);
+                setPlaybook(fetchedPlaybook!);
             }
         };
 

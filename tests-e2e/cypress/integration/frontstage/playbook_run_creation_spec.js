@@ -25,13 +25,13 @@ describe('playbook runs can be started', () => {
 
     before(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Create a playbook
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
 
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 cy.apiCreateTestPlaybook({
                     teamId: team.id,
                     title: playbookName,
@@ -48,7 +48,7 @@ describe('playbook runs can be started', () => {
         cy.viewport('macbook-13');
 
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Verify the playbook is there
         cy.verifyPlaybookCreated(teamId, playbookName);
@@ -76,7 +76,7 @@ describe('playbook runs can be started', () => {
         });
     });
 
-    describe('via RHS', () => {
+    /* describe('via RHS', () => {
         it('while viewing a public channel', () => {
             // # Visit a public channel: off-topic
             cy.visit('/ad-1/channels/off-topic');
@@ -96,7 +96,7 @@ describe('playbook runs can be started', () => {
             cy.startPlaybookRunFromRHS(playbookName, playbookRunName);
             cy.verifyPlaybookRunActive(teamId, playbookRunName);
         });
-    });
+    }); */
 
     describe('via post menu', () => {
         it('while viewing a public channel', () => {

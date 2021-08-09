@@ -3,13 +3,13 @@ package main
 import (
 	"net/http"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/api"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/command"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/telemetry"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/command"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 	"github.com/pkg/errors"
@@ -56,7 +56,7 @@ func (p *Plugin) OnActivate() error {
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
 		Username:    "playbook",
 		DisplayName: "Playbook Bot",
-		Description: "Incident Collaboration plugin's bot.",
+		Description: "Playbook's bot.",
 	},
 		pluginapi.ProfileImagePath("assets/incident_plugin_icon.png"),
 	)
@@ -146,6 +146,7 @@ func (p *Plugin) OnActivate() error {
 		p.config,
 		scheduler,
 		telemetryClient,
+		p.API,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
@@ -177,7 +178,7 @@ func (p *Plugin) OnActivate() error {
 	)
 	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config)
-	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, telemetryClient, telemetryClient, p.config)
+	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, telemetryClient, p.playbookService, telemetryClient, telemetryClient)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
 
@@ -192,7 +193,7 @@ func (p *Plugin) OnActivate() error {
 
 	// prevent a recursive OnConfigurationChange
 	go func() {
-		// Remove the prepackaged old version of the plugin
+		// Remove the prepackaged old versions of the plugin
 		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
 	}()
 
@@ -213,7 +214,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot, p.bot, p.playbookRunService, p.playbookService, p.config)
 
 	if err := runner.Execute(); err != nil {
-		return nil, model.NewAppError("IncidentCollaborationPlugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("Playbooks.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	return &model.CommandResponse{}, nil

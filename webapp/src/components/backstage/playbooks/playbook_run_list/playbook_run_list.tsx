@@ -26,7 +26,7 @@ import {fetchOwnersInTeam, fetchPlaybookRuns} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
-import {Playbook} from 'src/types/playbook';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list.scss';
 import Row from 'src/components/backstage/playbooks/playbook_run_list/row';
@@ -70,8 +70,9 @@ const statusOptions: StatusOption[] = [
 ];
 
 interface Props {
-    playbook: Playbook | null
+    playbook: PlaybookWithChecklist | null
     fetchParamsTime?: FetchPlaybookRunsParamsTime
+    filterPill?: JSX.Element | null
 }
 
 const PlaybookRunList = (props: Props) => {
@@ -125,8 +126,8 @@ const PlaybookRunList = (props: Props) => {
         setFetchParams({...fetchParams, search_term: term, page: 0});
     }
 
-    function setStatus(status: string) {
-        setFetchParams({...fetchParams, status, page: 0});
+    function setStatus(statuses: string[]) {
+        setFetchParams({...fetchParams, statuses, page: 0});
     }
 
     function setPage(page: number) {
@@ -167,7 +168,7 @@ const PlaybookRunList = (props: Props) => {
 
     const isFiltering = (
         (fetchParams?.search_term?.length ?? 0) > 0 ||
-        (fetchParams?.status?.length ?? 0) > 0 ||
+        (fetchParams?.statuses?.length ?? 0) > 0 ||
         (fetchParams?.owner_user_id?.length ?? 0) > 0
     );
 
@@ -204,10 +205,11 @@ const PlaybookRunList = (props: Props) => {
                     />
                     <StatusFilter
                         options={statusOptions}
-                        default={fetchParams.status}
+                        default={fetchParams.statuses}
                         onChange={setStatus}
                     />
                 </div>
+                {props.filterPill}
                 <PlaybookRunListHeader>
                     <div className='row'>
                         <div className='col-sm-4'>

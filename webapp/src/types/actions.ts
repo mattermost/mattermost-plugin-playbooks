@@ -4,12 +4,10 @@
 import Integrations from 'mattermost-redux/action_types/integrations';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
-import {RHSState, RHSTabState, TimelineEventsFilter} from 'src/types/rhs';
-import {Playbook} from 'src/types/playbook';
+import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
 import {pluginId} from 'src/manifest';
-
-import {GlobalSettings} from './settings';
+import {GlobalSettings} from 'src/types/settings';
+import {ChecklistItemsFilter} from 'src/types/playbook';
 
 export const RECEIVED_TOGGLE_RHS_ACTION = pluginId + '_toggle_rhs';
 export const SET_RHS_OPEN = pluginId + '_set_rhs_open';
@@ -23,12 +21,15 @@ export const RECEIVED_TEAM_PLAYBOOK_RUNS = pluginId + '_received_team_playbook_r
 export const RECEIVED_TEAM_DISABLED = pluginId + '_received_team_disabled';
 export const REMOVED_FROM_CHANNEL = pluginId + '_removed_from_playbook_run_channel';
 export const SET_RHS_STATE = pluginId + '_set_rhs_state';
-export const SET_RHS_TAB_STATE = pluginId + '_set_rhs_tab_state';
 export const SET_RHS_EVENTS_FILTER = pluginId + '_set_rhs_events_filter';
 export const RECEIVED_GLOBAL_SETTINGS = pluginId + '_received_global_settings';
 export const SHOW_POST_MENU_MODAL = pluginId + '_show_post_menu_modal';
 export const HIDE_POST_MENU_MODAL = pluginId + '_hide_post_menu_modal';
 export const SET_HAS_VIEWED_CHANNEL = pluginId + '_set_has_viewed';
+export const SET_RHS_ABOUT_COLLAPSED_STATE = pluginId + '_set_rhs_about_collapsed_state';
+export const SET_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_checklist_collapsed_state';
+export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = pluginId + '_set_all_checklists_collapsed_state';
+export const SET_CHECKLIST_ITEMS_FILTER = pluginId + '_set_checklist_items_filter';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;
@@ -96,12 +97,6 @@ export interface SetRHSState {
     nextState: RHSState;
 }
 
-export interface SetRHSTabState {
-    type: typeof SET_RHS_TAB_STATE;
-    channelId: string;
-    nextState: RHSTabState;
-}
-
 export interface SetRHSEventsFilter {
     type: typeof SET_RHS_EVENTS_FILTER;
     channelId: string;
@@ -125,4 +120,30 @@ export interface SetHasViewedChannel {
     type: typeof SET_HAS_VIEWED_CHANNEL;
     channelId: string;
     hasViewed: boolean;
+}
+
+export interface SetRHSAboutCollapsedState {
+    type: typeof SET_RHS_ABOUT_COLLAPSED_STATE;
+    channelId: string;
+    collapsed: boolean;
+}
+
+export interface SetChecklistCollapsedState {
+    type: typeof SET_CHECKLIST_COLLAPSED_STATE;
+    channelId: string;
+    checklistIndex: number;
+    collapsed: boolean;
+}
+
+export interface SetAllChecklistsCollapsedState {
+    type: typeof SET_ALL_CHECKLISTS_COLLAPSED_STATE;
+    channelId: string;
+    numOfChecklists: number;
+    collapsed: boolean;
+}
+
+export interface SetChecklistItemsFilter {
+    type: typeof SET_CHECKLIST_ITEMS_FILTER;
+    channelId: string;
+    nextState: ChecklistItemsFilter;
 }

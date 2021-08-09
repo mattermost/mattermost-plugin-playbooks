@@ -31,15 +31,6 @@ export const TeamContainer = styled.div`
     margin-left: 1rem;
 `;
 
-export const BackstageHeaderHelpText = styled.div`
-    margin-top: -3rem;
-    margin-left: 1rem;
-    font-weight: normal;
-    font-size: 12px;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-`;
-
 export const BackstageSubheader = styled.div`
     font-weight: 600;
     font-size: 16px;

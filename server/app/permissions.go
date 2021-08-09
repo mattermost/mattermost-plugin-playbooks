@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -321,10 +321,6 @@ func CreatePlaybook(userID string, playbook Playbook, cfgService config.Service,
 // if you need to use this function, integrate that here first.
 func PlaybookModify(userID string, playbook, oldPlaybook Playbook, cfgService config.Service, pluginAPI *pluginapi.Client, playbookService PlaybookService) error {
 	if err := PlaybookAccess(userID, oldPlaybook, pluginAPI); err != nil {
-		return err
-	}
-
-	if err := PlaybookLicensedFeatures(playbook, cfgService, playbookService); err != nil {
 		return err
 	}
 

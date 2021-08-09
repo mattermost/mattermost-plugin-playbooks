@@ -8,41 +8,35 @@
 
 const BACKSTAGE_LIST_PER_PAGE = 15;
 
-import {TINY} from '../../fixtures/timeouts';
+import {HALF_SEC} from '../../fixtures/timeouts';
 
 describe('backstage playbook run list', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
-    let newTeam;
-    let newTeamWithNoActivePlaybookRuns;
     let userId;
     let playbookId;
 
     before(() => {
         // # Login as the sysadmin
-        cy.apiLogin('sysadmin');
+        cy.legacyApiLogin('sysadmin');
 
         // # Create a new team for the welcome page test
-        cy.apiCreateTeam('team', 'Team').then(({team}) => {
-            newTeam = team;
-
+        cy.legacyApiCreateTeam('team', 'Team').then(({team}) => {
             // # Add user-1 to team
             cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
-                cy.apiAddUserToTeam(team.id, user.id);
+                cy.legacyApiAddUserToTeam(team.id, user.id);
             });
         });
 
         // # Create a new team for the welcome page test when filtering
-        cy.apiCreateTeam('team', 'Team With No Active Playbook Runs').then(({team}) => {
-            newTeamWithNoActivePlaybookRuns = team;
-
+        cy.legacyApiCreateTeam('team', 'Team With No Active Playbook Runs').then(({team}) => {
             // # Add user-1 to team
             cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
-                cy.apiAddUserToTeam(team.id, user.id);
+                cy.legacyApiAddUserToTeam(team.id, user.id);
             });
 
             // # Create a playbook
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 cy.apiCreateTestPlaybook({
                     teamId: team.id,
                     title: playbookName,
@@ -52,12 +46,12 @@ describe('backstage playbook run list', () => {
         });
 
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Create a playbook
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 userId = user.id;
 
                 cy.apiCreateTestPlaybook({
@@ -76,65 +70,7 @@ describe('backstage playbook run list', () => {
         cy.viewport('macbook-13');
 
         // # Login as user-1
-        cy.apiLogin('user-1');
-    });
-
-    it('shows welcome page when no playbook runs', () => {
-        // # Open backstage
-        cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management`);
-
-        // # Switch to playbook runs backstage
-        cy.findByTestId('playbookRunsLHSButton').click();
-
-        // * Assert welcome page title text.
-        cy.get('#root').findByText('What are playbook runs?').should('be.visible');
-    });
-
-    it('shows welcome page when no playbook runs, even when filtering', () => {
-        // # Navigate to a filtered playbook run list on a team with no playbook runs.
-        cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management/runs?status=Active`);
-
-        // * Assert welcome page title text.
-        cy.get('#root').findByText('What are playbook runs?').should('be.visible');
-    });
-
-    it('does not show welcome page when filtering yields no playbook runs', () => {
-        // # Run the playbook
-        const now = Date.now();
-        const playbookRunName = 'Playbook Run (' + now + ')';
-        cy.apiRunPlaybook({
-            teamId: newTeamWithNoActivePlaybookRuns.id,
-            playbookId,
-            playbookRunName,
-            ownerUserId: userId,
-        });
-
-        // # Navigate to a filtered playbook run list on a team with no active playbook runs.
-        cy.visit(`/${newTeamWithNoActivePlaybookRuns.name}/com.mattermost.plugin-incident-management/runs?status=Active`);
-
-        // * Assert welcome page is not visible.
-        cy.get('#root').findByText('What are playbook runs?').should('not.be.visible');
-
-        // * Assert playbook run listing is visible.
-        cy.findByTestId('titlePlaybookRun').should('exist').contains('Runs');
-        cy.findByTestId('titlePlaybookRun').contains(newTeamWithNoActivePlaybookRuns.display_name);
-    });
-
-    it('New playbook run works when the backstage is the first page loaded', () => {
-        // # Navigate to the playbook runs backstage of a team with no playbook runs.
-        cy.visit(`/${newTeam.name}/com.mattermost.plugin-incident-management/runs`);
-
-        // # Make sure that the Redux store is empty
-        cy.reload();
-
-        // # Click on button to run a playbook.
-        cy.findByText('Run playbook').click();
-
-        // * Verify that we are in the centre channel view, out of the backstage
-        cy.url().should('include', `/${newTeam.name}/channels`);
-
-        // * Verify that the interactive dialog modal to create a playbook run is visible
-        cy.get('#interactiveDialogModal').should('exist');
+        cy.legacyApiLogin('user-1');
     });
 
     it('has "Runs" and team name in heading', () => {
@@ -156,7 +92,6 @@ describe('backstage playbook run list', () => {
 
         // * Assert contents of heading.
         cy.findByTestId('titlePlaybookRun').should('exist').contains('Runs');
-        cy.findByTestId('titlePlaybookRun').contains('eligendi');
     });
 
     it('loads playbook run details page when clicking on a playbook run', () => {
@@ -190,7 +125,7 @@ describe('backstage playbook run list', () => {
 
         before(() => {
             // # Login as user-1
-            cy.apiLogin('user-1');
+            cy.legacyApiLogin('user-1');
 
             // # Start sufficient playbook runs to ensure pagination is possible.
             for (let i = 0; i < BACKSTAGE_LIST_PER_PAGE + 1; i++) {
@@ -207,7 +142,7 @@ describe('backstage playbook run list', () => {
 
         beforeEach(() => {
             // # Login as user-1
-            cy.apiLogin('user-1');
+            cy.legacyApiLogin('user-1');
 
             // # Open backstage
             cy.visit('/ad-1/com.mattermost.plugin-incident-management');
@@ -227,7 +162,7 @@ describe('backstage playbook run list', () => {
             cy.get('#playbookRunList input').type(playbookRunTimestamps[0]);
 
             // # Wait for the playbook run list to update.
-            cy.wait(TINY);
+            cy.wait(HALF_SEC);
 
             // * Verify "Previous" no longer shown
             cy.findByText('Previous').should('not.exist');
@@ -242,7 +177,7 @@ describe('backstage playbook run list', () => {
                 .find('.PlaybookRunProfile').first().parent().click({force: true});
 
             // # Wait for the playbook run list to update.
-            cy.wait(TINY);
+            cy.wait(HALF_SEC);
 
             // * Verify "Previous" no longer shown
             cy.findByText('Previous').should('not.exist');

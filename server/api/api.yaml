@@ -1,7 +1,7 @@
 openapi: "3.0.0"
 info:
   version: 0.6.0
-  title: Incident Collaboration API
+  title: Playbooks API
   contact:
     name: Mattermost
     url: https://mattermost.com/

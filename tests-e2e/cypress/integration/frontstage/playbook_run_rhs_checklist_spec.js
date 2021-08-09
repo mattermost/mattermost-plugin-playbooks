@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import {TINY} from '../../fixtures/timeouts';
+import {HALF_SEC} from '../../fixtures/timeouts';
 
 describe('playbook run rhs checklist', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
@@ -16,14 +16,14 @@ describe('playbook run rhs checklist', () => {
 
     before(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Switch to clean display mode
         cy.apiSaveMessageDisplayPreference('clean');
 
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 userId = user.id;
 
                 // # Create a playbook
@@ -62,7 +62,7 @@ describe('playbook run rhs checklist', () => {
         cy.viewport('macbook-13');
 
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
     });
 
     describe('rhs stuff', () => {
@@ -81,35 +81,35 @@ describe('playbook run rhs checklist', () => {
                 ownerUserId: userId,
             });
 
-            cy.apiGetChannelByName('ad-1', playbookRunChannelName).then(({channel}) => {
+            cy.legacyApiGetChannelByName('ad-1', playbookRunChannelName).then(({channel}) => {
                 // # Add @aaron.peterson
                 cy.apiGetUserByEmail('user-7@sample.mattermost.com').then(({user}) => {
-                    cy.apiAddUserToChannel(channel.id, user.id);
+                    cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
 
                 // # Add @christina.wilson
                 cy.apiGetUserByEmail('user-6@sample.mattermost.com').then(({user}) => {
-                    cy.apiAddUserToChannel(channel.id, user.id);
+                    cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
 
                 // # Add @diana.wells
                 cy.apiGetUserByEmail('user-8@sample.mattermost.com').then(({user}) => {
-                    cy.apiAddUserToChannel(channel.id, user.id);
+                    cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
 
                 // # Add @emily.meyer
                 cy.apiGetUserByEmail('user-14@sample.mattermost.com').then(({user}) => {
-                    cy.apiAddUserToChannel(channel.id, user.id);
+                    cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
 
                 // # Add @frances.elliot
                 cy.apiGetUserByEmail('user-24@sample.mattermost.com').then(({user}) => {
-                    cy.apiAddUserToChannel(channel.id, user.id);
+                    cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
 
                 // # Add @jack.wheeler
                 cy.apiGetUserByEmail('user-3@sample.mattermost.com').then(({user}) => {
-                    cy.apiAddUserToChannel(channel.id, user.id);
+                    cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
             });
         });
@@ -121,9 +121,6 @@ describe('playbook run rhs checklist', () => {
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
                 cy.findByText(playbookRunName).should('exist');
-
-                // # Select the checklists tab
-                cy.findByTestId('checklists').click();
             });
         });
 
@@ -164,9 +161,6 @@ describe('playbook run rhs checklist', () => {
             cy.visit('/ad-1/channels/' + playbookRunChannelName);
 
             cy.get('#rhsContainer').should('exist').within(() => {
-                // # Select the checklists tab
-                cy.findByTestId('checklists').click();
-
                 // * Verify the invalid command still has not yet been run.
                 cy.findAllByTestId('run').eq(0).should('have.text', 'Run');
 
@@ -192,7 +186,7 @@ describe('playbook run rhs checklist', () => {
         it('add new task', () => {
             const newTasktext = 'This is my new task' + Date.now();
 
-            cy.addNewTaskFromPostMenu(newTasktext);
+            cy.addNewTaskFromRHS(newTasktext);
 
             // Check that it was created
             cy.findByText(newTasktext).should('exist');
@@ -211,7 +205,7 @@ describe('playbook run rhs checklist', () => {
             // Hover over a checklist item at the end
             cy.findAllByTestId('checkbox-item-container').eq(10).trigger('mouseover').within(() => {
                 // Click the profile icon
-                cy.get('.icon-account-plus-outline').click().wait(TINY);
+                cy.get('.icon-account-plus-outline').click().wait(HALF_SEC);
 
                 cy.isInViewport('.playbook-run-user-select');
             });
