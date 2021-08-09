@@ -28,7 +28,7 @@ To quickly test Mattermost Playbooks, use the following test commands to create 
 
 - `/playbook test create-playbooks [total playbooks]` - Provide a number of total playbooks that will be created. The command creates one or more playbooks based on the given parameter.
 
-  * An example command looks like: `/playbook test create-playbooks 5`
+  * An example command looks like: `/playbook test create-playbooks 6`
 
 - `/playbook test create-playbook-run [playbook ID] [timestamp] [playbook run name]` - Provide the ID of an existing playbook to which the current user has access, a timestamp, and an playbook run name. The command creates an ongoing playbook run with the creation date set to the specified timestamp.
 
