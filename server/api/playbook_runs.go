@@ -413,6 +413,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.ExportChannelOnArchiveEnabled = pb.ExportChannelOnArchiveEnabled
 		}
 
+		if pb.CategorizeChannelEnabled {
+			playbookRun.CategoryName = pb.CategoryName
+		}
+
 		playbookRun.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
 		playbookRun.Retrospective = pb.RetrospectiveTemplate
 
