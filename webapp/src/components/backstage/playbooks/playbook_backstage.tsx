@@ -30,6 +30,7 @@ import StatsView from 'src/components/backstage/playbooks/stats_view';
 import {startPlaybookRunById} from 'src/actions';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
+import {useForceDocumentTitle} from 'src/hooks';
 
 interface MatchParams {
     playbookId: string
@@ -50,6 +51,8 @@ const PlaybookBackstage = () => {
     const [filterPill, setFilterPill] = useState<JSX.Element | null>(null);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [stats, setStats] = useState(EmptyPlaybookStats);
+
+    useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
     useEffect(() => {
         const fetchData = async () => {

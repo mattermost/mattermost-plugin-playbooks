@@ -20,10 +20,6 @@ export interface PresetTemplate {
     template: DraftPlaybookWithChecklist;
 }
 
-const TemplateIcon = styled(Icon)`
-    color: var(--mention-highlight-link);
-`;
-
 export const PresetTemplates: PresetTemplate[] = [
     {
         title: 'Blank',
@@ -33,7 +29,7 @@ export const PresetTemplates: PresetTemplate[] = [
     {
         title: 'Product Release',
         icon: (
-            <TemplateIcon
+            <Icon
                 path={mdiRocketLaunchOutline}
                 size={2.5}
             />
@@ -118,7 +114,7 @@ export const PresetTemplates: PresetTemplate[] = [
     {
         title: 'Customer Onboarding',
         icon: (
-            <TemplateIcon
+            <Icon
                 path={mdiHandshakeOutline}
                 size={2.5}
             />
@@ -284,7 +280,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 '### Follow-up tasks\n' +
                 'This section lists the action items to turn learnings into changes that help the team become more proficient with iterations. It could include tweaking the playbook, publishing the retrospective, or other improvements. The best follow-ups will have a clear owner assigned as well as due date.\n' +
                 '\n' +
-                '### Timeline Highlights\n' +
+                '### Timeline highlights\n' +
                 'This section is a curated log that details the most important moments. It can contain key communications, screen shots, or other artifacts. Use the built-in timeline feature to help you retrace and replay the sequence of events.\n',
             retrospective_reminder_interval_seconds: 24 * 60 * 60, // 24 hours
             signal_any_keywords_enabled: true,
@@ -292,16 +288,127 @@ export const PresetTemplates: PresetTemplate[] = [
         },
     },
     {
-        title: 'Feature Swimlane',
+        title: 'Feature Lifecycle',
         icon: (
-            <TemplateIcon
+            <Icon
                 path={mdiCodeBraces}
                 size={2.5}
             />
         ),
         template: {
             ...emptyPlaybook(),
-            title: 'Feature Swimlane',
+            title: 'Feature Lifecycle',
+            num_stages: 5,
+            checklists: [
+                {
+                    title: 'Plan',
+                    items: [
+                        newChecklistItem('Explain what the problem is and why it\'s important'),
+                        newChecklistItem('Explain proposal for potential solutions'),
+                        newChecklistItem('List out open questions and assumptions'),
+                        newChecklistItem('Set the target release date'),
+                    ],
+                },
+                {
+                    title: 'Kickoff',
+                    items: [
+                        newChecklistItem(
+                            'Choose an engineering owner for the feature',
+                            'Expectations for the owner:\n' +
+                            '- Responsible for setting and meeting expectation for target dates\n' +
+                            '- Post weekly status update\n' +
+                            '- Demo feature at R&D meeting\n' +
+                            '- Ensure technical quality after release\n',
+                        ),
+                        newChecklistItem('Identify and invite contributors to the feature channel'),
+                        newChecklistItem(
+                            'Schedule kickoff and recurring check-in meetings',
+                            'Expectations leaving the kickoff meeting:\n' +
+                            '- Alignment on the precise problem in addition to rough scope and target\n' +
+                            '- Clear next steps and deliverables for each individual\n',
+                        ),
+                    ],
+                },
+                {
+                    title: 'Build',
+                    items: [
+                        newChecklistItem(
+                            'Align on scope, quality, and time.',
+                            'There are likely many different efforts to achieve alignment here, this checkbox just symbolizes sign-off from contributors.',
+                        ),
+                        newChecklistItem('Breakdown feature milestones and add them to this checklist'),
+                    ],
+                },
+                {
+                    title: 'Ship',
+                    items: [
+                        newChecklistItem('Update documentation and user guides'),
+                        newChecklistItem('Merge all feature and bug PRs to master'),
+                        newChecklistItem(
+                            'Demo to the community',
+                            'For example:\n' +
+                            '- R&D meeting\n' +
+                            '- Developer meeting\n' +
+                            '- Company wide meeting\n',
+                        ),
+                        newChecklistItem('Build telemetry dashboard to measure adoption'),
+                        newChecklistItem(
+                            'Create launch kit for go-to-market teams',
+                            'Including but not exclusive to:\n' +
+                            '- release blog post\n' +
+                            '- one-pager\n' +
+                            '- demo video\n',
+                        ),
+                    ],
+                },
+                {
+                    title: 'Follow up',
+                    items: [
+                        newChecklistItem('Schedule meeting to review adoption metrics and user feedback'),
+                        newChecklistItem('Plan improvements and next iteration'),
+                    ],
+                },
+            ],
+            num_actions: 2,
+            create_public_playbook_run: true,
+            message_on_join_enabled: true,
+            message_on_join:
+                'Hello and welcome!\n\n' +
+                'This channel was created as part of the **Feature Lifecycle** playbook and is where conversations related to developing this feature are held. You can customize this message using Markdown so that every new channel member can be welcomed with helpful context and resources.',
+            categorize_channel_enabled: true,
+            description:
+                '**One-liner**\n' +
+                '<ie. Enable users to prescribe a description template so it\'s consistent for every run and therefore easier to read.>\n' +
+                '\n' +
+                '**Targets release**\n' +
+                '- Code complete: date\n' +
+                '- Customer release: month\n' +
+                '\n' +
+                '**Resources**\n' +
+                '- Jira Epic: <link>\n' +
+                '- UX prototype: <link>\n' +
+                '- Technical design: <link>\n' +
+                '- User docs: <link>\n',
+            reminder_message_template:
+                '**Demo**\n' +
+                '<Insert_GIF_here>\n' +
+                '\n' +
+                '**Changes since last week**\n' +
+                '- \n' +
+                '- \n' +
+                '\n' +
+                '**Risks**\n' +
+                '- \n' +
+                '- \n',
+            reminder_timer_default_seconds: 24 * 60 * 60, // 1 day
+            retrospective_template:
+                'Start\n' +
+                '\n' +
+                'Stop\n' +
+                '\n' +
+                'Keep\n' +
+                '\n',
+            retrospective_reminder_interval_seconds: 0, // Once
         },
     },
 ];
@@ -444,6 +551,7 @@ const IconContainer = styled.div`
     align-items: center;
     justify-content: center;
     background: var(--center-channel-bg);
+    color: var(--button-bg);
     height: 156px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     box-sizing: border-box;

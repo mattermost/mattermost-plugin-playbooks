@@ -642,7 +642,7 @@ const PlaybookEdit = (props: Props) => {
                                     <>
                                         <SidebarBlock>
                                             <BackstageSubheader>
-                                                {'Retrospective Reminder Interval'}
+                                                {'Retrospective reminder interval'}
                                                 <BackstageSubheaderDescription>
                                                     {'Reminds the channel at a specified interval to fill out the retrospective.'}
                                                 </BackstageSubheaderDescription>
@@ -663,7 +663,7 @@ const PlaybookEdit = (props: Props) => {
                                         </SidebarBlock>
                                         <SidebarBlock>
                                             <BackstageSubheader>
-                                                {'Retrospective Template'}
+                                                {'Retrospective template'}
                                                 <BackstageSubheaderDescription>
                                                     {'Default text for the retrospective.'}
                                                 </BackstageSubheaderDescription>
