@@ -8,9 +8,9 @@ import {IntegrationTypes} from 'mattermost-redux/action_types';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 
-import {selectToggleRHS} from 'src/selectors';
+import {selectExperimentalFeatures, selectToggleRHS} from 'src/selectors';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
 
 import {
@@ -61,6 +61,10 @@ import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 
+import {modals} from 'src/webapp_globals';
+
+import {ModalTypes, UpdateRunStatusModal} from 'src/components/modals';
+
 export function startPlaybookRun(postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
@@ -88,9 +92,26 @@ export function startPlaybookRunById(playbookId: string) {
     };
 }
 
-export function updateStatus(defaultStatus?: string) {
+export function promptUpdateStatus(
+    playbookRunId: PlaybookRun['id'],
+    playbookId: PlaybookRun['playbook_id'],
+    channelId: PlaybookRun['channel_id'],
+    defaultStatus?: PlaybookRunStatus,
+) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`);
+        const experimentalFeaturesEnabled = selectExperimentalFeatures(getState());
+
+        if (experimentalFeaturesEnabled) {
+            const definition = {
+                modalId: ModalTypes.UpdateRunStatus,
+                dialogType: UpdateRunStatusModal,
+                dialogProps: {playbookRunId, playbookId, channelId},
+            };
+
+            dispatch(modals.openModal(definition));
+        } else {
+            await (clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`));
+        }
     };
 }
 

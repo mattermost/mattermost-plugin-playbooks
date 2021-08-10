@@ -23,7 +23,7 @@ import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {StatusPost} from 'src/types/playbook_run';
 
 import {isMobile} from 'src/mobile';
-import {updateStatus, toggleRHS} from 'src/actions';
+import {promptUpdateStatus, toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import ShowMore from 'src/components/rhs/show_more';
 import {UpdateBody} from 'src/components/rhs/rhs_shared';
@@ -89,6 +89,10 @@ function useAuthorInfo(userID: string) : [string, string] {
 
 interface Props {
     post: Post | null;
+
+    playbookRunId: string;
+    playbookId: string
+    channelId: string;
 }
 
 const PostCard = (props: Props) => {
@@ -98,7 +102,7 @@ const PostCard = (props: Props) => {
     if (!props.post) {
         return (
             <NoRecentUpdates>
-                {'No recent updates. '}<a onClick={() => dispatch(updateStatus())}>{'Click here'}</a>{' to update status.'}
+                {'No recent updates. '}<a onClick={() => dispatch(promptUpdateStatus(props.playbookRunId, props.playbookId, props.channelId))}>{'Click here'}</a>{' to update status.'}
             </NoRecentUpdates>
         );
     }

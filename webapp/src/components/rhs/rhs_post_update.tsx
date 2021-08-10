@@ -6,7 +6,7 @@ import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
 import moment from 'moment';
 
-import {updateStatus} from 'src/actions';
+import {promptUpdateStatus} from 'src/actions';
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import RHSPostUpdateButton from 'src/components/rhs/rhs_post_update_button';
@@ -74,7 +74,7 @@ const RHSPostUpdate = (props: Props) => {
                 collapsed={props.collapsed}
                 isNextUpdateScheduled={isNextUpdateScheduled}
                 updatesExist={props.updatesExist}
-                onClick={() => dispatch(updateStatus())}
+                onClick={() => dispatch(promptUpdateStatus(props.playbookRun.id, props.playbookRun.playbook_id, props.playbookRun.channel_id))}
                 isDue={isDue}
             />
         </PostUpdate>

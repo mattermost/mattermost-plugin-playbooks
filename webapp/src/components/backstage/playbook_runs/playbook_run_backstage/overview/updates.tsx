@@ -34,6 +34,8 @@ const Updates = (props: Props) => {
             <PostContent
                 key={sp.id}
                 postId={sp.id}
+                channelId={props.playbookRun.channel_id}
+                playbookId={props.playbookRun.playbook_id}
             />
         ));
     }
@@ -46,7 +48,7 @@ const Updates = (props: Props) => {
     );
 };
 
-const PostContent = (props: { postId: string }) => {
+const PostContent = (props: { postId: string; channelId: PlaybookRun['channel_id']; playbookId: PlaybookRun['playbook_id']; }) => {
     const post = usePost(props.postId);
 
     if (!post) {
@@ -55,7 +57,11 @@ const PostContent = (props: { postId: string }) => {
 
     return (
         <StyledContent>
-            <PostCard post={post}/>
+            <PostCard
+                post={post}
+                channelId={props.channelId}
+                playbookId={props.playbookId}
+            />
         </StyledContent>
     );
 };

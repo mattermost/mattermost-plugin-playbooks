@@ -34,10 +34,22 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         autoCloseOnCancelButton: true,
         autoCloseOnConfirmButton: true,
         enforceFocus: true,
+        show: true,
     };
 
+    public constructor(props: Props) {
+        super(props);
+        this.state = {show: this.props.show};
+    }
+
+    static getDerivedStateFromProps(props: Props, state: State) {
+        return {...state, show: props.show};
+    }
+
     onHide = () => {
-        this.props.onHide();
+        this.setState({show: false}, () => {
+            // setTimeout(this.props.onHide, 500);
+        });
     }
 
     handleCancel = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -101,30 +113,28 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         }
 
         return (
-            <Modal
+            <StyledModal
                 dialogClassName={classNames('a11y__modal GenericModal', this.props.className)}
-                show={this.props.show}
+                show={this.state.show}
                 onHide={this.onHide}
                 onExited={this.onHide}
                 enforceFocus={this.props.enforceFocus}
                 restoreFocus={true}
                 role='dialog'
-                aria-labelledby='genericModalLabel'
+                aria-labelledby={`${this.props.id}_heading`}
                 id={this.props.id}
             >
                 <Modal.Header
+                    className='GenericModal__header'
                     closeButton={true}
-                />
+                >
+                    <ModalHeading id={`${this.props.id}_heading`}>
+                        {this.props.modalHeaderText}
+                    </ModalHeading>
+                </Modal.Header>
                 <form>
                     <Modal.Body>
-                        <div className='GenericModal__header'>
-                            <h1 id='genericModalLabel'>
-                                {this.props.modalHeaderText}
-                            </h1>
-                        </div>
-                        <div className='GenericModal__body'>
-                            {this.props.children}
-                        </div>
+                        {this.props.children}
                     </Modal.Body>
                     <Modal.Footer>
                         <FooterContainer>
@@ -136,10 +146,38 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                         </FooterContainer>
                     </Modal.Footer>
                 </form>
-            </Modal>
+            </StyledModal>
         );
     }
 }
+
+const StyledModal = styled(Modal)`
+    &&& {
+        /* content-spacing */
+        .modal-header {
+            margin-bottom: 8px;
+        }
+        .modal-content {
+            padding: 24px;
+        }
+        .modal-footer {
+            padding: 24px 0 0 0;
+        }
+        .close {
+            margin: 12px 12px 0 0;
+        }
+    }
+
+    &&&& {
+        /* control correction-overrides */
+        .form-control {
+            border: none;
+        }
+        input.form-control {
+            padding-left: 16px;
+        }
+    }
+`;
 
 const Buttons = styled.div`
     display: flex;
@@ -150,5 +188,19 @@ const Buttons = styled.div`
 const FooterContainer = styled.div`
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-end;
 `;
+
+const ModalHeading = styled.h1`
+    font-family: Metropolis;
+    font-size: 22px;
+    line-height: 28px;
+    color: var(--center-channel-color);
+`;
+
+export const ModalDescription = styled.p`
+    font-size: 12px;
+    line-height: 16px;
+    color: rgba(var(--center-channel-color), 0.72);
+`;
+

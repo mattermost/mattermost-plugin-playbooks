@@ -10,7 +10,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {PlaybookRun, playbookRunCurrentStatus} from 'src/types/playbook_run';
 
 import {Footer, StyledFooterButton} from 'src/components/rhs/rhs_shared';
-import {updateStatus} from 'src/actions';
+import {promptUpdateStatus} from 'src/actions';
 import {navigateToUrl} from 'src/browser_routing';
 import {pluginId} from 'src/manifest';
 import {currentPlaybookRun} from 'src/selectors';
@@ -43,7 +43,7 @@ const RHSFooter = (props: Props) => {
             </StyledFooterButton>
             <SpacedFooterButton
                 primary={true}
-                onClick={() => dispatch(updateStatus())}
+                onClick={() => dispatch(promptUpdateStatus(playbookRun.id, playbookRun.playbook_id, playbookRun.channel_id))}
             >
                 {text}
             </SpacedFooterButton>

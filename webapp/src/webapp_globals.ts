@@ -9,7 +9,15 @@ export const {
 } = global.PostUtils;
 
 export const {
+
+    modals,
+
+    // @ts-ignore
+} = global.WebappUtils;
+
+export const {
     Timestamp,
+    Textbox,
 
     // @ts-ignore
 } = global.Components;

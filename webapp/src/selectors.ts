@@ -201,3 +201,5 @@ export const currentRHSAboutCollapsedState = createSelector(
         return stateByChannel[channelId] ?? false;
     },
 );
+
+export const selectExperimentalFeatures = (state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features);
