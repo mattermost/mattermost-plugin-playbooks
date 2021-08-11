@@ -24,23 +24,9 @@ interface Props {
     onToggle: () => void;
     channelId?: string;
     onChannelSelected: (channelID: string | undefined) => void;
-    teamId: string;
 }
 
 export const Announcement = (props: Props) => {
-    const [channels, setChannels] = useState<Channel[]>([]);
-    useEffect(() => {
-        const fetchData = async () => {
-            if (props.teamId) {
-                const fetchedChannels = await fetchMyChannels(props.teamId);
-                if (fetchedChannels) {
-                    setChannels(fetchedChannels);
-                }
-            }
-        };
-        fetchData();
-    }, [props.teamId]);
-
     return (
         <AutomationHeader>
             <AutomationTitle>
@@ -61,9 +47,6 @@ export const Announcement = (props: Props) => {
                     captureMenuScroll={false}
                     shouldRenderValue={props.enabled}
                     placeholder={'Search for channel'}
-                    selectableChannels={channels.filter((channel) =>
-                        channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL,
-                    )}
                 />
             </SelectorWrapper>
         </AutomationHeader>

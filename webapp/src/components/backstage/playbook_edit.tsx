@@ -5,17 +5,16 @@ import React, {useState, useEffect} from 'react';
 import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
-import {Channel} from 'mattermost-redux/types/channels';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 import {selectTeam} from 'mattermost-redux/actions/teams';
-import General from 'mattermost-redux/constants/general';
+import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 import {navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {DraftPlaybookWithChecklist, PlaybookWithChecklist, Checklist, emptyPlaybook} from 'src/types/playbook';
-import {savePlaybook, clientFetchPlaybook, fetchMyChannels} from 'src/client';
+import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -194,7 +193,6 @@ const PlaybookEdit = (props: Props) => {
         team_id: props.teamId || '',
     });
     const [changesMade, setChangesMade] = useState(false);
-    const [channels, setChannels] = useState<Channel[]>([]);
 
     const urlParams = useParams<URLParams>();
     const location = useLocation();
@@ -252,16 +250,12 @@ const PlaybookEdit = (props: Props) => {
                     setFetchingState(FetchingStateType.notFound);
                 }
             }
-
-            const fetchedChannels = await fetchMyChannels(props.teamId || playbook.team_id);
-            if (fetchedChannels) {
-                setChannels(fetchedChannels);
-            }
         };
         fetchData();
     }, [urlParams.playbookId, props.isNew, props.teamId]);
 
     dispatch(selectTeam(props.teamId || playbook.team_id));
+    dispatch(fetchMyChannelsAndMembers(props.teamId || playbook.team_id));
 
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
@@ -578,9 +572,6 @@ const PlaybookEdit = (props: Props) => {
                                         shouldRenderValue={true}
                                         isDisabled={false}
                                         captureMenuScroll={false}
-                                        selectableChannels={channels.filter((channel) =>
-                                            channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL,
-                                        )}
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>
@@ -700,7 +691,6 @@ const PlaybookEdit = (props: Props) => {
                                     defaultOwnerID={playbook.default_owner_id}
                                     onToggleDefaultOwner={handleToggleDefaultOwner}
                                     onAssignOwner={handleAssignDefaultOwner}
-                                    teamID={props.teamId || playbook.team_id}
                                     announcementChannelID={playbook.announcement_channel_id}
                                     announcementChannelEnabled={playbook.announcement_channel_enabled}
                                     onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
