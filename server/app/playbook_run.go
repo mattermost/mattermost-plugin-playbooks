@@ -23,43 +23,128 @@ const (
 // NOTE: when adding a column to the db, search for "When adding an Playbook Run column" to see where
 // that column needs to be added in the sqlstore code.
 type PlaybookRun struct {
-	ID                                   string          `json:"id"`
-	Name                                 string          `json:"name"` // Retrieved from playbook run channel
-	Description                          string          `json:"description"`
-	OwnerUserID                          string          `json:"owner_user_id"`
-	ReporterUserID                       string          `json:"reporter_user_id"`
-	TeamID                               string          `json:"team_id"`
-	ChannelID                            string          `json:"channel_id"`
-	CreateAt                             int64           `json:"create_at"` // Retrieved from playbook run channel
-	EndAt                                int64           `json:"end_at"`
-	DeleteAt                             int64           `json:"delete_at"` // Retrieved from playbook run channel
-	ActiveStage                          int             `json:"active_stage"`
-	ActiveStageTitle                     string          `json:"active_stage_title"`
-	PostID                               string          `json:"post_id"`
-	PlaybookID                           string          `json:"playbook_id"`
-	Checklists                           []Checklist     `json:"checklists"`
-	StatusPosts                          []StatusPost    `json:"status_posts"`
-	CurrentStatus                        string          `json:"current_status"`
-	LastStatusUpdateAt                   int64           `json:"last_status_update_at"`
-	ReminderPostID                       string          `json:"reminder_post_id"`
-	PreviousReminder                     time.Duration   `json:"previous_reminder"`
-	BroadcastChannelID                   string          `json:"broadcast_channel_id"`
-	ReminderMessageTemplate              string          `json:"reminder_message_template"`
-	InvitedUserIDs                       []string        `json:"invited_user_ids"`
-	InvitedGroupIDs                      []string        `json:"invited_group_ids"`
-	TimelineEvents                       []TimelineEvent `json:"timeline_events"`
-	DefaultOwnerID                       string          `json:"default_owner_id"`
-	AnnouncementChannelID                string          `json:"announcement_channel_id"`
-	WebhookOnCreationURL                 string          `json:"webhook_on_creation_url"`
-	WebhookOnStatusUpdateURL             string          `json:"webhook_on_status_update_url"`
-	Retrospective                        string          `json:"retrospective"`
-	RetrospectivePublishedAt             int64           `json:"retrospective_published_at"` // The last time a retrospective was published. 0 if never published.
-	RetrospectiveWasCanceled             bool            `json:"retrospective_was_canceled"`
-	RetrospectiveReminderIntervalSeconds int64           `json:"retrospective_reminder_interval_seconds"`
-	MessageOnJoin                        string          `json:"message_on_join"`
-	ExportChannelOnArchiveEnabled        bool            `json:"export_channel_on_archive_enabled"`
-	ParticipantIDs                       []string        `json:"participant_ids"`
-	CategorizeChannelEnabled             bool            `json:"categorize_channel_enabled"`
+	// Unique identifier of the playbook run.
+	ID string `json:"id"`
+
+	// Name of the playbook run's channel.
+	Name string `json:"name"`
+
+	// A short description in markdown describing what the run is.
+	Description string `json:"description"`
+
+	// User identifier of the playbook run's owner.
+	OwnerUserID string `json:"owner_user_id"`
+
+	// User identifier of the playbook run's reporter; i.e., the user that created the run.
+	ReporterUserID string `json:"reporter_user_id"`
+
+	// Identifier of the team the playbook run lives in.
+	TeamID string `json:"team_id"`
+
+	// Identifier of the playbook run's channel.
+	ChannelID string `json:"channel_id"`
+
+	// Timestamp, in milliseconds since epoch, of when the playbook run was created.
+	CreateAt int64 `json:"create_at"`
+
+	// Timestamp, in milliseconds since epoch, of when the playbook run was ended.
+	// If 0, the run is still ongoing.
+	EndAt int64 `json:"end_at"`
+
+	// Deprecated field.
+	DeleteAt int64 `json:"delete_at"`
+
+	// Deprecated field.
+	ActiveStage int `json:"active_stage"`
+
+	// Deprecated field.
+	ActiveStageTitle string `json:"active_stage_title"`
+
+	// If not empty, the identifier of the post from which this playbook run was originally created.
+	PostID string `json:"post_id"`
+
+	// Identifier of the playbook from which this run was created.
+	PlaybookID string `json:"playbook_id"`
+
+	// Array of checklists in the run.
+	Checklists []Checklist `json:"checklists"`
+
+	// Array of all the status updates posted in this run.
+	StatusPosts []StatusPost `json:"status_posts"`
+
+	// The current status of the playbook run. It can be Reported, Active, Resolved or Archived.
+	CurrentStatus string `json:"current_status"`
+
+	// Timestamp, in milliseconds since epoch, of when the last status update was posted.
+	LastStatusUpdateAt int64 `json:"last_status_update_at"`
+
+	// If not empty, the identifier of the reminder posted to the channel to update the status.
+	ReminderPostID string `json:"reminder_post_id"`
+
+	// If not empty, the time.Duration (nanoseconds) at which the next scheduled status update will
+	// be posted
+	PreviousReminder time.Duration `json:"previous_reminder"`
+
+	// If not empty, the identifier of the channel to which all status updates are broadcasted.
+	BroadcastChannelID string `json:"broadcast_channel_id"`
+
+	// If not empty, the template shown when updating the status of the playbook run for the first
+	// time.
+	ReminderMessageTemplate string `json:"reminder_message_template"`
+
+	// If not empty, an array containing the identifiers of the users that were automatically
+	// invited to the playbook run when it was created.
+	InvitedUserIDs []string `json:"invited_user_ids"`
+
+	// If not empty, an array containing the identifiers of the user groups that were automatically
+	// invited to the playbook run when it was created.
+	InvitedGroupIDs []string `json:"invited_group_ids"`
+
+	// Array of events saved to the timeline of the playbook run.
+	TimelineEvents []TimelineEvent `json:"timeline_events"`
+
+	// If not empty, the identifier of the user that was automatically assigned as owner of the
+	// playbook run when it was created.
+	DefaultOwnerID string `json:"default_owner_id"`
+
+	// If not empty, the identifier of the channel where the playbook run creation was announced in.
+	AnnouncementChannelID string `json:"announcement_channel_id"`
+
+	// If not empty, the URL to which a POST request is made with the whole playbook run as payload
+	// when the run is created.
+	WebhookOnCreationURL string `json:"webhook_on_creation_url"`
+
+	// If not empty, the URL to which a POST request is made with the whole playbook run as payload
+	// every time the status of the playbook run is updated.
+	WebhookOnStatusUpdateURL string `json:"webhook_on_status_update_url"`
+
+	// The contents of the currently saved retrospective. If RetrospectivePublishedAt is different
+	// than 0, this the published retrospective.
+	Retrospective string `json:"retrospective"`
+
+	// Timestamp, in milliseconds since epoch, of the last time a retrospective was published.
+	// If 0, the retrospective has not been published yet.
+	RetrospectivePublishedAt int64 `json:"retrospective_published_at"`
+
+	// True if the retrospective was canceled. False otherwise.
+	RetrospectiveWasCanceled bool `json:"retrospective_was_canceled"`
+
+	// Inteval, in seconds, between subsequent reminders to fill the retrospective.
+	RetrospectiveReminderIntervalSeconds int64 `json:"retrospective_reminder_interval_seconds"`
+
+	// If not empty, the message shown to every user that joins the channel of the playbook run.
+	MessageOnJoin string `json:"message_on_join"`
+
+	// True if the channel is exported when the status is updated to Archived.
+	ExportChannelOnArchiveEnabled bool `json:"export_channel_on_archive_enabled"`
+
+	// Array of identifiers of all the participants in the playbook run. A participant is right now
+	// a member of the playbook run channel that is not a bot.
+	ParticipantIDs []string `json:"participant_ids"`
+
+	// If true, the channel is automatically categorized in the Playbook Runs category for every
+	// user that joins the playbook run channel.
+	CategorizeChannelEnabled bool `json:"categorize_channel_enabled"`
 }
 
 func (i *PlaybookRun) Clone() *PlaybookRun {
@@ -142,10 +227,19 @@ func (i *PlaybookRun) ResolvedAt() int64 {
 }
 
 type StatusPost struct {
-	ID       string `json:"id"`
-	Status   string `json:"status"`
-	CreateAt int64  `json:"create_at"`
-	DeleteAt int64  `json:"delete_at"`
+	// Identifier of the post containing the status update.
+	ID string `json:"id"`
+
+	// Status of the playbook run after this update was posted.
+	// It can be "Reported", "Active", "Resolved" and "Archived".
+	Status string `json:"status"`
+
+	// Timestamp, in milliseconds since epoch, of the time this status update was posted.
+	CreateAt int64 `json:"create_at"`
+
+	// Timestamp, in milliseconds since epoch, of the time the post containing this status update
+	// was deleted. 0 if it was never deleted.
+	DeleteAt int64 `json:"delete_at"`
 }
 
 type UpdateOptions struct {
@@ -184,17 +278,43 @@ const (
 )
 
 type TimelineEvent struct {
-	ID            string            `json:"id"`
-	PlaybookRunID string            `json:"playbook_run_id"`
-	CreateAt      int64             `json:"create_at"`
-	DeleteAt      int64             `json:"delete_at"`
-	EventAt       int64             `json:"event_at"`
-	EventType     timelineEventType `json:"event_type"`
-	Summary       string            `json:"summary"`
-	Details       string            `json:"details"`
-	PostID        string            `json:"post_id"`
-	SubjectUserID string            `json:"subject_user_id"`
-	CreatorUserID string            `json:"creator_user_id"`
+	// Identifier of this event.
+	ID string `json:"id"`
+
+	// Identifier of the playbook run this event lives in.
+	PlaybookRunID string `json:"playbook_run_id"`
+
+	// Timestamp, in milliseconds since epoch, of the time this event was created.
+	CreateAt int64 `json:"create_at"`
+
+	// Timestamp, in milliseconds since epoch, of the time this event was deleted.
+	// 0 if it was never deleted.
+	DeleteAt int64 `json:"delete_at"`
+
+	// Timestamp, in milliseconds since epoch, of the actual situation this event is describing.
+	EventAt int64 `json:"event_at"`
+
+	// Type of this event. It can be "incident_created", "task_state_modified", "status_updated",
+	// "owner_changed", "assignee_changed", "ran_slash_command", "event_from_post",
+	// "user_joined_left", "published_retrospective" or "canceled_retrospective".
+	EventType timelineEventType `json:"event_type"`
+
+	// Short description of the event.
+	Summary string `json:"summary"`
+
+	// Longer description of the event.
+	Details string `json:"details"`
+
+	// If not empty, identifier of the post announcing in the channel this event happened.
+	// If the event is of type "event_from_post", this is the identifier of such post.
+	PostID string `json:"post_id"`
+
+	// Identifier of the user involved in the event. For example, if the event is of type
+	// "owner_changed", this is the identifier of the new owner.
+	SubjectUserID string `json:"subject_user_id"`
+
+	// Identifier of the user that created the event.
+	CreatorUserID string `json:"creator_user_id"`
 }
 
 // GetPlaybookRunsResults collects the results of the GetPlaybookRuns call: the list of PlaybookRuns matching

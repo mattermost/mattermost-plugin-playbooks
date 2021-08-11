@@ -178,6 +178,18 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbook *Playbook
 	return nil
 }
 
+// Payload sent with playbook run webhooks.
+type PlaybookRunWebhookPayload struct {
+	// Playbook run.
+	PlaybookRun
+
+	// Absolute URL of the playbook run channel.
+	ChannelURL string `json:"channel_url"`
+
+	// Absolute URL of the playbook run overview page.
+	DetailsURL string `json:"details_url"`
+}
+
 // sendWebhookOnCreation sends a POST request to the creation webhook URL.
 // It blocks until a response is received.
 func (s *PlaybookRunServiceImpl) sendWebhookOnCreation(playbookRun PlaybookRun) error {
@@ -201,11 +213,7 @@ func (s *PlaybookRunServiceImpl) sendWebhookOnCreation(playbookRun PlaybookRun) 
 
 	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, playbookRun.ID)
 
-	payload := struct {
-		PlaybookRun
-		ChannelURL string `json:"channel_url"`
-		DetailsURL string `json:"details_url"`
-	}{
+	payload := PlaybookRunWebhookPayload{
 		PlaybookRun: playbookRun,
 		ChannelURL:  channelURL,
 		DetailsURL:  detailsURL,
@@ -705,11 +713,7 @@ func (s *PlaybookRunServiceImpl) sendWebhookOnUpdateStatus(playbookRun PlaybookR
 
 	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, playbookRun.ID)
 
-	payload := struct {
-		PlaybookRun
-		ChannelURL string `json:"channel_url"`
-		DetailsURL string `json:"details_url"`
-	}{
+	payload := PlaybookRunWebhookPayload{
 		PlaybookRun: playbookRun,
 		ChannelURL:  channelURL,
 		DetailsURL:  detailsURL,
