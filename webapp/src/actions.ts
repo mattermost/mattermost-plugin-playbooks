@@ -62,7 +62,7 @@ import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 
-export function startPlaybookRun(teamId: string, isBackstage: boolean, postId?: string) {
+export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
@@ -73,11 +73,11 @@ export function startPlaybookRun(teamId: string, isBackstage: boolean, postId?: 
             command = `${command} ${postId}`;
         }
 
-        await clientExecuteCommand(dispatch, getState, command, teamId, isBackstage);
+        await clientExecuteCommand(dispatch, getState, command, teamId);
     };
 }
 
-export function startPlaybookRunById(teamId: string, playbookId: string, isBackstage: boolean) {
+export function startPlaybookRunById(teamId: string, playbookId: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
@@ -85,13 +85,13 @@ export function startPlaybookRunById(teamId: string, playbookId: string, isBacks
 
         const command = `/playbook start-playbook ${playbookId} ${clientId}`;
 
-        await clientExecuteCommand(dispatch, getState, command, teamId, isBackstage);
+        await clientExecuteCommand(dispatch, getState, command, teamId);
     };
 }
 
-export function updateStatus(teamId: string, isBackstage: boolean, defaultStatus?: string) {
+export function updateStatus(teamId: string, defaultStatus?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`, teamId, isBackstage);
+        await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`, teamId);
     };
 }
 
@@ -99,7 +99,7 @@ export function addToTimeline(postId: string) {
     return async (dispatch: Dispatch, getState: GetStateFunc) => {
         const currentTeamId = getCurrentTeamId(getState());
 
-        await clientExecuteCommand(dispatch, getState, `/playbook add ${postId}`, currentTeamId, false);
+        await clientExecuteCommand(dispatch, getState, `/playbook add ${postId}`, currentTeamId);
     };
 }
 
@@ -107,7 +107,7 @@ export function addNewTask(checklist: number) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         const currentTeamId = getCurrentTeamId(getState());
 
-        await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, currentTeamId, false);
+        await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, currentTeamId);
     };
 }
 

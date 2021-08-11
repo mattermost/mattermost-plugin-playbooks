@@ -235,7 +235,7 @@ export const RHSHomePlaybook = ({
                     </MetaItem>
                 </Meta>
             </div>
-            <RunButton onClick={() => dispatch(startPlaybookRunById(team_id, id, false))}>
+            <RunButton onClick={() => dispatch(startPlaybookRunById(team_id, id))}>
                 <Icon
                     path={mdiClipboardPlayOutline}
                     size={1.5}

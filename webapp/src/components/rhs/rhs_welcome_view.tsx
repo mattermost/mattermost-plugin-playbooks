@@ -67,7 +67,7 @@ const RHSWelcomeView = () => {
                         </p>
                         <div className='header-button-div mb-4'>
                             <PrimaryButton
-                                onClick={() => dispatch(startPlaybookRun(currentTeam.id, false))}
+                                onClick={() => dispatch(startPlaybookRun(currentTeam.id))}
                             >
                                 <SideBySide>
                                     <i className='icon-plus icon--no-spacing mr-2'/>

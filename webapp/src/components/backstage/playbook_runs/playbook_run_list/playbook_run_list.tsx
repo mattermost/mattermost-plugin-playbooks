@@ -297,7 +297,7 @@ const BackstagePlaybookRunList = () => {
 
     const newPlaybookRun = () => {
         goToMattermost();
-        dispatch(startPlaybookRun(teams[0].id, true)); //TODO add team selector ?
+        dispatch(startPlaybookRun(teams[0].id)); //TODO add team selector ?
     };
 
     // Show nothing until after we've completed fetching playbook runs.

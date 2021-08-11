@@ -37,7 +37,7 @@ const RHSFooter = (props: Props) => {
             </StyledFooterButton>
             <SpacedFooterButton
                 primary={true}
-                onClick={() => dispatch(updateStatus(props.playbookRun?.team_id || '', false))}
+                onClick={() => dispatch(updateStatus(props.playbookRun?.team_id || ''))}
             >
                 {text}
             </SpacedFooterButton>
