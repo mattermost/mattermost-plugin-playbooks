@@ -91,7 +91,7 @@ const PostCard = (props: Props) => {
     if (!props.post) {
         return (
             <NoRecentUpdates>
-                {'No recent updates. '}<a onClick={() => dispatch(updateStatus(props.team.id))}>{'Click here'}</a>{' to update status.'}
+                {'No recent updates. '}<a onClick={() => dispatch(updateStatus(props.team.id, true))}>{'Click here'}</a>{' to update status.'}
             </NoRecentUpdates>
         );
     }

@@ -108,7 +108,7 @@ const PlaybookBackstage = () => {
 
         if (playbook?.id) {
             telemetryEventForPlaybook(playbook.id, 'playbook_dashboard_run_clicked');
-            dispatch(startPlaybookRunById(team.id, playbook.id));
+            dispatch(startPlaybookRunById(team.id, playbook.id, true));
         }
     };
 

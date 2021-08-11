@@ -104,7 +104,7 @@ const RHSListView = () => {
                 >
                     <Header>
                         <CenterCell>
-                            <Link onClick={() => dispatch(startPlaybookRun(currentTeam.id))}>
+                            <Link onClick={() => dispatch(startPlaybookRun(currentTeam.id, false))}>
                                 <PlusIcon/>{'Run playbook'}
                             </Link>
                         </CenterCell>

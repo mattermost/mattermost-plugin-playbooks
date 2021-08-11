@@ -34,7 +34,7 @@ export const StartPlaybookRunPostMenu = (props: Props) => {
     }
 
     const handleClick = () => {
-        dispatch(startPlaybookRun(channel.team_id, props.postId));
+        dispatch(startPlaybookRun(channel.team_id, false, props.postId));
     };
 
     return (

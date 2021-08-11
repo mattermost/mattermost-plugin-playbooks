@@ -101,12 +101,12 @@ export function fetchPlaybookRunChannels(teamID: string, userID: string) {
     return doGet(`${apiUrl}/runs/channels?team_id=${teamID}&member_id=${userID}`);
 }
 
-export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string, teamId: string) {
+export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string, teamId: string, isBackstage: boolean) {
     let currentChannel = getCurrentChannel(getState());
 
     // Default to town square if there is no current channel (i.e., if Mattermost has not yet loaded)
     // or in a different team.
-    if (!currentChannel || currentChannel.team_id !== teamId) {
+    if (!currentChannel || currentChannel.team_id !== teamId || isBackstage) {
         currentChannel = await Client4.getChannelByName(teamId, 'town-square');
     }
 

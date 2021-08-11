@@ -73,7 +73,7 @@ const RHSPostUpdate = (props: Props) => {
                 collapsed={props.collapsed}
                 isNextUpdateScheduled={isNextUpdateScheduled}
                 updatesExist={props.updatesExist}
-                onClick={() => dispatch(updateStatus(props.playbookRun.team_id))}
+                onClick={() => dispatch(updateStatus(props.playbookRun.team_id, false))}
                 isDue={isDue}
             />
         </PostUpdate>
