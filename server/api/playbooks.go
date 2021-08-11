@@ -103,6 +103,15 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	if playbook.CategorizeChannelEnabled {
+		categoryNameLength := len(playbook.CategoryName)
+		if categoryNameLength == 0 || categoryNameLength > 22 {
+			msg := fmt.Sprintf("Invalid category name: %s (should be between 1-22 characters)", playbook.CategoryName)
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
+	}
+
 	if len(playbook.SignalAnyKeywords) != 0 {
 		playbook.SignalAnyKeywords = removeDuplicates(playbook.SignalAnyKeywords)
 	}
@@ -191,6 +200,15 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 
 		if url.Scheme != "http" && url.Scheme != "https" {
 			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
+	}
+
+	if playbook.CategorizeChannelEnabled {
+		categoryNameLength := len(playbook.CategoryName)
+		if categoryNameLength == 0 || categoryNameLength > 22 {
+			msg := fmt.Sprintf("Invalid category name: %s (should be between 1-22 characters)", playbook.CategoryName)
 			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
