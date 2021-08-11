@@ -128,6 +128,7 @@ interface Props {
     isNew: boolean;
     teamId?: string;
 }
+
 interface URLParams {
     playbookId?: string;
     tabId?: string;
@@ -476,7 +477,7 @@ const PlaybookEdit = (props: Props) => {
     };
 
     const searchUsers = (term: string) => {
-        return dispatch(searchProfiles(term, {team_id: props.teamId}));
+        return dispatch(searchProfiles(term, {team_id: props.teamId || playbook.team_id}));
     };
 
     const getUsers = () => {
