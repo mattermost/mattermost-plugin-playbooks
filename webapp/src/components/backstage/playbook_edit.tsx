@@ -476,6 +476,16 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleCategoryNameChange = (name: string) => {
+        if (playbook.category_name !== name) {
+            setPlaybook({
+                ...playbook,
+                category_name: name,
+            });
+            setChangesMade(true);
+        }
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
     };
@@ -715,6 +725,8 @@ const PlaybookEdit = (props: Props) => {
                                     signalAnyKeywords={playbook.signal_any_keywords}
                                     categorizePlaybookRun={playbook.categorize_channel_enabled}
                                     onToggleCategorizePlaybookRun={handleToggleCategorizePlaybookRun}
+                                    categoryName={playbook.category_name}
+                                    categoryNameChange={handleCategoryNameChange}
                                 />
                             </TabContainer>
                             <TabContainer>

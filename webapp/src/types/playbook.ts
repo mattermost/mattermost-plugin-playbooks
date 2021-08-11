@@ -40,6 +40,7 @@ export interface PlaybookWithChecklist extends Playbook {
     export_channel_on_archive_enabled: boolean;
     signal_any_keywords_enabled: boolean;
     signal_any_keywords: string[];
+    category_name: string;
     categorize_channel_enabled: boolean;
 }
 
@@ -124,6 +125,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         export_channel_on_archive_enabled: false,
         signal_any_keywords: [],
         signal_any_keywords_enabled: false,
+        category_name: '',
         categorize_channel_enabled: false,
     };
 }

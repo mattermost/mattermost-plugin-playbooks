@@ -7,8 +7,6 @@ import styled from 'styled-components';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
-import {CategorizePlaybookRun} from 'src/components/backstage/automation/categorize_playbook_run';
-
 import {PatternedInput} from 'src/components/backstage/automation/patterned_input';
 
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
@@ -55,6 +53,8 @@ interface Props {
     signalAnyKeywords: string[];
     categorizePlaybookRun: boolean;
     onToggleCategorizePlaybookRun: () => void;
+    categoryName: string;
+    categoryNameChange: (url: string) => void;
 }
 
 export const AutomationSettings = (props: Props) => {
@@ -157,9 +157,16 @@ export const AutomationSettings = (props: Props) => {
                     />
                 </Setting>
                 <Setting id={'user-joins-channel-categorize'}>
-                    <CategorizePlaybookRun
+                    <PatternedInput
                         enabled={props.categorizePlaybookRun}
                         onToggle={props.onToggleCategorizePlaybookRun}
+                        input={props.categoryName}
+                        onChange={props.categoryNameChange}
+                        pattern={'[\\s\\S]*'}
+                        placeholderText={'Enter category name'}
+                        textOnToggle={'Add the channel to a sidebar category'}
+                        type={'text'}
+                        errorText={'Category name is not valid.'}
                     />
                 </Setting>
             </Section>
