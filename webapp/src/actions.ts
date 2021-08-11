@@ -4,7 +4,8 @@ import {AnyAction, Dispatch} from 'redux';
 
 import {generateId} from 'mattermost-redux/utils/helpers';
 
-import {IntegrationTypes, TeamTypes} from 'mattermost-redux/action_types';
+import {IntegrationTypes} from 'mattermost-redux/action_types';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
@@ -94,15 +95,19 @@ export function updateStatus(teamId: string, defaultStatus?: string) {
     };
 }
 
-export function addToTimeline(teamId: string, postId: string) {
+export function addToTimeline(postId: string) {
     return async (dispatch: Dispatch, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, `/playbook add ${postId}`, teamId);
+        const currentTeamId = getCurrentTeamId(getState());
+
+        await clientExecuteCommand(dispatch, getState, `/playbook add ${postId}`, currentTeamId);
     };
 }
 
-export function addNewTask(teamId: string, checklist: number) {
+export function addNewTask(checklist: number) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, teamId);
+        const currentTeamId = getCurrentTeamId(getState());
+
+        await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, currentTeamId);
     };
 }
 

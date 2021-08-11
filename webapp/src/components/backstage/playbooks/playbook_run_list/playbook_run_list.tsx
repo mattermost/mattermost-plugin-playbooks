@@ -79,7 +79,6 @@ const PlaybookRunList = (props: Props) => {
     const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => UserProfile;
     const [fetchParams, setFetchParams] = useState<FetchPlaybookRunsParams>(
         {
-            team_id: props.playbook?.team_id,
             page: 0,
             per_page: BACKSTAGE_LIST_PER_PAGE,
             sort: 'last_status_update_at',

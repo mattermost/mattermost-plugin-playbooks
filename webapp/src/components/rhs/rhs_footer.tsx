@@ -2,19 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
-
-import {Team} from 'mattermost-redux/types/teams';
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
 
 import {PlaybookRun, playbookRunCurrentStatus} from 'src/types/playbook_run';
 
 import {Footer, StyledFooterButton} from 'src/components/rhs/rhs_shared';
 import {updateStatus} from 'src/actions';
 import {navigateToPluginUrl} from 'src/browser_routing';
-import {currentPlaybookRun} from 'src/selectors';
 
 const SpacedFooterButton = styled(StyledFooterButton)`
     margin-left: 10px;
@@ -26,8 +21,6 @@ interface Props {
 
 const RHSFooter = (props: Props) => {
     const dispatch = useDispatch();
-    const playbookRun = useSelector(currentPlaybookRun);
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id || playbookRun?.team_id || ''));
 
     let text = 'Update status';
     if (playbookRunCurrentStatus(props.playbookRun) === 'Archived') {
@@ -38,13 +31,13 @@ const RHSFooter = (props: Props) => {
         <Footer id='playbookRunRHSFooter'>
             <StyledFooterButton
                 primary={false}
-                onClick={() => navigateToPluginUrl(`/runs/${playbookRun?.id}`)}
+                onClick={() => navigateToPluginUrl(`/runs/${props.playbookRun?.id}`)}
             >
                 {'Overview'}
             </StyledFooterButton>
             <SpacedFooterButton
                 primary={true}
-                onClick={() => dispatch(updateStatus(team.id))}
+                onClick={() => dispatch(updateStatus(props.playbookRun?.team_id || ''))}
             >
                 {text}
             </SpacedFooterButton>

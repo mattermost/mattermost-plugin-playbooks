@@ -2,13 +2,9 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
 import moment from 'moment';
-
-import {Team} from 'mattermost-redux/types/teams';
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
 
 import {updateStatus} from 'src/actions';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -28,7 +24,6 @@ const RHSPostUpdate = (props: Props) => {
     const dispatch = useDispatch();
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
     //@ts-ignore
     const Timestamp = window.Components?.Timestamp;
@@ -78,7 +73,7 @@ const RHSPostUpdate = (props: Props) => {
                 collapsed={props.collapsed}
                 isNextUpdateScheduled={isNextUpdateScheduled}
                 updatesExist={props.updatesExist}
-                onClick={() => dispatch(updateStatus(team.id))}
+                onClick={() => dispatch(updateStatus(props.playbookRun.team_id))}
                 isDue={isDue}
             />
         </PostUpdate>

@@ -52,8 +52,8 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
         }
 
         return {
-            edit: (p: TParam, teamId: string, tabId?: typeof tabInfo[number]['id']) => {
-                return go(`/playbooks/${id(p)}/edit${tabId ? `/${tabId}` : ''}/teamId=${teamId}`, p);
+            edit: (p: TParam, tabId?: typeof tabInfo[number]['id']) => {
+                return go(`/playbooks/${id(p)}/edit${tabId ? `/${tabId}` : ''}`, p);
             },
             view: (p: TParam) => {
                 return go(`/playbooks/${id(p)}`, p);

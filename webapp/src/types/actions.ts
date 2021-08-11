@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import Integrations from 'mattermost-redux/action_types/integrations';
-import Teams from 'mattermost-redux/action_types/teams';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';

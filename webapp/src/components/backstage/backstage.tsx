@@ -24,7 +24,7 @@ import PlaybookRunBackstage
 import BackstagePlaybookRunList from 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list';
 
 import PlaybookList from 'src/components/backstage/playbook_list';
-import PlaybookEditWrapper from 'src/components/backstage/playbook_edit_wrapper';
+import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
 import {ErrorPageTypes} from 'src/constants';
 import {navigateToUrl, pluginErrorUrl} from 'src/browser_routing';
@@ -176,7 +176,9 @@ const Backstage = () => {
                         <NewPlaybook/>
                     </Route>
                     <Route path={`${match.url}/playbooks/:playbookId/edit/:tabId?`}>
-                        <PlaybookEditWrapper/>
+                        <PlaybookEdit
+                            isNew={false}
+                        />
                     </Route>
                     <Route path={`${match.url}/playbooks/:playbookId`}>
                         <PlaybookBackstage/>

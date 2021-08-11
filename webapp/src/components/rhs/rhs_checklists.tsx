@@ -16,9 +16,6 @@ import {
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
-import {Team} from 'mattermost-redux/types/teams';
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
@@ -78,7 +75,6 @@ const RHSChecklists = (props: Props) => {
     const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
     const active = props.playbookRun.current_status !== PlaybookRunStatus.Resolved && props.playbookRun.current_status !== PlaybookRunStatus.Archived;
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
     const selectOption = (value: string, checked: boolean) => {
         telemetryEventForPlaybookRun(props.playbookRun.id, 'checklists_filter_selected');
@@ -130,7 +126,6 @@ const RHSChecklists = (props: Props) => {
                     index={checklistIndex}
                     collapsed={Boolean(checklistsState[checklistIndex])}
                     setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
-                    teamId={team.id}
                 >
                     {visibleTasks(checklist, checklistItemsFilter, myUser.id) &&
                     <ChecklistContainer className='checklist'>
@@ -219,7 +214,7 @@ const RHSChecklists = (props: Props) => {
             ))}
             {
                 active &&
-                <FinishButton onClick={() => dispatch(updateStatus(team.id, 'Resolved'))}>
+                <FinishButton onClick={() => dispatch(updateStatus(props.playbookRun.team_id, 'Resolved'))}>
                     {'Finish run'}
                 </FinishButton>
             }

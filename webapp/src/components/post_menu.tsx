@@ -62,14 +62,13 @@ export const AttachToPlaybookRunPostMenu = (props: Props) => {
     const allowMessage = useAllowAddMessageToTimelineInCurrentTeam();
 
     const post = useSelector<GlobalState, Post>((state) => getPost(state, props.postId));
-    const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, post.channel_id));
     if (!post || isSystemMessage(post)) {
         return null;
     }
 
     const handleClick = () => {
         if (allowMessage) {
-            dispatch(addToTimeline(channel.team_id, props.postId));
+            dispatch(addToTimeline(props.postId));
         } else {
             dispatch(showPostMenuModal());
         }

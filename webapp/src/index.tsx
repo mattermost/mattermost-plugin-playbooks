@@ -108,7 +108,7 @@ export default class Plugin {
 
             r.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));
 
-            r.registerNeedsTeamRoute('/error', ErrorPage);
+            r.registerNeedsTeamRoute('/error', ErrorPage); // TODO deprecate in v2.0.
             r.registerNeedsTeamRoute('/', Backstage);
 
             r.registerCustomRoute('/error', ErrorPage);
