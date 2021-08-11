@@ -578,10 +578,10 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 
-		playbookRun := &app.PlaybookRun{CategorizeChannelEnabled: true}
+		playbookRun := &app.PlaybookRun{CategoryName: "Playbook Run"}
 		sidebarCategories := []*model.SidebarCategoryWithChannels{
 			{
-				SidebarCategory: model.SidebarCategory{Id: "sidebar_category_id", DisplayName: "Playbook Runs"},
+				SidebarCategory: model.SidebarCategory{Id: "sidebar_category_id", DisplayName: "Playbook Run"},
 				Channels:        []string{},
 			},
 		}
@@ -629,7 +629,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 
-		playbookRun := &app.PlaybookRun{CategorizeChannelEnabled: true}
+		playbookRun := &app.PlaybookRun{CategoryName: "Playbook Run"}
 		existingSidebarCategory := &model.SidebarCategoryWithChannels{
 			SidebarCategory: model.SidebarCategory{Id: "sidebar_category_id", DisplayName: "Test Category Sidebar"},
 			Channels:        []string{},
@@ -642,7 +642,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 			SidebarCategory: model.SidebarCategory{
 				UserId:      "user_id",
 				TeamId:      "team_id",
-				DisplayName: "Playbook Runs",
+				DisplayName: "Playbook Run",
 				Muted:       false,
 			},
 			Channels: []string{"channel_id"},
