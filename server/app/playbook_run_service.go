@@ -27,8 +27,6 @@ const (
 	PlaybookRunCreatedWSEvent = "playbook_run_created"
 	playbookRunUpdatedWSEvent = "playbook_run_updated"
 	noAssigneeName            = "No Assignee"
-
-	playbookRunsCategoryName = "Playbook Runs"
 )
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
@@ -1568,8 +1566,8 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 		return
 	}
 
-	if playbookRun.CategorizeChannelEnabled {
-		err = s.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId)
+	if playbookRun.CategoryName != "" {
+		err = s.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, playbookRun.CategoryName)
 		if err != nil {
 			s.logger.Errorf("failed to categorize channel; error: %s", err.Error())
 		}
@@ -1578,7 +1576,7 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 
 // createOrUpdatePlaybookRunSidebarCategory creates or updates a "Playbook Runs" sidebar category if
 // it does not already exist and adds the channel within the sidebar category
-func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID string) error {
+func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID, playbookRunsCategoryName string) error {
 	sidebar, err := s.pluginAPI.Channel.GetSidebarCategories(userID, teamID)
 	if err != nil {
 		return err
