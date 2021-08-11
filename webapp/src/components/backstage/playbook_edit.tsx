@@ -525,6 +525,14 @@ const PlaybookEdit = (props: Props) => {
         }
     };
 
+    const handleChannelNameTemplateChange = (channelNameTemplate: string) => {
+        setPlaybook({
+            ...playbook,
+            channel_name_template: channelNameTemplate,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.teamId || playbook.team_id}));
     };
@@ -744,6 +752,8 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleCategorizePlaybookRun={handleToggleCategorizePlaybookRun}
                                     categoryName={playbook.category_name}
                                     categoryNameChange={handleCategoryNameChange}
+                                    channelNameTemplate={playbook.channel_name_template}
+                                    onChannelNameTemplateChange={handleChannelNameTemplateChange}
                                 />
                             </TabContainer>
                             <TabContainer>

@@ -7,6 +7,7 @@ import styled from 'styled-components';
 
 interface ToggleProps {
     isChecked: boolean;
+    disabled?: boolean;
     onChange: () => void;
 }
 
@@ -17,13 +18,18 @@ export const Toggle = (props: ToggleProps) => {
                 type='checkbox'
                 onChange={props.onChange}
                 checked={props.isChecked}
+                disabled={props.disabled}
             />
-            <RoundSwitch/>
+            <RoundSwitch disabled={props.disabled}/>
         </Label>
     );
 };
 
-const RoundSwitch = styled.span`
+interface RoundSwitchProps {
+    disabled?: boolean;
+}
+
+const RoundSwitch = styled.span<RoundSwitchProps>`
     position: relative;
     display: inline-block;
     cursor: pointer;
@@ -37,11 +43,10 @@ const RoundSwitch = styled.span`
     width: 40px;
     height: 24px;
     border-radius: 14px;
-    background: rgba(var(--center-channel-color-rgb), 0.24);
-
+    background: rgba(var(--center-channel-color-rgb), ${(props) => (props.disabled ? '0.08' : '0.24')});
 
     // Inner circle
-    :before {
+    ::before {
         position: absolute;
         width: 20px;
         height: 20px;
@@ -56,13 +61,14 @@ const RoundSwitch = styled.span`
         transition: .4s;
     }
 
-    input:checked + & {
-        background-color: var(--button-bg);
+    input:checked + && {
+        background-color: ${(props) => (props.disabled ? 'var(--button-bg-30)' : 'var(--button-bg)')}
     }
 
-    input:checked + &:before {
+    input:checked + &&::before {
         transform: translateX(16px);
     }
+
 `;
 
 const InvisibleInput = styled.input`
