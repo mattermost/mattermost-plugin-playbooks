@@ -59,7 +59,6 @@ type PlaybookRun struct {
 	MessageOnJoin                        string          `json:"message_on_join"`
 	ExportChannelOnArchiveEnabled        bool            `json:"export_channel_on_archive_enabled"`
 	ParticipantIDs                       []string        `json:"participant_ids"`
-	CategorizeChannelEnabled             bool            `json:"categorize_channel_enabled"`
 	CategoryName                         string          `json:"category_name"`
 }
 
