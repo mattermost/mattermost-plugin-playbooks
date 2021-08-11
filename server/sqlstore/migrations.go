@@ -985,11 +985,11 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.25.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
-				if err := addColumnToMySQLTable(e, "IR_Playbook", "CategoryName", "TEXT DEFAULT ''"); err != nil {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "CategoryName", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column CategoryName to table IR_Playbook")
 				}
 
-				if err := addColumnToMySQLTable(e, "IR_Incident", "CategoryName", "TEXT DEFAULT ''"); err != nil {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "CategoryName", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column CategoryName to table IR_Incident")
 				}
 			} else {
