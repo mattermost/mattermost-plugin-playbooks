@@ -10,6 +10,7 @@ import {Channel} from 'mattermost-redux/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {
     FetchPlaybookRunsParams,
@@ -101,7 +102,13 @@ export function fetchPlaybookRunChannels(teamID: string, userID: string) {
 }
 
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string, teamId: string) {
-    const currentChannel = await Client4.getChannelByName(teamId, 'town-square');
+    let currentChannel = getCurrentChannel(getState());
+
+    // Default to town square if there is no current channel (i.e., if Mattermost has not yet loaded)
+    // or in a different team.
+    if (!currentChannel || currentChannel.team_id !== teamId) {
+        currentChannel = await Client4.getChannelByName(teamId, 'town-square');
+    }
 
     const args = {
         channel_id: currentChannel?.id,
