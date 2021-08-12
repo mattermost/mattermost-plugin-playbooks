@@ -162,11 +162,12 @@ export const AutomationSettings = (props: Props) => {
                         onToggle={props.onToggleCategorizePlaybookRun}
                         input={props.categoryName}
                         onChange={props.categoryNameChange}
-                        pattern={'^[\\s\\S]{1,22}$'}
+                        pattern={'[\\s\\S]*'}
                         placeholderText={'Enter category name'}
                         textOnToggle={'Add the channel to a sidebar category'}
                         type={'text'}
-                        errorText={'Category name should be between 1-22 characters'}
+                        errorText={'Invalid category name.'} // this should not happen
+                        maxLength={22}
                     />
                 </Setting>
             </Section>
