@@ -998,7 +998,7 @@ var migrations = []Migration{
 				}
 
 				if _, err := e.Exec("UPDATE IR_Incident SET CategoryName = 'Playbook Runs' WHERE CategorizeChannelEnabled=1"); err != nil {
-					return errors.Wrapf(err, "failed setting default value in column CategoryName of table IR_Playbook")
+					return errors.Wrapf(err, "failed setting default value in column CategoryName of table IR_Incident")
 				}
 			} else {
 				if err := addColumnToPGTable(e, "IR_Playbook", "CategoryName", "TEXT DEFAULT ''"); err != nil {
