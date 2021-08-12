@@ -478,8 +478,8 @@ func removeDuplicates(a []string) []string {
 
 func (h *PlaybookHandler) validateCategoryName(categoryName string) error {
 	categoryNameLength := len(categoryName)
-	if categoryNameLength == 0 || categoryNameLength > 22 {
-		msg := fmt.Sprintf("invalid category name: %s (should be between 1-22 characters)", categoryName)
+	if categoryNameLength > 22 {
+		msg := fmt.Sprintf("invalid category name: %s (maximum length is 22 characters)", categoryName)
 		return errors.Errorf(msg)
 	}
 	return nil
