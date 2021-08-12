@@ -989,16 +989,32 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed adding column CategoryName to table IR_Playbook")
 				}
 
+				if _, err := e.Exec("UPDATE IR_Playbook SET CategoryName = 'Playbook Runs' WHERE CategorizeChannelEnabled=1"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column CategoryName of table IR_Playbook")
+				}
+
 				if err := addColumnToMySQLTable(e, "IR_Incident", "CategoryName", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column CategoryName to table IR_Incident")
+				}
+
+				if _, err := e.Exec("UPDATE IR_Incident SET CategoryName = 'Playbook Runs' WHERE CategorizeChannelEnabled=1"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column CategoryName of table IR_Playbook")
 				}
 			} else {
 				if err := addColumnToPGTable(e, "IR_Playbook", "CategoryName", "TEXT DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column CategoryName to table IR_Playbook")
 				}
 
+				if _, err := e.Exec("UPDATE IR_Playbook SET CategoryName = 'Playbook Runs' WHERE CategorizeChannelEnabled"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column CategoryName of table IR_Playbook")
+				}
+
 				if err := addColumnToPGTable(e, "IR_Incident", "CategoryName", "TEXT DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column CategoryName to table IR_Incident")
+				}
+
+				if _, err := e.Exec("UPDATE IR_Incident SET CategoryName = 'Playbook Runs' WHERE CategorizeChannelEnabled"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column CategoryName of table IR_Incident")
 				}
 			}
 			return nil
