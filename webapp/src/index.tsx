@@ -112,7 +112,7 @@ export default class Plugin {
         if (registry.registerProduct) {
             registry.registerProduct(
                 '/playbooks',
-                GlobalHeaderIcon,
+                'product-playbooks',
                 'Playbooks',
                 '/playbooks',
                 Backstage,
