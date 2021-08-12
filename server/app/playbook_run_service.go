@@ -1576,7 +1576,7 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 
 // createOrUpdatePlaybookRunSidebarCategory creates or updates a "Playbook Runs" sidebar category if
 // it does not already exist and adds the channel within the sidebar category
-func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID, playbookRunsCategoryName string) error {
+func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID, categoryName string) error {
 	sidebar, err := s.pluginAPI.Channel.GetSidebarCategories(userID, teamID)
 	if err != nil {
 		return err
@@ -1584,7 +1584,7 @@ func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID
 
 	var categoryID string
 	for _, category := range sidebar.Categories {
-		if category.DisplayName == playbookRunsCategoryName {
+		if category.DisplayName == categoryName {
 			categoryID = category.Id
 			if !sliceContains(category.Channels, channelID) {
 				category.Channels = append(category.Channels, channelID)
@@ -1598,7 +1598,7 @@ func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID
 			SidebarCategory: model.SidebarCategory{
 				UserId:      userID,
 				TeamId:      teamID,
-				DisplayName: playbookRunsCategoryName,
+				DisplayName: categoryName,
 				Muted:       false,
 			},
 			Channels: []string{channelID},
@@ -1612,7 +1612,7 @@ func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID
 
 	// remove channel from previous category
 	for _, category := range sidebar.Categories {
-		if category.DisplayName == playbookRunsCategoryName {
+		if category.DisplayName == categoryName {
 			continue
 		}
 		for i, channel := range category.Channels {

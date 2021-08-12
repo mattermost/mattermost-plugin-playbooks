@@ -54,7 +54,7 @@ interface Props {
     categorizePlaybookRun: boolean;
     onToggleCategorizePlaybookRun: () => void;
     categoryName: string;
-    categoryNameChange: (url: string) => void;
+    categoryNameChange: (categoryName: string) => void;
 }
 
 export const AutomationSettings = (props: Props) => {
