@@ -2,7 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useRef, useEffect} from 'react';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
+
+import {useSelector} from 'react-redux';
+import {Team} from 'mattermost-redux/types/teams';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
 
 import PostText from 'src/components/post_text';
 import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
@@ -17,6 +22,8 @@ const RHSAboutDescription = (props: DescriptionProps) => {
 
     const [editing, setEditing] = useState(false);
     const [editedValue, setEditedValue] = useState(props.value);
+
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const textareaRef = useRef(null);
 
@@ -47,7 +54,10 @@ const RHSAboutDescription = (props: DescriptionProps) => {
                 }}
             >
                 {editedValue ? (
-                    <PostText text={editedValue}/>
+                    <PostText
+                        text={editedValue}
+                        team={currentTeam}
+                    />
                 ) : (
                     <PlaceholderText>{placeholder}</PlaceholderText>
                 )}
@@ -78,34 +88,11 @@ const RHSAboutDescription = (props: DescriptionProps) => {
     );
 };
 
-const DescriptionTextArea = styled.textarea`
-    resize: none;
-    width: 100%;
-    height: max-content;
-    padding: 4px 8px;
-    margin-top: -2px;
-    margin-bottom: 9px;
-
-    border: none;
-    border-radius: 5px;
-    box-shadow: none;
-
-    background: rgba(var(--center-channel-color-rgb), 0.04);
-
-    &:focus {
-        box-shadow: none;
-    }
-
-    font-size: 14px;
-    line-height: 20px;
-    color: var(--center-channel-color);
-`;
-
 const PlaceholderText = styled.span`
     opacity: 0.5;
 `;
 
-const RenderedDescription = styled.div`
+const commonDescriptionStyle = css`
     margin-bottom: 16px;
     padding: 2px 8px;
 
@@ -119,6 +106,36 @@ const RenderedDescription = styled.div`
 
     p {
         white-space: pre-wrap;
+    }
+
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--center-channel-color);
+`;
+
+const RenderedDescription = styled.div`
+    ${commonDescriptionStyle}
+
+    p:last-child {
+        margin-bottom: 0;
+    }
+`;
+
+const DescriptionTextArea = styled.textarea`
+    ${commonDescriptionStyle}
+
+    display: block;
+    resize: none;
+    width: 100%;
+
+    border: none;
+    border-radius: 5px;
+    box-shadow: none;
+
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+
+    &:focus {
+        box-shadow: none;
     }
 `;
 

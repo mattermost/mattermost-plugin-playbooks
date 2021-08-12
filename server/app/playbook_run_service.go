@@ -140,11 +140,6 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbook *Playbook
 		return errors.New("SiteURL not set")
 	}
 
-	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get playbook run team")
-	}
-
 	playbookRunChannel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get playbook run channel")
@@ -153,13 +148,13 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbook *Playbook
 	announcementMsg := fmt.Sprintf(
 		"### New run started: [%s](%s)\n",
 		playbookRun.Name,
-		getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, playbookRun.ID),
+		getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID),
 	)
 	announcementMsg += fmt.Sprintf(
 		"@%s just ran the [%s](%s) playbook.",
 		owner.Username,
 		playbook.Title,
-		getPlaybookDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, playbook.ID),
+		getPlaybookDetailsURL(*siteURL, s.configService.GetManifest().Id, playbook.ID),
 	)
 
 	if playbookRunChannel.Type == model.CHANNEL_OPEN {
@@ -199,7 +194,7 @@ func (s *PlaybookRunServiceImpl) sendWebhookOnCreation(playbookRun PlaybookRun) 
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, playbookRun.ID)
+	detailsURL := getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID)
 
 	payload := struct {
 		PlaybookRun
@@ -251,11 +246,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookRun.ReporterUserID = userID
 	playbookRun.ID = model.NewId()
 
-	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch team")
-	}
-
 	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
 	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
 		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
@@ -265,8 +255,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
 	if siteURL != "" && pb != nil {
-		overviewURL = fmt.Sprintf("%s/%s/%s/runs/%s", siteURL, team.Name, s.configService.GetManifest().Id, playbookRun.ID)
-		playbookURL = fmt.Sprintf("%s/%s/%s/playbooks/%s", siteURL, team.Name, s.configService.GetManifest().Id, pb.ID)
+		overviewURL = getRunDetailsURL(siteURL, s.configService.GetManifest().Id, playbookRun.ID)
+		playbookURL = getPlaybookDetailsURL(siteURL, s.configService.GetManifest().Id, pb.ID)
 		header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
 			pb.Title, playbookURL, overviewURL)
 	}
@@ -703,7 +693,7 @@ func (s *PlaybookRunServiceImpl) sendWebhookOnUpdateStatus(playbookRun PlaybookR
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := getDetailsURL(*siteURL, team.Name, s.configService.GetManifest().Id, playbookRun.ID)
+	detailsURL := getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID)
 
 	payload := struct {
 		PlaybookRun
@@ -913,13 +903,8 @@ func (s *PlaybookRunServiceImpl) exportChannelToFile(playbookRunName string, own
 }
 
 func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *PlaybookRun, isInitial bool) error {
-	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
-	if err != nil {
-		return err
-	}
-
-	retrospectiveURL := fmt.Sprintf("/%s/%s/runs/%s/retrospective",
-		team.Name,
+	retrospectiveURL := getRunRetrospectiveURL(
+		"",
 		s.configService.GetManifest().Id,
 		playbookRun.ID,
 	)
@@ -945,7 +930,7 @@ func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *Playbook
 		customPostType = "custom_retro_rem_first"
 	}
 
-	if _, err = s.poster.PostCustomMessageWithAttachments(playbookRun.ChannelID, customPostType, attachments, "@channel Reminder to [fill out the retrospective](%s).", retrospectiveURL); err != nil {
+	if _, err := s.poster.PostCustomMessageWithAttachments(playbookRun.ChannelID, customPostType, attachments, "@channel Reminder to [fill out the retrospective](%s).", retrospectiveURL); err != nil {
 		return errors.Wrap(err, "failed to post retro reminder to channel")
 	}
 
@@ -1827,11 +1812,6 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, c
 }
 
 func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) (*model.Dialog, error) {
-	team, err := s.pluginAPI.Team.Get(teamID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch team")
-	}
-
 	user, err := s.pluginAPI.User.Get(ownerID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch owner user")
@@ -1859,7 +1839,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 	}
 	newPlaybookMarkdown := ""
 	if siteURL != "" && !isMobileApp {
-		url := fmt.Sprintf("%s/%s/%s/playbooks/new", siteURL, team.Name, s.configService.GetManifest().Id)
+		url := getPlaybooksNewURL(siteURL, s.configService.GetManifest().Id)
 		newPlaybookMarkdown = fmt.Sprintf("[Click here](%s) to create your own playbook.", url)
 	}
 
@@ -2111,13 +2091,8 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, text, publi
 		return errors.Wrap(err, "failed to get publisher user")
 	}
 
-	team, err := s.pluginAPI.Team.Get(playbookRunToPublish.TeamID)
-	if err != nil {
-		return err
-	}
-
-	retrospectiveURL := fmt.Sprintf("/%s/%s/runs/%s/retrospective",
-		team.Name,
+	retrospectiveURL := getRunRetrospectiveURL(
+		"",
 		s.configService.GetManifest().Id,
 		playbookRunToPublish.ID,
 	)
@@ -2206,24 +2181,6 @@ func getChannelURL(siteURL string, teamName string, channelName string) string {
 		siteURL,
 		teamName,
 		channelName,
-	)
-}
-
-func getDetailsURL(siteURL string, teamName string, manifestID string, playbookRunID string) string {
-	return fmt.Sprintf("%s/%s/%s/runs/%s",
-		siteURL,
-		teamName,
-		manifestID,
-		playbookRunID,
-	)
-}
-
-func getPlaybookDetailsURL(siteURL string, teamName string, manifestID string, playbookID string) string {
-	return fmt.Sprintf("%s/%s/%s/playbooks/%s",
-		siteURL,
-		teamName,
-		manifestID,
-		playbookID,
 	)
 }
 

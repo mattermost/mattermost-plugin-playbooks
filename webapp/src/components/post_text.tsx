@@ -6,7 +6,6 @@ import {useSelector} from 'react-redux';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 
 import {ChannelNamesMap} from 'src/types/backstage';
@@ -14,12 +13,12 @@ import {UpdateBody} from 'src/components/rhs/rhs_shared';
 
 interface Props {
     text: string;
+    team: Team;
     children?: ReactNode | ReactNodeArray;
     className?: string;
 }
 
 const PostText = (props: Props) => {
-    const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
 
     // @ts-ignore
@@ -29,7 +28,7 @@ const PostText = (props: Props) => {
         singleline: false,
         mentionHighlight: true,
         atMentions: true,
-        team,
+        team: props.team,
         channelNamesMap,
     };
 

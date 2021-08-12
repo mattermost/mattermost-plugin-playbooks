@@ -202,7 +202,7 @@ const RHSHome = () => {
     const [currentPlaybook, setCurrentPlaybook] = useState<Playbook | null>();
 
     const [playbooks, {hasMore, isLoading}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
-    const {create} = usePlaybooksRouting<Playbook>(currentTeam.name);
+    const {create} = usePlaybooksRouting<Playbook>();
 
     const canCreatePlaybooks = useCanCreatePlaybooks();
     const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
@@ -213,7 +213,7 @@ const RHSHome = () => {
             telemetryEventForTemplate(template.title, 'use_template_option');
         }
         if (allowPlaybookCreation) {
-            create(template?.title);
+            create(currentTeam, template?.title);
         } else {
             showUpgradeModal();
         }

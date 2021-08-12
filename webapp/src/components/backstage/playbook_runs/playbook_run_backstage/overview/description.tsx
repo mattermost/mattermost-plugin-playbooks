@@ -3,6 +3,10 @@
 
 import React from 'react';
 import styled from 'styled-components';
+import {useSelector} from 'react-redux';
+import {Team} from 'mattermost-redux/types/teams';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -22,11 +26,16 @@ const StyledContent = styled(Content)`
 `;
 
 const Description = (props: { playbookRun: PlaybookRun }) => {
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
+
     let description: JSX.Element = <EmptyBody>{'There is no description available.'}</EmptyBody>;
     if (props.playbookRun.status_posts.length > 0 && props.playbookRun.description) {
         description = (
             <StyledContent>
-                <PostText text={props.playbookRun.description}/>
+                <PostText
+                    text={props.playbookRun.description}
+                    team={team}
+                />
             </StyledContent>
         );
     }

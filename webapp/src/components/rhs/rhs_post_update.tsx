@@ -8,7 +8,6 @@ import moment from 'moment';
 
 import {updateStatus} from 'src/actions';
 import {PlaybookRun} from 'src/types/playbook_run';
-
 import RHSPostUpdateButton from 'src/components/rhs/rhs_post_update_button';
 import Exclamation from 'src/components/assets/icons/exclamation';
 import Clock from 'src/components/assets/icons/clock';
@@ -74,7 +73,7 @@ const RHSPostUpdate = (props: Props) => {
                 collapsed={props.collapsed}
                 isNextUpdateScheduled={isNextUpdateScheduled}
                 updatesExist={props.updatesExist}
-                onClick={() => dispatch(updateStatus())}
+                onClick={() => dispatch(updateStatus(props.playbookRun.team_id))}
                 isDue={isDue}
             />
         </PostUpdate>

@@ -233,7 +233,6 @@ func TestCreatePlaybookRun(t *testing.T) {
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
-		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
 		pluginAPI.On("CreateChannel", mock.MatchedBy(func(channel *model.Channel) bool {
 			return channel.Name != ""
 		})).Return(&model.Channel{Id: "channel_id", TeamId: "team_id"}, nil)
@@ -331,7 +330,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 				"http://example.com/ad-1/channels/channel-name",
 				payload.ChannelURL)
 			require.Equal(t,
-				"http://example.com/ad-1/com.mattermost.plugin-incident-management/runs/"+createdPlaybookRun.ID,
+				"http://example.com/plug/com.mattermost.plugin-incident-management/runs/"+createdPlaybookRun.ID,
 				payload.DetailsURL)
 
 		case <-time.After(time.Second * 5):
@@ -428,7 +427,7 @@ func TestUpdateStatus(t *testing.T) {
 				"http://example.com/team_name/channels/channel_name",
 				payload.ChannelURL)
 			require.Equal(t,
-				fmt.Sprintf("http://example.com/team_name/com.mattermost.plugin-incident-management/runs/%s", playbookRunID),
+				fmt.Sprintf("http://example.com/plug/com.mattermost.plugin-incident-management/runs/%s", playbookRunID),
 				payload.DetailsURL)
 
 		case <-time.After(time.Second * 5):

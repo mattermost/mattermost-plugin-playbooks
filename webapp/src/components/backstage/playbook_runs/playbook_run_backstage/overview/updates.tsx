@@ -3,6 +3,10 @@
 
 import React from 'react';
 import styled from 'styled-components';
+import {useSelector} from 'react-redux';
+import {Team} from 'mattermost-redux/types/teams';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -26,6 +30,7 @@ interface Props {
 
 const Updates = (props: Props) => {
     const statusPosts = props.playbookRun.status_posts.sort((a, b) => b.create_at - a.create_at);
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
     let updates: JSX.Element | JSX.Element[] =
         <EmptyBody>{'There are no updates available.'}</EmptyBody>;
@@ -34,6 +39,7 @@ const Updates = (props: Props) => {
             <PostContent
                 key={sp.id}
                 postId={sp.id}
+                team={team}
             />
         ));
     }
@@ -46,7 +52,7 @@ const Updates = (props: Props) => {
     );
 };
 
-const PostContent = (props: { postId: string }) => {
+const PostContent = (props: { postId: string, team: Team }) => {
     const post = usePost(props.postId);
 
     if (!post) {
@@ -55,7 +61,10 @@ const PostContent = (props: { postId: string }) => {
 
     return (
         <StyledContent>
-            <PostCard post={post}/>
+            <PostCard
+                post={post}
+                team={props.team}
+            />
         </StyledContent>
     );
 };
