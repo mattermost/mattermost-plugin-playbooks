@@ -104,8 +104,8 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if playbook.CategorizeChannelEnabled {
-		if err := h.validateCategoryName(playbook.CategoryName); err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
+		if err2 := h.validateCategoryName(playbook.CategoryName); err2 != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err2)
 			return
 		}
 	}
@@ -204,8 +204,8 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if playbook.CategorizeChannelEnabled {
-		if err := h.validateCategoryName(playbook.CategoryName); err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
+		if err2 := h.validateCategoryName(playbook.CategoryName); err2 != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err2)
 			return
 		}
 	}
