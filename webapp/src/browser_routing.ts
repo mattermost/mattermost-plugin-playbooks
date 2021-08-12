@@ -3,8 +3,6 @@
 
 import React from 'react';
 
-import {pluginId} from 'src/manifest';
-
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
@@ -13,7 +11,7 @@ export const navigateToUrl = (urlPath: string) => {
 };
 
 export const pluginUrl = (urlPath: string) => {
-    return `/plug/${pluginId}` + urlPath;
+    return '/playbooks' + urlPath;
 };
 
 export const navigateToPluginUrl = (urlPath: string) => {

@@ -1113,7 +1113,7 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 
 	msg := "Playbooks successfully created"
 	for i, playbookID := range playbookIds {
-		url := fmt.Sprintf("/plug/%s/playbooks/%s", r.configService.GetManifest().Id, playbookID)
+		url := fmt.Sprintf("/playbooks/playbooks/%s", playbookID)
 		msg += fmt.Sprintf("\n- [%s](%s)", dummyListPlaybooks[i].Title, url)
 	}
 

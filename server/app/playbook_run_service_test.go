@@ -330,7 +330,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 				"http://example.com/ad-1/channels/channel-name",
 				payload.ChannelURL)
 			require.Equal(t,
-				"http://example.com/plug/com.mattermost.plugin-incident-management/runs/"+createdPlaybookRun.ID,
+				"http://example.com/playbooks/runs/"+createdPlaybookRun.ID,
 				payload.DetailsURL)
 
 		case <-time.After(time.Second * 5):
@@ -427,7 +427,7 @@ func TestUpdateStatus(t *testing.T) {
 				"http://example.com/team_name/channels/channel_name",
 				payload.ChannelURL)
 			require.Equal(t,
-				fmt.Sprintf("http://example.com/plug/com.mattermost.plugin-incident-management/runs/%s", playbookRunID),
+				fmt.Sprintf("http://example.com/playbooks/runs/%s", playbookRunID),
 				payload.DetailsURL)
 
 		case <-time.After(time.Second * 5):

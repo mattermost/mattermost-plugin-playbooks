@@ -35,7 +35,7 @@ describe('playbook creation button', () => {
         const playbookName = 'Untitled playbook';
 
         // # Open backstage
-        cy.visit('/plug/com.mattermost.plugin-incident-management');
+        cy.visit('/playbooks');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -55,7 +55,7 @@ describe('playbook creation button', () => {
         const playbookName = 'Untitled playbook';
 
         // # Open backstage
-        cy.visit('/plug/com.mattermost.plugin-incident-management');
+        cy.visit('/playbooks');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -76,7 +76,7 @@ describe('playbook creation button', () => {
         const playbookName = 'Service Reliability Incident';
 
         // # Open backstage
-        cy.visit('/plug/com.mattermost.plugin-incident-management');
+        cy.visit('/playbooks');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -94,7 +94,7 @@ describe('playbook creation button', () => {
 
     it('shows remove beside members when > 1 member', () => {
         // # Open backstage
-        cy.visit('/plug/com.mattermost.plugin-incident-management');
+        cy.visit('/playbooks');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
