@@ -178,15 +178,15 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbook *Playbook
 	return nil
 }
 
-// Payload sent with playbook run webhooks.
+// PlaybookRunWebhookPayload is the body of the payload sent via playbook run webhooks.
 type PlaybookRunWebhookPayload struct {
 	// Playbook run.
 	PlaybookRun
 
 	// Absolute URL of the playbook run channel.
-	ChannelURL string `json:"channel_url"`
+	// ChannelURL is the absolute URL of the playbook run channel.
 
-	// Absolute URL of the playbook run overview page.
+	// DetailsURL is the absolute URL of the playbook run overview page.
 	DetailsURL string `json:"details_url"`
 }
 
