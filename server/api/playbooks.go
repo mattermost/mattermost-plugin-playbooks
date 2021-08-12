@@ -104,10 +104,8 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if playbook.CategorizeChannelEnabled {
-		categoryNameLength := len(playbook.CategoryName)
-		if categoryNameLength == 0 || categoryNameLength > 22 {
-			msg := fmt.Sprintf("Invalid category name: %s (should be between 1-22 characters)", playbook.CategoryName)
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+		if err := h.validateCategoryName(playbook.CategoryName); err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
 			return
 		}
 	}
@@ -206,10 +204,8 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if playbook.CategorizeChannelEnabled {
-		categoryNameLength := len(playbook.CategoryName)
-		if categoryNameLength == 0 || categoryNameLength > 22 {
-			msg := fmt.Sprintf("Invalid category name: %s (should be between 1-22 characters)", playbook.CategoryName)
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+		if err := h.validateCategoryName(playbook.CategoryName); err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
 			return
 		}
 	}
@@ -478,4 +474,13 @@ func removeDuplicates(a []string) []string {
 		res = append(res, item)
 	}
 	return res
+}
+
+func (h *PlaybookHandler) validateCategoryName(categoryName string) error {
+	categoryNameLength := len(categoryName)
+	if categoryNameLength == 0 || categoryNameLength > 22 {
+		msg := fmt.Sprintf("invalid category name: %s (should be between 1-22 characters)", categoryName)
+		return errors.Errorf(msg)
+	}
+	return nil
 }
