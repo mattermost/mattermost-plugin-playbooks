@@ -2,8 +2,6 @@ package app
 
 import "fmt"
 
-const pluginRoute = "plug"
-
 func getRunsURL(siteURL string, manifestID string) string {
 	return fmt.Sprintf(
 		"%s/playbooks/runs",
