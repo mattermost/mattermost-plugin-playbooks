@@ -182,8 +182,8 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbook *Playbook
 type PlaybookRunWebhookPayload struct {
 	PlaybookRun
 
-	// Absolute URL of the playbook run channel.
 	// ChannelURL is the absolute URL of the playbook run channel.
+	ChannelURL string `json:"channel_url"`
 
 	// DetailsURL is the absolute URL of the playbook run overview page.
 	DetailsURL string `json:"details_url"`
