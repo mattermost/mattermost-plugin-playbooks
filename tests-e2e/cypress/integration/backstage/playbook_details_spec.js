@@ -625,7 +625,7 @@ describe('backstage playbook details', () => {
 
                 it('allows changing the owner', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/plug/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit}`);
+                    cy.visit(`/plug/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();

@@ -103,7 +103,7 @@ describe('playbook creation button', () => {
         cy.findByText('Create playbook').click();
 
         // #  Select team
-        cy.findByText('eligendi').first().click();
+        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
 
         // # Click 'Permissions' tab
         cy.findByText('Permissions').click();
