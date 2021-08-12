@@ -31,7 +31,7 @@ describe('playbook creation button', () => {
     });
 
     it('opens playbook creation page with New Playbook button', () => {
-        const url = 'com.mattermost.plugin-incident-management/playbooks/new';
+        const url = 'playbooks/new';
         const playbookName = 'Untitled playbook';
 
         // # Open backstage
@@ -51,7 +51,7 @@ describe('playbook creation button', () => {
     });
 
     it('opens playbook creation page with "Blank" template option', () => {
-        const url = 'com.mattermost.plugin-incident-management/playbooks/new';
+        const url = 'playbooks/new';
         const playbookName = 'Untitled playbook';
 
         // # Open backstage
