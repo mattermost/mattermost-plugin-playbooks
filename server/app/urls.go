@@ -2,14 +2,10 @@ package app
 
 import "fmt"
 
-const pluginRoute = "plug"
-
 func getRunsURL(siteURL string, manifestID string) string {
 	return fmt.Sprintf(
-		"%s/%s/%s/runs",
+		"%s/playbooks/runs",
 		siteURL,
-		pluginRoute,
-		manifestID,
 	)
 }
 
@@ -27,10 +23,8 @@ func getRunRetrospectiveURL(siteURL string, manifestID string, playbookRunID str
 
 func getPlaybooksURL(siteURL string, manifestID string) string {
 	return fmt.Sprintf(
-		"%s/%s/%s/playbooks",
+		"%s/playbooks/playbooks",
 		siteURL,
-		pluginRoute,
-		manifestID,
 	)
 }
 

@@ -34,6 +34,8 @@ import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backs
 import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 
+import ErrorPage from '../error_page';
+
 import SettingsView from './settings';
 import {BackstageNavbar, BackstageNavbarIcon} from './backstage_navbar';
 
@@ -202,6 +204,9 @@ const Backstage = () => {
                     </Route>
                     <Route path={`${match.url}/settings`}>
                         <SettingsView/>
+                    </Route>
+                    <Route path={`${match.url}/error`}>
+                        <ErrorPage/>
                     </Route>
                     <Route
                         exact={true}
