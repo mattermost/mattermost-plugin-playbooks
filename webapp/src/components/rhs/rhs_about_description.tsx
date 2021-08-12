@@ -4,6 +4,11 @@
 import React, {useState, useRef, useEffect} from 'react';
 import styled, {css} from 'styled-components';
 
+import {useSelector} from 'react-redux';
+import {Team} from 'mattermost-redux/types/teams';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
+
 import PostText from 'src/components/post_text';
 import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
 
@@ -17,6 +22,8 @@ const RHSAboutDescription = (props: DescriptionProps) => {
 
     const [editing, setEditing] = useState(false);
     const [editedValue, setEditedValue] = useState(props.value);
+
+    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
 
     const textareaRef = useRef(null);
 
@@ -47,7 +54,10 @@ const RHSAboutDescription = (props: DescriptionProps) => {
                 }}
             >
                 {editedValue ? (
-                    <PostText text={editedValue}/>
+                    <PostText
+                        text={editedValue}
+                        team={currentTeam}
+                    />
                 ) : (
                     <PlaceholderText>{placeholder}</PlaceholderText>
                 )}

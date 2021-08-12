@@ -25,10 +25,11 @@ const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(stat
     channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL,
 );
 
+type GetChannelType = (channelID: string) => Channel
+
 const ChannelSelector = (props: Props & { className?: string }) => {
     const selectableChannels = useSelector(getMyPublicAndPrivateChannels);
 
-    type GetChannelType = (channelID: string) => Channel
     const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID) || {display_name: 'Unknown Channel', id: channelID});
 
     const onChange = (channel: Channel | null, {action}: {action: string}) => {

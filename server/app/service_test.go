@@ -420,51 +420,6 @@ func TestMessageHasBeenPosted(t *testing.T) {
 		s.MessageHasBeenPosted(sessionID, post)
 	})
 
-	t.Run("can't get team", func(t *testing.T) {
-		s, store, pluginAPI, keywordsIgnorer := getMockPlaybookService(t)
-
-		sessionID := model.NewId()
-		userID := model.NewId()
-		post := &model.Post{UserId: userID, Message: "some message", RootId: "", ChannelId: model.NewId()}
-
-		keywordsIgnorer.EXPECT().IsIgnored(post.RootId, post.UserId).Return(false)
-
-		teamID := model.NewId()
-		pluginAPI.On("GetChannel", post.ChannelId).Return(&model.Channel{TeamId: teamID}, nil)
-
-		store.EXPECT().GetTimeLastUpdated(true).Return(int64(1000), nil)
-		playbooks := []app.Playbook{
-			{
-				ID:                model.NewId(),
-				Title:             "playbook 1",
-				UpdateAt:          100,
-				TeamID:            "",
-				SignalAnyKeywords: []string{"some", "bla"},
-			},
-			{
-				ID:                model.NewId(),
-				Title:             "playbook 2",
-				UpdateAt:          1100,
-				TeamID:            teamID,
-				SignalAnyKeywords: []string{"bla", "something"},
-			},
-			{
-				ID:                model.NewId(),
-				Title:             "playbook 3",
-				UpdateAt:          900,
-				TeamID:            teamID,
-				SignalAnyKeywords: []string{"some", "other"},
-			},
-		}
-		store.EXPECT().GetPlaybooksWithKeywords(gomock.Any()).Return(playbooks, nil)
-		store.EXPECT().GetPlaybookIDsForUser(userID, teamID).Return([]string{playbooks[1].ID, playbooks[2].ID}, nil)
-		pluginAPI.On("GetSession", sessionID).Return(&model.Session{}, nil)
-		pluginAPI.On("GetTeam", teamID).Return(nil, &model.AppError{Id: "someID"})
-		pluginAPI.On("LogError", "can't get team", "teamID", teamID, "err", mock.Anything)
-
-		s.MessageHasBeenPosted(sessionID, post)
-	})
-
 	t.Run("suggest a playbook", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
@@ -513,13 +468,12 @@ func TestMessageHasBeenPosted(t *testing.T) {
 		store.EXPECT().GetPlaybooksWithKeywords(gomock.Any()).Return(playbooks, nil)
 		store.EXPECT().GetPlaybookIDsForUser(userID, teamID).Return([]string{playbooks[1].ID, playbooks[2].ID}, nil)
 		pluginAPI.On("GetSession", sessionID).Return(&model.Session{}, nil)
-		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Name: "teamName"}, nil)
 
 		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "id"}).AnyTimes()
 		siteURL := "site"
 		pluginAPI.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 
-		message := fmt.Sprintf("`some` is a trigger for the [%s](%s) playbook, would you like to run it?", playbooks[2].Title, fmt.Sprintf("site/teamName/id/playbooks/%s", playbooks[2].ID))
+		message := fmt.Sprintf("`some` is a trigger for the [%s](%s) playbook, would you like to run it?", playbooks[2].Title, fmt.Sprintf("site/plug/id/playbooks/%s", playbooks[2].ID))
 		poster.EXPECT().EphemeralPostWithAttachments(userID, channelID, post.Id, gomock.Any(), message)
 		s.MessageHasBeenPosted(sessionID, post)
 	})

@@ -4,6 +4,11 @@
 import React, {useState} from 'react';
 import styled from 'styled-components';
 
+import {useSelector} from 'react-redux';
+import {Team} from 'mattermost-redux/types/teams';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import {
@@ -68,6 +73,7 @@ const Report = (props: ReportProps) => {
     const [report, setReport] = useState(props.playbookRun.retrospective);
     const [editing, setEditing] = useState(false);
     const [publishedThisSession, setPublishedThisSession] = useState(false);
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
     const savePressed = () => {
         updateRetrospective(props.playbookRun.id, report);
@@ -119,7 +125,10 @@ const Report = (props: ReportProps) => {
             }
             {!editing &&
                 <PostTextContainer>
-                    <PostText text={report}/>
+                    <PostText
+                        text={report}
+                        team={team}
+                    />
                 </PostTextContainer>
             }
         </ReportContainer>

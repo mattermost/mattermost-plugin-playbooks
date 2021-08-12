@@ -35,7 +35,7 @@ describe('playbook creation button', () => {
         const playbookName = 'Untitled playbook';
 
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit('/plug/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -44,7 +44,7 @@ describe('playbook creation button', () => {
         cy.findByText('Create playbook').click();
 
         // #  Select team
-        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
+        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
 
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
@@ -55,7 +55,7 @@ describe('playbook creation button', () => {
         const playbookName = 'Untitled playbook';
 
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit('/plug/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -64,19 +64,19 @@ describe('playbook creation button', () => {
         cy.findByText('Blank').click();
 
         // #  Select team
-        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
+        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
 
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
 
     it('opens Service Outage Incident page from its template option', () => {
-        const url1 = 'playbooks/new?team_id='
+        const url1 = 'playbooks/new?teamId=';
         const url2 = '&template_title=Service%20Reliability%20Incident';
         const playbookName = 'Service Reliability Incident';
 
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit('/plug/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -85,7 +85,7 @@ describe('playbook creation button', () => {
         cy.findByText('Service Reliability Incident').click();
 
         // #  Select team
-        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
+        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
 
         // * Verify a new 'Service Outage Incident' creation page is opened
         verifyPlaybookCreationPageOpened(url1, playbookName);
@@ -94,7 +94,7 @@ describe('playbook creation button', () => {
 
     it('shows remove beside members when > 1 member', () => {
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit('/plug/com.mattermost.plugin-incident-management');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -103,7 +103,7 @@ describe('playbook creation button', () => {
         cy.findByText('Create playbook').click();
 
         // #  Select team
-        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true})
+        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
 
         // # Click 'Permissions' tab
         cy.findByText('Permissions').click();
