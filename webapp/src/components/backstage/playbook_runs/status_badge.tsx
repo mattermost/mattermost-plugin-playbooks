@@ -24,19 +24,14 @@ const Badge = styled.div<BadgeProps>`
 
     ${(props) => {
         switch (props.status) {
-        case PlaybookRunStatus.Reported:
-            return css`
-                background-color: var(--away-indicator);
-        `;
-        case PlaybookRunStatus.Active:
+        case PlaybookRunStatus.InProgress:
             return css`
                 background-color: var(--dnd-indicator);
         `;
-        case PlaybookRunStatus.Resolved:
+        case PlaybookRunStatus.Finished:
             return css`
                 background-color: var(--online-indicator);
         `;
-        case PlaybookRunStatus.Archived:
         default:
             return css`
                 color: var(--center-channel-color);
@@ -58,7 +53,7 @@ const Badge = styled.div<BadgeProps>`
 
 const StatusBadge = (props: BadgeProps) => (
     <Badge {...props}>
-        {props.status}
+        {props.status === PlaybookRunStatus.InProgress ? 'In Progress' : props.status}
     </Badge>
 );
 

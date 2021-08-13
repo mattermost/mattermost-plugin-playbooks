@@ -121,8 +121,8 @@ var dummyPlaybookRun = &app.PlaybookRun{
 		},
 	},
 	StatusPosts: []app.StatusPost{
-		{ID: "status_post_1", Status: app.StatusActive},
-		{ID: "status_post_2", Status: app.StatusReported},
+		{ID: "status_post_1"},
+		{ID: "status_post_2"},
 	},
 	PreviousReminder: 5 * time.Second,
 	TimelineEvents: []app.TimelineEvent{
@@ -215,7 +215,7 @@ func TestRudderTelemetry(t *testing.T) {
 			rudderClient.CreatePlaybookRun(dummyPlaybookRun, dummyUserID, true)
 		}},
 		"end playbook run": {eventPlaybookRun, actionEnd, func() {
-			rudderClient.EndPlaybookRun(dummyPlaybookRun, dummyUserID)
+			rudderClient.FinishPlaybookRun(dummyPlaybookRun, dummyUserID)
 		}},
 		"add checklist item": {eventTasks, actionAddTask, func() {
 			rudderClient.AddTask(dummyPlaybookRunID, dummyUserID, dummyTask)

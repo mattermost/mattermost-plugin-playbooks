@@ -382,12 +382,11 @@ func TestUpdateStatus(t *testing.T) {
 			ChannelID:                "channel_id",
 			BroadcastChannelID:       "broadcast_channel_id",
 			OwnerUserID:              "user_id",
-			CurrentStatus:            app.StatusReported,
+			CurrentStatus:            app.StatusInProgress,
 			CreateAt:                 1620018358404,
 			WebhookOnStatusUpdateURL: server.URL,
 		}
 		statusUpdateOptions := app.StatusUpdateOptions{
-			Status:   app.StatusActive,
 			Message:  "latest-message",
 			Reminder: 0,
 		}
@@ -397,7 +396,7 @@ func TestUpdateStatus(t *testing.T) {
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		store.EXPECT().UpdatePlaybookRun(gomock.AssignableToTypeOf(&app.PlaybookRun{})).Return(nil)
 		store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&app.SQLStatusPost{})).Return(nil)
-		store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(2)
+		store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(4)
 
 		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
 

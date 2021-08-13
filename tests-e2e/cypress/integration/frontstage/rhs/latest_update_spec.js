@@ -232,11 +232,6 @@ describe('playbook run rhs > latest update', () => {
                 // # Type the invalid data
                 cy.findByTestId('messageinput').clear().type(' {enter} {enter}  ');
 
-                // # Enter valid status
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').type('Reported', {delay: 200}).type('{enter}');
-                });
-
                 // # Submit the dialog.
                 cy.get('#interactiveDialogSubmit').click();
 

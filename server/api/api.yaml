@@ -75,15 +75,13 @@ paths:
           in: query
           description: The returned list will contain only the playbook runs with this status.
           required: false
-          example: active
+          example: InProgress
           schema:
             type: string
-            default: Reported
+            default: InProgress
             enum:
-              - Reported
-              - Active
-              - Resolved
-              - Archived
+              - InProgress
+              - Finished
         - name: owner_user_id
           in: query
           description: The returned list will contain only the playbook runs commanded by this user.
@@ -363,8 +361,8 @@ paths:
             default: all
             enum:
               - all
-              - active
-              - ended
+              - InProgress
+              - Finished
         - name: owner_user_id
           in: query
           description: The returned list will contain only the channels whose playbook run is commanded by this user.
@@ -691,25 +689,12 @@ paths:
             type: string
             example: 1igmynxs77ywmcbwbsujzktter
       requestBody:
-        description: Payload to change the playbook run's status.
+        description: Payload to change the playbook run's status update message.
         content:
           application/json:
             schema:
               type: object
               properties:
-                status:
-                  type: string
-                  enum:
-                    - Reported
-                    - Active
-                    - Resolved
-                    - Archived
-                  description: The new status.
-                  example: Active
-                description:
-                  type: string
-                  description: The current description of the playbook run.
-                  example: \# Summary\nA tl;dr of the current situation.
                 message:
                   type: string
                   description: The status update message.
@@ -719,7 +704,6 @@ paths:
                   description: The number of seconds until the system will send a reminder to the owner to update the status. No reminder will be scheduled if reminder is 0 or omitted.
                   example: 600
               required:
-                - status
                 - description
                 - message
       x-codeSamples:
@@ -727,7 +711,7 @@ paths:
           source: |
             curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/update-status' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
-            -d '{"status": "Resolved", "description": "Current situation has been solved, customers are satisfied.", "message": "Resolving playbook run because the issue was solved."}'
+            -d '{"message": "Finishing playbook run because the issue was solved."}'
       responses:
         200:
           description: Playbook run updated.
@@ -735,6 +719,33 @@ paths:
           $ref: "#/components/schemas/400"
         403:
           $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
+
+  /runs/{id}/finish:
+    post:
+      summary: Finish a playbook
+      operationId: finish
+      security:
+        - BearerAuth: []
+      tags:
+        - PlaybookRuns
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook run to finish.
+          schema:
+            type: string
+            example: 1igmynxs77ywmcbwbsujzktter
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/finish' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: Playbook run finished.
         500:
           $ref: "#/components/schemas/500"
 

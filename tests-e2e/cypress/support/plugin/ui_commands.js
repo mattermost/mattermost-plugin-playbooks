@@ -182,7 +182,7 @@ Cypress.Commands.add('selectChannel', (channelName) => {
 /**
  * Update the status of the current playbook run through the slash command.
  */
-Cypress.Commands.add('updateStatus', (message, reminder, status) => {
+Cypress.Commands.add('updateStatus', (message, reminder) => {
     // # Run the slash command to update status.
     cy.executeSlashCommand('/playbook update');
 
@@ -193,17 +193,6 @@ Cypress.Commands.add('updateStatus', (message, reminder, status) => {
 
         // # Type the new update in the text box.
         cy.findByTestId('messageinput').type(message);
-
-        let actualStatus = status;
-        if (!actualStatus) {
-            actualStatus = 'reported';
-        }
-
-        actualStatus = actualStatus.toLowerCase();
-
-        cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-            cy.get('input').type(actualStatus, {delay: 200}).type('{enter}');
-        });
 
         if (reminder) {
             cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {

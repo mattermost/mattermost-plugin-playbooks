@@ -68,3 +68,71 @@ var addColumnToMySQLTable = func(e sqlx.Ext, tableName, columnName, columnType s
 
 	return err
 }
+
+var renameColumnMySQL = func(e sqlx.Ext, tableName, oldColName, newColName, colDatatype string) error {
+	var result int
+	err := e.QueryRowx(
+		"SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+		tableName,
+		newColName,
+	).Scan(&result)
+
+	// Only alter the table if we don't find the column
+	if err == sql.ErrNoRows {
+		_, err = e.Exec(fmt.Sprintf("ALTER TABLE %s CHANGE %s %s %s", tableName, oldColName, newColName, colDatatype))
+	}
+
+	return err
+}
+
+var renameColumnPG = func(e sqlx.Ext, tableName, oldColName, newColName string) error {
+	_, err := e.Exec(fmt.Sprintf(`
+		DO
+		$$
+		BEGIN
+			ALTER TABLE %s RENAME COLUMN %s TO %s;
+		EXCEPTION
+			WHEN others THEN
+				RAISE NOTICE 'Ignoring ALTER TABLE statement. Column "%s" does not exist in table "%s".';
+		END
+		$$;
+	`, tableName, oldColName, newColName, oldColName, tableName))
+
+	return err
+}
+
+var dropColumnMySQL = func(e sqlx.Ext, tableName, colName string) error {
+	var result int
+	err := e.QueryRowx(
+		"SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+		tableName,
+		colName,
+	).Scan(&result)
+
+	if err == sql.ErrNoRows {
+		return nil
+	}
+
+	// Only alter the table if we find the column
+	if err == nil && result == 1 {
+		_, err = e.Exec(fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", tableName, colName))
+	}
+
+	return err
+}
+
+var dropColumnPG = func(e sqlx.Ext, tableName, colName string) error {
+	_, err := e.Exec(fmt.Sprintf(`
+		DO
+		$$
+		BEGIN
+			ALTER TABLE %s DROP COLUMN %s;
+		EXCEPTION
+			WHEN others THEN
+				RAISE NOTICE 'Ignoring ALTER TABLE statement. Column "%s" does not exist in table "%s".';
+		END
+		$$;
+	`, tableName, colName, colName, tableName))
+
+	return err
+}

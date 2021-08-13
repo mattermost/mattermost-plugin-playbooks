@@ -118,14 +118,28 @@ func (s *PlaybookRunService) Create(ctx context.Context, opts PlaybookRunCreateO
 	return playbookRun, nil
 }
 
-func (s *PlaybookRunService) UpdateStatus(ctx context.Context, playbookRunID string, status Status, message string, reminderInSeconds int64) error {
+func (s *PlaybookRunService) UpdateStatus(ctx context.Context, playbookRunID string, message string, reminderInSeconds int64) error {
 	updateURL := fmt.Sprintf("runs/%s/status", playbookRunID)
 	opts := StatusUpdateOptions{
-		Status:            status,
 		Message:           message,
 		ReminderInSeconds: reminderInSeconds,
 	}
 	req, err := s.client.newRequest(http.MethodPost, updateURL, opts)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) error {
+	finishURL := fmt.Sprintf("runs/%s/finish", playbookRunID)
+	req, err := s.client.newRequest(http.MethodPost, finishURL, nil)
 	if err != nil {
 		return err
 	}

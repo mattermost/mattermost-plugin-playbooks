@@ -95,6 +95,12 @@ export function updateStatus(teamId: string, defaultStatus?: string) {
     };
 }
 
+export function finishRun() {
+    return async (dispatch: Dispatch, getState: GetStateFunc) => {
+        await clientExecuteCommand(dispatch, getState, '/playbook finish');
+    };
+}
+
 export function addToTimeline(postId: string) {
     return async (dispatch: Dispatch, getState: GetStateFunc) => {
         const currentTeamId = getCurrentTeamId(getState());

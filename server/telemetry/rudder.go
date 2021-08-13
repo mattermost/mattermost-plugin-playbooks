@@ -145,8 +145,8 @@ func (t *RudderTelemetry) CreatePlaybookRun(playbookRun *app.PlaybookRun, userID
 	t.track(eventPlaybookRun, properties)
 }
 
-// EndPlaybookRun tracks the end of the playbook run passed.
-func (t *RudderTelemetry) EndPlaybookRun(playbookRun *app.PlaybookRun, userID string) {
+// FinishPlaybookRun tracks the end of the playbook run passed.
+func (t *RudderTelemetry) FinishPlaybookRun(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionEnd
 	t.track(eventPlaybookRun, properties)

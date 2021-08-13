@@ -114,7 +114,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 				CASE WHEN WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
 				CASE WHEN SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
 				CASE WHEN CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN ExportChannelOnArchiveEnabled THEN 1 ELSE 0 END
+				CASE WHEN ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 			"BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate",
@@ -134,7 +134,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"RetrospectiveTemplate",
 			"WebhookOnStatusUpdateURL",
 			"WebhookOnStatusUpdateEnabled",
-			"ExportChannelOnArchiveEnabled",
+			"ExportChannelOnFinishedEnabled",
 			"ConcatenatedSignalAnyKeywords",
 			"SignalAnyKeywordsEnabled",
 			"CategorizeChannelEnabled",
@@ -206,7 +206,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
 			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
 			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
-			"ExportChannelOnArchiveEnabled":        rawPlaybook.ExportChannelOnArchiveEnabled,
+			"ExportChannelOnFinishedEnabled":       rawPlaybook.ExportChannelOnFinishedEnabled,
 			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
 			"SignalAnyKeywordsEnabled":             rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":             rawPlaybook.CategorizeChannelEnabled,
@@ -303,7 +303,7 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.ExportChannelOnArchiveEnabled THEN 1 ELSE 0 END
+				CASE WHEN p.ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 		).
 		From("IR_Playbook AS p").
@@ -368,7 +368,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.ExportChannelOnArchiveEnabled THEN 1 ELSE 0 END
+				CASE WHEN p.ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 		).
 		From("IR_Playbook AS p").
@@ -562,7 +562,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
 			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
 			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
-			"ExportChannelOnArchiveEnabled":        rawPlaybook.ExportChannelOnArchiveEnabled,
+			"ExportChannelOnFinishedEnabled":       rawPlaybook.ExportChannelOnFinishedEnabled,
 			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
 			"SignalAnyKeywordsEnabled":             rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":             rawPlaybook.CategorizeChannelEnabled,
