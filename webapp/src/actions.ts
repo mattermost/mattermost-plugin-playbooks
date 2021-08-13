@@ -95,9 +95,9 @@ export function updateStatus(teamId: string, defaultStatus?: string) {
     };
 }
 
-export function finishRun() {
+export function finishRun(teamId: string) {
     return async (dispatch: Dispatch, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/playbook finish');
+        await clientExecuteCommand(dispatch, getState, '/playbook finish', teamId);
     };
 }
 
