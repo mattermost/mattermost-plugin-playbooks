@@ -104,7 +104,7 @@ Cypress.Commands.add('openBackstage', () => {
 
 // Create playbook
 Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
-    cy.visit(`/playbooks/playbooks/new`);
+    cy.visit('/playbooks/playbooks/new');
 
     cy.findByTestId('save_playbook', {timeout: 30000}).should('exist');
 
@@ -195,7 +195,7 @@ Cypress.Commands.add('updateStatus', (message, reminder) => {
         cy.findByTestId('messageinput').type(message);
 
         if (reminder) {
-            cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+            cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                 cy.get('input').type(reminder, {delay: 200}).type('{enter}');
             });
         }

@@ -105,7 +105,6 @@ Cypress.Commands.add('apiFinishRun', (playbookRunId) => {
     });
 });
 
-// it to set playbook to Finished/Archived
 // Update an playbook run's status programmatically.
 Cypress.Commands.add('apiUpdateStatus', (
     {
