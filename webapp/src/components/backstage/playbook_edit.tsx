@@ -86,6 +86,7 @@ const EditableTexts = styled.div`
     flex-direction: column;
     justify-content: flex-start;
     padding: 0 15px;
+    font-weight: normal;
 `;
 
 const EditableTitleContainer = styled.div`

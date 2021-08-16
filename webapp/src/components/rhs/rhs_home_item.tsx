@@ -93,7 +93,7 @@ const Sub = styled.span`
         font-size: 2rem;
         line-height: 12px;
         vertical-align: middle;
-        font-weight: 700;
+        font-weight: 600;
     }
 `;
 
@@ -122,7 +122,7 @@ const MetaItem = styled(PillBox)`
         font-size: 2rem;
         line-height: 10px;
         vertical-align: middle;
-        font-weight: 700;
+        font-weight: 600;
     }
 `;
 
