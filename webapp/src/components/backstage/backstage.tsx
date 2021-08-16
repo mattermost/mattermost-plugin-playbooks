@@ -72,6 +72,10 @@ const BackstageTitlebarItem = styled(NavLink)`
             fill: var(--button-bg);
             text-decoration: unset;
         }
+
+        & > :first-child {
+            margin-right: 12px;
+        }
     }
 `;
 
@@ -116,13 +120,11 @@ const Backstage = () => {
                         activeClassName={'active'}
                         data-testid='playbookRunsLHSButton'
                     >
-                        <span className='mr-3 d-flex items-center'>
-                            <Icon
-                                path={mdiClipboardPlayMultipleOutline}
-                                title='Runs'
-                                size={1.4}
-                            />
-                        </span>
+                        <Icon
+                            path={mdiClipboardPlayMultipleOutline}
+                            title='Runs'
+                            size={1.4}
+                        />
                         {'Runs'}
                     </BackstageTitlebarItem>
                     <BackstageTitlebarItem
@@ -130,9 +132,7 @@ const Backstage = () => {
                         activeClassName={'active'}
                         data-testid='playbooksLHSButton'
                     >
-                        <span className='mr-3 d-flex items-center'>
-                            <PlaybookIcon/>
-                        </span>
+                        <PlaybookIcon/>
                         {'Playbooks'}
                     </BackstageTitlebarItem>
                     <BackstageTitlebarItem
@@ -140,9 +140,7 @@ const Backstage = () => {
                         activeClassName={'active'}
                         data-testid='settingsLHSButton'
                     >
-                        <span className='mr-3 d-flex items-center'>
-                            <div className={'fa fa-gear'}/>
-                        </span>
+                        <div className={'fa fa-gear'}/>
                         {'Settings'}
                     </BackstageTitlebarItem>
                 </div>
@@ -153,13 +151,11 @@ const Backstage = () => {
                             to={`/${teams[0].name}/messages/@surveybot`}
                             data-testid='giveFeedbackButton'
                         >
-                            <span className='mr-3 d-flex items-center'>
-                                <Icon
-                                    path={mdiThumbsUpDown}
-                                    title='Give Feedback'
-                                    size={1}
-                                />
-                            </span>
+                            <Icon
+                                path={mdiThumbsUpDown}
+                                title='Give Feedback'
+                                size={1}
+                            />
                             {'Give Feedback'}
                         </BackstageTitlebarItem>
                     }
