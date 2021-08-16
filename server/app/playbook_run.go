@@ -20,7 +20,7 @@ const (
 
 // PlaybookRun holds the detailed information of an playbook run.
 //
-// NOTE: when adding a column to the db, search for "When adding an Playbook Run column" to see where
+// NOTE: When adding a column to the db, search for "When adding an Playbook Run column" to see where
 // that column needs to be added in the sqlstore code.
 type PlaybookRun struct {
 	// ID is the unique identifier of the playbook run.
@@ -29,7 +29,7 @@ type PlaybookRun struct {
 	// Name is the name of the playbook run's channel.
 	Name string `json:"name"`
 
-	// Description is a short string in markdown describing what the run is.
+	// Description is a short string, in Markdown, describing what the run is.
 	Description string `json:"description"`
 
 	// OwnerUserID is the user identifier of the playbook run's owner.
@@ -85,7 +85,7 @@ type PlaybookRun struct {
 	ReminderPostID string `json:"reminder_post_id"`
 
 	// PreviousReminder, if not empty, is the time.Duration (nanoseconds) at which the next
-	// scheduled status update will be posted
+	// scheduled status update will be posted.
 	PreviousReminder time.Duration `json:"previous_reminder"`
 
 	// BroadcastChannelID, if not empty, is the identifier of the channel to which all status
@@ -112,7 +112,7 @@ type PlaybookRun struct {
 	DefaultOwnerID string `json:"default_owner_id"`
 
 	// AnnouncementChannelID, if not empty, is the identifier of the channel where the playbook run
-	// creation was announced in.
+	// creation was announced.
 	AnnouncementChannelID string `json:"announcement_channel_id"`
 
 	// WebhookOnCreationURL, if not empty, is the URL to which a POST request is made with the whole
@@ -131,10 +131,10 @@ type PlaybookRun struct {
 	// retrospective was published. If 0, the retrospective has not been published yet.
 	RetrospectivePublishedAt int64 `json:"retrospective_published_at"`
 
-	// RetrospectiveWasCanceled is true if the retrospective was canceled, false otherwise.
+	// RetrospectiveWasCanceled is true if the retrospective was cancelled, false otherwise.
 	RetrospectiveWasCanceled bool `json:"retrospective_was_canceled"`
 
-	// RetrospectiveReminderIntervalSeconds is the inteval, in seconds, between subsequent reminders
+	// RetrospectiveReminderIntervalSeconds is the interval, in seconds, between subsequent reminders
 	// to fill the retrospective.
 	RetrospectiveReminderIntervalSeconds int64 `json:"retrospective_reminder_interval_seconds"`
 
@@ -143,15 +143,15 @@ type PlaybookRun struct {
 	MessageOnJoin string `json:"message_on_join"`
 
 	// ExportChannelOnArchiveEnabled is true if the channel is exported when the status is updated
-	// to Archived, false otherwies.
+	// to "Archived", false otherwise.
 	ExportChannelOnArchiveEnabled bool `json:"export_channel_on_archive_enabled"`
 
 	// ParticipantIDs is an array of the identifiers of all the participants in the playbook run.
-	// A participant is right now a member of the playbook run channel that is not a bot.
+	// A participant is any member of the playbook run channel that isn't a bot.
 	ParticipantIDs []string `json:"participant_ids"`
 
-	// CategorizeChannelEnabled is true if the channel is automatically categorized in the Playbook
-	// Runs category for every user that joins the playbook run channel.
+	// CategorizeChannelEnabled is true if the channel is automatically categorized in the playbook
+	// runs category for every user that joins the playbook run channel.
 	CategorizeChannelEnabled bool `json:"categorize_channel_enabled"`
 }
 
@@ -239,7 +239,7 @@ type StatusPost struct {
 	ID string `json:"id"`
 
 	// Status is the status of the playbook run after this update was posted.
-	// It can be "Reported", "Active", "Resolved" and "Archived".
+	// It can be "Reported", "Active", "Resolved", or "Archived".
 	Status string `json:"status"`
 
 	// CreateAt is the timestamp, in milliseconds since epoch, of the time this status update was
@@ -306,7 +306,7 @@ type TimelineEvent struct {
 
 	// EventType is the type of this event. It can be "incident_created", "task_state_modified",
 	// "status_updated", "owner_changed", "assignee_changed", "ran_slash_command",
-	// "event_from_post", "user_joined_left", "published_retrospective" or "canceled_retrospective".
+	// "event_from_post", "user_joined_left", "published_retrospective", or "canceled_retrospective".
 	EventType timelineEventType `json:"event_type"`
 
 	// Summary is a short description of the event.
@@ -315,8 +315,8 @@ type TimelineEvent struct {
 	// Details is the longer description of the event.
 	Details string `json:"details"`
 
-	// PostID, f not empty, is the identifier of the post announcing in the channel this event
-	// happened. If the event is of type "event_from_post", this is the identifier of such post.
+	// PostID, if not empty, is the identifier of the post announcing in the channel this event
+	// happened. If the event is of type "event_from_post", this is the identifier of that post.
 	PostID string `json:"post_id"`
 
 	// SubjectUserID is the identifier of the user involved in the event. For example, if the event

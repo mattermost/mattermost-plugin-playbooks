@@ -99,7 +99,7 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	return json.Marshal(old)
 }
 
-// Checklist represents a checklist in a playbook
+// Checklist represents a checklist in a playbook.
 type Checklist struct {
 	// ID is the identifier of the checklist.
 	ID string `json:"id"`
@@ -117,7 +117,7 @@ func (c Checklist) Clone() Checklist {
 	return newChecklist
 }
 
-// ChecklistItem represents an item in a checklist
+// ChecklistItem represents an item in a checklist.
 type ChecklistItem struct {
 	// ID is the identifier of the checklist item.
 	ID string `json:"id"`
@@ -137,7 +137,7 @@ type ChecklistItem struct {
 	// state was modified. The empty string if it was never modified.
 	StateModifiedPostID string `json:"state_modified_post_id"`
 
-	// AssigneeID is the identifier of the user to which this item is assigned to.
+	// AssigneeID is the identifier of the user to whom this item is assigned.
 	AssigneeID string `json:"assignee_id"`
 
 	// AssigneeModified is the timestamp, in milliseconds since epoch, of the last time the item's
