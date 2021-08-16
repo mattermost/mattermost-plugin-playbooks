@@ -20,6 +20,7 @@ import {
     StatusFilter,
     StatusOption,
 } from 'src/components/backstage/playbook_runs/playbook_run_list/status_filter';
+import {BackstageHeader} from 'src/components/backstage/styles';
 
 import TeamSelector from 'src/components/team/team_selector';
 
@@ -340,14 +341,9 @@ const BackstagePlaybookRunList = () => {
 
     return (<>
         <div className='PlaybookRunList container-medium'>
-            <div className='Backstage__header'>
-                <div
-                    className='title'
-                    data-testid='titlePlaybookRun'
-                >
-                    {'Runs'}
-                </div>
-            </div>
+            <BackstageHeader data-testid='titlePlaybookRun'>
+                {'Runs'}
+            </BackstageHeader>
             <div
                 id='playbookRunList'
                 className='list'
