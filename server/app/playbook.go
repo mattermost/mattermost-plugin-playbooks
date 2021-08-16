@@ -99,10 +99,15 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	return json.Marshal(old)
 }
 
-// Checklist represents a checklist in a playbook
+// Checklist represents a checklist in a playbook.
 type Checklist struct {
-	ID    string          `json:"id"`
-	Title string          `json:"title"`
+	// ID is the identifier of the checklist.
+	ID string `json:"id"`
+
+	// Title is the name of the checklist.
+	Title string `json:"title"`
+
+	// Items is an array of all the items in the checklist.
 	Items []ChecklistItem `json:"items"`
 }
 
@@ -112,19 +117,46 @@ func (c Checklist) Clone() Checklist {
 	return newChecklist
 }
 
-// ChecklistItem represents an item in a checklist
+// ChecklistItem represents an item in a checklist.
 type ChecklistItem struct {
-	ID                     string `json:"id"`
-	Title                  string `json:"title"`
-	State                  string `json:"state"`
-	StateModified          int64  `json:"state_modified"`
-	StateModifiedPostID    string `json:"state_modified_post_id"`
-	AssigneeID             string `json:"assignee_id"`
-	AssigneeModified       int64  `json:"assignee_modified"`
+	// ID is the identifier of the checklist item.
+	ID string `json:"id"`
+
+	// Title is the content of the checklist item.
+	Title string `json:"title"`
+
+	// State is the state of the checklist item: "closed" if it's checked, the empty string
+	// otherwise.
+	State string `json:"state"`
+
+	// StateModified is the timestamp, in milliseconds since epoch, of the last time the item's
+	// state was modified. 0 if it was never modified.
+	StateModified int64 `json:"state_modified"`
+
+	// StateModifiedPostID is the identifier of the post that announced the last time the item's
+	// state was modified. The empty string if it was never modified.
+	StateModifiedPostID string `json:"state_modified_post_id"`
+
+	// AssigneeID is the identifier of the user to whom this item is assigned.
+	AssigneeID string `json:"assignee_id"`
+
+	// AssigneeModified is the timestamp, in milliseconds since epoch, of the last time the item's
+	// assignee was modified. 0 if it was never modified.
+	AssigneeModified int64 `json:"assignee_modified"`
+
+	// AssigneeModifiedPostID is the identifier of the post that announced the last time the item's
+	// assignee was modified. The empty string if it was never modified.
 	AssigneeModifiedPostID string `json:"assignee_modified_post_id"`
-	Command                string `json:"command"`
-	CommandLastRun         int64  `json:"command_last_run"`
-	Description            string `json:"description"`
+
+	// Command, if not empty, is the slash command that can be run as part of this item.
+	Command string `json:"command"`
+
+	// CommandLastRun is the timestamp, in milliseconds since epoch, of the last time the item's
+	// slash command was run. 0 if it was never run.
+	CommandLastRun int64 `json:"command_last_run"`
+
+	// Description is a string with the markdown content of the long description of the item.
+	Description string `json:"description"`
 }
 
 type GetPlaybooksResults struct {
