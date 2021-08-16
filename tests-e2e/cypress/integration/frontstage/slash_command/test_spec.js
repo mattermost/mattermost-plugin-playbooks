@@ -6,11 +6,19 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import users from '../../../fixtures/users.json';
+
 describe('slash command > test', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let playbookId;
 
     before(() => {
+        // # Turn off growth onboarding screens
+        cy.apiLogin(users.sysadmin);
+        cy.apiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
+
         // # Login as user-1.
         cy.apiLogin('user-1');
 

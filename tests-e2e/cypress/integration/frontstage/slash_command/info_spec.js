@@ -6,6 +6,8 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import users from '../../../fixtures/users.json';
+
 describe('slash command > info', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
@@ -16,6 +18,12 @@ describe('slash command > info', () => {
     let playbookRunChannelName;
 
     before(() => {
+        // # Turn off growth onboarding screens
+        cy.apiLogin(users.sysadmin);
+        cy.apiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
+
         // # Login as user-1
         cy.apiLogin('user-1');
 

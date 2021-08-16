@@ -7,6 +7,7 @@
 // ***************************************************************
 
 import * as TIMEOUTS from '../../../fixtures/timeouts';
+import users from '../../../fixtures/users.json';
 
 describe('playbook run rhs', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
@@ -15,6 +16,12 @@ describe('playbook run rhs', () => {
     let playbookId;
 
     before(() => {
+        // # Turn off growth onboarding screens
+        cy.apiLogin(users.sysadmin);
+        cy.apiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
+
         // # Login as user-1
         cy.apiLogin('user-1');
 
