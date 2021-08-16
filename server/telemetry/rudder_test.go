@@ -446,7 +446,7 @@ func TestPlaybookRunProperties(t *testing.T) {
 		"ChannelID":               dummyPlaybookRun.ChannelID,
 		"CreateAt":                dummyPlaybookRun.CreateAt,
 		"EndAt":                   dummyPlaybookRun.EndAt,
-		"DeleteAt":                dummyPlaybookRun.DeleteAt,
+		"DeleteAt":                dummyPlaybookRun.DeleteAt, //nolint
 		"PostID":                  dummyPlaybookRun.PostID,
 		"PlaybookID":              dummyPlaybookRun.PlaybookID,
 		"NumChecklists":           2,

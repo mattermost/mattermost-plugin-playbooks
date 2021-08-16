@@ -1070,11 +1070,6 @@ func TestCreateAndGetPlaybookRun(t *testing.T) {
 				ExpectedErr: nil,
 			},
 			{
-				Name:        "Deleted playbook run",
-				PlaybookRun: NewBuilder(t).WithDeleteAt(model.GetMillis()).ToPlaybookRun(),
-				ExpectedErr: nil,
-			},
-			{
 				Name:        "PlaybookRun with one checklist and 10 items",
 				PlaybookRun: NewBuilder(t).WithChecklists([]int{10}).ToPlaybookRun(),
 				ExpectedErr: nil,
@@ -1980,12 +1975,6 @@ func (ib *PlaybookRunBuilder) ToPlaybookRun() *app.PlaybookRun {
 
 func (ib *PlaybookRunBuilder) WithCreateAt(createAt int64) *PlaybookRunBuilder {
 	ib.playbookRun.CreateAt = createAt
-
-	return ib
-}
-
-func (ib *PlaybookRunBuilder) WithDeleteAt(deleteAt int64) *PlaybookRunBuilder {
-	ib.playbookRun.DeleteAt = deleteAt
 
 	return ib
 }
