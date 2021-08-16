@@ -667,7 +667,7 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRun
 	duration := timeutils.DurationString(timeutils.GetTimeForMillis(playbookRun.CreateAt), time.Now())
 
 	broadcastedMsg := fmt.Sprintf("# Status Update: [%s](/%s/pl/%s)\n", playbookRunChannel.DisplayName, playbookRunTeam.Name, originalPostID)
-	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, playbookRun.CurrentStatus)
+	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, formatStatus(playbookRun.CurrentStatus))
 	broadcastedMsg += "***\n"
 	broadcastedMsg += statusUpdate
 
@@ -676,6 +676,14 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRun
 	}
 
 	return nil
+}
+
+func formatStatus(status string) string {
+	ret := status
+	if status == StatusInProgress {
+		ret = "In Progress"
+	}
+	return ret
 }
 
 // sendWebhookOnUpdateStatus sends a POST request to the status update webhook URL.

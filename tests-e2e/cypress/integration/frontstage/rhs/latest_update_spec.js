@@ -300,7 +300,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', '60min');
                 });
             });
@@ -319,7 +319,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', 'None');
                 });
             });
@@ -338,7 +338,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', '15min');
                 });
             });
@@ -357,7 +357,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', '30min');
                 });
             });
@@ -376,7 +376,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', '60min');
                 });
             });
@@ -395,7 +395,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', '4hr');
                 });
             });
@@ -414,7 +414,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', '24hr');
                 });
             });
