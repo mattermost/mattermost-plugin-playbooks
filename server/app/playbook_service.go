@@ -106,7 +106,7 @@ func (s *playbookService) Delete(playbook Playbook, userID string) error {
 }
 
 func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Post) {
-	if s.keywordsThreadIgnorer.IsIgnored(post.RootId, post.UserId) {
+	if post.IsSystemMessage() || s.keywordsThreadIgnorer.IsIgnored(post.RootId, post.UserId) {
 		return
 	}
 
