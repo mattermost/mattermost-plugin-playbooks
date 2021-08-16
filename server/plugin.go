@@ -58,7 +58,7 @@ func (p *Plugin) OnActivate() error {
 		DisplayName: "Playbook Bot",
 		Description: "Playbook's bot.",
 	},
-		pluginapi.ProfileImagePath("assets/incident_plugin_icon.png"),
+		pluginapi.ProfileImagePath("assets/plugin_icon.png"),
 	)
 	if err != nil {
 		return errors.Wrapf(err, "failed to ensure bot")
