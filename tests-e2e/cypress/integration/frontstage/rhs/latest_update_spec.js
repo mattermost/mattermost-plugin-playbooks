@@ -6,6 +6,8 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import users from '../../../fixtures/users.json';
+
 describe('playbook run rhs > latest update', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     const defaultReminderMessage = '# Default reminder message';
@@ -14,6 +16,12 @@ describe('playbook run rhs > latest update', () => {
     let playbookId;
 
     before(() => {
+        // # Turn off growth onboarding screens
+        cy.apiLogin(users.sysadmin);
+        cy.apiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
+
         // # Login as user-1
         cy.legacyApiLogin('user-1');
 
