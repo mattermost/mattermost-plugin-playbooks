@@ -187,7 +187,7 @@ const PlaybookList = () => {
                                 {'Playbooks'}
                             </div>
                             {canCreatePlaybooks &&
-                                <div className='header-button-div'>
+                                <div>
                                     <TeamSelectorButton
                                         onClick={(team: Team) => newPlaybook(team)}
                                         teams={teams}
