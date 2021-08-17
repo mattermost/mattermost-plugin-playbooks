@@ -12,6 +12,7 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
 
 import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
+import {SemiBoldHeading} from 'src/styles/headings';
 
 interface Props {
     onEdit: (newTitle: string) => void;
@@ -135,6 +136,8 @@ const ErrorMessage = styled.div`
 `;
 
 export const DefaultRenderedTitle = styled.div`
+    ${SemiBoldHeading}
+
     padding: 0 8px;
 
     max-width: 100%;

@@ -22,6 +22,7 @@ import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
+import {RegularHeading} from 'src/styles/headings';
 
 import './playbook.scss';
 import {useAllowRetrospectiveAccess, useExperimentalFeaturesEnabled} from 'src/hooks';
@@ -82,6 +83,8 @@ const SecondaryButtonLarger = styled(SecondaryButtonSmaller)`
 `;
 
 const EditableTexts = styled.div`
+    ${RegularHeading}
+
     display: flex;
     flex-direction: column;
     justify-content: flex-start;

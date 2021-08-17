@@ -6,6 +6,7 @@ import styled, {css} from 'styled-components';
 import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
 
 import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {SemiBoldHeading} from 'src/styles/headings';
 
 export const Container = styled.div`
     display: flex;
@@ -28,6 +29,8 @@ export const TabPageContainer = styled.div`
 `;
 
 export const Title = styled.div`
+    ${SemiBoldHeading}
+
     color: var(--button-bg);
     font-size: 18px;
     font-weight: 600;

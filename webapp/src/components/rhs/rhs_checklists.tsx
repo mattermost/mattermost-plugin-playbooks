@@ -51,6 +51,7 @@ import {
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {SemiBoldHeading} from 'src/styles/headings';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -234,7 +235,8 @@ const InnerContainer = styled.div`
 `;
 
 const MainTitle = styled.div`
-    font-weight: 600;
+    ${SemiBoldHeading}
+
     font-size: 16px;
     line-height: 24px;
     margin: 0 0 0 8px;
