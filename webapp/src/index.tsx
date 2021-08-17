@@ -19,7 +19,7 @@ import {makeSlashCommandHook} from 'src/slash_command';
 import {RetrospectiveFirstReminder, RetrospectiveReminder} from './components/retrospective_reminder_posts';
 
 import {pluginId} from './manifest';
-import ChannelHeaderButton from './components/assets/icons/channel_header_button';
+import {ChannelHeaderButton, ChannelHeaderText, ChannelHeaderTooltip} from './components/channel_header';
 import RightHandSidebar from './components/rhs/rhs_main';
 import RHSTitle from './components/rhs/rhs_title';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from './components/post_menu';
@@ -111,7 +111,7 @@ export default class Plugin {
             // Store the toggleRHS action to use later
             store.dispatch(setToggleRHSAction(boundToggleRHSAction));
 
-            r.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, 'Playbook', 'Playbook');
+            r.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, ChannelHeaderText, ChannelHeaderTooltip);
             r.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);
             r.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
             r.registerRootComponent(PostMenuModal);
