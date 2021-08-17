@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import users from '../../fixtures/users.json';
+
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -27,6 +29,12 @@ describe('playbook run automation', () => {
     beforeEach(() => {
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
+
+        // # Turn off growth onboarding screens
+        cy.apiLogin(users.sysadmin);
+        cy.apiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
 
         // # Login as user-1
         cy.legacyApiLogin('user-1');
