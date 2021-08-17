@@ -90,7 +90,7 @@ type PlaybookRun struct {
 	// updates are broadcasted.
 	BroadcastChannelID string `json:"broadcast_channel_id"`
 
-	// ReminderMessageTemplate, ifnot empty, is the template shown when updating the status of the
+	// ReminderMessageTemplate, if not empty, is the template shown when updating the status of the
 	// playbook run for the first time.
 	ReminderMessageTemplate string `json:"reminder_message_template"`
 

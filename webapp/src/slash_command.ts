@@ -14,11 +14,11 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
             messageTrimmed = message.trim();
         }
 
-        if (messageTrimmed && messageTrimmed.startsWith('/playbook start')) {
+        if (messageTrimmed && messageTrimmed.startsWith('/playbook run')) {
             const clientId = generateId();
             store.dispatch(setClientId(clientId));
 
-            messageTrimmed = `/playbook start ${clientId}`;
+            messageTrimmed = `/playbook run ${clientId}`;
 
             return Promise.resolve({message: messageTrimmed, args});
         }
