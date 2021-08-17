@@ -723,7 +723,7 @@ paths:
           $ref: "#/components/schemas/500"
 
   /runs/{id}/finish:
-    post:
+    put:
       summary: Finish a playbook
       operationId: finish
       security:

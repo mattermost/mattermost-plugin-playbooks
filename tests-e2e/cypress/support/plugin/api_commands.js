@@ -98,7 +98,7 @@ Cypress.Commands.add('apiFinishRun', (playbookRunId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: `${playbookRunsEndpoint}/${playbookRunId}/finish`,
-        method: 'POST',
+        method: 'PUT',
     }).then((response) => {
         expect(response.status).to.equal(200);
         cy.wrap(response.body);
