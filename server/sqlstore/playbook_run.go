@@ -470,7 +470,7 @@ func (s *playbookRunStore) UpdateStatus(statusPost *app.SQLStatusPost) error {
 	return nil
 }
 
-func (s *playbookRunStore) FinishRun(playbookRunID string, endAt int64) error {
+func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) error {
 	if _, err := s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{

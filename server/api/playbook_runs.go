@@ -65,7 +65,7 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	playbookRunRouterAuthorized.HandleFunc("", handler.updatePlaybookRun).Methods(http.MethodPatch)
 	playbookRunRouterAuthorized.HandleFunc("/owner", handler.changeOwner).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/status", handler.status).Methods(http.MethodPost)
-	playbookRunRouterAuthorized.HandleFunc("/finish", handler.finish).Methods(http.MethodPost)
+	playbookRunRouterAuthorized.HandleFunc("/finish", handler.finish).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)

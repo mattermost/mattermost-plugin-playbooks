@@ -139,7 +139,7 @@ func (s *PlaybookRunService) UpdateStatus(ctx context.Context, playbookRunID str
 
 func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) error {
 	finishURL := fmt.Sprintf("runs/%s/finish", playbookRunID)
-	req, err := s.client.newRequest(http.MethodPost, finishURL, nil)
+	req, err := s.client.newRequest(http.MethodPut, finishURL, nil)
 	if err != nil {
 		return err
 	}

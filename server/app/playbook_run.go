@@ -492,8 +492,8 @@ type PlaybookRunStore interface {
 	// UpdateStatus updates the status of a playbook run.
 	UpdateStatus(statusPost *SQLStatusPost) error
 
-	// FinishRun finishes a run at endAt (in millis)
-	FinishRun(playbookRunID string, endAt int64) error
+	// FinishPlaybookRun finishes a run at endAt (in millis)
+	FinishPlaybookRun(playbookRunID string, endAt int64) error
 
 	// GetTimelineEvent returns the timeline event for playbookRunID by the timeline event ID.
 	GetTimelineEvent(playbookRunID, eventID string) (*TimelineEvent, error)

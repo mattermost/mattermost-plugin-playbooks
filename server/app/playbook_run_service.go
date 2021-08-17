@@ -843,7 +843,7 @@ func (s *PlaybookRunServiceImpl) FinishRun(playbookRunID, userID string) error {
 	}
 
 	endAt := model.GetMillis()
-	if err = s.store.FinishRun(playbookRunID, endAt); err != nil {
+	if err = s.store.FinishPlaybookRun(playbookRunID, endAt); err != nil {
 		return err
 	}
 
