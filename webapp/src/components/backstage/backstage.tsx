@@ -109,62 +109,67 @@ const Backstage = () => {
 
     return (
         <BackstageContainer>
-            <BackstageNavbar className='flex justify-content-between'>
-                <div className='d-flex items-center'>
-                    <BackstageTitlebarItem
-                        to={`${match.url}/runs`}
-                        activeClassName={'active'}
-                        data-testid='playbookRunsLHSButton'
-                    >
-                        <span className='mr-3 d-flex items-center'>
-                            <Icon
-                                path={mdiClipboardPlayMultipleOutline}
-                                title='Runs'
-                                size={1.4}
-                            />
-                        </span>
-                        {'Runs'}
-                    </BackstageTitlebarItem>
-                    <BackstageTitlebarItem
-                        to={`${match.url}/playbooks`}
-                        activeClassName={'active'}
-                        data-testid='playbooksLHSButton'
-                    >
-                        <span className='mr-3 d-flex items-center'>
-                            <PlaybookIcon/>
-                        </span>
-                        {'Playbooks'}
-                    </BackstageTitlebarItem>
-                    <BackstageTitlebarItem
-                        to={`${match.url}/settings`}
-                        activeClassName={'active'}
-                        data-testid='settingsLHSButton'
-                    >
-                        <span className='mr-3 d-flex items-center'>
-                            <div className={'fa fa-gear'}/>
-                        </span>
-                        {'Settings'}
-                    </BackstageTitlebarItem>
-                </div>
-                <div className='d-flex items-center'>
-                    {npsAvailable &&
-                        <BackstageTitlebarItem
-                            onClick={promptForFeedback}
-                            to={`/${teams[0].name}/messages/@surveybot`}
-                            data-testid='giveFeedbackButton'
-                        >
-                            <span className='mr-3 d-flex items-center'>
-                                <Icon
-                                    path={mdiThumbsUpDown}
-                                    title='Give Feedback'
-                                    size={1}
-                                />
-                            </span>
-                            {'Give Feedback'}
-                        </BackstageTitlebarItem>
-                    }
-                </div>
-            </BackstageNavbar>
+            <Switch>
+                <Route path={`${match.url}/error`}/>
+                <Route>
+                    <BackstageNavbar className='flex justify-content-between'>
+                        <div className='d-flex items-center'>
+                            <BackstageTitlebarItem
+                                to={`${match.url}/runs`}
+                                activeClassName={'active'}
+                                data-testid='playbookRunsLHSButton'
+                            >
+                                <span className='mr-3 d-flex items-center'>
+                                    <Icon
+                                        path={mdiClipboardPlayMultipleOutline}
+                                        title='Runs'
+                                        size={1.4}
+                                    />
+                                </span>
+                                {'Runs'}
+                            </BackstageTitlebarItem>
+                            <BackstageTitlebarItem
+                                to={`${match.url}/playbooks`}
+                                activeClassName={'active'}
+                                data-testid='playbooksLHSButton'
+                            >
+                                <span className='mr-3 d-flex items-center'>
+                                    <PlaybookIcon/>
+                                </span>
+                                {'Playbooks'}
+                            </BackstageTitlebarItem>
+                            <BackstageTitlebarItem
+                                to={`${match.url}/settings`}
+                                activeClassName={'active'}
+                                data-testid='settingsLHSButton'
+                            >
+                                <span className='mr-3 d-flex items-center'>
+                                    <div className={'fa fa-gear'}/>
+                                </span>
+                                {'Settings'}
+                            </BackstageTitlebarItem>
+                        </div>
+                        <div className='d-flex items-center'>
+                            {npsAvailable &&
+                            <BackstageTitlebarItem
+                                onClick={promptForFeedback}
+                                to={`/${teams[0].name}/messages/@surveybot`}
+                                data-testid='giveFeedbackButton'
+                            >
+                                <span className='mr-3 d-flex items-center'>
+                                    <Icon
+                                        path={mdiThumbsUpDown}
+                                        title='Give Feedback'
+                                        size={1}
+                                    />
+                                </span>
+                                {'Give Feedback'}
+                            </BackstageTitlebarItem>
+                            }
+                        </div>
+                    </BackstageNavbar>
+                </Route>
+            </Switch>
             <BackstageBody>
                 <Switch>
                     <Route path={`${match.url}/playbooks/new`}>
