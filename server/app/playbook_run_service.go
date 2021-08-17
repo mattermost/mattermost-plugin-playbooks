@@ -1584,7 +1584,7 @@ func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID
 
 	var categoryID string
 	for _, category := range sidebar.Categories {
-		if category.DisplayName == categoryName {
+		if strings.ToLower(category.DisplayName) == strings.ToLower(categoryName) {
 			categoryID = category.Id
 			if !sliceContains(category.Channels, channelID) {
 				category.Channels = append(category.Channels, channelID)
@@ -1612,7 +1612,7 @@ func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID
 
 	// remove channel from previous category
 	for _, category := range sidebar.Categories {
-		if category.DisplayName == categoryName {
+		if strings.ToLower(category.DisplayName) == strings.ToLower(categoryName) {
 			continue
 		}
 		for i, channel := range category.Channels {
