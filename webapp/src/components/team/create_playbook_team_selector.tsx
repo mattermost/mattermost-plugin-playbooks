@@ -76,6 +76,11 @@ export default function CreatePlaybookTeamSelector(props: Props) {
         <div
             onClick={(event) => {
                 if (props.enableEdit) {
+                    if (props.teams.length === 1) {
+                        props.onSelectedChange(props.teams[0]);
+                        return;
+                    }
+
                     toggleOpen(event.clientX, event.clientY);
                 }
             }}
@@ -109,7 +114,7 @@ export default function CreatePlaybookTeamSelector(props: Props) {
                 hideSelectedOptions={false}
                 menuIsOpen={true}
                 options={teamOptions}
-                placeholder={'Search'}
+                placeholder={'Select a team'}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 onChange={onSelectedChange}
