@@ -291,16 +291,22 @@ const StepDescription = (props: StepDescriptionProps): React.ReactElement<StepDe
     );
 };
 
+const ControlComponentAnchor = styled.a`
+    display: inline-block;
+    margin: 0 0 8px 12px;
+    font-weight: 600;
+    font-size: 12px;
+    position: relative;
+    top: -4px;
+`;
+
 const ControlComponent = (ownProps: ControlProps<any>) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
-            <a
-                className='PlaybookRunFilter-reset'
-                onClick={ownProps.selectProps.onCustomReset}
-            >
+            <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
                 {'No Assignee'}
-            </a>
+            </ControlComponentAnchor>
         )}
     </div>
 );
