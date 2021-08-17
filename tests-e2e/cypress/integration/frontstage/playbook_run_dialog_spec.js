@@ -6,11 +6,19 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import users from '../../fixtures/users.json';
+
 describe('playbook run creation dialog', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
 
     before(() => {
+        // # Turn off growth onboarding screens
+        cy.apiLogin(users.sysadmin);
+        cy.apiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
+
         // # Login as user-1
         cy.legacyApiLogin('user-1');
 
@@ -67,7 +75,7 @@ describe('playbook run creation dialog', () => {
             cy.findByText('Click here').click();
 
             // * Verify it's the new playbook page
-            cy.url().should('include', '/com.mattermost.plugin-incident-management/playbooks/new');
+            cy.url().should('include', 'playbooks/new');
         });
     });
 

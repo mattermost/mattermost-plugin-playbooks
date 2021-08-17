@@ -2,18 +2,13 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useSelector} from 'react-redux';
 import moment from 'moment';
 import styled from 'styled-components';
-
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {PlaybookRun, playbookRunCurrentStatus} from 'src/types/playbook_run';
 import Duration from 'src/components/duration';
-import {navigateToTeamPluginUrl} from 'src/browser_routing';
+import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
 import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
@@ -53,11 +48,10 @@ const SmallStatusBadge = styled(StatusBadge)`
 `;
 
 const Row = (props: { playbookRun: PlaybookRun }) => {
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const [completedTasks, totalTasks] = tasksCompletedTotal(props.playbookRun.checklists);
 
     function openPlaybookRunDetails(playbookRun: PlaybookRun) {
-        navigateToTeamPluginUrl(currentTeam.name, `/runs/${playbookRun.id}`);
+        navigateToPluginUrl(`/runs/${playbookRun.id}`);
     }
 
     return (

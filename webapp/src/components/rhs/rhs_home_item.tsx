@@ -6,8 +6,6 @@ import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
 
 import Icon from '@mdi/react';
 import {mdiClipboardPlayOutline, mdiCheckAll, mdiSync, mdiOpenInNew} from '@mdi/js';
@@ -166,13 +164,14 @@ export const RHSHomePlaybook = ({
         num_stages,
         num_actions,
         last_run_at,
+        team_id,
     },
 }: RHSHomePlaybookProps) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-    const {view} = usePlaybooksRouting(currentTeam.name, {urlOnly: true});
+    const {view} = usePlaybooksRouting({urlOnly: true});
     const linkRef = useRef(null);
+
     return (
         <Item>
             <div>
@@ -236,7 +235,7 @@ export const RHSHomePlaybook = ({
                     </MetaItem>
                 </Meta>
             </div>
-            <RunButton onClick={() => dispatch(startPlaybookRunById(id))}>
+            <RunButton onClick={() => dispatch(startPlaybookRunById(team_id, id))}>
                 <Icon
                     path={mdiClipboardPlayOutline}
                     size={1.5}
@@ -261,14 +260,14 @@ export const RHSHomeTemplate = ({
     const {formatMessage} = useIntl();
     const currentTeam = useSelector(getCurrentTeam);
     const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
-    const {create} = usePlaybooksRouting(currentTeam.name, {urlOnly: true});
+    const {create} = usePlaybooksRouting({urlOnly: true});
     const linkRef = useRef(null);
     return (
         <Item>
             <div>
                 <Title ref={linkRef}>
                     <Link
-                        to={allowPlaybookCreation ? create(template.title) : ''}
+                        to={allowPlaybookCreation ? create(currentTeam, template.title) : ''}
                         onClick={(e) => {
                             e.preventDefault();
                             onUse(template);

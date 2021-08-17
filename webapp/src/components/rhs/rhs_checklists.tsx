@@ -214,7 +214,17 @@ const RHSChecklists = (props: Props) => {
             ))}
             {
                 active &&
-                <FinishButton onClick={() => dispatch(promptUpdateStatus(props.playbookRun.id, props.playbookRun.playbook_id, props.playbookRun.channel_id, PlaybookRunStatus.Resolved))}>
+                <FinishButton
+                    onClick={() => {
+                        dispatch(promptUpdateStatus(
+                            props.playbookRun.team_id,
+                            props.playbookRun.id,
+                            props.playbookRun.playbook_id,
+                            props.playbookRun.channel_id,
+                            PlaybookRunStatus.Resolved,
+                        ));
+                    }}
+                >
                     {'Finish run'}
                 </FinishButton>
             }

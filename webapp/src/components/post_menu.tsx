@@ -10,6 +10,8 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {Post} from 'mattermost-redux/types/posts';
 import {isSystemMessage} from 'mattermost-redux/utils/post_utils';
 import {getPost} from 'mattermost-redux/selectors/entities/posts';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {Channel} from 'mattermost-redux/types/channels';
 
 import PlaybookRunPostMenuIcon from 'src/components/assets/icons/post_menu_icon';
 
@@ -26,12 +28,13 @@ interface Props {
 export const StartPlaybookRunPostMenu = (props: Props) => {
     const dispatch = useDispatch();
     const post = useSelector<GlobalState, Post>((state) => getPost(state, props.postId));
+    const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, post.channel_id));
     if (!post || isSystemMessage(post)) {
         return null;
     }
 
     const handleClick = () => {
-        dispatch(startPlaybookRun(props.postId));
+        dispatch(startPlaybookRun(channel.team_id, props.postId));
     };
 
     return (

@@ -3,17 +3,13 @@
 
 import React, {useState, useEffect} from 'react';
 import styled from 'styled-components';
-import {useSelector} from 'react-redux';
 
 import Icon from '@mdi/react';
 import {mdiClipboardPlayOutline, mdiNotebookOutline} from '@mdi/js';
 
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-
 import {PlaybookRun} from 'src/types/playbook_run';
 
-import {pluginId} from 'src/manifest';
-import {navigateToUrl} from 'src/browser_routing';
+import {navigateToPluginUrl} from 'src/browser_routing';
 import {clientFetchPlaybook} from 'src/client';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import DotMenu, {DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
@@ -26,11 +22,10 @@ interface Props {
 }
 
 const RHSAboutButtons = (props: Props) => {
-    const currentTeam = useSelector(getCurrentTeam);
     const playbookName = usePlaybookName(props.playbookRun.playbook_id);
 
-    const overviewURL = `/${currentTeam.name}/${pluginId}/runs/${props.playbookRun.id}`;
-    const playbookURL = `/${currentTeam.name}/${pluginId}/playbooks/${props.playbookRun.playbook_id}`;
+    const overviewURL = `/runs/${props.playbookRun.id}`;
+    const playbookURL = `/playbooks/${props.playbookRun.playbook_id}`;
 
     return (
         <>
@@ -39,14 +34,14 @@ const RHSAboutButtons = (props: Props) => {
                 left={true}
                 dotMenuButton={StyledDotMenuButton}
             >
-                <StyledDropdownMenuItem onClick={() => navigateToUrl(overviewURL)}>
+                <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
                     <DropdownIcon
                         path={mdiClipboardPlayOutline}
                         size={1.25}
                     />
                     {'Go to run overview'}
                 </StyledDropdownMenuItem>
-                <StyledDropdownMenuItem onClick={() => navigateToUrl(playbookURL)}>
+                <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
                     <DropdownIcon
                         path={mdiNotebookOutline}
                         size={1.25}

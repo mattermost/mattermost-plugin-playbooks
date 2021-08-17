@@ -2,18 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useDispatch, useSelector} from 'react-redux';
+import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
-
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {PlaybookRun, playbookRunCurrentStatus} from 'src/types/playbook_run';
 
 import {Footer, StyledFooterButton} from 'src/components/rhs/rhs_shared';
 import {promptUpdateStatus} from 'src/actions';
-import {navigateToUrl} from 'src/browser_routing';
-import {pluginId} from 'src/manifest';
-import {currentPlaybookRun} from 'src/selectors';
+import {navigateToPluginUrl} from 'src/browser_routing';
 
 const SpacedFooterButton = styled(StyledFooterButton)`
     margin-left: 10px;
@@ -25,8 +21,6 @@ interface Props {
 
 const RHSFooter = (props: Props) => {
     const dispatch = useDispatch();
-    const currentTeam = useSelector(getCurrentTeam);
-    const playbookRun = useSelector(currentPlaybookRun);
 
     let text = 'Update status';
     if (playbookRunCurrentStatus(props.playbookRun) === 'Archived') {
@@ -37,13 +31,20 @@ const RHSFooter = (props: Props) => {
         <Footer id='playbookRunRHSFooter'>
             <StyledFooterButton
                 primary={false}
-                onClick={() => navigateToUrl(`/${currentTeam.name}/${pluginId}/runs/${playbookRun?.id}`)}
+                onClick={() => navigateToPluginUrl(`/runs/${props.playbookRun?.id}`)}
             >
                 {'Overview'}
             </StyledFooterButton>
             <SpacedFooterButton
                 primary={true}
-                onClick={() => dispatch(promptUpdateStatus(playbookRun.id, playbookRun.playbook_id, playbookRun.channel_id))}
+                onClick={() => {
+                    dispatch(promptUpdateStatus(
+                        props.playbookRun?.team_id || '',
+                        props.playbookRun.id,
+                        props.playbookRun.playbook_id,
+                        props.playbookRun.channel_id,
+                    ));
+                }}
             >
                 {text}
             </SpacedFooterButton>

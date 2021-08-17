@@ -4,13 +4,13 @@
 import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
-import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
-import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from 'mattermost-redux/types/users';
+import {Channel} from 'mattermost-redux/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {
     FetchPlaybookRunsParams,
@@ -101,18 +101,18 @@ export function fetchPlaybookRunChannels(teamID: string, userID: string) {
     return doGet(`${apiUrl}/runs/channels?team_id=${teamID}&member_id=${userID}`);
 }
 
-export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {
+export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string, teamId: string) {
     let currentChannel = getCurrentChannel(getState());
-    const currentTeamId = getCurrentTeamId(getState());
 
     // Default to town square if there is no current channel (i.e., if Mattermost has not yet loaded)
-    if (!currentChannel) {
-        currentChannel = await Client4.getChannelByName(currentTeamId, 'town-square');
+    // or in a different team.
+    if (!currentChannel || currentChannel.team_id !== teamId) {
+        currentChannel = await Client4.getChannelByName(teamId, 'town-square');
     }
 
     const args = {
         channel_id: currentChannel?.id,
-        team_id: currentTeamId,
+        team_id: teamId,
     };
 
     try {
@@ -186,6 +186,10 @@ export async function deletePlaybook(playbookId: Playbook['id']) {
 
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
     return Client4.getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE);
+}
+
+export async function fetchMyChannels(teamId: string): Promise<Channel[]> {
+    return Client4.getMyChannels(teamId);
 }
 
 export async function fetchUsersInTeam(teamId: string): Promise<UserProfile[]> {

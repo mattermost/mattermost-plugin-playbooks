@@ -13,7 +13,6 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels'
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
-import {pluginId} from 'src/manifest';
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
 import PlusIcon from 'src/components/assets/icons/plus_icon';
 import {
@@ -22,7 +21,7 @@ import {
     renderView, RHSContainer, RHSContent,
 } from 'src/components/rhs/rhs_shared';
 import {setRHSViewingPlaybookRun, startPlaybookRun} from 'src/actions';
-import {navigateToTeamPluginUrl, navigateToUrl} from 'src/browser_routing';
+import {navigateToUrl, navigateToPluginUrl} from 'src/browser_routing';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {myActivePlaybookRunsList} from 'src/selectors';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
@@ -84,7 +83,7 @@ const RHSListView = () => {
     };
 
     const viewBackstagePlaybookRunList = () => {
-        navigateToUrl(`/${currentTeam.name}/${pluginId}/runs`);
+        navigateToPluginUrl('runs');
     };
 
     if (playbookRunList.length === 0) {
@@ -105,14 +104,14 @@ const RHSListView = () => {
                 >
                     <Header>
                         <CenterCell>
-                            <Link onClick={() => dispatch(startPlaybookRun())}>
+                            <Link onClick={() => dispatch(startPlaybookRun(currentTeam.id))}>
                                 <PlusIcon/>{'Run playbook'}
                             </Link>
                         </CenterCell>
                         <RightCell>
                             <ThreeDotMenu
-                                onCreatePlaybook={() => navigateToTeamPluginUrl(currentTeam.name, '/playbooks')}
-                                onSeeAllPlaybookRuns={() => navigateToTeamPluginUrl(currentTeam.name, '/runs')}
+                                onCreatePlaybook={() => navigateToPluginUrl('/playbooks')}
+                                onSeeAllPlaybookRuns={() => navigateToPluginUrl('/runs')}
                             />
                         </RightCell>
                     </Header>

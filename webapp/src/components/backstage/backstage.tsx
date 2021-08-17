@@ -10,8 +10,10 @@ import Icon from '@mdi/react';
 import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
+import {Theme} from 'mattermost-redux/types/preferences';
+import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import IncidentIcon from 'src/components/assets/icons/incident_icon';
 import {promptForFeedback} from 'src/client';
@@ -25,19 +27,24 @@ import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
 import {ErrorPageTypes} from 'src/constants';
-import {navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
+import {navigateToUrl, pluginErrorUrl} from 'src/browser_routing';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 
 import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
 import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 
+import ErrorPage from '../error_page';
+
 import SettingsView from './settings';
 import {BackstageNavbar, BackstageNavbarIcon} from './backstage_navbar';
 
+import {applyTheme} from './css_utils';
+
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
-    height: 100%;
+    // The container should take up all vertical real estate, less the height of the global header.
+    height: calc(100% - 40px);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -80,7 +87,12 @@ const Backstage = () => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
         document.body.classList.add('app__body');
+        const root = document.getElementById('root');
+        if (root) {
+            root.className += ' channel-view';
+        }
 
+        applyTheme(currentTheme);
         return function cleanUp() {
             document.body.classList.remove('app__body');
         };
@@ -88,12 +100,13 @@ const Backstage = () => {
 
     useForceDocumentTitle('Playbooks');
 
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const currentTheme = useSelector<GlobalState, Theme>(getTheme);
+    const teams = useSelector<GlobalState, Team[]>(getMyTeams);
 
     const match = useRouteMatch();
 
     const goToMattermost = () => {
-        navigateToUrl(`/${currentTeam.name}`);
+        navigateToUrl('');
     };
 
     const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
@@ -141,7 +154,7 @@ const Backstage = () => {
                     {npsAvailable &&
                         <BackstageTitlebarItem
                             onClick={promptForFeedback}
-                            to={`/${currentTeam.name}/messages/@surveybot`}
+                            to={`/${teams[0].name}/messages/@surveybot`}
                             data-testid='giveFeedbackButton'
                         >
                             <span className='mr-3 d-flex items-center'>
@@ -163,14 +176,11 @@ const Backstage = () => {
             <BackstageBody>
                 <Switch>
                     <Route path={`${match.url}/playbooks/new`}>
-                        <NewPlaybook
-                            currentTeam={currentTeam}
-                        />
+                        <NewPlaybook/>
                     </Route>
                     <Route path={`${match.url}/playbooks/:playbookId/edit/:tabId?`}>
                         <PlaybookEdit
                             isNew={false}
-                            currentTeam={currentTeam}
                         />
                     </Route>
                     <Route path={`${match.url}/playbooks/:playbookId`}>
@@ -196,6 +206,9 @@ const Backstage = () => {
                     <Route path={`${match.url}/settings`}>
                         <SettingsView/>
                     </Route>
+                    <Route path={`${match.url}/error`}>
+                        <ErrorPage/>
+                    </Route>
                     <Route
                         exact={true}
                         path={`${match.url}/`}
@@ -203,7 +216,7 @@ const Backstage = () => {
                         <Redirect to={`${match.url}/runs`}/>
                     </Route>
                     <Route>
-                        <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.DEFAULT)}/>
+                        <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>
                     </Route>
                 </Switch>
             </BackstageBody>

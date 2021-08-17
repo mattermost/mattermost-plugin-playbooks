@@ -5,28 +5,21 @@ import styled from 'styled-components';
 import moment from 'moment';
 
 import {useDispatch, useSelector} from 'react-redux';
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 
 import {Post} from 'mattermost-redux/types/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {GlobalState} from 'mattermost-redux/types/store';
+import {Team} from 'mattermost-redux/types/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {Client4} from 'mattermost-redux/client';
 
-import {Team} from 'mattermost-redux/types/teams';
-import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {getPost} from 'mattermost-redux/selectors/entities/posts';
-
-import {StatusPost} from 'src/types/playbook_run';
-
 import {isMobile} from 'src/mobile';
-import {promptUpdateStatus, toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
+import {promptUpdateStatus, toggleRHS} from 'src/actions';
 import ShowMore from 'src/components/rhs/show_more';
-import {UpdateBody} from 'src/components/rhs/rhs_shared';
 import PostText from 'src/components/post_text';
 
 const NoRecentUpdates = styled.div`
@@ -89,7 +82,7 @@ function useAuthorInfo(userID: string) : [string, string] {
 
 interface Props {
     post: Post | null;
-
+    team: Team;
     playbookRunId: string;
     playbookId: string
     channelId: string;
@@ -102,7 +95,7 @@ const PostCard = (props: Props) => {
     if (!props.post) {
         return (
             <NoRecentUpdates>
-                {'No recent updates. '}<a onClick={() => dispatch(promptUpdateStatus(props.playbookRunId, props.playbookId, props.channelId))}>{'Click here'}</a>{' to update status.'}
+                {'No recent updates. '}<a onClick={() => dispatch(promptUpdateStatus(props.team.id, props.playbookRunId, props.playbookId, props.channelId))}>{'Click here'}</a>{' to update status.'}
             </NoRecentUpdates>
         );
     }
@@ -134,7 +127,10 @@ const PostCard = (props: Props) => {
                 <ShowMore
                     text={props.post.message}
                 >
-                    <PostText text={props.post.message}>
+                    <PostText
+                        text={props.post.message}
+                        team={props.team}
+                    >
                         {props.post.edit_at !== 0 && <EditedIndicator>{'(edited)'}</EditedIndicator>}
                     </PostText>
                 </ShowMore>

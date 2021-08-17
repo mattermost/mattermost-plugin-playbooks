@@ -3,6 +3,10 @@
 
 import React from 'react';
 import styled from 'styled-components';
+import {useSelector} from 'react-redux';
+import {Team} from 'mattermost-redux/types/teams';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {GlobalState} from 'mattermost-redux/types/store';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -26,6 +30,7 @@ interface Props {
 
 const Updates = (props: Props) => {
     const statusPosts = props.playbookRun.status_posts.sort((a, b) => b.create_at - a.create_at);
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
     let updates: JSX.Element | JSX.Element[] =
         <EmptyBody>{'There are no updates available.'}</EmptyBody>;
@@ -36,6 +41,7 @@ const Updates = (props: Props) => {
                 postId={sp.id}
                 channelId={props.playbookRun.channel_id}
                 playbookId={props.playbookRun.playbook_id}
+                team={team}
             />
         ));
     }
@@ -48,7 +54,7 @@ const Updates = (props: Props) => {
     );
 };
 
-const PostContent = (props: { postId: string; channelId: PlaybookRun['channel_id']; playbookId: PlaybookRun['playbook_id']; }) => {
+const PostContent = (props: { postId: string; team: Team; channelId: PlaybookRun['channel_id']; playbookId: PlaybookRun['playbook_id']; }) => {
     const post = usePost(props.postId);
 
     if (!post) {
@@ -61,6 +67,7 @@ const PostContent = (props: { postId: string; channelId: PlaybookRun['channel_id
                 post={post}
                 channelId={props.channelId}
                 playbookId={props.playbookId}
+                team={props.team}
             />
         </StyledContent>
     );

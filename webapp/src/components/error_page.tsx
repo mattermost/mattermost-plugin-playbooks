@@ -2,19 +2,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useEffect} from 'react';
+import React, {useEffect} from 'react';
 import {Link, useLocation} from 'react-router-dom';
-import {useSelector} from 'react-redux';
 
 import qs from 'qs';
 
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
-
 import WarningIcon from 'src/components/assets/icons/warning_icon';
 import {ErrorPageTypes} from 'src/constants';
-import {teamPluginUrl} from 'src/browser_routing';
+import {pluginUrl} from 'src/browser_routing';
 
 const ErrorPage = () => {
     useEffect(() => {
@@ -27,8 +22,6 @@ const ErrorPage = () => {
     const queryString = useLocation().search.substr(1);
     const params = qs.parse(queryString);
 
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
-
     let title = 'Page not found';
     let message = 'The page you were trying to reach does not exist.';
     let returnTo = '/';
@@ -38,13 +31,13 @@ const ErrorPage = () => {
     case ErrorPageTypes.PLAYBOOK_RUNS:
         title = 'Run not found';
         message = "The run you're requesting is private or does not exist.";
-        returnTo = teamPluginUrl(currentTeam.name, '/runs');
+        returnTo = pluginUrl('/runs');
         returnToMsg = 'Back to runs';
         break;
     case ErrorPageTypes.PLAYBOOKS:
         title = 'Playbook Not Found';
         message = "The playbook you're requesting is private or does not exist.";
-        returnTo = teamPluginUrl(currentTeam.name, '/playbooks');
+        returnTo = pluginUrl('/playbooks');
         returnToMsg = 'Back to playbooks';
         break;
     }

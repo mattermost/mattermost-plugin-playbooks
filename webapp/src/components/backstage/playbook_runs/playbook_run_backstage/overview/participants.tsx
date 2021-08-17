@@ -5,7 +5,8 @@ import React, {useState} from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
@@ -51,6 +52,8 @@ const Participants = (
     const profilesExceptTwoMains = participant_ids
         .filter((id) => id !== playbookRun.owner_user_id && id !== playbookRun.reporter_user_id);
 
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbookRun.team_id));
+
     return (
         <TabPageContainer>
             <Title>{`Participants (${participant_ids.length})`}</Title>
@@ -59,9 +62,13 @@ const Participants = (
                 <Participant
                     userId={playbookRun.owner_user_id}
                     isOwner={true}
+                    teamName={team.name}
                 />
                 <Heading>{'Reporter'}</Heading>
-                <Participant userId={playbookRun.reporter_user_id}/>
+                <Participant
+                    userId={playbookRun.reporter_user_id}
+                    teamName={team.name}
+                />
                 {
                     profilesExceptTwoMains.length > 0 &&
                     <>
@@ -70,6 +77,7 @@ const Participants = (
                             <Participant
                                 key={id}
                                 userId={id}
+                                teamName={team.name}
                             />
                         ))}
                     </>
@@ -83,12 +91,12 @@ export default Participants;
 
 interface ParticipantProps {
     userId: string;
+    teamName: string;
     isOwner?: boolean;
 }
 
-function Participant({userId, isOwner}: ParticipantProps) {
+function Participant({userId, teamName, isOwner}: ParticipantProps) {
     const [showMessage, setShowMessage] = useState(Boolean(isOwner));
-    const team = useSelector(getCurrentTeam);
     const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userId));
 
     return (
@@ -99,7 +107,7 @@ function Participant({userId, isOwner}: ParticipantProps) {
             <ProfileWithPosition userId={userId}/>
             {showMessage && (
                 <SecondaryButtonRight
-                    onClick={() => navigateToUrl(`/${team.name}/messages/@${user.username}`)}
+                    onClick={() => navigateToUrl(`/${teamName}/messages/@${user.username}`)}
                 >
                     {'Message'}
                 </SecondaryButtonRight>

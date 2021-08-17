@@ -5,8 +5,6 @@ import styled from 'styled-components';
 
 import moment from 'moment';
 
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-
 import {Post} from 'mattermost-redux/types/posts';
 
 import {getPostIdsInCurrentChannel, getPostsInCurrentChannel} from 'mattermost-redux/selectors/entities/posts';
@@ -15,9 +13,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 import {currentPlaybookRun} from 'src/selectors';
 
-import {navigateToUrl} from 'src/browser_routing';
-
-import {pluginId} from 'src/manifest';
+import {navigateToPluginUrl} from 'src/browser_routing';
 
 import {noRetrospective} from 'src/client';
 
@@ -55,7 +51,6 @@ const ReminderCommon = (props: ReminderCommonProps) => {
     const playbookRun = useSelector(currentPlaybookRun);
     const reminderDuration = playbookRun?.retrospective_reminder_interval_seconds || 0;
     const wasPublishedOrCanceled = playbookRun?.retrospective_published_at !== 0;
-    const currentTeam = useSelector(getCurrentTeam);
     const latestReminderPost = useSelector(selectLatestReminderPost);
 
     const disableButtons = wasPublishedOrCanceled || latestReminderPost?.id !== props.post.id;
@@ -80,7 +75,7 @@ const ReminderCommon = (props: ReminderCommonProps) => {
                 </CustomPostHeader>
                 <CustomPostButtonRow>
                     <PrimaryButton
-                        onClick={() => navigateToUrl(`/${currentTeam.name}/${pluginId}/runs/${playbookRun?.id}/retrospective`)}
+                        onClick={() => navigateToPluginUrl(`/runs/${playbookRun?.id}/retrospective`)}
                         disabled={disableButtons}
                     >
                         {props.primary}

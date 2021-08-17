@@ -5,6 +5,7 @@ import {AnyAction, Dispatch} from 'redux';
 import {generateId} from 'mattermost-redux/utils/helpers';
 
 import {IntegrationTypes} from 'mattermost-redux/action_types';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
@@ -65,7 +66,7 @@ import {modals} from 'src/webapp_globals';
 
 import {ModalTypes, UpdateRunStatusModal} from 'src/components/modals';
 
-export function startPlaybookRun(postId?: string) {
+export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
@@ -76,11 +77,11 @@ export function startPlaybookRun(postId?: string) {
             command = `${command} ${postId}`;
         }
 
-        await clientExecuteCommand(dispatch, getState, command);
+        await clientExecuteCommand(dispatch, getState, command, teamId);
     };
 }
 
-export function startPlaybookRunById(playbookId: string) {
+export function startPlaybookRunById(teamId: string, playbookId: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
@@ -88,11 +89,12 @@ export function startPlaybookRunById(playbookId: string) {
 
         const command = `/playbook start-playbook ${playbookId} ${clientId}`;
 
-        await clientExecuteCommand(dispatch, getState, command);
+        await clientExecuteCommand(dispatch, getState, command, teamId);
     };
 }
 
 export function promptUpdateStatus(
+    teamId: string,
     playbookRunId: PlaybookRun['id'],
     playbookId: PlaybookRun['playbook_id'],
     channelId: PlaybookRun['channel_id'],
@@ -110,20 +112,24 @@ export function promptUpdateStatus(
 
             dispatch(modals.openModal(definition));
         } else {
-            await (clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`));
+            await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`, teamId);
         }
     };
 }
 
 export function addToTimeline(postId: string) {
     return async (dispatch: Dispatch, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, `/playbook add ${postId}`);
+        const currentTeamId = getCurrentTeamId(getState());
+
+        await clientExecuteCommand(dispatch, getState, `/playbook add ${postId}`, currentTeamId);
     };
 }
 
 export function addNewTask(checklist: number) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`);
+        const currentTeamId = getCurrentTeamId(getState());
+
+        await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, currentTeamId);
     };
 }
 
