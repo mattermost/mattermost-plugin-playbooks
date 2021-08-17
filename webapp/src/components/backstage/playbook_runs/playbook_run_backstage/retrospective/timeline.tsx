@@ -9,7 +9,7 @@ import moment from 'moment';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {Team} from 'mattermost-redux/types/teams';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -47,7 +47,7 @@ interface Props {
 
 const Timeline = (props: Props) => {
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
-    const team = useSelector<GlobalState, Team>(getCurrentTeam);
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
     if (props.playbookRun.timeline_events.length === 0) {
         return (

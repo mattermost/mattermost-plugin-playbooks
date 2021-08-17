@@ -125,7 +125,7 @@ func playbookRunProperties(playbookRun *app.PlaybookRun, userID string) map[stri
 		"ChannelID":               playbookRun.ChannelID,
 		"CreateAt":                playbookRun.CreateAt,
 		"EndAt":                   playbookRun.EndAt,
-		"DeleteAt":                playbookRun.DeleteAt,
+		"DeleteAt":                playbookRun.DeleteAt, //nolint
 		"PostID":                  playbookRun.PostID,
 		"PlaybookID":              playbookRun.PlaybookID,
 		"NumChecklists":           len(playbookRun.Checklists),

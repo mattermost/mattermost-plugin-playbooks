@@ -9,7 +9,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {useLocation} from 'react-router-dom';
 
-import {getCurrentTeam, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
@@ -35,7 +35,7 @@ import {
 } from 'src/client';
 import Profile from 'src/components/profile/profile';
 import StatusBadge from '../status_badge';
-import {navigateToUrl, navigateToTeamPluginUrl} from 'src/browser_routing';
+import {navigateToUrl, navigateToPluginUrl} from 'src/browser_routing';
 import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import LeftDots from 'src/components/assets/left_dots';
@@ -48,16 +48,22 @@ import BackstageListHeader from '../../backstage_list_header';
 
 const debounceDelay = 300; // in milliseconds
 
+const ControlComponentAnchor = styled.a`
+    display: inline-block;
+    margin: 0 0 8px 12px;
+    font-weight: 600;
+    font-size: 12px;
+    position: relative;
+    top: -4px;
+`;
+
 const controlComponent = (ownProps: ControlProps<any>, filterName: string) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
-            <a
-                className='PlaybookRunFilter-reset'
-                onClick={ownProps.selectProps.onCustomReset}
-            >
+            <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
                 {'Reset to all ' + filterName}
-            </a>
+            </ControlComponentAnchor>
         )}
     </div>
 );
@@ -173,7 +179,6 @@ const BackstagePlaybookRunList = () => {
     const [showNoPlaybookRuns, setShowNoPlaybookRuns] = useState(false);
     const [playbookRuns, setPlaybookRuns] = useState<PlaybookRun[] | null>(null);
     const [totalCount, setTotalCount] = useState(0);
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const selectUser = useSelector<GlobalState>((state) => (userId: string) => getUser(state, userId)) as (userId: string) => UserProfile;
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
 
@@ -276,7 +281,7 @@ const BackstagePlaybookRunList = () => {
     }
 
     function openPlaybookRunDetails(playbookRun: PlaybookRun) {
-        navigateToTeamPluginUrl(currentTeam.name, `/runs/${playbookRun.id}`);
+        navigateToPluginUrl(`/runs/${playbookRun.id}`);
     }
 
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
@@ -293,12 +298,12 @@ const BackstagePlaybookRunList = () => {
     };
 
     const goToMattermost = () => {
-        navigateToUrl(`/${currentTeam.name}`);
+        navigateToUrl('');
     };
 
     const newPlaybookRun = () => {
         goToMattermost();
-        dispatch(startPlaybookRun());
+        dispatch(startPlaybookRun(teams[0].id)); //TODO add team selector ?
     };
 
     // Show nothing until after we've completed fetching playbook runs.

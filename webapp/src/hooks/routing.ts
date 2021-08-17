@@ -9,7 +9,7 @@ import {getConfig} from 'mattermost-redux/selectors/entities/general';
 
 import {useSelector} from 'react-redux';
 
-import {navigateToTeamPluginUrl, teamPluginUrl} from 'src/browser_routing';
+import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
 import {TEMPLATE_TITLE_KEY} from 'src/constants';
 import {Playbook} from 'src/types/playbook';
 import {tabInfo} from 'src/components/backstage/playbook_edit';
@@ -26,19 +26,17 @@ function id(p: Playbook | Playbook['id']) {
 /**
  * Access backstage routing functions for a given team.
  * @typeParam T - Type of routing function parameter and argument in callback. Must be {@link Playbook} or {@link Playbook.id}.
- * @param teamName - Which team-backstage to go to. (see {@link navigateToTeamPluginUrl})
  * @param options - {@link PlaybooksRoutingOptions} alters behavior of hook
  *
  * @example Get URL to go view the given playbook
- * const {view} = usePlaybooksRouting(currentTeam.name, {urlOnly: true});
+ * const {view} = usePlaybooksRouting({urlOnly: true});
  * const url = view(id);
  *
  * @example Navigate to the backstage edit page for the given playbook
- * const playbookRouting = usePlaybooksRouting(currentTeam.name);
+ * const playbookRouting = usePlaybooksRouting();
  * playbookRouting.edit(id);
  */
 export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
-    teamName: Team['name'],
     {urlOnly, onGo}: PlaybooksRoutingOptions<TParam> = {},
 ) {
     return useMemo(() => {
@@ -47,9 +45,10 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
                 if (p) {
                     onGo?.(p);
                 }
-                navigateToTeamPluginUrl(teamName, path);
+                navigateToPluginUrl(path);
             }
-            return teamPluginUrl(teamName, path);
+
+            return pluginUrl(path);
         }
 
         return {
@@ -59,16 +58,12 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
             view: (p: TParam) => {
                 return go(`/playbooks/${id(p)}`, p);
             },
-            create: (templateTitle?: string) => {
-                const queryParams = qs.stringify({[TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
+            create: (team: Team, templateTitle?: string) => {
+                const queryParams = qs.stringify({teamId: team.id, [TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
                 return go(`/playbooks/new${queryParams}`);
             },
-            createInTeam: (team:Team, templateTitle?: string) => {
-                const queryParams = qs.stringify({team_id: team.id, [TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
-                navigateToTeamPluginUrl(team.name, `/playbooks/new${queryParams}`);
-            },
         };
-    }, [teamName, onGo, urlOnly]);
+    }, [onGo, urlOnly]);
 }
 
 const selectSiteName = (state: GlobalState) => getConfig(state).SiteName;

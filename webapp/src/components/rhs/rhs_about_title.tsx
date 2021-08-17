@@ -2,7 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useRef, useEffect} from 'react';
+import {useSelector} from 'react-redux';
 import styled, {StyledComponent} from 'styled-components';
+
+import {GlobalState} from 'mattermost-redux/types/store';
+import General from 'mattermost-redux/constants/general';
+import Permissions from 'mattermost-redux/constants/permissions';
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
+import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
 
 import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
 
@@ -15,6 +22,7 @@ interface Props {
 const RHSAboutTitle = (props: Props) => {
     const [editing, setEditing] = useState(false);
     const [editedValue, setEditedValue] = useState(props.value);
+    const permissionToChangeTitle = useSelector(hasPermissionsToChangeChannelName);
 
     const invalidValue = editedValue.length < 2;
 
@@ -36,6 +44,13 @@ const RHSAboutTitle = (props: Props) => {
         setEditing(false);
     };
 
+    let onRenderedTitleClick = () => { /* do nothing */};
+    if (permissionToChangeTitle) {
+        onRenderedTitleClick = () => {
+            setEditing(true);
+        };
+    }
+
     useClickOutsideRef(inputRef, saveAndClose);
     useKeyPress('Enter', saveAndClose);
     useKeyPress('Escape', discardAndClose);
@@ -44,7 +59,7 @@ const RHSAboutTitle = (props: Props) => {
         const RenderedTitle = props.renderedTitle ?? DefaultRenderedTitle;
 
         return (
-            <RenderedTitle onClick={() => setEditing(true)} >
+            <RenderedTitle onClick={onRenderedTitleClick} >
                 {editedValue}
             </RenderedTitle>
         );
@@ -72,6 +87,18 @@ const RHSAboutTitle = (props: Props) => {
             }
         </>
     );
+};
+
+const hasPermissionsToChangeChannelName = (state: GlobalState) => {
+    const channel = getCurrentChannel(state);
+
+    const permission = channel.type === General.OPEN_CHANNEL ? Permissions.MANAGE_PUBLIC_CHANNEL_PROPERTIES : Permissions.MANAGE_PRIVATE_CHANNEL_PROPERTIES;
+
+    return haveIChannelPermission(state, {
+        channel: channel.id,
+        team: channel.team_id,
+        permission,
+    });
 };
 
 const TitleInput = styled.input`

@@ -11,6 +11,8 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
 
+import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
+
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
 
@@ -22,7 +24,6 @@ import RightHandSidebar from './components/rhs/rhs_main';
 import RHSTitle from './components/rhs/rhs_title';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from './components/post_menu';
 import Backstage from './components/backstage/backstage';
-import ErrorPage from './components/error_page';
 import PostMenuModal from './components/post_menu_modal';
 import {
     setToggleRHSAction, actionSetGlobalSettings,
@@ -51,6 +52,22 @@ import {makeUpdateMainMenu} from './make_update_main_menu';
 import {fetchGlobalSettings} from './client';
 import {CloudUpgradePost} from './components/cloud_upgrade_post';
 
+const GlobalHeaderCenter = () => {
+    return null;
+};
+
+const OldRoutesRedirect = () => {
+    const match = useRouteMatch();
+    const location = useLocation();
+    const redirPath = location.pathname.replace(match.url, '');
+
+    return (
+        <Redirect
+            to={'/playbooks' + redirPath}
+        />
+    );
+};
+
 export default class Plugin {
     removeMainMenuSub?: Unsubscribe;
     removeRHSListener?: Unsubscribe;
@@ -72,6 +89,17 @@ export default class Plugin {
             store.dispatch(actionSetGlobalSettings(await fetchGlobalSettings()));
         };
         getGlobalSettings();
+
+        if (registry.registerProduct) {
+            registry.registerProduct(
+                '/playbooks',
+                'product-playbooks',
+                'Playbooks',
+                '/playbooks',
+                Backstage,
+                GlobalHeaderCenter,
+            );
+        }
 
         const doRegistrations = () => {
             const r = new RegistryWrapper(registry, store);
@@ -108,8 +136,9 @@ export default class Plugin {
 
             r.registerSlashCommandWillBePostedHook(makeSlashCommandHook(store));
 
-            r.registerNeedsTeamRoute('/error', ErrorPage);
-            r.registerNeedsTeamRoute('/', Backstage);
+            // Redirect old routes
+            r.registerNeedsTeamRoute('/error', OldRoutesRedirect);
+            r.registerNeedsTeamRoute('/', OldRoutesRedirect);
 
             r.registerPostTypeComponent('custom_retro_rem_first', RetrospectiveFirstReminder);
             r.registerPostTypeComponent('custom_retro_rem', RetrospectiveReminder);

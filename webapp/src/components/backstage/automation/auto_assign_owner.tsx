@@ -20,7 +20,6 @@ interface Props {
     getProfiles: () => ActionFunc;
     ownerID: string;
     onAssignOwner: (userId: string | undefined) => void;
-    teamID: string;
 }
 
 export const AutoAssignOwner = (props: Props) => {

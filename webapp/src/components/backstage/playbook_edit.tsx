@@ -5,16 +5,14 @@ import React, {useState, useEffect} from 'react';
 import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
-
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {Team} from 'mattermost-redux/types/teams';
+import {selectTeam} from 'mattermost-redux/actions/teams';
+import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
-import {navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
+import {navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {DraftPlaybookWithChecklist, PlaybookWithChecklist, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
@@ -128,7 +126,7 @@ const OuterContainer = styled.div`
 
 interface Props {
     isNew: boolean;
-    currentTeam: Team;
+    teamId?: string;
 }
 
 interface URLParams {
@@ -189,12 +187,11 @@ const PlaybookNavbar = styled(BackstageNavbar)`
 const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const currentUserId = useSelector(getCurrentUserId);
 
     const [playbook, setPlaybook] = useState<DraftPlaybookWithChecklist | PlaybookWithChecklist>({
         ...emptyPlaybook(),
-        team_id: props.currentTeam.id,
+        team_id: props.teamId || '',
     });
     const [changesMade, setChangesMade] = useState(false);
 
@@ -235,7 +232,7 @@ const PlaybookEdit = (props: Props) => {
 
                     setPlaybook({
                         ...template.template,
-                        team_id: props.currentTeam.id,
+                        team_id: props.teamId || '',
                     });
                     setChangesMade(true);
                 }
@@ -256,7 +253,10 @@ const PlaybookEdit = (props: Props) => {
             }
         };
         fetchData();
-    }, [urlParams.playbookId, props.isNew]);
+    }, [urlParams.playbookId, props.isNew, props.teamId]);
+
+    dispatch(selectTeam(props.teamId || playbook.team_id));
+    dispatch(fetchMyChannelsAndMembers(props.teamId || playbook.team_id));
 
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
@@ -288,9 +288,9 @@ const PlaybookEdit = (props: Props) => {
     const onClose = (id?: string) => {
         const playbookId = urlParams.playbookId || id;
         if (playbookId) {
-            navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbookId}`);
+            navigateToPluginUrl(`/playbooks/${playbookId}`);
         } else {
-            navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
+            navigateToPluginUrl('/playbooks');
         }
     };
 
@@ -487,11 +487,11 @@ const PlaybookEdit = (props: Props) => {
     };
 
     const searchUsers = (term: string) => {
-        return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
+        return dispatch(searchProfiles(term, {team_id: props.teamId || playbook.team_id}));
     };
 
     const getUsers = () => {
-        return dispatch(getProfilesInTeam(props.currentTeam.id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
+        return dispatch(getProfilesInTeam(props.teamId || playbook.team_id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
     };
 
     const handleBroadcastInput = (channelId: string | undefined) => {
@@ -505,10 +505,12 @@ const PlaybookEdit = (props: Props) => {
     if (!props.isNew) {
         switch (fetchingState) {
         case FetchingStateType.notFound:
-            return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)}/>;
+            return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
         case FetchingStateType.loading:
             return null;
         }
+    } else if (!props.teamId) {
+        return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
     }
 
     return (
@@ -700,7 +702,6 @@ const PlaybookEdit = (props: Props) => {
                                     defaultOwnerID={playbook.default_owner_id}
                                     onToggleDefaultOwner={handleToggleDefaultOwner}
                                     onAssignOwner={handleAssignDefaultOwner}
-                                    teamID={playbook.team_id}
                                     announcementChannelID={playbook.announcement_channel_id}
                                     announcementChannelEnabled={playbook.announcement_channel_enabled}
                                     onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
@@ -769,6 +770,7 @@ const PlaybookEdit = (props: Props) => {
                                         getProfiles={getUsers}
                                         memberIds={playbook.member_ids}
                                         onClear={handleClearUsers}
+                                        teamId={props.teamId || playbook.team_id}
                                     />
                                 </SidebarBlock>
                             </TabContainer>

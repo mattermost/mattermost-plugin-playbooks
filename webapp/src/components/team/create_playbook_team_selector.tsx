@@ -76,6 +76,11 @@ export default function CreatePlaybookTeamSelector(props: Props) {
         <div
             onClick={(event) => {
                 if (props.enableEdit) {
+                    if (props.teams.length === 1) {
+                        props.onSelectedChange(props.teams[0]);
+                        return;
+                    }
+
                     toggleOpen(event.clientX, event.clientY);
                 }
             }}
@@ -109,7 +114,7 @@ export default function CreatePlaybookTeamSelector(props: Props) {
                 hideSelectedOptions={false}
                 menuIsOpen={true}
                 options={teamOptions}
-                placeholder={'Search'}
+                placeholder={'Select a team'}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 onChange={onSelectedChange}
@@ -166,6 +171,9 @@ interface ChildContainerProps {
 }
 
 const ChildContainer = styled.div<ChildContainerProps>`
+    margin: 4px 0 0;
+    min-width: 20rem;
+
     top: ${(props) => {
         if (props.dependsOnPosition) {
             return props.position ? props.position.y : 0;
@@ -194,7 +202,6 @@ const Dropdown = ({children, showOnRight, moveUp, target, onClose, dependsOnMous
         <ProfileDropdown className={classes}>
             {target}
             <ChildContainer
-                className='PlaybookRunFilter-select'
                 moveUp={moveUp}
                 position={position}
                 dependsOnPosition={dependsOnMousePosition}

@@ -28,7 +28,6 @@ interface Props {
     defaultOwnerEnabled: boolean;
     onToggleDefaultOwner: () => void;
     onAssignOwner: (userId: string | undefined) => void;
-    teamID: string;
     announcementChannelID: string;
     announcementChannelEnabled: boolean;
     onToggleAnnouncementChannel: () => void;
@@ -101,7 +100,6 @@ export const AutomationSettings = (props: Props) => {
                         getProfiles={props.getProfiles}
                         ownerID={props.defaultOwnerID}
                         onAssignOwner={props.onAssignOwner}
-                        teamID={props.teamID}
                     />
                 </Setting>
                 <Setting id={'announcement-channel'}>
