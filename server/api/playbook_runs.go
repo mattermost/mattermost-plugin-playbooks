@@ -66,6 +66,7 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	playbookRunRouterAuthorized.HandleFunc("/owner", handler.changeOwner).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/status", handler.status).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/finish", handler.finish).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/finish-dialog", handler.finishDialog).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
@@ -697,6 +698,29 @@ func (h *PlaybookRunHandler) finish(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
+}
+
+// updateStatusDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a
+// user submits the Finish Run dialog.
+func (h *PlaybookRunHandler) finishDialog(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	playbookRun, incErr := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if incErr != nil {
+		h.HandleError(w, incErr)
+		return
+	}
+
+	if err := app.EditPlaybookRun(userID, playbookRun.ChannelID, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to playbook run channel %s", userID, playbookRun.ChannelID))
+		return
+	}
+
+	if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
 }
 
 // updateStatusDialog handles the POST /runs/{id}/update-status-dialog endpoint, called when a

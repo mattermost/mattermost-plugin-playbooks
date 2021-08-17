@@ -647,7 +647,7 @@ func (r *Runner) actionFinish() {
 		return
 	}
 
-	err = r.playbookRunService.FinishPlaybookRun(playbookRunID, r.args.UserId)
+	err = r.playbookRunService.OpenFinishPlaybookRunDialog(playbookRunID, r.args.TriggerId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error finishing the playbook run: %v", err)
 		return

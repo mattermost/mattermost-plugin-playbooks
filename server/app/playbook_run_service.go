@@ -834,6 +834,36 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	return nil
 }
 
+func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, triggerID string) error {
+	currentPlaybookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+
+	numOutstanding := 0
+	for _, c := range currentPlaybookRun.Checklists {
+		for _, item := range c.Items {
+			if item.State != ChecklistItemStateClosed {
+				numOutstanding++
+			}
+		}
+	}
+
+	dialogRequest := model.OpenDialogRequest{
+		URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/finish-dialog",
+			s.configService.GetManifest().Id,
+			playbookRunID),
+		Dialog:    *s.newFinishPlaybookRunDialog(numOutstanding),
+		TriggerId: triggerID,
+	}
+
+	if err := s.pluginAPI.Frontend.OpenInteractiveDialog(dialogRequest); err != nil {
+		return errors.Wrap(err, "failed to open finish run dialog")
+	}
+
+	return nil
+}
+
 // FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
 func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string) error {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
@@ -1879,6 +1909,22 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, c
 	}
 
 	return nil
+}
+
+func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(outstanding int) *model.Dialog {
+	message := "Are you sure you want to finish the run?"
+	if outstanding == 1 {
+		message = "There is **1 outstanding task**, are you sure you want to finish the run?"
+	} else {
+		message = "There are **" + strconv.Itoa(outstanding) + " outstanding tasks**, are you sure you want to finish the run?"
+	}
+
+	return &model.Dialog{
+		Title:            "Confirm finish run",
+		IntroductionText: message,
+		SubmitLabel:      "Finish run",
+		NotifyOnCancel:   false,
+	}
 }
 
 func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) (*model.Dialog, error) {

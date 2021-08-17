@@ -376,6 +376,9 @@ type PlaybookRunService interface {
 	// UpdateStatus updates a playbook run's status.
 	UpdateStatus(playbookRunID, userID string, options StatusUpdateOptions) error
 
+	// OpenFinishPlaybookRunDialog opens the dialog to confirm the run should be finished.
+	OpenFinishPlaybookRunDialog(playbookRunID, triggerID string) error
+
 	// FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
 	FinishPlaybookRun(playbookRunID, userID string) error
 
