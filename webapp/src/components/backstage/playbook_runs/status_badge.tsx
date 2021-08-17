@@ -26,11 +26,11 @@ const Badge = styled.div<BadgeProps>`
         switch (props.status) {
         case PlaybookRunStatus.InProgress:
             return css`
-                background-color: var(--dnd-indicator);
+                background-color: var(--sidebar-text-active-border);
         `;
         case PlaybookRunStatus.Finished:
             return css`
-                background-color: var(--online-indicator);
+                background-color: var(--center-channel-color-64);
         `;
         default:
             return css`
