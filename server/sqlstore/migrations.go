@@ -1011,14 +1011,14 @@ var migrations = []Migration{
 			}
 
 			if _, err := e.Exec(`
-					UPDATE IR_Incident
-					SET CurrentStatus =
-							CASE
-								WHEN CurrentStatus = 'Archived'
-									THEN 'Finished'
-								ELSE 'InProgress'
-								END;
-					`); err != nil {
+				UPDATE IR_Incident
+				SET CurrentStatus =
+						CASE
+							WHEN CurrentStatus = 'Archived'
+								THEN 'Finished'
+							ELSE 'InProgress'
+							END;
+				`); err != nil {
 				return errors.Wrap(err, "failed changing CurrentStatus to Archived or InProgress in table IR_Incident")
 			}
 

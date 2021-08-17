@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-const playbookRunStartCommand = '/playbook start';
+const playbookRunStartCommand = '/playbook run';
 
 // function startPlaybookRun(playbookRunName) {
 Cypress.Commands.add('startPlaybookRun', (playbookName, playbookRunName) => {
@@ -27,12 +27,12 @@ Cypress.Commands.add('executeSlashCommand', (command) => {
     cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 200}).type('{enter}');
 });
 
-// Opens playbook run dialog using the `/playbook start` slash command
+// Opens playbook run dialog using the `/playbook run` slash command
 Cypress.Commands.add('openPlaybookRunDialogFromSlashCommand', () => {
     cy.executeSlashCommand(playbookRunStartCommand);
 });
 
-// Starts playbook run with the `/playbook start` slash command
+// Starts playbook run with the `/playbook run` slash command
 // function startPlaybookRunWithSlashCommand(playbookRunName) {
 Cypress.Commands.add('startPlaybookRunWithSlashCommand', (playbookName, playbookRunName) => {
     cy.openPlaybookRunDialogFromSlashCommand();

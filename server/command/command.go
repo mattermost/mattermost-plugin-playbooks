@@ -21,7 +21,7 @@ import (
 )
 
 const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
-	"* `/playbook start` - Run a playbook. \n" +
+	"* `/playbook run` - Run a playbook. \n" +
 	"* `/playbook finish` - Finish the playbook run in this channel. \n" +
 	"* `/playbook update` - Provide a status update. \n" +
 	"* `/playbook check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
@@ -52,7 +52,7 @@ func getCommand(addTestCommands bool) *model.Command {
 		DisplayName:      "Playbook",
 		Description:      "Playbooks",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, finish, update, check, list, owner, info",
+		AutoCompleteDesc: "Available commands: run, finish, update, check, list, owner, info",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(addTestCommands),
 	}
@@ -60,10 +60,10 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	command := model.NewAutocompleteData("playbook", "[command]",
-		"Available commands: start, finish, update, check, checkadd, checkremove, list, owner, info, timeline")
+		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline")
 
-	start := model.NewAutocompleteData("start", "", "Starts a new playbook run")
-	command.AddCommand(start)
+	run := model.NewAutocompleteData("run", "", "Starts a new playbook run")
+	command.AddCommand(run)
 
 	finish := model.NewAutocompleteData("finish", "",
 		"Finishes the playbook run associated with the current channel")
@@ -186,7 +186,7 @@ func (r *Runner) warnUserAndLogErrorf(format string, args ...interface{}) {
 	})
 }
 
-func (r *Runner) actionStart(args []string) {
+func (r *Runner) actionRun(args []string) {
 	clientID := ""
 	if len(args) > 0 {
 		clientID = args[0]
@@ -232,11 +232,11 @@ func (r *Runner) actionStart(args []string) {
 	}
 }
 
-// actionStartPlaybook is intended for scripting use, not use by the end user (they would have
+// actionRunPlaybook is intended for scripting use, not use by the end user (they would have
 // to type in the correct playbookID).
-func (r *Runner) actionStartPlaybook(args []string) {
+func (r *Runner) actionRunPlaybook(args []string) {
 	if len(args) != 2 {
-		r.postCommandResponse("Usage: `/playbook start-playbook <playbookID> <clientID>`")
+		r.postCommandResponse("Usage: `/playbook run-playbook <playbookID> <clientID>`")
 		return
 	}
 
@@ -647,7 +647,7 @@ func (r *Runner) actionFinish() {
 		return
 	}
 
-	err = r.playbookRunService.FinishRun(playbookRunID, r.args.UserId)
+	err = r.playbookRunService.FinishPlaybookRun(playbookRunID, r.args.UserId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error finishing the playbook run: %v", err)
 		return
@@ -1706,7 +1706,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 	}
 
 	for i := 0; i < numEndedPlaybookRuns; i++ {
-		err := r.playbookRunService.FinishRun(playbookRuns[i].ID, r.args.UserId)
+		err := r.playbookRunService.FinishPlaybookRun(playbookRuns[i].ID, r.args.UserId)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error ending the playbook run: %v", err)
 			return
@@ -1768,10 +1768,10 @@ func (r *Runner) Execute() error {
 	}
 
 	switch cmd {
-	case "start":
-		r.actionStart(parameters)
-	case "start-playbook":
-		r.actionStartPlaybook(parameters)
+	case "run":
+		r.actionRun(parameters)
+	case "run-playbook":
+		r.actionRunPlaybook(parameters)
 	case "finish":
 		r.actionFinish()
 	case "update":

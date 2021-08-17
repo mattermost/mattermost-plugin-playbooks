@@ -690,7 +690,7 @@ func (h *PlaybookRunHandler) finish(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := h.playbookRunService.FinishRun(playbookRunID, userID); err != nil {
+	if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
 		h.HandleError(w, err)
 		return
 	}

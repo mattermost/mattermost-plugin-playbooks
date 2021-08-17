@@ -5,11 +5,12 @@
 package mock_app
 
 import (
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	app "github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	model "github.com/mattermost/mattermost-server/v5/model"
-	reflect "reflect"
-	time "time"
 )
 
 // MockPlaybookRunService is a mock of PlaybookRunService interface
@@ -149,7 +150,7 @@ func (mr *MockPlaybookRunServiceMockRecorder) EditChecklistItem(arg0, arg1, arg2
 }
 
 // FinishRun mocks base method
-func (m *MockPlaybookRunService) FinishRun(arg0, arg1 string) error {
+func (m *MockPlaybookRunService) FinishPlaybookRun(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FinishRun", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -159,7 +160,7 @@ func (m *MockPlaybookRunService) FinishRun(arg0, arg1 string) error {
 // FinishRun indicates an expected call of FinishRun
 func (mr *MockPlaybookRunServiceMockRecorder) FinishRun(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishRun", reflect.TypeOf((*MockPlaybookRunService)(nil).FinishRun), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishRun", reflect.TypeOf((*MockPlaybookRunService)(nil).FinishPlaybookRun), arg0, arg1)
 }
 
 // GetChecklistAutocomplete mocks base method

@@ -646,7 +646,7 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRunID, authorID, originalPostID string) error {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
+		return errors.Wrapf(err, "failed to retrieve playbook run for id: %s", playbookRunID)
 	}
 
 	playbookRunChannel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
@@ -679,11 +679,14 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRun
 }
 
 func formatStatus(status string) string {
-	ret := status
-	if status == StatusInProgress {
-		ret = "In Progress"
+	switch status {
+	case StatusInProgress:
+		return "In Progress"
+	case StatusFinished:
+		return "Finished"
+	default:
+		return status
 	}
-	return ret
 }
 
 // sendWebhookOnUpdateStatus sends a POST request to the status update webhook URL.
@@ -831,8 +834,8 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	return nil
 }
 
-// FinishRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
-func (s *PlaybookRunServiceImpl) FinishRun(playbookRunID, userID string) error {
+// FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
+func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string) error {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -887,21 +890,23 @@ func (s *PlaybookRunServiceImpl) FinishRun(playbookRunID, userID string) error {
 		}
 	}
 
+	var fileID string
 	if playbookRunToModify.ExportChannelOnFinishedEnabled {
-		fileID, err2 := s.exportChannelToFile(playbookRunToModify.Name, playbookRunToModify.OwnerUserID, playbookRunToModify.ChannelID)
-		if err2 != nil {
+		fileID, err = s.exportChannelToFile(playbookRunToModify.Name, playbookRunToModify.OwnerUserID, playbookRunToModify.ChannelID)
+		if err != nil {
 			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
 			return nil
 		}
 
-		channel, err2 := s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
-		if err2 != nil {
+		var channel *model.Channel
+		channel, err = s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
+		if err != nil {
 			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
-			return nil
+			return errors.Wrapf(err, "failed to get channel in export channel on finished, in FinishPlaybookRun, for channelID: %s", playbookRunToModify.ChannelID)
 		}
 
-		if err2 = s.poster.DM(playbookRunToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Playbook run ~%s exported successfully", channel.Name), FileIds: []string{fileID}}); err2 != nil {
-			return errors.Wrap(err2, "failed to send exported channel result to playbook owner")
+		if err = s.poster.DM(playbookRunToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Playbook run ~%s exported successfully", channel.Name), FileIds: []string{fileID}}); err != nil {
+			return errors.Wrap(err, "failed to send exported channel result to playbook owner")
 		}
 	}
 
