@@ -31,8 +31,6 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
-import {ComponentByType} from 'src/components/modals';
-
 import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
@@ -465,22 +463,4 @@ export function useNow(refreshIntervalMillis = 1000) {
     }, [refreshIntervalMillis]);
 
     return now;
-}
-
-export function useModalOpener(type: Parameters<typeof ComponentByType.get>[0], props: Record<string, any>) {
-    const dispatch = useDispatch();
-
-    if (!type) {
-        return null;
-    }
-
-    const definition = {
-        modalId: type,
-        dialogType: ComponentByType.get(type),
-        dialogProps: props,
-    };
-
-    return () => {
-        dispatch(modals.openModal(definition));
-    };
 }

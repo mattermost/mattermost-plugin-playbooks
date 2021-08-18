@@ -37,6 +37,7 @@ const config = {
                 fileName: false,
             },
         ],
+        'babel-plugin-ts-nameof',
     ],
 };
 

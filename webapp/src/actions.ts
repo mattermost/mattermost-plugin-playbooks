@@ -64,7 +64,7 @@ import {ChecklistItemsFilter} from 'src/types/playbook';
 
 import {modals} from 'src/webapp_globals';
 
-import {ModalTypes, UpdateRunStatusModal} from 'src/components/modals';
+import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -104,13 +104,7 @@ export function promptUpdateStatus(
         const experimentalFeaturesEnabled = selectExperimentalFeatures(getState());
 
         if (experimentalFeaturesEnabled) {
-            const definition = {
-                modalId: ModalTypes.UpdateRunStatus,
-                dialogType: UpdateRunStatusModal,
-                dialogProps: {playbookRunId, playbookId, channelId},
-            };
-
-            dispatch(modals.openModal(definition));
+            dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookId, playbookRunId, channelId})));
         } else {
             await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`, teamId);
         }

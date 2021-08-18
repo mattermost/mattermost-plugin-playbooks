@@ -6,11 +6,13 @@ import classNames from 'classnames';
 import React from 'react';
 import {Modal} from 'react-bootstrap';
 
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+
 type Props = {
     className?: string;
     onHide: () => void;
     modalHeaderText: React.ReactNode;
-    show: boolean;
+    show?: boolean;
     handleCancel?: () => void;
     handleConfirm?: () => void;
     confirmButtonText?: React.ReactNode;
@@ -34,21 +36,13 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         autoCloseOnCancelButton: true,
         autoCloseOnConfirmButton: true,
         enforceFocus: true,
-        show: true,
     };
 
-    public constructor(props: Props) {
-        super(props);
-        this.state = {show: this.props.show};
-    }
-
-    static getDerivedStateFromProps(props: Props, state: State) {
-        return {...state, show: props.show};
-    }
+    state = {show: true};
 
     onHide = () => {
         this.setState({show: false}, () => {
-            // setTimeout(this.props.onHide, 500);
+            setTimeout(this.props.onHide, 150);
         });
     }
 
@@ -81,16 +75,16 @@ export default class GenericModal extends React.PureComponent<Props, State> {
             }
 
             confirmButton = (
-                <button
+                <PrimaryButton
                     type='submit'
-                    className={classNames(`GenericModal__button confirm ${this.props.confirmButtonClassName}`, {
+                    className={classNames(`confirm ${this.props.confirmButtonClassName}`, {
                         disabled: this.props.isConfirmDisabled,
                     })}
                     onClick={this.handleConfirm}
                     disabled={this.props.isConfirmDisabled}
                 >
                     {confirmButtonText}
-                </button>
+                </PrimaryButton>
             );
         }
 
@@ -102,20 +96,20 @@ export default class GenericModal extends React.PureComponent<Props, State> {
             }
 
             cancelButton = (
-                <button
+                <TertiaryButton
                     type='button'
-                    className='GenericModal__button cancel'
+                    className='cancel'
                     onClick={this.handleCancel}
                 >
                     {cancelButtonText}
-                </button>
+                </TertiaryButton>
             );
         }
 
         return (
             <StyledModal
                 dialogClassName={classNames('a11y__modal GenericModal', this.props.className)}
-                show={this.state.show}
+                show={this.props.show ?? this.state.show}
                 onHide={this.onHide}
                 onExited={this.onHide}
                 enforceFocus={this.props.enforceFocus}
@@ -157,6 +151,9 @@ const StyledModal = styled(Modal)`
         .modal-header {
             margin-bottom: 8px;
         }
+        .modal-body {
+            overflow: visible;
+        }
         .modal-content {
             padding: 24px;
         }
@@ -183,6 +180,7 @@ const Buttons = styled.div`
     display: flex;
     flex-direction: row;
     justify-content: center;
+    gap: 10px;
 `;
 
 const FooterContainer = styled.div`
@@ -198,9 +196,22 @@ const ModalHeading = styled.h1`
     color: var(--center-channel-color);
 `;
 
-export const ModalDescription = styled.p`
+export const Description = styled.p`
     font-size: 12px;
     line-height: 16px;
-    color: rgba(var(--center-channel-color), 0.72);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+
+    a {
+        font-weight: bold;
+    }
+`;
+
+export const Label = styled.label`
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--center-channel-color);
+    margin-top: 24px;
+    margin-bottom: 8px;
 `;
 
