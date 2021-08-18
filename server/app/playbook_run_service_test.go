@@ -565,7 +565,7 @@ func TestOpenCreatePlaybookRunDialog(t *testing.T) {
 }
 
 func TestUserHasJoinedChannel(t *testing.T) {
-	t.Run("should add the new channel into the 'Playbook Run' sidebar category if it already exists", func(t *testing.T) {
+	t.Run("should add the new channel into the 'Playbook Runs' sidebar category if it already exists", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
 		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
@@ -576,7 +576,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 
-		playbookRun := &app.PlaybookRun{CategorizeChannelEnabled: true}
+		playbookRun := &app.PlaybookRun{CategoryName: "Playbook Runs"}
 		sidebarCategories := []*model.SidebarCategoryWithChannels{
 			{
 				SidebarCategory: model.SidebarCategory{Id: "sidebar_category_id", DisplayName: "Playbook Runs"},
@@ -614,7 +614,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		assert.Equal(t, sidebarCategories[0].Channels[0], "channel_id")
 	})
 
-	t.Run("should create the 'Playbook Run' sidebar category and add the channel if it does not exists", func(t *testing.T) {
+	t.Run("should create the 'Playbook Runs' sidebar category and add the channel if it does not exists", func(t *testing.T) {
 		// In this test case we only assert that the methods were called with the apt parameters
 
 		controller := gomock.NewController(t)
@@ -627,7 +627,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 
-		playbookRun := &app.PlaybookRun{CategorizeChannelEnabled: true}
+		playbookRun := &app.PlaybookRun{CategoryName: "Playbook Runs"}
 		existingSidebarCategory := &model.SidebarCategoryWithChannels{
 			SidebarCategory: model.SidebarCategory{Id: "sidebar_category_id", DisplayName: "Test Category Sidebar"},
 			Channels:        []string{},
@@ -641,6 +641,111 @@ func TestUserHasJoinedChannel(t *testing.T) {
 				UserId:      "user_id",
 				TeamId:      "team_id",
 				DisplayName: "Playbook Runs",
+				Muted:       false,
+			},
+			Channels: []string{"channel_id"},
+		}
+
+		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{})).Return(nil, nil)
+		store.EXPECT().GetPlaybookRunIDForChannel(gomock.Any()).Return("playbook_run_id", nil)
+		store.EXPECT().GetPlaybookRun("playbook_run_id").Return(playbookRun, nil).Times(2)
+		poster.EXPECT().PublishWebsocketEventToChannel(gomock.Any(), gomock.Any(), gomock.Any())
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
+		pluginAPI.On("GetChannel", "channel_id").Return(&model.Channel{TeamId: "team_id"}, nil)
+		pluginAPI.On("KVSetWithOptions", "mutex_playbook_run_categories", mock.Anything, mock.Anything).Return(true, nil)
+		pluginAPI.On("GetChannelSidebarCategories", "user_id", "team_id").Return(orderedSidebarCategories, nil)
+		pluginAPI.On(
+			"CreateChannelSidebarCategory",
+			"user_id",
+			"team_id",
+			newSidebarCategory,
+		).Return(newSidebarCategory, nil)
+
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
+
+		userID := "user_id"
+		channelID := "channel_id"
+		actorID := ""
+
+		s.UserHasJoinedChannel(userID, channelID, actorID)
+	})
+
+	t.Run("should add the new channel into the 'Playbook Runs 2' sidebar category if it already exists", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		store := mock_app.NewMockPlaybookRunStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_app.NewMockJobOnceScheduler(controller)
+
+		playbookRun := &app.PlaybookRun{CategoryName: "Playbook Runs 2"}
+		sidebarCategories := []*model.SidebarCategoryWithChannels{
+			{
+				SidebarCategory: model.SidebarCategory{Id: "sidebar_category_id", DisplayName: "Playbook Runs 2"},
+				Channels:        []string{},
+			},
+		}
+		orderedSidebarCategories := &model.OrderedSidebarCategories{
+			Categories: sidebarCategories,
+			Order:      []string{},
+		}
+
+		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{})).Return(nil, nil)
+		store.EXPECT().GetPlaybookRunIDForChannel(gomock.Any()).Return("playbook_run_id", nil)
+		store.EXPECT().GetPlaybookRun("playbook_run_id").Return(playbookRun, nil).Times(2)
+		poster.EXPECT().PublishWebsocketEventToChannel(gomock.Any(), gomock.Any(), gomock.Any())
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
+		pluginAPI.On("GetChannel", "channel_id").Return(&model.Channel{TeamId: "team_id"}, nil)
+		pluginAPI.On("KVSetWithOptions", "mutex_playbook_run_categories", mock.Anything, mock.Anything).Return(true, nil)
+		pluginAPI.On("GetChannelSidebarCategories", "user_id", "team_id").Return(orderedSidebarCategories, nil)
+		pluginAPI.On(
+			"UpdateChannelSidebarCategories",
+			"user_id",
+			"team_id",
+			[]*model.SidebarCategoryWithChannels(orderedSidebarCategories.Categories),
+		).Return(sidebarCategories, nil)
+
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
+
+		userID := "user_id"
+		channelID := "channel_id"
+		actorID := ""
+		s.UserHasJoinedChannel(userID, channelID, actorID)
+
+		assert.Equal(t, len(sidebarCategories[0].Channels), 1)
+		assert.Equal(t, sidebarCategories[0].Channels[0], "channel_id")
+	})
+
+	t.Run("should create the 'Playbook Runs 2' sidebar category and add the channel if it does not exists", func(t *testing.T) {
+		// In this test case we only assert that the methods were called with the apt parameters
+
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		store := mock_app.NewMockPlaybookRunStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_app.NewMockJobOnceScheduler(controller)
+
+		playbookRun := &app.PlaybookRun{CategoryName: "Playbook Runs 2"}
+		existingSidebarCategory := &model.SidebarCategoryWithChannels{
+			SidebarCategory: model.SidebarCategory{Id: "sidebar_category_id", DisplayName: "Test Category Sidebar"},
+			Channels:        []string{},
+		}
+		orderedSidebarCategories := &model.OrderedSidebarCategories{
+			Categories: []*model.SidebarCategoryWithChannels{existingSidebarCategory},
+			Order:      []string{},
+		}
+		newSidebarCategory := &model.SidebarCategoryWithChannels{
+			SidebarCategory: model.SidebarCategory{
+				UserId:      "user_id",
+				TeamId:      "team_id",
+				DisplayName: "Playbook Runs 2",
 				Muted:       false,
 			},
 			Channels: []string{"channel_id"},

@@ -138,6 +138,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"ConcatenatedSignalAnyKeywords",
 			"SignalAnyKeywordsEnabled",
 			"CategorizeChannelEnabled",
+			"CategoryName",
 		).
 		From("IR_Playbook")
 
@@ -210,6 +211,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
 			"SignalAnyKeywordsEnabled":             rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":             rawPlaybook.CategorizeChannelEnabled,
+			"CategoryName":                         rawPlaybook.CategoryName,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -566,6 +568,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
 			"SignalAnyKeywordsEnabled":             rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":             rawPlaybook.CategorizeChannelEnabled,
+			"CategoryName":                         rawPlaybook.CategoryName,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

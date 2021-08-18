@@ -27,7 +27,7 @@ import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
 import {ErrorPageTypes} from 'src/constants';
-import {navigateToUrl, pluginErrorUrl} from 'src/browser_routing';
+import {pluginErrorUrl} from 'src/browser_routing';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 
 import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
@@ -37,7 +37,7 @@ import CloudModal from 'src/components/cloud_modal';
 import ErrorPage from '../error_page';
 
 import SettingsView from './settings';
-import {BackstageNavbar, BackstageNavbarIcon} from './backstage_navbar';
+import {BackstageNavbar} from './backstage_navbar';
 
 import {applyTheme} from './css_utils';
 
@@ -105,10 +105,6 @@ const Backstage = () => {
 
     const match = useRouteMatch();
 
-    const goToMattermost = () => {
-        navigateToUrl('');
-    };
-
     const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     return (
@@ -167,10 +163,6 @@ const Backstage = () => {
                             {'Give Feedback'}
                         </BackstageTitlebarItem>
                     }
-                    <BackstageNavbarIcon
-                        className='icon-close close-icon'
-                        onClick={goToMattermost}
-                    />
                 </div>
             </BackstageNavbar>
             <BackstageBody>

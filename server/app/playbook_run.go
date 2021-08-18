@@ -148,9 +148,8 @@ type PlaybookRun struct {
 	// A participant is any member of the playbook run channel that isn't a bot.
 	ParticipantIDs []string `json:"participant_ids"`
 
-	// CategorizeChannelEnabled is true if the channel is automatically categorized in the playbook
-	// runs category for every user that joins the playbook run channel.
-	CategorizeChannelEnabled bool `json:"categorize_channel_enabled"`
+	// CategoryName, if not empty, is the name of the category where the run channel will live.
+	CategoryName string `json:"category_name"`
 }
 
 func (i *PlaybookRun) Clone() *PlaybookRun {
