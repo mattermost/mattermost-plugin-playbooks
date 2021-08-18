@@ -21,12 +21,12 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
+    finishRun,
     playbookRunUpdated,
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
     setChecklistItemsFilter,
     toggleRHS,
-    promptUpdateStatus,
 } from 'src/actions';
 import {
     Checklist,
@@ -73,7 +73,7 @@ const RHSChecklists = (props: Props) => {
 
     const checklists = props.playbookRun.checklists || [];
     const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
-    const active = props.playbookRun.current_status !== PlaybookRunStatus.Resolved && props.playbookRun.current_status !== PlaybookRunStatus.Archived;
+    const active = props.playbookRun.current_status === PlaybookRunStatus.InProgress;
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
 
     const selectOption = (value: string, checked: boolean) => {
@@ -214,17 +214,7 @@ const RHSChecklists = (props: Props) => {
             ))}
             {
                 active &&
-                <FinishButton
-                    onClick={() => {
-                        dispatch(promptUpdateStatus(
-                            props.playbookRun.team_id,
-                            props.playbookRun.id,
-                            props.playbookRun.playbook_id,
-                            props.playbookRun.channel_id,
-                            PlaybookRunStatus.Resolved,
-                        ));
-                    }}
-                >
+                <FinishButton onClick={() => dispatch(finishRun(props.playbookRun.team_id))}>
                     {'Finish run'}
                 </FinishButton>
             }

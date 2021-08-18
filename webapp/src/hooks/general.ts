@@ -9,8 +9,6 @@ import {
 import {useDispatch, useSelector} from 'react-redux';
 import moment from 'moment';
 
-import {haveITeamPermission} from 'mattermost-redux/selectors/entities/roles';
-import {PermissionsOptions} from 'mattermost-redux/selectors/entities/roles_helpers';
 import {getCurrentTeam, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {
@@ -30,8 +28,6 @@ import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/p
 import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
-
-import {PlaybookRun, StatusPost} from 'src/types/playbook_run';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';
@@ -234,14 +230,6 @@ export function useProfilesInChannel(channelId: string) {
     return profilesInChannel;
 }
 
-function getLatestPostId(statusPosts: StatusPost[]) {
-    const sortedPosts = [...statusPosts]
-        .filter((a) => a.delete_at === 0)
-        .sort((a, b) => b.create_at - a.create_at);
-
-    return sortedPosts[0]?.id;
-}
-
 export function usePost(postId: string) {
     const postFromState = useSelector<GlobalState, Post | null>((state) =>
         getPostFromState(state, postId || ''),
@@ -268,11 +256,6 @@ export function usePost(postId: string) {
     }, [postFromState, postId]);
 
     return post;
-}
-
-export function useLatestUpdate(playbookRun: PlaybookRun) {
-    const postId = getLatestPostId(playbookRun.status_posts);
-    return usePost(postId);
 }
 
 export function useNumPlaybooksInCurrentTeam() {

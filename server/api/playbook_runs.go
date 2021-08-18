@@ -65,6 +65,8 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	playbookRunRouterAuthorized.HandleFunc("", handler.updatePlaybookRun).Methods(http.MethodPatch)
 	playbookRunRouterAuthorized.HandleFunc("/owner", handler.changeOwner).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/status", handler.status).Methods(http.MethodPost)
+	playbookRunRouterAuthorized.HandleFunc("/finish", handler.finish).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/finish-dialog", handler.finishDialog).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
@@ -380,7 +382,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.Description = pb.Description
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
-		playbookRun.CategorizeChannelEnabled = pb.CategorizeChannelEnabled
 
 		playbookRun.InvitedUserIDs = []string{}
 		playbookRun.InvitedGroupIDs = []string{}
@@ -409,8 +410,12 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.MessageOnJoin = pb.MessageOnJoin
 		}
 
-		if pb.ExportChannelOnArchiveEnabled {
-			playbookRun.ExportChannelOnArchiveEnabled = pb.ExportChannelOnArchiveEnabled
+		if pb.ExportChannelOnFinishedEnabled {
+			playbookRun.ExportChannelOnFinishedEnabled = pb.ExportChannelOnFinishedEnabled
+		}
+
+		if pb.CategorizeChannelEnabled {
+			playbookRun.CategoryName = pb.CategoryName
 		}
 
 		playbookRun.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
@@ -674,22 +679,6 @@ func (h *PlaybookRunHandler) status(w http.ResponseWriter, r *http.Request) {
 
 	options.Reminder = options.Reminder * time.Second
 
-	options.Status = strings.TrimSpace(options.Status)
-	if options.Status == "" {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "status must not be empty", errors.New("status field empty"))
-		return
-	}
-	switch options.Status {
-	case app.StatusActive:
-	case app.StatusArchived:
-	case app.StatusReported:
-	case app.StatusResolved:
-		break
-	default:
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid status", nil)
-		return
-	}
-
 	err = h.playbookRunService.UpdateStatus(playbookRunID, userID, options)
 	if err != nil {
 		h.HandleError(w, err)
@@ -698,6 +687,43 @@ func (h *PlaybookRunHandler) status(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
+}
+
+// updateStatusD handles the POST /runs/{id}/finish endpoint, user has edit permissions
+func (h *PlaybookRunHandler) finish(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"OK"}`))
+}
+
+// updateStatusDialog handles the POST /runs/{id}/finish-dialog endpoint, called when a
+// user submits the Finish Run dialog.
+func (h *PlaybookRunHandler) finishDialog(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	playbookRun, incErr := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if incErr != nil {
+		h.HandleError(w, incErr)
+		return
+	}
+
+	if err := app.EditPlaybookRun(userID, playbookRun.ChannelID, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", fmt.Errorf("user %s cannot post to playbook run channel %s", userID, playbookRun.ChannelID))
+		return
+	}
+
+	if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
 }
 
 // updateStatusDialog handles the POST /runs/{id}/update-status-dialog endpoint, called when a
@@ -739,21 +765,6 @@ func (h *PlaybookRunHandler) updateStatusDialog(w http.ResponseWriter, r *http.R
 		}
 	}
 
-	if status, ok := request.Submission[app.DialogFieldStatusKey]; ok {
-		options.Status = status.(string)
-	}
-
-	switch options.Status {
-	case app.StatusActive:
-	case app.StatusArchived:
-	case app.StatusReported:
-	case app.StatusResolved:
-		break
-	default:
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid status", nil)
-		return
-	}
-
 	err = h.playbookRunService.UpdateStatus(playbookRunID, userID, options)
 	if err != nil {
 		h.HandleError(w, err)
@@ -788,7 +799,7 @@ func (h *PlaybookRunHandler) reminderButtonUpdate(w http.ResponseWriter, r *http
 		return
 	}
 
-	if err = h.playbookRunService.OpenUpdateStatusDialog(playbookRunID, requestData.TriggerId, ""); err != nil {
+	if err = h.playbookRunService.OpenUpdateStatusDialog(playbookRunID, requestData.TriggerId); err != nil {
 		h.HandleError(w, errors.New("reminderButtonUpdate failed to open update status dialog"))
 		return
 	}

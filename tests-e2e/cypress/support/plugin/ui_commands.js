@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-const playbookRunStartCommand = '/playbook start';
+const playbookRunStartCommand = '/playbook run';
 
 // function startPlaybookRun(playbookRunName) {
 Cypress.Commands.add('startPlaybookRun', (playbookName, playbookRunName) => {
@@ -27,12 +27,12 @@ Cypress.Commands.add('executeSlashCommand', (command) => {
     cy.findByTestId('post_textbox').type('{esc}{esc}{esc}{esc}', {delay: 200}).type('{enter}');
 });
 
-// Opens playbook run dialog using the `/playbook start` slash command
+// Opens playbook run dialog using the `/playbook run` slash command
 Cypress.Commands.add('openPlaybookRunDialogFromSlashCommand', () => {
     cy.executeSlashCommand(playbookRunStartCommand);
 });
 
-// Starts playbook run with the `/playbook start` slash command
+// Starts playbook run with the `/playbook run` slash command
 // function startPlaybookRunWithSlashCommand(playbookRunName) {
 Cypress.Commands.add('startPlaybookRunWithSlashCommand', (playbookName, playbookRunName) => {
     cy.openPlaybookRunDialogFromSlashCommand();
@@ -104,7 +104,7 @@ Cypress.Commands.add('openBackstage', () => {
 
 // Create playbook
 Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
-    cy.visit(`/playbooks/playbooks/new`);
+    cy.visit('/playbooks/playbooks/new');
 
     cy.findByTestId('save_playbook', {timeout: 30000}).should('exist');
 
@@ -182,7 +182,7 @@ Cypress.Commands.add('selectChannel', (channelName) => {
 /**
  * Update the status of the current playbook run through the slash command.
  */
-Cypress.Commands.add('updateStatus', (message, reminder, status) => {
+Cypress.Commands.add('updateStatus', (message, reminder) => {
     // # Run the slash command to update status.
     cy.executeSlashCommand('/playbook update');
 
@@ -194,19 +194,8 @@ Cypress.Commands.add('updateStatus', (message, reminder, status) => {
         // # Type the new update in the text box.
         cy.findByTestId('messageinput').type(message);
 
-        let actualStatus = status;
-        if (!actualStatus) {
-            actualStatus = 'reported';
-        }
-
-        actualStatus = actualStatus.toLowerCase();
-
-        cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-            cy.get('input').type(actualStatus, {delay: 200}).type('{enter}');
-        });
-
         if (reminder) {
-            cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+            cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                 cy.get('input').type(reminder, {delay: 200}).type('{enter}');
             });
         }

@@ -21,9 +21,9 @@ import (
 )
 
 const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
-	"* `/playbook start` - Run a playbook. \n" +
-	"* `/playbook end` - Close the playbook run in this channel. \n" +
-	"* `/playbook update [next status]` - Provide a status update. \n" +
+	"* `/playbook run` - Run a playbook. \n" +
+	"* `/playbook finish` - Finish the playbook run in this channel. \n" +
+	"* `/playbook update` - Provide a status update. \n" +
 	"* `/playbook check [checklist #] [item #]` - check/uncheck the checklist item. \n" +
 	"* `/playbook checkadd [checklist #] [item text]` - add a checklist item. \n" +
 	"* `/playbook checkremove [checklist #] [item #]` - remove a checklist item. \n" +
@@ -52,7 +52,7 @@ func getCommand(addTestCommands bool) *model.Command {
 		DisplayName:      "Playbook",
 		Description:      "Playbooks",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: start, end, update, restart, check, list, owner, info",
+		AutoCompleteDesc: "Available commands: run, finish, update, check, list, owner, info",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(addTestCommands),
 	}
@@ -60,29 +60,18 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	command := model.NewAutocompleteData("playbook", "[command]",
-		"Available commands: start, end, update, restart, check, checkadd, checkremove, list, owner, info, timeline")
+		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline")
 
-	start := model.NewAutocompleteData("start", "", "Starts a new playbook run")
-	command.AddCommand(start)
+	run := model.NewAutocompleteData("run", "", "Starts a new playbook run")
+	command.AddCommand(run)
 
-	end := model.NewAutocompleteData("end", "",
-		"Ends the playbook run associated with the current channel")
-	command.AddCommand(end)
+	finish := model.NewAutocompleteData("finish", "",
+		"Finishes the playbook run associated with the current channel")
+	command.AddCommand(finish)
 
-	update := model.NewAutocompleteData("update", "[next status]",
+	update := model.NewAutocompleteData("update", "",
 		"Provide a status update.")
-	update.AddNamedStaticListArgument("next-status",
-		"The default status for the update dialog.",
-		false, []model.AutocompleteListItem{
-			{Item: "Reported", Hint: "", HelpText: ""},
-			{Item: "Active", Hint: "", HelpText: ""},
-			{Item: "Resolved", Hint: "", HelpText: ""},
-			{Item: "Archived", Hint: "", HelpText: ""}})
 	command.AddCommand(update)
-
-	restart := model.NewAutocompleteData("restart", "",
-		"Restarts the playbook run associated with the current channel")
-	command.AddCommand(restart)
 
 	checklist := model.NewAutocompleteData("check", "[checklist item]",
 		"Checks or unchecks a checklist item.")
@@ -197,7 +186,7 @@ func (r *Runner) warnUserAndLogErrorf(format string, args ...interface{}) {
 	})
 }
 
-func (r *Runner) actionStart(args []string) {
+func (r *Runner) actionRun(args []string) {
 	clientID := ""
 	if len(args) > 0 {
 		clientID = args[0]
@@ -243,11 +232,11 @@ func (r *Runner) actionStart(args []string) {
 	}
 }
 
-// actionStartPlaybook is intended for scripting use, not use by the end user (they would have
+// actionRunPlaybook is intended for scripting use, not use by the end user (they would have
 // to type in the correct playbookID).
-func (r *Runner) actionStartPlaybook(args []string) {
+func (r *Runner) actionRunPlaybook(args []string) {
 	if len(args) != 2 {
-		r.postCommandResponse("Usage: `/playbook start-playbook <playbookID> <clientID>`")
+		r.postCommandResponse("Usage: `/playbook run-playbook <playbookID> <clientID>`")
 		return
 	}
 
@@ -528,7 +517,6 @@ func (r *Runner) actionList() {
 		PerPage:   maxPlaybookRunsToList,
 		Sort:      app.SortByCreateAt,
 		Direction: app.DirectionDesc,
-		Statuses:  []string{app.StatusReported, app.StatusActive, app.StatusResolved},
 	}
 
 	result, err := r.playbookRunService.GetPlaybookRuns(requesterInfo, options)
@@ -639,11 +627,7 @@ func (r *Runner) actionInfo() {
 	r.poster.EphemeralPost(r.args.UserId, r.args.ChannelId, post)
 }
 
-func (r *Runner) actionEnd() {
-	r.actionUpdate([]string{"Resolved"})
-}
-
-func (r *Runner) actionUpdate(args []string) {
+func (r *Runner) actionFinish() {
 	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
@@ -663,14 +647,34 @@ func (r *Runner) actionUpdate(args []string) {
 		return
 	}
 
-	defaultStatus := ""
-	if len(args) == 1 {
-		defaultStatus = args[0]
-	} else if len(args) == 2 && args[0] == "--next-status" {
-		defaultStatus = args[1]
+	err = r.playbookRunService.OpenFinishPlaybookRunDialog(playbookRunID, r.args.TriggerId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error finishing the playbook run: %v", err)
+		return
+	}
+}
+
+func (r *Runner) actionUpdate() {
+	playbookRunID, err := r.playbookRunService.GetPlaybookRunIDForChannel(r.args.ChannelId)
+	if err != nil {
+		if errors.Is(err, app.ErrNotFound) {
+			r.postCommandResponse("This command only works when run from a playbook run channel.")
+			return
+		}
+		r.warnUserAndLogErrorf("Error retrieving playbook run: %v", err)
+		return
 	}
 
-	err = r.playbookRunService.OpenUpdateStatusDialog(playbookRunID, r.args.TriggerId, defaultStatus)
+	if err = app.EditPlaybookRun(r.args.UserId, r.args.ChannelId, r.pluginAPI); err != nil {
+		if errors.Is(err, app.ErrNoPermissions) {
+			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
+			return
+		}
+		r.warnUserAndLogErrorf("Error retrieving playbook run: %v", err)
+		return
+	}
+
+	err = r.playbookRunService.OpenUpdateStatusDialog(playbookRunID, r.args.TriggerId)
 	switch {
 	case errors.Is(err, app.ErrPlaybookRunNotActive):
 		r.postCommandResponse("This playbook run has already been closed.")
@@ -679,10 +683,6 @@ func (r *Runner) actionUpdate(args []string) {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
 	}
-}
-
-func (r *Runner) actionRestart() {
-	r.actionUpdate(nil)
 }
 
 func (r *Runner) actionAdd(args []string) {
@@ -1706,10 +1706,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 	}
 
 	for i := 0; i < numEndedPlaybookRuns; i++ {
-		err := r.playbookRunService.UpdateStatus(playbookRuns[i].ID, r.args.UserId, app.StatusUpdateOptions{
-			Status:  app.StatusArchived,
-			Message: "This is now archived.",
-		})
+		err := r.playbookRunService.FinishPlaybookRun(playbookRuns[i].ID, r.args.UserId)
 		if err != nil {
 			r.warnUserAndLogErrorf("Error ending the playbook run: %v", err)
 			return
@@ -1771,22 +1768,20 @@ func (r *Runner) Execute() error {
 	}
 
 	switch cmd {
-	case "start":
-		r.actionStart(parameters)
-	case "start-playbook":
-		r.actionStartPlaybook(parameters)
-	case "end":
-		r.actionEnd()
+	case "run":
+		r.actionRun(parameters)
+	case "run-playbook":
+		r.actionRunPlaybook(parameters)
+	case "finish":
+		r.actionFinish()
 	case "update":
-		r.actionUpdate(parameters)
+		r.actionUpdate()
 	case "check":
 		r.actionCheck(parameters)
 	case "checkadd":
 		r.actionAddChecklistItem(parameters)
 	case "checkremove":
 		r.actionRemoveChecklistItem(parameters)
-	case "restart":
-		r.actionRestart()
 	case "owner":
 		r.actionOwner(parameters)
 	case "list":

@@ -113,7 +113,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(222).
 		WithChecklists([]int{6}).
-		WithCurrentStatus("Archived").
+		WithCurrentStatus(app.StatusFinished).
 		WithPlaybookID("playbook2").
 		WithParticipant(bob).
 		WithParticipant(john).
@@ -127,7 +127,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 		WithTeamID(team1id).
 		WithCreateAt(333).
 		WithChecklists([]int{5}).
-		WithCurrentStatus("Archived").
+		WithCurrentStatus(app.StatusFinished).
 		WithParticipant(bob).
 		WithParticipant(jane).
 		ToPlaybookRun()
@@ -500,7 +500,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - only active, page 1 by 2 - admin",
+			Name: "team1 - only in progress, page 1 by 2 - admin",
 			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
@@ -511,7 +511,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 				Direction: app.DirectionAsc,
 				Page:      1,
 				PerPage:   2,
-				Status:    app.StatusReported,
+				Status:    app.StatusInProgress,
 			},
 			Want: app.GetPlaybookRunsResults{
 				TotalCount: 3,
@@ -522,14 +522,14 @@ func TestGetPlaybookRuns(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - active, owner3, desc - admin ",
+			Name: "team1 - in progress, owner3, desc - admin ",
 			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
 			},
 			Options: app.PlaybookRunFilterOptions{
 				TeamID:    team1id,
-				Status:    app.StatusReported,
+				Status:    app.StatusInProgress,
 				OwnerID:   owner3.UserID,
 				Sort:      app.SortByCreateAt,
 				Direction: app.DirectionDesc,
@@ -545,7 +545,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - status = archived ",
+			Name: "team1 - status = finished",
 			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
@@ -554,7 +554,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 				TeamID:    team1id,
 				Sort:      app.SortByCreateAt,
 				Direction: app.DirectionAsc,
-				Statuses:  []string{app.StatusArchived},
+				Statuses:  []string{app.StatusFinished},
 				Page:      0,
 				PerPage:   1000,
 			},
@@ -567,7 +567,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - status = archived or reported ",
+			Name: "team1 - status = InProgress or Finished ",
 			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
@@ -576,7 +576,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 				TeamID:    team1id,
 				Sort:      app.SortByCreateAt,
 				Direction: app.DirectionAsc,
-				Statuses:  []string{app.StatusArchived, app.StatusReported},
+				Statuses:  []string{app.StatusFinished, app.StatusInProgress},
 				Page:      0,
 				PerPage:   1000,
 			},
@@ -656,7 +656,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "fuzzy search using starting characters, active -- not implemented",
+			Name: "fuzzy search using starting characters, inProgress -- not implemented",
 			RequesterInfo: app.RequesterInfo{
 				UserID:  lucy.ID,
 				IsAdmin: true,
@@ -664,7 +664,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 			Options: app.PlaybookRunFilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "sbsm",
-				Status:     app.StatusReported,
+				Status:     app.StatusInProgress,
 				Sort:       app.SortByCreateAt,
 				Direction:  app.DirectionAsc,
 				Page:       0,
@@ -1939,7 +1939,7 @@ func NewBuilder(t testing.TB) *PlaybookRunBuilder {
 			PostID:        model.NewId(),
 			PlaybookID:    model.NewId(),
 			Checklists:    nil,
-			CurrentStatus: "Reported",
+			CurrentStatus: "InProgress",
 		},
 	}
 }
@@ -2016,7 +2016,7 @@ func (ib *PlaybookRunBuilder) WithTeamID(id string) *PlaybookRunBuilder {
 func (ib *PlaybookRunBuilder) WithCurrentStatus(status string) *PlaybookRunBuilder {
 	ib.playbookRun.CurrentStatus = status
 
-	if status == "Resolved" || status == "Archived" {
+	if status == app.StatusFinished {
 		ib.playbookRun.EndAt = ib.playbookRun.CreateAt + 100
 	}
 

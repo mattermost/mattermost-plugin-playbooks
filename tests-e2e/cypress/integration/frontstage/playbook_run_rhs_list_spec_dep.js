@@ -176,14 +176,7 @@ describe('rhs playbook run list', () => {
                     cy.findByText(playbookRunName).should('exist');
                 });
 
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId,
-                    teamId: teamId1,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Archived',
-                });
+                cy.apiFinishRun(playbookRun.id);
             });
 
             // * Verify we see the welcome screen when there are no playbook runs.
@@ -195,7 +188,7 @@ describe('rhs playbook run list', () => {
 
     describe('should see the complete playbook run list', () => {
         it('after creating two playbook runs and moving back to town-square', () => {
-            cy.endAllMyActivePlaybookRuns(teamId1);
+            cy.endAllMyInProgressPlaybookRuns(teamId1);
 
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${teamName1}/channels/town-square`);
@@ -410,8 +403,8 @@ describe('rhs playbook run list', () => {
 
         it('of the current team, not another teams channels', () => {
             // # Remove all active playbook runs so that we can verify the number of playbook runs in the rhs list later
-            cy.endAllMyActivePlaybookRuns(teamId1);
-            cy.endAllMyActivePlaybookRuns(teamId2);
+            cy.endAllMyInProgressPlaybookRuns(teamId1);
+            cy.endAllMyInProgressPlaybookRuns(teamId2);
 
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${teamName1}/channels/town-square`);
@@ -1011,158 +1004,13 @@ describe('rhs playbook run list', () => {
                 });
 
                 // # User-2 closes the playbook run
-                cy.apiUpdateStatus({
-                    playbookRunId,
-                    userId: user2Id,
-                    teamId: teamId1,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Archived',
-                });
+                cy.apiFinishRun(playbookRunId);
 
                 // * Verify the playbook run is not listed
                 cy.get('#rhsContainer').should('exist').within(() => {
                     cy.findByText('Runs in progress').should('exist');
 
                     cy.findByText(playbookRunName).should('not.exist');
-                });
-            });
-        });
-
-        it('should see playbook run in list when the user restarts an playbook run and presses back button', () => {
-            // # Navigate directly to a non-playbook run channel
-            cy.visit(`/${teamName1}/channels/town-square`);
-
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Click the icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click();
-            });
-
-            // # start new playbook run
-            const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
-            let playbookRunId;
-            cy.apiRunPlaybook({
-                teamId: teamId1,
-                playbookId: playbookId1,
-                playbookRunName,
-                ownerUserId: userId
-            }).then((playbookRun) => {
-                playbookRunId = playbookRun.id;
-                cy.verifyPlaybookRunActive(teamId1, playbookRunName);
-
-                // * Verify the rhs list is open and we can see the new playbook run
-                cy.get('#rhsContainer').should('exist').within(() => {
-                    cy.findByText('Runs in progress').should('exist');
-
-                    cy.findByText(playbookRunName).should('exist');
-                });
-
-                // # User-1 closes the playbook run
-                // TODO: Waiting here because of https://mattermost.atlassian.net/browse/MM-29617
-                cy.wait(TIMEOUTS.HALF_SEC).apiUpdateStatus({
-                    playbookRunId,
-                    userId,
-                    teamId: teamId1,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Archived',
-                });
-                cy.verifyPlaybookRunEnded(teamId1, playbookRunName);
-
-                // * Verify we cannot see the playbook run
-                cy.get('#rhsContainer').should('exist').within(() => {
-                    cy.findByText('Runs in progress').should('exist');
-
-                    cy.findByText(playbookRunName).should('not.exist');
-                });
-
-                // # User-1 restarts the playbook run
-                cy.apiRestartPlaybookRun(playbookRunId);
-                cy.verifyPlaybookRunActive(teamId1, playbookRunName);
-
-                // * Verify the rhs list is open and we can see the new playbook run
-                cy.get('#rhsContainer').should('exist').within(() => {
-                    cy.findByText('Runs in progress').should('exist');
-
-                    cy.findByText(playbookRunName).should('exist');
-                });
-            });
-        });
-
-        it('should see playbook run in list when another user restarts an playbook run', () => {
-            // # Navigate directly to a non-playbook run channel
-            cy.visit(`/${teamName1}/channels/town-square`);
-
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Click the icon
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist').click();
-            });
-
-            // * Verify we can see the playbook runs list
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Runs in progress').should('exist');
-            });
-
-            // # Login as user-2
-            cy.legacyApiLogin('user-2');
-
-            // # start new playbook run
-            const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
-            const playbookRunChannelName = 'playbook-run-' + now;
-            cy.apiRunPlaybook({
-                teamId: teamId1,
-                playbook2Id: playbookId2,
-                playbookRunName,
-                ownerUserId: user2Id
-            }).then((playbookRun) => {
-                const playbookRunId = playbookRun.id;
-                cy.verifyPlaybookRunActive(teamId1, playbookRunName);
-
-                // # add user-1 to the playbook run
-                cy.legacyApiGetChannelByName(teamName1, playbookRunChannelName).then(({channel}) => {
-                    cy.legacyApiAddUserToChannel(channel.id, userId);
-                });
-
-                // * Verify the rhs list is open and we can see the new playbook run
-                cy.get('#rhsContainer').should('exist').within(() => {
-                    cy.findByText('Runs in progress').should('exist');
-
-                    cy.findByText(playbookRunName).should('exist');
-                });
-
-                // # User-2 closes the playbook run
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId: user2Id,
-                    teamId: teamId1,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Archived',
-                });
-
-                // * Verify we cannot see the playbook run
-                cy.get('#rhsContainer').should('exist').within(() => {
-                    cy.findByText('Runs in progress').should('exist');
-
-                    cy.findByText(playbookRunName).should('not.exist');
-                });
-
-                // # User-2 restarts the playbook run
-                cy.apiRestartPlaybookRun(playbookRunId);
-
-                // * Verify the rhs list is open and we can see the new playbook run
-                cy.get('#rhsContainer').should('exist').within(() => {
-                    cy.findByText('Runs in progress').should('exist');
-
-                    cy.findByText(playbookRunName).should('exist');
                 });
             });
         });
@@ -1411,32 +1259,32 @@ describe('rhs playbook run list', () => {
                     });
 
                     // # Update the status
-                    cy.legacyApiGetChannelByName(teamName1, playbookRunChannelName).then(({channel}) => {
-                        const channelId = channel.id;
+                    cy.legacyApiGetChannelByName(teamName1, playbookRunChannelName)
+                        .then(({channel}) => {
+                            const channelId = channel.id;
 
-                        cy.apiUpdateStatus({
-                            playbookRunId,
-                            userId,
-                            channelId,
-                            teamId: teamId1,
-                            message: 'Status update 2',
-                            description: 'description',
-                            status: 'Active',
+                            cy.apiUpdateStatus({
+                                playbookRunId,
+                                userId,
+                                channelId,
+                                teamId: teamId1,
+                                message: 'Status update 2',
+                                description: 'description',
+                            });
+
+                            // * verify the last updated time is updated
+                            cy.get('#rhsContainer').should('exist').within(() => {
+                                cy.findByText('Runs in progress').should('exist');
+
+                                cy.get('.scrollbar--view').scrollIntoView();
+
+                                cy.findByText(playbookRunName).should('exist');
+
+                                // * Verify the last updated is updated
+                                cy.findAllByText('Last updated:').eq(0).should('exist')
+                                    .next().should('have.text', '< 1m ago');
+                            });
                         });
-
-                        // * verify the last updated time is updated
-                        cy.get('#rhsContainer').should('exist').within(() => {
-                            cy.findByText('Runs in progress').should('exist');
-
-                            cy.get('.scrollbar--view').scrollIntoView();
-
-                            cy.findByText(playbookRunName).should('exist');
-
-                            // * Verify the last updated is updated
-                            cy.findAllByText('Last updated:').eq(0).should('exist')
-                                .next().should('have.text', '< 1m ago');
-                        });
-                    });
                 });
         });
     });

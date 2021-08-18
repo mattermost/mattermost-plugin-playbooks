@@ -24,7 +24,7 @@ import {
 import TeamSelector from 'src/components/team/team_selector';
 
 import SearchInput from 'src/components/backstage/playbook_runs/playbook_run_list/search_input';
-import {FetchPlaybookRunsParams, PlaybookRun, playbookRunIsActive, playbookRunCurrentStatus} from 'src/types/playbook_run';
+import {FetchPlaybookRunsParams, PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import ProfileSelector from 'src/components/profile/profile_selector';
@@ -48,16 +48,22 @@ import BackstageListHeader from '../../backstage_list_header';
 
 const debounceDelay = 300; // in milliseconds
 
+const ControlComponentAnchor = styled.a`
+    display: inline-block;
+    margin: 0 0 8px 12px;
+    font-weight: 600;
+    font-size: 12px;
+    position: relative;
+    top: -4px;
+`;
+
 const controlComponent = (ownProps: ControlProps<any>, filterName: string) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
-            <a
-                className='PlaybookRunFilter-reset'
-                onClick={ownProps.selectProps.onCustomReset}
-            >
+            <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
                 {'Reset to all ' + filterName}
-            </a>
+            </ControlComponentAnchor>
         )}
     </div>
 );
@@ -162,10 +168,8 @@ const NoContentPage = (props: {onNewPlaybookRun: () => void}) => {
 
 const statusOptions: StatusOption[] = [
     {value: '', label: 'All'},
-    {value: 'Reported', label: 'Reported'},
-    {value: 'Active', label: 'Active'},
-    {value: 'Resolved', label: 'Resolved'},
-    {value: 'Archived', label: 'Archived'},
+    {value: 'InProgress', label: 'In Progress'},
+    {value: 'Finished', label: 'Finished'},
 ];
 
 const BackstagePlaybookRunList = () => {
@@ -183,7 +187,9 @@ const BackstagePlaybookRunList = () => {
             per_page: BACKSTAGE_LIST_PER_PAGE,
             sort: 'create_at',
             direction: 'desc',
-            statuses: statusOptions.filter((opt) => opt.value !== 'Archived' && opt.value !== '').map((opt) => opt.value),
+            statuses: statusOptions
+                .filter((opt) => opt.value !== 'Finished' && opt.value !== '')
+                .map((opt) => opt.value),
         },
     );
 
@@ -430,7 +436,7 @@ const BackstagePlaybookRunList = () => {
                             {teams.length > 1 && <TeamName>{getTeamName(teams, playbookRun.team_id)}</TeamName>}
                         </div>
                         <div className='col-sm-2'>
-                            <StatusBadge status={playbookRunCurrentStatus(playbookRun)}/>
+                            <StatusBadge status={playbookRun.current_status}/>
                         </div>
                         <div
                             className='col-sm-2'

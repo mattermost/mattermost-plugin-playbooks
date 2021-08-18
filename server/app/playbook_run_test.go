@@ -15,153 +15,6 @@ func TestPlaybookRun_MarshalJSON(t *testing.T) {
 	require.NotContains(t, string(result), "null", "update MarshalJSON to initialize nil slices")
 }
 
-func TestPlaybookRun_LastResovedAt(t *testing.T) {
-	for name, tc := range map[string]struct {
-		inc      PlaybookRun
-		expected int64
-	}{
-		"blank": {
-			inc: PlaybookRun{
-				StatusPosts: []StatusPost{},
-			},
-			expected: 0,
-		},
-		"just active": {
-			inc: PlaybookRun{
-				StatusPosts: []StatusPost{
-					{
-						DeleteAt: 0,
-						CreateAt: 999,
-						Status:   StatusActive,
-					},
-				},
-			},
-			expected: 0,
-		},
-		"just resolved": {
-			inc: PlaybookRun{
-				StatusPosts: []StatusPost{
-					{
-						DeleteAt: 0,
-						CreateAt: 999,
-						Status:   StatusResolved,
-					},
-				},
-			},
-			expected: 999,
-		},
-		"resolved": {
-			inc: PlaybookRun{
-				StatusPosts: []StatusPost{
-					{
-						DeleteAt: 0,
-						CreateAt: 1,
-						Status:   StatusActive,
-					},
-					{
-						DeleteAt: 0,
-						CreateAt: 123,
-						Status:   StatusResolved,
-					},
-				},
-			},
-			expected: 123,
-		},
-		"resolved deleted": {
-			inc: PlaybookRun{
-				StatusPosts: []StatusPost{
-					{
-						DeleteAt: 0,
-						CreateAt: 1,
-						Status:   StatusActive,
-					},
-					{
-						DeleteAt: 23,
-						CreateAt: 123,
-						Status:   StatusResolved,
-					},
-				},
-			},
-			expected: 0,
-		},
-		"multiple resolution": {
-			inc: PlaybookRun{
-				StatusPosts: []StatusPost{
-					{
-						DeleteAt: 0,
-						CreateAt: 1,
-						Status:   StatusActive,
-					},
-					{
-						DeleteAt: 0,
-						CreateAt: 123,
-						Status:   StatusResolved,
-					},
-					{
-						DeleteAt: 0,
-						CreateAt: 456,
-						Status:   StatusResolved,
-					},
-				},
-			},
-			expected: 123,
-		},
-		"multiple resolution with break": {
-			inc: PlaybookRun{
-				StatusPosts: []StatusPost{
-					{
-						DeleteAt: 0,
-						CreateAt: 1,
-						Status:   StatusActive,
-					},
-					{
-						DeleteAt: 0,
-						CreateAt: 123,
-						Status:   StatusResolved,
-					},
-					{
-						DeleteAt: 0,
-						CreateAt: 223,
-						Status:   StatusActive,
-					},
-					{
-						DeleteAt: 0,
-						CreateAt: 456,
-						Status:   StatusResolved,
-					},
-				},
-			},
-			expected: 456,
-		},
-		"resolution but has active afterwards": {
-			inc: PlaybookRun{
-				StatusPosts: []StatusPost{
-					{
-						DeleteAt: 0,
-						CreateAt: 1,
-						Status:   StatusActive,
-					},
-					{
-						DeleteAt: 0,
-						CreateAt: 123,
-						Status:   StatusResolved,
-					},
-					{
-						DeleteAt: 0,
-						CreateAt: 223,
-						Status:   StatusActive,
-					},
-				},
-			},
-			expected: 0,
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			require.Equal(t, tc.expected, tc.inc.ResolvedAt())
-		})
-	}
-}
-
 func TestPlaybookRunFilterOptions_Clone(t *testing.T) {
 	options := PlaybookRunFilterOptions{
 		TeamID:     "team_id",
@@ -169,8 +22,8 @@ func TestPlaybookRunFilterOptions_Clone(t *testing.T) {
 		PerPage:    10,
 		Sort:       SortByID,
 		Direction:  DirectionAsc,
-		Status:     "active",
-		Statuses:   []string{"active", "resolved"},
+		Status:     "InProgress",
+		Statuses:   []string{"InProgress", "Finished"},
 		OwnerID:    "owner_id",
 		MemberID:   "member_id",
 		SearchTerm: "search_term",
@@ -185,8 +38,8 @@ func TestPlaybookRunFilterOptions_Clone(t *testing.T) {
 	clone.PerPage = 20
 	clone.Sort = SortByName
 	clone.Direction = DirectionDesc
-	clone.Status = "archived"
-	clone.Statuses[0] = "reported"
+	clone.Status = "Finished"
+	clone.Statuses[0] = "Finished"
 	clone.OwnerID = "owner_id_clone"
 	clone.MemberID = "member_id_clone"
 	clone.SearchTerm = "search_term_clone"
@@ -316,7 +169,7 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("valid", func(t *testing.T) {
+	t.Run("invalid status", func(t *testing.T) {
 		options := PlaybookRunFilterOptions{
 			TeamID:     model.NewId(),
 			Page:       1,
@@ -324,7 +177,44 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 			Sort:       SortByID,
 			Direction:  DirectionAsc,
 			Status:     "active",
-			Statuses:   []string{"active", "resolved"},
+			OwnerID:    model.NewId(),
+			MemberID:   model.NewId(),
+			SearchTerm: "search_term",
+			PlaybookID: model.NewId(),
+		}
+
+		_, err := options.Validate()
+		require.Error(t, err)
+	})
+
+	t.Run("invalid statuses", func(t *testing.T) {
+		options := PlaybookRunFilterOptions{
+			TeamID:     model.NewId(),
+			Page:       1,
+			PerPage:    10,
+			Sort:       SortByID,
+			Direction:  DirectionAsc,
+			Status:     "InProgress",
+			Statuses:   []string{"active", "Finished"},
+			OwnerID:    model.NewId(),
+			MemberID:   model.NewId(),
+			SearchTerm: "search_term",
+			PlaybookID: model.NewId(),
+		}
+
+		_, err := options.Validate()
+		require.Error(t, err)
+	})
+
+	t.Run("valid status", func(t *testing.T) {
+		options := PlaybookRunFilterOptions{
+			TeamID:     model.NewId(),
+			Page:       1,
+			PerPage:    10,
+			Sort:       SortByID,
+			Direction:  DirectionAsc,
+			Status:     "Finished",
+			Statuses:   []string{"InProgress", "Finished"},
 			OwnerID:    model.NewId(),
 			MemberID:   model.NewId(),
 			SearchTerm: "search_term",

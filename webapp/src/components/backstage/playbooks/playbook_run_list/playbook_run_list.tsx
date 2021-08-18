@@ -31,16 +31,22 @@ import Row from 'src/components/backstage/playbooks/playbook_run_list/row';
 
 const debounceDelay = 300; // in milliseconds
 
+const ControlComponentAnchor = styled.a`
+    display: inline-block;
+    margin: 0 0 8px 12px;
+    font-weight: 600;
+    font-size: 12px;
+    position: relative;
+    top: -4px;
+`;
+
 const ControlComponent = (ownProps: ControlProps<any>) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
-            <a
-                className='PlaybookRunFilter-reset'
-                onClick={ownProps.selectProps.onCustomReset}
-            >
+            <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
                 {'Reset to all owners'}
-            </a>
+            </ControlComponentAnchor>
         )}
     </div>
 );
@@ -61,10 +67,8 @@ const PlaybookRunListHeader = styled.div`
 
 const statusOptions: StatusOption[] = [
     {value: '', label: 'All'},
-    {value: 'Reported', label: 'Reported'},
-    {value: 'Active', label: 'Active'},
-    {value: 'Resolved', label: 'Resolved'},
-    {value: 'Archived', label: 'Archived'},
+    {value: 'InProgress', label: 'In Progress'},
+    {value: 'Finished', label: 'Finished'},
 ];
 
 interface Props {

@@ -9,6 +9,8 @@ import {Team} from 'mattermost-redux/types/teams';
 
 import {useClientRect} from 'src/hooks';
 
+import {PlaybookRunFilterButton} from 'src/components/backstage/playbook_runs/playbook_run_list/status_filter';
+
 import TeamWithIcon from './team_with_icon';
 
 interface Option {
@@ -152,7 +154,7 @@ export default function TeamSelector(props: Props) {
                 {<i className='icon-chevron-down ml-1 mr-2'/>}
             </TeamButton>
         );
-    } else {
+    } else if (props.placeholderButtonClass) {
         target = (
             <button
                 onClick={() => {
@@ -160,11 +162,25 @@ export default function TeamSelector(props: Props) {
                         toggleOpen();
                     }
                 }}
-                className={props.placeholderButtonClass || 'PlaybookRunFilter-button' + (isOpen ? ' active' : '')}
+                className={props.placeholderButtonClass}
             >
                 {selected === null ? props.placeholder : selected.label}
                 {<i className='icon-chevron-down icon--small ml-2'/>}
             </button>
+        );
+    } else {
+        target = (
+            <PlaybookRunFilterButton
+                active={isOpen}
+                onClick={() => {
+                    if (props.enableEdit) {
+                        toggleOpen();
+                    }
+                }}
+            >
+                {selected === null ? props.placeholder : selected.label}
+                {<i className='icon-chevron-down icon--small ml-2'/>}
+            </PlaybookRunFilterButton>
         );
     }
 
@@ -265,6 +281,8 @@ interface ChildContainerProps {
 }
 
 const ChildContainer = styled.div<ChildContainerProps>`
+    margin: 4px 0 0;
+    min-width: 20rem;
     top: ${(props) => dropdownYShift - (props.moveUp || 0)}px;
 `;
 
@@ -280,7 +298,7 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
         <ProfileDropdown className={classes}>
             {target}
             <ChildContainer
-                className='PlaybookRunFilter-select playbook-run-user-select__container'
+                className='playbook-run-user-select__container'
                 moveUp={moveUp}
             >
                 {children}

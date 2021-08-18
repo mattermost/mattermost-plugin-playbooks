@@ -14,6 +14,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import './profile_selector.scss';
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
+import {PlaybookRunFilterButton} from 'src/components/backstage/playbook_runs/playbook_run_list/status_filter';
 import {useClientRect} from 'src/hooks';
 
 interface Option {
@@ -183,7 +184,7 @@ export default function ProfileSelector(props: Props) {
                 onClick={props.enableEdit ? toggleOpen : () => null}
             />
         );
-    } else {
+    } else if (props.placeholderButtonClass) {
         target = (
             <button
                 onClick={() => {
@@ -191,11 +192,25 @@ export default function ProfileSelector(props: Props) {
                         toggleOpen();
                     }
                 }}
-                className={props.placeholderButtonClass || 'PlaybookRunFilter-button' + (isOpen ? ' active' : '')}
+                className={props.placeholderButtonClass}
             >
                 {props.placeholder}
                 {<i className='icon-chevron-down icon--small ml-2'/>}
             </button>
+        );
+    } else {
+        target = (
+            <PlaybookRunFilterButton
+                active={isOpen}
+                onClick={() => {
+                    if (props.enableEdit) {
+                        toggleOpen();
+                    }
+                }}
+            >
+                {selected === null ? props.placeholder : selected.label}
+                {<i className='icon-chevron-down icon--small ml-2'/>}
+            </PlaybookRunFilterButton>
         );
     }
 
@@ -297,6 +312,8 @@ interface ChildContainerProps {
 }
 
 const ChildContainer = styled.div<ChildContainerProps>`
+    margin: 4px 0 0;
+    min-width: 20rem;
     top: ${(props) => 27 - (props.moveUp || 0)}px;
 `;
 
@@ -312,7 +329,7 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
         <ProfileDropdown className={classes}>
             {target}
             <ChildContainer
-                className='PlaybookRunFilter-select playbook-run-user-select__container'
+                className='playbook-run-user-select__container'
                 moveUp={moveUp}
             >
                 {children}

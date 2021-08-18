@@ -134,14 +134,7 @@ describe('playbook run rhs', () => {
                 ownerUserId: userId,
             }).then((playbookRun) => {
                 // # End the playbook run
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId,
-                    teamId,
-                    message: 'resolved',
-                    description: 'description',
-                    status: 'Resolved',
-                });
+                cy.apiFinishRun(playbookRun.id);
             });
 
             // # Navigate directly to the application and the playbook run channel
@@ -165,14 +158,7 @@ describe('playbook run rhs', () => {
                 ownerUserId: userId,
             }).then((playbookRun) => {
                 // # End the playbook run
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId,
-                    teamId,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Archived',
-                });
+                cy.apiFinishRun(playbookRun.id);
             });
 
             // # Navigate directly to the application and the playbook run channel
@@ -235,14 +221,7 @@ describe('playbook run rhs', () => {
                 ownerUserId: userId,
             }).then((playbookRun) => {
                 // # End the playbook run
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId,
-                    teamId,
-                    message: 'resolving',
-                    description: 'description',
-                    status: 'Resolved',
-                });
+                cy.apiFinishRun(playbookRun.id);
             });
 
             // # Open the playbook run channel from the LHS.
@@ -275,14 +254,7 @@ describe('playbook run rhs', () => {
                 ownerUserId: userId,
             }).then((playbookRun) => {
                 // # End the playbook run
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId,
-                    teamId,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Archived',
-                });
+                cy.apiFinishRun(playbookRun.id);
             });
 
             // # Open the playbook run channel from the LHS.
@@ -334,14 +306,7 @@ describe('playbook run rhs', () => {
                 ownerUserId: userId,
             }).then((playbookRun) => {
                 // # End the playbook run
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId,
-                    teamId,
-                    message: 'resolving',
-                    description: 'description',
-                    status: 'Resolved',
-                });
+                cy.apiFinishRun(playbookRun.id);
             });
 
             // # Navigate to a channel without a playbook run.
@@ -372,14 +337,7 @@ describe('playbook run rhs', () => {
                 ownerUserId: userId,
             }).then((playbookRun) => {
                 // # End the playbook run
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId,
-                    teamId,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Archived',
-                });
+                cy.apiFinishRun(playbookRun.id);
             });
 
             // # Navigate to a channel without a playbook run.

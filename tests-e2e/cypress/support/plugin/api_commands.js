@@ -19,28 +19,13 @@ Cypress.Commands.add('apiGetAllPlaybookRuns', (teamId) => {
 });
 
 /**
- * Get all active playbook runs directly via API
+ * Get all InProgress playbook runs directly via API
  */
-Cypress.Commands.add('apiGetAllActivePlaybookRuns', (teamId, userId = '') => {
+Cypress.Commands.add('apiGetAllInProgressPlaybookRuns', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
-        qs: {team_id: teamId, status: 'Active', member_id: userId},
-        method: 'GET',
-    }).then((response) => {
-        expect(response.status).to.equal(200);
-        cy.wrap(response);
-    });
-});
-
-/**
- * Get all reported playbook runs directly via API
- */
-Cypress.Commands.add('apiGetAllReportedPlaybookRuns', (teamId, userId = '') => {
-    return cy.request({
-        headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
-        qs: {team_id: teamId, status: 'Reported', member_id: userId},
+        qs: {team_id: teamId, status: 'InProgress', member_id: userId},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -82,7 +67,14 @@ Cypress.Commands.add('apiGetPlaybookRun', (playbookRunId) => {
 /**
  * Start an playbook run directly via API.
  */
-Cypress.Commands.add('apiRunPlaybook', ({teamId, playbookId, playbookRunName, ownerUserId, description = ''}) => {
+Cypress.Commands.add('apiRunPlaybook', (
+    {
+        teamId,
+        playbookId,
+        playbookRunName,
+        ownerUserId,
+        description = ''
+    }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: playbookRunsEndpoint,
@@ -100,16 +92,29 @@ Cypress.Commands.add('apiRunPlaybook', ({teamId, playbookId, playbookRunName, ow
     });
 });
 
+// Finish a playbook's run programmaticially. Uses currently logged in user, so that user must
+// have edit permissions on the run
+Cypress.Commands.add('apiFinishRun', (playbookRunId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `${playbookRunsEndpoint}/${playbookRunId}/finish`,
+        method: 'PUT',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body);
+    });
+});
+
 // Update an playbook run's status programmatically.
-Cypress.Commands.add('apiUpdateStatus', ({
-    playbookRunId,
-    userId,
-    channelId,
-    teamId,
-    message,
-    description,
-    status
-}) => {
+Cypress.Commands.add('apiUpdateStatus', (
+    {
+        playbookRunId,
+        userId,
+        channelId,
+        teamId,
+        message,
+        description,
+    }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: `${playbookRunsEndpoint}/${playbookRunId}/update-status-dialog`,
@@ -121,30 +126,12 @@ Cypress.Commands.add('apiUpdateStatus', ({
             user_id: userId,
             channel_id: channelId,
             team_id: teamId,
-            submission: {message, description, reminder: '15', status},
+            submission: {message, description, reminder: '15'},
             cancelled: false,
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
         cy.wrap(response.body);
-    });
-});
-
-/**
- * Restart an playbook run directly via API
- * @param {String} playbookRunId
- * All parameters required
- */
-Cypress.Commands.add('apiRestartPlaybookRun', (playbookRunId) => {
-    return cy.apiUpdateStatus({
-        playbookRunId,
-        userId: '',
-        channelId: '',
-        teamId: '',
-        reminder: '',
-        message: 'reopen',
-        description: 'description',
-        status: 'Active',
     });
 });
 
@@ -198,30 +185,31 @@ Cypress.Commands.add('verifyPlaybookRunEnded', (teamId, playbookRunName) => {
 });
 
 // Create a playbook programmatically.
-Cypress.Commands.add('apiCreatePlaybook', ({
-    teamId,
-    title,
-    createPublicPlaybookRun,
-    checklists,
-    memberIDs,
-    broadcastChannelId,
-    reminderMessageTemplate,
-    reminderTimerDefaultSeconds,
-    invitedUserIds,
-    inviteUsersEnabled,
-    defaultOwnerId,
-    defaultOwnerEnabled,
-    announcementChannelId,
-    announcementChannelEnabled,
-    webhookOnCreationURL,
-    webhookOnCreationEnabled,
-    webhookOnStatusUpdateURL,
-    webhookOnStatusUpdateEnabled,
-    messageOnJoin,
-    messageOnJoinEnabled,
-    signalAnyKeywords,
-    signalAnyKeywordsEnabled,
-}) => {
+Cypress.Commands.add('apiCreatePlaybook', (
+    {
+        teamId,
+        title,
+        createPublicPlaybookRun,
+        checklists,
+        memberIDs,
+        broadcastChannelId,
+        reminderMessageTemplate,
+        reminderTimerDefaultSeconds,
+        invitedUserIds,
+        inviteUsersEnabled,
+        defaultOwnerId,
+        defaultOwnerEnabled,
+        announcementChannelId,
+        announcementChannelEnabled,
+        webhookOnCreationURL,
+        webhookOnCreationEnabled,
+        webhookOnStatusUpdateURL,
+        webhookOnStatusUpdateEnabled,
+        messageOnJoin,
+        messageOnJoinEnabled,
+        signalAnyKeywords,
+        signalAnyKeywordsEnabled,
+    }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
@@ -257,14 +245,15 @@ Cypress.Commands.add('apiCreatePlaybook', ({
 });
 
 // Create a test playbook programmatically.
-Cypress.Commands.add('apiCreateTestPlaybook', ({
-    teamId,
-    title,
-    userId,
-    broadcastChannelId,
-    reminderMessageTemplate,
-    reminderTimerDefaultSeconds
-}) => (
+Cypress.Commands.add('apiCreateTestPlaybook', (
+    {
+        teamId,
+        title,
+        userId,
+        broadcastChannelId,
+        reminderMessageTemplate,
+        reminderTimerDefaultSeconds
+    }) => (
     cy.apiCreatePlaybook({
         teamId,
         title,

@@ -3,8 +3,6 @@
 
 import {generateId} from 'mattermost-redux/utils/helpers';
 
-import {getCurrentChannelId} from 'mattermost-redux/src/selectors/entities/channels';
-
 import {Store} from 'src/types/store';
 
 import {
@@ -42,18 +40,18 @@ export function makeSlashCommandHook(store: Store) {
         const message = inMessage && typeof inMessage === 'string' ? inMessage.trim() : null;
         const experimentalFeaturesEnabled = selectExperimentalFeatures(store.getState());
 
-        if (message?.startsWith('/playbook start')) {
+        if (message?.startsWith('/playbook run')) {
             const clientId = generateId();
             store.dispatch(setClientId(clientId));
 
-            return {message: `/playbook start ${clientId}`, args};
+            return {message: `/playbook run ${clientId}`, args};
         }
 
         if (experimentalFeaturesEnabled && message?.startsWith('/playbook update') && isInPlaybookRunChannel) {
             const clientId = generateId();
             const currentRun = currentPlaybookRun(state);
             store.dispatch(setClientId(clientId));
-            store.dispatch(promptUpdateStatus(currentRun.id, currentRun.playbook_id, currentRun.channel_id));
+            store.dispatch(promptUpdateStatus(currentRun.team_id, currentRun.id, currentRun.playbook_id, currentRun.channel_id));
             return {};
         }
 

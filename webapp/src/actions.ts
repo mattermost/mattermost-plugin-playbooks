@@ -72,7 +72,7 @@ export function startPlaybookRun(teamId: string, postId?: string) {
         const clientId = generateId();
         dispatch(setClientId(clientId));
 
-        let command = `/playbook start ${clientId}`;
+        let command = `/playbook run ${clientId}`;
         if (postId) {
             command = `${command} ${postId}`;
         }
@@ -87,7 +87,7 @@ export function startPlaybookRunById(teamId: string, playbookId: string) {
         const clientId = generateId();
         dispatch(setClientId(clientId));
 
-        const command = `/playbook start-playbook ${playbookId} ${clientId}`;
+        const command = `/playbook run-playbook ${playbookId} ${clientId}`;
 
         await clientExecuteCommand(dispatch, getState, command, teamId);
     };
@@ -108,6 +108,12 @@ export function promptUpdateStatus(
         } else {
             await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`, teamId);
         }
+    };
+}
+
+export function finishRun(teamId: string) {
+    return async (dispatch: Dispatch, getState: GetStateFunc) => {
+        await clientExecuteCommand(dispatch, getState, '/playbook finish', teamId);
     };
 }
 
