@@ -148,6 +148,20 @@ func (mr *MockPlaybookRunServiceMockRecorder) EditChecklistItem(arg0, arg1, arg2
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditChecklistItem", reflect.TypeOf((*MockPlaybookRunService)(nil).EditChecklistItem), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
+// FinishPlaybookRun mocks base method
+func (m *MockPlaybookRunService) FinishPlaybookRun(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FinishPlaybookRun", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// FinishPlaybookRun indicates an expected call of FinishPlaybookRun
+func (mr *MockPlaybookRunServiceMockRecorder) FinishPlaybookRun(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishPlaybookRun", reflect.TypeOf((*MockPlaybookRunService)(nil).FinishPlaybookRun), arg0, arg1)
+}
+
 // GetChecklistAutocomplete mocks base method
 func (m *MockPlaybookRunService) GetChecklistAutocomplete(arg0 string) ([]model.AutocompleteListItem, error) {
 	m.ctrl.T.Helper()
@@ -363,18 +377,32 @@ func (mr *MockPlaybookRunServiceMockRecorder) OpenCreatePlaybookRunDialog(arg0, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenCreatePlaybookRunDialog", reflect.TypeOf((*MockPlaybookRunService)(nil).OpenCreatePlaybookRunDialog), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
-// OpenUpdateStatusDialog mocks base method
-func (m *MockPlaybookRunService) OpenUpdateStatusDialog(arg0, arg1, arg2 string) error {
+// OpenFinishPlaybookRunDialog mocks base method
+func (m *MockPlaybookRunService) OpenFinishPlaybookRunDialog(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenUpdateStatusDialog", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "OpenFinishPlaybookRunDialog", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OpenFinishPlaybookRunDialog indicates an expected call of OpenFinishPlaybookRunDialog
+func (mr *MockPlaybookRunServiceMockRecorder) OpenFinishPlaybookRunDialog(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenFinishPlaybookRunDialog", reflect.TypeOf((*MockPlaybookRunService)(nil).OpenFinishPlaybookRunDialog), arg0, arg1)
+}
+
+// OpenUpdateStatusDialog mocks base method
+func (m *MockPlaybookRunService) OpenUpdateStatusDialog(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OpenUpdateStatusDialog", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // OpenUpdateStatusDialog indicates an expected call of OpenUpdateStatusDialog
-func (mr *MockPlaybookRunServiceMockRecorder) OpenUpdateStatusDialog(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockPlaybookRunServiceMockRecorder) OpenUpdateStatusDialog(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenUpdateStatusDialog", reflect.TypeOf((*MockPlaybookRunService)(nil).OpenUpdateStatusDialog), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenUpdateStatusDialog", reflect.TypeOf((*MockPlaybookRunService)(nil).OpenUpdateStatusDialog), arg0, arg1)
 }
 
 // PublishRetrospective mocks base method

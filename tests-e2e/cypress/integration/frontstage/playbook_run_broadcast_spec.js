@@ -101,7 +101,7 @@ describe('playbook run broadcast', () => {
 
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
-        cy.updateStatus(updateMessage, 0, 'Active');
+        cy.updateStatus(updateMessage, 0);
 
         // # Navigate to the broadcast channel
         cy.visit(`/ad-1/channels/${publicBroadcastChannelName}`);
@@ -109,7 +109,7 @@ describe('playbook run broadcast', () => {
         // * Verify that the last post contains the expected header and the update message verbatim
         cy.getLastPostId().then((lastPostId) => {
             cy.get(`#postMessageText_${lastPostId}`).contains(`Status Update: ${playbookRunName}`);
-            cy.get(`#postMessageText_${lastPostId}`).contains('By @user-1 | Duration: < 1m | Status: Active');
+            cy.get(`#postMessageText_${lastPostId}`).contains('By @user-1 | Duration: < 1m | Status: In Progress');
             cy.get(`#postMessageText_${lastPostId}`).contains(updateMessage);
         });
     });
@@ -131,7 +131,7 @@ describe('playbook run broadcast', () => {
 
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
-        cy.updateStatus(updateMessage, 0, 'Active');
+        cy.updateStatus(updateMessage, 0);
 
         // # Navigate to the broadcast channel
         cy.visit('/ad-1/channels/' + privateBroadcastChannelName);
@@ -139,7 +139,7 @@ describe('playbook run broadcast', () => {
         // * Verify that the last post contains the expected header and the update message verbatim
         cy.getLastPostId().then((lastPostId) => {
             cy.get(`#postMessageText_${lastPostId}`).contains(`Status Update: ${playbookRunName}`);
-            cy.get(`#postMessageText_${lastPostId}`).contains('By @user-1 | Duration: < 1m | Status: Active');
+            cy.get(`#postMessageText_${lastPostId}`).contains('By @user-1 | Duration: < 1m | Status: In Progress');
             cy.get(`#postMessageText_${lastPostId}`).contains(updateMessage);
         });
     });

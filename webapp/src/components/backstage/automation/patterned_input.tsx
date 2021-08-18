@@ -18,6 +18,7 @@ interface Props {
     type: string;
     pattern: string;
     onChange: (updatedInput: string) => void;
+    maxLength?: number;
 }
 
 export const PatternedInput: FC<Props> = (props: Props) => (
@@ -38,6 +39,7 @@ export const PatternedInput: FC<Props> = (props: Props) => (
                 onChange={(e) => props.onChange(e.target.value)}
                 pattern={props.pattern}
                 placeholder={props.placeholderText}
+                maxLength={props.maxLength}
             />
             <ErrorMessage>
                 {props.errorText}

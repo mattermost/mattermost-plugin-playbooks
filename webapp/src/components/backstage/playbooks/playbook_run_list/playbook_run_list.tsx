@@ -67,10 +67,8 @@ const PlaybookRunListHeader = styled.div`
 
 const statusOptions: StatusOption[] = [
     {value: '', label: 'All'},
-    {value: 'Reported', label: 'Reported'},
-    {value: 'Active', label: 'Active'},
-    {value: 'Resolved', label: 'Resolved'},
-    {value: 'Archived', label: 'Archived'},
+    {value: 'InProgress', label: 'In Progress'},
+    {value: 'Finished', label: 'Finished'},
 ];
 
 interface Props {

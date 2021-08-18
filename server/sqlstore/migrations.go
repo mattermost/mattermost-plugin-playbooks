@@ -980,4 +980,89 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.24.0"),
+		toVersion:   semver.MustParse("0.25.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := renameColumnMySQL(e, "IR_Playbook", "ExportChannelOnArchiveEnabled", "ExportChannelOnFinishedEnabled", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+					return errors.Wrap(err, "failed changing column ExportChannelOnArchiveEnabled to ExportChannelOnFinishedEnabled in table IR_Playbook")
+				}
+
+				if err := renameColumnMySQL(e, "IR_Incident", "ExportChannelOnArchiveEnabled", "ExportChannelOnFinishedEnabled", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
+					return errors.Wrap(err, "failed changing column ExportChannelOnArchiveEnabled to ExportChannelOnFinishedEnabled in table IR_Incident")
+				}
+
+				if err := dropColumnMySQL(e, "IR_StatusPosts", "Status"); err != nil {
+					return errors.Wrap(err, "failed dropping column Status in table IR_StatusPosts")
+				}
+			} else {
+				if err := renameColumnPG(e, "IR_Playbook", "ExportChannelOnArchiveEnabled", "ExportChannelOnFinishedEnabled"); err != nil {
+					return errors.Wrap(err, "failed changing column ExportChannelOnArchiveEnabled to ExportChannelOnFinishedEnabled in table IR_Playbook")
+				}
+
+				if err := renameColumnPG(e, "IR_Incident", "ExportChannelOnArchiveEnabled", "ExportChannelOnFinishedEnabled"); err != nil {
+					return errors.Wrap(err, "failed changing column ExportChannelOnArchiveEnabled to ExportChannelOnFinishedEnabled in table IR_Incident")
+				}
+
+				if err := dropColumnPG(e, "IR_StatusPosts", "Status"); err != nil {
+					return errors.Wrap(err, "failed dropping column Status in table IR_StatusPosts")
+				}
+			}
+
+			if _, err := e.Exec(`
+				UPDATE IR_Incident
+				SET CurrentStatus =
+						CASE
+							WHEN CurrentStatus = 'Archived'
+								THEN 'Finished'
+							ELSE 'InProgress'
+							END;
+				`); err != nil {
+				return errors.Wrap(err, "failed changing CurrentStatus to Archived or InProgress in table IR_Incident")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.25.0"),
+		toVersion:   semver.MustParse("0.26.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "CategoryName", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column CategoryName to table IR_Playbook")
+				}
+
+				if _, err := e.Exec("UPDATE IR_Playbook SET CategoryName = 'Playbook Runs' WHERE CategorizeChannelEnabled=1"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column CategoryName of table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Incident", "CategoryName", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column CategoryName to table IR_Incident")
+				}
+
+				if _, err := e.Exec("UPDATE IR_Incident SET CategoryName = 'Playbook Runs' WHERE CategorizeChannelEnabled=1"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column CategoryName of table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "CategoryName", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column CategoryName to table IR_Playbook")
+				}
+
+				if _, err := e.Exec("UPDATE IR_Playbook SET CategoryName = 'Playbook Runs' WHERE CategorizeChannelEnabled"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column CategoryName of table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Incident", "CategoryName", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column CategoryName to table IR_Incident")
+				}
+
+				if _, err := e.Exec("UPDATE IR_Incident SET CategoryName = 'Playbook Runs' WHERE CategorizeChannelEnabled"); err != nil {
+					return errors.Wrapf(err, "failed setting default value in column CategoryName of table IR_Incident")
+				}
+			}
+			return nil
+		},
+	},
 }

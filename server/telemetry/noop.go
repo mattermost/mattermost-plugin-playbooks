@@ -20,7 +20,7 @@ func (t *NoopTelemetry) CreatePlaybookRun(*app.PlaybookRun, string, bool) {
 }
 
 // EndPlaybookRun does nothing
-func (t *NoopTelemetry) EndPlaybookRun(*app.PlaybookRun, string) {
+func (t *NoopTelemetry) FinishPlaybookRun(*app.PlaybookRun, string) {
 }
 
 // RestartPlaybookRun does nothing

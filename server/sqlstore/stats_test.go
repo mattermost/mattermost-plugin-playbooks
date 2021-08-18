@@ -27,7 +27,7 @@ func setupStatsStore(t *testing.T, db *sqlx.DB) *StatsStore {
 	return NewStatsStore(pluginAPIClient, logger, sqlStore)
 }
 
-func TestTotalReportedPlaybookRuns(t *testing.T) {
+func TestTotalInProgressPlaybookRuns(t *testing.T) {
 	team1id := model.NewId()
 	team2id := model.NewId()
 
@@ -101,7 +101,7 @@ func TestTotalReportedPlaybookRuns(t *testing.T) {
 			WithName("pr 1 - wheel cat aliens wheelbarrow").
 			WithChannel(&channel01).
 			WithTeamID(team1id).
-			WithCurrentStatus("Reported").
+			WithCurrentStatus(app.StatusInProgress).
 			WithCreateAt(123).
 			WithPlaybookID("playbook1").
 			ToPlaybookRun()
@@ -110,7 +110,7 @@ func TestTotalReportedPlaybookRuns(t *testing.T) {
 			WithName("pr 2").
 			WithChannel(&channel02).
 			WithTeamID(team1id).
-			WithCurrentStatus("Active").
+			WithCurrentStatus(app.StatusInProgress).
 			WithCreateAt(123).
 			WithPlaybookID("playbook1").
 			ToPlaybookRun()
@@ -119,7 +119,7 @@ func TestTotalReportedPlaybookRuns(t *testing.T) {
 			WithName("pr 3").
 			WithChannel(&channel03).
 			WithTeamID(team1id).
-			WithCurrentStatus("Active").
+			WithCurrentStatus(app.StatusFinished).
 			WithPlaybookID("playbook2").
 			WithCreateAt(123).
 			ToPlaybookRun()
@@ -128,7 +128,7 @@ func TestTotalReportedPlaybookRuns(t *testing.T) {
 			WithName("pr 4").
 			WithChannel(&channel04).
 			WithTeamID(team2id).
-			WithCurrentStatus("Reported").
+			WithCurrentStatus(app.StatusInProgress).
 			WithPlaybookID("playbook1").
 			WithCreateAt(123).
 			ToPlaybookRun()
@@ -137,7 +137,7 @@ func TestTotalReportedPlaybookRuns(t *testing.T) {
 			WithName("pr 5").
 			WithChannel(&channel05).
 			WithTeamID(team2id).
-			WithCurrentStatus("Active").
+			WithCurrentStatus(app.StatusInProgress).
 			WithPlaybookID("playbook2").
 			WithCreateAt(123).
 			ToPlaybookRun()
@@ -146,7 +146,7 @@ func TestTotalReportedPlaybookRuns(t *testing.T) {
 			WithName("pr 6").
 			WithChannel(&channel06).
 			WithTeamID(team1id).
-			WithCurrentStatus("Resolved").
+			WithCurrentStatus(app.StatusInProgress).
 			WithPlaybookID("playbook1").
 			WithCreateAt(123).
 			ToPlaybookRun()
@@ -155,7 +155,7 @@ func TestTotalReportedPlaybookRuns(t *testing.T) {
 			WithName("pr 7").
 			WithChannel(&channel07).
 			WithTeamID(team2id).
-			WithCurrentStatus("Resolved").
+			WithCurrentStatus(app.StatusInProgress).
 			WithPlaybookID("playbook2").
 			WithCreateAt(123).
 			ToPlaybookRun()
@@ -164,7 +164,7 @@ func TestTotalReportedPlaybookRuns(t *testing.T) {
 			WithName("pr 8").
 			WithChannel(&channel08).
 			WithTeamID(team1id).
-			WithCurrentStatus("Archived").
+			WithCurrentStatus(app.StatusFinished).
 			WithPlaybookID("playbook1").
 			WithCreateAt(123).
 			ToPlaybookRun()
@@ -173,7 +173,7 @@ func TestTotalReportedPlaybookRuns(t *testing.T) {
 			WithName("pr 9").
 			WithChannel(&channel09).
 			WithTeamID(team2id).
-			WithCurrentStatus("Archived").
+			WithCurrentStatus(app.StatusFinished).
 			WithPlaybookID("playbook2").
 			WithCreateAt(123).
 			ToPlaybookRun()
@@ -229,14 +229,14 @@ func TestTotalReportedPlaybookRuns(t *testing.T) {
 			result := statsStore.TotalInProgressPlaybookRuns(&StatsFilters{
 				TeamID: team2id,
 			})
-			assert.Equal(t, 2, result)
+			assert.Equal(t, 3, result)
 		})
 
 		t.Run(driverName+" In-progress Playbook Runs - playbook1", func(t *testing.T) {
 			result := statsStore.TotalInProgressPlaybookRuns(&StatsFilters{
 				PlaybookID: "playbook1",
 			})
-			assert.Equal(t, 3, result)
+			assert.Equal(t, 4, result)
 		})
 
 		t.Run(driverName+" In-progress Playbook Runs - playbook2", func(t *testing.T) {
@@ -248,7 +248,7 @@ func TestTotalReportedPlaybookRuns(t *testing.T) {
 
 		t.Run(driverName+" In-progress Playbook Runs - all", func(t *testing.T) {
 			result := statsStore.TotalInProgressPlaybookRuns(&StatsFilters{})
-			assert.Equal(t, 5, result)
+			assert.Equal(t, 6, result)
 		})
 
 		/* This can't be tested well because it uses model.GetMillis() inside

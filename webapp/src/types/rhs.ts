@@ -7,7 +7,7 @@ export enum RHSState {
 }
 
 export enum TimelineEventType {
-    PlaybookRunCreated = 'incident_created',
+    RunCreated = 'incident_created',
     StatusUpdated = 'status_updated',
     OwnerChanged = 'owner_changed',
     AssigneeChanged = 'assignee_changed',
@@ -17,6 +17,7 @@ export enum TimelineEventType {
     UserJoinedLeft = 'user_joined_left',
     PublishedRetrospective = 'published_retrospective',
     CanceledRetrospective = 'canceled_retrospective',
+    RunFinished = 'run_finished'
 }
 
 export interface TimelineEvent {

@@ -4,30 +4,30 @@ import "time"
 
 // PlaybookRun represents a playbook run.
 type PlaybookRun struct {
-	ID                            string          `json:"id"`
-	Name                          string          `json:"name"`
-	Description                   string          `json:"description"`
-	OwnerUserID                   string          `json:"owner_user_id"`
-	ReporterUserID                string          `json:"reporter_user_id"`
-	TeamID                        string          `json:"team_id"`
-	ChannelID                     string          `json:"channel_id"`
-	CreateAt                      int64           `json:"create_at"`
-	EndAt                         int64           `json:"end_at"`
-	DeleteAt                      int64           `json:"delete_at"`
-	ActiveStage                   int             `json:"active_stage"`
-	ActiveStageTitle              string          `json:"active_stage_title"`
-	PostID                        string          `json:"post_id"`
-	PlaybookID                    string          `json:"playbook_id"`
-	Checklists                    []Checklist     `json:"checklists"`
-	StatusPosts                   []StatusPost    `json:"status_posts"`
-	ReminderPostID                string          `json:"reminder_post_id"`
-	PreviousReminder              time.Duration   `json:"previous_reminder"`
-	BroadcastChannelID            string          `json:"broadcast_channel_id"`
-	ReminderMessageTemplate       string          `json:"reminder_message_template"`
-	InvitedUserIDs                []string        `json:"invited_user_ids"`
-	InvitedGroupIDs               []string        `json:"invited_group_ids"`
-	TimelineEvents                []TimelineEvent `json:"timeline_events"`
-	ExportChannelOnArchiveEnabled bool            `json:"export_channel_on_archive_enabled"`
+	ID                             string          `json:"id"`
+	Name                           string          `json:"name"`
+	Description                    string          `json:"description"`
+	OwnerUserID                    string          `json:"owner_user_id"`
+	ReporterUserID                 string          `json:"reporter_user_id"`
+	TeamID                         string          `json:"team_id"`
+	ChannelID                      string          `json:"channel_id"`
+	CreateAt                       int64           `json:"create_at"`
+	EndAt                          int64           `json:"end_at"`
+	DeleteAt                       int64           `json:"delete_at"`
+	ActiveStage                    int             `json:"active_stage"`
+	ActiveStageTitle               string          `json:"active_stage_title"`
+	PostID                         string          `json:"post_id"`
+	PlaybookID                     string          `json:"playbook_id"`
+	Checklists                     []Checklist     `json:"checklists"`
+	StatusPosts                    []StatusPost    `json:"status_posts"`
+	ReminderPostID                 string          `json:"reminder_post_id"`
+	PreviousReminder               time.Duration   `json:"previous_reminder"`
+	BroadcastChannelID             string          `json:"broadcast_channel_id"`
+	ReminderMessageTemplate        string          `json:"reminder_message_template"`
+	InvitedUserIDs                 []string        `json:"invited_user_ids"`
+	InvitedGroupIDs                []string        `json:"invited_group_ids"`
+	TimelineEvents                 []TimelineEvent `json:"timeline_events"`
+	ExportChannelOnFinishedEnabled bool            `json:"export_channel_on_finished_enabled"`
 }
 
 // StatusPost is information added to the playbook run when selecting from the db and sent to the
@@ -186,10 +186,8 @@ type PlaybookRunList struct {
 type Status string
 
 const (
-	StatusReported Status = "Reported"
-	StatusActive   Status = "Active"
-	StatusResolved Status = "Resolved"
-	StatusArchived Status = "Archived"
+	StatusInProgress Status = "InProgress"
+	StatusFinished   Status = "Finished"
 )
 
 type GetPlaybookRunsResults struct {
@@ -202,7 +200,6 @@ type GetPlaybookRunsResults struct {
 
 // StatusUpdateOptions are the fields required to update a playbook run's status
 type StatusUpdateOptions struct {
-	Status            Status `json:"status"`
 	Message           string `json:"message"`
 	ReminderInSeconds int64  `json:"reminder"`
 }

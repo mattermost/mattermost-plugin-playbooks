@@ -14,15 +14,14 @@ export interface PlaybookRun {
     channel_id: string;
     create_at: number;
     end_at: number;
-    delete_at: number;
-    active_stage: number;
-    active_stage_title: string;
     post_id: string;
     playbook_id: string;
     checklists: Checklist[];
     status_posts: StatusPost[];
     current_status: PlaybookRunStatus;
+    last_status_update_at: number;
     reminder_post_id: string;
+    previous_reminder: number;
     broadcast_channel_id: string;
     timeline_events: TimelineEvent[];
     retrospective: string;
@@ -30,13 +29,10 @@ export interface PlaybookRun {
     retrospective_was_canceled: boolean;
     retrospective_reminder_interval_seconds: number;
     participant_ids: string[];
-    last_status_update_at: number;
-    previous_reminder: number;
 }
 
 export interface StatusPost {
     id: string;
-    status: PlaybookRunStatus;
     create_at: number;
     delete_at: number;
 }
@@ -58,11 +54,8 @@ export interface FetchPlaybookRunsReturn {
 }
 
 export enum PlaybookRunStatus {
-    Reported = 'Reported',
-    Active = 'Active',
-    Resolved = 'Resolved',
-    Archived = 'Archived',
-    Old = '',
+    InProgress = 'InProgress',
+    Finished = 'Finished',
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -77,9 +70,6 @@ export function isPlaybookRun(arg: any): arg is PlaybookRun {
         arg.channel_id && typeof arg.channel_id === 'string' &&
         typeof arg.create_at === 'number' &&
         typeof arg.end_at === 'number' &&
-        typeof arg.delete_at === 'number' &&
-        typeof arg.active_stage === 'number' &&
-        typeof arg.active_stage_title === 'string' &&
         typeof arg.post_id === 'string' &&
         arg.playbook_id && typeof arg.playbook_id === 'string' &&
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
@@ -88,8 +78,8 @@ export function isPlaybookRun(arg: any): arg is PlaybookRun {
         typeof arg.broadcast_channel_id === 'string' &&
         arg.timeline_events && Array.isArray(arg.timeline_events) && arg.timeline_events.every(isTimelineEvent) &&
         arg.participant_ids && Array.isArray(arg.participant_ids) && arg.participant_ids.every(isString)) &&
-        arg.last_status_update_at && typeof arg.last_status_update_at === 'number' &&
-        arg.previous_reminder && typeof arg.previous_reminder === 'number';
+        typeof arg.last_status_update_at === 'number' &&
+        typeof arg.previous_reminder === 'number';
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -97,7 +87,6 @@ export function isStatusPost(arg: any): arg is StatusPost {
     return Boolean(arg &&
         arg.id && typeof arg.id === 'string' &&
         typeof arg.create_at === 'number' &&
-        typeof arg.status === 'string' &&
         typeof arg.delete_at === 'number');
 }
 
@@ -130,21 +119,8 @@ function isString(arg: any): arg is string {
     return Boolean(typeof arg === 'string');
 }
 
-export function playbookRunCurrentStatusPost(playbookRun: PlaybookRun): StatusPost | undefined {
-    const sortedPosts = [...playbookRun.status_posts]
-        .filter((a) => a.delete_at === 0)
-        .sort((a, b) => b.create_at - a.create_at);
-
-    return sortedPosts[0];
-}
-
-export function playbookRunCurrentStatus(playbookRun: PlaybookRun): PlaybookRunStatus {
-    return playbookRun.current_status;
-}
-
 export function playbookRunIsActive(playbookRun: PlaybookRun): boolean {
-    const currentStatus = playbookRunCurrentStatus(playbookRun);
-    return currentStatus !== PlaybookRunStatus.Archived;
+    return playbookRun.current_status === PlaybookRunStatus.InProgress;
 }
 
 export interface FetchPlaybookRunsParams {
