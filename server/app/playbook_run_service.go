@@ -1915,7 +1915,7 @@ func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(outstanding int) *mo
 	message := "Are you sure you want to finish the run?"
 	if outstanding == 1 {
 		message = "There is **1 outstanding task**, are you sure you want to finish the run?"
-	} else {
+	} else if outstanding > 1 {
 		message = "There are **" + strconv.Itoa(outstanding) + " outstanding tasks**, are you sure you want to finish the run?"
 	}
 
