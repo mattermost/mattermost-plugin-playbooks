@@ -918,8 +918,8 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		}
 	}
 
-	var fileID string
 	if playbookRunToModify.ExportChannelOnFinishedEnabled {
+		var fileID string
 		fileID, err = s.exportChannelToFile(playbookRunToModify.Name, playbookRunToModify.OwnerUserID, playbookRunToModify.ChannelID)
 		if err != nil {
 			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
@@ -1912,9 +1912,9 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, c
 func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(outstanding int) *model.Dialog {
 	message := "Are you sure you want to finish the run?"
 	if outstanding == 1 {
-		message = "There is **1 outstanding task**, are you sure you want to finish the run?"
+		message = "There is **1 outstanding task**. Are you sure you want to finish the run?"
 	} else if outstanding > 1 {
-		message = "There are **" + strconv.Itoa(outstanding) + " outstanding tasks**, are you sure you want to finish the run?"
+		message = "There are **" + strconv.Itoa(outstanding) + " outstanding tasks**. Are you sure you want to finish the run?"
 	}
 
 	return &model.Dialog{
