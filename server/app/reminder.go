@@ -35,9 +35,8 @@ func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string)
 		return
 	}
 
-	// If we are not in the resolved state then don't remind
-	if playbookRunToRemind.CurrentStatus != StatusResolved &&
-		playbookRunToRemind.CurrentStatus != StatusArchived {
+	// If we are not in the finished state then don't remind
+	if playbookRunToRemind.CurrentStatus != StatusFinished {
 		return
 	}
 

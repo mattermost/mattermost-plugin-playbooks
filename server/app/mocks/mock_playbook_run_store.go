@@ -78,6 +78,20 @@ func (mr *MockPlaybookRunStoreMockRecorder) CreateTimelineEvent(arg0 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTimelineEvent", reflect.TypeOf((*MockPlaybookRunStore)(nil).CreateTimelineEvent), arg0)
 }
 
+// FinishPlaybookRun mocks base method
+func (m *MockPlaybookRunStore) FinishPlaybookRun(arg0 string, arg1 int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FinishPlaybookRun", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// FinishPlaybookRun indicates an expected call of FinishPlaybookRun
+func (mr *MockPlaybookRunStoreMockRecorder) FinishPlaybookRun(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishPlaybookRun", reflect.TypeOf((*MockPlaybookRunStore)(nil).FinishPlaybookRun), arg0, arg1)
+}
+
 // GetAllPlaybookRunMembersCount mocks base method
 func (m *MockPlaybookRunStore) GetAllPlaybookRunMembersCount(arg0 string) (int64, error) {
 	m.ctrl.T.Helper()

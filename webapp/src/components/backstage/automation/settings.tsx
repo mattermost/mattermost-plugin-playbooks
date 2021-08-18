@@ -44,8 +44,8 @@ interface Props {
     onToggleMessageOnJoin: () => void;
     messageOnJoin: string;
     messageOnJoinChange: (message: string) => void;
-    exportChannelOnArchiveEnabled: boolean;
-    onToggleExportChannelOnArchiveEnabled: () => void;
+    exportChannelOnFinishedEnabled: boolean;
+    onToggleExportChannelOnFinishedEnabled: () => void;
     signalAnyKeywordsEnabled: boolean;
     onToggleSignalAnyKeywords: () => void;
     signalAnyKeywordsChange: (keywords: string) => void;
@@ -171,12 +171,12 @@ export const AutomationSettings = (props: Props) => {
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When a run is archived'}
+                    {'When a run is finished'}
                 </SectionTitle>
-                <Setting id={'export-channel-on-archive'}>
+                <Setting id={'export-channel-on-finished'}>
                     <ExportChannelOnArchive
-                        enabled={props.exportChannelOnArchiveEnabled}
-                        onToggle={props.onToggleExportChannelOnArchiveEnabled}
+                        enabled={props.exportChannelOnFinishedEnabled}
+                        onToggle={props.onToggleExportChannelOnFinishedEnabled}
                     />
                 </Setting>
             </Section>

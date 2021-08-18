@@ -460,10 +460,10 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleToggleExportChannelOnArchiveEnabled = () => {
+    const handleToggleExportChannelOnFinishedEnabled = () => {
         setPlaybook({
             ...playbook,
-            export_channel_on_archive_enabled: !playbook.export_channel_on_archive_enabled,
+            export_channel_on_finished_enabled: !playbook.export_channel_on_finished_enabled,
         });
         setChangesMade(true);
     };
@@ -718,8 +718,8 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
                                     messageOnJoin={playbook.message_on_join}
                                     messageOnJoinChange={handleMessageOnJoinChange}
-                                    onToggleExportChannelOnArchiveEnabled={handleToggleExportChannelOnArchiveEnabled}
-                                    exportChannelOnArchiveEnabled={playbook.export_channel_on_archive_enabled}
+                                    onToggleExportChannelOnFinishedEnabled={handleToggleExportChannelOnFinishedEnabled}
+                                    exportChannelOnFinishedEnabled={playbook.export_channel_on_finished_enabled}
                                     signalAnyKeywordsEnabled={playbook.signal_any_keywords_enabled}
                                     onToggleSignalAnyKeywords={handleToggleSignalAnyKeywords}
                                     signalAnyKeywordsChange={handleSignalAnyKeywordsChange}
