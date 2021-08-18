@@ -114,6 +114,9 @@ const (
 
 	// SortByTitle sorts by the "title" field.
 	SortByTitle Sort = "title"
+
+	// SortByRuns sorts by the number of times a playbook has been run.
+	SortByRuns Sort = "runs"
 )
 
 // SortDirection determines whether results are sorted ascending or descending.
@@ -200,7 +203,6 @@ type GetPlaybookRunsResults struct {
 // StatusUpdateOptions are the fields required to update a playbook run's status
 type StatusUpdateOptions struct {
 	Status            Status `json:"status"`
-	Description       string `json:"description"`
 	Message           string `json:"message"`
 	ReminderInSeconds int64  `json:"reminder"`
 }

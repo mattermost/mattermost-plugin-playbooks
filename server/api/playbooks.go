@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
@@ -99,6 +99,13 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		if url.Scheme != "http" && url.Scheme != "https" {
 			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
 			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
+	}
+
+	if playbook.CategorizeChannelEnabled {
+		if err2 := h.validateCategoryName(playbook.CategoryName); err2 != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err2)
 			return
 		}
 	}
@@ -192,6 +199,13 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		if url.Scheme != "http" && url.Scheme != "https" {
 			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
 			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
+	}
+
+	if playbook.CategorizeChannelEnabled {
+		if err2 := h.validateCategoryName(playbook.CategoryName); err2 != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err2)
 			return
 		}
 	}
@@ -290,12 +304,7 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if teamID == "" {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Provide a team ID", nil)
-		return
-	}
-
-	if !app.CanViewTeam(userID, teamID, h.pluginAPI) {
+	if teamID != "" && !app.CanViewTeam(userID, teamID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
 			"userID %s does not have permission to get playbooks on teamID %s",
 			userID,
@@ -337,7 +346,7 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 	teamID := query.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !app.CanViewTeam(userID, teamID, h.pluginAPI) {
+	if teamID != "" && !app.CanViewTeam(userID, teamID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
 		return
 	}
@@ -374,7 +383,7 @@ func (h *PlaybookHandler) getPlaybookCount(w http.ResponseWriter, r *http.Reques
 	teamID := query.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if !app.CanViewTeam(userID, teamID, h.pluginAPI) {
+	if teamID != "" && !app.CanViewTeam(userID, teamID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
 		return
 	}
@@ -404,6 +413,8 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		sortField = app.SortByStages
 	case "steps":
 		sortField = app.SortBySteps
+	case "runs":
+		sortField = app.SortByRuns
 	default:
 		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'sort' (%s): it should be empty or one of 'title', 'stages' or 'steps'", param)
 	}
@@ -463,4 +474,13 @@ func removeDuplicates(a []string) []string {
 		res = append(res, item)
 	}
 	return res
+}
+
+func (h *PlaybookHandler) validateCategoryName(categoryName string) error {
+	categoryNameLength := len(categoryName)
+	if categoryNameLength > 22 {
+		msg := fmt.Sprintf("invalid category name: %s (maximum length is 22 characters)", categoryName)
+		return errors.Errorf(msg)
+	}
+	return nil
 }

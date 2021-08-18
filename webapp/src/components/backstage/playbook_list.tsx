@@ -1,33 +1,28 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
-import qs from 'qs';
 
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 
 import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
 
-import {FetchPlaybooksNoChecklistReturn, PlaybookNoChecklist} from 'src/types/playbook';
-import {navigateToTeamPluginUrl} from 'src/browser_routing';
-
-import {deletePlaybook, clientFetchPlaybooks} from 'src/client';
-
 import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import TemplateSelector, {PresetTemplate} from 'src/components/backstage/template_selector';
+import TemplateSelector, {isPlaybookCreationAllowed, PresetTemplate} from 'src/components/backstage/template_selector';
+import {telemetryEventForTemplate} from 'src/client';
 
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import './playbook.scss';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
-import {TEMPLATE_TITLE_KEY, BACKSTAGE_LIST_PER_PAGE, AdminNotificationType} from 'src/constants';
+import {BACKSTAGE_LIST_PER_PAGE, AdminNotificationType} from 'src/constants';
 import {Banner} from 'src/components/backstage/styles';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 
@@ -35,71 +30,41 @@ import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
-import {PrimaryButton, UpgradeButton, UpgradeButtonProps} from 'src/components/assets/buttons';
+import {PrimaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
 
-import {useAllowPlaybookCreationInCurrentTeam, useCanCreatePlaybooks} from 'src/hooks';
+import CreatePlaybookTeamSelector from 'src/components/team/create_playbook_team_selector';
+
+import {TeamName, getTeamName} from 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list';
+import {
+    useAllowPlaybookCreationInTeams,
+    useCanCreatePlaybooks,
+    usePlaybooksCrud,
+    usePlaybooksRouting,
+} from 'src/hooks';
+
+import {Playbook} from 'src/types/playbook';
 
 const DeleteBannerTimeout = 5000;
 
 const PlaybookList = () => {
-    const [playbooks, setPlaybooks] = useState<PlaybookNoChecklist[] | null>(null);
-    const [totalCount, setTotalCount] = useState(0);
-    const [selectedPlaybook, setSelectedPlaybook] = useState<PlaybookNoChecklist | null>(null);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
     const canCreatePlaybooks = useCanCreatePlaybooks();
     const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
-    const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
+    const allowPlaybookCreationInTeams = useAllowPlaybookCreationInTeams();
+    const teams = useSelector<GlobalState, Team[]>(getMyTeams);
 
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const [
+        playbooks,
+        {totalCount, params, selectedPlaybook},
+        {setPage, sortBy, setSelectedPlaybook, deletePlaybook},
+    ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
-    const [fetchParams, setFetchParams] = useState<{ sort: string, direction: string, page: number, per_page: number }>(
-        {
-            sort: 'title',
-            direction: 'asc',
-            page: 0,
-            per_page: BACKSTAGE_LIST_PER_PAGE,
-        },
-    );
+    const {view, edit, create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
-    function colHeaderClicked(colName: string) {
-        if (fetchParams.sort === colName) {
-            // we're already sorting on this column; reverse the direction
-            const newSortDirection = fetchParams.direction === 'asc' ? 'desc' : 'asc';
-            setFetchParams({...fetchParams, direction: newSortDirection});
-            return;
-        }
-
-        setFetchParams({...fetchParams, sort: colName, direction: 'asc'});
-    }
-
-    function setPage(page: number) {
-        setFetchParams({...fetchParams, page});
-    }
-
-    const fetchPlaybooks = async () => {
-        const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksNoChecklistReturn;
-        setPlaybooks(result.items);
-        setTotalCount(result.total_count);
-    };
-    useEffect(() => {
-        fetchPlaybooks();
-    }, [currentTeam.id, fetchParams]);
-
-    const viewPlaybook = (playbook: PlaybookNoChecklist) => {
-        setSelectedPlaybook(playbook);
-        navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook.id}`);
-    };
-
-    const editPlaybook = (playbook: PlaybookNoChecklist) => {
-        setSelectedPlaybook(playbook);
-        navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook.id}/edit`);
-    };
-
-    const newPlaybook = (templateTitle?: string | undefined) => {
-        if (allowPlaybookCreation) {
-            const queryParams = qs.stringify({[TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
-            navigateToTeamPluginUrl(currentTeam.name, `/playbooks/new${queryParams}`);
+    const newPlaybook = (team: Team, templateTitle?: string | undefined) => {
+        if (allowPlaybookCreationInTeams.get(team.id)) {
+            create(team, templateTitle);
         } else {
             showUpgradeModal();
         }
@@ -109,24 +74,14 @@ const PlaybookList = () => {
         setShowConfirmation(false);
     };
 
-    const onConfirmDelete = (playbook: PlaybookNoChecklist) => {
+    const onConfirmDelete = (playbook: Playbook) => {
         setSelectedPlaybook(playbook);
         setShowConfirmation(true);
     };
 
     const onDelete = async () => {
         if (selectedPlaybook) {
-            await deletePlaybook(selectedPlaybook);
-            let page = fetchParams.page;
-
-            // Fetch latest count
-            const result = await clientFetchPlaybooks(currentTeam.id, fetchParams) as FetchPlaybooksNoChecklistReturn;
-
-            // Go back to previous page if the last item on this page was just deleted
-            page = Math.max(Math.min(result.page_count - 1, page), 0);
-
-            // Setting the page here results in fetching playbooks through the fetchParams dependency of the effect above
-            setPage(page);
+            await deletePlaybook(selectedPlaybook.id);
 
             hideConfirmModal();
             setShowBanner(true);
@@ -155,38 +110,26 @@ const PlaybookList = () => {
             </div>
         );
     } else {
-        body = playbooks.map((p: PlaybookNoChecklist) => (
+        body = playbooks.map((p: Playbook) => (
             <div
                 className='row playbook-item'
                 key={p.id}
-                onClick={() => viewPlaybook(p)}
+                onClick={() => view(p)}
             >
-                <a className='col-sm-4 title'>
+                <div className='col-sm-4 title'>
                     <TextWithTooltip
                         id={p.title}
                         text={p.title}
                     />
-                </a>
-                <div
-                    className='col-sm-2'
-                >
-                    {
-                        p.num_stages
-                    }
+                    {teams.length > 1 && <TeamName>{getTeamName(teams, p.team_id)}</TeamName>}
                 </div>
-                <div
-                    className='col-sm-2'
-                >
-                    {
-
-                        /* Calculate all steps for this playbook */
-                        p.num_steps
-                    }
-                </div>
+                <div className='col-sm-2'>{p.num_stages}</div>
+                <div className='col-sm-2'>{p.num_steps}</div>
+                <div className='col-sm-2'>{p.num_runs}</div>
                 <div className='col-sm-2 action-col'>
                     <PlaybookActionMenu
                         onEdit={() => {
-                            editPlaybook(p);
+                            edit(p);
                         }}
                         onDelete={() => {
                             onConfirmDelete(p);
@@ -207,9 +150,13 @@ const PlaybookList = () => {
             {deleteSuccessfulBanner}
             {canCreatePlaybooks &&
                 <TemplateSelector
-                    onSelect={(template: PresetTemplate) => {
-                        newPlaybook(template.title);
+                    onSelect={(team: Team, template: PresetTemplate) => {
+                        telemetryEventForTemplate(template.title, 'click_template_icon');
+                        newPlaybook(team, template.title);
                     }}
+                    teams={teams}
+                    allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
+                    showUpgradeModal={showUpgradeModal}
                 />
             }
             {
@@ -218,7 +165,8 @@ const PlaybookList = () => {
                     <NoContentPage
                         onNewPlaybook={newPlaybook}
                         canCreatePlaybooks={canCreatePlaybooks}
-                        allowPlaybookCreation={allowPlaybookCreation}
+                        teams={teams}
+                        allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
                     />
                     <NoContentPlaybookSvg/>
                 </>
@@ -237,19 +185,15 @@ const PlaybookList = () => {
                                 className='title list-title'
                             >
                                 {'Playbooks'}
-                                <div className='light'>
-                                    {'(' + currentTeam.display_name + ')'}
-                                </div>
                             </div>
                             {canCreatePlaybooks &&
                                 <div className='header-button-div'>
-                                    <UpgradeOrPrimaryButton
-                                        onClick={() => newPlaybook()}
-                                        allowPlaybookCreation={allowPlaybookCreation}
-                                    >
-                                        <i className='icon-plus mr-2'/>
-                                        {'Create playbook'}
-                                    </UpgradeOrPrimaryButton>
+                                    <TeamSelectorButton
+                                        onClick={(team: Team) => newPlaybook(team)}
+                                        teams={teams}
+                                        allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
+                                        showUpgradeModal={showUpgradeModal}
+                                    />
                                 </div>
                             }
                         </div>
@@ -258,25 +202,33 @@ const PlaybookList = () => {
                                 <div className='col-sm-4'>
                                     <SortableColHeader
                                         name={'Name'}
-                                        direction={fetchParams.direction}
-                                        active={fetchParams.sort === 'title'}
-                                        onClick={() => colHeaderClicked('title')}
+                                        direction={params.direction}
+                                        active={params.sort === 'title'}
+                                        onClick={() => sortBy('title')}
                                     />
                                 </div>
                                 <div className='col-sm-2'>
                                     <SortableColHeader
                                         name={'Checklists'}
-                                        direction={fetchParams.direction}
-                                        active={fetchParams.sort === 'stages'}
-                                        onClick={() => colHeaderClicked('stages')}
+                                        direction={params.direction}
+                                        active={params.sort === 'stages'}
+                                        onClick={() => sortBy('stages')}
                                     />
                                 </div>
                                 <div className='col-sm-2'>
                                     <SortableColHeader
                                         name={'Tasks'}
-                                        direction={fetchParams.direction}
-                                        active={fetchParams.sort === 'steps'}
-                                        onClick={() => colHeaderClicked('steps')}
+                                        direction={params.direction}
+                                        active={params.sort === 'steps'}
+                                        onClick={() => sortBy('steps')}
+                                    />
+                                </div>
+                                <div className='col-sm-2'>
+                                    <SortableColHeader
+                                        name={'Runs'}
+                                        direction={params.direction}
+                                        active={params.sort === 'runs'}
+                                        onClick={() => sortBy('runs')}
                                     />
                                 </div>
                                 <div className='col-sm-2'>{'Actions'}</div>
@@ -284,8 +236,8 @@ const PlaybookList = () => {
                         </BackstageListHeader>
                         {body}
                         <PaginationRow
-                            page={fetchParams.page}
-                            perPage={fetchParams.per_page}
+                            page={params.page}
+                            perPage={params.per_page}
                             totalCount={totalCount}
                             setPage={setPage}
                         />
@@ -304,19 +256,56 @@ const PlaybookList = () => {
     );
 };
 
-type CreatePlaybookButtonProps = UpgradeButtonProps & {allowPlaybookCreation: boolean};
+type CreatePlaybookButtonProps = UpgradeButtonProps & {teams: Team[], allowPlaybookCreationInTeams:Map<string, boolean>, showUpgradeModal?: () => void};
 
-const UpgradeOrPrimaryButton = (props: CreatePlaybookButtonProps) => {
-    const {children, allowPlaybookCreation, ...rest} = props;
-
-    if (allowPlaybookCreation) {
-        return <PrimaryButton {...rest}>{children}</PrimaryButton>;
+const TeamSelectorButton = (props: CreatePlaybookButtonProps) => {
+    const {teams, allowPlaybookCreationInTeams, showUpgradeModal, ...rest} = props;
+    if (isPlaybookCreationAllowed(allowPlaybookCreationInTeams)) {
+        return (
+            <CreatePlaybookTeamSelector
+                testId={'create-playbook-team-selector'}
+                enableEdit={true}
+                teams={teams}
+                allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
+                onSelectedChange={props.onClick}
+                withButton={true}
+                {...rest}
+            >
+                <CreatePlaybookButton>
+                    <i className='icon-plus mr-2'/>
+                    {'Create playbook'}
+                </CreatePlaybookButton>
+            </CreatePlaybookTeamSelector>
+        );
     }
-
-    return <UpgradeButton {...rest}>{children}</UpgradeButton>;
+    return (
+        <CreatePlaybookButton
+            onClick={showUpgradeModal}
+        >
+            <i className='icon-plus mr-2'/>
+            {'Create playbook'}
+            <NotAllowedIcon className='icon icon-key-variant-circle'/>
+        </CreatePlaybookButton>
+    );
 };
 
-const useUpgradeModalVisibility = (initialState: boolean): [boolean, () => void, () => void] => {
+const CreatePlaybookButton = styled(PrimaryButton)`
+    display: flex;
+    align-items: center;
+`;
+
+const NotAllowedIcon = styled.i`
+    color: var(--online-indicator);
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
+`;
+
+export const useUpgradeModalVisibility = (initialState: boolean): [boolean, () => void, () => void] => {
     const [isModalShown, setShowModal] = useState(initialState);
 
     const showUpgradeModal = () => {
@@ -361,51 +350,21 @@ const DescriptionWarn = styled(Description)`
     color: rgba(var(--error-text-color-rgb), 0.72);
 `;
 
-const Button = styled.button`
-    display: inline-flex;
-    background: var(--button-bg);
-    color: var(--button-color);
-    border-radius: 4px;
-    border: 0px;
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 18px;
-    align-items: center;
-    padding: 14px 24px;
-    transition: all 0.15s ease-out;
-
-    &:hover {
-        opacity: 0.8;
-    }
-
-    &:active  {
-        background: rgba(var(--button-bg-rgb), 0.8);
-    }
-
-    i {
-        font-size: 24px;
-    }
-`;
-
-const NoContentPage = (props: { onNewPlaybook: () => void, canCreatePlaybooks: boolean, allowPlaybookCreation: boolean }) => {
+const NoContentPage = (props: { onNewPlaybook: (team: Team) => void, canCreatePlaybooks: boolean, teams: Team[], allowPlaybookCreationInTeams: Map<string, boolean>}) => {
     return (
         <Container>
             <Title>{'What is a playbook?'}</Title>
             <Description>{'A playbook is a workflow that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives.'}</Description>
             { props.canCreatePlaybooks &&
-                <UpgradeOrPrimaryButton
+                <TeamSelectorButton
                     className='mt-6'
-                    onClick={() => props.onNewPlaybook()}
-                    allowPlaybookCreation={props.allowPlaybookCreation}
-                >
-                    <i className='icon-plus mr-2'/>
-                    {'Create playbook'}
-                </UpgradeOrPrimaryButton>
+                    onClick={(team: Team) => props.onNewPlaybook(team)}
+                    teams={props.teams}
+                    allowPlaybookCreationInTeams={props.allowPlaybookCreationInTeams}
+                />
             }
-            { !props.canCreatePlaybooks &&
-            <DescriptionWarn>{"There are no playbooks to view. You don't have permission to create playbooks in this workspace."}</DescriptionWarn>
+            {!props.canCreatePlaybooks &&
+                <DescriptionWarn>{"There are no playbooks to view. You don't have permission to create playbooks in this workspace."}</DescriptionWarn>
             }
         </Container>
     );
@@ -431,13 +390,15 @@ const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
             }
         >
             <DropdownMenuItem
-                text='Edit'
                 onClick={props.onEdit}
-            />
+            >
+                {'Edit'}
+            </DropdownMenuItem>
             <DropdownMenuItem
-                text='Delete'
                 onClick={props.onDelete}
-            />
+            >
+                {'Delete'}
+            </DropdownMenuItem>
         </DotMenu>
     );
 };

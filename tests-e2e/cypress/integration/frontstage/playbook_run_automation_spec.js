@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import users from '../../fixtures/users.json';
+
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -12,13 +14,13 @@ describe('playbook run automation', () => {
 
     before(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Get the current team and user
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
         }).then(() => {
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 userId = user.id;
             });
         });
@@ -28,8 +30,14 @@ describe('playbook run automation', () => {
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
 
+        // # Turn off growth onboarding screens
+        cy.apiLogin(users.sysadmin);
+        cy.apiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
+
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Go to Town Square
         cy.visit('/ad-1/channels/town-square');
@@ -79,7 +87,7 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with a couple of invited users and the setting enabled, and a playbook run with it
-                cy.apiGetUsers(['aaron.medina', 'alice.johnston']).then((res) => {
+                cy.legacyApiGetUsers(['aaron.medina', 'alice.johnston']).then((res) => {
                     const userIds = res.body.map((user) => user.id);
 
                     return cy.apiCreatePlaybook({
@@ -123,7 +131,7 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with a couple of invited users and the setting enabled, and a playbook run with it
-                cy.apiGetUsers(['aaron.medina', 'alice.johnston']).then((res) => {
+                cy.legacyApiGetUsers(['aaron.medina', 'alice.johnston']).then((res) => {
                     const userIds = res.body.map((user) => user.id);
 
                     return cy.apiCreatePlaybook({
@@ -164,10 +172,10 @@ describe('playbook run automation', () => {
                 let playbook;
 
                 // # Create a playbook with a user that is later removed from the team
-                cy.apiLogin('sysadmin').then(() => {
+                cy.legacyApiLogin('sysadmin').then(() => {
                     cy.apiCreateUser().then((result) => {
                         userToRemove = result.user;
-                        cy.apiAddUserToTeam(teamId, userToRemove.id);
+                        cy.legacyApiAddUserToTeam(teamId, userToRemove.id);
 
                         const playbookName = 'Playbook (' + Date.now() + ')';
 
@@ -184,10 +192,10 @@ describe('playbook run automation', () => {
                         });
 
                         // # Remove user from the team
-                        cy.apiRemoveUserFromTeam(teamId, userToRemove.id);
+                        cy.legacyApiRemoveUserFromTeam(teamId, userToRemove.id);
                     });
                 }).then(() => {
-                    cy.apiLogin('user-1');
+                    cy.legacyApiLogin('user-1');
 
                     // # Create a new playbook run with the playbook.
                     const now = Date.now();
@@ -296,7 +304,7 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with the owner being part of the invited users
-                cy.apiGetUsers(['alice.johnston']).then((res) => {
+                cy.legacyApiGetUsers(['alice.johnston']).then((res) => {
                     const userIds = res.body.map((user) => user.id);
 
                     return cy.apiCreatePlaybook({
@@ -338,7 +346,7 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with the owner being part of the invited users
-                cy.apiGetUsers(['alice.johnston']).then((res) => {
+                cy.legacyApiGetUsers(['alice.johnston']).then((res) => {
                     const userIds = res.body.map((user) => user.id);
 
                     return cy.apiCreatePlaybook({
@@ -421,7 +429,7 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with a couple of invited users and the setting enabled, and a playbook run with it
-                cy.apiGetChannelByName('ad-1', 'town-square').then(({channel}) => {
+                cy.legacyApiGetChannelByName('ad-1', 'town-square').then(({channel}) => {
                     return cy.apiCreatePlaybook({
                         teamId,
                         title: playbookName,
@@ -466,7 +474,7 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with a couple of invited users and the setting enabled, and a playbook run with it
-                cy.apiGetChannelByName('ad-1', 'town-square').then(({channel}) => {
+                cy.legacyApiGetChannelByName('ad-1', 'town-square').then(({channel}) => {
                     return cy.apiCreatePlaybook({
                         teamId,
                         title: playbookName,
@@ -511,10 +519,10 @@ describe('playbook run automation', () => {
                 let playbookId;
 
                 // # Create a playbook with a channel that is later deleted
-                cy.apiLogin('sysadmin').then(() => {
+                cy.legacyApiLogin('sysadmin').then(() => {
                     const channelDisplayName = String('Channel to delete ' + Date.now());
                     const channelName = channelDisplayName.replace(/ /g, '-').toLowerCase();
-                    cy.apiCreateChannel(teamId, channelName, channelDisplayName).then(({channel}) => {
+                    cy.legacyApiCreateChannel(teamId, channelName, channelDisplayName).then(({channel}) => {
                         // # Create a playbook with the channel to be deleted as the announcement channel
                         cy.apiCreatePlaybook({
                             teamId,
@@ -528,10 +536,10 @@ describe('playbook run automation', () => {
                         });
 
                         // # Delete channel
-                        cy.apiDeleteChannel(channel.id);
+                        cy.legacyApiDeleteChannel(channel.id);
                     });
                 }).then(() => {
-                    cy.apiLogin('user-1');
+                    cy.legacyApiLogin('user-1');
 
                     // # Create a new playbook run with the playbook.
                     const now = Date.now();

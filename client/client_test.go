@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/stretchr/testify/require"
 )
 

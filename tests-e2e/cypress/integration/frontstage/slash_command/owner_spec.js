@@ -6,6 +6,8 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import users from '../../../fixtures/users.json';
+
 describe('slash command > owner', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
@@ -16,16 +18,22 @@ describe('slash command > owner', () => {
     let playbookRunChannelName;
 
     before(() => {
+        // # Turn off growth onboarding screens
+        cy.apiLogin(users.sysadmin);
+        cy.apiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
+
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Switch to clean display mode
         cy.apiSaveMessageDisplayPreference('clean');
 
         // # Create and run a playbook.
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 userId = user.id;
 
                 cy.apiCreatePlaybook({
@@ -72,7 +80,7 @@ describe('slash command > owner', () => {
         cy.viewport('macbook-13');
 
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Reset the owner to test-1 as necessary.
         cy.apiChangePlaybookRunOwner(playbookRunId, userId);

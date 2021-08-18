@@ -27,13 +27,13 @@ const (
 	userAgent  = "go-client/" + apiVersion
 )
 
-// Client manages communication with the Incident Collaboration API.
+// Client manages communication with the Playbooks API.
 type Client struct {
 	// client is the underlying HTTP client used to make API requests.
 	client *http.Client
-	// BaseURL is the base HTTP endpoint for the Incident Collaboration plugin.
+	// BaseURL is the base HTTP endpoint for the Playbooks plugin.
 	BaseURL *url.URL
-	// User agent used when communicating with the Incident Collaboration API.
+	// User agent used when communicating with the Playbooks API.
 	UserAgent string
 
 	// PlaybookRuns is a collection of methods used to interact with playbook runs.

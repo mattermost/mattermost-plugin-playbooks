@@ -6,6 +6,9 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import * as TIMEOUTS from '../../../fixtures/timeouts';
+import users from '../../../fixtures/users.json';
+
 describe('playbook run rhs', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
@@ -13,12 +16,18 @@ describe('playbook run rhs', () => {
     let playbookId;
 
     before(() => {
-        // # Login as user-1
-        cy.apiLogin('user-1');
+        // # Turn off growth onboarding screens
+        cy.apiLogin(users.sysadmin);
+        cy.apiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
 
-        cy.apiGetTeamByName('ad-1').then((team) => {
+        // # Login as user-1
+        cy.legacyApiLogin('user-1');
+
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
             teamId = team.id;
-            cy.apiGetCurrentUser().then((user) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 userId = user.id;
 
                 // # Create a playbook
@@ -35,7 +44,7 @@ describe('playbook run rhs', () => {
 
     beforeEach(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
     });
 
     describe('does not open', () => {
@@ -50,7 +59,7 @@ describe('playbook run rhs', () => {
             cy.get('#post-create').should('exist');
 
             // # Wait a bit longer to be confident.
-            cy.wait(2000);
+            cy.wait(TIMEOUTS.TWO_SEC);
 
             // * Verify the playbook run RHS is not open.
             cy.get('#rhsContainer').should('not.exist');
@@ -84,7 +93,7 @@ describe('playbook run rhs', () => {
             cy.get('#post-create').should('exist');
 
             // # Wait a bit longer to be confident.
-            cy.wait(2000);
+            cy.wait(TIMEOUTS.TWO_SEC);
 
             // * Verify the playbook run RHS is not open.
             cy.get('#rhsContainer').should('not.exist');
@@ -419,9 +428,9 @@ describe('playbook run rhs', () => {
                 cy.get('#incidentIcon').should('exist').click({force: true});
             });
 
-            // * Verify the playbook run RHS is open.
+            // * Verify RHS Home is open.
             cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText('Runs in progress').should('exist');
+                cy.findByText('Playbooks').should('exist');
             });
 
             // # Click the icon again

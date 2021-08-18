@@ -6,20 +6,28 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import users from '../../../fixtures/users.json';
+
 describe('slash command > test', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let playbookId;
 
     before(() => {
+        // # Turn off growth onboarding screens
+        cy.apiLogin(users.sysadmin);
+        cy.apiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
+
         // # Login as user-1.
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Switch to clean display mode.
         cy.apiSaveMessageDisplayPreference('clean');
 
         // # Create a playbook.
-        cy.apiGetTeamByName('ad-1').then((team) => {
-            cy.apiGetCurrentUser().then((user) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 cy.apiGetUserByEmail('sysadmin@sample.mattermost.com').then(({user: admin}) => {
                     cy.apiCreatePlaybook({
                         teamId: team.id,
@@ -52,10 +60,10 @@ describe('slash command > test', () => {
     describe('as a regular user', () => {
         before(() => {
             // # Login as sysadmin.
-            cy.apiLogin('sysadmin');
+            cy.legacyApiLogin('sysadmin');
 
             // # Set EnableTesting to true.
-            cy.apiUpdateConfig({
+            cy.legacyApiUpdateConfig({
                 ServiceSettings: {
                     EnableTesting: true
                 },
@@ -64,7 +72,7 @@ describe('slash command > test', () => {
 
         beforeEach(() => {
             // # Login as user-1
-            cy.apiLogin('user-1');
+            cy.legacyApiLogin('user-1');
 
             // # Navigate to a channel.
             cy.visit('/ad-1/channels/town-square');
@@ -99,10 +107,10 @@ describe('slash command > test', () => {
         describe('with EnableTesting set to false', () => {
             before(() => {
                 // # Login as sysadmin.
-                cy.apiLogin('sysadmin');
+                cy.legacyApiLogin('sysadmin');
 
                 // # Set EnableTesting to false.
-                cy.apiUpdateConfig({
+                cy.legacyApiUpdateConfig({
                     ServiceSettings: {
                         EnableTesting: false
                     },
@@ -111,7 +119,7 @@ describe('slash command > test', () => {
 
             beforeEach(() => {
                 // # Login as sysadmin.
-                cy.apiLogin('sysadmin');
+                cy.legacyApiLogin('sysadmin');
 
                 // # Navigate to a channel.
                 cy.visit('/ad-1/channels/town-square');
@@ -145,10 +153,10 @@ describe('slash command > test', () => {
         describe('with EnableTesting set to true', () => {
             before(() => {
                 // # Login as sysadmin.
-                cy.apiLogin('sysadmin');
+                cy.legacyApiLogin('sysadmin');
 
                 // # Set EnableTesting to true.
-                cy.apiUpdateConfig({
+                cy.legacyApiUpdateConfig({
                     ServiceSettings: {
                         EnableTesting: true
                     },
@@ -157,7 +165,7 @@ describe('slash command > test', () => {
 
             beforeEach(() => {
                 // # Login as sysadmin.
-                cy.apiLogin('sysadmin');
+                cy.legacyApiLogin('sysadmin');
 
                 // # Size the viewport to show the RHS without covering posts.
                 cy.viewport('macbook-13');

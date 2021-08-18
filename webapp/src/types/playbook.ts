@@ -2,13 +2,23 @@
 // See LICENSE.txt for license information.
 
 export interface Playbook {
-    id?: string;
+    id: string;
     title: string;
     description: string;
     team_id: string;
     create_public_playbook_run: boolean;
-    checklists: Checklist[];
+
+    /** @alias num_checklists */
+    num_stages: number;
+    num_steps: number;
+    num_runs: number;
+    num_actions: number;
+    last_run_at: number;
     member_ids: string[];
+}
+
+export interface PlaybookWithChecklist extends Playbook {
+    checklists: Checklist[];
     broadcast_channel_id: string;
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
@@ -30,29 +40,23 @@ export interface Playbook {
     export_channel_on_archive_enabled: boolean;
     signal_any_keywords_enabled: boolean;
     signal_any_keywords: string[];
+    category_name: string;
+    categorize_channel_enabled: boolean;
 }
 
-export interface PlaybookNoChecklist {
-    id?: string;
-    title: string;
-    description: string;
-    team_id: string;
-    create_public_playbook_run: boolean;
-    num_stages: number;
-    num_steps: number;
-    member_ids: string[];
+export interface FetchPlaybooksParams {
+    team_id?: string;
+    page?: number;
+    per_page?: number;
+    sort?: 'title' | 'stages' | 'steps' | 'runs';
+    direction?: 'asc' | 'desc';
 }
 
-export interface FetchPlaybooksNoChecklistReturn {
+export interface FetchPlaybooksReturn {
     total_count: number;
     page_count: number;
     has_more: boolean;
-    items: PlaybookNoChecklist[];
-}
-
-export interface FetchPlaybookRunsParams {
-    sort?: string;
-    direction?: string;
+    items: Playbook[];
 }
 
 export interface FetchPlaybooksCountReturn {
@@ -83,12 +87,21 @@ export interface ChecklistItem {
     command_last_run: number;
 }
 
-export function emptyPlaybook(): Playbook {
+export interface DraftPlaybookWithChecklist extends Omit<PlaybookWithChecklist, 'id'> {
+    id?: string;
+}
+
+export function emptyPlaybook(): DraftPlaybookWithChecklist {
     return {
         title: '',
         description: '',
         team_id: '',
         create_public_playbook_run: false,
+        num_stages: 0,
+        num_steps: 0,
+        num_runs: 0,
+        num_actions: 0,
+        last_run_at: 0,
         checklists: [emptyChecklist()],
         member_ids: [],
         broadcast_channel_id: '',
@@ -112,6 +125,8 @@ export function emptyPlaybook(): Playbook {
         export_channel_on_archive_enabled: false,
         signal_any_keywords: [],
         signal_any_keywords_enabled: false,
+        category_name: '',
+        categorize_channel_enabled: false,
     };
 }
 
@@ -140,9 +155,26 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     state,
 });
 
+export interface ChecklistItemsFilter extends Record<string, boolean> {
+    all: boolean;
+    checked: boolean;
+    me: boolean;
+    unassigned: boolean;
+    others: boolean;
+}
+
+export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
+    all: false,
+    checked: false,
+    me: true,
+    unassigned: true,
+    others: true,
+};
+
 // eslint-disable-next-line
-export function isPlaybook(arg: any): arg is Playbook {
-    return arg &&
+export function isPlaybook(arg: any): arg is PlaybookWithChecklist {
+    return (
+        arg &&
         typeof arg.id === 'string' &&
         typeof arg.title === 'string' &&
         typeof arg.team_id === 'string' &&
@@ -166,7 +198,8 @@ export function isPlaybook(arg: any): arg is Playbook {
         typeof arg.message_on_join === 'string' &&
         typeof arg.message_on_join_enabled === 'boolean' &&
         typeof arg.signal_any_keywords && Array.isArray(arg.signal_any_keywords) && arg.signal_any_keywords.every((id: any) => typeof id === 'string') &&
-        typeof arg.signal_any_keywords_enabled === 'boolean';
+        typeof arg.signal_any_keywords_enabled === 'boolean'
+    );
 }
 
 // eslint-disable-next-line
@@ -214,5 +247,5 @@ This section should include perspective from everyone that was involved to celeb
 ### Follow-up tasks
 This section lists the action items to turn learnings into changes that help the team become more proficient with iterations. It could include tweaking the playbook, publishing the retrospective, or other improvements. The best follow-ups will have a clear owner as well as due date.
 
-### Timeline Highlights
+### Timeline highlights
 This section is a curated log that details the most important moments. It can contain key communications, screen shots, or other artifacts. Use the built-in timeline feature to help you retrace and replay the sequence of events.`;

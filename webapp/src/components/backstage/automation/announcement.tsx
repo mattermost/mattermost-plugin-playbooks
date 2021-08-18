@@ -1,14 +1,17 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 
 import {MenuListComponentProps} from 'react-select';
 import {Scrollbars} from 'react-custom-scrollbars';
 import styled from 'styled-components';
+import General from 'mattermost-redux/constants/general';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 import {Channel} from 'mattermost-redux/types/channels';
+
+import {fetchMyChannels} from 'src/client';
 
 import Profile from 'src/components/profile/profile';
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
@@ -23,30 +26,32 @@ interface Props {
     onChannelSelected: (channelID: string | undefined) => void;
 }
 
-export const Announcement = (props: Props) => (
-    <AutomationHeader>
-        <AutomationTitle>
-            <Toggle
-                isChecked={props.enabled}
-                onChange={props.onToggle}
-            />
-            <div>{'Announce in another channel'}</div>
-        </AutomationTitle>
-        <SelectorWrapper>
-            <StyledChannelSelector
-                id='playbook-automation-announcement'
-                onChannelSelected={props.onChannelSelected}
-                channelId={props.channelId}
-                isClearable={true}
-                selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
-                isDisabled={!props.enabled}
-                captureMenuScroll={false}
-                shouldRenderValue={props.enabled}
-                placeholder={'Search for channel'}
-            />
-        </SelectorWrapper>
-    </AutomationHeader>
-);
+export const Announcement = (props: Props) => {
+    return (
+        <AutomationHeader>
+            <AutomationTitle>
+                <Toggle
+                    isChecked={props.enabled}
+                    onChange={props.onToggle}
+                />
+                <div>{'Announce in another channel'}</div>
+            </AutomationTitle>
+            <SelectorWrapper>
+                <StyledChannelSelector
+                    id='playbook-automation-announcement'
+                    onChannelSelected={props.onChannelSelected}
+                    channelId={props.channelId}
+                    isClearable={true}
+                    selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
+                    isDisabled={!props.enabled}
+                    captureMenuScroll={false}
+                    shouldRenderValue={props.enabled}
+                    placeholder={'Search for channel'}
+                />
+            </SelectorWrapper>
+        </AutomationHeader>
+    );
+};
 
 const StyledChannelSelector = styled(ChannelSelector)`
     background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};

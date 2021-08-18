@@ -7,9 +7,9 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	mock_bot "github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/store/storetest"
 	"github.com/stretchr/testify/require"
@@ -65,6 +65,8 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 
 	setupChannelsTable(t, db)
 	setupPostsTable(t, db)
+	setupBotsTable(t, db)
+	setupChannelMembersTable(t, db)
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		err = sqlStore.Migrate(currentSchemaVersion)
@@ -405,6 +407,34 @@ func setupPostsTable(t testing.TB, db *sqlx.DB) {
 	require.NoError(t, err)
 }
 
+func setupBotsTable(t testing.TB, db *sqlx.DB) {
+	t.Helper()
+
+	// This is completely handmade
+	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.bots (
+				userid character varying(26) NOT NULL,
+				description character varying(1024),
+			    ownerid character varying(190)
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// handmade
+	_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS Bots (
+				UserId varchar(26) NOT NULL,
+				Description varchar(1024),
+			    OwnerId varchar(190)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
 type userInfo struct {
 	ID   string
 	Name string
@@ -426,10 +456,10 @@ func addUsers(t *testing.T, store *SQLStore, users []userInfo) {
 func addUsersToTeam(t *testing.T, store *SQLStore, users []userInfo, teamID string) {
 	t.Helper()
 
-	insertBuilder := store.builder.Insert("TeamMembers").Columns("TeamId", "UserId")
+	insertBuilder := store.builder.Insert("TeamMembers").Columns("TeamId", "UserId", "DeleteAt")
 
 	for _, u := range users {
-		insertBuilder = insertBuilder.Values(teamID, u.ID)
+		insertBuilder = insertBuilder.Values(teamID, u.ID, 0)
 	}
 
 	_, err := store.execBuilder(store.db, insertBuilder)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 

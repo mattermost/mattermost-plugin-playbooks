@@ -1,26 +1,22 @@
 import React from 'react';
 import {Redirect} from 'react-router-dom';
 
-import {Team} from 'mattermost-redux/types/teams';
-
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
-import {useAllowPlaybookCreationInCurrentTeam} from 'src/hooks';
-import {teamPluginUrl} from 'src/browser_routing';
+import {useAllowPlaybookCreationInTeams} from 'src/hooks';
+import {pluginUrl} from 'src/browser_routing';
 
-interface Props {
-    currentTeam: Team
-}
+export const NewPlaybook = () => {
+    const allowedTeams = useAllowPlaybookCreationInTeams();
+    const searchParams = new URLSearchParams(location.search);
+    const teamId = searchParams.get('teamId');
 
-export const NewPlaybook = (props: Props) => {
-    const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
-
-    if (!allowPlaybookCreation) {
-        return <Redirect to={teamPluginUrl(props.currentTeam.name, '/playbooks')}/>;
+    if (!teamId || !allowedTeams.get(teamId)) {
+        return <Redirect to={pluginUrl('/playbooks')}/>;
     }
 
     return (
         <PlaybookEdit
-            currentTeam={props.currentTeam}
+            teamId={teamId}
             isNew={true}
         />
     );

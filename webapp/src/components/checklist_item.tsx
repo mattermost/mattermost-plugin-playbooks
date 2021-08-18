@@ -25,7 +25,7 @@ import {ChecklistItemButton} from 'src/components/checklist_item_input';
 import Profile from 'src/components/profile/profile';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import {formatText, messageHtmlToComponent} from 'src/components/shared';
+import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {useClickOutsideRef, useProfilesInCurrentChannel, useTimeout} from 'src/hooks';
 import {ChannelNamesMap} from 'src/types/backstage';
@@ -291,16 +291,22 @@ const StepDescription = (props: StepDescriptionProps): React.ReactElement<StepDe
     );
 };
 
+const ControlComponentAnchor = styled.a`
+    display: inline-block;
+    margin: 0 0 8px 12px;
+    font-weight: 600;
+    font-size: 12px;
+    position: relative;
+    top: -4px;
+`;
+
 const ControlComponent = (ownProps: ControlProps<any>) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
-            <a
-                className='PlaybookRunFilter-reset'
-                onClick={ownProps.selectProps.onCustomReset}
-            >
+            <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
                 {'No Assignee'}
-            </a>
+            </ControlComponentAnchor>
         )}
     </div>
 );

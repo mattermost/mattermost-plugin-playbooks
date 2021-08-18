@@ -6,28 +6,39 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
+import users from '../../fixtures/users.json';
+
 describe('backstage playbook details', () => {
     beforeEach(() => {
+        // # Turn off growth onboarding screens
+        cy.apiLogin(users.sysadmin);
+        cy.apiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
+
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
     });
 
     it('redirects to not found error if the playbook is unknown', () => {
         // # Visit the URL of a non-existing playbook
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/an_unknown_id');
+        cy.visit('/playbooks/playbooks/an_unknown_id');
 
         // * Verify that the user has been redirected to the playbooks not found error page
-        cy.url().should('include', '/ad-1/com.mattermost.plugin-incident-management/error?type=playbooks');
+        cy.url().should('include', '/playbooks/error?type=playbooks');
     });
 
     describe('tasks', () => {
         describe('slash command', () => {
             it('autocompletes after clicking Add a slash command', () => {
                 // # Visit the playbook backstage
-                cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
+                cy.visit('/playbooks/playbooks');
 
                 // # Start a blank playbook
                 cy.get('#root').findByText('Blank').click();
+
+                // #  Select team
+                cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
 
                 // # Add a slash command to a step
                 cy.get('#root').findByText('Add a slash command').click();
@@ -44,10 +55,13 @@ describe('backstage playbook details', () => {
 
             it('removes the input prompt when blurring with an empty slash command', () => {
                 // # Visit the playbook backstage
-                cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
+                cy.visit('/playbooks/playbooks');
 
                 // # Start a blank playbook
                 cy.get('#root').findByText('Blank').click();
+
+                // #  Select team
+                cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
 
                 // # Add a slash command to a step
                 cy.get('#root').findByText('Add a slash command').click();
@@ -67,10 +81,13 @@ describe('backstage playbook details', () => {
 
             it('removes the input prompt when blurring with an invalid slash command', () => {
                 // # Visit the playbook backstage
-                cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks');
+                cy.visit('/playbooks/playbooks');
 
                 // # Start a blank playbook
                 cy.get('#root').findByText('Blank').click();
+
+                // #  Select team
+                cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
 
                 // # Add a slash command to a step
                 cy.get('#root').findByText('Add a slash command').click();
@@ -96,13 +113,13 @@ describe('backstage playbook details', () => {
 
         before(() => {
             // # Login as user-1
-            cy.apiLogin('user-1');
+            cy.legacyApiLogin('user-1');
 
             // # Create a playbook
-            cy.apiGetTeamByName('ad-1').then((team) => {
+            cy.legacyApiGetTeamByName('ad-1').then((team) => {
                 teamId = team.id;
 
-                cy.apiGetCurrentUser().then((user) => {
+                cy.legacyApiGetCurrentUser().then((user) => {
                     cy.apiCreateTestPlaybook({
                         teamId: team.id,
                         title: playbookName,
@@ -115,7 +132,7 @@ describe('backstage playbook details', () => {
                 });
 
                 // # Create a private channel
-                cy.apiCreateChannel(teamId, 'private-channel', 'Private Channel', 'P').then(({channel}) => {
+                cy.legacyApiCreateChannel(teamId, 'private-channel', 'Private Channel', 'P').then(({channel}) => {
                     privateChannelId = channel.id;
                     privateChannelName = channel.name;
                 });
@@ -124,7 +141,7 @@ describe('backstage playbook details', () => {
 
         it('shows "Select a channel" when no broadcast channel configured', () => {
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -135,7 +152,7 @@ describe('backstage playbook details', () => {
 
         it('shows channel name when public broadcast channel configured', () => {
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -147,7 +164,7 @@ describe('backstage playbook details', () => {
             cy.findByTestId('save_playbook').click();
 
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -158,7 +175,7 @@ describe('backstage playbook details', () => {
 
         it('shows channel name when private broadcast channel configured and user is a member', () => {
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -170,7 +187,7 @@ describe('backstage playbook details', () => {
             cy.findByTestId('save_playbook').click();
 
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -181,7 +198,7 @@ describe('backstage playbook details', () => {
 
         it('shows "Unknown channel" when private broadcast channel configured and user is not a member', () => {
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -200,7 +217,7 @@ describe('backstage playbook details', () => {
             cy.get('#confirmModalButton').click();
 
             // # Visit the selected playbook
-            cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
             // # Switch to Templates tab
             cy.get('#root').findByText('Templates').click();
@@ -218,12 +235,12 @@ describe('backstage playbook details', () => {
 
         before(() => {
             // # Login as user-1
-            cy.apiLogin('user-1');
+            cy.legacyApiLogin('user-1');
 
             // # Create a playbook
-            cy.apiGetTeamByName('ad-1').then((team) => {
+            cy.legacyApiGetTeamByName('ad-1').then((team) => {
                 teamId = team.id;
-                cy.apiGetCurrentUser().then((user) => {
+                cy.legacyApiGetCurrentUser().then((user) => {
                     userId = user.id;
                     cy.apiCreateTestPlaybook({
                         teamId,
@@ -242,7 +259,7 @@ describe('backstage playbook details', () => {
             describe('invite members setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -253,7 +270,7 @@ describe('backstage playbook details', () => {
 
                 it('can be enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -272,7 +289,7 @@ describe('backstage playbook details', () => {
 
                 it('does not let add users when disabled', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -288,7 +305,7 @@ describe('backstage playbook details', () => {
 
                 it('allows adding users when enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -323,7 +340,7 @@ describe('backstage playbook details', () => {
 
                 it('allows adding new users to an already populated list', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -367,7 +384,7 @@ describe('backstage playbook details', () => {
 
                 it('allows removing users', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -414,7 +431,7 @@ describe('backstage playbook details', () => {
 
                 it('persists the list of users even if the toggle is off', () => {
                     // # Visit the selected playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -452,7 +469,7 @@ describe('backstage playbook details', () => {
                     cy.findByTestId('save_playbook').click();
 
                     // # Navigate again to the playbook
-                    cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -487,10 +504,10 @@ describe('backstage playbook details', () => {
                     let userToRemove;
 
                     // # Create a playbook with a user that is later removed from the team
-                    cy.apiLogin('sysadmin').then(() => {
+                    cy.legacyApiLogin('sysadmin').then(() => {
                         cy.apiCreateUser().then((result) => {
                             userToRemove = result.user;
-                            cy.apiAddUserToTeam(teamId, userToRemove.id);
+                            cy.legacyApiAddUserToTeam(teamId, userToRemove.id);
 
                             // # Create a playbook with the user that will be removed from the team.
                             cy.apiCreatePlaybook({
@@ -505,13 +522,13 @@ describe('backstage playbook details', () => {
                             });
 
                             // # Remove user from the team
-                            cy.apiRemoveUserFromTeam(teamId, userToRemove.id);
+                            cy.legacyApiRemoveUserFromTeam(teamId, userToRemove.id);
                         });
                     }).then(() => {
-                        cy.apiLogin('user-1');
+                        cy.legacyApiLogin('user-1');
 
                         // # Navigate again to the playbook
-                        cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                        cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();
@@ -523,7 +540,7 @@ describe('backstage playbook details', () => {
                         cy.url().should('not.include', playbookId + '/edit');
 
                         // # Navigate again to the playbook
-                        cy.visit('/ad-1/com.mattermost.plugin-incident-management/playbooks/' + playbookId + '/edit');
+                        cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
 
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();
@@ -542,7 +559,7 @@ describe('backstage playbook details', () => {
             describe('assign owner setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -553,7 +570,7 @@ describe('backstage playbook details', () => {
 
                 it('can be enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -572,7 +589,7 @@ describe('backstage playbook details', () => {
 
                 it('does not let add a owner when disabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -588,7 +605,7 @@ describe('backstage playbook details', () => {
 
                 it('allows adding users when enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -616,7 +633,7 @@ describe('backstage playbook details', () => {
 
                 it('allows changing the owner', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -653,7 +670,7 @@ describe('backstage playbook details', () => {
 
                 it('persists the assign owner even if the toggle is off', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -688,7 +705,7 @@ describe('backstage playbook details', () => {
                     cy.findByTestId('save_playbook').click();
 
                     // # Navigate again to the playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -712,13 +729,13 @@ describe('backstage playbook details', () => {
                     let userToRemove;
 
                     // # Create a playbook with a user that is later removed from the team
-                    cy.apiLogin('sysadmin').then(() => {
+                    cy.legacyApiLogin('sysadmin').then(() => {
                         // # We need to increase the maximum number of users per team; otherwise,
                         // adding a new member to the team fails in CI
 
                         cy.apiCreateUser().then((result) => {
                             userToRemove = result.user;
-                            cy.apiAddUserToTeam(teamId, userToRemove.id);
+                            cy.legacyApiAddUserToTeam(teamId, userToRemove.id);
 
                             // # Create a playbook with the user that will be removed from the team as
                             // the default owner
@@ -734,13 +751,13 @@ describe('backstage playbook details', () => {
                             });
 
                             // # Remove user from the team
-                            cy.apiRemoveUserFromTeam(teamId, userToRemove.id);
+                            cy.legacyApiRemoveUserFromTeam(teamId, userToRemove.id);
                         });
                     }).then(() => {
-                        cy.apiLogin('user-1');
+                        cy.legacyApiLogin('user-1');
 
                         // # Navigate again to the playbook
-                        cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                        cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();
@@ -752,7 +769,7 @@ describe('backstage playbook details', () => {
                         cy.url().should('not.include', playbookId + '/edit');
 
                         // # Navigate again to the playbook
-                        cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                        cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();
@@ -776,7 +793,7 @@ describe('backstage playbook details', () => {
             describe('announcement channel setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -787,7 +804,7 @@ describe('backstage playbook details', () => {
 
                 it('can be enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -806,7 +823,7 @@ describe('backstage playbook details', () => {
 
                 it('does not let select a channel when disabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -822,7 +839,7 @@ describe('backstage playbook details', () => {
 
                 it('allows selecting a channel when enabled', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -850,7 +867,7 @@ describe('backstage playbook details', () => {
 
                 it('allows changing the channel', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -887,7 +904,7 @@ describe('backstage playbook details', () => {
 
                 it('persists the channel even if the toggle is off', () => {
                     // # Visit the selected playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -922,7 +939,7 @@ describe('backstage playbook details', () => {
                     cy.findByTestId('save_playbook').click();
 
                     // # Navigate again to the playbook
-                    cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                    cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
@@ -944,10 +961,10 @@ describe('backstage playbook details', () => {
 
                 it('removes the channel and disables the setting if the channel no longer exists', () => {
                     // # Create a playbook with a user that is later removed from the team
-                    cy.apiLogin('sysadmin').then(() => {
+                    cy.legacyApiLogin('sysadmin').then(() => {
                         const channelDisplayName = String('Channel to delete ' + Date.now());
                         const channelName = channelDisplayName.replace(/ /g, '-').toLowerCase();
-                        cy.apiCreateChannel(teamId, channelName, channelDisplayName).then(({channel}) => {
+                        cy.legacyApiCreateChannel(teamId, channelName, channelDisplayName).then(({channel}) => {
                             // # Create a playbook with the channel to be deleted as the announcement channel
                             cy.apiCreatePlaybook({
                                 teamId,
@@ -961,13 +978,13 @@ describe('backstage playbook details', () => {
                             });
 
                             // # Delete channel
-                            cy.apiDeleteChannel(channel.id);
+                            cy.legacyApiDeleteChannel(channel.id);
                         });
                     }).then(() => {
-                        cy.apiLogin('user-1');
+                        cy.legacyApiLogin('user-1');
 
                         // # Navigate again to the playbook
-                        cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                        cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();
@@ -979,7 +996,7 @@ describe('backstage playbook details', () => {
                         cy.url().should('not.include', playbookId + '/edit');
 
                         // # Navigate again to the playbook
-                        cy.visit(`/ad-1/com.mattermost.plugin-incident-management/playbooks/${playbookId}/edit`);
+                        cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();

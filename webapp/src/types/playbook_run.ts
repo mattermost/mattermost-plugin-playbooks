@@ -29,6 +29,9 @@ export interface PlaybookRun {
     retrospective_published_at: number;
     retrospective_was_canceled: boolean;
     retrospective_reminder_interval_seconds: number;
+    participant_ids: string[];
+    last_status_update_at: number;
+    previous_reminder: number;
 }
 
 export interface StatusPost {
@@ -83,7 +86,10 @@ export function isPlaybookRun(arg: any): arg is PlaybookRun {
         arg.status_posts && Array.isArray(arg.status_posts) && arg.status_posts.every(isStatusPost) &&
         typeof arg.reminder_post_id === 'string' &&
         typeof arg.broadcast_channel_id === 'string' &&
-        arg.timeline_events && Array.isArray(arg.timeline_events) && arg.timeline_events.every(isTimelineEvent));
+        arg.timeline_events && Array.isArray(arg.timeline_events) && arg.timeline_events.every(isTimelineEvent) &&
+        arg.participant_ids && Array.isArray(arg.participant_ids) && arg.participant_ids.every(isString)) &&
+        arg.last_status_update_at && typeof arg.last_status_update_at === 'number' &&
+        arg.previous_reminder && typeof arg.previous_reminder === 'number';
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -120,6 +126,10 @@ export function isTimelineEvent(arg: any): arg is TimelineEvent {
         typeof arg.creator_user_id === 'string');
 }
 
+function isString(arg: any): arg is string {
+    return Boolean(typeof arg === 'string');
+}
+
 export function playbookRunCurrentStatusPost(playbookRun: PlaybookRun): StatusPost | undefined {
     const sortedPosts = [...playbookRun.status_posts]
         .filter((a) => a.delete_at === 0)
@@ -143,7 +153,7 @@ export interface FetchPlaybookRunsParams {
     per_page?: number;
     sort?: string;
     direction?: string;
-    status?: string;
+    statuses?: string[];
     owner_user_id?: string;
     search_term?: string;
     member_id?: string;
@@ -170,11 +180,3 @@ export const fetchParamsTimeEqual = (a: FetchPlaybookRunsParamsTime, b: FetchPla
         a.started_gte === b.started_gte &&
         a.started_lt === b.started_lt);
 };
-
-export interface FetchPlaybooksParams {
-    team_id?: string;
-    page?: number;
-    per_page?: number;
-    sort?: string;
-    direction?: string;
-}

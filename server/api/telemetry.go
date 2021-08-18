@@ -9,8 +9,8 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 )
 
 // TelemetryHandler is the API handler.
@@ -51,6 +51,9 @@ func NewTelemetryHandler(router *mux.Router, playbookRunService app.PlaybookRunS
 	playbookTelemetryRouterAuthorized := telemetryRouter.PathPrefix("/playbook").Subrouter()
 	playbookTelemetryRouterAuthorized.Use(handler.checkPlaybookViewPermissions)
 	playbookTelemetryRouterAuthorized.HandleFunc("/{id:[A-Za-z0-9]+}", handler.telemetryForPlaybook).Methods(http.MethodPost)
+
+	templateRouter := telemetryRouter.PathPrefix("/template").Subrouter()
+	templateRouter.HandleFunc("", handler.telemetryForTemplate)
 
 	return handler
 }
@@ -175,6 +178,32 @@ func (h *TelemetryHandler) telemetryForPlaybook(w http.ResponseWriter, r *http.R
 	}
 
 	h.playbookTelemetry.FrontendTelemetryForPlaybook(playbook, userID, params.Action)
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *TelemetryHandler) telemetryForTemplate(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var params struct {
+		TemplateName string `json:"template_name"`
+		Action       string `json:"action"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode post body", err)
+		return
+	}
+
+	if params.TemplateName == "" {
+		h.HandleError(w, errors.New("must provide template_name"))
+		return
+	}
+	if params.Action == "" {
+		h.HandleError(w, errors.New("must provide action"))
+		return
+	}
+
+	h.playbookTelemetry.FrontendTelemetryForPlaybookTemplate(params.TemplateName, userID, params.Action)
 
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -4,17 +4,16 @@
 import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
-import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
-import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from 'mattermost-redux/types/users';
+import {Channel} from 'mattermost-redux/types/channels';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
+import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {
     FetchPlaybookRunsParams,
-    FetchPlaybooksParams,
     FetchPlaybookRunsReturn,
     PlaybookRun,
     isPlaybookRun,
@@ -27,9 +26,11 @@ import {OwnerInfo} from 'src/types/backstage';
 import {
     ChecklistItem,
     ChecklistItemState,
-    FetchPlaybooksNoChecklistReturn,
+    FetchPlaybooksParams,
+    FetchPlaybooksReturn,
+    PlaybookWithChecklist,
+    DraftPlaybookWithChecklist,
     Playbook,
-    PlaybookNoChecklist,
     FetchPlaybooksCountReturn,
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
@@ -42,7 +43,7 @@ import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 const apiUrl = `/plugins/${pluginId}/api/v0`;
 
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
-    const queryParams = qs.stringify(params, {addQueryPrefix: true});
+    const queryParams = qs.stringify(params, {addQueryPrefix: true, indices: false});
 
     let data = await doGet(`${apiUrl}/runs${queryParams}`);
     if (!data) {
@@ -100,18 +101,18 @@ export function fetchPlaybookRunChannels(teamID: string, userID: string) {
     return doGet(`${apiUrl}/runs/channels?team_id=${teamID}&member_id=${userID}`);
 }
 
-export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string) {
+export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string, teamId: string) {
     let currentChannel = getCurrentChannel(getState());
-    const currentTeamId = getCurrentTeamId(getState());
 
     // Default to town square if there is no current channel (i.e., if Mattermost has not yet loaded)
-    if (!currentChannel) {
-        currentChannel = await Client4.getChannelByName(currentTeamId, 'town-square');
+    // or in a different team.
+    if (!currentChannel || currentChannel.team_id !== teamId) {
+        currentChannel = await Client4.getChannelByName(teamId, 'town-square');
     }
 
     const args = {
         channel_id: currentChannel?.id,
-        team_id: currentTeamId,
+        team_id: teamId,
     };
 
     try {
@@ -139,14 +140,14 @@ export function clientFetchPlaybooks(teamID: string, params: FetchPlaybooksParam
         team_id: teamID,
         ...params,
     }, {addQueryPrefix: true});
-    return doGet(`${apiUrl}/playbooks${queryParams}`);
+    return doGet<FetchPlaybooksReturn>(`${apiUrl}/playbooks${queryParams}`);
 }
 
 const clientHasPlaybooks = async (teamID: string): Promise<boolean> => {
     const result = await clientFetchPlaybooks(teamID, {
         page: 0,
         per_page: 1,
-    }) as FetchPlaybooksNoChecklistReturn;
+    }) as FetchPlaybooksReturn;
 
     return result.items?.length > 0;
 };
@@ -154,17 +155,17 @@ const clientHasPlaybooks = async (teamID: string): Promise<boolean> => {
 export {clientHasPlaybooks};
 
 export function clientFetchPlaybook(playbookID: string) {
-    return doGet(`${apiUrl}/playbooks/${playbookID}`);
+    return doGet<PlaybookWithChecklist>(`${apiUrl}/playbooks/${playbookID}`);
 }
 
 export async function clientFetchPlaybooksCount(teamID: string) {
     const queryParams = qs.stringify({
         team_id: teamID,
     }, {addQueryPrefix: true});
-    return await doGet(`${apiUrl}/playbooks/count${queryParams}`) as FetchPlaybooksCountReturn;
+    return doGet<FetchPlaybooksCountReturn>(`${apiUrl}/playbooks/count${queryParams}`);
 }
 
-export async function savePlaybook(playbook: Playbook) {
+export async function savePlaybook(playbook: PlaybookWithChecklist | DraftPlaybookWithChecklist) {
     if (!playbook.id) {
         const data = await doPost(`${apiUrl}/playbooks`, JSON.stringify(playbook));
         return data;
@@ -177,8 +178,8 @@ export async function savePlaybook(playbook: Playbook) {
     return {id: playbook.id};
 }
 
-export async function deletePlaybook(playbook: PlaybookNoChecklist) {
-    const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbook.id}`, {
+export async function deletePlaybook(playbookId: Playbook['id']) {
+    const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}`, {
         method: 'delete',
     });
     return data;
@@ -186,6 +187,10 @@ export async function deletePlaybook(playbook: PlaybookNoChecklist) {
 
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
     return Client4.getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE);
+}
+
+export async function fetchMyChannels(teamId: string): Promise<Channel[]> {
+    return Client4.getMyChannels(teamId);
 }
 
 export async function fetchUsersInTeam(teamId: string): Promise<UserProfile[]> {
@@ -311,6 +316,13 @@ export async function telemetryEventForPlaybook(playbookID: string, action: stri
     });
 }
 
+export async function telemetryEventForTemplate(templateName: string, action: string) {
+    await doFetchWithoutResponse(`${apiUrl}/telemetry/template`, {
+        method: 'POST',
+        body: JSON.stringify({template_name: templateName, action}),
+    });
+}
+
 export async function setGlobalSettings(settings: GlobalSettings) {
     await doFetchWithoutResponse(`${apiUrl}/settings`, {
         method: 'PUT',
@@ -399,14 +411,28 @@ export const promptForFeedback = async () => {
     }
 };
 
-export const doGet = async (url: string) => {
-    const {data} = await doFetchWithResponse(url, {method: 'get'});
+export const changeChannelName = async (channelId: string, newName: string) => {
+    await doFetchWithoutResponse(`/api/v4/channels/${channelId}/patch`, {
+        method: 'PUT',
+        body: JSON.stringify({display_name: newName}),
+    });
+};
+
+export const updatePlaybookRunDescription = async (playbookRunId: string, newDescription: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/update-description`, {
+        method: 'PUT',
+        body: JSON.stringify({description: newDescription}),
+    });
+};
+
+export const doGet = async <TData = any>(url: string) => {
+    const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 
     return data;
 };
 
-export const doPost = async (url: string, body = {}) => {
-    const {data} = await doFetchWithResponse(url, {
+export const doPost = async <TData = any>(url: string, body = {}) => {
+    const {data} = await doFetchWithResponse<TData>(url, {
         method: 'POST',
         body,
     });
@@ -414,8 +440,8 @@ export const doPost = async (url: string, body = {}) => {
     return data;
 };
 
-export const doPut = async (url: string, body = {}) => {
-    const {data} = await doFetchWithResponse(url, {
+export const doPut = async <TData = any>(url: string, body = {}) => {
+    const {data} = await doFetchWithResponse<TData>(url, {
         method: 'PUT',
         body,
     });
@@ -423,8 +449,8 @@ export const doPut = async (url: string, body = {}) => {
     return data;
 };
 
-export const doPatch = async (url: string, body = {}) => {
-    const {data} = await doFetchWithResponse(url, {
+export const doPatch = async <TData = any>(url: string, body = {}) => {
+    const {data} = await doFetchWithResponse<TData>(url, {
         method: 'PATCH',
         body,
     });
@@ -432,14 +458,14 @@ export const doPatch = async (url: string, body = {}) => {
     return data;
 };
 
-export const doFetchWithResponse = async (url: string, options = {}) => {
+export const doFetchWithResponse = async <TData = any>(url: string, options = {}) => {
     const response = await fetch(url, Client4.getOptions(options));
 
     let data;
     if (response.ok) {
         const contentType = response.headers.get('content-type');
         if (contentType === 'application/json') {
-            data = await response.json();
+            data = await response.json() as TData;
         }
 
         return {
@@ -457,12 +483,12 @@ export const doFetchWithResponse = async (url: string, options = {}) => {
     });
 };
 
-export const doFetchWithTextResponse = async (url: string, options = {}) => {
+export const doFetchWithTextResponse = async <TData extends string>(url: string, options = {}) => {
     const response = await fetch(url, Client4.getOptions(options));
 
     let data;
     if (response.ok) {
-        data = await response.text();
+        data = await response.text() as TData;
 
         return {
             response,

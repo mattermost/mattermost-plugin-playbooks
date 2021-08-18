@@ -5,8 +5,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	mock_sqlstore "github.com/mattermost/mattermost-plugin-incident-collaboration/server/sqlstore/mocks"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	mock_sqlstore "github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore/mocks"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -184,72 +184,6 @@ func TestTotalReportedPlaybookRuns(t *testing.T) {
 			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
 			require.NoError(t, err)
 		}
-
-		t.Run(driverName+" Reported Playbook Runs - team1", func(t *testing.T) {
-			result := statsStore.TotalReportedPlaybookRuns(&StatsFilters{
-				TeamID: team1id,
-			})
-			assert.Equal(t, 1, result)
-		})
-
-		t.Run(driverName+" Reported Playbook Runs - team2", func(t *testing.T) {
-			result := statsStore.TotalReportedPlaybookRuns(&StatsFilters{
-				TeamID: team2id,
-			})
-			assert.Equal(t, 1, result)
-		})
-
-		t.Run(driverName+" Reported playbook runs - playbook1", func(t *testing.T) {
-			result := statsStore.TotalReportedPlaybookRuns(&StatsFilters{
-				PlaybookID: "playbook1",
-			})
-			assert.Equal(t, 2, result)
-		})
-
-		t.Run(driverName+" Reported playbook runs - playbook2", func(t *testing.T) {
-			result := statsStore.TotalReportedPlaybookRuns(&StatsFilters{
-				PlaybookID: "playbook2",
-			})
-			assert.Equal(t, 0, result)
-		})
-
-		t.Run(driverName+" Reported playbook runs - all", func(t *testing.T) {
-			result := statsStore.TotalReportedPlaybookRuns(&StatsFilters{})
-			assert.Equal(t, 2, result)
-		})
-
-		t.Run(driverName+" Active Playbook Runs - team1", func(t *testing.T) {
-			result := statsStore.TotalActivePlaybookRuns(&StatsFilters{
-				TeamID: team1id,
-			})
-			assert.Equal(t, 2, result)
-		})
-
-		t.Run(driverName+" Active Playbook Runs - team2", func(t *testing.T) {
-			result := statsStore.TotalActivePlaybookRuns(&StatsFilters{
-				TeamID: team2id,
-			})
-			assert.Equal(t, 1, result)
-		})
-
-		t.Run(driverName+" Active playbook runs - playbook1", func(t *testing.T) {
-			result := statsStore.TotalActivePlaybookRuns(&StatsFilters{
-				PlaybookID: "playbook1",
-			})
-			assert.Equal(t, 1, result)
-		})
-
-		t.Run(driverName+" Active playbook runs - playbook2", func(t *testing.T) {
-			result := statsStore.TotalActivePlaybookRuns(&StatsFilters{
-				PlaybookID: "playbook2",
-			})
-			assert.Equal(t, 2, result)
-		})
-
-		t.Run(driverName+" Active playbook runs - all", func(t *testing.T) {
-			result := statsStore.TotalActivePlaybookRuns(&StatsFilters{})
-			assert.Equal(t, 3, result)
-		})
 
 		t.Run(driverName+" Active Participants - team1", func(t *testing.T) {
 			result := statsStore.TotalActiveParticipants(&StatsFilters{

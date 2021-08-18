@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {Team} from 'mattermost-redux/types/teams';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {useSelector} from 'react-redux';
@@ -24,7 +25,8 @@ export interface SharePlaybookProps {
     onClear: () => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
-    playbook: Playbook;
+    memberIds: Playbook['member_ids'];
+    teamId: string;
 }
 
 const UserSelectorWrapper = styled.div`
@@ -33,15 +35,13 @@ const UserSelectorWrapper = styled.div`
     height: 40px;
 `;
 
-const selectCurrentTeamName = (state: GlobalState) => getCurrentTeam(state).name;
-
 const SharePlaybook = (props: SharePlaybookProps) => {
     const allowPlaybookGranularAccess = useAllowPlaybookGranularAccess();
     const [showModal, setShowModal] = useState(false);
 
-    const currentTeamName = useSelector<GlobalState, string>(selectCurrentTeamName);
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.teamId));
 
-    const enabled = props.playbook.member_ids.length > 0;
+    const enabled = props.memberIds.length > 0;
 
     const handleDisable = () => {
         props.onClear();
@@ -73,8 +73,8 @@ const SharePlaybook = (props: SharePlaybookProps) => {
                         checked={!enabled}
                         onChange={handleDisable}
                     />
-                    {'Everyone on this team ('}
-                    <b>{currentTeamName}</b>
+                    {'Everyone on team ('}
+                    <b>{team.display_name}</b>
                     {') can access.'}
                 </RadioLabel>
                 <RadioLabel>
@@ -95,7 +95,7 @@ const SharePlaybook = (props: SharePlaybookProps) => {
                         {'Only users who you select will be able to edit or run this playbook.'}
                     </BackstageSubheaderDescription>
                     <SelectUsersBelow
-                        userIds={props.playbook.member_ids}
+                        userIds={props.memberIds}
                         onAddUser={props.onAddUser}
                         onRemoveUser={props.onRemoveUser}
                         searchProfiles={props.searchProfiles}

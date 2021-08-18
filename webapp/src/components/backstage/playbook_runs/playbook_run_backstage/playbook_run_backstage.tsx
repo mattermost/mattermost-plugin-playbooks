@@ -7,8 +7,6 @@ import styled from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-import {Team} from 'mattermost-redux/types/teams';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Channel} from 'mattermost-redux/types/channels';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
@@ -21,13 +19,13 @@ import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_r
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
 import {clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookRunMetadata} from 'src/client';
-import {navigateToTeamPluginUrl, navigateToUrl, teamPluginErrorUrl} from 'src/browser_routing';
+import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
-import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
 
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
-import {Playbook} from 'src/types/playbook';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 import ExportLink from '../playbook_run_details/export_link';
 
 const OuterContainer = styled.div`
@@ -164,14 +162,15 @@ const PositionedUpgradeBadge = styled(UpgradeBadge)`
 const PlaybookRunBackstage = () => {
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
-    const [playbook, setPlaybook] = useState<Playbook | null>(null);
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
+    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const channel = useSelector<GlobalState, Channel | null>((state) => (playbookRun ? getChannel(state, playbookRun.channel_id) : null));
     const match = useRouteMatch<MatchParams>();
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
+
+    useForceDocumentTitle(playbookRun?.name ? (playbookRun.name + ' - Playbooks') : 'Playbooks');
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
@@ -189,7 +188,7 @@ const PlaybookRunBackstage = () => {
         const fetchData = async () => {
             if (playbookRun?.playbook_id) {
                 const fetchedPlaybook = await clientFetchPlaybook(playbookRun.playbook_id);
-                setPlaybook(fetchedPlaybook);
+                setPlaybook(fetchedPlaybook!);
             }
         };
 
@@ -201,7 +200,7 @@ const PlaybookRunBackstage = () => {
     }
 
     if (fetchingState === FetchingStateType.notFound || playbookRun === null || playbookRunMetadata === null) {
-        return <Redirect to={teamPluginErrorUrl(currentTeam.name, ErrorPageTypes.PLAYBOOK_RUNS)}/>;
+        return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
     const goToChannel = () => {
@@ -214,7 +213,7 @@ const PlaybookRunBackstage = () => {
     }
 
     const closePlaybookRunDetails = () => {
-        navigateToTeamPluginUrl(currentTeam.name, '/runs');
+        navigateToPluginUrl('/runs');
     };
 
     return (
@@ -227,7 +226,7 @@ const PlaybookRunBackstage = () => {
                     />
                     <VerticalBlock>
                         <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
-                        <PlaybookDiv onClick={() => navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbook?.id}`)}>
+                        <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
                             <SmallPlaybookIcon/>
                             <SubTitle>{playbook?.title}</SubTitle>
                         </PlaybookDiv>

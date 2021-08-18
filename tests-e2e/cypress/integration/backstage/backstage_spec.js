@@ -11,11 +11,11 @@ describe('backstage', () => {
 
     before(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Create and run a playbook.
-        cy.apiGetTeamByName('ad-1').then((team) => {
-            cy.apiGetCurrentUser().then((user) => {
+        cy.legacyApiGetTeamByName('ad-1').then((team) => {
+            cy.legacyApiGetCurrentUser().then((user) => {
                 cy.apiCreateTestPlaybook({
                     teamId: team.id,
                     title: playbookName,
@@ -36,7 +36,7 @@ describe('backstage', () => {
 
     beforeEach(() => {
         // # Login as user-1
-        cy.apiLogin('user-1');
+        cy.legacyApiLogin('user-1');
 
         // # Navigate to the application
         cy.visit('/ad-1/');
@@ -52,7 +52,7 @@ describe('backstage', () => {
 
     it('switches to playbooks list view via header button', () => {
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit('/playbooks');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();
@@ -63,7 +63,7 @@ describe('backstage', () => {
 
     it('switches to playbook runs list view via header button', () => {
         // # Open backstage
-        cy.visit('/ad-1/com.mattermost.plugin-incident-management');
+        cy.visit('/playbooks');
 
         // # Switch to playbooks backstage
         cy.findByTestId('playbooksLHSButton').click();

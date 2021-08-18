@@ -5,22 +5,20 @@ import React, {useState, useEffect} from 'react';
 import {Redirect, useParams, useLocation} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
-
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
-import {Team} from 'mattermost-redux/types/teams';
+import {selectTeam} from 'mattermost-redux/actions/teams';
+import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
-import {navigateToTeamPluginUrl, teamPluginErrorUrl} from 'src/browser_routing';
-import {Playbook, Checklist, emptyPlaybook} from 'src/types/playbook';
+import {navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
+import {DraftPlaybookWithChecklist, PlaybookWithChecklist, Checklist, emptyPlaybook} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import {BackstageNavbar} from 'src/components/backstage/backstage';
+import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
 import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
@@ -128,7 +126,7 @@ const OuterContainer = styled.div`
 
 interface Props {
     isNew: boolean;
-    currentTeam: Team;
+    teamId?: string;
 }
 
 interface URLParams {
@@ -143,7 +141,7 @@ const FetchingStateType = {
 };
 
 // setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
-const setPlaybookDefaults = (playbook: Playbook) => ({
+const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
     ...playbook,
     title: playbook.title.trim() || 'Untitled playbook',
     checklists: playbook.checklists.map((checklist) => ({
@@ -162,14 +160,14 @@ const timerOptions = [
     {value: 3600, label: '60min'},
     {value: 14400, label: '4hr'},
     {value: 86400, label: '24hr'},
-];
+] as const;
 
-const tabInfo = [
+export const tabInfo = [
     {id: 'checklists', name: 'Checklists'},
     {id: 'templates', name: 'Templates'},
     {id: 'actions', name: 'Actions'},
     {id: 'permissions', name: 'Permissions'},
-];
+] as const;
 
 const retrospectiveReminderOptions = [
     {value: 0, label: 'Once'},
@@ -177,20 +175,23 @@ const retrospectiveReminderOptions = [
     {value: 14400, label: '4hr'},
     {value: 86400, label: '24hr'},
     {value: 604800, label: '7days'},
-];
+] as const;
 
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
+const PlaybookNavbar = styled(BackstageNavbar)`
+    top: 80px;
+`;
+
 const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
-    const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const currentUserId = useSelector(getCurrentUserId);
 
-    const [playbook, setPlaybook] = useState<Playbook>({
+    const [playbook, setPlaybook] = useState<DraftPlaybookWithChecklist | PlaybookWithChecklist>({
         ...emptyPlaybook(),
-        team_id: props.currentTeam.id,
+        team_id: props.teamId || '',
     });
     const [changesMade, setChangesMade] = useState(false);
 
@@ -231,7 +232,7 @@ const PlaybookEdit = (props: Props) => {
 
                     setPlaybook({
                         ...template.template,
-                        team_id: props.currentTeam.id,
+                        team_id: props.teamId || '',
                     });
                     setChangesMade(true);
                 }
@@ -241,8 +242,10 @@ const PlaybookEdit = (props: Props) => {
             if (urlParams.playbookId) {
                 try {
                     const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
-                    fetchedPlaybook.member_ids = fetchedPlaybook.member_ids || [currentUserId];
-                    setPlaybook(fetchedPlaybook);
+                    if (fetchedPlaybook) {
+                        fetchedPlaybook.member_ids ??= [currentUserId];
+                        setPlaybook(fetchedPlaybook);
+                    }
                     setFetchingState(FetchingStateType.fetched);
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
@@ -250,7 +253,10 @@ const PlaybookEdit = (props: Props) => {
             }
         };
         fetchData();
-    }, [urlParams.playbookId, props.isNew]);
+    }, [urlParams.playbookId, props.isNew, props.teamId]);
+
+    dispatch(selectTeam(props.teamId || playbook.team_id));
+    dispatch(fetchMyChannelsAndMembers(props.teamId || playbook.team_id));
 
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
@@ -282,9 +288,9 @@ const PlaybookEdit = (props: Props) => {
     const onClose = (id?: string) => {
         const playbookId = urlParams.playbookId || id;
         if (playbookId) {
-            navigateToTeamPluginUrl(currentTeam.name, `/playbooks/${playbookId}`);
+            navigateToPluginUrl(`/playbooks/${playbookId}`);
         } else {
-            navigateToTeamPluginUrl(currentTeam.name, '/playbooks');
+            navigateToPluginUrl('/playbooks');
         }
     };
 
@@ -462,12 +468,30 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
+    const handleToggleCategorizePlaybookRun = () => {
+        setPlaybook({
+            ...playbook,
+            categorize_channel_enabled: !playbook.categorize_channel_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleCategoryNameChange = (name: string) => {
+        if (playbook.category_name !== name) {
+            setPlaybook({
+                ...playbook,
+                category_name: name,
+            });
+            setChangesMade(true);
+        }
+    };
+
     const searchUsers = (term: string) => {
-        return dispatch(searchProfiles(term, {team_id: props.currentTeam.id}));
+        return dispatch(searchProfiles(term, {team_id: props.teamId || playbook.team_id}));
     };
 
     const getUsers = () => {
-        return dispatch(getProfilesInTeam(props.currentTeam.id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
+        return dispatch(getProfilesInTeam(props.teamId || playbook.team_id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
     };
 
     const handleBroadcastInput = (channelId: string | undefined) => {
@@ -481,15 +505,17 @@ const PlaybookEdit = (props: Props) => {
     if (!props.isNew) {
         switch (fetchingState) {
         case FetchingStateType.notFound:
-            return <Redirect to={teamPluginErrorUrl(props.currentTeam.name, ErrorPageTypes.PLAYBOOKS)}/>;
+            return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
         case FetchingStateType.loading:
             return null;
         }
+    } else if (!props.teamId) {
+        return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
     }
 
     return (
         <OuterContainer>
-            <BackstageNavbar
+            <PlaybookNavbar
                 data-testid='backstage-nav-bar'
             >
                 <EditableTexts>
@@ -520,7 +546,7 @@ const PlaybookEdit = (props: Props) => {
                         {'Save'}
                     </span>
                 </PrimaryButton>
-            </BackstageNavbar>
+            </PlaybookNavbar>
             <Container>
                 <EditView>
                     <TabsHeader>
@@ -622,7 +648,7 @@ const PlaybookEdit = (props: Props) => {
                                     <>
                                         <SidebarBlock>
                                             <BackstageSubheader>
-                                                {'Retrospective Reminder Interval'}
+                                                {'Retrospective reminder interval'}
                                                 <BackstageSubheaderDescription>
                                                     {'Reminds the channel at a specified interval to fill out the retrospective.'}
                                                 </BackstageSubheaderDescription>
@@ -643,7 +669,7 @@ const PlaybookEdit = (props: Props) => {
                                         </SidebarBlock>
                                         <SidebarBlock>
                                             <BackstageSubheader>
-                                                {'Retrospective Template'}
+                                                {'Retrospective template'}
                                                 <BackstageSubheaderDescription>
                                                     {'Default text for the retrospective.'}
                                                 </BackstageSubheaderDescription>
@@ -676,7 +702,6 @@ const PlaybookEdit = (props: Props) => {
                                     defaultOwnerID={playbook.default_owner_id}
                                     onToggleDefaultOwner={handleToggleDefaultOwner}
                                     onAssignOwner={handleAssignDefaultOwner}
-                                    teamID={playbook.team_id}
                                     announcementChannelID={playbook.announcement_channel_id}
                                     announcementChannelEnabled={playbook.announcement_channel_enabled}
                                     onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
@@ -699,6 +724,10 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleSignalAnyKeywords={handleToggleSignalAnyKeywords}
                                     signalAnyKeywordsChange={handleSignalAnyKeywordsChange}
                                     signalAnyKeywords={playbook.signal_any_keywords}
+                                    categorizePlaybookRun={playbook.categorize_channel_enabled}
+                                    onToggleCategorizePlaybookRun={handleToggleCategorizePlaybookRun}
+                                    categoryName={playbook.category_name}
+                                    categoryNameChange={handleCategoryNameChange}
                                 />
                             </TabContainer>
                             <TabContainer>
@@ -739,8 +768,9 @@ const PlaybookEdit = (props: Props) => {
                                         onRemoveUser={handleRemoveUser}
                                         searchProfiles={searchUsers}
                                         getProfiles={getUsers}
-                                        playbook={playbook}
+                                        memberIds={playbook.member_ids}
                                         onClear={handleClearUsers}
+                                        teamId={props.teamId || playbook.team_id}
                                     />
                                 </SidebarBlock>
                             </TabContainer>

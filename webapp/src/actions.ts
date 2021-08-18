@@ -5,13 +5,14 @@ import {AnyAction, Dispatch} from 'redux';
 import {generateId} from 'mattermost-redux/utils/helpers';
 
 import {IntegrationTypes} from 'mattermost-redux/action_types';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import {selectToggleRHS} from 'src/selectors';
-import {RHSState, RHSTabState, TimelineEventsFilter} from 'src/types/rhs';
+import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
 
 import {
     PLAYBOOK_RUN_CREATED,
@@ -28,12 +29,10 @@ import {
     SET_RHS_EVENTS_FILTER,
     SET_RHS_OPEN,
     SET_RHS_STATE,
-    SET_RHS_TAB_STATE,
     SetClientId,
     SetRHSEventsFilter,
     SetRHSOpen,
     SetRHSState,
-    SetRHSTabState,
     SetTriggerId,
     RECEIVED_TEAM_DISABLED,
     ReceivedTeamDisabled,
@@ -49,13 +48,21 @@ import {
     ShowPostMenuModal,
     HIDE_POST_MENU_MODAL,
     HidePostMenuModal,
-    SetHasViewedChannel, SET_HAS_VIEWED_CHANNEL,
-} from './types/actions';
+    SetHasViewedChannel,
+    SET_HAS_VIEWED_CHANNEL,
+    SetRHSAboutCollapsedState,
+    SET_RHS_ABOUT_COLLAPSED_STATE,
+    SET_CHECKLIST_COLLAPSED_STATE,
+    SetChecklistCollapsedState,
+    SetAllChecklistsCollapsedState,
+    SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    SET_CHECKLIST_ITEMS_FILTER, SetChecklistItemsFilter,
+} from 'src/types/actions';
+import {clientExecuteCommand} from 'src/client';
+import {GlobalSettings} from 'src/types/settings';
+import {ChecklistItemsFilter} from 'src/types/playbook';
 
-import {clientExecuteCommand} from './client';
-import {GlobalSettings} from './types/settings';
-
-export function startPlaybookRun(postId?: string) {
+export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
@@ -66,11 +73,11 @@ export function startPlaybookRun(postId?: string) {
             command = `${command} ${postId}`;
         }
 
-        await clientExecuteCommand(dispatch, getState, command);
+        await clientExecuteCommand(dispatch, getState, command, teamId);
     };
 }
 
-export function startPlaybookRunById(playbookId: string) {
+export function startPlaybookRunById(teamId: string, playbookId: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
@@ -78,37 +85,29 @@ export function startPlaybookRunById(playbookId: string) {
 
         const command = `/playbook start-playbook ${playbookId} ${clientId}`;
 
-        await clientExecuteCommand(dispatch, getState, command);
+        await clientExecuteCommand(dispatch, getState, command, teamId);
     };
 }
 
-export function endPlaybookRun() {
+export function updateStatus(teamId: string, defaultStatus?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/playbook end');
-    };
-}
-
-export function restartPlaybookRun() {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/playbook restart');
-    };
-}
-
-export function updateStatus() {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, '/playbook update');
+        await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`, teamId);
     };
 }
 
 export function addToTimeline(postId: string) {
     return async (dispatch: Dispatch, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, `/playbook add ${postId}`);
+        const currentTeamId = getCurrentTeamId(getState());
+
+        await clientExecuteCommand(dispatch, getState, `/playbook add ${postId}`, currentTeamId);
     };
 }
 
 export function addNewTask(checklist: number) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`);
+        const currentTeamId = getCurrentTeamId(getState());
+
+        await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, currentTeamId);
     };
 }
 
@@ -205,12 +204,6 @@ export const removedFromPlaybookRunChannel = (channelId: string): RemovedFromCha
     channelId,
 });
 
-export const setRHSTabState = (channelId: string, nextState: RHSTabState): SetRHSTabState => ({
-    type: SET_RHS_TAB_STATE,
-    channelId,
-    nextState,
-});
-
 export const setRHSEventsFilter = (channelId: string, nextState: TimelineEventsFilter): SetRHSEventsFilter => ({
     type: SET_RHS_EVENTS_FILTER,
     channelId,
@@ -234,4 +227,30 @@ export const setHasViewedChannel = (channelId: string): SetHasViewedChannel => (
     type: SET_HAS_VIEWED_CHANNEL,
     channelId,
     hasViewed: true,
+});
+
+export const setRHSAboutCollapsedState = (channelId: string, collapsed: boolean): SetRHSAboutCollapsedState => ({
+    type: SET_RHS_ABOUT_COLLAPSED_STATE,
+    channelId,
+    collapsed,
+});
+
+export const setChecklistCollapsedState = (channelId: string, checklistIndex: number, collapsed: boolean): SetChecklistCollapsedState => ({
+    type: SET_CHECKLIST_COLLAPSED_STATE,
+    channelId,
+    checklistIndex,
+    collapsed,
+});
+
+export const setAllChecklistsCollapsedState = (channelId: string, collapsed: boolean, numOfChecklists: number): SetAllChecklistsCollapsedState => ({
+    type: SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    channelId,
+    numOfChecklists,
+    collapsed,
+});
+
+export const setChecklistItemsFilter = (channelId: string, nextState: ChecklistItemsFilter): SetChecklistItemsFilter => ({
+    type: SET_CHECKLIST_ITEMS_FILTER,
+    channelId,
+    nextState,
 });

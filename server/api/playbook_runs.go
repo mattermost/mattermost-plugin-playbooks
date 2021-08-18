@@ -10,15 +10,15 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/app"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 )
 
 // PlaybookRunHandler is the API handler.
@@ -71,6 +71,7 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	playbookRunRouterAuthorized.HandleFunc("/no-retrospective-button", handler.noRetrospectiveButton).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/check-and-send-message-on-join/{channel_id:[A-Za-z0-9]+}", handler.checkAndSendMessageOnJoin).Methods(http.MethodGet)
+	playbookRunRouterAuthorized.HandleFunc("/update-description", handler.updateDescription).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
@@ -411,6 +412,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.ExportChannelOnArchiveEnabled = pb.ExportChannelOnArchiveEnabled
 		}
 
+		if pb.CategorizeChannelEnabled {
+			playbookRun.CategoryName = pb.CategoryName
+		}
+
 		playbookRun.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
 		playbookRun.Retrospective = pb.RetrospectiveTemplate
 
@@ -452,18 +457,6 @@ func (h *PlaybookRunHandler) getPlaybookRuns(w http.ResponseWriter, r *http.Requ
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	// More detailed permissions checked on DB level.
-	if !app.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
-			"userID %s does not have view permission for teamID %s", userID, filterOptions.TeamID))
-		return
-	}
-
-	if !app.IsOnEnabledTeam(filterOptions.TeamID, h.config) {
-		ReturnJSON(w, map[string]bool{"disabled": true}, http.StatusOK)
-		return
-	}
-
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -563,20 +556,8 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(w http.ResponseWriter, r *h
 // getOwners handles the /runs/owners api endpoint.
 func (h *PlaybookRunHandler) getOwners(w http.ResponseWriter, r *http.Request) {
 	teamID := r.URL.Query().Get("team_id")
-	if teamID == "" {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter: team_id", errors.New("team_id required"))
-	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	if !app.CanViewTeam(userID, teamID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
-			"userID %s does not have view permission for teamID %s",
-			userID,
-			teamID,
-		))
-		return
-	}
-
 	options := app.PlaybookRunFilterOptions{
 		TeamID: teamID,
 	}
@@ -608,15 +589,6 @@ func (h *PlaybookRunHandler) getChannels(w http.ResponseWriter, r *http.Request)
 	}
 
 	userID := r.Header.Get("Mattermost-User-ID")
-	if !app.CanViewTeam(userID, filterOptions.TeamID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "permissions error", errors.Errorf(
-			"userID %s does not have view permission for teamID %s",
-			userID,
-			filterOptions.TeamID,
-		))
-		return
-	}
-
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -697,12 +669,6 @@ func (h *PlaybookRunHandler) status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	options.Description = strings.TrimSpace(options.Description)
-	if options.Description == "" {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "description must not be empty", errors.New("description field empty"))
-		return
-	}
-
 	options.Message = strings.TrimSpace(options.Message)
 	if options.Message == "" {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "message must not be empty", errors.New("message field empty"))
@@ -770,15 +736,6 @@ func (h *PlaybookRunHandler) updateStatusDialog(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if description, ok := request.Submission[app.DialogFieldDescriptionKey]; ok {
-		options.Description = strings.TrimSpace(description.(string))
-	}
-	if options.Description == "" {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(fmt.Sprintf(`{"errors": {"%s":"This field is required."}}`, app.DialogFieldDescriptionKey)))
-		return
-	}
-
 	if reminderI, ok := request.Submission[app.DialogFieldReminderInSecondsKey]; ok {
 		if reminder, err2 := strconv.Atoi(reminderI.(string)); err2 == nil {
 			options.Reminder = time.Duration(reminder) * time.Second
@@ -834,7 +791,7 @@ func (h *PlaybookRunHandler) reminderButtonUpdate(w http.ResponseWriter, r *http
 		return
 	}
 
-	if err = h.playbookRunService.OpenUpdateStatusDialog(playbookRunID, requestData.TriggerId); err != nil {
+	if err = h.playbookRunService.OpenUpdateStatusDialog(playbookRunID, requestData.TriggerId, ""); err != nil {
 		h.HandleError(w, errors.New("reminderButtonUpdate failed to open update status dialog"))
 		return
 	}
@@ -870,6 +827,12 @@ func (h *PlaybookRunHandler) reminderButtonDismiss(w http.ResponseWriter, r *htt
 	if err = h.playbookRunService.RemoveReminderPost(playbookRunID); err != nil {
 		h.log.Errorf("reminderButtonDismiss: error removing reminder for channelID: %s; error: %s", requestData.ChannelId, err.Error())
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder", err)
+		return
+	}
+
+	if err = h.playbookRunService.ResetReminderTimer(playbookRunID); err != nil {
+		h.log.Errorf("reminderButtonDismiss: error resetting reminder for channelID: %s; error: %s", requestData.ChannelId, err.Error())
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error resetting reminder", err)
 		return
 	}
 
@@ -928,6 +891,42 @@ func (h *PlaybookRunHandler) checkAndSendMessageOnJoin(w http.ResponseWriter, r 
 
 	hasViewed := h.playbookRunService.CheckAndSendMessageOnJoin(userID, playbookRunID, channelID)
 	ReturnJSON(w, map[string]interface{}{"viewed": hasViewed}, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) updateDescription(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	playbookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	var requestBody struct {
+		Description string `json:"description"`
+	}
+
+	if err2 := json.NewDecoder(r.Body).Decode(&requestBody); err2 != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook run description", err2)
+		return
+	}
+
+	if err = app.EditPlaybookRun(userID, playbookRun.ChannelID, h.pluginAPI); err != nil {
+		if errors.Is(err, app.ErrNoPermissions) {
+			ReturnJSON(w, nil, http.StatusForbidden)
+			return
+		}
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error getting permissions", err)
+		return
+	}
+
+	if err := h.playbookRunService.UpdateDescription(playbookRunID, requestBody.Description); err != nil {
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to update description", err)
+		return
+	}
+
+	ReturnJSON(w, nil, http.StatusOK)
 }
 
 func (h *PlaybookRunHandler) getChecklistAutocompleteItem(w http.ResponseWriter, r *http.Request) {
@@ -1297,9 +1296,6 @@ func (h *PlaybookRunHandler) publishRetrospective(w http.ResponseWriter, r *http
 // parsePlaybookRunsFilterOptions is only for parsing. Put validation logic in app.validateOptions.
 func parsePlaybookRunsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, error) {
 	teamID := u.Query().Get("team_id")
-	if teamID == "" {
-		return nil, errors.New("bad parameter 'team_id'; 'team_id' is required")
-	}
 
 	pageParam := u.Query().Get("page")
 	if pageParam == "" {
@@ -1322,7 +1318,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, 
 	sort := u.Query().Get("sort")
 	direction := u.Query().Get("direction")
 
-	status := u.Query().Get("status")
+	statuses := u.Query()["statuses"]
 
 	ownerID := u.Query().Get("owner_user_id")
 	searchTerm := u.Query().Get("search_term")
@@ -1361,7 +1357,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, 
 		PerPage:    perPage,
 		Sort:       app.SortField(sort),
 		Direction:  app.SortDirection(direction),
-		Status:     status,
+		Statuses:   statuses,
 		OwnerID:    ownerID,
 		SearchTerm: searchTerm,
 		MemberID:   memberID,

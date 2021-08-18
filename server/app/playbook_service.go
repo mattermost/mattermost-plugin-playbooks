@@ -8,8 +8,8 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/bot"
-	"github.com/mattermost/mattermost-plugin-incident-collaboration/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 )
 
 const (
@@ -106,7 +106,7 @@ func (s *playbookService) Delete(playbook Playbook, userID string) error {
 }
 
 func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Post) {
-	if s.keywordsThreadIgnorer.IsIgnored(post.RootId, post.UserId) {
+	if post.IsSystemMessage() || s.keywordsThreadIgnorer.IsIgnored(post.RootId, post.UserId) {
 		return
 	}
 
@@ -128,18 +128,12 @@ func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Pos
 		return
 	}
 
-	team, err := s.api.Team.Get(teamID)
-	if err != nil {
-		s.api.Log.Error("can't get team", "teamID", teamID, "err", err.Error())
-		return
-	}
-
 	pluginID := s.configService.GetManifest().Id
 	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
 	if s.api.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
 		siteURL = *s.api.Configuration.GetConfig().ServiceSettings.SiteURL
 	}
-	playbooksURL := fmt.Sprintf("%s/%s/%s/playbooks", siteURL, team.Name, pluginID)
+	playbooksURL := getPlaybooksURL(siteURL, pluginID)
 
 	message := s.getPlaybookSuggestionsMessage(suggestedPlaybooks, triggers, playbooksURL)
 	attachment := s.getPlaybookSuggestionsSlackAttachment(suggestedPlaybooks, post.Id, playbooksURL, session.IsMobileApp())

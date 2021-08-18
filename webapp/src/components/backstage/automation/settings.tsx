@@ -28,7 +28,6 @@ interface Props {
     defaultOwnerEnabled: boolean;
     onToggleDefaultOwner: () => void;
     onAssignOwner: (userId: string | undefined) => void;
-    teamID: string;
     announcementChannelID: string;
     announcementChannelEnabled: boolean;
     onToggleAnnouncementChannel: () => void;
@@ -51,6 +50,10 @@ interface Props {
     onToggleSignalAnyKeywords: () => void;
     signalAnyKeywordsChange: (keywords: string) => void;
     signalAnyKeywords: string[];
+    categorizePlaybookRun: boolean;
+    onToggleCategorizePlaybookRun: () => void;
+    categoryName: string;
+    categoryNameChange: (categoryName: string) => void;
 }
 
 export const AutomationSettings = (props: Props) => {
@@ -97,7 +100,6 @@ export const AutomationSettings = (props: Props) => {
                         getProfiles={props.getProfiles}
                         ownerID={props.defaultOwnerID}
                         onAssignOwner={props.onAssignOwner}
-                        teamID={props.teamID}
                     />
                 </Setting>
                 <Setting id={'announcement-channel'}>
@@ -152,7 +154,20 @@ export const AutomationSettings = (props: Props) => {
                         onChange={props.messageOnJoinChange}
                     />
                 </Setting>
-
+                <Setting id={'user-joins-channel-categorize'}>
+                    <PatternedInput
+                        enabled={props.categorizePlaybookRun}
+                        onToggle={props.onToggleCategorizePlaybookRun}
+                        input={props.categoryName}
+                        onChange={props.categoryNameChange}
+                        pattern={'[\\s\\S]*'}
+                        placeholderText={'Enter category name'}
+                        textOnToggle={'Add the channel to a sidebar category'}
+                        type={'text'}
+                        errorText={'Invalid category name.'} // this should not happen
+                        maxLength={22}
+                    />
+                </Setting>
             </Section>
             <Section>
                 <SectionTitle>

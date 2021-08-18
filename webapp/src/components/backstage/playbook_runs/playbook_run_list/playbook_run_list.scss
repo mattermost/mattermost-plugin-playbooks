@@ -20,6 +20,7 @@ $font-family: Open Sans;
 
             &__title {
                 display: flex;
+                flex-direction: column;
 
                 > span {
                     font-weight: 600;
