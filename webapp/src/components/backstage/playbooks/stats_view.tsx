@@ -9,6 +9,7 @@ import LineGraph from 'src/components/backstage/playbooks/line_graph';
 import {
     DefaultFetchPlaybookRunsParamsTime,
     fetchParamsTimeEqual,
+    FetchPlaybookRunsParams,
     FetchPlaybookRunsParamsTime,
 } from 'src/types/playbook_run';
 import BarGraph from 'src/components/backstage/playbooks/bar_graph';
@@ -25,6 +26,8 @@ interface Props {
     stats: PlaybookStats
     fetchParamsTime: FetchPlaybookRunsParamsTime
     setFetchParamsTime: (params: FetchPlaybookRunsParamsTime) => void
+    fetchParams: FetchPlaybookRunsParams
+    setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>
     setFilterPill: (pill: JSX.Element | null) => void
 }
 
@@ -48,17 +51,21 @@ const StatsView = (props: Props) => {
         const started = props.stats.runs_started_per_week_times[index][0];
         const ended = props.stats.runs_started_per_week_times[index][1];
         const nextFetchParamsTime = {
+            ...DefaultFetchPlaybookRunsParamsTime,
             started_gte: started,
             started_lt: ended,
         };
 
-        if (!fetchParamsTimeEqual(props.fetchParamsTime, nextFetchParamsTime)) {
+        if (!fetchParamsTimeEqual(props.fetchParams, nextFetchParamsTime)) {
             const text = 'Runs started between ' +
                 moment.utc(started).format('D MMM') + ' and ' +
                 moment.utc(ended).format('D MMM');
 
             props.setFilterPill(pill(text));
             props.setFetchParamsTime(nextFetchParamsTime);
+            props.setFetchParams((oldParams) => {
+                return {...oldParams, ...nextFetchParamsTime};
+            });
         }
     };
 
@@ -71,21 +78,28 @@ const StatsView = (props: Props) => {
         const started = props.stats.active_runs_per_day_times[index][0];
         const ended = props.stats.active_runs_per_day_times[index][1];
         const nextFetchParamsTime = {
+            ...DefaultFetchPlaybookRunsParamsTime,
             active_gte: started,
             active_lt: ended,
         };
 
-        if (!fetchParamsTimeEqual(props.fetchParamsTime, nextFetchParamsTime)) {
+        if (!fetchParamsTimeEqual(props.fetchParams, nextFetchParamsTime)) {
             const text = 'Runs active on ' + moment.utc(started).format('D MMM');
 
             props.setFilterPill(pill(text));
             props.setFetchParamsTime(nextFetchParamsTime);
+            props.setFetchParams((oldParams) => {
+                return {...oldParams, ...nextFetchParamsTime};
+            });
         }
     };
 
     const clearFilter = () => {
         props.setFilterPill(null);
         props.setFetchParamsTime(DefaultFetchPlaybookRunsParamsTime);
+        props.setFetchParams((oldParams) => {
+            return {...oldParams, ...DefaultFetchPlaybookRunsParamsTime};
+        });
     };
 
     const pill = (text: string) => (

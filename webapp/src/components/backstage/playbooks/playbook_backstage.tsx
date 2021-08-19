@@ -21,7 +21,7 @@ import {DefaultFetchPlaybookRunsParamsTime} from 'src/types/playbook_run';
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
 import {clientFetchPlaybook, fetchPlaybookStats, telemetryEventForPlaybook} from 'src/client';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
-import {ErrorPageTypes} from 'src/constants';
+import {BACKSTAGE_LIST_PER_PAGE, ErrorPageTypes} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import PlaybookRunList
     from 'src/components/backstage/playbooks/playbook_run_list/playbook_run_list';
@@ -30,7 +30,8 @@ import StatsView from 'src/components/backstage/playbooks/stats_view';
 import {startPlaybookRunById} from 'src/actions';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
-import {useForceDocumentTitle} from 'src/hooks';
+import {useForceDocumentTitle, useRunsList} from 'src/hooks';
+import RunList from '../runs_list/runs_list';
 
 interface MatchParams {
     playbookId: string
@@ -42,6 +43,19 @@ const FetchingStateType = {
     notFound: 'notfound',
 };
 
+const defaultPlaybookFetchParams = {
+    page: 0,
+    per_page: BACKSTAGE_LIST_PER_PAGE,
+    sort: 'last_status_update_at',
+    direction: 'desc',
+};
+
+const RunListContainer = styled.div`
+    && {
+        margin-top: 48px;
+    }
+`;
+
 const PlaybookBackstage = () => {
     const dispatch = useDispatch();
     const match = useRouteMatch<MatchParams>();
@@ -51,6 +65,7 @@ const PlaybookBackstage = () => {
     const [filterPill, setFilterPill] = useState<JSX.Element | null>(null);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [stats, setStats] = useState(EmptyPlaybookStats);
+    const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -61,6 +76,9 @@ const PlaybookBackstage = () => {
                 try {
                     const fetchedPlaybook = await clientFetchPlaybook(playbookId);
                     setPlaybook(fetchedPlaybook!);
+                    setFetchParams((oldParams) => {
+                        return {...oldParams, playbook_id: fetchedPlaybook?.id};
+                    });
                     setFetchingState(FetchingStateType.fetched);
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
@@ -162,8 +180,20 @@ const PlaybookBackstage = () => {
                         stats={stats}
                         fetchParamsTime={fetchParamsTime}
                         setFetchParamsTime={setFetchParamsTime}
+                        fetchParams={fetchParams}
+                        setFetchParams={setFetchParams}
                         setFilterPill={setFilterPill}
                     />
+                    <RunListContainer>
+                        <RunList
+                            playbookRuns={playbookRuns}
+                            totalCount={totalCount}
+                            fetchParams={fetchParams}
+                            setFetchParams={setFetchParams}
+                            filterPill={filterPill}
+                            fixedTeam={true}
+                        />
+                    </RunListContainer>
                     <PlaybookRunList
                         playbook={playbook}
                         fetchParamsTime={fetchParamsTime}

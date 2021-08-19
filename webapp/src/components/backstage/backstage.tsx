@@ -40,6 +40,7 @@ import SettingsView from './settings';
 import {BackstageNavbar} from './backstage_navbar';
 
 import {applyTheme} from './css_utils';
+import RunsPage from './runs_page';
 
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
@@ -193,6 +194,7 @@ const Backstage = () => {
                         to={`${match.url}/runs`}
                     />
                     <Route path={`${match.url}/runs`}>
+                        <RunsPage/>
                         <BackstagePlaybookRunList/>
                     </Route>
                     <Route path={`${match.url}/settings`}>
