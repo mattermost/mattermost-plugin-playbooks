@@ -13,9 +13,9 @@ import {pluginUrl} from 'src/browser_routing';
 
 const ErrorPage = () => {
     useEffect(() => {
-        document.body.setAttribute('class', 'error');
+        document.body.classList.add('error');
         return () => {
-            document.body.removeAttribute('class');
+            document.body.classList.remove('error');
         };
     }, []);
 
