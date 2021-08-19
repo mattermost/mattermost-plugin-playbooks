@@ -2,47 +2,20 @@
 // See LICENSE.txt for license information.
 
 /**
- * End all active playbook runs directly from API with sysadmin. Need to login after this.
+ * End all InProgress playbook runs directly from API with sysadmin. Need to login after this.
  */
-Cypress.Commands.add('endAllActivePlaybookRuns', (teamId) => {
+Cypress.Commands.add('endAllInProgressPlaybookRuns', (teamId) => {
     cy.apiLogin('sysadmin');
-    cy.apiGetCurrentUser().then((user) => {
-        cy.apiGetAllActivePlaybookRuns(teamId).then((response) => {
+    cy.apiGetCurrentUser().then(() => {
+        cy.apiGetAllInProgressPlaybookRuns(teamId).then((response) => {
             const playbookRuns = response.body.items;
 
             playbookRuns.forEach((playbookRun) => {
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId: user.id,
-                    teamId,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Archived',
-                });
+                cy.apiFinishRun(playbookRun.id);
             });
         });
 
-        cy.apiGetAllReportedPlaybookRuns(teamId).then((response) => {
-            const playbookRuns = response.body.items;
-
-            playbookRuns.forEach((playbookRun) => {
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId: user.id,
-                    teamId,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Archived',
-                });
-            });
-        });
-
-        cy.apiGetAllActivePlaybookRuns(teamId).then((response) => {
-            const playbookRuns = response.body.items;
-            expect(playbookRuns.length).to.equal(0);
-        });
-
-        cy.apiGetAllReportedPlaybookRuns(teamId).then((response) => {
+        cy.apiGetAllInProgressPlaybookRuns(teamId).then((response) => {
             const playbookRuns = response.body.items;
             expect(playbookRuns.length).to.equal(0);
         });
@@ -52,37 +25,15 @@ Cypress.Commands.add('endAllActivePlaybookRuns', (teamId) => {
 });
 
 /**
- * End all active playbook runs directly from API with current user.
+ * End all InProgress playbook runs directly from API with current user.
  */
-Cypress.Commands.add('endAllMyActivePlaybookRuns', (teamId) => {
+Cypress.Commands.add('endAllMyInProgressPlaybookRuns', (teamId) => {
     cy.apiGetCurrentUser().then((user) => {
-        cy.apiGetAllActivePlaybookRuns(teamId, user.id).then((response) => {
+        cy.apiGetAllInProgressPlaybookRuns(teamId, user.id).then((response) => {
             const playbookRuns = response.body.items;
 
             playbookRuns.forEach((playbookRun) => {
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId: user.id,
-                    teamId,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Archived',
-                });
-            });
-        });
-
-        cy.apiGetAllReportedPlaybookRuns(teamId, user.id).then((response) => {
-            const playbookRuns = response.body.items;
-
-            playbookRuns.forEach((playbookRun) => {
-                cy.apiUpdateStatus({
-                    playbookRunId: playbookRun.id,
-                    userId: user.id,
-                    teamId,
-                    message: 'ending',
-                    description: 'description',
-                    status: 'Archived',
-                });
+                cy.apiFinishRun(playbookRun.id);
             });
         });
     });

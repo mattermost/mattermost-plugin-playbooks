@@ -61,7 +61,7 @@ const Followups = (props: { playbookRun: PlaybookRun }) => {
                         <SmallProfile userId={props.playbookRun.owner_user_id}/>
                     </Cell>
                     <Cell>
-                        <Badge status={'Open' as PlaybookRunStatus}/>
+                        <Badge status={PlaybookRunStatus.InProgress}/>
                     </Cell>
                     <Cell>
                         <a href={''}>{'MM-42843'}</a>
@@ -72,7 +72,7 @@ const Followups = (props: { playbookRun: PlaybookRun }) => {
                         <SmallProfile userId={props.playbookRun.reporter_user_id}/>
                     </Cell>
                     <Cell>
-                        <Badge status={'In Progress' as PlaybookRunStatus}/>
+                        <Badge status={PlaybookRunStatus.InProgress}/>
                     </Cell>
                     <Cell>
                         <a href={''}>{'MM-42850'}</a>

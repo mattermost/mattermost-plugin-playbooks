@@ -141,14 +141,14 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder", "i.BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"AnnouncementChannelID", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL", "ExportChannelOnArchiveEnabled",
-			"CategorizeChannelEnabled").
+			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL", "ExportChannelOnFinishedEnabled",
+			"CategoryName").
 		Column(participantsCol).
 		From("IR_Incident AS i").
 		Join("Channels AS c ON (c.Id = i.ChannelId)")
 
 	statusPostsSelect := sqlStore.builder.
-		Select("sp.IncidentID AS PlaybookRunID", "p.ID", "p.CreateAt", "p.DeleteAt", "sp.Status").
+		Select("sp.IncidentID AS PlaybookRunID", "p.ID", "p.CreateAt", "p.DeleteAt").
 		From("IR_StatusPosts as sp").
 		Join("Posts as p ON sp.PostID = p.Id")
 
@@ -383,8 +383,8 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"RetrospectiveReminderIntervalSeconds": rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":             rawPlaybookRun.RetrospectiveWasCanceled,
 			"WebhookOnStatusUpdateURL":             rawPlaybookRun.WebhookOnStatusUpdateURL,
-			"ExportChannelOnArchiveEnabled":        rawPlaybookRun.ExportChannelOnArchiveEnabled,
-			"CategorizeChannelEnabled":             rawPlaybookRun.CategorizeChannelEnabled,
+			"ExportChannelOnFinishedEnabled":       rawPlaybookRun.ExportChannelOnFinishedEnabled,
+			"CategoryName":                         rawPlaybookRun.CategoryName,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
 			"ActiveStageTitle": "",
@@ -425,7 +425,6 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 			"ReminderPostID":                       rawPlaybookRun.ReminderPostID,
 			"PreviousReminder":                     rawPlaybookRun.PreviousReminder,
 			"BroadcastChannelID":                   rawPlaybookRun.BroadcastChannelID,
-			"EndAt":                                rawPlaybookRun.ResolvedAt(),
 			"ConcatenatedInvitedUserIDs":           rawPlaybookRun.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":          rawPlaybookRun.ConcatenatedInvitedGroupIDs,
 			"DefaultCommanderID":                   rawPlaybookRun.DefaultOwnerID,
@@ -437,7 +436,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 			"RetrospectiveReminderIntervalSeconds": rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":             rawPlaybookRun.RetrospectiveWasCanceled,
 			"WebhookOnStatusUpdateURL":             rawPlaybookRun.WebhookOnStatusUpdateURL,
-			"ExportChannelOnArchiveEnabled":        rawPlaybookRun.ExportChannelOnArchiveEnabled,
+			"ExportChannelOnFinishedEnabled":       rawPlaybookRun.ExportChannelOnFinishedEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 
@@ -458,28 +457,28 @@ func (s *playbookRunStore) UpdateStatus(statusPost *app.SQLStatusPost) error {
 	if statusPost.PostID == "" {
 		return errors.New("needs post ID")
 	}
-	if statusPost.Status == "" {
-		return errors.New("needs status")
-	}
 
 	if _, err := s.store.execBuilder(s.store.db, sq.
 		Insert("IR_StatusPosts").
 		SetMap(map[string]interface{}{
 			"IncidentID": statusPost.PlaybookRunID,
 			"PostID":     statusPost.PostID,
-			"Status":     statusPost.Status,
 		})); err != nil {
 		return errors.Wrap(err, "failed to add new status post")
 	}
 
+	return nil
+}
+
+func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) error {
 	if _, err := s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
-			"CurrentStatus": statusPost.Status,
-			"EndAt":         statusPost.EndAt,
+			"CurrentStatus": app.StatusFinished,
+			"EndAt":         endAt,
 		}).
-		Where(sq.Eq{"ID": statusPost.PlaybookRunID})); err != nil {
-		return errors.Wrap(err, "failed to update current status")
+		Where(sq.Eq{"ID": playbookRunID})); err != nil {
+		return errors.Wrapf(err, "failed to finish run for id: %s", playbookRunID)
 	}
 
 	return nil
@@ -841,7 +840,7 @@ func buildTeamLimitExpr(userID, teamID, tableName string) sq.Sqlizer {
 		EXISTS(SELECT 1
 					FROM TeamMembers as tm
 					WHERE tm.TeamId = %s.TeamID
-					  AND tm.DeleteAt = 0  
+					  AND tm.DeleteAt = 0
 		  	  		  AND tm.UserId = ?)
 		`, tableName), userID)
 }

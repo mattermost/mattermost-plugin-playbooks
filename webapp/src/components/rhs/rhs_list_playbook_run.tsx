@@ -1,18 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 
-import {Client4} from 'mattermost-redux/client';
-import {Post} from 'mattermost-redux/types/posts';
-import {GlobalState} from 'mattermost-redux/types/store';
-import {getPost} from 'mattermost-redux/selectors/entities/posts';
+import {PlaybookRun} from 'src/types/playbook_run';
 
-import {PlaybookRun, playbookRunCurrentStatus} from 'src/types/playbook_run';
-
-import Profile from 'src/components/profile/profile';
 import Duration from 'src/components/duration';
 import {lastUpdatedByPlaybookRunId} from 'src/selectors';
 
@@ -107,7 +101,7 @@ const RHSListPlaybookRun = (props: Props) => {
                 <Col1>{'Status:'}</Col1>
                 <Col2>
                     <div>
-                        <StatusBadge status={playbookRunCurrentStatus(props.playbookRun)}/>
+                        <StatusBadge status={props.playbookRun.current_status}/>
                     </div>
                 </Col2>
             </Row>

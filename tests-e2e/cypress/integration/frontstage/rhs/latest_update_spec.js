@@ -240,11 +240,6 @@ describe('playbook run rhs > latest update', () => {
                 // # Type the invalid data
                 cy.findByTestId('messageinput').clear().type(' {enter} {enter}  ');
 
-                // # Enter valid status
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').type('Reported', {delay: 200}).type('{enter}');
-                });
-
                 // # Submit the dialog.
                 cy.get('#interactiveDialogSubmit').click();
 
@@ -305,7 +300,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', '60min');
                 });
             });
@@ -324,7 +319,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', 'None');
                 });
             });
@@ -343,7 +338,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', '15min');
                 });
             });
@@ -362,7 +357,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', '30min');
                 });
             });
@@ -381,7 +376,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', '60min');
                 });
             });
@@ -400,7 +395,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', '4hr');
                 });
             });
@@ -419,7 +414,7 @@ describe('playbook run rhs > latest update', () => {
             // # Get the interactive dialog modal.
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(1).within(() => {
+                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
                     cy.get('input').should('have.value', '24hr');
                 });
             });

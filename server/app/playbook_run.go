@@ -12,10 +12,8 @@ import (
 )
 
 const (
-	StatusReported = "Reported"
-	StatusActive   = "Active"
-	StatusResolved = "Resolved"
-	StatusArchived = "Archived"
+	StatusInProgress = "InProgress"
+	StatusFinished   = "Finished"
 )
 
 // PlaybookRun holds the detailed information of an playbook run.
@@ -92,7 +90,7 @@ type PlaybookRun struct {
 	// updates are broadcasted.
 	BroadcastChannelID string `json:"broadcast_channel_id"`
 
-	// ReminderMessageTemplate, ifnot empty, is the template shown when updating the status of the
+	// ReminderMessageTemplate, if not empty, is the template shown when updating the status of the
 	// playbook run for the first time.
 	ReminderMessageTemplate string `json:"reminder_message_template"`
 
@@ -144,15 +142,14 @@ type PlaybookRun struct {
 
 	// ExportChannelOnArchiveEnabled is true if the channel is exported when the status is updated
 	// to "Archived", false otherwise.
-	ExportChannelOnArchiveEnabled bool `json:"export_channel_on_archive_enabled"`
+	ExportChannelOnFinishedEnabled bool `json:"export_channel_on_finished_enabled"`
 
 	// ParticipantIDs is an array of the identifiers of all the participants in the playbook run.
 	// A participant is any member of the playbook run channel that isn't a bot.
 	ParticipantIDs []string `json:"participant_ids"`
 
-	// CategorizeChannelEnabled is true if the channel is automatically categorized in the playbook
-	// runs category for every user that joins the playbook run channel.
-	CategorizeChannelEnabled bool `json:"categorize_channel_enabled"`
+	// CategoryName, if not empty, is the name of the category where the run channel will live.
+	CategoryName string `json:"category_name"`
 }
 
 func (i *PlaybookRun) Clone() *PlaybookRun {
@@ -204,43 +201,9 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	return json.Marshal(old)
 }
 
-func (i *PlaybookRun) IsActive() bool {
-	currentStatus := i.CurrentStatus
-	return currentStatus != StatusResolved && currentStatus != StatusArchived
-}
-
-func (i *PlaybookRun) ResolvedAt() int64 {
-	// Backwards compatibility for playbook runs with old status updates
-	if len(i.StatusPosts) > 0 && i.StatusPosts[len(i.StatusPosts)-1].Status == "" {
-		return i.EndAt
-	}
-
-	var resolvedPost *StatusPost
-	for j := len(i.StatusPosts) - 1; j >= 0; j-- {
-		if i.StatusPosts[j].DeleteAt != 0 {
-			continue
-		}
-		if i.StatusPosts[j].Status != StatusResolved && i.StatusPosts[j].Status != StatusArchived {
-			break
-		}
-
-		resolvedPost = &i.StatusPosts[j]
-	}
-
-	if resolvedPost == nil {
-		return 0
-	}
-
-	return resolvedPost.CreateAt
-}
-
 type StatusPost struct {
 	// ID is the identifier of the post containing the status update.
 	ID string `json:"id"`
-
-	// Status is the status of the playbook run after this update was posted.
-	// It can be "Reported", "Active", "Resolved", or "Archived".
-	Status string `json:"status"`
 
 	// CreateAt is the timestamp, in milliseconds since epoch, of the time this status update was
 	// posted.
@@ -257,7 +220,6 @@ type UpdateOptions struct {
 // StatusUpdateOptions encapsulates the fields that can be set when updating an playbook run's status
 // NOTE: changes made to this should be reflected in the client package.
 type StatusUpdateOptions struct {
-	Status   string        `json:"status"`
 	Message  string        `json:"message"`
 	Reminder time.Duration `json:"reminder"`
 }
@@ -284,6 +246,7 @@ const (
 	UserJoinedLeft         timelineEventType = "user_joined_left"
 	PublishedRetrospective timelineEventType = "published_retrospective"
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
+	RunFinished            timelineEventType = "run_finished"
 )
 
 type TimelineEvent struct {
@@ -339,7 +302,6 @@ type GetPlaybookRunsResults struct {
 type SQLStatusPost struct {
 	PlaybookRunID string
 	PostID        string
-	Status        string
 	EndAt         int64
 }
 
@@ -396,7 +358,7 @@ type PlaybookRunService interface {
 	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the playbook run's status.
-	OpenUpdateStatusDialog(playbookRunID, triggerID, defaultStatus string) error
+	OpenUpdateStatusDialog(playbookRunID, triggerID string) error
 
 	// OpenAddToTimelineDialog opens an interactive dialog so the user can add a post to the playbook run timeline.
 	OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error
@@ -412,6 +374,12 @@ type PlaybookRunService interface {
 
 	// UpdateStatus updates a playbook run's status.
 	UpdateStatus(playbookRunID, userID string, options StatusUpdateOptions) error
+
+	// OpenFinishPlaybookRunDialog opens the dialog to confirm the run should be finished.
+	OpenFinishPlaybookRunDialog(playbookRunID, triggerID string) error
+
+	// FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
+	FinishPlaybookRun(playbookRunID, userID string) error
 
 	// GetPlaybookRun gets a playbook run by ID. Returns error if it could not be found.
 	GetPlaybookRun(playbookRunID string) (*PlaybookRun, error)
@@ -526,6 +494,9 @@ type PlaybookRunStore interface {
 	// UpdateStatus updates the status of a playbook run.
 	UpdateStatus(statusPost *SQLStatusPost) error
 
+	// FinishPlaybookRun finishes a run at endAt (in millis)
+	FinishPlaybookRun(playbookRunID string, endAt int64) error
+
 	// GetTimelineEvent returns the timeline event for playbookRunID by the timeline event ID.
 	GetTimelineEvent(playbookRunID, eventID string) (*TimelineEvent, error)
 
@@ -569,8 +540,8 @@ type PlaybookRunTelemetry interface {
 	// CreatePlaybookRun tracks the creation of a new playbook run.
 	CreatePlaybookRun(playbookRun *PlaybookRun, userID string, public bool)
 
-	// EndPlaybookRun tracks the end of a playbook run.
-	EndPlaybookRun(playbookRun *PlaybookRun, userID string)
+	// FinishPlaybookRun tracks the end of a playbook run.
+	FinishPlaybookRun(playbookRun *PlaybookRun, userID string)
 
 	// RestartPlaybookRun tracks the restart of a playbook run.
 	RestartPlaybookRun(playbookRun *PlaybookRun, userID string)
@@ -754,5 +725,19 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 		options.StartedLT = 0
 	}
 
+	if options.Status != "" && !validStatus(options.Status) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'status': must be InProgress or Finished")
+	}
+
+	for _, s := range options.Statuses {
+		if !validStatus(s) {
+			return PlaybookRunFilterOptions{}, errors.New("bad parameter in 'statuses': must be InProgress or Finished")
+		}
+	}
+
 	return options, nil
+}
+
+func validStatus(status string) bool {
+	return status == "" || status == StatusInProgress || status == StatusFinished
 }

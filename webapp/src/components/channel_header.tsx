@@ -1,14 +1,13 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-import React, {useRef, FC} from 'react';
+import React, {useRef} from 'react';
 import {useSelector} from 'react-redux';
-
 import {createGlobalStyle} from 'styled-components';
 
-import {isPlaybookRunRHSOpen, isDisabledOnCurrentTeam} from 'src/selectors';
+import IncidentIcon, {Ref as PlaybookRunIconRef} from 'src/components/assets/icons/incident_icon';
 
-import IncidentIcon, {Ref as PlaybookRunIconRef} from './incident_icon';
+import {isPlaybookRunRHSOpen, isDisabledOnCurrentTeam, inPlaybookRunChannel} from 'src/selectors';
 
 const DisabledStyle = createGlobalStyle`
     .plugin-icon-hide {
@@ -16,7 +15,7 @@ const DisabledStyle = createGlobalStyle`
     }
 `;
 
-const ChannelHeaderButton = () => {
+export const ChannelHeaderButton = () => {
     const myRef = useRef<PlaybookRunIconRef>(null);
     const isRHSOpen = useSelector(isPlaybookRunRHSOpen);
     const disabled = useSelector(isDisabledOnCurrentTeam);
@@ -48,4 +47,13 @@ const ChannelHeaderButton = () => {
     );
 };
 
-export default ChannelHeaderButton;
+export const ChannelHeaderText = () => {
+    const currentChannelIsPlaybookRun = useSelector(inPlaybookRunChannel);
+    if (currentChannelIsPlaybookRun) {
+        return 'View Run Details';
+    }
+
+    return 'Run Playbook';
+};
+
+export const ChannelHeaderTooltip = ChannelHeaderText;

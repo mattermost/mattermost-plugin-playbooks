@@ -23,7 +23,7 @@ func (b *Bot) PostMessage(channelID, format string, args ...interface{}) (*model
 	return post, nil
 }
 
-// PostMessage posts a message with slack attachments to channelID. Returns the post id if
+// PostMessageWithAttachments posts a message with slack attachments to channelID. Returns the post id if
 // posting was successful. Often used to include post actions.
 func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error) {
 	post := &model.Post{
@@ -52,7 +52,7 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 	return post, nil
 }
 
-// Post DM from the plugin bot to the specified user
+// DM sends a DM from the plugin bot to the specified user
 func (b *Bot) DM(userID string, post *model.Post) error {
 	channel, err := b.pluginAPI.Channel.GetDirect(userID, b.botUserID)
 	if err != nil {
@@ -67,7 +67,7 @@ func (b *Bot) DM(userID string, post *model.Post) error {
 	return nil
 }
 
-// Ephemeral sends an ephemeral message to a user
+// EphemeralPost sends an ephemeral message to a user
 func (b *Bot) EphemeralPost(userID, channelID string, post *model.Post) {
 	post.UserId = b.botUserID
 	post.ChannelId = channelID

@@ -1452,38 +1452,13 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
 		updateOptions := app.StatusUpdateOptions{
-			Status:   "Active",
 			Message:  "test message",
 			Reminder: 600 * time.Second,
 		}
 		playbookRunService.EXPECT().UpdateStatus("playbookRunID", "testUserID", updateOptions).Return(nil)
 
-		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", icClient.StatusActive, "test message", 600)
+		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", "test message", 600)
 		require.NoError(t, err)
-	})
-
-	t.Run("update playbook run status, bad status", func(t *testing.T) {
-		reset(t)
-		setDefaultExpectations(t)
-		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
-
-		teamID := model.NewId()
-		testPlaybookRun := app.PlaybookRun{
-			ID:          "playbookRunID",
-			OwnerUserID: "testUserID",
-			TeamID:      teamID,
-			Name:        "playbookRunName",
-			ChannelID:   "channelID",
-		}
-
-		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil).Times(2)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
-
-		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", "Arrrrrrrctive", "test message", 600)
-		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("update playbook run status, no permission to post", func(t *testing.T) {
@@ -1506,7 +1481,7 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(false)
 
-		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", icClient.StatusActive, "test message", 600)
+		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", "test message", 600)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
@@ -1530,31 +1505,7 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
 
-		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", icClient.StatusActive, "  \t   \r   \t  \r\r  ", 600)
-		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
-	})
-
-	t.Run("update playbook run status, status empty", func(t *testing.T) {
-		reset(t)
-		setDefaultExpectations(t)
-		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
-
-		teamID := model.NewId()
-		testPlaybookRun := app.PlaybookRun{
-			ID:          "playbookRunID",
-			OwnerUserID: "testUserID",
-			TeamID:      teamID,
-			Name:        "playbookRunName",
-			ChannelID:   "channelID",
-		}
-
-		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil).Times(2)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
-
-		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", "\t   \r  ", "test message", 600)
+		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", "  \t   \r   \t  \r\r  ", 600)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 }
