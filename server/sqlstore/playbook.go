@@ -138,7 +138,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"ConcatenatedSignalAnyKeywords",
 			"SignalAnyKeywordsEnabled",
 			"CategorizeChannelEnabled",
-			"CategoryName",
+			"COALESCE(CategoryName, '') CategoryName",
 		).
 		From("IR_Playbook")
 
