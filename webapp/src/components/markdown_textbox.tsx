@@ -3,11 +3,13 @@
 
 import React, {MouseEvent, ChangeEvent, useState} from 'react';
 
-import Icon from '@mdi/react';
-import {mdiOpenInNew} from '@mdi/js';
+import {useSelector} from 'react-redux';
+
 import classNames from 'classnames';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
+
+import {getConfig} from 'mattermost-redux/selectors/entities/general';
 
 import {Textbox} from 'src/webapp_globals';
 
@@ -30,6 +32,10 @@ const MarkdownTextbox = ({
     ...props
 }: MarkdownTextboxProps) => {
     const [showPreview, setShowPreview] = useState(false);
+    const config = useSelector(getConfig);
+
+    // @ts-expect-error
+    const charLimit = parseInt(config.MaxPostSize || '', 10) || DEFAULT_CHAR_LIMIT;
 
     return (
         <div className={className}>
@@ -43,14 +49,14 @@ const MarkdownTextbox = ({
                 useChannelMentions={false}
                 channelId={autocompleteChannelId}
                 onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setValue(e.target.value)}
-                characterLimit={DEFAULT_CHAR_LIMIT}
+                characterLimit={charLimit}
                 createMessage={''}
                 onKeyPress={() => true}
                 openWhenEmpty={true}
                 {...props}
             />
             <StyledTextboxLinks
-                characterLimit={DEFAULT_CHAR_LIMIT}
+                characterLimit={charLimit}
                 showPreview={showPreview}
                 updatePreview={setShowPreview}
                 message={value}
