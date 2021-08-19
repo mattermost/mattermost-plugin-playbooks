@@ -7,6 +7,7 @@ export interface Playbook {
     description: string;
     team_id: string;
     create_public_playbook_run: boolean;
+    delete_at: number;
 
     /** @alias num_checklists */
     num_stages: number;
