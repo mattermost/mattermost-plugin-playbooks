@@ -2,11 +2,16 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import configureStore, {MockStoreEnhanced} from 'redux-mock-store';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 
+import * as Selectors from 'src/selectors';
+
 import {makeSlashCommandHook} from './slash_command';
 
 const mockStore = configureStore<GlobalState, DispatchFunc>();
 
 test('makeSlashCommandHook leaves rejected slash commands unmodified', async () => {
+    const inPlaybookRunChannel = jest.spyOn(Selectors, 'inPlaybookRunChannel');
+    inPlaybookRunChannel.mockReturnValue(true);
+
     const initialState = {} as GlobalState;
     const store: MockStoreEnhanced<GlobalState, DispatchFunc> = mockStore(initialState);
 
