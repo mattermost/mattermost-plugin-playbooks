@@ -66,6 +66,41 @@ export async function fetchPlaybookRun(id: string) {
     return data as PlaybookRun;
 }
 
+export async function postStatusUpdate(
+    playbookRunId: string,
+    payload: {
+        message: string,
+        reminder?: number},
+    ids: {
+        user_id: string;
+        channel_id: string;
+        team_id: string;
+    },
+) {
+    const base = {
+        type: 'dialog_submission',
+        callback_id: '',
+        state: '',
+        cancelled: false,
+    };
+
+    const body = JSON.stringify({
+        ...base,
+        ...ids,
+        submission: {
+            ...payload,
+            reminder: payload.reminder?.toFixed() ?? '',
+        },
+    });
+
+    try {
+        const data = await doPost(`${apiUrl}/runs/${playbookRunId}/update-status-dialog`, body);
+        return data;
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function fetchPlaybookRunMetadata(id: string) {
     const data = await doGet(`${apiUrl}/runs/${id}/metadata`);
     // eslint-disable-next-line no-process-env
@@ -142,7 +177,7 @@ export function clientFetchPlaybooks(teamID: string, params: FetchPlaybooksParam
     return doGet<FetchPlaybooksReturn>(`${apiUrl}/playbooks${queryParams}`);
 }
 
-const clientHasPlaybooks = async (teamID: string): Promise<boolean> => {
+export const clientHasPlaybooks = async (teamID: string): Promise<boolean> => {
     const result = await clientFetchPlaybooks(teamID, {
         page: 0,
         per_page: 1,
@@ -150,8 +185,6 @@ const clientHasPlaybooks = async (teamID: string): Promise<boolean> => {
 
     return result.items?.length > 0;
 };
-
-export {clientHasPlaybooks};
 
 export function clientFetchPlaybook(playbookID: string) {
     return doGet<PlaybookWithChecklist>(`${apiUrl}/playbooks/${playbookID}`);
