@@ -22,6 +22,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 
 import {usePlaybook} from 'src/hooks';
 import MarkdownTextbox from '../markdown_textbox';
+import {pluginUrl} from 'src/browser_routing';
 
 const ID = `${pluginId}_${nameof(UpdateRunStatusModal)}`;
 
@@ -41,7 +42,6 @@ export function makeModalDefinition(props: Props) {
 
 function UpdateRunStatusModal({playbookRunId, playbookId, channelId, ...props}: Props) {
     const {formatMessage} = useIntl();
-    const currentTeam = useSelector(getCurrentTeam);
     const [message, setMessage] = useState<string | null>(null);
     const playbook = usePlaybook(playbookId);
     if (playbook && message == null) {
@@ -71,7 +71,7 @@ function UpdateRunStatusModal({playbookRunId, playbookId, channelId, ...props}: 
                                 <Link
                                     target='_blank'
                                     rel='noopener noreferrer'
-                                    to={`/${currentTeam.name}/${pluginId}/runs/${playbookRunId}`}
+                                    to={pluginUrl(`/runs/${playbookRunId}`)}
                                 >
                                     {chunks}
                                 </Link>

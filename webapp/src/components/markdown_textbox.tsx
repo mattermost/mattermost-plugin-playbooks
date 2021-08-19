@@ -116,10 +116,10 @@ function TextboxLinks({
                 {'~~ '}
             </span>
             <span>
-                {'`code`'}
+                {'`inline code`'}
             </span>
             <span>
-                {'```code block```'}
+                {'```preformatted```'}
             </span>
             <span>
                 {'>quote'}
@@ -138,6 +138,14 @@ function TextboxLinks({
                 className={'help__format-text'}
             >
                 {helpText}
+            </div>
+            <div>
+                <button
+                    onClick={togglePreview}
+                    className='style--none textbox-preview-link color--link'
+                >
+                    {showPreview ? 'Edit' : 'Preview'}
+                </button>
                 <Link
                     target='_blank'
                     rel='noopener noreferrer'
@@ -145,18 +153,8 @@ function TextboxLinks({
                     className='textbox-help-link'
                 >
                     {'Help'}
-                    <Icon
-                        path={mdiOpenInNew}
-                        size={0.7}
-                    />
                 </Link>
             </div>
-            <button
-                onClick={togglePreview}
-                className='style--none textbox-preview-link color--link'
-            >
-                {showPreview ? 'Edit message' : 'Preview'}
-            </button>
         </div>
     );
 }
@@ -176,7 +174,6 @@ const StyledTextboxLinks = styled(TextboxLinks)`
 
     .help__format-text {
         transition: opacity, 0.3s, ease-in, 0.3s;
-        display: inline-block;
         font-size: 0.85em;
         vertical-align: bottom;
         white-space: nowrap;
