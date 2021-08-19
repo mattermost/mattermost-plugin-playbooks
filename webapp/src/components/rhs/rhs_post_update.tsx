@@ -99,6 +99,7 @@ const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) 
 };
 
 const PastTimeSpec = [
+    {within: ['second', -45], display: 'just now'},
     ['minute', -59],
     ['hour', -48],
     ['day', -30],
@@ -107,7 +108,6 @@ const PastTimeSpec = [
 ];
 
 const FutureTimeSpec = [
-    'now',
     ['minute', 59],
     ['hour', 48],
     ['day', 30],
