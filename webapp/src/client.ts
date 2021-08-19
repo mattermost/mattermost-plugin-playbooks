@@ -70,7 +70,8 @@ export async function postStatusUpdate(
     playbookRunId: string,
     payload: {
         message: string,
-        reminder?: number},
+        reminder?: number
+    },
     ids: {
         user_id: string;
         channel_id: string;
