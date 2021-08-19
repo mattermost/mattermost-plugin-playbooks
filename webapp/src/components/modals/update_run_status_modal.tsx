@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {ComponentProps, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {useSelector} from 'react-redux';
@@ -18,7 +18,6 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
-import {pluginId} from 'src/manifest';
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -27,13 +26,13 @@ import MarkdownTextbox from '../markdown_textbox';
 import {pluginUrl} from 'src/browser_routing';
 import {postStatusUpdate} from 'src/client';
 
-const ID = `${pluginId}_${nameof(UpdateRunStatusModal)}`;
+const ID = 'playbooks_update_run_status_dialog';
 
 type Props = {
     playbookRunId: PlaybookRun['id'];
     playbookId: PlaybookRun['playbook_id'];
     channelId: PlaybookRun['channel_id'];
-}
+};
 
 export function makeModalDefinition(props: Props) {
     return {
@@ -43,7 +42,7 @@ export function makeModalDefinition(props: Props) {
     };
 }
 
-function UpdateRunStatusModal({playbookRunId, playbookId, channelId, ...props}: Props) {
+function UpdateRunStatusModal({playbookRunId, playbookId, channelId, ...modalProps}: Props) {
     const {formatMessage} = useIntl();
     const [message, setMessage] = useState<string | null>(null);
     const playbook = usePlaybook(playbookId);
@@ -52,25 +51,28 @@ function UpdateRunStatusModal({playbookRunId, playbookId, channelId, ...props}: 
     }
     const currentUserId = useSelector(getCurrentUserId);
     const channel = useSelector((state: GlobalState) => getChannel(state, channelId) || {display_name: 'Unknown Channel', id: channelId});
-    const team = useSelector((state: GlobalState) => getTeam(state, channel.team_id));
+    const team = useSelector((state: GlobalState) => playbook && getTeam(state, playbook.team_id));
 
     const onConfirm = () => {
         if (!message) {
             return false;
         }
-        postStatusUpdate(playbookRunId, {message}, {user_id: currentUserId, channel_id: channel.id, team_id: team.id});
+        if (message && currentUserId && channel && team) {
+            postStatusUpdate(playbookRunId, {message}, {user_id: currentUserId, channel_id: channel.id, team_id: team.id});
+        }
         return true;
     };
 
     return (
         <GenericModal
-            id={ID}
             modalHeaderText={'Post update'}
             confirmButtonText={'Post'}
             cancelButtonText={'Cancel'}
             handleCancel={() => true}
             handleConfirm={onConfirm}
-            {...props}
+            isConfirmDisabled={!(message && currentUserId && channel && team)}
+            {...modalProps}
+            id={ID}
         >
             <FormContainer>
                 <Description>
@@ -90,11 +92,11 @@ function UpdateRunStatusModal({playbookRunId, playbookId, channelId, ...props}: 
                             );
                         },
                         hasBroadcast: playbook?.broadcast_channel_id ? 'true' : 'false',
-                        broadcastChannel: (
+                        broadcastChannel: team && channel && (
                             <Link
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                to={`/${team.name}/channels/${channelId}`}
+                                to={`/${team.name}/channels/${channel.id}`}
                             >
                                 {`~${channel.name}`}
                             </Link>
@@ -108,7 +110,7 @@ function UpdateRunStatusModal({playbookRunId, playbookId, channelId, ...props}: 
                     id='update_run_status_textbox'
                     value={message ?? ''}
                     setValue={setMessage}
-                    autocompleteChannelId={channelId}
+                    channelId={channelId}
                 />
             </FormContainer>
         </GenericModal>

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {MouseEvent, ChangeEvent, useState} from 'react';
+import React, {MouseEvent, ChangeEvent, useState, ComponentProps} from 'react';
 
 import {useSelector} from 'react-redux';
 
@@ -15,22 +15,20 @@ import {Textbox} from 'src/webapp_globals';
 
 const DEFAULT_CHAR_LIMIT = 4000;
 
-type MarkdownTextboxProps = {
+type Props = {
     value: string;
     setValue: (val: string) => void;
-    autocompleteChannelId: string;
     createMessage?: string;
     id: string;
-    className?: string
-}
+    className?: string;
+} & ComponentProps<typeof Textbox>;
 
 const MarkdownTextbox = ({
     value,
     setValue,
-    autocompleteChannelId,
     className,
-    ...props
-}: MarkdownTextboxProps) => {
+    ...textboxProps
+}: Props) => {
     const [showPreview, setShowPreview] = useState(false);
     const config = useSelector(getConfig);
 
@@ -38,7 +36,7 @@ const MarkdownTextbox = ({
     const charLimit = parseInt(config.MaxPostSize || '', 10) || DEFAULT_CHAR_LIMIT;
 
     return (
-        <div className={className}>
+        <Wrapper className={className}>
             <Textbox
                 tabIndex={0}
                 value={value}
@@ -47,13 +45,12 @@ const MarkdownTextbox = ({
                 suggestionListPosition='bottom'
                 preview={showPreview}
                 useChannelMentions={false}
-                channelId={autocompleteChannelId}
                 onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setValue(e.target.value)}
                 characterLimit={charLimit}
                 createMessage={''}
                 onKeyPress={() => true}
                 openWhenEmpty={true}
-                {...props}
+                {...textboxProps}
             />
             <StyledTextboxLinks
                 characterLimit={charLimit}
@@ -61,11 +58,11 @@ const MarkdownTextbox = ({
                 updatePreview={setShowPreview}
                 message={value}
             />
-        </div>
+        </Wrapper>
     );
 };
 
-const StyledMarkdownTextbox = styled(MarkdownTextbox)`
+const Wrapper = styled.div`
     .textarea-wrapper {
         margin-bottom: 6px;
     }
@@ -87,7 +84,7 @@ const StyledMarkdownTextbox = styled(MarkdownTextbox)`
 type TextboxLinksProps = {
     showPreview?: boolean;
     characterLimit: number;
-    updatePreview?: (showPreview: boolean) => void;
+    updatePreview: (showPreview: boolean) => void;
     message: string;
     className?: string;
 };
@@ -101,37 +98,10 @@ function TextboxLinks({
 }: TextboxLinksProps) {
     const togglePreview = (e: MouseEvent) => {
         e.preventDefault();
-        updatePreview?.(!showPreview);
+        updatePreview(!showPreview);
     };
 
-    const hasText = message && message.length > 0;
-
-    const helpText = (
-        <Helpers>
-            <b>
-                {'**bold**'}
-            </b>
-            <i>
-                {'*italic*'}
-            </i>
-            <span>
-                {'~~'}
-                <s>
-                    {'strike'}
-                </s>
-                {'~~ '}
-            </span>
-            <span>
-                {'`inline code`'}
-            </span>
-            <span>
-                {'```preformatted```'}
-            </span>
-            <span>
-                {'>quote'}
-            </span>
-        </Helpers>
-    );
+    const hasText = message?.length > 0;
 
     return (
         <div
@@ -143,7 +113,14 @@ function TextboxLinks({
                 style={{visibility: hasText ? 'visible' : 'hidden', opacity: hasText ? '' : '0'}}
                 className={'help__format-text'}
             >
-                {helpText}
+                <HelpText>
+                    <b>{'**bold**'}</b>
+                    <i>{'*italic*'}</i>
+                    <span>{'~~'}<s>{'strike'}</s>{'~~ '}</span>
+                    <span>{'`inline code`'}</span>
+                    <span>{'```preformatted```'}</span>
+                    <span>{'>quote'}</span>
+                </HelpText>
             </div>
             <div>
                 <button
@@ -191,7 +168,7 @@ const StyledTextboxLinks = styled(TextboxLinks)`
     }
 `;
 
-const Helpers = styled.span`
+const HelpText = styled.span`
     opacity: 0.45;
 
     && {
@@ -218,4 +195,4 @@ const Helpers = styled.span`
     }
 `;
 
-export default StyledMarkdownTextbox;
+export default MarkdownTextbox;

@@ -9,7 +9,6 @@ export const {
 } = global.PostUtils ?? {};
 
 export const {
-
     modals,
 
     // @ts-ignore

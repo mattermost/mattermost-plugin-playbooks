@@ -517,7 +517,6 @@ interface ChecklistItemEditModalProps {
     onDone: () => void;
     checklistNum: number;
     playbookRunId: string;
-
     channelId: string;
     itemNum: number;
     taskTitle: string;
@@ -582,7 +581,7 @@ const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {
                     id={`taskEditTextbox_c${props.checklistNum}i${props.itemNum}`}
                     value={description ?? ''}
                     setValue={setDescription}
-                    autocompleteChannelId={props.channelId}
+                    channelId={props.channelId}
                 />
             </FormContainer>
         </GenericModal>

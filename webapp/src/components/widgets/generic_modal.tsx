@@ -190,7 +190,6 @@ const FooterContainer = styled.div`
 `;
 
 const ModalHeading = styled.h1`
-    font-family: Metropolis;
     font-size: 22px;
     line-height: 28px;
     color: var(--center-channel-color);
