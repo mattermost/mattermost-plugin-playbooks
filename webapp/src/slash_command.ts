@@ -23,15 +23,7 @@ import {
 
 import {RHSState} from 'src/types/rhs';
 
-/**
- * @see {}
- */
-type SlashCommandObj = {
-    message?: string;
-    args?: string[];
-} | {
-    error: string;
-} | {};
+type SlashCommandObj = {message?: string; args?: string[];} | {error: string;} | {};
 
 export function makeSlashCommandHook(store: Store) {
     return async (inMessage: any, args: any): Promise<SlashCommandObj> => {
