@@ -12,7 +12,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {useSelector} from 'react-redux';
 
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
-import {PlaybookRun, playbookRunCurrentStatus} from 'src/types/playbook_run';
+import {PlaybookRun} from 'src/types/playbook_run';
 import Duration from 'src/components/duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
@@ -97,7 +97,7 @@ const Row = (props: Props) => {
             </div>
             <div className='col-sm-2'>
                 <SmallStatusBadge
-                    status={playbookRunCurrentStatus(props.playbookRun)}
+                    status={props.playbookRun.current_status}
                 />
                 <SmallText>
                     <Duration

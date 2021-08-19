@@ -13,10 +13,8 @@ import {StatusOption} from './runs_list/status_filter';
 //TODO Unify these.
 const statusOptions: StatusOption[] = [
     {value: '', label: 'All'},
-    {value: 'Reported', label: 'Reported'},
-    {value: 'Active', label: 'Active'},
-    {value: 'Resolved', label: 'Resolved'},
-    {value: 'Archived', label: 'Archived'},
+    {value: 'InProgress', label: 'In Progress'},
+    {value: 'Finished', label: 'Finished'},
 ];
 
 const defaultPlaybookFetchParams = {
@@ -24,7 +22,9 @@ const defaultPlaybookFetchParams = {
     per_page: BACKSTAGE_LIST_PER_PAGE,
     sort: 'last_status_update_at',
     direction: 'desc',
-    statuses: statusOptions.filter((opt) => opt.value !== 'Archived' && opt.value !== '').map((opt) => opt.value),
+    statuses: statusOptions
+        .filter((opt) => opt.value !== 'Finished' && opt.value !== '')
+        .map((opt) => opt.value),
 };
 
 const RunsPage = () => {
