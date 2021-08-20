@@ -88,9 +88,16 @@ paths:
           explode: true
         - name: owner_user_id
           in: query
-          description: The returned list will contain only the playbook runs commanded by this user.
+          description: The returned list will contain only the playbook runs commanded by this user. Specify "me" for current user.
           required: false
           example: lpn2ogt9qzkc59lfvvad9t15v4
+          schema:
+            type: string
+        - name: member_id
+          in: query
+          description: The returned list will contain only the playbook runs this user is a member of. Specify "me" for current user.
+          required: false
+          example: bruhg1cs65retdbea798hrml4v
           schema:
             type: string
         - name: search_term
@@ -98,13 +105,6 @@ paths:
           description: The returned list will contain only the playbook runs whose name contains the search term.
           required: false
           example: "server down"
-          schema:
-            type: string
-        - name: member_id
-          in: query
-          description: The returned list will contain only the playbook runs this user is a member of.
-          required: false
-          example: bruhg1cs65retdbea798hrml4v
           schema:
             type: string
       x-codeSamples:

@@ -39,10 +39,12 @@ func TestPlaybookRuns(t *testing.T) {
 	var pluginAPI *plugintest.API
 	var client *pluginapi.Client
 
+	mattermostUserID := "testUserID"
+
 	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
 	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/com.mattermost.plugin-incident-management")
-		r.Header.Add("Mattermost-User-ID", "testUserID")
+		r.Header.Add("Mattermost-User-ID", mattermostUserID)
 
 		handler.ServeHTTP(w, r)
 	})
@@ -56,6 +58,7 @@ func TestPlaybookRuns(t *testing.T) {
 	reset := func(t *testing.T) {
 		t.Helper()
 
+		mattermostUserID = "testUserID"
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
 		pluginAPI = &plugintest.API{}
@@ -1483,6 +1486,250 @@ func TestPlaybookRuns(t *testing.T) {
 		})
 		require.Error(t, err)
 		assert.Empty(t, actualList)
+	})
+
+	t.Run("get playbook runs filtered by owner", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+
+		userID := model.NewId()
+		teamID := model.NewId()
+		mattermostUserID = userID
+		playbookRun1 := app.PlaybookRun{
+			ID:              "playbookRunID1",
+			OwnerUserID:     userID,
+			TeamID:          teamID,
+			Name:            "playbookRunName1",
+			ChannelID:       "channelID1",
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
+			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+			TimelineEvents:  []app.TimelineEvent{},
+		}
+
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("GetUser", userID).Return(&model.User{}, nil)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		result := &app.GetPlaybookRunsResults{
+			TotalCount: 100,
+			PageCount:  200,
+			HasMore:    true,
+			Items:      []app.PlaybookRun{playbookRun1},
+		}
+		playbookRunService.EXPECT().GetPlaybookRuns(
+			app.RequesterInfo{
+				UserID:  userID,
+				IsAdmin: false,
+				IsGuest: false,
+			},
+			gomock.Eq(app.PlaybookRunFilterOptions{
+				TeamID:    teamID,
+				OwnerID:   userID,
+				Page:      0,
+				PerPage:   200,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+			}),
+		).Return(result, nil)
+
+		actualList, err := c.PlaybookRuns.List(context.TODO(), 0, 200, icClient.PlaybookRunListOptions{
+			TeamID:  teamID,
+			OwnerID: userID,
+		})
+		require.NoError(t, err)
+
+		expectedList := &icClient.GetPlaybookRunsResults{
+			TotalCount: 100,
+			PageCount:  200,
+			HasMore:    true,
+			Items:      []icClient.PlaybookRun{toAPIPlaybookRun(playbookRun1)},
+		}
+		assert.Equal(t, expectedList, actualList)
+	})
+
+	t.Run("get playbook runs filtered by owner=me", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+
+		userID := model.NewId()
+		teamID := model.NewId()
+		mattermostUserID = userID
+		playbookRun1 := app.PlaybookRun{
+			ID:              "playbookRunID1",
+			OwnerUserID:     userID,
+			TeamID:          teamID,
+			Name:            "playbookRunName1",
+			ChannelID:       "channelID1",
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
+			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+			TimelineEvents:  []app.TimelineEvent{},
+		}
+
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("GetUser", userID).Return(&model.User{}, nil)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		result := &app.GetPlaybookRunsResults{
+			TotalCount: 100,
+			PageCount:  200,
+			HasMore:    true,
+			Items:      []app.PlaybookRun{playbookRun1},
+		}
+		playbookRunService.EXPECT().GetPlaybookRuns(
+			app.RequesterInfo{
+				UserID:  userID,
+				IsAdmin: false,
+				IsGuest: false,
+			},
+			app.PlaybookRunFilterOptions{
+				TeamID:    teamID,
+				OwnerID:   userID,
+				Page:      0,
+				PerPage:   200,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+			},
+		).Return(result, nil)
+
+		actualList, err := c.PlaybookRuns.List(context.TODO(), 0, 200, icClient.PlaybookRunListOptions{
+			TeamID:  teamID,
+			OwnerID: icClient.Me,
+		})
+		require.NoError(t, err)
+
+		expectedList := &icClient.GetPlaybookRunsResults{
+			TotalCount: 100,
+			PageCount:  200,
+			HasMore:    true,
+			Items:      []icClient.PlaybookRun{toAPIPlaybookRun(playbookRun1)},
+		}
+		assert.Equal(t, expectedList, actualList)
+	})
+
+	t.Run("get playbook runs filtered by member", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+
+		userID := model.NewId()
+		teamID := model.NewId()
+		mattermostUserID = userID
+		playbookRun1 := app.PlaybookRun{
+			ID:              "playbookRunID1",
+			OwnerUserID:     userID,
+			TeamID:          teamID,
+			Name:            "playbookRunName1",
+			ChannelID:       "channelID1",
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
+			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+			TimelineEvents:  []app.TimelineEvent{},
+		}
+
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("GetUser", userID).Return(&model.User{}, nil)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		result := &app.GetPlaybookRunsResults{
+			TotalCount: 100,
+			PageCount:  200,
+			HasMore:    true,
+			Items:      []app.PlaybookRun{playbookRun1},
+		}
+		playbookRunService.EXPECT().GetPlaybookRuns(
+			app.RequesterInfo{
+				UserID:  userID,
+				IsAdmin: false,
+				IsGuest: false,
+			},
+			app.PlaybookRunFilterOptions{
+				TeamID:    teamID,
+				MemberID:  userID,
+				Page:      0,
+				PerPage:   200,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+			},
+		).Return(result, nil)
+
+		actualList, err := c.PlaybookRuns.List(context.TODO(), 0, 200, icClient.PlaybookRunListOptions{
+			TeamID:   teamID,
+			MemberID: userID,
+		})
+		require.NoError(t, err)
+
+		expectedList := &icClient.GetPlaybookRunsResults{
+			TotalCount: 100,
+			PageCount:  200,
+			HasMore:    true,
+			Items:      []icClient.PlaybookRun{toAPIPlaybookRun(playbookRun1)},
+		}
+		assert.Equal(t, expectedList, actualList)
+	})
+
+	t.Run("get playbook runs filtered by member=me", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+
+		userID := model.NewId()
+		teamID := model.NewId()
+		mattermostUserID = userID
+		playbookRun1 := app.PlaybookRun{
+			ID:              "playbookRunID1",
+			OwnerUserID:     userID,
+			TeamID:          teamID,
+			Name:            "playbookRunName1",
+			ChannelID:       "channelID1",
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
+			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+			TimelineEvents:  []app.TimelineEvent{},
+		}
+
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("GetUser", userID).Return(&model.User{}, nil)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		result := &app.GetPlaybookRunsResults{
+			TotalCount: 100,
+			PageCount:  200,
+			HasMore:    true,
+			Items:      []app.PlaybookRun{playbookRun1},
+		}
+		playbookRunService.EXPECT().GetPlaybookRuns(
+			app.RequesterInfo{
+				UserID:  userID,
+				IsAdmin: false,
+				IsGuest: false,
+			},
+			app.PlaybookRunFilterOptions{
+				TeamID:    teamID,
+				MemberID:  userID,
+				Page:      0,
+				PerPage:   200,
+				Sort:      app.SortByCreateAt,
+				Direction: app.DirectionAsc,
+			},
+		).Return(result, nil)
+
+		actualList, err := c.PlaybookRuns.List(context.TODO(), 0, 200, icClient.PlaybookRunListOptions{
+			TeamID:   teamID,
+			MemberID: icClient.Me,
+		})
+		require.NoError(t, err)
+
+		expectedList := &icClient.GetPlaybookRunsResults{
+			TotalCount: 100,
+			PageCount:  200,
+			HasMore:    true,
+			Items:      []icClient.PlaybookRun{toAPIPlaybookRun(playbookRun1)},
+		}
+		assert.Equal(t, expectedList, actualList)
 	})
 
 	t.Run("checklist autocomplete for a channel without permission to view", func(t *testing.T) {

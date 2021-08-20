@@ -2,6 +2,10 @@ package client
 
 import "time"
 
+// Me is a constant that refers to the current user, and can be used in various APIs in place of
+// explicitly specifying the current user's id.
+const Me = "me"
+
 // PlaybookRun represents a playbook run.
 type PlaybookRun struct {
 	ID                             string          `json:"id"`
@@ -142,10 +146,10 @@ type PlaybookRunListOptions struct {
 	// Statuses filters by InProgress or Ended; defaults to All when no status specified.
 	Statuses []Status `url:"statuses,omitempty"`
 
-	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter).
+	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter). Specify "me" for current user.
 	OwnerID string `url:"owner_user_id,omitempty"`
 
-	// MemberID filters playbook runs that have this member. Defaults to blank (no filter).
+	// MemberID filters playbook runs that have this member. Defaults to blank (no filter). Specify "me" for current user.
 	MemberID string `url:"member_id,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
