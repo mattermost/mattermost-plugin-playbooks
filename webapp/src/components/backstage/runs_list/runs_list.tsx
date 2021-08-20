@@ -12,6 +12,8 @@ import Row from './row';
 import RunListHeader from './run_list_header';
 import Filters from './filters';
 
+import './runs_list.scss';
+
 interface Props {
     playbookRuns: PlaybookRun[]
     totalCount: number

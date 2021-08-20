@@ -11,15 +11,12 @@ import {Team} from 'mattermost-redux/types/teams';
 
 import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
 
-import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
-import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import TemplateSelector, {isPlaybookCreationAllowed, PresetTemplate} from 'src/components/backstage/template_selector';
 import {telemetryEventForTemplate} from 'src/client';
 
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import './playbook.scss';
-import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
 import {BACKSTAGE_LIST_PER_PAGE, AdminNotificationType} from 'src/constants';
@@ -34,7 +31,6 @@ import {PrimaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
 
 import CreatePlaybookTeamSelector from 'src/components/team/create_playbook_team_selector';
 
-import {TeamName, getTeamName} from 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list';
 import {
     useAllowPlaybookCreationInTeams,
     useCanCreatePlaybooks,
@@ -43,6 +39,8 @@ import {
 } from 'src/hooks';
 
 import {Playbook} from 'src/types/playbook';
+
+import PlaybookListRow from './playbook_list_row';
 
 const DeleteBannerTimeout = 5000;
 
@@ -111,32 +109,14 @@ const PlaybookList = () => {
         );
     } else {
         body = playbooks.map((p: Playbook) => (
-            <div
-                className='row playbook-item'
+            <PlaybookListRow
                 key={p.id}
+                playbook={p}
+                displayTeam={teams.length > 1}
                 onClick={() => view(p)}
-            >
-                <div className='col-sm-4 title'>
-                    <TextWithTooltip
-                        id={p.title}
-                        text={p.title}
-                    />
-                    {teams.length > 1 && <TeamName>{getTeamName(teams, p.team_id)}</TeamName>}
-                </div>
-                <div className='col-sm-2'>{p.num_stages}</div>
-                <div className='col-sm-2'>{p.num_steps}</div>
-                <div className='col-sm-2'>{p.num_runs}</div>
-                <div className='col-sm-2 action-col'>
-                    <PlaybookActionMenu
-                        onEdit={() => {
-                            edit(p);
-                        }}
-                        onDelete={() => {
-                            onConfirmDelete(p);
-                        }}
-                    />
-                </div>
-            </div>
+                onEdit={() => edit(p)}
+                onDelete={() => onConfirmDelete(p)}
+            />
         ));
     }
 
@@ -367,39 +347,6 @@ const NoContentPage = (props: { onNewPlaybook: (team: Team) => void, canCreatePl
                 <DescriptionWarn>{"There are no playbooks to view. You don't have permission to create playbooks in this workspace."}</DescriptionWarn>
             }
         </Container>
-    );
-};
-
-interface PlaybookActionMenuProps {
-    onEdit: () => void;
-    onDelete: () => void;
-}
-
-const IconWrapper = styled.div`
-    display: inline-flex;
-    padding: 10px 5px;
-`;
-
-const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
-    return (
-        <DotMenu
-            icon={
-                <IconWrapper>
-                    <DotMenuIcon/>
-                </IconWrapper>
-            }
-        >
-            <DropdownMenuItem
-                onClick={props.onEdit}
-            >
-                {'Edit'}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-                onClick={props.onDelete}
-            >
-                {'Delete'}
-            </DropdownMenuItem>
-        </DotMenu>
     );
 };
 

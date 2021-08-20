@@ -21,8 +21,6 @@ import {promptForFeedback} from 'src/client';
 import PlaybookRunBackstage
     from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
 
-import BackstagePlaybookRunList from 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list';
-
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
@@ -195,7 +193,6 @@ const Backstage = () => {
                     />
                     <Route path={`${match.url}/runs`}>
                         <RunsPage/>
-                        <BackstagePlaybookRunList/>
                     </Route>
                     <Route path={`${match.url}/settings`}>
                         <SettingsView/>

@@ -18,9 +18,13 @@ import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
 import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
-import ProgressBar from 'src/components/backstage/playbooks/playbook_run_list/progress_bar';
+
 import {findLastUpdatedWithDefault} from 'src/utils';
 import {usePlaybookName} from 'src/hooks';
+
+import {InfoLine} from '../styles';
+
+import ProgressBar from './progress_bar';
 
 const SmallText = styled.div`
     font-weight: 400;
@@ -52,14 +56,6 @@ const SmallStatusBadge = styled(StatusBadge)`
     height: 16px;
     padding: 0 4px;
     margin: 0;
-`;
-
-const InfoLine = styled.div`
-    font-style: normal;
-    font-weight: normal;
-    font-size: 11px;
-    line-height: 16px;
-    color: var(--center-channel-color-56);
 `;
 
 const RunName = styled.div`

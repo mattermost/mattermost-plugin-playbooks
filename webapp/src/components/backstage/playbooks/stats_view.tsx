@@ -10,7 +10,6 @@ import {
     DefaultFetchPlaybookRunsParamsTime,
     fetchParamsTimeEqual,
     FetchPlaybookRunsParams,
-    FetchPlaybookRunsParamsTime,
 } from 'src/types/playbook_run';
 import BarGraph from 'src/components/backstage/playbooks/bar_graph';
 import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
@@ -24,8 +23,6 @@ import Pill from 'src/components/widgets/pill';
 
 interface Props {
     stats: PlaybookStats
-    fetchParamsTime: FetchPlaybookRunsParamsTime
-    setFetchParamsTime: (params: FetchPlaybookRunsParamsTime) => void
     fetchParams: FetchPlaybookRunsParams
     setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>
     setFilterPill: (pill: JSX.Element | null) => void
@@ -62,7 +59,6 @@ const StatsView = (props: Props) => {
                 moment.utc(ended).format('D MMM');
 
             props.setFilterPill(pill(text));
-            props.setFetchParamsTime(nextFetchParamsTime);
             props.setFetchParams((oldParams) => {
                 return {...oldParams, ...nextFetchParamsTime};
             });
@@ -87,7 +83,6 @@ const StatsView = (props: Props) => {
             const text = 'Runs active on ' + moment.utc(started).format('D MMM');
 
             props.setFilterPill(pill(text));
-            props.setFetchParamsTime(nextFetchParamsTime);
             props.setFetchParams((oldParams) => {
                 return {...oldParams, ...nextFetchParamsTime};
             });
@@ -96,7 +91,6 @@ const StatsView = (props: Props) => {
 
     const clearFilter = () => {
         props.setFilterPill(null);
-        props.setFetchParamsTime(DefaultFetchPlaybookRunsParamsTime);
         props.setFetchParams((oldParams) => {
             return {...oldParams, ...DefaultFetchPlaybookRunsParamsTime};
         });

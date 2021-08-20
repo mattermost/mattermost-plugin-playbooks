@@ -17,14 +17,11 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {DefaultFetchPlaybookRunsParamsTime} from 'src/types/playbook_run';
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
 import {clientFetchPlaybook, fetchPlaybookStats, telemetryEventForPlaybook} from 'src/client';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {BACKSTAGE_LIST_PER_PAGE, ErrorPageTypes} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import PlaybookRunList
-    from 'src/components/backstage/playbooks/playbook_run_list/playbook_run_list';
 import {EmptyPlaybookStats} from 'src/types/stats';
 import StatsView from 'src/components/backstage/playbooks/stats_view';
 import {startPlaybookRunById} from 'src/actions';
@@ -61,7 +58,6 @@ const PlaybookBackstage = () => {
     const match = useRouteMatch<MatchParams>();
     const location = useLocation();
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
-    const [fetchParamsTime, setFetchParamsTime] = useState(DefaultFetchPlaybookRunsParamsTime);
     const [filterPill, setFilterPill] = useState<JSX.Element | null>(null);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [stats, setStats] = useState(EmptyPlaybookStats);
@@ -101,7 +97,7 @@ const PlaybookBackstage = () => {
 
         fetchData();
         fetchStats();
-    }, [match.params.playbookId]);
+    }, [match.params.playbookId, setFetchParams]);
 
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
 
@@ -178,8 +174,6 @@ const PlaybookBackstage = () => {
                 <BottomInnerContainer>
                     <StatsView
                         stats={stats}
-                        fetchParamsTime={fetchParamsTime}
-                        setFetchParamsTime={setFetchParamsTime}
                         fetchParams={fetchParams}
                         setFetchParams={setFetchParams}
                         setFilterPill={setFilterPill}
@@ -194,11 +188,6 @@ const PlaybookBackstage = () => {
                             fixedTeam={true}
                         />
                     </RunListContainer>
-                    <PlaybookRunList
-                        playbook={playbook}
-                        fetchParamsTime={fetchParamsTime}
-                        filterPill={filterPill}
-                    />
                 </BottomInnerContainer>
             </BottomContainer>
         </OuterContainer>

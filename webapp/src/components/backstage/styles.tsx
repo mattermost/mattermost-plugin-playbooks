@@ -163,3 +163,57 @@ export const CenteredRow = styled.div`
     flex-direction: row;
     justify-content: center;
 `;
+
+export const InfoLine = styled.div`
+    font-style: normal;
+    font-weight: normal;
+    font-size: 11px;
+    line-height: 16px;
+    color: var(--center-channel-color-56);
+`;
+
+interface PlaybookRunFilterButtonProps {
+    active?: boolean;
+}
+
+export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProps>`
+    display: flex;
+    align-items: center;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    color: var(--center-channel-color-56);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 12px;
+    -webkit-transition: all 0.15s ease;
+    -webkit-transition-delay: 0s;
+    -moz-transition: all 0.15s ease;
+    -o-transition: all 0.15s ease;
+    transition: all 0.15s ease;
+    padding: 0 16px;
+    height: 4rem;
+
+    :hover {
+        background: var(--center-channel-color-08);
+        color: var(--center-channel-color-72);
+    }
+
+    :active {
+        background: var(--button-bg-08);
+        color: var(--button-bg);
+    }
+
+    .icon-chevron-down {
+        :before {
+            margin: 0;
+        }
+    }
+
+    ${(props) => props.active && css`
+        cursor: pointer;
+        background: var(--button-bg-08);
+        color: var(--button-bg);
+    `}
+`;
