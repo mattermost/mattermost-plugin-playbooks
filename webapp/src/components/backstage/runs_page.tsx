@@ -8,9 +8,9 @@ import {fetchPlaybookRuns} from 'src/client';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
 import {useRunsList} from 'src/hooks';
+import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 import RunList from './runs_list/runs_list';
-import {statusOptions} from './runs_list/status_filter';
 import NoContentPage from './runs_page_no_content';
 
 const defaultPlaybookFetchParams = {
@@ -18,9 +18,7 @@ const defaultPlaybookFetchParams = {
     per_page: BACKSTAGE_LIST_PER_PAGE,
     sort: 'last_status_update_at',
     direction: 'desc',
-    statuses: statusOptions
-        .filter((opt) => opt.value !== 'Finished' && opt.value !== '')
-        .map((opt) => opt.value),
+    statuses: [PlaybookRunStatus.InProgress],
 };
 
 const RunsPage = () => {

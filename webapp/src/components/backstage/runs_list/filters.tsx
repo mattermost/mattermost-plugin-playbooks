@@ -133,7 +133,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                 onSelectedChange={setOwnerId}
             />
             <StatusFilter
-                default={fetchParams.statuses}
+                statuses={fetchParams.statuses || []}
                 onChange={setStatus}
             />
             {teams.length > 1 && !fixedTeam &&

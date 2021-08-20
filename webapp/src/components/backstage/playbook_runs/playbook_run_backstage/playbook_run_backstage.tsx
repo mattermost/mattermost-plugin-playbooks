@@ -4,7 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
-import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
+import {Redirect, Route, useRouteMatch, NavLink, Switch, useHistory} from 'react-router-dom';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Channel} from 'mattermost-redux/types/channels';
@@ -165,6 +165,7 @@ const PlaybookRunBackstage = () => {
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const channel = useSelector<GlobalState, Channel | null>((state) => (playbookRun ? getChannel(state, playbookRun.channel_id) : null));
     const match = useRouteMatch<MatchParams>();
+    const history = useHistory();
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -213,7 +214,7 @@ const PlaybookRunBackstage = () => {
     }
 
     const closePlaybookRunDetails = () => {
-        navigateToPluginUrl('/runs');
+        history.goBack();
     };
 
     return (

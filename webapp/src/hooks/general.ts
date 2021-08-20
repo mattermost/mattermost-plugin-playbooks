@@ -29,6 +29,10 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
+import {useHistory, useLocation, useParams} from 'react-router-dom';
+
+import qs from 'qs';
+
 import {FetchPlaybookRunsParams, PlaybookRun, StatusPost} from 'src/types/playbook_run';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
@@ -456,7 +460,18 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
     const [playbookRuns, setPlaybookRuns] = useState<PlaybookRun[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [fetchParams, setFetchParams] = useState(defaultFetchParams);
+    const history = useHistory();
+    const location = useLocation();
 
+    // On first load fetch parameters from the query string
+    useEffect(() => {
+        const queryParams = qs.parse(location.search, {ignoreQueryPrefix: true});
+        setFetchParams((oldParams) => {
+            return {...oldParams, ...queryParams};
+        });
+    }, []);
+
+    // Fetch the queried runs
     useEffect(() => {
         let isCanceled = false;
 
@@ -475,6 +490,11 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
             isCanceled = true;
         };
     }, [fetchParams]);
+
+    // Update the query string when the fetchParams change
+    useEffect(() => {
+        history.replace({search: qs.stringify(fetchParams, {addQueryPrefix: false, indices: false})});
+    }, [fetchParams, history]);
 
     return [playbookRuns, totalCount, fetchParams, setFetchParams];
 }
