@@ -206,15 +206,6 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		Where(permissionsExpr).
 		Where(teamLimitExpr)
 
-	if options.Status != "" && len(options.Statuses) != 0 {
-		return nil, errors.New("options Status and Statuses cannot both be set")
-	}
-
-	if options.Status != "" {
-		queryForResults = queryForResults.Where(sq.Eq{"i.CurrentStatus": options.Status})
-		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Status})
-	}
-
 	if len(options.Statuses) != 0 {
 		queryForResults = queryForResults.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Statuses})

@@ -511,7 +511,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 				Direction: app.DirectionAsc,
 				Page:      1,
 				PerPage:   2,
-				Status:    app.StatusInProgress,
+				Statuses:  []string{app.StatusInProgress},
 			},
 			Want: app.GetPlaybookRunsResults{
 				TotalCount: 3,
@@ -529,7 +529,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 			},
 			Options: app.PlaybookRunFilterOptions{
 				TeamID:    team1id,
-				Status:    app.StatusInProgress,
+				Statuses:  []string{app.StatusInProgress},
 				OwnerID:   owner3.UserID,
 				Sort:      app.SortByCreateAt,
 				Direction: app.DirectionDesc,
@@ -664,7 +664,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 			Options: app.PlaybookRunFilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "sbsm",
-				Status:     app.StatusInProgress,
+				Statuses:   []string{app.StatusInProgress},
 				Sort:       app.SortByCreateAt,
 				Direction:  app.DirectionAsc,
 				Page:       0,

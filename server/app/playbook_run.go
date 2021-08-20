@@ -616,9 +616,6 @@ type PlaybookRunFilterOptions struct {
 	// Direction orders by ascending or descending, defaulting to ascending.
 	Direction SortDirection `url:"direction,omitempty"`
 
-	// Status filters by current status
-	Status string
-
 	// Statuses filters by all statuses in the list (inclusive)
 	Statuses []string
 
@@ -725,10 +722,6 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	}
 	if options.StartedLT < 0 {
 		options.StartedLT = 0
-	}
-
-	if options.Status != "" && !validStatus(options.Status) {
-		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'status': must be InProgress or Finished")
 	}
 
 	for _, s := range options.Statuses {

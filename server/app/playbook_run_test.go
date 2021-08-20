@@ -22,7 +22,6 @@ func TestPlaybookRunFilterOptions_Clone(t *testing.T) {
 		PerPage:    10,
 		Sort:       SortByID,
 		Direction:  DirectionAsc,
-		Status:     "InProgress",
 		Statuses:   []string{"InProgress", "Finished"},
 		OwnerID:    "owner_id",
 		MemberID:   "member_id",
@@ -38,7 +37,6 @@ func TestPlaybookRunFilterOptions_Clone(t *testing.T) {
 	clone.PerPage = 20
 	clone.Sort = SortByName
 	clone.Direction = DirectionDesc
-	clone.Status = "Finished"
 	clone.Statuses[0] = "Finished"
 	clone.OwnerID = "owner_id_clone"
 	clone.MemberID = "member_id_clone"
@@ -169,24 +167,6 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("invalid status", func(t *testing.T) {
-		options := PlaybookRunFilterOptions{
-			TeamID:     model.NewId(),
-			Page:       1,
-			PerPage:    10,
-			Sort:       SortByID,
-			Direction:  DirectionAsc,
-			Status:     "active",
-			OwnerID:    model.NewId(),
-			MemberID:   model.NewId(),
-			SearchTerm: "search_term",
-			PlaybookID: model.NewId(),
-		}
-
-		_, err := options.Validate()
-		require.Error(t, err)
-	})
-
 	t.Run("invalid statuses", func(t *testing.T) {
 		options := PlaybookRunFilterOptions{
 			TeamID:     model.NewId(),
@@ -194,7 +174,6 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 			PerPage:    10,
 			Sort:       SortByID,
 			Direction:  DirectionAsc,
-			Status:     "InProgress",
 			Statuses:   []string{"active", "Finished"},
 			OwnerID:    model.NewId(),
 			MemberID:   model.NewId(),
@@ -213,7 +192,6 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 			PerPage:    10,
 			Sort:       SortByID,
 			Direction:  DirectionAsc,
-			Status:     "Finished",
 			Statuses:   []string{"InProgress", "Finished"},
 			OwnerID:    model.NewId(),
 			MemberID:   model.NewId(),
