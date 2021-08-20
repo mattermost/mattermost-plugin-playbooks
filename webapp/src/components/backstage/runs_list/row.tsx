@@ -73,7 +73,7 @@ const teamNameSelector = (teamId: string) => (state: GlobalState): string => get
 
 const Row = (props: Props) => {
     // This is not optimal. One network request for every row.
-    const playbookName = usePlaybookName(props.playbookRun.playbook_id);
+    const playbookName = usePlaybookName(props.fixedTeam ? '' : props.playbookRun.playbook_id);
     const teamName = useSelector(teamNameSelector(props.playbookRun.team_id));
     const [completedTasks, totalTasks] = tasksCompletedTotal(props.playbookRun.checklists);
 
