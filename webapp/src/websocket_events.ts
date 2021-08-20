@@ -39,7 +39,7 @@ export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
 
         const fetched = await fetchPlaybookRuns({
             team_id: currentTeam.id,
-            member_id: currentUserId,
+            participant_id: currentUserId,
         });
 
         dispatch(receivedTeamPlaybookRuns(fetched.items));

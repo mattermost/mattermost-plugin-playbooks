@@ -1338,9 +1338,9 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 
 	searchTerm := u.Query().Get("search_term")
 
-	memberID := u.Query().Get("member_id")
-	if memberID == client.Me {
-		memberID = currentUserID
+	participantID := u.Query().Get("participant_id")
+	if participantID == client.Me {
+		participantID = currentUserID
 	}
 
 	playbookID := u.Query().Get("playbook_id")
@@ -1370,20 +1370,20 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	startedLT, _ := strconv.ParseInt(startedLTParam, 10, 64)
 
 	options := app.PlaybookRunFilterOptions{
-		TeamID:     teamID,
-		Page:       page,
-		PerPage:    perPage,
-		Sort:       app.SortField(sort),
-		Direction:  app.SortDirection(direction),
-		Statuses:   statuses,
-		OwnerID:    ownerID,
-		SearchTerm: searchTerm,
-		MemberID:   memberID,
-		PlaybookID: playbookID,
-		ActiveGTE:  activeGTE,
-		ActiveLT:   activeLT,
-		StartedGTE: startedGTE,
-		StartedLT:  startedLT,
+		TeamID:        teamID,
+		Page:          page,
+		PerPage:       perPage,
+		Sort:          app.SortField(sort),
+		Direction:     app.SortDirection(direction),
+		Statuses:      statuses,
+		OwnerID:       ownerID,
+		SearchTerm:    searchTerm,
+		ParticipantID: participantID,
+		PlaybookID:    playbookID,
+		ActiveGTE:     activeGTE,
+		ActiveLT:      activeLT,
+		StartedGTE:    startedGTE,
+		StartedLT:     startedLT,
 	}
 
 	options, err = options.Validate()

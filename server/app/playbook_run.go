@@ -229,7 +229,7 @@ type Metadata struct {
 	ChannelName        string `json:"channel_name"`
 	ChannelDisplayName string `json:"channel_display_name"`
 	TeamName           string `json:"team_name"`
-	NumMembers         int64  `json:"num_members"`
+	NumParticipants    int64  `json:"num_participants"`
 	TotalPosts         int64  `json:"total_posts"`
 }
 
@@ -512,10 +512,10 @@ type PlaybookRunStore interface {
 	// GetPlaybookRunByChannel gets a playbook run associated with the given channel id.
 	GetPlaybookRunIDForChannel(channelID string) (string, error)
 
-	// GetAllPlaybookRunMembersCount returns the count of all members of the
+	// GetHistoricalPlaybookRunParticipantsCount returns the count of all participants of the
 	// playbook run associated with the given channel id since the beginning of the
 	// playbook run, excluding bots.
-	GetAllPlaybookRunMembersCount(channelID string) (int64, error)
+	GetHistoricalPlaybookRunParticipantsCount(channelID string) (int64, error)
 
 	// GetOwners returns the owners of the playbook runs selected by options
 	GetOwners(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) ([]OwnerInfo, error)
@@ -622,8 +622,8 @@ type PlaybookRunFilterOptions struct {
 	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter).
 	OwnerID string `url:"owner_user_id,omitempty"`
 
-	// MemberID filters playbook runs that have this member. Defaults to blank (no filter).
-	MemberID string `url:"member_id,omitempty"`
+	// ParticipantID filters playbook runs that have this member. Defaults to blank (no filter).
+	ParticipantID string `url:"participant_id,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
@@ -703,8 +703,8 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'owner_id': must be 26 characters or blank")
 	}
 
-	if options.MemberID != "" && !model.IsValidId(options.MemberID) {
-		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'member_id': must be 26 characters or blank")
+	if options.ParticipantID != "" && !model.IsValidId(options.ParticipantID) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'participant_id': must be 26 characters or blank")
 	}
 
 	if options.PlaybookID != "" && !model.IsValidId(options.PlaybookID) {

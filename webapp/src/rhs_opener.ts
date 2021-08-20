@@ -36,7 +36,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
             const currentUserId = getCurrentUserId(state);
             const fetched = await fetchPlaybookRuns({
                 team_id: currentTeam.id,
-                member_id: currentUserId,
+                participant_id: currentUserId,
             });
             if (fetched.disabled) {
                 store.dispatch(receivedDisabledOnTeam(currentTeam.id));

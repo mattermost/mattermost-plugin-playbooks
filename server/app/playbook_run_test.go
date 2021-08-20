@@ -17,16 +17,16 @@ func TestPlaybookRun_MarshalJSON(t *testing.T) {
 
 func TestPlaybookRunFilterOptions_Clone(t *testing.T) {
 	options := PlaybookRunFilterOptions{
-		TeamID:     "team_id",
-		Page:       1,
-		PerPage:    10,
-		Sort:       SortByID,
-		Direction:  DirectionAsc,
-		Statuses:   []string{"InProgress", "Finished"},
-		OwnerID:    "owner_id",
-		MemberID:   "member_id",
-		SearchTerm: "search_term",
-		PlaybookID: "playbook_id",
+		TeamID:        "team_id",
+		Page:          1,
+		PerPage:       10,
+		Sort:          SortByID,
+		Direction:     DirectionAsc,
+		Statuses:      []string{"InProgress", "Finished"},
+		OwnerID:       "owner_id",
+		ParticipantID: "participant_id",
+		SearchTerm:    "search_term",
+		PlaybookID:    "playbook_id",
 	}
 	marshalledOptions, err := json.Marshal(options)
 	require.NoError(t, err)
@@ -39,7 +39,7 @@ func TestPlaybookRunFilterOptions_Clone(t *testing.T) {
 	clone.Direction = DirectionDesc
 	clone.Statuses[0] = "Finished"
 	clone.OwnerID = "owner_id_clone"
-	clone.MemberID = "member_id_clone"
+	clone.ParticipantID = "participant_id_clone"
 	clone.SearchTerm = "search_term_clone"
 	clone.PlaybookID = "playbook_id_clone"
 
@@ -147,10 +147,10 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("invalid member id", func(t *testing.T) {
+	t.Run("invalid participant id", func(t *testing.T) {
 		options := PlaybookRunFilterOptions{
-			TeamID:   model.NewId(),
-			MemberID: "invalid",
+			TeamID:        model.NewId(),
+			ParticipantID: "invalid",
 		}
 
 		_, err := options.Validate()
@@ -169,16 +169,16 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 
 	t.Run("invalid statuses", func(t *testing.T) {
 		options := PlaybookRunFilterOptions{
-			TeamID:     model.NewId(),
-			Page:       1,
-			PerPage:    10,
-			Sort:       SortByID,
-			Direction:  DirectionAsc,
-			Statuses:   []string{"active", "Finished"},
-			OwnerID:    model.NewId(),
-			MemberID:   model.NewId(),
-			SearchTerm: "search_term",
-			PlaybookID: model.NewId(),
+			TeamID:        model.NewId(),
+			Page:          1,
+			PerPage:       10,
+			Sort:          SortByID,
+			Direction:     DirectionAsc,
+			Statuses:      []string{"active", "Finished"},
+			OwnerID:       model.NewId(),
+			ParticipantID: model.NewId(),
+			SearchTerm:    "search_term",
+			PlaybookID:    model.NewId(),
 		}
 
 		_, err := options.Validate()
@@ -187,16 +187,16 @@ func TestPlaybookRunFilterOptions_Validate(t *testing.T) {
 
 	t.Run("valid status", func(t *testing.T) {
 		options := PlaybookRunFilterOptions{
-			TeamID:     model.NewId(),
-			Page:       1,
-			PerPage:    10,
-			Sort:       SortByID,
-			Direction:  DirectionAsc,
-			Statuses:   []string{"InProgress", "Finished"},
-			OwnerID:    model.NewId(),
-			MemberID:   model.NewId(),
-			SearchTerm: "search_term",
-			PlaybookID: model.NewId(),
+			TeamID:        model.NewId(),
+			Page:          1,
+			PerPage:       10,
+			Sort:          SortByID,
+			Direction:     DirectionAsc,
+			Statuses:      []string{"InProgress", "Finished"},
+			OwnerID:       model.NewId(),
+			ParticipantID: model.NewId(),
+			SearchTerm:    "search_term",
+			PlaybookID:    model.NewId(),
 		}
 
 		validOptions, err := options.Validate()

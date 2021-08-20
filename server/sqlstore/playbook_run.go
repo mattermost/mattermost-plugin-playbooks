@@ -216,13 +216,13 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.CommanderUserID": options.OwnerID})
 	}
 
-	if options.MemberID != "" {
+	if options.ParticipantID != "" {
 		membershipClause := s.queryBuilder.
 			Select("1").
 			Prefix("EXISTS(").
 			From("ChannelMembers AS cm").
 			Where("cm.ChannelId = i.ChannelID").
-			Where(sq.Eq{"cm.UserId": strings.ToLower(options.MemberID)}).
+			Where(sq.Eq{"cm.UserId": strings.ToLower(options.ParticipantID)}).
 			Suffix(")")
 
 		queryForResults = queryForResults.Where(membershipClause)
@@ -660,22 +660,22 @@ func (s *playbookRunStore) GetPlaybookRunIDForChannel(channelID string) (string,
 	return id, nil
 }
 
-// GetAllPlaybookRunMembersCount returns the count of all members of an playbook run's channel
+// GetHistoricalPlaybookRunParticipantsCount returns the count of all members of an playbook run's channel
 // since the beginning of the playbook run, excluding bots.
-func (s *playbookRunStore) GetAllPlaybookRunMembersCount(channelID string) (int64, error) {
+func (s *playbookRunStore) GetHistoricalPlaybookRunParticipantsCount(channelID string) (int64, error) {
 	query := s.queryBuilder.
 		Select("COUNT(DISTINCT cmh.UserId)").
 		From("ChannelMemberHistory AS cmh").
 		Where(sq.Eq{"cmh.ChannelId": channelID}).
 		Where(sq.Expr("cmh.UserId NOT IN (SELECT UserId FROM Bots)"))
 
-	var numMembers int64
-	err := s.store.getBuilder(s.store.db, &numMembers, query)
+	var numParticipants int64
+	err := s.store.getBuilder(s.store.db, &numParticipants, query)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to query database")
 	}
 
-	return numMembers, nil
+	return numParticipants, nil
 }
 
 // GetOwners returns the owners of the playbook runs selected by options

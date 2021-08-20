@@ -93,9 +93,9 @@ paths:
           example: lpn2ogt9qzkc59lfvvad9t15v4
           schema:
             type: string
-        - name: member_id
+        - name: participant_id
           in: query
-          description: The returned list will contain only the playbook runs this user is a member of. Specify "me" for current user.
+          description: The returned list will contain only the playbook runs for which the given user is a participant. Specify "me" for current user.
           required: false
           example: bruhg1cs65retdbea798hrml4v
           schema:
@@ -381,9 +381,9 @@ paths:
           example: "server down"
           schema:
             type: string
-        - name: member_id
+        - name: participant_id
           in: query
-          description: The returned list will contain only the channels this user is a member of.
+          description: The returned list will contain only the channels associated to a playbook run for which the given user is a participant.
           required: false
           example: bruhg1cs65retdbea798hrml4v
           schema:

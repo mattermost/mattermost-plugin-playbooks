@@ -41,7 +41,7 @@ export interface Metadata {
     channel_name: string;
     channel_display_name: string;
     team_name: string;
-    num_members: number;
+    num_participants: number;
     total_posts: number;
 }
 
@@ -96,7 +96,7 @@ export function isMetadata(arg: any): arg is Metadata {
         arg.channel_name && typeof arg.channel_name === 'string' &&
         arg.channel_display_name && typeof arg.channel_display_name === 'string' &&
         arg.team_name && typeof arg.team_name === 'string' &&
-        typeof arg.num_members === 'number' &&
+        typeof arg.num_participants === 'number' &&
         typeof arg.total_posts === 'number');
 }
 
@@ -131,8 +131,8 @@ export interface FetchPlaybookRunsParams {
     direction?: string;
     statuses?: string[];
     owner_user_id?: string;
+    participant_id?: string;
     search_term?: string;
-    member_id?: string;
     disabled?: boolean;
     playbook_id?: string;
     active_gte?: number;

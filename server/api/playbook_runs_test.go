@@ -1184,7 +1184,7 @@ func TestPlaybookRuns(t *testing.T) {
 			ChannelName:        "theChannelName",
 			ChannelDisplayName: "theChannelDisplayName",
 			TeamName:           "ourAwesomeTeam",
-			NumMembers:         11,
+			NumParticipants:    11,
 			TotalPosts:         42,
 		}
 
@@ -1264,7 +1264,7 @@ func TestPlaybookRuns(t *testing.T) {
 			ChannelName:        "theChannelName",
 			ChannelDisplayName: "theChannelDisplayName",
 			TeamName:           "ourAwesomeTeam",
-			NumMembers:         11,
+			NumParticipants:    11,
 			TotalPosts:         42,
 		}
 
@@ -1311,7 +1311,7 @@ func TestPlaybookRuns(t *testing.T) {
 			ChannelName:        "theChannelName",
 			ChannelDisplayName: "theChannelDisplayName",
 			TeamName:           "ourAwesomeTeam",
-			NumMembers:         11,
+			NumParticipants:    11,
 			TotalPosts:         42,
 		}
 
@@ -1610,7 +1610,7 @@ func TestPlaybookRuns(t *testing.T) {
 		assert.Equal(t, expectedList, actualList)
 	})
 
-	t.Run("get playbook runs filtered by member", func(t *testing.T) {
+	t.Run("get playbook runs filtered by participant", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
@@ -1647,18 +1647,18 @@ func TestPlaybookRuns(t *testing.T) {
 				IsGuest: false,
 			},
 			app.PlaybookRunFilterOptions{
-				TeamID:    teamID,
-				MemberID:  userID,
-				Page:      0,
-				PerPage:   200,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
+				TeamID:        teamID,
+				ParticipantID: userID,
+				Page:          0,
+				PerPage:       200,
+				Sort:          app.SortByCreateAt,
+				Direction:     app.DirectionAsc,
 			},
 		).Return(result, nil)
 
 		actualList, err := c.PlaybookRuns.List(context.TODO(), 0, 200, icClient.PlaybookRunListOptions{
-			TeamID:   teamID,
-			MemberID: userID,
+			TeamID:        teamID,
+			ParticipantID: userID,
 		})
 		require.NoError(t, err)
 
@@ -1671,7 +1671,7 @@ func TestPlaybookRuns(t *testing.T) {
 		assert.Equal(t, expectedList, actualList)
 	})
 
-	t.Run("get playbook runs filtered by member=me", func(t *testing.T) {
+	t.Run("get playbook runs filtered by participant=me", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 
@@ -1708,18 +1708,18 @@ func TestPlaybookRuns(t *testing.T) {
 				IsGuest: false,
 			},
 			app.PlaybookRunFilterOptions{
-				TeamID:    teamID,
-				MemberID:  userID,
-				Page:      0,
-				PerPage:   200,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
+				TeamID:        teamID,
+				ParticipantID: userID,
+				Page:          0,
+				PerPage:       200,
+				Sort:          app.SortByCreateAt,
+				Direction:     app.DirectionAsc,
 			},
 		).Return(result, nil)
 
 		actualList, err := c.PlaybookRuns.List(context.TODO(), 0, 200, icClient.PlaybookRunListOptions{
-			TeamID:   teamID,
-			MemberID: icClient.Me,
+			TeamID:        teamID,
+			ParticipantID: icClient.Me,
 		})
 		require.NoError(t, err)
 
