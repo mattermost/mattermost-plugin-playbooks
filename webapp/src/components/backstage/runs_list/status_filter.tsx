@@ -9,16 +9,21 @@ import {PlaybookRunFilterButton} from '../styles';
 interface Props {
     default: string[] | undefined;
     onChange: (statuses: string[]) => void;
-    options: StatusOption[];
 }
 
-export interface StatusOption {
+export const statusOptions: StatusOption[] = [
+    {value: '', label: 'All'},
+    {value: 'InProgress', label: 'In Progress'},
+    {value: 'Finished', label: 'Finished'},
+];
+
+interface StatusOption {
     value: string;
     label: string;
 }
 
 export function StatusFilter(props: Props) {
-    const opts = props.options.map((opt) => ({
+    const opts = statusOptions.map((opt) => ({
         display: opt.label,
         value: opt.value,
         selected: props.default?.includes(opt.value) || false,

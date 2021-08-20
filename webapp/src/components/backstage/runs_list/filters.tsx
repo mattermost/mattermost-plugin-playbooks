@@ -22,7 +22,7 @@ import TeamSelector from 'src/components/team/team_selector';
 import {fetchOwnersInTeam} from 'src/client';
 
 import SearchInput from './search_input';
-import {StatusFilter, StatusOption} from './status_filter';
+import {StatusFilter} from './status_filter';
 
 interface Props {
     fetchParams: FetchPlaybookRunsParams
@@ -31,12 +31,6 @@ interface Props {
 }
 
 const searchDebounceDelayMilliseconds = 300;
-
-const statusOptions: StatusOption[] = [
-    {value: '', label: 'All'},
-    {value: 'InProgress', label: 'In Progress'},
-    {value: 'Finished', label: 'Finished'},
-];
 
 const ControlComponentAnchor = styled.a`
     display: inline-block;
@@ -139,7 +133,6 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                 onSelectedChange={setOwnerId}
             />
             <StatusFilter
-                options={statusOptions}
                 default={fetchParams.statuses}
                 onChange={setStatus}
             />

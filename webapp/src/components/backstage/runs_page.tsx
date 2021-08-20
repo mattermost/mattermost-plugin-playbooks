@@ -8,14 +8,7 @@ import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {useRunsList} from 'src/hooks';
 
 import RunList from './runs_list/runs_list';
-import {StatusOption} from './runs_list/status_filter';
-
-//TODO Unify these.
-const statusOptions: StatusOption[] = [
-    {value: '', label: 'All'},
-    {value: 'InProgress', label: 'In Progress'},
-    {value: 'Finished', label: 'Finished'},
-];
+import {statusOptions} from './runs_list/status_filter';
 
 const defaultPlaybookFetchParams = {
     page: 0,
