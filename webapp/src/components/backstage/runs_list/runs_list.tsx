@@ -60,7 +60,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
                 }
                 {playbookRuns.length === 0 && isFiltering &&
                 <div className='text-center pt-8'>
-                    {'There are no runs for this playbook matching those filters.'}
+                    {'There are no runs matching those filters.'}
                 </div>
                 }
                 {playbookRuns.map((playbookRun) => (

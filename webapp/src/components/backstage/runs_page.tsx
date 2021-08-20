@@ -1,7 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useEffect, useState} from 'react';
+
+import {fetchPlaybookRuns} from 'src/client';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
@@ -9,6 +11,7 @@ import {useRunsList} from 'src/hooks';
 
 import RunList from './runs_list/runs_list';
 import {statusOptions} from './runs_list/status_filter';
+import NoContentPage from './runs_page_no_content';
 
 const defaultPlaybookFetchParams = {
     page: 0,
@@ -22,6 +25,29 @@ const defaultPlaybookFetchParams = {
 
 const RunsPage = () => {
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
+    const [showNoPlaybookRuns, setShowNoPlaybookRuns] = useState(false);
+
+    // When the component is first mounted, determine if there are any
+    // playbook runs at all, ignoring filters. Decide once if we should show the "no playbook runs"
+    // landing page.
+    useEffect(() => {
+        async function checkForPlaybookRuns() {
+            const playbookRunsReturn = await fetchPlaybookRuns({
+                page: 0,
+                per_page: 1,
+            });
+
+            if (playbookRunsReturn.items.length === 0) {
+                setShowNoPlaybookRuns(true);
+            }
+        }
+
+        checkForPlaybookRuns();
+    }, []);
+
+    if (showNoPlaybookRuns) {
+        return <NoContentPage/>;
+    }
 
     return (
         <div className='PlaybookRunList container-medium'>
