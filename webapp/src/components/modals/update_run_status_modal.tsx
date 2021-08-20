@@ -18,6 +18,9 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
+import Icon from '@mdi/react';
+import {mdiLockAlert} from '@mdi/js';
+
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -32,6 +35,7 @@ type Props = {
     playbookRunId: PlaybookRun['id'];
     playbookId: PlaybookRun['playbook_id'];
     channelId: PlaybookRun['channel_id'];
+    hasPermission: boolean;
 };
 
 export function makeModalDefinition(props: Props) {
@@ -42,7 +46,13 @@ export function makeModalDefinition(props: Props) {
     };
 }
 
-function UpdateRunStatusModal({playbookRunId, playbookId, channelId, ...modalProps}: Props) {
+function UpdateRunStatusModal({
+    playbookRunId,
+    playbookId,
+    channelId,
+    hasPermission,
+    ...modalProps
+}: Props) {
     const {formatMessage} = useIntl();
     const [message, setMessage] = useState<string | null>(null);
     const playbook = usePlaybook(playbookId);
@@ -54,7 +64,7 @@ function UpdateRunStatusModal({playbookRunId, playbookId, channelId, ...modalPro
     const team = useSelector((state: GlobalState) => playbook && getTeam(state, playbook.team_id));
 
     const onConfirm = () => {
-        if (!message) {
+        if (!message || !hasPermission) {
             return false;
         }
         if (message && currentUserId && channel && team) {
@@ -63,56 +73,72 @@ function UpdateRunStatusModal({playbookRunId, playbookId, channelId, ...modalPro
         return true;
     };
 
-    return (
-        <GenericModal
-            modalHeaderText={'Post update'}
-            confirmButtonText={'Post'}
-            cancelButtonText={'Cancel'}
-            handleCancel={() => true}
-            handleConfirm={onConfirm}
-            isConfirmDisabled={!(message && currentUserId && channel && team)}
-            {...modalProps}
-            id={ID}
-        >
-            <FormContainer>
-                <Description>
-                    {formatMessage({
-                        id: `${ID}_description`,
-                        defaultMessage: 'This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcast to {broadcastChannel}} other {}}.',
-                    }, {
-                        OverviewLink: (...chunks) => {
-                            return (
-                                <Link
-                                    target='_blank'
-                                    rel='noopener noreferrer'
-                                    to={pluginUrl(`/runs/${playbookRunId}`)}
-                                >
-                                    {chunks}
-                                </Link>
-                            );
-                        },
-                        hasBroadcast: playbook?.broadcast_channel_id ? 'true' : 'false',
-                        broadcastChannel: team && channel && (
+    const form = (
+        <FormContainer>
+            <Description>
+                {formatMessage({
+                    id: `${ID}_description`,
+                    defaultMessage: 'This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcast to {broadcastChannel}} other {}}.',
+                }, {
+                    OverviewLink: (...chunks) => {
+                        return (
                             <Link
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                to={`/${team.name}/channels/${channel.id}`}
+                                to={pluginUrl(`/runs/${playbookRunId}`)}
                             >
-                                {`~${channel.name}`}
+                                {chunks}
                             </Link>
-                        ),
-                    })}
-                </Description>
-                <Label>
-                    {'Change since last update'}
-                </Label>
-                <MarkdownTextbox
-                    id='update_run_status_textbox'
-                    value={message ?? ''}
-                    setValue={setMessage}
-                    channelId={channelId}
-                />
-            </FormContainer>
+                        );
+                    },
+                    hasBroadcast: playbook?.broadcast_channel_id ? 'true' : 'false',
+                    broadcastChannel: team && channel && (
+                        <Link
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            to={`/${team.name}/channels/${channel.id}`}
+                        >
+                            {`~${channel.name}`}
+                        </Link>
+                    ),
+                })}
+            </Description>
+            <Label>
+                {'Change since last update'}
+            </Label>
+            <MarkdownTextbox
+                id='update_run_status_textbox'
+                value={message ?? ''}
+                setValue={setMessage}
+                channelId={channelId}
+            />
+        </FormContainer>
+    );
+
+    const warning = (
+        <WarningBlock>
+            <Icon
+                path={mdiLockAlert}
+                size={3}
+            />
+            <span>
+                {'You do not have permission to post an update.'}
+            </span>
+        </WarningBlock>
+    );
+
+    return (
+        <GenericModal
+            modalHeaderText={'Post update'}
+            cancelButtonText={hasPermission ? 'Cancel' : 'Close'}
+            confirmButtonText={hasPermission ? 'Post' : 'Ok'}
+            handleCancel={() => true}
+            handleConfirm={hasPermission ? onConfirm : null}
+            isConfirmDisabled={!(message && currentUserId && channel && team && hasPermission)}
+            {...modalProps}
+            id={ID}
+        >
+            {hasPermission ? form : warning}
         </GenericModal>
     );
 }
@@ -121,6 +147,15 @@ const FormContainer = styled.div`
     display: flex;
     flex-direction: column;
     color: var(--center-channel-color);
+`;
+
+const WarningBlock = styled.div`
+    padding: 2rem;
+    display: flex;
+    place-content: center;
+    span {
+        padding: 1.5rem;
+    }
 `;
 
 export default UpdateRunStatusModal;

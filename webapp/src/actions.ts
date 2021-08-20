@@ -11,7 +11,7 @@ import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 
-import {selectExperimentalFeatures, selectToggleRHS} from 'src/selectors';
+import {selectExperimentalFeatures, selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
 
 import {
@@ -101,10 +101,12 @@ export function promptUpdateStatus(
     defaultStatus?: PlaybookRunStatus,
 ) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        const experimentalFeaturesEnabled = selectExperimentalFeatures(getState());
+        const state = getState();
+        const experimentalFeaturesEnabled = selectExperimentalFeatures(state);
+        const hasPermission = canIPostUpdateForRun(state, channelId, teamId);
 
         if (experimentalFeaturesEnabled) {
-            dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookId, playbookRunId, channelId})));
+            dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookId, playbookRunId, channelId, hasPermission})));
         } else {
             await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`, teamId);
         }

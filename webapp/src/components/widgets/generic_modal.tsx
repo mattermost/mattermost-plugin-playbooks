@@ -13,8 +13,8 @@ type Props = {
     onHide: () => void;
     modalHeaderText: React.ReactNode;
     show?: boolean;
-    handleCancel?: () => void;
-    handleConfirm?: () => void;
+    handleCancel?: (() => void) | null;
+    handleConfirm?: (() => void) | null;
     confirmButtonText?: React.ReactNode;
     confirmButtonClassName?: string;
     cancelButtonText?: React.ReactNode;
@@ -51,9 +51,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         if (this.props.autoCloseOnCancelButton) {
             this.onHide();
         }
-        if (this.props.handleCancel) {
-            this.props.handleCancel();
-        }
+        this.props.handleCancel?.();
     }
 
     handleConfirm = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -61,9 +59,8 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         if (this.props.autoCloseOnConfirmButton) {
             this.onHide();
         }
-        if (this.props.handleConfirm) {
-            this.props.handleConfirm();
-        }
+
+        this.props.handleConfirm?.();
     }
 
     render() {
