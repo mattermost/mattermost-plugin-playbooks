@@ -139,8 +139,8 @@ type PlaybookRunListOptions struct {
 	Sort      Sort          `url:"sort,omitempty"`
 	Direction SortDirection `url:"direction,omitempty"`
 
-	// Status filters by All, Ongoing, or Ended; defaults to All.
-	Status Status `url:"status,omitempty"`
+	// Statuses filters by InProgress or Ended; defaults to All when no status specified.
+	Statuses []Status `url:"statuses,omitempty"`
 
 	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter).
 	OwnerID string `url:"owner_user_id,omitempty"`

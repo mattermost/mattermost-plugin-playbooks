@@ -71,17 +71,21 @@ paths:
             enum:
               - desc
               - asc
-        - name: status
+        - name: statuses
           in: query
-          description: The returned list will contain only the playbook runs with this status.
+          description: The returned list will contain only the playbook runs with the specified statuses.
           required: false
           example: InProgress
           schema:
-            type: string
-            default: InProgress
-            enum:
-              - InProgress
-              - Finished
+            type: array
+            default: ["InProgress"]
+            items:
+              type: string
+              enum:
+                - InProgress
+                - Finished
+          style: form
+          explode: true
         - name: owner_user_id
           in: query
           description: The returned list will contain only the playbook runs commanded by this user.

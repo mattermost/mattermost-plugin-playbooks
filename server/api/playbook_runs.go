@@ -1326,6 +1326,7 @@ func parsePlaybookRunsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, 
 	sort := u.Query().Get("sort")
 	direction := u.Query().Get("direction")
 
+	// Parse statuses= query string parameters as an array.
 	statuses := u.Query()["statuses"]
 
 	ownerID := u.Query().Get("owner_user_id")
