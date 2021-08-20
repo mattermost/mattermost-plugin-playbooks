@@ -657,7 +657,9 @@ type PlaybookRunFilterOptions struct {
 // Clone duplicates the given options.
 func (o *PlaybookRunFilterOptions) Clone() PlaybookRunFilterOptions {
 	newPlaybookRunFilterOptions := *o
-	newPlaybookRunFilterOptions.Statuses = append([]string{}, o.Statuses...)
+	if len(o.Statuses) > 0 {
+		newPlaybookRunFilterOptions.Statuses = append([]string{}, o.Statuses...)
+	}
 
 	return newPlaybookRunFilterOptions
 }
