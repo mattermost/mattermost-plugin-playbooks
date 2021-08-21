@@ -98,6 +98,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         description: '',
         team_id: '',
         create_public_playbook_run: false,
+        delete_at: 0,
         num_stages: 0,
         num_steps: 0,
         num_runs: 0,
@@ -180,6 +181,7 @@ export function isPlaybook(arg: any): arg is PlaybookWithChecklist {
         typeof arg.title === 'string' &&
         typeof arg.team_id === 'string' &&
         typeof arg.create_public_playbook_run === 'boolean' &&
+        typeof arg.delete_at === 'number' &&
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
         arg.member_ids && Array.isArray(arg.member_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
         typeof arg.broadcast_channel_id === 'string' &&
