@@ -129,16 +129,19 @@ const PlaybookBackstage = () => {
     }
 
     const RunButton = () => {
-      if (playbook?.delete_at != 0) {
-        return null;
-      }
-      return (
-          <PrimaryButtonLarger onClick={runPlaybook}>
-              <RightMarginedIcon path={mdiClipboardPlayOutline} size={1.25} />
-              {"Run"}
-          </PrimaryButtonLarger>
-      );
-    }
+        if (playbook?.delete_at !== 0) {
+            return null;
+        }
+        return (
+            <PrimaryButtonLarger onClick={runPlaybook}>
+                <RightMarginedIcon
+                    path={mdiClipboardPlayOutline}
+                    size={1.25}
+                />
+                {'Run'}
+            </PrimaryButtonLarger>
+        );
+    };
 
     return (
         <OuterContainer>
