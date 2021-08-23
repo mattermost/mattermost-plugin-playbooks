@@ -34,8 +34,6 @@ import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors
 import {clientFetchPlaybooksCount} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
-import {modals} from 'src/webapp_globals';
-
 import {
     isCloud,
     isE10LicensedOrDevelopment,

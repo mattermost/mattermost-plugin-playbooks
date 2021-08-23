@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ComponentProps, useState} from 'react';
+import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {useSelector} from 'react-redux';
@@ -17,9 +17,6 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-
-import Icon from '@mdi/react';
-import {mdiLockAlert} from '@mdi/js';
 
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -117,10 +114,6 @@ function UpdateRunStatusModal({
 
     const warning = (
         <WarningBlock>
-            <Icon
-                path={mdiLockAlert}
-                size={3}
-            />
             <span>
                 {'You do not have permission to post an update.'}
             </span>
