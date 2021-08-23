@@ -98,7 +98,6 @@ export function promptUpdateStatus(
     playbookRunId: PlaybookRun['id'],
     playbookId: PlaybookRun['playbook_id'],
     channelId: PlaybookRun['channel_id'],
-    defaultStatus?: PlaybookRunStatus,
 ) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         const state = getState();
@@ -108,7 +107,7 @@ export function promptUpdateStatus(
         if (experimentalFeaturesEnabled) {
             dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookId, playbookRunId, channelId, hasPermission})));
         } else {
-            await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`, teamId);
+            await clientExecuteCommand(dispatch, getState, '/playbook update', teamId);
         }
     };
 }
