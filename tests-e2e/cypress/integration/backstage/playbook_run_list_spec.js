@@ -11,6 +11,7 @@ const BACKSTAGE_LIST_PER_PAGE = 15;
 describe('backstage playbook run list', () => {
     let testTeam;
     let testUser;
+    let testAnotherUser;
     let testPlaybook;
 
     before(() => {
@@ -23,6 +24,13 @@ describe('backstage playbook run list', () => {
                 ServiceSettings: {EnableOnboardingFlow: false},
             });
 
+            // # Create another user
+            cy.apiCreateUser().then(({user: anotherUser}) => {
+                testAnotherUser = anotherUser;
+
+                cy.apiAddUserToTeam(testTeam.id, anotherUser.id);
+            });
+
             // # Login as testUser
             cy.apiLogin(testUser);
 
@@ -31,6 +39,7 @@ describe('backstage playbook run list', () => {
                 teamId: testTeam.id,
                 title: 'Public Playbook',
                 memberIDs: [],
+                createPublicPlaybookRun: true,
             }).then((playbook) => {
                 testPlaybook = playbook;
             });
@@ -90,6 +99,76 @@ describe('backstage playbook run list', () => {
 
         // * Verify that the header contains the playbook run name
         cy.findByTestId('playbook-run-title').contains(playbookRunName);
+    });
+
+    describe('filters my runs only', () => {
+        before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            // # Run a playbook with testUser as a participant
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName: 'testUsers Run',
+                ownerUserId: testUser.id,
+            });
+
+            // # Login as testAnotherUser
+            cy.apiLogin(testAnotherUser);
+
+            // # Run a playbook with testAnotherUser as a participant
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName: 'testAnotherUsers Run',
+                // ownerUserId: testUser.id,
+                ownerUserId: testAnotherUser.id,
+            });
+        });
+
+        it('for testUser', () => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            // # Open backstage
+            cy.visit('/playbooks');
+
+            // # Make sure both runs are visible by default
+            cy.findByText('testUsers Run').should('be.visible');
+            cy.findByText('testAnotherUsers Run').should('be.visible');
+
+            // # Filter to only my runs
+            cy.findByTestId('my-runs-only').click();
+
+            // # Verify runs by testAnotherUser are not visible
+            cy.findByText('testAnotherUsers Run').should('not.exist');
+
+            // # Verify runs by testUser remain visible
+            cy.findByText('testUsers Run').should('be.visible');
+
+        });
+
+        it('for testAnotherUser', () => {
+            // # Login as testAnotherUser
+            cy.apiLogin(testAnotherUser);
+
+            // # Open backstage
+            cy.visit('/playbooks');
+
+            // Make sure both runs are visible by default
+            cy.findByText('testUsers Run').should('be.visible');
+            cy.findByText('testAnotherUsers Run').should('be.visible');
+
+            // # Filter to only my runs
+            cy.findByTestId('my-runs-only').click();
+
+            // # Verify runs by testUser are not visible
+            cy.findByText('testUsers Run').should('not.exist');
+
+            // # Verify runs by testAnotherUser remain visible
+            cy.findByText('testAnotherUsers Run').should('be.visible');
+        });
     });
 
     describe('resets pagination when filtering', () => {
