@@ -8,8 +8,6 @@
 
 const BACKSTAGE_LIST_PER_PAGE = 15;
 
-import {HALF_SEC} from '../../fixtures/timeouts';
-
 describe('backstage playbook run list', () => {
     const playbookName = 'Playbook (' + Date.now() + ')';
     let teamId;
@@ -17,34 +15,6 @@ describe('backstage playbook run list', () => {
     let playbookId;
 
     before(() => {
-        // # Login as the sysadmin
-        cy.legacyApiLogin('sysadmin');
-
-        // # Create a new team for the welcome page test
-        cy.legacyApiCreateTeam('team', 'Team').then(({team}) => {
-            // # Add user-1 to team
-            cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
-                cy.legacyApiAddUserToTeam(team.id, user.id);
-            });
-        });
-
-        // # Create a new team for the welcome page test when filtering
-        cy.legacyApiCreateTeam('team', 'Team With No Active Playbook Runs').then(({team}) => {
-            // # Add user-1 to team
-            cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
-                cy.legacyApiAddUserToTeam(team.id, user.id);
-            });
-
-            // # Create a playbook
-            cy.legacyApiGetCurrentUser().then((user) => {
-                cy.apiCreateTestPlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    userId: user.id,
-                });
-            });
-        });
-
         // # Login as user-1
         cy.legacyApiLogin('user-1');
 
@@ -161,9 +131,6 @@ describe('backstage playbook run list', () => {
             // # Search for a playbook run by name
             cy.findByTestId('search-filter').type(playbookRunTimestamps[0]);
 
-            // # Wait for the playbook run list to update.
-            cy.wait(HALF_SEC);
-
             // * Verify "Previous" no longer shown
             cy.findByText('Previous').should('not.exist');
         });
@@ -175,9 +142,6 @@ describe('backstage playbook run list', () => {
             // # Find the list and chose the first owner in the list
             cy.get('.playbook-run-user-select__container')
                 .find('.PlaybookRunProfile').first().parent().click({force: true});
-
-            // # Wait for the playbook run list to update.
-            cy.wait(HALF_SEC);
 
             // * Verify "Previous" no longer shown
             cy.findByText('Previous').should('not.exist');
