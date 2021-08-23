@@ -360,11 +360,13 @@ const BackstagePlaybookRunList = () => {
             >
                 <div className='PlaybookRunList__filters'>
                     <SearchInput
+                        testId={'search-filter'}
                         default={fetchParams.search_term}
                         onSearch={debounce(setSearchTerm, debounceDelay)}
                     />
                     <CheckboxInput
-                        text={"My runs only"}
+                        testId={'my-runs-only'}
+                        text={'My runs only'}
                         checked={myRunsOnly}
                         onChange={setMyRunsOnly}
                     />

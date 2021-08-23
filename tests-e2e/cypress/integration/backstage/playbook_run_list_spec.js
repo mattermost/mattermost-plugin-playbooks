@@ -159,7 +159,7 @@ describe('backstage playbook run list', () => {
 
         it('by playbook run name', () => {
             // # Search for a playbook run by name
-            cy.get('#playbookRunList input').type(playbookRunTimestamps[0]);
+            cy.findByTestId('search-filter').type(playbookRunTimestamps[0]);
 
             // # Wait for the playbook run list to update.
             cy.wait(HALF_SEC);

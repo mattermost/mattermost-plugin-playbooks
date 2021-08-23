@@ -178,6 +178,7 @@ const PlaybookRunList = (props: Props) => {
             >
                 <div className='PlaybookRunList__filters'>
                     <SearchInput
+                        testId={'search-filter'}
                         default={fetchParams.search_term}
                         onSearch={debounce(setSearchTerm, debounceDelay)}
                     />

@@ -46,6 +46,7 @@ const Component = styled.label`
 `;
 
 interface Props {
+    testId: string;
     text: string;
     checked: boolean;
     onChange: (checked: boolean) => void;
@@ -57,7 +58,7 @@ const CheckboxInput = (props: Props) => {
     };
 
     return (
-        <Component>
+        <Component data-testId={props.testId}>
             <input
                 type='checkbox'
                 onChange={onChange}
