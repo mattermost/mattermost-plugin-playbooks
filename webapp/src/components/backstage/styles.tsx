@@ -5,6 +5,8 @@ import styled, {css} from 'styled-components';
 import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
 
+import {RegularHeading} from 'src/styles/headings';
+
 export const Banner = styled.div`
     color: var(--button-color);
     background-color: var(--button-bg);
@@ -19,6 +21,8 @@ export const Banner = styled.div`
 `;
 
 export const BackstageHeader = styled.div`
+    ${RegularHeading}
+
     display: flex;
     font-size: 2.8rem;
     line-height: 3.6rem;
