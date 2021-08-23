@@ -56,6 +56,7 @@ func (s *PlaybookRunServiceImpl) handleReminderToFillRetro(playbookRunID string)
 }
 
 func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string) {
+	s.logger.Errorf("<><> reminder fired for id: %s", playbookRunID)
 	playbookRunToModify, err := s.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "HandleReminder failed to get playbook run id: %s", playbookRunID).Error())
@@ -109,6 +110,7 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 // SetReminder sets a reminder. After timeInMinutes in the future, the owner will be
 // reminded to update the playbook run's status.
 func (s *PlaybookRunServiceImpl) SetReminder(playbookRunID string, fromNow time.Duration) error {
+	s.logger.Errorf("<><> SetReminder for id: %s", playbookRunID)
 	if _, err := s.scheduler.ScheduleOnce(playbookRunID, time.Now().Add(fromNow)); err != nil {
 		return errors.Wrap(err, "unable to schedule reminder")
 	}
@@ -118,6 +120,7 @@ func (s *PlaybookRunServiceImpl) SetReminder(playbookRunID string, fromNow time.
 
 // RemoveReminder removes the pending reminder for the given playbook run, if any.
 func (s *PlaybookRunServiceImpl) RemoveReminder(playbookRunID string) {
+	s.logger.Errorf("<><> removed reminder for id: %s", playbookRunID)
 	s.scheduler.Cancel(playbookRunID)
 }
 
