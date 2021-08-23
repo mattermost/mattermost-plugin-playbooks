@@ -35,21 +35,19 @@ type Props = {
     hasPermission: boolean;
 };
 
-export function makeModalDefinition(props: Props) {
-    return {
-        modalId: ID,
-        dialogType: UpdateRunStatusModal,
-        dialogProps: props,
-    };
-}
+export const makeModalDefinition = (props: Props) => ({
+    modalId: ID,
+    dialogType: UpdateRunStatusModal,
+    dialogProps: props,
+});
 
-function UpdateRunStatusModal({
+const UpdateRunStatusModal = ({
     playbookRunId,
     playbookId,
     channelId,
     hasPermission,
     ...modalProps
-}: Props) {
+}: Props) => {
     const {formatMessage} = useIntl();
     const [message, setMessage] = useState<string | null>(null);
     const playbook = usePlaybook(playbookId);
@@ -134,7 +132,7 @@ function UpdateRunStatusModal({
             {hasPermission ? form : warning}
         </GenericModal>
     );
-}
+};
 
 const FormContainer = styled.div`
     display: flex;
