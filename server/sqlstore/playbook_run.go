@@ -815,19 +815,18 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 		`, info.UserID)
 	}
 
-	// is the requester a channel member, or is the channel public?
+	// is the playbook open to everyone on the team, or is the user a member of the playbook?
 	return sq.Expr(`
 		  (
-			  -- If requester is a channel member
-			  EXISTS(SELECT 1
-						 FROM ChannelMembers as cm
-						 WHERE cm.ChannelId = i.ChannelID
-						   AND cm.UserId = ?)
-			  -- Or if channel is public
-			  OR EXISTS(SELECT 1
-							FROM Channels as c
-							WHERE c.Id = i.ChannelID
-							  AND c.Type = 'O')
+ 			  NOT EXISTS(
+					SELECT 1
+						FROM IR_PlaybookMember
+						WHERE PlaybookID = i.PlaybookID)
+			  OR EXISTS(
+					SELECT 1
+						FROM IR_PlaybookMember
+						WHERE PlaybookID = i.PlaybookID
+						  AND MemberID = ?)
 		  )`, info.UserID)
 }
 

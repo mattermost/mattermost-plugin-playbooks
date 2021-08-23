@@ -133,14 +133,14 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbook, err := h.playbookService.Get(vars["id"])
-	if err != nil {
-		h.HandleError(w, err)
+	if err := app.PlaybookAccess(userID, vars["id"], h.playbookService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
-	if err := app.PlaybookAccess(userID, playbook, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+	playbook, err := h.playbookService.Get(vars["id"])
+	if err != nil {
+		h.HandleError(w, err)
 		return
 	}
 
@@ -254,7 +254,7 @@ func doPlaybookModificationChecks(playbook *app.Playbook, userID string, pluginA
 	}
 	playbook.InvitedGroupIDs = filteredGroups
 
-	if playbook.DefaultOwnerID != "" && !app.IsMemberOfTeamID(playbook.DefaultOwnerID, playbook.TeamID, pluginAPI) {
+	if playbook.DefaultOwnerID != "" && !app.IsMemberOfTeam(playbook.DefaultOwnerID, playbook.TeamID, pluginAPI) {
 		pluginAPI.Log.Warn("owner is not a member of the playbook's team, disabling default owner", "teamID", playbook.TeamID, "userID", playbook.DefaultOwnerID)
 		playbook.DefaultOwnerID = ""
 		playbook.DefaultOwnerEnabled = false
@@ -274,14 +274,14 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 	vars := mux.Vars(r)
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbookToDelete, err := h.playbookService.Get(vars["id"])
-	if err != nil {
-		h.HandleError(w, err)
+	if err2 := app.PlaybookAccess(userID, vars["id"], h.playbookService, h.pluginAPI); err2 != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err2)
 		return
 	}
 
-	if err2 := app.PlaybookAccess(userID, playbookToDelete, h.pluginAPI); err2 != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err2)
+	playbookToDelete, err := h.playbookService.Get(vars["id"])
+	if err != nil {
+		h.HandleError(w, err)
 		return
 	}
 
