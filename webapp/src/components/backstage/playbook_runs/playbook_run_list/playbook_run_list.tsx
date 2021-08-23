@@ -24,6 +24,7 @@ import {
 import TeamSelector from 'src/components/team/team_selector';
 
 import SearchInput from 'src/components/backstage/playbook_runs/playbook_run_list/search_input';
+import CheckboxInput from 'src/components/backstage/playbook_runs/playbook_run_list/checkbox_input';
 import {FetchPlaybookRunsParams, PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {SortableColHeader} from 'src/components/sortable_col_header';
@@ -272,6 +273,11 @@ const BackstagePlaybookRunList = () => {
         return owners.map((c) => selectUser(c.user_id) || {id: c.user_id} as UserProfile);
     }
 
+    const myRunsOnly = fetchParams.participant_id === 'me';
+    function setMyRunsOnly(checked?: boolean) {
+        setFetchParams({...fetchParams, participant_id: checked ? 'me' : ''});
+    }
+
     function setOwnerId(userId?: string) {
         setFetchParams({...fetchParams, owner_user_id: userId, page: 0});
     }
@@ -356,6 +362,11 @@ const BackstagePlaybookRunList = () => {
                     <SearchInput
                         default={fetchParams.search_term}
                         onSearch={debounce(setSearchTerm, debounceDelay)}
+                    />
+                    <CheckboxInput
+                        text={"My runs only"}
+                        checked={myRunsOnly}
+                        onChange={setMyRunsOnly}
                     />
                     <ProfileSelector
                         testId={'owner-filter'}
