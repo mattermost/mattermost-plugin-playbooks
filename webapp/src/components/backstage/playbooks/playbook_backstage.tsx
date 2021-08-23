@@ -113,14 +113,20 @@ const PlaybookBackstage = () => {
         }
     };
 
-    let subTitle = 'Everyone can access this playbook';
-    let accessIconClass = 'icon-globe';
+    let subTitle;
+    let accessIconClass;
     if (playbook.member_ids.length === 1) {
         subTitle = 'Only you can access this playbook';
         accessIconClass = 'icon-lock-outline';
     } else if (playbook.member_ids.length > 1) {
         subTitle = `${playbook.member_ids.length} people can access this playbook`;
         accessIconClass = 'icon-lock-outline';
+    } else if (team) {
+        accessIconClass = 'icon-globe';
+        subTitle = `Everyone in ${team.name} can access this playbook`;
+    } else {
+        accessIconClass = 'icon-globe';
+        subTitle = 'Everyone in this team can access this playbook';
     }
 
     return (
@@ -133,7 +139,7 @@ const PlaybookBackstage = () => {
                     />
                     <VerticalBlock>
                         <Title>{playbook.title}</Title>
-                        <HorizontalBlock>
+                        <HorizontalBlock data-testid='playbookPermissionsDescription'>
                             <i className={'icon ' + accessIconClass}/>
                             <SubTitle>{subTitle}</SubTitle>
                         </HorizontalBlock>

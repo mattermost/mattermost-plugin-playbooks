@@ -66,6 +66,16 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 		Name: "notinvolved",
 	}
 
+	bot1 := userInfo{
+		ID:   model.NewId(),
+		Name: "Mr. Bot",
+	}
+
+	bot2 := userInfo{
+		ID:   model.NewId(),
+		Name: "Mrs. Bot",
+	}
+
 	channel01 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 123, DeleteAt: 0}
 	channel02 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 199, DeleteAt: 0}
 	channel03 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 222, DeleteAt: 0}
@@ -87,11 +97,12 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 		setupChannelMembersTable(t, db)
 		setupChannelsTable(t, db)
 
-		addUsers(t, store, []userInfo{lucy, bob, john, jane, notInvolved, phil, quincy})
-		addUsersToTeam(t, store, []userInfo{lucy, bob, john, jane, notInvolved, phil, quincy}, team1id)
-		addUsersToTeam(t, store, []userInfo{lucy, bob, john, jane, notInvolved, phil, quincy}, team2id)
+		addUsers(t, store, []userInfo{lucy, bob, john, jane, notInvolved, phil, quincy, bot1, bot2})
+		addBots(t, store, []userInfo{bot1, bot2})
+		addUsersToTeam(t, store, []userInfo{lucy, bob, john, jane, notInvolved, phil, quincy, bot1, bot2}, team1id)
+		addUsersToTeam(t, store, []userInfo{lucy, bob, john, jane, notInvolved, phil, quincy, bot1, bot2}, team2id)
 		createChannels(t, store, []model.Channel{channel01, channel02, channel03, channel04, channel05, channel06, channel07, channel08, channel09})
-		addUsersToChannels(t, store, []userInfo{bob, lucy, phil}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel06.Id, channel07.Id, channel08.Id, channel09.Id})
+		addUsersToChannels(t, store, []userInfo{bob, lucy, phil, bot1, bot2}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel06.Id, channel07.Id, channel08.Id, channel09.Id})
 		addUsersToChannels(t, store, []userInfo{bob, quincy}, []string{channel05.Id})
 		addUsersToChannels(t, store, []userInfo{john}, []string{channel01.Id})
 		addUsersToChannels(t, store, []userInfo{jane}, []string{channel01.Id, channel02.Id})

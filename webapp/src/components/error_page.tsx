@@ -13,9 +13,9 @@ import {pluginUrl} from 'src/browser_routing';
 
 const ErrorPage = () => {
     useEffect(() => {
-        document.body.setAttribute('class', 'sticky error');
+        document.body.classList.add('error');
         return () => {
-            document.body.removeAttribute('class');
+            document.body.classList.remove('error');
         };
     }, []);
 
@@ -48,11 +48,11 @@ const ErrorPage = () => {
                 <div className='error__icon'>
                     <WarningIcon/>
                 </div>
-                <h2>
-                    {title}
+                <h2 data-testid='errorMessageTitle'>
+                    <span>{title}</span>
                 </h2>
                 <p>
-                    {message}
+                    <span>{message}</span>
                 </p>
                 <Link to={returnTo}>
                     {returnToMsg}

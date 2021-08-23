@@ -453,6 +453,19 @@ func addUsers(t *testing.T, store *SQLStore, users []userInfo) {
 	require.NoError(t, err)
 }
 
+func addBots(t *testing.T, store *SQLStore, bots []userInfo) {
+	t.Helper()
+
+	insertBuilder := store.builder.Insert("Bots").Columns("UserId", "Description")
+
+	for _, u := range bots {
+		insertBuilder = insertBuilder.Values(u.ID, u.Name)
+	}
+
+	_, err := store.execBuilder(store.db, insertBuilder)
+	require.NoError(t, err)
+}
+
 func addUsersToTeam(t *testing.T, store *SQLStore, users []userInfo, teamID string) {
 	t.Helper()
 
