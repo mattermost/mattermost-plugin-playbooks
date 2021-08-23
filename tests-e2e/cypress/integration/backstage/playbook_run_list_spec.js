@@ -9,28 +9,30 @@
 const BACKSTAGE_LIST_PER_PAGE = 15;
 
 describe('backstage playbook run list', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
-    let teamId;
-    let userId;
-    let playbookId;
+    let testTeam;
+    let testUser;
+    let testPlaybook;
 
     before(() => {
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Create a playbook
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
-            cy.legacyApiGetCurrentUser().then((user) => {
-                userId = user.id;
+            // # Turn off growth onboarding screens
+            cy.apiUpdateConfig({
+                ServiceSettings: {EnableOnboardingFlow: false},
+            });
 
-                cy.apiCreateTestPlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    userId: user.id,
-                }).then((playbook) => {
-                    playbookId = playbook.id;
-                });
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Public Playbook',
+                memberIDs: [],
+            }).then((playbook) => {
+                testPlaybook = playbook;
             });
         });
     });
@@ -39,8 +41,8 @@ describe('backstage playbook run list', () => {
         // # Size the viewport to show all of the backstage.
         cy.viewport('macbook-13');
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+        // # Login as testUser
+        cy.apiLogin(testUser);
     });
 
     it('has "Runs" and team name in heading', () => {
@@ -48,10 +50,10 @@ describe('backstage playbook run list', () => {
         const now = Date.now();
         const playbookRunName = 'Playbook Run (' + now + ')';
         cy.apiRunPlaybook({
-            teamId,
-            playbookId,
+            teamId: testTeam.id,
+            playbookId: testPlaybook.id,
             playbookRunName,
-            ownerUserId: userId,
+            ownerUserId: testUser.id,
         });
 
         // # Open backstage
@@ -69,10 +71,10 @@ describe('backstage playbook run list', () => {
         const now = Date.now();
         const playbookRunName = 'Playbook Run (' + now + ')';
         cy.apiRunPlaybook({
-            teamId,
-            playbookId,
+            teamId: testTeam.id,
+            playbookId: testPlaybook.id,
             playbookRunName,
-            ownerUserId: userId,
+            ownerUserId: testUser.id,
         });
 
         // # Open backstage
@@ -94,25 +96,25 @@ describe('backstage playbook run list', () => {
         const playbookRunTimestamps = [];
 
         before(() => {
-            // # Login as user-1
-            cy.legacyApiLogin('user-1');
+            // # Login as testUser
+            cy.apiLogin(testUser);
 
             // # Start sufficient playbook runs to ensure pagination is possible.
             for (let i = 0; i < BACKSTAGE_LIST_PER_PAGE + 1; i++) {
                 const now = Date.now();
                 cy.apiRunPlaybook({
-                    teamId,
-                    playbookId,
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
                     playbookRunName: 'Playbook Run (' + now + ')',
-                    ownerUserId: userId,
+                    ownerUserId: testUser.id,
                 });
                 playbookRunTimestamps.push(now);
             }
         });
 
         beforeEach(() => {
-            // # Login as user-1
-            cy.legacyApiLogin('user-1');
+            // # Login as testUser
+            cy.apiLogin(testUser);
 
             // # Open backstage
             cy.visit('/playbooks');
