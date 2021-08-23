@@ -985,7 +985,7 @@ func (s *PlaybookRunServiceImpl) exportChannelToFile(playbookRunName string, own
 	res := s.pluginAPI.Plugin.HTTP(req)
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return "", errors.New(fmt.Sprintf("There was an error when making a request to upload file with status code %s", strconv.Itoa(res.StatusCode)))
+		return "", errors.Errorf("There was an error when making a request to upload file with status code %s", strconv.Itoa(res.StatusCode))
 	}
 
 	file, err := s.pluginAPI.File.Upload(res.Body, fmt.Sprintf("%s.csv", playbookRunName), channelID)
