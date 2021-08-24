@@ -18,8 +18,12 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
+import moment from 'moment';
+
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
-import {PlaybookRun} from 'src/types/playbook_run';
+
+import {makeOption, useDateTimeInput} from 'src/components/datetime_input';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import {usePlaybook} from 'src/hooks';
 import MarkdownTextbox from '../markdown_textbox';
@@ -27,6 +31,35 @@ import {pluginUrl} from 'src/browser_routing';
 import {postStatusUpdate} from 'src/client';
 
 const ID = 'playbooks_update_run_status_dialog';
+
+const useReminderTimer = (playbook?: PlaybookWithChecklist) => {
+    const reminderSeconds = playbook?.reminder_timer_default_seconds;
+    const reminderTimestamp = reminderSeconds ? moment().add(reminderSeconds, 'seconds').valueOf() : null;
+    const makeDefaultOptions = () => {
+        const options = [
+            makeOption('in 15 minutes'),
+            makeOption('in 30 minutes'),
+            makeOption('in 60 minutes'),
+            makeOption('in 4 hours'),
+            makeOption('in 24 hours'),
+            makeOption('in 7 days'),
+        ];
+        if (reminderSeconds) {
+            options.push({ts: reminderTimestamp});
+        }
+
+        return options;
+    };
+
+    const {input, value: updateReminderTimestamp} = useDateTimeInput(reminderTimestamp, makeDefaultOptions);
+
+    let reminder;
+    if (updateReminderTimestamp) {
+        reminder = Math.abs(moment().diff(moment(updateReminderTimestamp), 'second'));
+    }
+
+    return {input, reminder};
+};
 
 type Props = {
     playbookRunId: string;
@@ -58,12 +91,14 @@ const UpdateRunStatusModal = ({
     const channel = useSelector((state: GlobalState) => getChannel(state, channelId) || {display_name: 'Unknown Channel', id: channelId});
     const team = useSelector((state: GlobalState) => playbook && getTeam(state, playbook.team_id));
 
+    const {input: reminderInput, reminder} = useReminderTimer(playbook);
+
     const onConfirm = () => {
         if (!message || !hasPermission) {
             return false;
         }
         if (message && currentUserId && channel && team) {
-            postStatusUpdate(playbookRunId, {message}, {user_id: currentUserId, channel_id: channel.id, team_id: team.id});
+            postStatusUpdate(playbookRunId, {message, reminder}, {user_id: currentUserId, channel_id: channel.id, team_id: team.id});
         }
         return true;
     };
@@ -107,6 +142,10 @@ const UpdateRunStatusModal = ({
                 setValue={setMessage}
                 channelId={channelId}
             />
+            <Label>
+                {'Timer for next update'}
+            </Label>
+            {reminderInput}
         </FormContainer>
     );
 
