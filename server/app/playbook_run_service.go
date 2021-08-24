@@ -609,7 +609,7 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRunID, userID, postID
 	s.telemetry.AddPostToTimeline(playbookRunModified, userID)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
