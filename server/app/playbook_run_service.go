@@ -635,7 +635,7 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 	s.telemetry.RemoveTimelineEvent(playbookRunModified, userID)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -670,7 +670,7 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRun
 	broadcastedMsg += statusUpdate
 
 	if _, err := s.poster.PostMessage(playbookRun.BroadcastChannelID, broadcastedMsg); err != nil {
-		return err
+		return errors.Wrap(err, "failed to post broadcast message")
 	}
 
 	return nil
@@ -1176,7 +1176,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	s.telemetry.ChangeOwner(playbookRunToModify, userID)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -1237,7 +1237,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	}
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -1335,7 +1335,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	}
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -1398,7 +1398,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	}
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return cmdResponse.TriggerId, nil
