@@ -103,7 +103,6 @@ const commonSelectStyle = css`
         border: none;
         box-shadow: inset 0 0 0 1px var(--center-channel-color-16);
         width: 100%;
-        height: 4rem;
         font-size: 14px;
 
         &--is-focused {
@@ -119,6 +118,20 @@ const commonSelectStyle = css`
 
     .channel-selector__single-value {
         color: var(--center-channel-color);
+    }
+
+    .channel-selector__multi-value {
+        height: 20px;
+        line-height: 19px;
+
+        border-radius: 10px;
+        padding-left: 8px;
+
+        .channel-selector__multi-value__label {
+            padding: 0;
+        }
+        .channel-selector__multi-value__remove {
+        }
     }
 `;
 

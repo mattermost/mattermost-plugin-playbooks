@@ -378,7 +378,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.Checklists = pb.Checklists
 		public = pb.CreatePublicPlaybookRun
 
-		playbookRun.BroadcastChannelID = pb.BroadcastChannelID
 		playbookRun.Description = pb.Description
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
@@ -394,8 +393,8 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.DefaultOwnerID = pb.DefaultOwnerID
 		}
 
-		if pb.AnnouncementChannelEnabled {
-			playbookRun.AnnouncementChannelID = pb.AnnouncementChannelID
+		if pb.BroadcastEnabled {
+			playbookRun.BroadcastChannelIDs = pb.BroadcastChannelIDs
 		}
 
 		if pb.WebhookOnCreationEnabled {

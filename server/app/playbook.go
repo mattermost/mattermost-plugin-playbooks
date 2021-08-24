@@ -26,7 +26,6 @@ type Playbook struct {
 	LastRunAt                            int64       `json:"last_run_at"`
 	Checklists                           []Checklist `json:"checklists"`
 	MemberIDs                            []string    `json:"member_ids"`
-	BroadcastChannelID                   string      `json:"broadcast_channel_id"`
 	ReminderMessageTemplate              string      `json:"reminder_message_template"`
 	ReminderTimerDefaultSeconds          int64       `json:"reminder_timer_default_seconds"`
 	InvitedUserIDs                       []string    `json:"invited_user_ids"`
@@ -34,8 +33,8 @@ type Playbook struct {
 	InviteUsersEnabled                   bool        `json:"invite_users_enabled"`
 	DefaultOwnerID                       string      `json:"default_owner_id"`
 	DefaultOwnerEnabled                  bool        `json:"default_owner_enabled"`
-	AnnouncementChannelID                string      `json:"announcement_channel_id"`
-	AnnouncementChannelEnabled           bool        `json:"announcement_channel_enabled"`
+	BroadcastChannelIDs                  []string    `json:"broadcast_channel_ids"`
+	BroadcastEnabled                     bool        `json:"broadcast_enabled"`
 	WebhookOnCreationURL                 string      `json:"webhook_on_creation_url"`
 	WebhookOnCreationEnabled             bool        `json:"webhook_on_creation_enabled"`
 	MessageOnJoin                        string      `json:"message_on_join"`

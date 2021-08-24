@@ -13,7 +13,6 @@ type Playbook struct {
 	NumSteps                       int64       `json:"num_steps"`
 	Checklists                     []Checklist `json:"checklists"`
 	MemberIDs                      []string    `json:"member_ids"`
-	BroadcastChannelID             string      `json:"broadcast_channel_id"`
 	ReminderMessageTemplate        string      `json:"reminder_message_template"`
 	ReminderTimerDefaultSeconds    int64       `json:"reminder_timer_default_seconds"`
 	InvitedUserIDs                 []string    `json:"invited_user_ids"`
@@ -21,8 +20,8 @@ type Playbook struct {
 	InvitedUsersEnabled            bool        `json:"invited_users_enabled"`
 	DefaultOwnerID                 string      `json:"default_owner_id"`
 	DefaultOwnerEnabled            bool        `json:"default_owner_enabled"`
-	AnnouncementChannelID          string      `json:"announcement_channel_id"`
-	AnnouncementChannelEnabled     bool        `json:"announcement_channel_enabled"`
+	BroadcastChannelIDs            []string    `json:"broadcast_channel_ids"`
+	BroadcastEnabled               bool        `json:"broadcast_enabled"`
 	ExportChannelOnFinishedEnabled bool        `json:"export_channel_on_finished_enabled"`
 }
 
@@ -64,8 +63,8 @@ type PlaybookCreateOptions struct {
 	InviteUsersEnabled          bool        `json:"invite_users_enabled"`
 	DefaultOwnerID              string      `json:"default_owner_id"`
 	DefaultOwnerEnabled         bool        `json:"default_owner_enabled"`
-	AnnouncementChannelID       string      `json:"announcement_channel_id"`
-	AnnouncementChannelEnabled  bool        `json:"announcement_channel_enabled"`
+	BroadcastChannelIDs         []string    `json:"broadcast_channel_ids"`
+	BroadcastEnabled            bool        `json:"broadcast_enabled"`
 }
 
 // PlaybookListOptions specifies the optional parameters to the

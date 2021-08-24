@@ -20,5 +20,5 @@ export const AutomationTitle = styled.div`
 export const SelectorWrapper = styled.div`
     margin: 0;
     width: 300px;
-    height: 40px;
+    min-height: 40px;
 `;

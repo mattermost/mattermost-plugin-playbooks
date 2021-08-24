@@ -15,7 +15,6 @@ import {Team} from 'mattermost-redux/types/teams';
 import {Theme} from 'mattermost-redux/types/preferences';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
-import IncidentIcon from 'src/components/assets/icons/incident_icon';
 import {promptForFeedback} from 'src/client';
 
 import PlaybookRunBackstage

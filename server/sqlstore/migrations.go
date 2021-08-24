@@ -1065,4 +1065,85 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.26.0"),
+		toVersion:   semver.MustParse("0.27.0"),
+		// This deprecates columns BroadcastChannelID (in singular), AnnouncementChannelID and AnnouncementChannelEnabled
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			updateIncidentTableQuery := `
+				UPDATE IR_Incident SET
+					ConcatenatedBroadcastChannelIds = (
+						COALESCE(
+							CONCAT_WS(
+								',',
+								CASE WHEN AnnouncementChannelID = '' THEN NULL ELSE AnnouncementChannelID END,
+								CASE WHEN BroadcastChannelID = ''  OR BroadcastChannelID = AnnouncementChannelID THEN NULL ELSE BroadcastChannelID END
+							),
+						'')
+					)
+			`
+
+			updatePlaybookTableQuery := `
+				UPDATE IR_Playbook SET
+					ConcatenatedBroadcastChannelIds = (
+						COALESCE(
+							CONCAT_WS(
+								',',
+								CASE WHEN AnnouncementChannelID = '' THEN NULL ELSE AnnouncementChannelID END,
+								CASE WHEN BroadcastChannelID = ''  OR BroadcastChannelID = AnnouncementChannelID THEN NULL ELSE BroadcastChannelID END
+							),
+						'')
+					)
+				, BroadcastEnabled = (CASE
+					WHEN BroadcastChannelID != '' THEN TRUE
+					WHEN AnnouncementChannelEnabled = TRUE THEN TRUE
+					ELSE FALSE
+				END)
+			`
+
+			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ConcatenatedBroadcastChannelIds", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedBroadcastChannelIds to table IR_Incident")
+				}
+
+				if _, err := e.Exec(updateIncidentTableQuery); err != nil {
+					return errors.Wrapf(err, "failed setting value in column ConcatenatedBroadcastChannelIds of table IR_Incident")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ConcatenatedBroadcastChannelIds", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedBroadcastChannelIds to table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "BroadcastEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column BroadcastEnabled to table IR_Playbook")
+				}
+
+				if _, err := e.Exec(updatePlaybookTableQuery); err != nil {
+					return errors.Wrapf(err, "failed setting value in columns ConcatenatedBroadcastChannelIds and BroadcastEnabled of table IR_Playbook")
+				}
+
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "ConcatenatedBroadcastChannelIds", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedBroadcastChannelIds to table IR_Incident")
+				}
+
+				if _, err := e.Exec(updateIncidentTableQuery); err != nil {
+					return errors.Wrapf(err, "failed setting value in column ConcatenatedBroadcastChannelIds of table IR_Incident")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "ConcatenatedBroadcastChannelIds", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedBroadcastChannelIds to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "BroadcastEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column BroadcastEnabled to table IR_Playbook")
+				}
+
+				if _, err := e.Exec(updatePlaybookTableQuery); err != nil {
+					return errors.Wrapf(err, "failed setting value in columns ConcatenatedBroadcastChannelIds and BroadcastEnabled of table IR_Playbook")
+				}
+			}
+			return nil
+		},
+	},
 }

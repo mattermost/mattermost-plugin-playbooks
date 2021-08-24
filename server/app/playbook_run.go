@@ -86,10 +86,6 @@ type PlaybookRun struct {
 	// scheduled status update will be posted.
 	PreviousReminder time.Duration `json:"previous_reminder"`
 
-	// BroadcastChannelID, if not empty, is the identifier of the channel to which all status
-	// updates are broadcasted.
-	BroadcastChannelID string `json:"broadcast_channel_id"`
-
 	// ReminderMessageTemplate, if not empty, is the template shown when updating the status of the
 	// playbook run for the first time.
 	ReminderMessageTemplate string `json:"reminder_message_template"`
@@ -109,9 +105,9 @@ type PlaybookRun struct {
 	// as owner of the playbook run when it was created.
 	DefaultOwnerID string `json:"default_owner_id"`
 
-	// AnnouncementChannelID, if not empty, is the identifier of the channel where the playbook run
-	// creation was announced.
-	AnnouncementChannelID string `json:"announcement_channel_id"`
+	// BroadcastChannelIDs is an array of the identifiers of the channels where the playbook run
+	// creation and status update are announced.
+	BroadcastChannelIDs []string `json:"broadcast_channel_ids"`
 
 	// WebhookOnCreationURL, if not empty, is the URL to which a POST request is made with the whole
 	// playbook run as payload when the run is created.
@@ -196,6 +192,9 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	}
 	if old.ParticipantIDs == nil {
 		old.ParticipantIDs = []string{}
+	}
+	if old.BroadcastChannelIDs == nil {
+		old.BroadcastChannelIDs = []string{}
 	}
 
 	return json.Marshal(old)

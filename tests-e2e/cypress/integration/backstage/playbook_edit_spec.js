@@ -790,7 +790,7 @@ describe('backstage playbook details', () => {
                 });
             });
 
-            describe('announcement channel setting', () => {
+            describe('broadcast channel setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
                     cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
@@ -799,7 +799,7 @@ describe('backstage playbook details', () => {
                     cy.get('#root').findByText('Actions').click();
 
                     // * Verify that the toggle is unchecked
-                    cy.get('#announcement-channel label input').should('not.be.checked');
+                    cy.get('#broadcast-channels label input').should('not.be.checked');
                 });
 
                 it('can be enabled', () => {
@@ -809,7 +809,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
 
-                    cy.get('#announcement-channel').within(() => {
+                    cy.get('#broadcast-channels').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -829,10 +829,10 @@ describe('backstage playbook details', () => {
                     cy.get('#root').findByText('Actions').click();
 
                     // * Verify that the toggle is unchecked
-                    cy.get('#announcement-channel label input').should('not.be.checked');
+                    cy.get('#broadcast-channels label input').should('not.be.checked');
 
                     // * Verify that the channel selector is disabled
-                    cy.get('#announcement-channel').within(() => {
+                    cy.get('#broadcast-channels').within(() => {
                         cy.getStyledComponent('StyledSelect').should('have.class', 'channel-selector--is-disabled');
                     });
                 });
@@ -844,7 +844,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
 
-                    cy.get('#announcement-channel').within(() => {
+                    cy.get('#broadcast-channels').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -872,7 +872,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
 
-                    cy.get('#announcement-channel').within(() => {
+                    cy.get('#broadcast-channels').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -909,7 +909,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
 
-                    cy.get('#announcement-channel').within(() => {
+                    cy.get('#broadcast-channels').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -944,7 +944,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
 
-                    cy.get('#announcement-channel').within(() => {
+                    cy.get('#broadcast-channels').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -1001,7 +1001,7 @@ describe('backstage playbook details', () => {
                         // # Switch to Actions tab
                         cy.get('#root').findByText('Actions').click();
 
-                        cy.get('#announcement-channel').within(() => {
+                        cy.get('#broadcast-channels').within(() => {
                             // * Verify that the toggle is unchecked
                             cy.get('label input').should('not.be.checked');
 

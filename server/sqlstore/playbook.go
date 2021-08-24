@@ -16,10 +16,11 @@ import (
 
 type sqlPlaybook struct {
 	app.Playbook
-	ChecklistsJSON                json.RawMessage
-	ConcatenatedInvitedUserIDs    string
-	ConcatenatedInvitedGroupIDs   string
-	ConcatenatedSignalAnyKeywords string
+	ChecklistsJSON                  json.RawMessage
+	ConcatenatedInvitedUserIDs      string
+	ConcatenatedInvitedGroupIDs     string
+	ConcatenatedSignalAnyKeywords   string
+	ConcatenatedBroadcastChannelIDs string
 }
 
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
@@ -108,7 +109,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			`(
 				CASE WHEN InviteUsersEnabled THEN 1 ELSE 0 END +
 				CASE WHEN DefaultCommanderEnabled THEN 1 ELSE 0 END +
-				CASE WHEN AnnouncementChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN BroadcastEnabled THEN 1 ELSE 0 END +
 				CASE WHEN WebhookOnCreationEnabled THEN 1 ELSE 0 END +
 				CASE WHEN MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
@@ -116,7 +117,6 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 				CASE WHEN CategorizeChannelEnabled THEN 1 ELSE 0 END +
 				CASE WHEN ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
-			"BroadcastChannelID",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate",
 			"ReminderTimerDefaultSeconds",
 			"ConcatenatedInvitedUserIDs",
@@ -124,8 +124,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"InviteUsersEnabled",
 			"DefaultCommanderID AS DefaultOwnerID",
 			"DefaultCommanderEnabled AS DefaultOwnerEnabled",
-			"AnnouncementChannelID",
-			"AnnouncementChannelEnabled",
+			"ConcatenatedBroadcastChannelIDs",
+			"BroadcastEnabled",
 			"WebhookOnCreationURL",
 			"WebhookOnCreationEnabled",
 			"MessageOnJoin",
@@ -189,7 +189,6 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"ChecklistsJSON":                       rawPlaybook.ChecklistsJSON,
 			"NumStages":                            len(rawPlaybook.Checklists),
 			"NumSteps":                             getSteps(rawPlaybook.Playbook),
-			"BroadcastChannelID":                   rawPlaybook.BroadcastChannelID,
 			"ReminderMessageTemplate":              rawPlaybook.ReminderMessageTemplate,
 			"ReminderTimerDefaultSeconds":          rawPlaybook.ReminderTimerDefaultSeconds,
 			"ConcatenatedInvitedUserIDs":           rawPlaybook.ConcatenatedInvitedUserIDs,
@@ -197,8 +196,8 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"InviteUsersEnabled":                   rawPlaybook.InviteUsersEnabled,
 			"DefaultCommanderID":                   rawPlaybook.DefaultOwnerID,
 			"DefaultCommanderEnabled":              rawPlaybook.DefaultOwnerEnabled,
-			"AnnouncementChannelID":                rawPlaybook.AnnouncementChannelID,
-			"AnnouncementChannelEnabled":           rawPlaybook.AnnouncementChannelEnabled,
+			"ConcatenatedBroadcastChannelIDs":      rawPlaybook.ConcatenatedBroadcastChannelIDs,
+			"BroadcastEnabled":                     rawPlaybook.BroadcastEnabled,
 			"WebhookOnCreationURL":                 rawPlaybook.WebhookOnCreationURL,
 			"WebhookOnCreationEnabled":             rawPlaybook.WebhookOnCreationEnabled,
 			"MessageOnJoin":                        rawPlaybook.MessageOnJoin,
@@ -299,7 +298,7 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 			`(
 				CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.AnnouncementChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.BroadcastEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
@@ -364,7 +363,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 			`(
 				CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.AnnouncementChannelEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.BroadcastEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
@@ -546,7 +545,6 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"ChecklistsJSON":                       rawPlaybook.ChecklistsJSON,
 			"NumStages":                            len(rawPlaybook.Checklists),
 			"NumSteps":                             getSteps(rawPlaybook.Playbook),
-			"BroadcastChannelID":                   rawPlaybook.BroadcastChannelID,
 			"ReminderMessageTemplate":              rawPlaybook.ReminderMessageTemplate,
 			"ReminderTimerDefaultSeconds":          rawPlaybook.ReminderTimerDefaultSeconds,
 			"ConcatenatedInvitedUserIDs":           rawPlaybook.ConcatenatedInvitedUserIDs,
@@ -554,8 +552,8 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"InviteUsersEnabled":                   rawPlaybook.InviteUsersEnabled,
 			"DefaultCommanderID":                   rawPlaybook.DefaultOwnerID,
 			"DefaultCommanderEnabled":              rawPlaybook.DefaultOwnerEnabled,
-			"AnnouncementChannelID":                rawPlaybook.AnnouncementChannelID,
-			"AnnouncementChannelEnabled":           rawPlaybook.AnnouncementChannelEnabled,
+			"ConcatenatedBroadcastChannelIDs":      rawPlaybook.ConcatenatedBroadcastChannelIDs,
+			"BroadcastEnabled":                     rawPlaybook.BroadcastEnabled,
 			"WebhookOnCreationURL":                 rawPlaybook.WebhookOnCreationURL,
 			"WebhookOnCreationEnabled":             rawPlaybook.WebhookOnCreationEnabled,
 			"MessageOnJoin":                        rawPlaybook.MessageOnJoin,
@@ -674,11 +672,12 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 	}
 
 	return &sqlPlaybook{
-		Playbook:                      playbook,
-		ChecklistsJSON:                checklistsJSON,
-		ConcatenatedInvitedUserIDs:    strings.Join(playbook.InvitedUserIDs, ","),
-		ConcatenatedInvitedGroupIDs:   strings.Join(playbook.InvitedGroupIDs, ","),
-		ConcatenatedSignalAnyKeywords: strings.Join(playbook.SignalAnyKeywords, ","),
+		Playbook:                        playbook,
+		ChecklistsJSON:                  checklistsJSON,
+		ConcatenatedInvitedUserIDs:      strings.Join(playbook.InvitedUserIDs, ","),
+		ConcatenatedInvitedGroupIDs:     strings.Join(playbook.InvitedGroupIDs, ","),
+		ConcatenatedSignalAnyKeywords:   strings.Join(playbook.SignalAnyKeywords, ","),
+		ConcatenatedBroadcastChannelIDs: strings.Join(playbook.BroadcastChannelIDs, ","),
 	}, nil
 }
 
@@ -704,5 +703,11 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 	if rawPlaybook.ConcatenatedSignalAnyKeywords != "" {
 		p.SignalAnyKeywords = strings.Split(rawPlaybook.ConcatenatedSignalAnyKeywords, ",")
 	}
+
+	p.BroadcastChannelIDs = []string(nil)
+	if rawPlaybook.ConcatenatedBroadcastChannelIDs != "" {
+		p.BroadcastChannelIDs = strings.Split(rawPlaybook.ConcatenatedBroadcastChannelIDs, ",")
+	}
+
 	return p, nil
 }
