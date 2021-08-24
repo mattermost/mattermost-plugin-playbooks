@@ -9,6 +9,7 @@ import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
 import {useRunsList} from 'src/hooks';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
+import {BackstageHeader} from 'src/components/backstage/styles';
 
 import RunList from './runs_list/runs_list';
 import NoContentPage from './runs_page_no_content';
@@ -49,14 +50,9 @@ const RunsPage = () => {
 
     return (
         <div className='PlaybookRunList container-medium'>
-            <div className='Backstage__header'>
-                <div
-                    className='title'
-                    data-testid='titlePlaybookRun'
-                >
-                    {'Runs'}
-                </div>
-            </div>
+            <BackstageHeader data-testid='titlePlaybookRun'>
+                {'Runs'}
+            </BackstageHeader>
             <RunList
                 playbookRuns={playbookRuns}
                 totalCount={totalCount}

@@ -65,7 +65,7 @@ const RHSWelcomeView = () => {
                         <p className='mt-3 mb-4 light'>
                             {'There are no runs in progress at the moment. Run a playbook to start orchestrating workflows for your team and tools.'}
                         </p>
-                        <div className='header-button-div mb-4'>
+                        <div className='mb-4'>
                             <PrimaryButton
                                 onClick={() => dispatch(startPlaybookRun(currentTeam.id))}
                             >

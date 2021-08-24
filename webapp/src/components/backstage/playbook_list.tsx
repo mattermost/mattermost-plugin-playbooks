@@ -20,7 +20,7 @@ import './playbook.scss';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
 import {BACKSTAGE_LIST_PER_PAGE, AdminNotificationType} from 'src/constants';
-import {Banner} from 'src/components/backstage/styles';
+import {Banner, BackstageSubheader} from 'src/components/backstage/styles';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 
 import RightDots from 'src/components/assets/right_dots';
@@ -43,6 +43,14 @@ import {Playbook} from 'src/types/playbook';
 import PlaybookListRow from './playbook_list_row';
 
 const DeleteBannerTimeout = 5000;
+
+const PlaybooksHeader = styled(BackstageSubheader)`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4rem 0 3.2rem;
+`;
 
 const PlaybookList = () => {
     const [showConfirmation, setShowConfirmation] = useState(false);
@@ -159,15 +167,10 @@ const PlaybookList = () => {
                     <LeftDots/>
                     <LeftFade/>
                     <div className='playbook-list container-medium'>
-                        <div className='Backstage__header'>
-                            <div
-                                data-testid='titlePlaybook'
-                                className='title list-title'
-                            >
-                                {'Playbooks'}
-                            </div>
+                        <PlaybooksHeader data-testid='titlePlaybook'>
+                            {'Playbooks'}
                             {canCreatePlaybooks &&
-                                <div className='header-button-div'>
+                                <div>
                                     <TeamSelectorButton
                                         onClick={(team: Team) => newPlaybook(team)}
                                         teams={teams}
@@ -176,7 +179,7 @@ const PlaybookList = () => {
                                     />
                                 </div>
                             }
-                        </div>
+                        </PlaybooksHeader>
                         <BackstageListHeader>
                             <div className='row'>
                                 <div className='col-sm-4'>

@@ -39,6 +39,9 @@ const Updates = (props: Props) => {
             <PostContent
                 key={sp.id}
                 postId={sp.id}
+                channelId={props.playbookRun.channel_id}
+                playbookRunId={props.playbookRun.id}
+                playbookId={props.playbookRun.playbook_id}
                 team={team}
             />
         ));
@@ -52,7 +55,15 @@ const Updates = (props: Props) => {
     );
 };
 
-const PostContent = (props: { postId: string, team: Team }) => {
+type PostContentProps = {
+    postId: string;
+    team: Team;
+    channelId: string;
+    playbookId: string;
+    playbookRunId: string;
+}
+
+const PostContent = (props: PostContentProps) => {
     const post = usePost(props.postId);
 
     if (!post) {
@@ -63,6 +74,9 @@ const PostContent = (props: { postId: string, team: Team }) => {
         <StyledContent>
             <PostCard
                 post={post}
+                channelId={props.channelId}
+                playbookRunId={props.playbookRunId}
+                playbookId={props.playbookId}
                 team={props.team}
             />
         </StyledContent>

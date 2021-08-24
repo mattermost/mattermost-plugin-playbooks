@@ -29,6 +29,7 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import {useForceDocumentTitle, useRunsList} from 'src/hooks';
 import RunList from '../runs_list/runs_list';
+import {RegularHeading} from 'src/styles/headings';
 
 interface MatchParams {
     playbookId: string
@@ -252,6 +253,8 @@ const HorizontalBlock = styled.div`
 `;
 
 const Title = styled.div`
+    ${RegularHeading}
+
     font-size: 20px;
     line-height: 28px;
     color: var(--center-channel-color);
