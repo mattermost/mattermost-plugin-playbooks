@@ -480,7 +480,7 @@ func (h *PlaybookRunHandler) getPlaybookRun(w http.ResponseWriter, r *http.Reque
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := app.ViewPlaybookRunFromPlaybookRunID(userID, playbookRunID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+	if err := app.UserCanViewPlaybookRun(userID, playbookRunID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook run.", nil)
 		return
 	}
@@ -500,7 +500,7 @@ func (h *PlaybookRunHandler) getPlaybookRunMetadata(w http.ResponseWriter, r *ht
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := app.ViewPlaybookRunFromPlaybookRunID(userID, playbookRunID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+	if err := app.UserCanViewPlaybookRun(userID, playbookRunID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
 			errors.Errorf("userid: %s does not have permissions to view the playbook run details", userID))
 		return
@@ -521,7 +521,7 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(w http.ResponseWriter, r *h
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := app.ViewPlaybookRunFromChannelID(userID, channelID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+	if err := app.UserCanViewPlaybookRunFromChannelID(userID, channelID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
 		h.log.Warnf("User %s does not have permissions to get playbook run for channel %s", userID, channelID)
 		h.HandleErrorWithCode(w, http.StatusNotFound, "Not found",
 			errors.Errorf("playbook run for channel id %s not found", channelID))
@@ -936,7 +936,7 @@ func (h *PlaybookRunHandler) getChecklistAutocompleteItem(w http.ResponseWriter,
 	channelID := query.Get("channel_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := app.ViewPlaybookRunFromChannelID(userID, channelID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+	if err := app.UserCanViewPlaybookRunFromChannelID(userID, channelID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}
@@ -961,7 +961,7 @@ func (h *PlaybookRunHandler) getChecklistAutocomplete(w http.ResponseWriter, r *
 	channelID := query.Get("channel_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := app.ViewPlaybookRunFromChannelID(userID, channelID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+	if err := app.UserCanViewPlaybookRunFromChannelID(userID, channelID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}

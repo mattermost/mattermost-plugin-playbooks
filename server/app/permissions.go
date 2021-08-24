@@ -24,7 +24,9 @@ type RequesterInfo struct {
 	IsGuest bool
 }
 
-func ViewPlaybookRunFromPlaybookRunID(userID, playbookRunID string, playbookService PlaybookService, playbookRunService PlaybookRunService, pluginAPI *pluginapi.Client) error {
+// UserCanViewPlaybookRun returns nil if the userID has permissions to view the playbook run
+// associated with playbookRunID
+func UserCanViewPlaybookRun(userID, playbookRunID string, playbookService PlaybookService, playbookRunService PlaybookRunService, pluginAPI *pluginapi.Client) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil
 	}
@@ -38,12 +40,12 @@ func ViewPlaybookRunFromPlaybookRunID(userID, playbookRunID string, playbookServ
 		return nil
 	}
 
-	return PlaybookAccess(userID, playbookRunID, playbookService, pluginAPI)
+	return PlaybookAccess(userID, playbookRun.PlaybookID, playbookService, pluginAPI)
 }
 
-// ViewPlaybookRunFromChannelID returns nil if the userID has permissions to view the playbook run
+// UserCanViewPlaybookRunFromChannelID returns nil if the userID has permissions to view the playbook run
 // associated with channelID
-func ViewPlaybookRunFromChannelID(userID, channelID string, playbookService PlaybookService, playbookRunService PlaybookRunService, pluginAPI *pluginapi.Client) error {
+func UserCanViewPlaybookRunFromChannelID(userID, channelID string, playbookService PlaybookService, playbookRunService PlaybookRunService, pluginAPI *pluginapi.Client) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil
 	}
@@ -57,7 +59,12 @@ func ViewPlaybookRunFromChannelID(userID, channelID string, playbookService Play
 		return errors.Wrapf(err, "Unable to get playbookRunID to determine permissions, channel id `%s`", channelID)
 	}
 
-	return PlaybookAccess(userID, playbookRunID, playbookService, pluginAPI)
+	playbookRun, err := playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrapf(err, "Unable to get playbookRun to determine permissions, playbookRun id `%s`", playbookRunID)
+	}
+
+	return PlaybookAccess(userID, playbookRun.PlaybookID, playbookService, pluginAPI)
 }
 
 // EditPlaybookRun returns nil if the userID has permissions to edit channelID

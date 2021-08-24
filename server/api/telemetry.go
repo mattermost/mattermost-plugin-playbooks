@@ -63,7 +63,7 @@ func (h *TelemetryHandler) checkPlaybookRunViewPermissions(next http.Handler) ht
 		vars := mux.Vars(r)
 		userID := r.Header.Get("Mattermost-User-ID")
 
-		if err := app.ViewPlaybookRunFromPlaybookRunID(userID, vars["id"], h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+		if err := app.UserCanViewPlaybookRun(userID, vars["id"], h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
 			if errors.Is(err, app.ErrNoPermissions) {
 				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
