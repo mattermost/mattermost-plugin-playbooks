@@ -8,6 +8,7 @@ import {fetchPlaybookRuns} from 'src/client';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
 import {useRunsList} from 'src/hooks';
+import {BackstageHeader} from 'src/components/backstage/styles';
 
 import RunList from './runs_list/runs_list';
 import {statusOptions} from './runs_list/status_filter';
@@ -51,14 +52,9 @@ const RunsPage = () => {
 
     return (
         <div className='PlaybookRunList container-medium'>
-            <div className='Backstage__header'>
-                <div
-                    className='title'
-                    data-testid='titlePlaybookRun'
-                >
-                    {'Runs'}
-                </div>
-            </div>
+            <BackstageHeader data-testid='titlePlaybookRun'>
+                {'Runs'}
+            </BackstageHeader>
             <RunList
                 playbookRuns={playbookRuns}
                 totalCount={totalCount}

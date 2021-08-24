@@ -32,7 +32,7 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {FetchPlaybookRunsParams, PlaybookRun, StatusPost} from 'src/types/playbook_run';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
-import {getProfileSetForChannel} from 'src/selectors';
+import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';
 import {clientFetchPlaybooksCount, fetchPlaybookRuns, clientFetchPlaybook} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
@@ -208,9 +208,6 @@ export function useCanRestrictPlaybookCreation() {
 
     return settings.playbook_creators_user_ids.includes(currentUserID);
 }
-
-const selectExperimentalFeatures = (state: GlobalState) =>
-    Boolean(globalSettings(state)?.enable_experimental_features);
 
 export function useExperimentalFeaturesEnabled() {
     return useSelector(selectExperimentalFeatures);

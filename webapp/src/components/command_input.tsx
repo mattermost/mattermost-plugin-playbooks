@@ -10,17 +10,17 @@ import {BaseInput, InputTrashIcon} from './assets/inputs';
 const AutocompleteTextbox = window.Components.Textbox;
 
 const OverrideWebappStyle = createGlobalStyle`
-    .custom-textarea.custom-textarea {
+    input.custom-textarea.custom-textarea {
         border: none;
         box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
         height: 40px;
         min-height: 40px;
     }
 
-    .custom-textarea.custom-textarea:focus {
+    input.custom-textarea.custom-textarea:focus {
         border: none;
         box-shadow: inset 0 0 0 2px var(--button-bg);
-        padding: 0 30px 0 16px;
+        padding: 12px 30px 12px 16px;
     }
 
     .GenericModal .modal-body .form-control.form-control {
