@@ -95,9 +95,9 @@ export function startPlaybookRunById(teamId: string, playbookId: string) {
 
 export function promptUpdateStatus(
     teamId: string,
-    playbookRunId: PlaybookRun['id'],
-    playbookId: PlaybookRun['playbook_id'],
-    channelId: PlaybookRun['channel_id'],
+    playbookRunId: string,
+    playbookId: string,
+    channelId: string,
 ) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         const state = getState();

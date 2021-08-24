@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {ComponentProps, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {useSelector} from 'react-redux';
@@ -29,11 +29,11 @@ import {postStatusUpdate} from 'src/client';
 const ID = 'playbooks_update_run_status_dialog';
 
 type Props = {
-    playbookRunId: PlaybookRun['id'];
-    playbookId: PlaybookRun['playbook_id'];
-    channelId: PlaybookRun['channel_id'];
+    playbookRunId: string;
+    playbookId: string;
+    channelId: string;
     hasPermission: boolean;
-};
+} & Partial<ComponentProps<typeof GenericModal>>;
 
 export const makeModalDefinition = (props: Props) => ({
     modalId: ID,

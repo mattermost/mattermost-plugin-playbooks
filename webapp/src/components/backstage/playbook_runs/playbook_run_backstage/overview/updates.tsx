@@ -58,9 +58,9 @@ const Updates = (props: Props) => {
 type PostContentProps = {
     postId: string;
     team: Team;
-    channelId: PlaybookRun['channel_id'];
-    playbookId: PlaybookRun['playbook_id'];
-    playbookRunId: PlaybookRun['id'];
+    channelId: string;
+    playbookId: string;
+    playbookRunId: string;
 }
 
 const PostContent = (props: PostContentProps) => {
