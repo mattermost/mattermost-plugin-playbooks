@@ -1,31 +1,53 @@
-import {Store} from 'redux';
-import {GlobalState} from 'mattermost-redux/types/store';
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
 import {generateId} from 'mattermost-redux/utils/helpers';
 
-import {toggleRHS, setClientId, setRHSViewingList, setRHSViewingPlaybookRun} from 'src/actions';
-import {inPlaybookRunChannel, isPlaybookRunRHSOpen, currentRHSState} from 'src/selectors';
+import {Store} from 'src/types/store';
+
+import {
+    toggleRHS,
+    setClientId,
+    setRHSViewingList,
+    setRHSViewingPlaybookRun,
+    promptUpdateStatus,
+} from 'src/actions';
+
+import {
+    inPlaybookRunChannel,
+    isPlaybookRunRHSOpen,
+    currentRHSState,
+    selectExperimentalFeatures,
+    currentPlaybookRun,
+} from 'src/selectors';
+
 import {RHSState} from 'src/types/rhs';
 
-export function makeSlashCommandHook(store: Store<GlobalState>) {
-    return (message: any, args: any) => {
-        let messageTrimmed = '';
+type SlashCommandObj = {message?: string; args?: string[];} | {error: string;} | {};
 
-        if (message && typeof message === 'string') {
-            messageTrimmed = message.trim();
-        }
+export function makeSlashCommandHook(store: Store) {
+    return async (inMessage: any, args: any): Promise<SlashCommandObj> => {
+        const state = store.getState();
+        const isInPlaybookRunChannel = inPlaybookRunChannel(state);
+        const message = inMessage && typeof inMessage === 'string' ? inMessage.trim() : null;
+        const experimentalFeaturesEnabled = selectExperimentalFeatures(store.getState());
 
-        if (messageTrimmed && messageTrimmed.startsWith('/playbook run')) {
+        if (message?.startsWith('/playbook run')) {
             const clientId = generateId();
             store.dispatch(setClientId(clientId));
 
-            messageTrimmed = `/playbook run ${clientId}`;
-
-            return Promise.resolve({message: messageTrimmed, args});
+            return {message: `/playbook run ${clientId}`, args};
         }
 
-        if (messageTrimmed && messageTrimmed.startsWith('/playbook info')) {
-            const state = store.getState();
+        if (experimentalFeaturesEnabled && message?.startsWith('/playbook update') && isInPlaybookRunChannel) {
+            const clientId = generateId();
+            const currentRun = currentPlaybookRun(state);
+            store.dispatch(setClientId(clientId));
+            store.dispatch(promptUpdateStatus(currentRun.team_id, currentRun.id, currentRun.playbook_id, currentRun.channel_id));
+            return {};
+        }
 
+        if (message?.startsWith('/playbook info')) {
             if (inPlaybookRunChannel(state) && !isPlaybookRunRHSOpen(state)) {
                 //@ts-ignore thunk
                 store.dispatch(toggleRHS());
@@ -35,12 +57,10 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
                 store.dispatch(setRHSViewingPlaybookRun());
             }
 
-            return Promise.resolve({message: messageTrimmed, args});
+            return {message, args};
         }
 
-        if (messageTrimmed && messageTrimmed.startsWith('/playbook list')) {
-            const state = store.getState();
-
+        if (message?.startsWith('/playbook list')) {
             if (!isPlaybookRunRHSOpen(state)) {
                 //@ts-ignore thunk
                 store.dispatch(toggleRHS());
@@ -50,9 +70,9 @@ export function makeSlashCommandHook(store: Store<GlobalState>) {
                 store.dispatch(setRHSViewingList());
             }
 
-            return Promise.resolve({message: messageTrimmed, args});
+            return {message, args};
         }
 
-        return Promise.resolve({message, args});
+        return {message: inMessage, args};
     };
 }

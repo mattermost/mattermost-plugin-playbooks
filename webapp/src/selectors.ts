@@ -15,6 +15,10 @@ import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {$ID, IDMappedObjects, Dictionary} from 'mattermost-redux/types/utilities';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
+import {haveIChannelPermission, haveISystemPermission} from 'mattermost-redux/selectors/entities/roles';
+
+import Permissions from 'mattermost-redux/constants/permissions';
+
 import {pluginId} from 'src/manifest';
 import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter, TimelineEventsFilterDefault} from 'src/types/rhs';
@@ -42,6 +46,22 @@ export const globalSettings = (state: GlobalState): GlobalSettings | null => plu
 // reminder: myPlaybookRunsByTeam indexes teamId->channelId->playbookRun
 const myPlaybookRunsByTeam = (state: GlobalState): Record<string, Record<string, PlaybookRun>> =>
     pluginState(state).myPlaybookRunsByTeam;
+
+export const canIPostUpdateForRun = (state: GlobalState, channelId: string, teamId: string) => {
+    const canPost = haveIChannelPermission(state, {
+        channel: channelId,
+        team: teamId,
+        permission: Permissions.READ_CHANNEL,
+    });
+
+    const canManageSystem = haveISystemPermission(state, {
+        channel: channelId,
+        team: teamId,
+        permission: Permissions.MANAGE_SYSTEM,
+    });
+
+    return canPost || canManageSystem;
+};
 
 export const inPlaybookRunChannel = createSelector(
     getCurrentTeamId,
@@ -201,3 +221,5 @@ export const currentRHSAboutCollapsedState = createSelector(
         return stateByChannel[channelId] ?? false;
     },
 );
+
+export const selectExperimentalFeatures = (state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features);

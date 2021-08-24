@@ -9,9 +9,9 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 
-import {selectToggleRHS} from 'src/selectors';
+import {selectExperimentalFeatures, selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
 
 import {
@@ -62,6 +62,10 @@ import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 
+import {modals} from 'src/webapp_globals';
+
+import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
+
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
@@ -89,9 +93,22 @@ export function startPlaybookRunById(teamId: string, playbookId: string) {
     };
 }
 
-export function updateStatus(teamId: string, defaultStatus?: string) {
+export function promptUpdateStatus(
+    teamId: string,
+    playbookRunId: string,
+    playbookId: string,
+    channelId: string,
+) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
-        await clientExecuteCommand(dispatch, getState, `/playbook update ${defaultStatus ?? ''}`, teamId);
+        const state = getState();
+        const experimentalFeaturesEnabled = selectExperimentalFeatures(state);
+        const hasPermission = canIPostUpdateForRun(state, channelId, teamId);
+
+        if (experimentalFeaturesEnabled) {
+            dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookId, playbookRunId, channelId, hasPermission})));
+        } else {
+            await clientExecuteCommand(dispatch, getState, '/playbook update', teamId);
+        }
     };
 }
 
