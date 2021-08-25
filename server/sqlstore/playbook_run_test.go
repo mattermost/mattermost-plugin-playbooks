@@ -1722,9 +1722,9 @@ func TestGetOwners(t *testing.T) {
 			queryBuilder = queryBuilder.PlaceholderFormat(sq.Dollar)
 		}
 
-		insertOwner := queryBuilder.Insert("Users").Columns("ID", "Username")
+		insertOwner := queryBuilder.Insert("Users").Columns("ID", "Username", "FirstName", "LastName", "Nickname")
 		for _, owner := range owners {
-			insertOwner = insertOwner.Values(owner.UserID, owner.Username)
+			insertOwner = insertOwner.Values(owner.UserID, owner.Username, owner.FirstName, owner.LastName, owner.Nickname)
 		}
 
 		query, args, err := insertOwner.ToSql()

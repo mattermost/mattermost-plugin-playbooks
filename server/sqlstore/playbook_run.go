@@ -694,7 +694,7 @@ func (s *playbookRunStore) GetOwners(requesterInfo app.RequesterInfo, options ap
 
 	// At the moment, the options only includes teamID
 	query := s.queryBuilder.
-		Select("DISTINCT u.Id AS UserID", "u.Username").
+		Select("DISTINCT u.Id AS UserID", "u.Username", "u.FirstName", "u.LastName", "u.Nickname").
 		From("IR_Incident AS i").
 		Join("Users AS u ON i.CommanderUserID = u.Id").
 		Where(teamLimitExpr).

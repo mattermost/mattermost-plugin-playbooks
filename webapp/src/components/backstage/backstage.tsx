@@ -21,8 +21,6 @@ import {promptForFeedback} from 'src/client';
 import PlaybookRunBackstage
     from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
 
-import BackstagePlaybookRunList from 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list';
-
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
@@ -40,6 +38,7 @@ import SettingsView from './settings';
 import {BackstageNavbar} from './backstage_navbar';
 
 import {applyTheme} from './css_utils';
+import RunsPage from './runs_page';
 
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
@@ -194,7 +193,7 @@ const Backstage = () => {
                         to={`${match.url}/runs`}
                     />
                     <Route path={`${match.url}/runs`}>
-                        <BackstagePlaybookRunList/>
+                        <RunsPage/>
                     </Route>
                     <Route path={`${match.url}/settings`}>
                         <SettingsView/>
