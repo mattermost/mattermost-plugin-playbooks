@@ -61,10 +61,8 @@ func (b *Bot) DM(userID string, post *model.Post) error {
 	}
 	post.ChannelId = channel.Id
 	post.UserId = b.botUserID
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
-		return err
-	}
-	return nil
+
+	return b.pluginAPI.Post.CreatePost(post)
 }
 
 // EphemeralPost sends an ephemeral message to a user

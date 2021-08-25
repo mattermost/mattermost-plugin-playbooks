@@ -232,11 +232,7 @@ func PlaybookLicensedFeatures(playbook Playbook, cfgService config.Service, play
 		return nil
 	}
 
-	if err := checkPlaybookIsNotUsingE10Features(playbook, playbookService); err != nil {
-		return err
-	}
-
-	return nil
+	return checkPlaybookIsNotUsingE10Features(playbook, playbookService)
 }
 
 func CreatePlaybook(userID string, playbook Playbook, cfgService config.Service, pluginAPI *pluginapi.Client, playbookService PlaybookService) error {
