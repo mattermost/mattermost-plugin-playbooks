@@ -29,9 +29,11 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
+import {FetchPlaybookRunsParams, PlaybookRun, StatusPost} from 'src/types/playbook_run';
+
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';
-import {clientFetchPlaybooksCount} from 'src/client';
+import {clientFetchPlaybooksCount, fetchPlaybookRuns, clientFetchPlaybook} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
 import {
@@ -445,3 +447,52 @@ export function useNow(refreshIntervalMillis = 1000) {
 
     return now;
 }
+
+export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
+[PlaybookRun[], number, FetchPlaybookRunsParams, React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>] {
+    const [playbookRuns, setPlaybookRuns] = useState<PlaybookRun[]>([]);
+    const [totalCount, setTotalCount] = useState(0);
+    const [fetchParams, setFetchParams] = useState(defaultFetchParams);
+
+    useEffect(() => {
+        let isCanceled = false;
+
+        async function fetchPlaybookRunsAsync() {
+            const playbookRunsReturn = await fetchPlaybookRuns(fetchParams);
+
+            if (!isCanceled) {
+                setPlaybookRuns(playbookRunsReturn.items);
+                setTotalCount(playbookRunsReturn.total_count);
+            }
+        }
+
+        fetchPlaybookRunsAsync();
+
+        return () => {
+            isCanceled = true;
+        };
+    }, [fetchParams]);
+
+    return [playbookRuns, totalCount, fetchParams, setFetchParams];
+}
+
+export const usePlaybookName = (playbookId: string) => {
+    const [playbookName, setPlaybookName] = useState('');
+
+    useEffect(() => {
+        const getPlaybookName = async () => {
+            if (playbookId !== '') {
+                try {
+                    const playbook = await clientFetchPlaybook(playbookId);
+                    setPlaybookName(playbook?.title || '');
+                } catch {
+                    setPlaybookName('');
+                }
+            }
+        };
+
+        getPlaybookName();
+    }, [playbookId]);
+
+    return playbookName;
+};
