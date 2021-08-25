@@ -6,7 +6,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
@@ -27,11 +27,11 @@ func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 	db = sqlx.NewDb(origDB, pluginAPI.Store.DriverName())
 
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
-	if pluginAPI.Store.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+	if pluginAPI.Store.DriverName() == model.DatabaseDriverPostgres {
 		builder = builder.PlaceholderFormat(sq.Dollar)
 	}
 
-	if pluginAPI.Store.DriverName() == model.DATABASE_DRIVER_MYSQL {
+	if pluginAPI.Store.DriverName() == model.DatabaseDriverMysql {
 		db.MapperFunc(func(s string) string { return s })
 	}
 
