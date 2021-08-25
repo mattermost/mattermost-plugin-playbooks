@@ -100,9 +100,10 @@ func TestCreatePlaybookRun(t *testing.T) {
 
 		teamID := model.NewId()
 		playbookRun := &app.PlaybookRun{
-			Name:        "###",
-			TeamID:      teamID,
-			OwnerUserID: "user_id",
+			Name:                "###",
+			TeamID:              teamID,
+			OwnerUserID:         "user_id",
+			BroadcastChannelIDs: []string{},
 		}
 
 		store.EXPECT().CreatePlaybookRun(gomock.Any()).Return(playbookRun, nil)
@@ -380,7 +381,7 @@ func TestUpdateStatus(t *testing.T) {
 			Name:                     "Name",
 			TeamID:                   teamID,
 			ChannelID:                "channel_id",
-			BroadcastChannelID:       "broadcast_channel_id",
+			BroadcastChannelIDs:      []string{"broadcast_channel_id"},
 			OwnerUserID:              "user_id",
 			CurrentStatus:            app.StatusInProgress,
 			CreateAt:                 1620018358404,
