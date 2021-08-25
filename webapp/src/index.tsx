@@ -6,6 +6,8 @@ import {Store, Unsubscribe} from 'redux';
 import {debounce} from 'debounce';
 
 import {GlobalState} from 'mattermost-redux/types/store';
+import {getConfig} from 'mattermost-redux/selectors/entities/general';
+import {Client4} from 'mattermost-redux/client';
 
 //@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
@@ -49,7 +51,7 @@ import {
 import RegistryWrapper from './registry_wrapper';
 import SystemConsoleEnabledTeams from './system_console_enabled_teams';
 import {makeUpdateMainMenu} from './make_update_main_menu';
-import {fetchGlobalSettings} from './client';
+import {fetchGlobalSettings, setSiteUrl} from './client';
 import {CloudUpgradePost} from './components/cloud_upgrade_post';
 
 const GlobalHeaderCenter = () => {
@@ -74,6 +76,12 @@ export default class Plugin {
 
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
         registry.registerReducer(reducer);
+
+        // Consume the SiteURL so that the client is subpath aware. We also do this for Client4
+        // in our version of the mattermost-redux, since webapp only does it in its copy.
+        const siteUrl = getConfig(store.getState())?.SiteURL || '';
+        setSiteUrl(siteUrl);
+        Client4.setUrl(siteUrl);
 
         const updateMainMenuAction = makeUpdateMainMenu(registry, store);
         updateMainMenuAction();
