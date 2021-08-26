@@ -17,8 +17,8 @@ import (
 	mock_poster "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	mock_config "github.com/mattermost/mattermost-plugin-playbooks/server/config/mocks"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -130,7 +130,7 @@ func TestPlaybooks(t *testing.T) {
 	server := httptest.NewServer(mattermostHandler)
 	t.Cleanup(server.Close)
 
-	c, err := icClient.New(&model.Client4{Url: server.URL})
+	c, err := icClient.New(&model.Client4{URL: server.URL})
 	require.NoError(t, err)
 
 	reset := func(t *testing.T) {
@@ -246,7 +246,7 @@ func TestPlaybooks(t *testing.T) {
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(1, nil)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		playbookService.EXPECT().
@@ -305,7 +305,7 @@ func TestPlaybooks(t *testing.T) {
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		playbookService.EXPECT().
@@ -364,7 +364,7 @@ func TestPlaybooks(t *testing.T) {
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		playbookService.EXPECT().
@@ -418,7 +418,7 @@ func TestPlaybooks(t *testing.T) {
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		playbookService.EXPECT().
@@ -477,7 +477,7 @@ func TestPlaybooks(t *testing.T) {
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(withMember.TeamID).Return(0, nil)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
@@ -538,7 +538,7 @@ func TestPlaybooks(t *testing.T) {
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(withMember.TeamID).Return(0, nil)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
@@ -573,7 +573,7 @@ func TestPlaybooks(t *testing.T) {
 				"teamID": playbooktest.TeamID,
 			}, playbooktest.TeamID)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
@@ -597,7 +597,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(model.NewId(), nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Roles: "system_guest"}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
@@ -621,8 +621,8 @@ func TestPlaybooks(t *testing.T) {
 			Return(model.NewId(), nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionToChannel", "testuserid", broadcastChannelID, model.PERMISSION_CREATE_POST).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", broadcastChannelID, model.PermissionCreatePost).Return(false)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
@@ -676,8 +676,8 @@ func TestPlaybooks(t *testing.T) {
 				"teamID": playbooktest.TeamID,
 			}, playbooktest.TeamID)
 
-		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetGroup", "testInvitedGroupID1").Return(&model.Group{
 			Id:             "testInvitedGroupID1",
 			AllowReference: true,
@@ -686,8 +686,8 @@ func TestPlaybooks(t *testing.T) {
 			Id:             "testInvitedGroupID2",
 			AllowReference: true,
 		}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
@@ -744,8 +744,8 @@ func TestPlaybooks(t *testing.T) {
 				"teamID": playbooktest.TeamID,
 			}, playbooktest.TeamID)
 
-		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetGroup", "testInvitedGroupID1").Return(&model.Group{
 			Id:             "testInvitedGroupID1",
 			AllowReference: true,
@@ -754,8 +754,8 @@ func TestPlaybooks(t *testing.T) {
 			Id:             "testInvitedGroupID2",
 			AllowReference: true,
 		}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
@@ -808,8 +808,8 @@ func TestPlaybooks(t *testing.T) {
 			Return(model.NewId(), nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetGroup", "testInvitedGroupID1").Return(&model.Group{
 			Id:             "testInvitedGroupID1",
 			AllowReference: true,
@@ -818,8 +818,8 @@ func TestPlaybooks(t *testing.T) {
 			Id:             "testInvitedGroupID2",
 			AllowReference: false,
 		}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
@@ -848,7 +848,7 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("get playbook", func(t *testing.T) {
 		reset(t)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
@@ -888,8 +888,8 @@ func TestPlaybooks(t *testing.T) {
 			Return(playbookResult, nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{})
@@ -933,8 +933,8 @@ func TestPlaybooks(t *testing.T) {
 			Return(playbookResult, nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Roles: "system_guest"}, nil)
 
 		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{})
@@ -970,8 +970,8 @@ func TestPlaybooks(t *testing.T) {
 			Return(playbookResult, nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{})
@@ -999,7 +999,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withMember))
@@ -1020,10 +1020,10 @@ func TestPlaybooks(t *testing.T) {
 			Return(nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 
-		pluginAPI.On("HasPermissionToChannel", "testuserid", withBroadcastChannel.BroadcastChannelID, model.PERMISSION_CREATE_POST).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testuserid", withBroadcastChannel.BroadcastChannelID, model.PermissionCreatePost).Return(false)
 
 		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withBroadcastChannel))
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
@@ -1042,7 +1042,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 
 		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withBroadcastChannel))
 		require.NoError(t, err)
@@ -1088,8 +1088,8 @@ func TestPlaybooks(t *testing.T) {
 			Return(nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetGroup", "testInvitedGroupID1").Return(&model.Group{
 			Id:             "testInvitedGroupID1",
 			AllowReference: true,
@@ -1098,7 +1098,7 @@ func TestPlaybooks(t *testing.T) {
 			Id:             "testInvitedGroupID2",
 			AllowReference: true,
 		}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 
 		handler.ServeHTTP(testrecorder, testreq)
 
@@ -1147,8 +1147,8 @@ func TestPlaybooks(t *testing.T) {
 			Return(nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetGroup", "testInvitedGroupID1").Return(&model.Group{
 			Id:             "testInvitedGroupID1",
 			AllowReference: true,
@@ -1157,8 +1157,8 @@ func TestPlaybooks(t *testing.T) {
 			Id:             "testInvitedGroupID2",
 			AllowReference: true,
 		}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 
 		handler.ServeHTTP(testrecorder, testreq)
 
@@ -1209,8 +1209,8 @@ func TestPlaybooks(t *testing.T) {
 			Return(nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID1", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testInvitedUserID2", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetGroup", "testInvitedGroupID1").Return(&model.Group{
 			Id:             "testInvitedGroupID1",
 			AllowReference: true,
@@ -1219,8 +1219,8 @@ func TestPlaybooks(t *testing.T) {
 			Id:             "testInvitedGroupID2",
 			AllowReference: false,
 		}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 		pluginAPI.On("LogWarn", "group does not allow references, removing from automated invite list", "group_id", "testInvitedGroupID2")
 
 		handler.ServeHTTP(testrecorder, testreq)
@@ -1247,8 +1247,8 @@ func TestPlaybooks(t *testing.T) {
 				"teamID": playbooktest.TeamID,
 			}, playbooktest.TeamID)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 
 		err := c.Playbooks.Delete(context.TODO(), "testplaybookid")
 		require.NoError(t, err)
@@ -1263,7 +1263,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(withid, nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(false)
 
 		err := c.Playbooks.Delete(context.TODO(), "testplaybookid")
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
@@ -1273,7 +1273,7 @@ func TestPlaybooks(t *testing.T) {
 		reset(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(false)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
@@ -1296,7 +1296,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(withid, nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(false)
 
 		result, err := c.Playbooks.Get(context.TODO(), "testplaybookid")
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
@@ -1307,7 +1307,7 @@ func TestPlaybooks(t *testing.T) {
 		reset(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(false)
 
 		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
@@ -1323,7 +1323,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(withid, nil).
 			Times(2)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(false)
 
 		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withid))
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
@@ -1332,8 +1332,8 @@ func TestPlaybooks(t *testing.T) {
 	t.Run("get playbook by member", func(t *testing.T) {
 		reset(t)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(false)
 
 		playbookService.EXPECT().
 			Get("playbookwithmember").
@@ -1350,8 +1350,8 @@ func TestPlaybooks(t *testing.T) {
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 		mattermostUserID = "unknownMember"
 
-		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "unknownMember", model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "unknownMember", model.PermissionManageSystem).Return(false)
 
 		playbookService.EXPECT().
 			Get("playbookwithmember").
@@ -1379,8 +1379,8 @@ func TestPlaybooks(t *testing.T) {
 			Return(nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(false)
 
 		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(updatedPlaybook))
 		require.NoError(t, err)
@@ -1404,8 +1404,8 @@ func TestPlaybooks(t *testing.T) {
 			Return(nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "unknownMember", model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "unknownMember", model.PermissionManageSystem).Return(false)
 
 		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(updatedPlaybook))
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
@@ -1429,8 +1429,8 @@ func TestPlaybooks(t *testing.T) {
 				"teamID": playbooktest.TeamID,
 			}, playbooktest.TeamID)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(false)
 
 		err := c.Playbooks.Delete(context.TODO(), "playbookwithmember")
 		require.NoError(t, err)
@@ -1446,8 +1446,8 @@ func TestPlaybooks(t *testing.T) {
 			Return(withMember, nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "unknownMember", model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "unknownMember", model.PermissionManageSystem).Return(false)
 
 		err := c.Playbooks.Delete(context.TODO(), "playbookwithmember")
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
@@ -1481,8 +1481,8 @@ func TestPlaybooks(t *testing.T) {
 			Return(playbookResult, nil).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(false)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{})
@@ -1612,7 +1612,7 @@ func TestSortingPlaybooks(t *testing.T) {
 	server := httptest.NewServer(mattermostHandler)
 	t.Cleanup(server.Close)
 
-	c, err := icClient.New(&model.Client4{Url: server.URL})
+	c, err := icClient.New(&model.Client4{URL: server.URL})
 	require.NoError(t, err)
 
 	reset := func(t *testing.T) {
@@ -1760,8 +1760,8 @@ func TestSortingPlaybooks(t *testing.T) {
 				Return(playbookResult, nil).
 				Times(1)
 
-			pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-			pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+			pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+			pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 			pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 			actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{
@@ -1833,7 +1833,7 @@ func TestPagingPlaybooks(t *testing.T) {
 	server := httptest.NewServer(mattermostHandler)
 	t.Cleanup(server.Close)
 
-	c, err := icClient.New(&model.Client4{Url: server.URL})
+	c, err := icClient.New(&model.Client4{URL: server.URL})
 	require.NoError(t, err)
 
 	reset := func(t *testing.T) {
@@ -1995,8 +1995,8 @@ func TestPagingPlaybooks(t *testing.T) {
 				Return(data.expectedResult, nil).
 				Times(1)
 
-			pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PERMISSION_VIEW_TEAM).Return(true)
-			pluginAPI.On("HasPermissionTo", "testuserid", model.PERMISSION_MANAGE_SYSTEM).Return(true)
+			pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+			pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 			pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 			actualList, err := c.Playbooks.List(context.TODO(), "testteamid", data.page, data.perPage, icClient.PlaybookListOptions{})

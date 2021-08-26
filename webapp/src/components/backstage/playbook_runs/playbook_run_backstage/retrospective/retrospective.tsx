@@ -8,8 +8,6 @@ import {Container, Left, Right} from 'src/components/backstage/playbook_runs/sha
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
 
-//import Followups from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/followups';
-//import Learnings from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/learnings';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -35,8 +33,6 @@ export const Retrospective = (props: { playbookRun: PlaybookRun }) => {
         <Container>
             <Left>
                 <Report playbookRun={props.playbookRun}/>
-                {/*<Learnings playbookRun={props.playbookRun}/>*/}
-                {/*<Followups playbookRun={props.playbookRun}/>*/}
             </Left>
             <Right>
                 <TimelineRetro playbookRun={props.playbookRun}/>

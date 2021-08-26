@@ -53,6 +53,7 @@ ifneq ($(HAS_SERVER),)
 	fi; \
 
 	@echo Running golangci-lint
+	golangci-lint --version
 	golangci-lint run ./...
 endif
 

@@ -7,7 +7,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/golang/mock/gomock"
 	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,7 +18,7 @@ func TestMigrationIdempotency(t *testing.T) {
 
 	for _, driver := range driverNames {
 		builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
-		if driver == model.DATABASE_DRIVER_POSTGRES {
+		if driver == model.DatabaseDriverPostgres {
 			builder = builder.PlaceholderFormat(sq.Dollar)
 		}
 

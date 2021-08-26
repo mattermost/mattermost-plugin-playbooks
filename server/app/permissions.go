@@ -4,7 +4,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -45,7 +45,7 @@ func UserCanViewPlaybookRun(userID, playbookRunID string, playbookService Playbo
 
 // UserCanViewPlaybookRunFromChannelID returns nil if the userID has permissions to view the playbook run
 // associated with channelID
-func UserCanViewPlaybookRunFromChannelID(userID, channelID string, playbookService PlaybookService, playbookRunService PlaybookRunService, pluginAPI *pluginapi.Client) error {
+func ViewPlaybookRunFromChannelID(userID, channelID string, pluginAPI *pluginapi.Client) error {
 	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
 		return nil
 	}
@@ -61,7 +61,11 @@ func UserCanViewPlaybookRunFromChannelID(userID, channelID string, playbookServi
 
 	playbookRun, err := playbookRunService.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrapf(err, "Unable to get playbookRun to determine permissions, playbookRun id `%s`", playbookRunID)
+		return errors.Wrapf(err, "Unable to get channel to determine permissions, channel id `%s`", channelID)
+	}
+
+	if channel.Type == model.CHANNEL_OPEN && pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_LIST_TEAM_CHANNELS) {
+		return nil
 	}
 
 	return PlaybookAccess(userID, playbookRun.PlaybookID, playbookService, pluginAPI)
@@ -69,11 +73,11 @@ func UserCanViewPlaybookRunFromChannelID(userID, channelID string, playbookServi
 
 // EditPlaybookRun returns nil if the userID has permissions to edit channelID
 func EditPlaybookRun(userID, channelID string, pluginAPI *pluginapi.Client) error {
-	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
+	if pluginAPI.User.HasPermissionTo(userID, model.PermissionManageSystem) {
 		return nil
 	}
 
-	if pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) {
+	if pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
 		return nil
 	}
 
@@ -82,12 +86,12 @@ func EditPlaybookRun(userID, channelID string, pluginAPI *pluginapi.Client) erro
 
 // CanViewTeam returns true if the userID has permissions to view teamID
 func CanViewTeam(userID, teamID string, pluginAPI *pluginapi.Client) bool {
-	return pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PERMISSION_VIEW_TEAM)
+	return pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam)
 }
 
 // IsAdmin returns true if the userID is a system admin
 func IsAdmin(userID string, pluginAPI *pluginapi.Client) bool {
-	return pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM)
+	return pluginAPI.User.HasPermissionTo(userID, model.PermissionManageSystem)
 }
 
 // IsGuest returns true if the userID is a system guest
@@ -105,7 +109,7 @@ func IsMemberOfChannel(userID, channelID string, pluginAPI *pluginapi.Client) bo
 }
 
 func CanPostToChannel(userID, channelID string, pluginAPI *pluginapi.Client) bool {
-	return pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_CREATE_POST)
+	return pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost)
 }
 
 func GetRequesterInfo(userID string, pluginAPI *pluginapi.Client) (RequesterInfo, error) {
@@ -257,11 +261,7 @@ func PlaybookLicensedFeatures(playbook Playbook, cfgService config.Service, play
 		return nil
 	}
 
-	if err := checkPlaybookIsNotUsingE10Features(playbook, playbookService); err != nil {
-		return err
-	}
-
-	return nil
+	return checkPlaybookIsNotUsingE10Features(playbook, playbookService)
 }
 
 func CreatePlaybook(userID string, playbook Playbook, cfgService config.Service, pluginAPI *pluginapi.Client, playbookService PlaybookService) error {
@@ -289,7 +289,7 @@ func CreatePlaybook(userID string, playbook Playbook, cfgService config.Service,
 	}
 
 	if playbook.BroadcastChannelID != "" &&
-		!pluginAPI.User.HasPermissionToChannel(userID, playbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
+		!pluginAPI.User.HasPermissionToChannel(userID, playbook.BroadcastChannelID, model.PermissionCreatePost) {
 		return errors.Errorf(
 			"userID %s does not have permission to create posts in the channel %s",
 			userID,
@@ -306,7 +306,7 @@ func CreatePlaybook(userID string, playbook Playbook, cfgService config.Service,
 	}
 
 	if playbook.AnnouncementChannelID != "" &&
-		!pluginAPI.User.HasPermissionToChannel(userID, playbook.AnnouncementChannelID, model.PERMISSION_CREATE_POST) {
+		!pluginAPI.User.HasPermissionToChannel(userID, playbook.AnnouncementChannelID, model.PermissionCreatePost) {
 		return errors.Errorf(
 			"userID %s does not have permission to create posts in the channel %s",
 			userID,
@@ -316,7 +316,7 @@ func CreatePlaybook(userID string, playbook Playbook, cfgService config.Service,
 
 	// Check all invited users have permissions to the team.
 	for _, userID := range playbook.InvitedUserIDs {
-		if !pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+		if !pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionViewTeam) {
 			return errors.Errorf(
 				"invited user with ID %s does not have permission to playbook's team %s",
 				userID,
@@ -351,7 +351,7 @@ func PlaybookModify(userID string, playbook, oldPlaybook Playbook, cfgService co
 
 	if playbook.BroadcastChannelID != "" &&
 		playbook.BroadcastChannelID != oldPlaybook.BroadcastChannelID &&
-		!pluginAPI.User.HasPermissionToChannel(userID, playbook.BroadcastChannelID, model.PERMISSION_CREATE_POST) {
+		!pluginAPI.User.HasPermissionToChannel(userID, playbook.BroadcastChannelID, model.PermissionCreatePost) {
 		return errors.Wrapf(
 			ErrNoPermissions,
 			"userID %s does not have permission to create posts in the channel %s",

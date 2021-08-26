@@ -6,7 +6,7 @@ import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
 import moment from 'moment';
 
-import {updateStatus} from 'src/actions';
+import {promptUpdateStatus} from 'src/actions';
 import {PlaybookRun} from 'src/types/playbook_run';
 import RHSPostUpdateButton from 'src/components/rhs/rhs_post_update_button';
 import Exclamation from 'src/components/assets/icons/exclamation';
@@ -73,7 +73,14 @@ const RHSPostUpdate = (props: Props) => {
                 collapsed={props.collapsed}
                 isNextUpdateScheduled={isNextUpdateScheduled}
                 updatesExist={props.updatesExist}
-                onClick={() => dispatch(updateStatus(props.playbookRun.team_id))}
+                onClick={() => {
+                    dispatch(promptUpdateStatus(
+                        props.playbookRun.team_id,
+                        props.playbookRun.id,
+                        props.playbookRun.playbook_id,
+                        props.playbookRun.channel_id,
+                    ));
+                }}
                 isDue={isDue}
             />
         </PostUpdate>
@@ -92,6 +99,7 @@ const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) 
 };
 
 const PastTimeSpec = [
+    {within: ['second', -45], display: 'just now'},
     ['minute', -59],
     ['hour', -48],
     ['day', -30],
@@ -100,7 +108,6 @@ const PastTimeSpec = [
 ];
 
 const FutureTimeSpec = [
-    'now',
     ['minute', 59],
     ['hour', 48],
     ['day', 30],

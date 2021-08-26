@@ -17,7 +17,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
@@ -122,7 +122,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 				AND cm.UserId NOT IN (SELECT UserId FROM Bots)
 			), ''
         ) AS ConcatenatedParticipantIDs`
-	if sqlStore.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+	if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
 		participantsCol = `
         COALESCE(
 			(SELECT group_concat(cm.UserId separator ',')
@@ -250,7 +250,7 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 
 		// Postgres performs a case-sensitive search, so we need to lowercase
 		// both the column contents and the search string
-		if s.store.db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		if s.store.db.DriverName() == model.DatabaseDriverPostgres {
 			column = "LOWER(c.DisplayName)"
 			searchString = strings.ToLower(options.SearchTerm)
 		}
@@ -694,7 +694,7 @@ func (s *playbookRunStore) GetOwners(requesterInfo app.RequesterInfo, options ap
 
 	// At the moment, the options only includes teamID
 	query := s.queryBuilder.
-		Select("DISTINCT u.Id AS UserID", "u.Username").
+		Select("DISTINCT u.Id AS UserID", "u.Username", "u.FirstName", "u.LastName", "u.Nickname").
 		From("IR_Incident AS i").
 		Join("Users AS u ON i.CommanderUserID = u.Id").
 		Where(teamLimitExpr).
@@ -782,7 +782,7 @@ func (s *playbookRunStore) SetViewedChannel(userID, channelID string) error {
 		}))
 
 	if err != nil {
-		if s.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+		if s.store.db.DriverName() == model.DatabaseDriverMysql {
 			me, ok := err.(*mysql.MySQLError)
 			if ok && me.Number == 1062 {
 				return errors.Wrap(app.ErrDuplicateEntry, err.Error())

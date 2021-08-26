@@ -6,16 +6,16 @@ import (
 	"log"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 func Example() {
 	ctx := context.Background()
 
 	client4 := model.NewAPIv4Client("http://localhost:8065")
-	_, response := client4.Login("test@example.com", "testtest")
-	if response.Error != nil {
-		log.Fatal(response.Error)
+	_, _, err := client4.Login("test@example.com", "testtest")
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	c, err := client.New(client4)

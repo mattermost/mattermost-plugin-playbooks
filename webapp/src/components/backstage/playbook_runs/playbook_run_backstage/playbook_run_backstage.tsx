@@ -22,6 +22,7 @@ import {clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookRunMetadata} from 's
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
+import {RegularHeading} from 'src/styles/headings';
 
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
@@ -100,6 +101,8 @@ const VerticalBlock = styled.div`
 `;
 
 const Title = styled.div`
+    ${RegularHeading}
+
     font-size: 20px;
     color: var(--center-channel-color);
 `;
