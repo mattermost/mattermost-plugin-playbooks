@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 func ExamplePlaybooksService_Get() {
@@ -33,14 +33,14 @@ func ExamplePlaybooksService_List() {
 	ctx := context.Background()
 
 	client4 := model.NewAPIv4Client("http://localhost:8065")
-	_, response := client4.Login("test@example.com", "testtest")
-	if response.Error != nil {
-		log.Fatal(response.Error.Error())
+	_, _, err := client4.Login("test@example.com", "testtest")
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 
-	teams, response := client4.GetAllTeams("", 0, 1)
-	if response.Error != nil {
-		log.Fatal(response.Error.Error())
+	teams, _, err := client4.GetAllTeams("", 0, 1)
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 	if len(teams) == 0 {
 		log.Fatal("no teams for this user")

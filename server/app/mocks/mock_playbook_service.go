@@ -5,10 +5,11 @@
 package mock_app
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	app "github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	model "github.com/mattermost/mattermost-server/v5/model"
-	reflect "reflect"
+	model "github.com/mattermost/mattermost-server/v6/model"
 )
 
 // MockPlaybookService is a mock of PlaybookService interface

@@ -12,8 +12,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	icClient "github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -50,7 +50,7 @@ func TestPlaybookRuns(t *testing.T) {
 	server := httptest.NewServer(mattermostHandler)
 	t.Cleanup(server.Close)
 
-	c, err := icClient.New(&model.Client4{Url: server.URL})
+	c, err := icClient.New(&model.Client4{URL: server.URL})
 	require.NoError(t, err)
 
 	reset := func(t *testing.T) {
@@ -169,8 +169,8 @@ func TestPlaybookRuns(t *testing.T) {
 		retI := i.Clone()
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePublicChannel).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
 		playbookRunService.EXPECT().CreatePlaybookRun(&i, &withid, "testUserID", true).Return(retI, nil)
@@ -231,8 +231,8 @@ func TestPlaybookRuns(t *testing.T) {
 		retI := i
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePublicChannel).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
 		poster.EXPECT().PublishWebsocketEventToUser(gomock.Any(), gomock.Any(), gomock.Any())
 		poster.EXPECT().EphemeralPost(gomock.Any(), gomock.Any(), gomock.Any())
 		playbookRunService.EXPECT().CreatePlaybookRun(&i, &withid, "testUserID", true).Return(&retI, nil)
@@ -289,8 +289,8 @@ func TestPlaybookRuns(t *testing.T) {
 		retI := i
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePublicChannel).Return(false)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -356,8 +356,8 @@ func TestPlaybookRuns(t *testing.T) {
 		retI := i
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PRIVATE_CHANNEL).Return(false)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePrivateChannel).Return(false)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -464,7 +464,7 @@ func TestPlaybookRuns(t *testing.T) {
 			).
 			Times(1)
 
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -511,10 +511,10 @@ func TestPlaybookRuns(t *testing.T) {
 			Times(1)
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePublicChannel).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetPost", "privatePostID").Return(&model.Post{ChannelId: "privateChannelId"}, nil)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PERMISSION_READ_CHANNEL).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PermissionReadChannel).Return(false)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -560,10 +560,10 @@ func TestPlaybookRuns(t *testing.T) {
 			Times(1)
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePublicChannel).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetPost", "privatePostID").Return(&model.Post{ChannelId: "privateChannelId"}, nil)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PERMISSION_READ_CHANNEL).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PermissionReadChannel).Return(false)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
@@ -613,8 +613,8 @@ func TestPlaybookRuns(t *testing.T) {
 		retI.ID = "playbookRunID"
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePublicChannel).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
 		playbookRunService.EXPECT().CreatePlaybookRun(&testPlaybookRun, &testPlaybook, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
@@ -669,8 +669,8 @@ func TestPlaybookRuns(t *testing.T) {
 		retI.ID = "playbookRunID"
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePublicChannel).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
 		playbookRunService.EXPECT().CreatePlaybookRun(&testPlaybookRun, &testPlaybook, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
@@ -703,8 +703,8 @@ func TestPlaybookRuns(t *testing.T) {
 		retI.ID = "playbookRunID"
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePublicChannel).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
 		playbookRunService.EXPECT().CreatePlaybookRun(&testPlaybookRun, nil, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
@@ -732,8 +732,8 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePublicChannel).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
 
 		resultPlaybookRun, err := c.PlaybookRuns.Create(context.TODO(), icClient.PlaybookRunCreateOptions{
 			Name:   testPlaybookRun.Name,
@@ -775,8 +775,8 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePublicChannel).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
 
 		resultPlaybookRun, err := c.PlaybookRuns.Create(context.TODO(), icClient.PlaybookRunCreateOptions{
 			Name:        "",
@@ -842,8 +842,8 @@ func TestPlaybookRuns(t *testing.T) {
 		retI.ID = "playbookRunID"
 		retI.ChannelID = "channelID"
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_CREATE_PUBLIC_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePublicChannel).Return(true)
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
 		playbookRunService.EXPECT().CreatePlaybookRun(&testPlaybookRun, &testPlaybook, "testUserID", true).Return(&retI, nil)
 
 		// Verify that the websocket event is published
@@ -879,8 +879,8 @@ func TestPlaybookRuns(t *testing.T) {
 			TimelineEvents:  []app.TimelineEvent{},
 		}
 
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(true)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 
 		playbookRunService.EXPECT().GetPlaybookRunIDForChannel("channelID").Return("playbookRunID", nil)
@@ -906,8 +906,8 @@ func TestPlaybookRuns(t *testing.T) {
 			ChannelID:   "channelID",
 		}
 
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(true)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 
 		playbookRunService.EXPECT().GetPlaybookRunIDForChannel("channelID").Return("", app.ErrNotFound)
@@ -932,8 +932,8 @@ func TestPlaybookRuns(t *testing.T) {
 			ChannelID:   "channelID",
 		}
 
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(false)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(false)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil)
 		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil)
@@ -962,9 +962,9 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(&model.Channel{Type: model.ChannelTypePrivate}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(false)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -999,9 +999,9 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(&model.Channel{Type: model.ChannelTypePrivate}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -1034,11 +1034,11 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testPlaybookRun.TeamID}, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(&model.Channel{Type: model.ChannelTypeOpen, TeamId: testPlaybookRun.TeamID}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(false)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
+		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PermissionListTeamChannels).
 			Return(false)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -1073,11 +1073,11 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testPlaybookRun.TeamID}, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(&model.Channel{Type: model.ChannelTypeOpen, TeamId: testPlaybookRun.TeamID}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(false)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
+		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PermissionListTeamChannels).
 			Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -1112,9 +1112,9 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testPlaybookRun.TeamID}, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(&model.Channel{Type: model.ChannelTypeOpen, TeamId: testPlaybookRun.TeamID}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -1145,9 +1145,9 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(&model.Channel{Type: model.ChannelTypePrivate}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(false)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -1186,9 +1186,9 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(&model.Channel{Type: model.ChannelTypePrivate}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -1223,11 +1223,11 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testPlaybookRun.TeamID}, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(&model.Channel{Type: model.ChannelTypeOpen, TeamId: testPlaybookRun.TeamID}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(false)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
+		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PermissionListTeamChannels).
 			Return(false)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -1266,11 +1266,11 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testPlaybookRun.TeamID}, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(&model.Channel{Type: model.ChannelTypeOpen, TeamId: testPlaybookRun.TeamID}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(false)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PERMISSION_LIST_TEAM_CHANNELS).
+		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PermissionListTeamChannels).
 			Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -1313,9 +1313,9 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.CHANNEL_OPEN, TeamId: testPlaybookRun.TeamID}, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PERMISSION_READ_CHANNEL).
+			Return(&model.Channel{Type: model.ChannelTypeOpen, TeamId: testPlaybookRun.TeamID}, nil)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
@@ -1351,10 +1351,10 @@ func TestPlaybookRuns(t *testing.T) {
 			TimelineEvents:  []app.TimelineEvent{},
 		}
 
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(true)
 		pluginAPI.On("GetUser", "testUserID").Return(&model.User{}, nil)
-		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PERMISSION_VIEW_TEAM).Return(true)
+		pluginAPI.On("HasPermissionToTeam", mock.Anything, mock.Anything, model.PermissionViewTeam).Return(true)
 		result := &app.GetPlaybookRunsResults{
 			TotalCount: 100,
 			PageCount:  200,
@@ -1382,7 +1382,7 @@ func TestPlaybookRuns(t *testing.T) {
 
 		teamID := model.NewId()
 
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
 		pluginAPI.On("GetUser", "testUserID").Return(&model.User{}, nil)
 
 		result := &app.GetPlaybookRunsResults{
@@ -1416,10 +1416,10 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
 		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(false)
-		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Type: model.CHANNEL_PRIVATE}, nil)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(false)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Type: model.ChannelTypePrivate}, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v0/runs/checklist-autocomplete?channel_id="+testPlaybookRun.ChannelID, nil)
@@ -1446,10 +1446,10 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
 		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil).Times(2)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(true)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionCreatePost).Return(true)
 
 		updateOptions := app.StatusUpdateOptions{
 			Message:  "test message",
@@ -1476,10 +1476,10 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
 		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil).Times(2)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(true)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionCreatePost).Return(false)
 
 		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", "test message", 600)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
@@ -1500,10 +1500,10 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil)
-		pluginAPI.On("HasPermissionTo", mock.Anything, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
 		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil).Times(2)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_READ_CHANNEL).Return(true)
-		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PERMISSION_CREATE_POST).Return(true)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(true)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionCreatePost).Return(true)
 
 		err := c.PlaybookRuns.UpdateStatus(context.TODO(), "playbookRunID", "  \t   \r   \t  \r\r  ", 600)
 		requireErrorWithStatusCode(t, err, http.StatusBadRequest)

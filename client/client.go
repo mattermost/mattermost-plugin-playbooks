@@ -16,7 +16,7 @@ import (
 	"strconv"
 
 	"github.com/google/go-querystring/query"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 )
@@ -51,7 +51,7 @@ func New(client4 *model.Client4) (*Client, error) {
 		&oauth2.Token{AccessToken: client4.AuthToken},
 	)
 
-	return newClient(client4.Url, oauth2.NewClient(ctx, ts))
+	return newClient(client4.URL, oauth2.NewClient(ctx, ts))
 }
 
 // newClient creates a new instance of Client from the given URL and http.Client.

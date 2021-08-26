@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
@@ -32,7 +32,7 @@ func (sqlStore *SQLStore) setSystemValue(e queryExecer, key, value string) error
 	// already exist. We can use its native support for upsert instead. Postgres
 	// 9.4 does not have native support for upsert, but it reports 1 row
 	// affected even when the key and value are already present.
-	if sqlStore.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+	if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
 		_, err := sqlStore.execBuilder(e,
 			sq.Insert("IR_System").
 				Columns("SKey", "SValue").
