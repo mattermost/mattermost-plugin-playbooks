@@ -33,7 +33,7 @@ export const Broadcast = (props: Props) => {
             </AutomationTitle>
             <SelectorWrapper>
                 <StyledChannelSelector
-                    id='playbook-automation-announcement'
+                    id='playbook-automation-broadcast'
                     onChannelsSelected={props.onChannelsSelected}
                     channelIds={props.channelIds}
                     isClearable={true}
