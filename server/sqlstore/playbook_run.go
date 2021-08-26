@@ -824,7 +824,7 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
                     SELECT 1
 						FROM ChannelMembers as cm
 						WHERE cm.ChannelId = i.ChannelId
-						  AND cm.userid = ?)
+						  AND cm.UserId = ?)
 			) OR (
 				  NOT EXISTS(
 						SELECT 1
