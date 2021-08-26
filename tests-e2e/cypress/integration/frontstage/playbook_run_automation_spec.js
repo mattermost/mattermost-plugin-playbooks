@@ -424,7 +424,7 @@ describe('playbook run automation', () => {
             });
         });
 
-        describe('announcement channel setting', () => {
+        describe('broadcast channel setting', () => {
             it('with channel configured and setting enabled', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
@@ -435,8 +435,8 @@ describe('playbook run automation', () => {
                         title: playbookName,
                         createPublicPlaybookRun: true,
                         memberIDs: [userId],
-                        announcementChannelId: channel.id,
-                        announcementChannelEnabled: true,
+                        broadcastChannelIds: [channel.id],
+                        broadcastEnabled: true,
                     });
                 }).then((playbook) => {
                     // # Create a new playbook run with that playbook
@@ -461,7 +461,7 @@ describe('playbook run automation', () => {
                             .should('not.contain', 'joined the channel');
                     });
 
-                    // # Navigate to the announcement channel
+                    // # Navigate to the broadcast channel
                     cy.visit('/ad-1/channels/town-square');
 
                     cy.getLastPostId().then((lastPostId) => {
@@ -480,8 +480,8 @@ describe('playbook run automation', () => {
                         title: playbookName,
                         createPublicPlaybookRun: true,
                         memberIDs: [userId],
-                        announcementChannelId: channel.id,
-                        announcementChannelEnabled: false,
+                        broadcastChannelIds: [channel.id],
+                        broadcastEnabled: false,
                     });
                 }).then((playbook) => {
                     // # Create a new playbook run with that playbook
@@ -506,7 +506,7 @@ describe('playbook run automation', () => {
                             .should('not.contain', 'joined the channel');
                     });
 
-                    // # Navigate to the announcement channel
+                    // # Navigate to the broadcast channel
                     cy.visit('/ad-1/channels/town-square');
 
                     cy.getLastPostId().then((lastPostId) => {
@@ -529,8 +529,8 @@ describe('playbook run automation', () => {
                             title: 'Playbook (' + Date.now() + ')',
                             createPublicPlaybookRun: true,
                             memberIDs: [userId],
-                            announcementChannelId: channel.id,
-                            announcementChannelEnabled: true,
+                            broadcastChannelIds: [channel.id],
+                            broadcastEnabled: true,
                         }).then((playbook) => {
                             playbookId = playbook.id;
                         });
