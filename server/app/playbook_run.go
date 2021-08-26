@@ -106,7 +106,7 @@ type PlaybookRun struct {
 	DefaultOwnerID string `json:"default_owner_id"`
 
 	// BroadcastChannelIDs is an array of the identifiers of the channels where the playbook run
-	// creation and status update are announced.
+	// creation and status updates are announced.
 	BroadcastChannelIDs []string `json:"broadcast_channel_ids"`
 
 	// WebhookOnCreationURL, if not empty, is the URL to which a POST request is made with the whole

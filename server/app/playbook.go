@@ -67,6 +67,9 @@ func (p Playbook) Clone() Playbook {
 	if len(p.SignalAnyKeywords) != 0 {
 		newPlaybook.SignalAnyKeywords = append([]string(nil), p.SignalAnyKeywords...)
 	}
+	if len(p.BroadcastChannelIDs) != 0 {
+		newPlaybook.BroadcastChannelIDs = append([]string(nil), p.BroadcastChannelIDs...)
+	}
 	return newPlaybook
 }
 
@@ -94,6 +97,9 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	}
 	if old.SignalAnyKeywords == nil {
 		old.SignalAnyKeywords = []string{}
+	}
+	if old.BroadcastChannelIDs == nil {
+		old.BroadcastChannelIDs = []string{}
 	}
 
 	return json.Marshal(old)
