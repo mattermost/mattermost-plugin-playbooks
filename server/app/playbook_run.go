@@ -534,6 +534,13 @@ type PlaybookRunStore interface {
 	// SetViewedChannel records that userID has viewed channelID. NOTE: does not check if there is already a
 	// record of that userID/channelID (i.e., will create duplicate rows)
 	SetViewedChannel(userID, channelID string) error
+
+	// GetChannelIDsToRootIDs takes a playbookRunID and returns the mapping of
+	// channelID->rootID. The rootID will be empty if there isn't a rootID for that channel
+	GetChannelIDsToRootIDs(playbookRunID string) (map[string]string, error)
+
+	// SetChannelIDsToRootID sets the channelID->rootID mappings for playbookRunID
+	SetChannelIDsToRootID(playbookRunID string, channelIDsToRootIDs map[string]string) error
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

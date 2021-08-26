@@ -108,6 +108,21 @@ func (mr *MockPlaybookRunStoreMockRecorder) GetHistoricalPlaybookRunParticipants
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHistoricalPlaybookRunParticipantsCount", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetHistoricalPlaybookRunParticipantsCount), arg0)
 }
 
+// GetChannelIDsToRootIDs mocks base method
+func (m *MockPlaybookRunStore) GetChannelIDsToRootIDs(arg0 string) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChannelIDsToRootIDs", arg0)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChannelIDsToRootIDs indicates an expected call of GetChannelIDsToRootIDs
+func (mr *MockPlaybookRunStoreMockRecorder) GetChannelIDsToRootIDs(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChannelIDsToRootIDs", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetChannelIDsToRootIDs), arg0)
+}
+
 // GetOwners mocks base method
 func (m *MockPlaybookRunStore) GetOwners(arg0 app.RequesterInfo, arg1 app.PlaybookRunFilterOptions) ([]app.OwnerInfo, error) {
 	m.ctrl.T.Helper()
@@ -209,6 +224,20 @@ func (m *MockPlaybookRunStore) NukeDB() error {
 func (mr *MockPlaybookRunStoreMockRecorder) NukeDB() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NukeDB", reflect.TypeOf((*MockPlaybookRunStore)(nil).NukeDB))
+}
+
+// SetChannelIDsToRootID mocks base method
+func (m *MockPlaybookRunStore) SetChannelIDsToRootID(arg0 string, arg1 map[string]string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetChannelIDsToRootID", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetChannelIDsToRootID indicates an expected call of SetChannelIDsToRootID
+func (mr *MockPlaybookRunStoreMockRecorder) SetChannelIDsToRootID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetChannelIDsToRootID", reflect.TypeOf((*MockPlaybookRunStore)(nil).SetChannelIDsToRootID), arg0, arg1)
 }
 
 // SetViewedChannel mocks base method

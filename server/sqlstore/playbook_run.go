@@ -790,6 +790,48 @@ func (s *playbookRunStore) SetViewedChannel(userID, channelID string) error {
 	return nil
 }
 
+func (s *playbookRunStore) GetChannelIDsToRootIDs(playbookRunID string) (map[string]string, error) {
+	var retAsJson string
+	query := s.store.builder.Select("COALESCE(ChannelIDToRootID, '')").
+		From("IR_Incident").
+		Where(sq.Eq{"ID": playbookRunID})
+
+	err := s.store.getBuilder(s.store.db, &retAsJson, query)
+	if err == sql.ErrNoRows {
+		return nil, errors.Wrapf(app.ErrNotFound, "could not find playbook with id: '%s'", playbookRunID)
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "failed to get channelID to rootID map for playbookRunID '%s'", playbookRunID)
+	}
+
+	ret := make(map[string]string)
+	if retAsJson == "" {
+		return ret, nil
+	}
+
+	if err := json.Unmarshal([]byte(retAsJson), &ret); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal channelID to rootID map for playbookRunID: '%s'", playbookRunID)
+	}
+
+	return ret, nil
+}
+
+func (s *playbookRunStore) SetChannelIDsToRootID(playbookRunID string, channelIDsToRootIDs map[string]string) error {
+	data, err := json.Marshal(channelIDsToRootIDs)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal channelIDsToRootIDs map")
+	}
+
+	_, err = s.store.execBuilder(s.store.db,
+		sq.Update("IR_Incident").
+			Set("ChannelIDToRootID", data).
+			Where(sq.Eq{"ID": playbookRunID}))
+	if err != nil {
+		return errors.Wrapf(err, "failed to set ChannelIDsToRootID column for playbookRunID: '%s'", playbookRunID)
+	}
+
+	return nil
+}
+
 func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqlizer {
 	if info.IsAdmin {
 		return nil
