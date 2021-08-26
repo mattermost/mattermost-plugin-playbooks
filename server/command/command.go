@@ -509,12 +509,12 @@ func (r *Runner) actionList() {
 	}
 
 	options := app.PlaybookRunFilterOptions{
-		TeamID:    r.args.TeamId,
-		MemberID:  r.args.UserId,
-		Page:      0,
-		PerPage:   maxPlaybookRunsToList,
-		Sort:      app.SortByCreateAt,
-		Direction: app.DirectionDesc,
+		TeamID:        r.args.TeamId,
+		ParticipantID: r.args.UserId,
+		Page:          0,
+		PerPage:       maxPlaybookRunsToList,
+		Sort:          app.SortByCreateAt,
+		Direction:     app.DirectionDesc,
 	}
 
 	result, err := r.playbookRunService.GetPlaybookRuns(requesterInfo, options)

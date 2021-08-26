@@ -38,7 +38,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
                 page: 0,
                 per_page: 0,
                 team_id: currentTeam.id,
-                member_id: currentUserId,
+                participant_id: currentUserId,
             });
             if (fetched.disabled) {
                 store.dispatch(receivedDisabledOnTeam(currentTeam.id));

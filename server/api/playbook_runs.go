@@ -452,13 +452,14 @@ func (h *PlaybookRunHandler) getRequesterInfo(userID string) (app.RequesterInfo,
 
 // getPlaybookRuns handles the GET /runs endpoint.
 func (h *PlaybookRunHandler) getPlaybookRuns(w http.ResponseWriter, r *http.Request) {
-	filterOptions, err := parsePlaybookRunsFilterOptions(r.URL)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	filterOptions, err := parsePlaybookRunsFilterOptions(r.URL, userID)
 	if err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
 		return
 	}
 
-	userID := r.Header.Get("Mattermost-User-ID")
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -584,13 +585,14 @@ func (h *PlaybookRunHandler) getOwners(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PlaybookRunHandler) getChannels(w http.ResponseWriter, r *http.Request) {
-	filterOptions, err := parsePlaybookRunsFilterOptions(r.URL)
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	filterOptions, err := parsePlaybookRunsFilterOptions(r.URL, userID)
 	if err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "Bad parameter", err)
 		return
 	}
 
-	userID := r.Header.Get("Mattermost-User-ID")
 	requesterInfo, err := h.getRequesterInfo(userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -1302,7 +1304,7 @@ func (h *PlaybookRunHandler) publishRetrospective(w http.ResponseWriter, r *http
 }
 
 // parsePlaybookRunsFilterOptions is only for parsing. Put validation logic in app.validateOptions.
-func parsePlaybookRunsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, error) {
+func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.PlaybookRunFilterOptions, error) {
 	teamID := u.Query().Get("team_id")
 
 	pageParam := u.Query().Get("page")
@@ -1326,12 +1328,20 @@ func parsePlaybookRunsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, 
 	sort := u.Query().Get("sort")
 	direction := u.Query().Get("direction")
 
+	// Parse statuses= query string parameters as an array.
 	statuses := u.Query()["statuses"]
 
 	ownerID := u.Query().Get("owner_user_id")
+	if ownerID == client.Me {
+		ownerID = currentUserID
+	}
+
 	searchTerm := u.Query().Get("search_term")
 
-	memberID := u.Query().Get("member_id")
+	participantID := u.Query().Get("participant_id")
+	if participantID == client.Me {
+		participantID = currentUserID
+	}
 
 	playbookID := u.Query().Get("playbook_id")
 
@@ -1360,20 +1370,20 @@ func parsePlaybookRunsFilterOptions(u *url.URL) (*app.PlaybookRunFilterOptions, 
 	startedLT, _ := strconv.ParseInt(startedLTParam, 10, 64)
 
 	options := app.PlaybookRunFilterOptions{
-		TeamID:     teamID,
-		Page:       page,
-		PerPage:    perPage,
-		Sort:       app.SortField(sort),
-		Direction:  app.SortDirection(direction),
-		Statuses:   statuses,
-		OwnerID:    ownerID,
-		SearchTerm: searchTerm,
-		MemberID:   memberID,
-		PlaybookID: playbookID,
-		ActiveGTE:  activeGTE,
-		ActiveLT:   activeLT,
-		StartedGTE: startedGTE,
-		StartedLT:  startedLT,
+		TeamID:        teamID,
+		Page:          page,
+		PerPage:       perPage,
+		Sort:          app.SortField(sort),
+		Direction:     app.SortDirection(direction),
+		Statuses:      statuses,
+		OwnerID:       ownerID,
+		SearchTerm:    searchTerm,
+		ParticipantID: participantID,
+		PlaybookID:    playbookID,
+		ActiveGTE:     activeGTE,
+		ActiveLT:      activeLT,
+		StartedGTE:    startedGTE,
+		StartedLT:     startedLT,
 	}
 
 	options, err = options.Validate()

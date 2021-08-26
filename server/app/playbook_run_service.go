@@ -510,12 +510,12 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, triggerID
 
 func (s *PlaybookRunServiceImpl) OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error {
 	options := PlaybookRunFilterOptions{
-		TeamID:    teamID,
-		MemberID:  requesterInfo.UserID,
-		Sort:      SortByCreateAt,
-		Direction: DirectionDesc,
-		Page:      0,
-		PerPage:   PerPageDefault,
+		TeamID:        teamID,
+		ParticipantID: requesterInfo.UserID,
+		Sort:          SortByCreateAt,
+		Direction:     DirectionDesc,
+		Page:          0,
+		PerPage:       PerPageDefault,
 	}
 
 	result, err := s.GetPlaybookRuns(requesterInfo, options)
@@ -1057,7 +1057,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 		return nil, errors.Wrapf(err, "failed to retrieve team id '%s'", channel.TeamId)
 	}
 
-	numMembers, err := s.store.GetAllPlaybookRunMembersCount(playbookRun.ChannelID)
+	numParticipants, err := s.store.GetHistoricalPlaybookRunParticipantsCount(playbookRun.ChannelID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get the count of playbook run members for channel id '%s'", playbookRun.ChannelID)
 	}
@@ -1067,7 +1067,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 		ChannelDisplayName: channel.DisplayName,
 		TeamName:           team.Name,
 		TotalPosts:         channel.TotalMsgCount,
-		NumMembers:         numMembers,
+		NumParticipants:    numParticipants,
 	}, nil
 }
 
