@@ -27,7 +27,7 @@ type RequesterInfo struct {
 // UserCanViewPlaybookRun returns nil if the userID has permissions to view the playbook run
 // associated with playbookRunID
 func UserCanViewPlaybookRun(userID, playbookRunID string, playbookService PlaybookService, playbookRunService PlaybookRunService, pluginAPI *pluginapi.Client) error {
-	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
+	if pluginAPI.User.HasPermissionTo(userID, model.PermissionManageSystem) {
 		return nil
 	}
 
@@ -36,7 +36,7 @@ func UserCanViewPlaybookRun(userID, playbookRunID string, playbookService Playbo
 		return errors.Wrapf(err, "Unable to get playbookRun to determine permissions, playbookRun id `%s`", playbookRunID)
 	}
 
-	if pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PERMISSION_READ_CHANNEL) {
+	if pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionReadChannel) {
 		return nil
 	}
 
@@ -45,12 +45,12 @@ func UserCanViewPlaybookRun(userID, playbookRunID string, playbookService Playbo
 
 // UserCanViewPlaybookRunFromChannelID returns nil if the userID has permissions to view the playbook run
 // associated with channelID
-func ViewPlaybookRunFromChannelID(userID, channelID string, pluginAPI *pluginapi.Client) error {
-	if pluginAPI.User.HasPermissionTo(userID, model.PERMISSION_MANAGE_SYSTEM) {
+func UserCanViewPlaybookRunFromChannelID(userID, channelID string, playbookService PlaybookService, playbookRunService PlaybookRunService, pluginAPI *pluginapi.Client) error {
+	if pluginAPI.User.HasPermissionTo(userID, model.PermissionManageSystem) {
 		return nil
 	}
 
-	if pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL) {
+	if pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
 		return nil
 	}
 
@@ -62,10 +62,6 @@ func ViewPlaybookRunFromChannelID(userID, channelID string, pluginAPI *pluginapi
 	playbookRun, err := playbookRunService.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrapf(err, "Unable to get channel to determine permissions, channel id `%s`", channelID)
-	}
-
-	if channel.Type == model.CHANNEL_OPEN && pluginAPI.User.HasPermissionToTeam(userID, channel.TeamId, model.PERMISSION_LIST_TEAM_CHANNELS) {
-		return nil
 	}
 
 	return PlaybookAccess(userID, playbookRun.PlaybookID, playbookService, pluginAPI)
@@ -105,7 +101,7 @@ func IsGuest(userID string, pluginAPI *pluginapi.Client) (bool, error) {
 }
 
 func IsMemberOfChannel(userID, channelID string, pluginAPI *pluginapi.Client) bool {
-	return pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_READ_CHANNEL)
+	return pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel)
 }
 
 func CanPostToChannel(userID, channelID string, pluginAPI *pluginapi.Client) bool {
