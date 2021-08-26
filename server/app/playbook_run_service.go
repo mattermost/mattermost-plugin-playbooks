@@ -16,8 +16,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -155,7 +155,7 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbook *Playbook
 		getPlaybookDetailsURL(*siteURL, s.configService.GetManifest().Id, playbook.ID),
 	)
 
-	if playbookRunChannel.Type == model.CHANNEL_OPEN {
+	if playbookRunChannel.Type == model.ChannelTypeOpen {
 		announcementMsg += fmt.Sprintf(
 			" Visit the link above for more information or join ~%v to participate.",
 			playbookRunChannel.Name,
@@ -251,7 +251,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookRun.ReporterUserID = userID
 	playbookRun.ID = model.NewId()
 
-	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	siteURL := model.ServiceSettingsDefaultSiteURL
 	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
 		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	}
@@ -609,7 +609,7 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRunID, userID, postID
 	s.telemetry.AddPostToTimeline(playbookRunModified, userID)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -635,7 +635,7 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 	s.telemetry.RemoveTimelineEvent(playbookRunModified, userID)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -670,7 +670,7 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRun
 	broadcastedMsg += statusUpdate
 
 	if _, err := s.poster.PostMessage(playbookRun.BroadcastChannelID, broadcastedMsg); err != nil {
-		return err
+		return errors.Wrap(err, "failed to post broadcast message")
 	}
 
 	return nil
@@ -985,7 +985,7 @@ func (s *PlaybookRunServiceImpl) exportChannelToFile(playbookRunName string, own
 	res := s.pluginAPI.Plugin.HTTP(req)
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return "", errors.New(fmt.Sprintf("There was an error when making a request to upload file with status code %s", strconv.Itoa(res.StatusCode)))
+		return "", errors.Errorf("There was an error when making a request to upload file with status code %s", strconv.Itoa(res.StatusCode))
 	}
 
 	file, err := s.pluginAPI.File.Upload(res.Body, fmt.Sprintf("%s.csv", playbookRunName), channelID)
@@ -1176,7 +1176,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	s.telemetry.ChangeOwner(playbookRunToModify, userID)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -1237,7 +1237,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	}
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -1335,7 +1335,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	}
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -1398,7 +1398,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	}
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return cmdResponse.TriggerId, nil
@@ -1836,13 +1836,13 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 
 func (s *PlaybookRunServiceImpl) hasPermissionToModifyPlaybookRun(playbookRun *PlaybookRun, userID string) bool {
 	// PlaybookRun main channel membership is required to modify playbook run
-	return s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PERMISSION_READ_CHANNEL)
+	return s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionReadChannel)
 }
 
 func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookRun, header string, public bool) (*model.Channel, error) {
-	channelType := model.CHANNEL_PRIVATE
+	channelType := model.ChannelTypePrivate
 	if public {
-		channelType = model.CHANNEL_OPEN
+		channelType = model.ChannelTypeOpen
 	}
 
 	channel := &model.Channel{
@@ -1902,7 +1902,7 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, c
 		}
 	}
 
-	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
+	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", model.ChannelAdminRoleId, model.ChannelUserRoleId)); err != nil {
 		s.pluginAPI.Log.Warn("failed to promote owner to admin", "ChannelID", channel.Id, "OwnerUserID", playbookRun.OwnerUserID, "err", err.Error())
 	}
 
@@ -1947,7 +1947,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 		})
 	}
 
-	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	siteURL := model.ServiceSettingsDefaultSiteURL
 	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
 		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	}
@@ -1995,7 +1995,7 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 
 	broadcastChannel, err := s.pluginAPI.Channel.Get(broadcastChannelID)
 	if err == nil {
-		if broadcastChannel.Type == model.CHANNEL_OPEN {
+		if broadcastChannel.Type == model.ChannelTypeOpen {
 			team, err := s.pluginAPI.Team.Get(broadcastChannel.TeamId)
 			if err != nil {
 				return nil, err

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
@@ -61,10 +61,8 @@ func (b *Bot) DM(userID string, post *model.Post) error {
 	}
 	post.ChannelId = channel.Id
 	post.UserId = b.botUserID
-	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
-		return err
-	}
-	return nil
+
+	return b.pluginAPI.Post.CreatePost(post)
 }
 
 // EphemeralPost sends an ephemeral message to a user
@@ -119,7 +117,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 	}
 
 	admins, err := b.pluginAPI.User.List(&model.UserGetOptions{
-		Role:    string(model.SYSTEM_ADMIN_ROLE_ID),
+		Role:    string(model.SystemAdminRoleId),
 		Page:    0,
 		PerPage: maxAdminsToQueryForNotification,
 	})

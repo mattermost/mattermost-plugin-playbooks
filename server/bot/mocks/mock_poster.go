@@ -5,9 +5,10 @@
 package mock_bot
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	model "github.com/mattermost/mattermost-server/v5/model"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
+	model "github.com/mattermost/mattermost-server/v6/model"
 )
 
 // MockPoster is a mock of Poster interface

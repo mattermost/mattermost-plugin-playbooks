@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-api/cluster"
@@ -331,8 +331,11 @@ func (r GetPlaybookRunsResults) MarshalJSON() ([]byte, error) {
 
 // OwnerInfo holds the summary information of a owner.
 type OwnerInfo struct {
-	UserID   string `json:"user_id"`
-	Username string `json:"username"`
+	UserID    string `json:"user_id"`
+	Username  string `json:"username"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Nickname  string `json:"nickname"`
 }
 
 // DialogState holds the start playbook run interactive dialog's state as it appears in the client

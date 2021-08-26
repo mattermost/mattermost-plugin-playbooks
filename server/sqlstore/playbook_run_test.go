@@ -13,7 +13,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	mock_sqlstore "github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore/mocks"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1718,13 +1718,13 @@ func TestGetOwners(t *testing.T) {
 		addUsersToChannels(t, store, []userInfo{bob}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel05.Id, channel06.Id, channel07.Id, channel08.Id, channel09.Id})
 
 		queryBuilder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
-		if driverName == model.DATABASE_DRIVER_POSTGRES {
+		if driverName == model.DatabaseDriverPostgres {
 			queryBuilder = queryBuilder.PlaceholderFormat(sq.Dollar)
 		}
 
-		insertOwner := queryBuilder.Insert("Users").Columns("ID", "Username")
+		insertOwner := queryBuilder.Insert("Users").Columns("ID", "Username", "FirstName", "LastName", "Nickname")
 		for _, owner := range owners {
-			insertOwner = insertOwner.Values(owner.UserID, owner.Username)
+			insertOwner = insertOwner.Values(owner.UserID, owner.Username, owner.FirstName, owner.LastName, owner.Nickname)
 		}
 
 		query, args, err := insertOwner.ToSql()
@@ -1886,7 +1886,7 @@ func TestCheckAndSendMessageOnJoin(t *testing.T) {
 			require.Equal(t, 3, int(rows))
 
 			// cannot add a duplicate row
-			if driverName == model.DATABASE_DRIVER_POSTGRES {
+			if driverName == model.DatabaseDriverPostgres {
 				_, err = db.Exec("INSERT INTO IR_ViewedChannel (UserID, ChannelID) VALUES ($1, $2)", oldID, channelID)
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "duplicate key value")

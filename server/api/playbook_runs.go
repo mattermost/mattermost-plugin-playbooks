@@ -11,7 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -424,10 +424,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbook = &pb
 	}
 
-	permission := model.PERMISSION_CREATE_PRIVATE_CHANNEL
+	permission := model.PermissionCreatePrivateChannel
 	permissionMessage := "You are not able to create a private channel"
 	if public {
-		permission = model.PERMISSION_CREATE_PUBLIC_CHANNEL
+		permission = model.PermissionCreatePublicChannel
 		permissionMessage = "You are not able to create a public channel"
 	}
 	if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, permission) {

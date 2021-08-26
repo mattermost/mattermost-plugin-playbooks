@@ -9,7 +9,7 @@ import {Team} from 'mattermost-redux/types/teams';
 
 import {useClientRect} from 'src/hooks';
 
-import {PlaybookRunFilterButton} from 'src/components/backstage/playbook_runs/playbook_run_list/status_filter';
+import {PlaybookRunFilterButton} from '../backstage/styles';
 
 import TeamWithIcon from './team_with_icon';
 

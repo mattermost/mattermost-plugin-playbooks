@@ -12,6 +12,7 @@ import Icon from '@mdi/react';
 import {mdiArrowDown, mdiArrowRight, mdiPlus} from '@mdi/js';
 
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
+import {SemiBoldHeading} from 'src/styles/headings';
 
 import {
     renderThumbVertical,
@@ -158,6 +159,8 @@ const Heading = styled.h4`
 `;
 
 const ListHeading = styled(Heading)`
+    ${SemiBoldHeading}
+
     padding-left: 2.75rem;
 `;
 

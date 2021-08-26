@@ -21,8 +21,6 @@ import {promptForFeedback} from 'src/client';
 import PlaybookRunBackstage
     from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
 
-import BackstagePlaybookRunList from 'src/components/backstage/playbook_runs/playbook_run_list/playbook_run_list';
-
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
@@ -40,6 +38,7 @@ import SettingsView from './settings';
 import {BackstageNavbar} from './backstage_navbar';
 
 import {applyTheme} from './css_utils';
+import RunsPage from './runs_page';
 
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
@@ -71,6 +70,10 @@ const BackstageTitlebarItem = styled(NavLink)`
             color: var(--button-bg);
             fill: var(--button-bg);
             text-decoration: unset;
+        }
+
+        & > :first-child {
+            margin-right: 12px;
         }
     }
 `;
@@ -119,13 +122,11 @@ const Backstage = () => {
                                 activeClassName={'active'}
                                 data-testid='playbookRunsLHSButton'
                             >
-                                <span className='mr-3 d-flex items-center'>
-                                    <Icon
-                                        path={mdiClipboardPlayMultipleOutline}
-                                        title='Runs'
-                                        size={1.4}
-                                    />
-                                </span>
+                                <Icon
+                                    path={mdiClipboardPlayMultipleOutline}
+                                    title='Runs'
+                                    size={1.4}
+                                />
                                 {'Runs'}
                             </BackstageTitlebarItem>
                             <BackstageTitlebarItem
@@ -133,9 +134,7 @@ const Backstage = () => {
                                 activeClassName={'active'}
                                 data-testid='playbooksLHSButton'
                             >
-                                <span className='mr-3 d-flex items-center'>
-                                    <PlaybookIcon/>
-                                </span>
+                                <PlaybookIcon/>
                                 {'Playbooks'}
                             </BackstageTitlebarItem>
                             <BackstageTitlebarItem
@@ -143,28 +142,24 @@ const Backstage = () => {
                                 activeClassName={'active'}
                                 data-testid='settingsLHSButton'
                             >
-                                <span className='mr-3 d-flex items-center'>
-                                    <div className={'fa fa-gear'}/>
-                                </span>
+                                <div className={'fa fa-gear'}/>
                                 {'Settings'}
                             </BackstageTitlebarItem>
                         </div>
                         <div className='d-flex items-center'>
                             {npsAvailable &&
-                            <BackstageTitlebarItem
-                                onClick={promptForFeedback}
-                                to={`/${teams[0].name}/messages/@surveybot`}
-                                data-testid='giveFeedbackButton'
-                            >
-                                <span className='mr-3 d-flex items-center'>
+                                <BackstageTitlebarItem
+                                    onClick={promptForFeedback}
+                                    to={`/${teams[0].name}/messages/@surveybot`}
+                                    data-testid='giveFeedbackButton'
+                                >
                                     <Icon
                                         path={mdiThumbsUpDown}
                                         title='Give Feedback'
                                         size={1}
                                     />
-                                </span>
-                                {'Give Feedback'}
-                            </BackstageTitlebarItem>
+                                    {'Give Feedback'}
+                                </BackstageTitlebarItem>
                             }
                         </div>
                     </BackstageNavbar>
@@ -198,7 +193,7 @@ const Backstage = () => {
                         to={`${match.url}/runs`}
                     />
                     <Route path={`${match.url}/runs`}>
-                        <BackstagePlaybookRunList/>
+                        <RunsPage/>
                     </Route>
                     <Route path={`${match.url}/settings`}>
                         <SettingsView/>

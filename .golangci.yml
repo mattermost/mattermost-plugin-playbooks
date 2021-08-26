@@ -1,5 +1,5 @@
 service:
-  golangci-lint-version: 1.21.0
+  golangci-lint-version: 1.42.0
 
 run:
   timeout: 5m
@@ -16,12 +16,12 @@ linters:
     - errcheck
     - gofmt
     - goimports
-    - golint
+    - revive
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - scopelint
+    - exportloopref
     - staticcheck
     - structcheck
     - unconvert
@@ -46,10 +46,9 @@ issues:
     - path: _test\.go
       linters:
         - goconst
-        - scopelint # https://github.com/kyoh86/scopelint/issues/4
         - unparam
         - gosec
     - linters:
-      - golint
+      - revive
       - gocritic
       path: "server/bot/logger.go"

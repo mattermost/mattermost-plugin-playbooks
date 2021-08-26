@@ -1,12 +1,26 @@
 import {useEffect, useState} from 'react';
 
 import {clientFetchPlaybook, clientFetchPlaybooks, deletePlaybook as clientDeletePlaybook} from 'src/client';
-import {FetchPlaybooksParams, Playbook} from 'src/types/playbook';
+import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
 
 type ParamsState = Required<FetchPlaybooksParams>;
 
 export async function getPlaybookOrFetch(id: string, playbooks: Playbook[] | null) {
     return playbooks?.find((p) => p.id === id) ?? clientFetchPlaybook(id);
+}
+
+/**
+ * Read-only logic to fetch playbook
+ * @param id identifier of playbook to fetch
+ * @remarks lightweight alternative to {@link usePlaybooksCrud} for read-only usage
+ */
+export function usePlaybook(id: Playbook['id']) {
+    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | undefined>();
+    useEffect(() => {
+        clientFetchPlaybook(id).then(setPlaybook);
+    }, [id]);
+
+    return playbook;
 }
 
 export function usePlaybooksCrud(

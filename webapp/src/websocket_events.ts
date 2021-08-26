@@ -38,6 +38,8 @@ export function handleReconnect(getState: GetStateFunc, dispatch: Dispatch) {
         }
 
         const fetched = await fetchPlaybookRuns({
+            page: 0,
+            per_page: 0,
             team_id: currentTeam.id,
             participant_id: currentUserId,
         });

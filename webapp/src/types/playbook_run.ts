@@ -124,9 +124,9 @@ export function playbookRunIsActive(playbookRun: PlaybookRun): boolean {
 }
 
 export interface FetchPlaybookRunsParams {
+    page: number;
+    per_page: number;
     team_id?: string;
-    page?: number;
-    per_page?: number;
     sort?: string;
     direction?: string;
     statuses?: string[];
@@ -148,9 +148,14 @@ export interface FetchPlaybookRunsParamsTime {
     started_lt?: number;
 }
 
-export const DefaultFetchPlaybookRunsParamsTime: FetchPlaybookRunsParamsTime = {};
+export const DefaultFetchPlaybookRunsParamsTime: FetchPlaybookRunsParamsTime = {
+    active_gte: 0,
+    active_lt: 0,
+    started_gte: 0,
+    started_lt: 0,
+};
 
-export const fetchParamsTimeEqual = (a: FetchPlaybookRunsParamsTime, b: FetchPlaybookRunsParamsTime) => {
+export const fetchParamsTimeEqual = (a: FetchPlaybookRunsParams, b: FetchPlaybookRunsParamsTime) => {
     return Boolean(a.active_gte === b.active_gte &&
         a.active_lt === b.active_lt &&
         a.started_gte === b.started_gte &&

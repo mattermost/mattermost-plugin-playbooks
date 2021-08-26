@@ -10,12 +10,12 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/store/storetest"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/store/storetest"
 	"github.com/stretchr/testify/require"
 )
 
-var driverNames = []string{model.DATABASE_DRIVER_POSTGRES, model.DATABASE_DRIVER_MYSQL}
+var driverNames = []string{model.DatabaseDriverPostgres, model.DatabaseDriverMysql}
 
 func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
 	t.Helper()
@@ -26,7 +26,7 @@ func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
 	require.NoError(t, err)
 
 	db := sqlx.NewDb(origDB, driverName)
-	if driverName == model.DATABASE_DRIVER_MYSQL {
+	if driverName == model.DatabaseDriverMysql {
 		db.MapperFunc(func(s string) string { return s })
 	}
 
@@ -48,7 +48,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	driverName := db.DriverName()
 
 	builder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
-	if driverName == model.DATABASE_DRIVER_POSTGRES {
+	if driverName == model.DatabaseDriverPostgres {
 		builder = builder.PlaceholderFormat(sq.Dollar)
 	}
 
@@ -83,7 +83,7 @@ func setupUsersTable(t *testing.T, db *sqlx.DB) {
 	// NOTE: for this and the other tables below, this is a now out-of-date schema, which doesn't
 	//       reflect any of the changes past v5.0. If the test code requires a new column, you will
 	//       need to update these tables accordingly.
-	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+	if db.DriverName() == model.DatabaseDriverPostgres {
 		_, err := db.Exec(`
 			CREATE TABLE IF NOT EXISTS public.users (
 				id character varying(26) NOT NULL,
@@ -167,7 +167,7 @@ func setupChannelMemberHistoryTable(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
 	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
-	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+	if db.DriverName() == model.DatabaseDriverPostgres {
 		_, err := db.Exec(`
 			CREATE TABLE IF NOT EXISTS public.channelmemberhistory (
 				channelid character varying(26) NOT NULL,
@@ -198,7 +198,7 @@ func setupTeamMembersTable(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
 	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
-	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+	if db.DriverName() == model.DatabaseDriverPostgres {
 		_, err := db.Exec(`
 			CREATE TABLE IF NOT EXISTS public.teammembers (
 				teamid character varying(26) NOT NULL,
@@ -236,7 +236,7 @@ func setupChannelMembersTable(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
 	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
-	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+	if db.DriverName() == model.DatabaseDriverPostgres {
 		_, err := db.Exec(`
 			CREATE TABLE IF NOT EXISTS public.channelmembers (
 				channelid character varying(26) NOT NULL,
@@ -281,7 +281,7 @@ func setupChannelsTable(t *testing.T, db *sqlx.DB) {
 	t.Helper()
 
 	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
-	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+	if db.DriverName() == model.DatabaseDriverPostgres {
 		_, err := db.Exec(`
 			CREATE TABLE IF NOT EXISTS public.channels (
 				id character varying(26) NOT NULL,
@@ -341,7 +341,7 @@ func setupPostsTable(t testing.TB, db *sqlx.DB) {
 	t.Helper()
 
 	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
-	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+	if db.DriverName() == model.DatabaseDriverPostgres {
 		_, err := db.Exec(`
 			CREATE TABLE IF NOT EXISTS public.posts (
 				id character varying(26) NOT NULL,
@@ -411,7 +411,7 @@ func setupBotsTable(t testing.TB, db *sqlx.DB) {
 	t.Helper()
 
 	// This is completely handmade
-	if db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+	if db.DriverName() == model.DatabaseDriverPostgres {
 		_, err := db.Exec(`
 			CREATE TABLE IF NOT EXISTS public.bots (
 				userid character varying(26) NOT NULL,

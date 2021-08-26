@@ -17,7 +17,8 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 import {Client4} from 'mattermost-redux/client';
 
 import {isMobile} from 'src/mobile';
-import {updateStatus, toggleRHS} from 'src/actions';
+import {ChannelNamesMap} from 'src/types/backstage';
+import {promptUpdateStatus, toggleRHS} from 'src/actions';
 import ShowMore from 'src/components/rhs/show_more';
 import PostText from 'src/components/post_text';
 
@@ -82,6 +83,9 @@ function useAuthorInfo(userID: string) : [string, string] {
 interface Props {
     post: Post | null;
     team: Team;
+    playbookRunId: string;
+    playbookId: string
+    channelId: string;
 }
 
 const PostCard = (props: Props) => {
@@ -91,7 +95,7 @@ const PostCard = (props: Props) => {
     if (!props.post) {
         return (
             <NoRecentUpdates>
-                {'No recent updates. '}<a onClick={() => dispatch(updateStatus(props.team.id))}>{'Click here'}</a>{' to update status.'}
+                {'No recent updates. '}<a onClick={() => dispatch(promptUpdateStatus(props.team.id, props.playbookRunId, props.playbookId, props.channelId))}>{'Click here'}</a>{' to update status.'}
             </NoRecentUpdates>
         );
     }

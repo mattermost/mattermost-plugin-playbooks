@@ -32,10 +32,11 @@ import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 
+import MarkdownTextbox from 'src/components/markdown_textbox';
+
 import CommandInput from './command_input';
 import GenericModal from './widgets/generic_modal';
 import {BaseInput} from './assets/inputs';
-import {StyledTextarea} from './backstage/styles';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
@@ -493,6 +494,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             <ChecklistItemEditModal
                 show={showEditDialog}
                 playbookRunId={props.playbookRunId}
+                channelId={props.channelId}
                 checklistNum={props.checklistNum}
                 itemNum={props.itemNum}
                 onDone={() => setShowEditDialog(false)}
@@ -511,14 +513,15 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
 };
 
 interface ChecklistItemEditModalProps {
-    show: boolean
-    onDone: () => void
-    checklistNum: number
-    playbookRunId: string
-    itemNum: number
-    taskTitle: string
-    taskDescription: string
-    taskCommand: string
+    show: boolean;
+    onDone: () => void;
+    checklistNum: number;
+    playbookRunId: string;
+    channelId: string;
+    itemNum: number;
+    taskTitle: string;
+    taskDescription: string;
+    taskCommand: string;
 }
 
 const ModalField = styled(BaseInput)`
@@ -573,10 +576,12 @@ const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {
                     setCommand={setCommand}
                     autocompleteOnBottom={true}
                 />
-                <StyledTextarea
-                    value={description}
-                    placeholder={'Description'}
-                    onChange={(e) => setDescription(e.target.value)}
+                <MarkdownTextbox
+                    className={'description_textarea'}
+                    id={`taskEditTextbox_c${props.checklistNum}i${props.itemNum}`}
+                    value={description ?? ''}
+                    setValue={setDescription}
+                    channelId={props.channelId}
                 />
             </FormContainer>
         </GenericModal>
