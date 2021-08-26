@@ -134,7 +134,7 @@ export async function fetchCheckAndSendMessageOnJoin(playbookRunID: string, chan
 }
 
 export function fetchPlaybookRunChannels(teamID: string, userID: string) {
-    return doGet(`${apiUrl}/runs/channels?team_id=${teamID}&member_id=${userID}`);
+    return doGet(`${apiUrl}/runs/channels?team_id=${teamID}&participant_id=${userID}`);
 }
 
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string, teamId: string) {

@@ -41,7 +41,7 @@ export interface Metadata {
     channel_name: string;
     channel_display_name: string;
     team_name: string;
-    num_members: number;
+    num_participants: number;
     total_posts: number;
 }
 
@@ -96,7 +96,7 @@ export function isMetadata(arg: any): arg is Metadata {
         arg.channel_name && typeof arg.channel_name === 'string' &&
         arg.channel_display_name && typeof arg.channel_display_name === 'string' &&
         arg.team_name && typeof arg.team_name === 'string' &&
-        typeof arg.num_members === 'number' &&
+        typeof arg.num_participants === 'number' &&
         typeof arg.total_posts === 'number');
 }
 
@@ -124,15 +124,15 @@ export function playbookRunIsActive(playbookRun: PlaybookRun): boolean {
 }
 
 export interface FetchPlaybookRunsParams {
+    page: number;
+    per_page: number;
     team_id?: string;
-    page?: number;
-    per_page?: number;
     sort?: string;
     direction?: string;
     statuses?: string[];
     owner_user_id?: string;
+    participant_id?: string;
     search_term?: string;
-    member_id?: string;
     disabled?: boolean;
     playbook_id?: string;
     active_gte?: number;
@@ -148,9 +148,14 @@ export interface FetchPlaybookRunsParamsTime {
     started_lt?: number;
 }
 
-export const DefaultFetchPlaybookRunsParamsTime: FetchPlaybookRunsParamsTime = {};
+export const DefaultFetchPlaybookRunsParamsTime: FetchPlaybookRunsParamsTime = {
+    active_gte: 0,
+    active_lt: 0,
+    started_gte: 0,
+    started_lt: 0,
+};
 
-export const fetchParamsTimeEqual = (a: FetchPlaybookRunsParamsTime, b: FetchPlaybookRunsParamsTime) => {
+export const fetchParamsTimeEqual = (a: FetchPlaybookRunsParams, b: FetchPlaybookRunsParamsTime) => {
     return Boolean(a.active_gte === b.active_gte &&
         a.active_lt === b.active_lt &&
         a.started_gte === b.started_gte &&

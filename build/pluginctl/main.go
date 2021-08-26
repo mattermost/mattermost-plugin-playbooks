@@ -8,7 +8,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 const helpText = `
@@ -58,7 +58,7 @@ func pluginctl() error {
 func getClient() (*model.Client4, error) {
 	socketPath := os.Getenv("MM_LOCALSOCKETPATH")
 	if socketPath == "" {
-		socketPath = model.LOCAL_MODE_SOCKET_PATH
+		socketPath = model.LocalModeSocketPath
 	}
 
 	client, connected := getUnixClient(socketPath)
@@ -90,9 +90,9 @@ func getClient() (*model.Client4, error) {
 
 	if adminUsername != "" && adminPassword != "" {
 		log.Printf("Authenticating as %s against %s.", adminUsername, siteURL)
-		_, resp := client.Login(adminUsername, adminPassword)
-		if resp.Error != nil {
-			return nil, fmt.Errorf("failed to login as %s: %w", adminUsername, resp.Error)
+		_, _, err := client.Login(adminUsername, adminPassword)
+		if err != nil {
+			return nil, fmt.Errorf("failed to login as %s: %w", adminUsername, err)
 		}
 		return client, nil
 	}
@@ -119,15 +119,15 @@ func deploy(client *model.Client4, pluginID, bundlePath string) error {
 	defer pluginBundle.Close()
 
 	log.Print("Uploading plugin via API.")
-	_, resp := client.UploadPluginForced(pluginBundle)
-	if resp.Error != nil {
-		return fmt.Errorf("failed to upload plugin bundle: %s", resp.Error.Error())
+	_, _, err = client.UploadPluginForced(pluginBundle)
+	if err != nil {
+		return fmt.Errorf("failed to upload plugin bundle: %s", err.Error())
 	}
 
 	log.Print("Enabling plugin.")
-	_, resp = client.EnablePlugin(pluginID)
-	if resp.Error != nil {
-		return fmt.Errorf("failed to enable plugin: %s", resp.Error.Error())
+	_, err = client.EnablePlugin(pluginID)
+	if err != nil {
+		return fmt.Errorf("failed to enable plugin: %s", err.Error())
 	}
 
 	return nil

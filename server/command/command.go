@@ -7,17 +7,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
-
-	"github.com/mattermost/mattermost-server/v5/model"
 )
 
 const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
@@ -511,12 +509,12 @@ func (r *Runner) actionList() {
 	}
 
 	options := app.PlaybookRunFilterOptions{
-		TeamID:    r.args.TeamId,
-		MemberID:  r.args.UserId,
-		Page:      0,
-		PerPage:   maxPlaybookRunsToList,
-		Sort:      app.SortByCreateAt,
-		Direction: app.DirectionDesc,
+		TeamID:        r.args.TeamId,
+		ParticipantID: r.args.UserId,
+		Page:          0,
+		PerPage:       maxPlaybookRunsToList,
+		Sort:          app.SortByCreateAt,
+		Direction:     app.DirectionDesc,
 	}
 
 	result, err := r.playbookRunService.GetPlaybookRuns(requesterInfo, options)
@@ -822,7 +820,7 @@ func (r *Runner) actionTestSelf(args []string) {
 		return
 	}
 
-	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PERMISSION_MANAGE_SYSTEM) {
+	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PermissionManageSystem) {
 		r.postCommandResponse("Running the self-test is restricted to system administrators.")
 		return
 	}
@@ -1049,7 +1047,7 @@ func (r *Runner) actionTest(args []string) {
 		return
 	}
 
-	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PERMISSION_MANAGE_SYSTEM) {
+	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PermissionManageSystem) {
 		r.postCommandResponse("Running the test command is restricted to system administrators.")
 		return
 	}
@@ -1723,7 +1721,7 @@ func (r *Runner) actionNukeDB(args []string) {
 		return
 	}
 
-	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PERMISSION_MANAGE_SYSTEM) {
+	if !r.pluginAPI.User.HasPermissionTo(r.args.UserId, model.PermissionManageSystem) {
 		r.postCommandResponse("Nuking the database is restricted to system administrators.")
 		return
 	}

@@ -71,22 +71,33 @@ paths:
             enum:
               - desc
               - asc
-        - name: status
+        - name: statuses
           in: query
-          description: The returned list will contain only the playbook runs with this status.
+          description: The returned list will contain only the playbook runs with the specified statuses.
           required: false
           example: InProgress
           schema:
-            type: string
-            default: InProgress
-            enum:
-              - InProgress
-              - Finished
+            type: array
+            default: ["InProgress"]
+            items:
+              type: string
+              enum:
+                - InProgress
+                - Finished
+          style: form
+          explode: true
         - name: owner_user_id
           in: query
-          description: The returned list will contain only the playbook runs commanded by this user.
+          description: The returned list will contain only the playbook runs commanded by this user. Specify "me" for current user.
           required: false
           example: lpn2ogt9qzkc59lfvvad9t15v4
+          schema:
+            type: string
+        - name: participant_id
+          in: query
+          description: The returned list will contain only the playbook runs for which the given user is a participant. Specify "me" for current user.
+          required: false
+          example: bruhg1cs65retdbea798hrml4v
           schema:
             type: string
         - name: search_term
@@ -94,13 +105,6 @@ paths:
           description: The returned list will contain only the playbook runs whose name contains the search term.
           required: false
           example: "server down"
-          schema:
-            type: string
-        - name: member_id
-          in: query
-          description: The returned list will contain only the playbook runs this user is a member of.
-          required: false
-          example: bruhg1cs65retdbea798hrml4v
           schema:
             type: string
       x-codeSamples:
@@ -377,9 +381,9 @@ paths:
           example: "server down"
           schema:
             type: string
-        - name: member_id
+        - name: participant_id
           in: query
-          description: The returned list will contain only the channels this user is a member of.
+          description: The returned list will contain only the channels associated to a playbook run for which the given user is a participant.
           required: false
           example: bruhg1cs65retdbea798hrml4v
           schema:

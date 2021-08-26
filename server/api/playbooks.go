@@ -12,7 +12,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -228,7 +228,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 func doPlaybookModificationChecks(playbook *app.Playbook, userID string, pluginAPI *pluginapi.Client) error {
 	filteredUsers := []string{}
 	for _, userID := range playbook.InvitedUserIDs {
-		if !pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PERMISSION_VIEW_TEAM) {
+		if !pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionViewTeam) {
 			pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", playbook.TeamID, "userID", userID)
 			continue
 		}
@@ -262,7 +262,7 @@ func doPlaybookModificationChecks(playbook *app.Playbook, userID string, pluginA
 
 	filteredBroadcastChannelIDs := []string{}
 	for _, channelID := range playbook.BroadcastChannelIDs {
-		if !pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PERMISSION_CREATE_POST) {
+		if !pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
 			pluginAPI.Log.Warn("broadcast channel is not valid, removing channel from list", "channel_id", channelID)
 			continue
 		}

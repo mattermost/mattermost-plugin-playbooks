@@ -7,7 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	mock_sqlstore "github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore/mocks"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

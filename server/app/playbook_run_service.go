@@ -16,8 +16,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -155,7 +155,7 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbookTitle, pla
 		getPlaybookDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookID),
 	)
 
-	if playbookRunChannel.Type == model.CHANNEL_OPEN {
+	if playbookRunChannel.Type == model.ChannelTypeOpen {
 		announcementMsg += fmt.Sprintf(
 			" Visit the link above for more information or join ~%v to participate.",
 			playbookRunChannel.Name,
@@ -251,7 +251,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookRun.ReporterUserID = userID
 	playbookRun.ID = model.NewId()
 
-	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	siteURL := model.ServiceSettingsDefaultSiteURL
 	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
 		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	}
@@ -512,12 +512,12 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, triggerID
 
 func (s *PlaybookRunServiceImpl) OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error {
 	options := PlaybookRunFilterOptions{
-		TeamID:    teamID,
-		MemberID:  requesterInfo.UserID,
-		Sort:      SortByCreateAt,
-		Direction: DirectionDesc,
-		Page:      0,
-		PerPage:   PerPageDefault,
+		TeamID:        teamID,
+		ParticipantID: requesterInfo.UserID,
+		Sort:          SortByCreateAt,
+		Direction:     DirectionDesc,
+		Page:          0,
+		PerPage:       PerPageDefault,
 	}
 
 	result, err := s.GetPlaybookRuns(requesterInfo, options)
@@ -1061,7 +1061,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 		return nil, errors.Wrapf(err, "failed to retrieve team id '%s'", channel.TeamId)
 	}
 
-	numMembers, err := s.store.GetAllPlaybookRunMembersCount(playbookRun.ChannelID)
+	numParticipants, err := s.store.GetHistoricalPlaybookRunParticipantsCount(playbookRun.ChannelID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get the count of playbook run members for channel id '%s'", playbookRun.ChannelID)
 	}
@@ -1071,7 +1071,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 		ChannelDisplayName: channel.DisplayName,
 		TeamName:           team.Name,
 		TotalPosts:         channel.TotalMsgCount,
-		NumMembers:         numMembers,
+		NumParticipants:    numParticipants,
 	}, nil
 }
 
@@ -1840,13 +1840,13 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 
 func (s *PlaybookRunServiceImpl) hasPermissionToModifyPlaybookRun(playbookRun *PlaybookRun, userID string) bool {
 	// PlaybookRun main channel membership is required to modify playbook run
-	return s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PERMISSION_READ_CHANNEL)
+	return s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionReadChannel)
 }
 
 func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookRun, header string, public bool) (*model.Channel, error) {
-	channelType := model.CHANNEL_PRIVATE
+	channelType := model.ChannelTypePrivate
 	if public {
-		channelType = model.CHANNEL_OPEN
+		channelType = model.ChannelTypeOpen
 	}
 
 	channel := &model.Channel{
@@ -1906,7 +1906,7 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, c
 		}
 	}
 
-	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
+	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", model.ChannelAdminRoleId, model.ChannelUserRoleId)); err != nil {
 		s.pluginAPI.Log.Warn("failed to promote owner to admin", "ChannelID", channel.Id, "OwnerUserID", playbookRun.OwnerUserID, "err", err.Error())
 	}
 
@@ -1951,7 +1951,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 		})
 	}
 
-	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	siteURL := model.ServiceSettingsDefaultSiteURL
 	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
 		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	}

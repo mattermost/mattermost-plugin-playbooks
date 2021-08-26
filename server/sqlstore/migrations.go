@@ -8,7 +8,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
@@ -34,7 +34,7 @@ var migrations = []Migration{
 				return errors.Wrapf(err, "failed creating table IR_System")
 			}
 
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
@@ -178,7 +178,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.2.0"),
 		toVersion:   semver.MustParse("0.3.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "ActiveStageTitle", "VARCHAR(1024) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column ActiveStageTitle to table IR_Incident")
 				}
@@ -236,7 +236,7 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.4.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_StatusPosts (
 						IncidentID VARCHAR(26) NOT NULL REFERENCES IR_Incident(ID),
@@ -300,7 +300,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.4.0"),
 		toVersion:   semver.MustParse("0.5.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "PreviousReminder", "BIGINT NOT NULL DEFAULT 0"); err != nil {
 					return errors.Wrapf(err, "failed adding column PreviousReminder to table IR_Incident")
 				}
@@ -340,7 +340,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.5.0"),
 		toVersion:   semver.MustParse("0.6.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "CurrentStatus", "VARCHAR(1024) NOT NULL DEFAULT 'Active'"); err != nil {
 					return errors.Wrapf(err, "failed adding column CurrentStatus to table IR_Incident")
 				}
@@ -365,7 +365,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.6.0"),
 		toVersion:   semver.MustParse("0.7.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_TimelineEvent
 					(
@@ -422,7 +422,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.7.0"),
 		toVersion:   semver.MustParse("0.8.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "ReporterUserID", "varchar(26) NOT NULL DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column ReporterUserID to table IR_Incident")
 				}
@@ -442,7 +442,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.8.0"),
 		toVersion:   semver.MustParse("0.9.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "ConcatenatedInvitedUserIDs", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column ConcatenatedInvitedUserIDs to table IR_Incident")
 				}
@@ -479,7 +479,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.9.0"),
 		toVersion:   semver.MustParse("0.10.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "DefaultCommanderID", "VARCHAR(26) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column DefaultCommanderID to table IR_Incident")
 				}
@@ -512,7 +512,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.10.0"),
 		toVersion:   semver.MustParse("0.11.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec(`
 					UPDATE IR_Incident
 					INNER JOIN Channels ON IR_Incident.ChannelID = Channels.ID
@@ -545,7 +545,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.11.0"),
 		toVersion:   semver.MustParse("0.12.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "AnnouncementChannelID", "VARCHAR(26) DEFAULT ''"); err != nil {
 					return errors.Wrapf(err, "failed adding column AnnouncementChannelID to table IR_Incident")
 				}
@@ -578,7 +578,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.12.0"),
 		toVersion:   semver.MustParse("0.13.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "WebhookOnCreationURL", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column WebhookOnCreationURL to table IR_Incident")
 				}
@@ -617,7 +617,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.13.0"),
 		toVersion:   semver.MustParse("0.14.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "ConcatenatedInvitedGroupIDs", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column ConcatenatedInvitedGroupIDs to table IR_Incident")
 				}
@@ -647,7 +647,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.14.0"),
 		toVersion:   semver.MustParse("0.15.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "Retrospective", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column Retrospective to table IR_Incident")
 				}
@@ -667,7 +667,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.15.0"),
 		toVersion:   semver.MustParse("0.16.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "MessageOnJoin", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column MessageOnJoin to table IR_Playbook")
 				}
@@ -733,7 +733,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.16.0"),
 		toVersion:   semver.MustParse("0.17.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "RetrospectivePublishedAt", "BIGINT NOT NULL DEFAULT 0"); err != nil {
 					return errors.Wrapf(err, "failed adding column RetrospectivePublishedAt to table IR_Incident")
 				}
@@ -749,7 +749,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.17.0"),
 		toVersion:   semver.MustParse("0.18.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "RetrospectiveReminderIntervalSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
 					return errors.Wrapf(err, "failed adding column RetrospectiveReminderIntervalSeconds to table IR_Incident")
 				}
@@ -777,7 +777,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.18.0"),
 		toVersion:   semver.MustParse("0.19.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "RetrospectiveTemplate", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column RetrospectiveReminderIntervalSeconds to table IR_Playbook")
 				}
@@ -799,7 +799,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.19.0"),
 		toVersion:   semver.MustParse("0.20.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column WebhookOnStatusUpdateURL to table IR_Playbook")
 				}
@@ -838,7 +838,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.20.0"),
 		toVersion:   semver.MustParse("0.21.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "ConcatenatedSignalAnyKeywords", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column ConcatenatedSignalAnyKeywords to table IR_Playbook")
 				}
@@ -889,7 +889,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.21.0"),
 		toVersion:   semver.MustParse("0.22.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "LastStatusUpdateAt", "BIGINT DEFAULT 0"); err != nil {
 					return errors.Wrapf(err, "failed adding column LastStatusUpdateAt to table IR_Incident")
 				}
@@ -936,7 +936,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.22.0"),
 		toVersion:   semver.MustParse("0.23.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "ExportChannelOnArchiveEnabled", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column ExportChannelOnArchiveEnabled to table IR_Playbook")
@@ -960,7 +960,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.23.0"),
 		toVersion:   semver.MustParse("0.24.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "CategorizeChannelEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column CategorizeChannelEnabled to table IR_Playbook")
 				}
@@ -984,7 +984,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.24.0"),
 		toVersion:   semver.MustParse("0.25.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := renameColumnMySQL(e, "IR_Playbook", "ExportChannelOnArchiveEnabled", "ExportChannelOnFinishedEnabled", "BOOLEAN NOT NULL DEFAULT FALSE"); err != nil {
 					return errors.Wrap(err, "failed changing column ExportChannelOnArchiveEnabled to ExportChannelOnFinishedEnabled in table IR_Playbook")
 				}
@@ -1029,7 +1029,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.25.0"),
 		toVersion:   semver.MustParse("0.26.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "CategoryName", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column CategoryName to table IR_Playbook")
 				}
@@ -1101,7 +1101,7 @@ var migrations = []Migration{
 				END)
 			`
 
-			if e.DriverName() == model.DATABASE_DRIVER_MYSQL {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Incident", "ConcatenatedBroadcastChannelIds", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column ConcatenatedBroadcastChannelIds to table IR_Incident")
 				}

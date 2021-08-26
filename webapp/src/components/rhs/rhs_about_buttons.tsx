@@ -10,10 +10,10 @@ import {mdiClipboardPlayOutline, mdiNotebookOutline} from '@mdi/js';
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import {navigateToPluginUrl} from 'src/browser_routing';
-import {clientFetchPlaybook} from 'src/client';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import DotMenu, {DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
+import {usePlaybookName} from 'src/hooks';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -67,27 +67,6 @@ const RHSAboutButtons = (props: Props) => {
             />
         </>
     );
-};
-
-const usePlaybookName = (playbookId: string) => {
-    const [playbookName, setPlaybookName] = useState('');
-
-    useEffect(() => {
-        const getPlaybookName = async () => {
-            if (playbookId !== '') {
-                try {
-                    const playbook = await clientFetchPlaybook(playbookId);
-                    setPlaybookName(playbook?.title || '');
-                } catch {
-                    setPlaybookName('');
-                }
-            }
-        };
-
-        getPlaybookName();
-    }, [playbookId]);
-
-    return playbookName;
 };
 
 const StyledDotMenuButton = styled(DotMenuButton)`

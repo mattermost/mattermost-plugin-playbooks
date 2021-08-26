@@ -6,6 +6,9 @@ import {Channel} from 'mattermost-redux/types/channels';
 export interface OwnerInfo {
     user_id: string;
     username: string;
+    first_name: string;
+    last_name: string;
+    nickname: string;
 }
 
 export type ChannelNamesMap = {

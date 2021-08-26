@@ -17,7 +17,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
@@ -123,7 +123,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 				AND cm.UserId NOT IN (SELECT UserId FROM Bots)
 			), ''
         ) AS ConcatenatedParticipantIDs`
-	if sqlStore.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+	if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
 		participantsCol = `
         COALESCE(
 			(SELECT group_concat(cm.UserId separator ',')
@@ -207,15 +207,6 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		Where(permissionsExpr).
 		Where(teamLimitExpr)
 
-	if options.Status != "" && len(options.Statuses) != 0 {
-		return nil, errors.New("options Status and Statuses cannot both be set")
-	}
-
-	if options.Status != "" {
-		queryForResults = queryForResults.Where(sq.Eq{"i.CurrentStatus": options.Status})
-		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Status})
-	}
-
 	if len(options.Statuses) != 0 {
 		queryForResults = queryForResults.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.CurrentStatus": options.Statuses})
@@ -226,13 +217,13 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		queryForTotal = queryForTotal.Where(sq.Eq{"i.CommanderUserID": options.OwnerID})
 	}
 
-	if options.MemberID != "" {
+	if options.ParticipantID != "" {
 		membershipClause := s.queryBuilder.
 			Select("1").
 			Prefix("EXISTS(").
 			From("ChannelMembers AS cm").
 			Where("cm.ChannelId = i.ChannelID").
-			Where(sq.Eq{"cm.UserId": strings.ToLower(options.MemberID)}).
+			Where(sq.Eq{"cm.UserId": strings.ToLower(options.ParticipantID)}).
 			Suffix(")")
 
 		queryForResults = queryForResults.Where(membershipClause)
@@ -251,7 +242,7 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 
 		// Postgres performs a case-sensitive search, so we need to lowercase
 		// both the column contents and the search string
-		if s.store.db.DriverName() == model.DATABASE_DRIVER_POSTGRES {
+		if s.store.db.DriverName() == model.DatabaseDriverPostgres {
 			column = "LOWER(c.DisplayName)"
 			searchString = strings.ToLower(options.SearchTerm)
 		}
@@ -668,22 +659,22 @@ func (s *playbookRunStore) GetPlaybookRunIDForChannel(channelID string) (string,
 	return id, nil
 }
 
-// GetAllPlaybookRunMembersCount returns the count of all members of an playbook run's channel
+// GetHistoricalPlaybookRunParticipantsCount returns the count of all members of an playbook run's channel
 // since the beginning of the playbook run, excluding bots.
-func (s *playbookRunStore) GetAllPlaybookRunMembersCount(channelID string) (int64, error) {
+func (s *playbookRunStore) GetHistoricalPlaybookRunParticipantsCount(channelID string) (int64, error) {
 	query := s.queryBuilder.
 		Select("COUNT(DISTINCT cmh.UserId)").
 		From("ChannelMemberHistory AS cmh").
 		Where(sq.Eq{"cmh.ChannelId": channelID}).
 		Where(sq.Expr("cmh.UserId NOT IN (SELECT UserId FROM Bots)"))
 
-	var numMembers int64
-	err := s.store.getBuilder(s.store.db, &numMembers, query)
+	var numParticipants int64
+	err := s.store.getBuilder(s.store.db, &numParticipants, query)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to query database")
 	}
 
-	return numMembers, nil
+	return numParticipants, nil
 }
 
 // GetOwners returns the owners of the playbook runs selected by options
@@ -693,7 +684,7 @@ func (s *playbookRunStore) GetOwners(requesterInfo app.RequesterInfo, options ap
 
 	// At the moment, the options only includes teamID
 	query := s.queryBuilder.
-		Select("DISTINCT u.Id AS UserID", "u.Username").
+		Select("DISTINCT u.Id AS UserID", "u.Username", "u.FirstName", "u.LastName", "u.Nickname").
 		From("IR_Incident AS i").
 		Join("Users AS u ON i.CommanderUserID = u.Id").
 		Where(teamLimitExpr).
@@ -781,7 +772,7 @@ func (s *playbookRunStore) SetViewedChannel(userID, channelID string) error {
 		}))
 
 	if err != nil {
-		if s.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+		if s.store.db.DriverName() == model.DatabaseDriverMysql {
 			me, ok := err.(*mysql.MySQLError)
 			if ok && me.Number == 1062 {
 				return errors.Wrap(app.ErrDuplicateEntry, err.Error())

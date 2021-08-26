@@ -14,8 +14,8 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import './profile_selector.scss';
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
-import {PlaybookRunFilterButton} from 'src/components/backstage/playbook_runs/playbook_run_list/status_filter';
 import {useClientRect} from 'src/hooks';
+import {PlaybookRunFilterButton} from '../backstage/styles';
 
 interface Option {
     value: string;

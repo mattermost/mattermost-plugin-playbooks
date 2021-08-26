@@ -10,7 +10,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
@@ -624,7 +624,7 @@ INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
         SELECT 1 FROM IR_PlaybookMember
             WHERE PlaybookID = ? AND MemberID = ?
     );`
-	if p.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+	if p.store.db.DriverName() == model.DatabaseDriverMysql {
 		insertExpr = `
 INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
     SELECT ?, ? FROM DUAL

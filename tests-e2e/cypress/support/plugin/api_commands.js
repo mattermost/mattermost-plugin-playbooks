@@ -25,7 +25,7 @@ Cypress.Commands.add('apiGetAllInProgressPlaybookRuns', (teamId, userId = '') =>
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
-        qs: {team_id: teamId, status: 'InProgress', member_id: userId},
+        qs: {team_id: teamId, status: 'InProgress', participant_id: userId},
         method: 'GET',
     }).then((response) => {
         expect(response.status).to.equal(200);

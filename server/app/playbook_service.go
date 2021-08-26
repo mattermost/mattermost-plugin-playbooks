@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -129,7 +129,7 @@ func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Pos
 	}
 
 	pluginID := s.configService.GetManifest().Id
-	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	siteURL := model.ServiceSettingsDefaultSiteURL
 	if s.api.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
 		siteURL = *s.api.Configuration.GetConfig().ServiceSettings.SiteURL
 	}
@@ -166,7 +166,7 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 	ignoreButton := &model.PostAction{
 		Id:   "ignoreKeywordsButton",
 		Name: "No, ignore",
-		Type: model.POST_ACTION_TYPE_BUTTON,
+		Type: model.PostActionTypeButton,
 		Integration: &model.PostActionIntegration{
 			URL: fmt.Sprintf("/plugins/%s/api/v0/signal/keywords/ignore-thread", pluginID),
 			Context: map[string]interface{}{
@@ -180,7 +180,7 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 		yesButton := &model.PostAction{
 			Id:   "runPlaybookButton",
 			Name: "Yes, run playbook",
-			Type: model.POST_ACTION_TYPE_BUTTON,
+			Type: model.PostActionTypeButton,
 			Integration: &model.PostActionIntegration{
 				URL: fmt.Sprintf("/plugins/%s/api/v0/signal/keywords/run-playbook", pluginID),
 				Context: map[string]interface{}{
@@ -212,7 +212,7 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 	playbookChooser := &model.PostAction{
 		Id:   "playbookChooser",
 		Name: "Select a playbook to run",
-		Type: model.POST_ACTION_TYPE_SELECT,
+		Type: model.PostActionTypeSelect,
 		Integration: &model.PostActionIntegration{
 			URL: fmt.Sprintf("/plugins/%s/api/v0/signal/keywords/run-playbook", pluginID),
 			Context: map[string]interface{}{

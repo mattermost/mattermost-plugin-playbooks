@@ -5,9 +5,10 @@
 package mock_sqlstore
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	model "github.com/mattermost/mattermost-server/v5/model"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
+	model "github.com/mattermost/mattermost-server/v6/model"
 )
 
 // MockConfigurationAPI is a mock of ConfigurationAPI interface

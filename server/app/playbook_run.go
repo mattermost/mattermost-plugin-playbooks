@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-api/cluster"
@@ -228,7 +228,7 @@ type Metadata struct {
 	ChannelName        string `json:"channel_name"`
 	ChannelDisplayName string `json:"channel_display_name"`
 	TeamName           string `json:"team_name"`
-	NumMembers         int64  `json:"num_members"`
+	NumParticipants    int64  `json:"num_participants"`
 	TotalPosts         int64  `json:"total_posts"`
 }
 
@@ -330,8 +330,11 @@ func (r GetPlaybookRunsResults) MarshalJSON() ([]byte, error) {
 
 // OwnerInfo holds the summary information of a owner.
 type OwnerInfo struct {
-	UserID   string `json:"user_id"`
-	Username string `json:"username"`
+	UserID    string `json:"user_id"`
+	Username  string `json:"username"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Nickname  string `json:"nickname"`
 }
 
 // DialogState holds the start playbook run interactive dialog's state as it appears in the client
@@ -511,10 +514,10 @@ type PlaybookRunStore interface {
 	// GetPlaybookRunByChannel gets a playbook run associated with the given channel id.
 	GetPlaybookRunIDForChannel(channelID string) (string, error)
 
-	// GetAllPlaybookRunMembersCount returns the count of all members of the
+	// GetHistoricalPlaybookRunParticipantsCount returns the count of all participants of the
 	// playbook run associated with the given channel id since the beginning of the
 	// playbook run, excluding bots.
-	GetAllPlaybookRunMembersCount(channelID string) (int64, error)
+	GetHistoricalPlaybookRunParticipantsCount(channelID string) (int64, error)
 
 	// GetOwners returns the owners of the playbook runs selected by options
 	GetOwners(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) ([]OwnerInfo, error)
@@ -615,17 +618,14 @@ type PlaybookRunFilterOptions struct {
 	// Direction orders by ascending or descending, defaulting to ascending.
 	Direction SortDirection `url:"direction,omitempty"`
 
-	// Status filters by current status
-	Status string
-
 	// Statuses filters by all statuses in the list (inclusive)
 	Statuses []string
 
 	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter).
 	OwnerID string `url:"owner_user_id,omitempty"`
 
-	// MemberID filters playbook runs that have this member. Defaults to blank (no filter).
-	MemberID string `url:"member_id,omitempty"`
+	// ParticipantID filters playbook runs that have this member. Defaults to blank (no filter).
+	ParticipantID string `url:"participant_id,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
@@ -656,7 +656,9 @@ type PlaybookRunFilterOptions struct {
 // Clone duplicates the given options.
 func (o *PlaybookRunFilterOptions) Clone() PlaybookRunFilterOptions {
 	newPlaybookRunFilterOptions := *o
-	newPlaybookRunFilterOptions.Statuses = append([]string{}, o.Statuses...)
+	if len(o.Statuses) > 0 {
+		newPlaybookRunFilterOptions.Statuses = append([]string{}, o.Statuses...)
+	}
 
 	return newPlaybookRunFilterOptions
 }
@@ -703,8 +705,8 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'owner_id': must be 26 characters or blank")
 	}
 
-	if options.MemberID != "" && !model.IsValidId(options.MemberID) {
-		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'member_id': must be 26 characters or blank")
+	if options.ParticipantID != "" && !model.IsValidId(options.ParticipantID) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'participant_id': must be 26 characters or blank")
 	}
 
 	if options.PlaybookID != "" && !model.IsValidId(options.PlaybookID) {
@@ -722,10 +724,6 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	}
 	if options.StartedLT < 0 {
 		options.StartedLT = 0
-	}
-
-	if options.Status != "" && !validStatus(options.Status) {
-		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'status': must be InProgress or Finished")
 	}
 
 	for _, s := range options.Statuses {

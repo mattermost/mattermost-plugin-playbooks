@@ -9,7 +9,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 type StatsStore struct {
@@ -144,7 +144,7 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 
 	q := s.store.builder.Select()
 	for i := 0; i < x; i++ {
-		if s.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+		if s.store.db.DriverName() == model.DatabaseDriverMysql {
 			q = q.Column(`
                 CAST(
                      SUM(
@@ -203,7 +203,7 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 	for i := 0; i < x; i++ {
 		// a playbook run was active if it was created before the end of the day and ended after the
 		// start of the day (or still active)
-		if s.store.db.DriverName() == model.DATABASE_DRIVER_MYSQL {
+		if s.store.db.DriverName() == model.DatabaseDriverMysql {
 			q = q.Column(`
                 CAST(
                      SUM(
