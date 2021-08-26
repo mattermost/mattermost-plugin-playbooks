@@ -815,19 +815,27 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 		`, info.UserID)
 	}
 
-	// is the playbook open to everyone on the team, or is the user a member of the playbook?
+	// 1. Is the user a channel member? If so, they have permission to view the run.
+	// 2. Is the playbook open to everyone on the team, or is the user a member of the playbook?
+	//    If so, they have permission to view the run.
 	return sq.Expr(`
-		  (
- 			  NOT EXISTS(
-					SELECT 1
-						FROM IR_PlaybookMember
-						WHERE PlaybookID = i.PlaybookID)
-			  OR EXISTS(
-					SELECT 1
-						FROM IR_PlaybookMember
-						WHERE PlaybookID = i.PlaybookID
-						  AND MemberID = ?)
-		  )`, info.UserID)
+        (
+			EXISTS (
+                    SELECT 1
+						FROM ChannelMembers as cm
+						WHERE cm.ChannelId = i.ChannelId
+						  AND cm.userid = ?)
+			) OR (
+				  NOT EXISTS(
+						SELECT 1
+							FROM IR_PlaybookMember
+							WHERE PlaybookID = i.PlaybookID)
+				  OR EXISTS(
+						SELECT 1
+							FROM IR_PlaybookMember
+							WHERE PlaybookID = i.PlaybookID
+							  AND MemberID = ?)
+		)`, info.UserID, info.UserID)
 }
 
 func buildTeamLimitExpr(userID, teamID, tableName string) sq.Sqlizer {
