@@ -5,11 +5,10 @@
 package mock_app
 
 import (
-	reflect "reflect"
-	time "time"
-
 	gomock "github.com/golang/mock/gomock"
 	app "github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	reflect "reflect"
+	time "time"
 )
 
 // MockPlaybookRunStore is a mock of PlaybookRunStore interface
@@ -93,21 +92,6 @@ func (mr *MockPlaybookRunStoreMockRecorder) FinishPlaybookRun(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishPlaybookRun", reflect.TypeOf((*MockPlaybookRunStore)(nil).FinishPlaybookRun), arg0, arg1)
 }
 
-// GetHistoricalPlaybookRunParticipantsCount mocks base method
-func (m *MockPlaybookRunStore) GetHistoricalPlaybookRunParticipantsCount(arg0 string) (int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHistoricalPlaybookRunParticipantsCount", arg0)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHistoricalPlaybookRunParticipantsCount indicates an expected call of GetHistoricalPlaybookRunParticipantsCount
-func (mr *MockPlaybookRunStoreMockRecorder) GetHistoricalPlaybookRunParticipantsCount(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHistoricalPlaybookRunParticipantsCount", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetHistoricalPlaybookRunParticipantsCount), arg0)
-}
-
 // GetChannelIDsToRootIDs mocks base method
 func (m *MockPlaybookRunStore) GetChannelIDsToRootIDs(arg0 string) (map[string]string, error) {
 	m.ctrl.T.Helper()
@@ -121,6 +105,21 @@ func (m *MockPlaybookRunStore) GetChannelIDsToRootIDs(arg0 string) (map[string]s
 func (mr *MockPlaybookRunStoreMockRecorder) GetChannelIDsToRootIDs(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChannelIDsToRootIDs", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetChannelIDsToRootIDs), arg0)
+}
+
+// GetHistoricalPlaybookRunParticipantsCount mocks base method
+func (m *MockPlaybookRunStore) GetHistoricalPlaybookRunParticipantsCount(arg0 string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHistoricalPlaybookRunParticipantsCount", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetHistoricalPlaybookRunParticipantsCount indicates an expected call of GetHistoricalPlaybookRunParticipantsCount
+func (mr *MockPlaybookRunStoreMockRecorder) GetHistoricalPlaybookRunParticipantsCount(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHistoricalPlaybookRunParticipantsCount", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetHistoricalPlaybookRunParticipantsCount), arg0)
 }
 
 // GetOwners mocks base method
