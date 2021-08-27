@@ -19,6 +19,7 @@ interface Props {
     keywords: string[];
     onKeywordsChange: (keywords: string[]) => void;
 }
+
 const selectComponents = {
     DropdownIndicator: null,
     ClearIndicator: null,
@@ -46,21 +47,29 @@ export const InputKeywords = (props: Props) => {
         setInputValue(newInputValue);
     };
 
-    const inputKeyDown = (e: React.KeyboardEvent) => {
+    const handleInput = (isBlur: boolean, event: any) => {
         if (!inputValue) {
             return;
         }
 
-        if (e.key === 'Enter' || e.key === 'Tab') {
+        if (isBlur || event.key === 'Enter' || event.key === 'Tab') {
             const keywords = values.map((item) => item.value);
             if (keywords.includes(inputValue)) {
                 return;
             }
             setInputValue('');
             setValues([...values, createOption(inputValue)]);
-            e.preventDefault();
+            event.preventDefault();
             props.onKeywordsChange([...keywords, inputValue]);
         }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        handleInput(false, e);
+    };
+
+    const handleBlur = (e: React.FocusEvent) => {
+        handleInput(true, e);
     };
 
     return (
@@ -82,9 +91,10 @@ export const InputKeywords = (props: Props) => {
                     menuIsOpen={false}
                     placeholder={props.placeholderText}
                     value={props.enabled ? values : []}
-                    onKeyDown={inputKeyDown}
+                    onKeyDown={handleKeyDown}
                     onChange={handleChange}
                     onInputChange={handleInputChange}
+                    onBlur={handleBlur}
                     styles={selectStyles}
                 />
             </KeywordsSelectorWrapper>
