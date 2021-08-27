@@ -763,6 +763,9 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	}
 
 	post, err := s.postMessageToThreadAndSaveRootID(playbookRunID, playbookRunToModify.ChannelID, options.Message)
+	if err != nil {
+		return errors.Wrap(err, "failed to post update status message")
+	}
 
 	// Add the status manually for the broadcasts
 	playbookRunToModify.StatusPosts = append(playbookRunToModify.StatusPosts,

@@ -791,12 +791,12 @@ func (s *playbookRunStore) SetViewedChannel(userID, channelID string) error {
 }
 
 func (s *playbookRunStore) GetChannelIDsToRootIDs(playbookRunID string) (map[string]string, error) {
-	var retAsJson string
+	var retAsJSON string
 	query := s.store.builder.Select("COALESCE(ChannelIDToRootID, '')").
 		From("IR_Incident").
 		Where(sq.Eq{"ID": playbookRunID})
 
-	err := s.store.getBuilder(s.store.db, &retAsJson, query)
+	err := s.store.getBuilder(s.store.db, &retAsJSON, query)
 	if err == sql.ErrNoRows {
 		return nil, errors.Wrapf(app.ErrNotFound, "could not find playbook with id: '%s'", playbookRunID)
 	} else if err != nil {
@@ -804,11 +804,11 @@ func (s *playbookRunStore) GetChannelIDsToRootIDs(playbookRunID string) (map[str
 	}
 
 	ret := make(map[string]string)
-	if retAsJson == "" {
+	if retAsJSON == "" {
 		return ret, nil
 	}
 
-	if err := json.Unmarshal([]byte(retAsJson), &ret); err != nil {
+	if err := json.Unmarshal([]byte(retAsJSON), &ret); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal channelID to rootID map for playbookRunID: '%s'", playbookRunID)
 	}
 
