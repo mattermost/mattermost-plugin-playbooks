@@ -49,7 +49,8 @@ describe('playbook run broadcast', () => {
                     teamId,
                     title: playbookName + ' - public broadcast',
                     userId,
-                    broadcastChannelId: publicBroadcastChannelId,
+                    broadcastChannelIds: [publicBroadcastChannelId],
+                    broadcastEnabled: true,
                 }).then((playbook) => {
                     publicBroadcastPlaybookId = playbook.id;
                 });
@@ -65,7 +66,8 @@ describe('playbook run broadcast', () => {
                     teamId,
                     title: playbookName + ' - private broadcast',
                     userId,
-                    broadcastChannelId: privateBroadcastChannelId,
+                    broadcastChannelIds: [privateBroadcastChannelId],
+                    broadcastEnabled: true,
                 }).then((playbook) => {
                     privateBroadcastPlaybookId = playbook.id;
                 });

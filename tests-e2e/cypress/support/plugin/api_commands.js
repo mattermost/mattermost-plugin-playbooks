@@ -192,7 +192,8 @@ Cypress.Commands.add('apiCreatePlaybook', (
         createPublicPlaybookRun,
         checklists,
         memberIDs,
-        broadcastChannelId,
+        broadcastEnabled,
+        broadcastChannelIds,
         reminderMessageTemplate,
         reminderTimerDefaultSeconds,
         invitedUserIds,
@@ -220,7 +221,8 @@ Cypress.Commands.add('apiCreatePlaybook', (
             create_public_playbook_run: createPublicPlaybookRun,
             checklists,
             member_ids: memberIDs,
-            broadcast_channel_id: broadcastChannelId,
+            broadcast_enabled: broadcastEnabled,
+            broadcast_channel_ids: broadcastChannelIds,
             reminder_message_template: reminderMessageTemplate,
             reminder_timer_default_seconds: reminderTimerDefaultSeconds,
             invited_user_ids: invitedUserIds,
@@ -250,7 +252,8 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         teamId,
         title,
         userId,
-        broadcastChannelId,
+        broadcastEnabled,
+        broadcastChannelIds,
         reminderMessageTemplate,
         reminderTimerDefaultSeconds
     }) => (
@@ -267,7 +270,8 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         memberIDs: [
             userId,
         ],
-        broadcastChannelId,
+        broadcastEnabled,
+        broadcastChannelIds,
         reminderMessageTemplate,
         reminderTimerDefaultSeconds,
     })

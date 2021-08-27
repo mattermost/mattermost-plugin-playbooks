@@ -28,7 +28,7 @@ describe('backstage playbook details', () => {
         cy.url().should('include', '/playbooks/error?type=playbooks');
     });
 
-    describe('tasks', () => {
+    describe('checklists', () => {
         describe('slash command', () => {
             it('autocompletes after clicking Add a slash command', () => {
                 // # Visit the playbook backstage
@@ -38,16 +38,23 @@ describe('backstage playbook details', () => {
                 cy.get('#root').findByText('Blank').click();
 
                 // #  Select team
-                cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
+                cy.get('[data-testid="teamIconInitial"]')
+                    .first()
+                    .parent()
+                    .click({force: true});
 
                 // # Add a slash command to a step
                 cy.get('#root').findByText('Add a slash command').click();
 
                 // * Verify the slash command input field now has focus
-                cy.get('#root').findByPlaceholderText('Slash Command').should('have.focus');
+                cy.get('#root')
+                    .findByPlaceholderText('Slash Command')
+                    .should('have.focus');
 
                 // * Verify the slash command input field is pre-populated with a leading slash
-                cy.get('#root').findByPlaceholderText('Slash Command').should('have.value', '/');
+                cy.get('#root')
+                    .findByPlaceholderText('Slash Command')
+                    .should('have.value', '/');
 
                 // * Verify the autocomplete prompt is open
                 cy.get('#suggestionList').should('exist');
@@ -61,22 +68,31 @@ describe('backstage playbook details', () => {
                 cy.get('#root').findByText('Blank').click();
 
                 // #  Select team
-                cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
+                cy.get('[data-testid="teamIconInitial"]')
+                    .first()
+                    .parent()
+                    .click({force: true});
 
                 // # Add a slash command to a step
                 cy.get('#root').findByText('Add a slash command').click();
 
                 // * Verify only the leading slash is in the input field.
-                cy.get('#root').findByPlaceholderText('Slash Command').should('have.value', '/');
+                cy.get('#root')
+                    .findByPlaceholderText('Slash Command')
+                    .should('have.value', '/');
 
                 // # Backspace even the slash in the input.
-                cy.get('#root').findByPlaceholderText('Slash Command').type('{backspace}');
+                cy.get('#root')
+                    .findByPlaceholderText('Slash Command')
+                    .type('{backspace}');
 
                 // # Blur the slash command input field
                 cy.get('#root').findByPlaceholderText('Slash Command').blur();
 
                 // # Verify the Add a slash command button returns
-                cy.get('#root').findByText('Add a slash command').should('exist');
+                cy.get('#root')
+                    .findByText('Add a slash command')
+                    .should('exist');
             });
 
             it('removes the input prompt when blurring with an invalid slash command', () => {
@@ -87,27 +103,35 @@ describe('backstage playbook details', () => {
                 cy.get('#root').findByText('Blank').click();
 
                 // #  Select team
-                cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
+                cy.get('[data-testid="teamIconInitial"]')
+                    .first()
+                    .parent()
+                    .click({force: true});
 
                 // # Add a slash command to a step
                 cy.get('#root').findByText('Add a slash command').click();
 
                 // * Verify only the leading slash is in the input field.
-                cy.get('#root').findByPlaceholderText('Slash Command').should('have.value', '/');
+                cy.get('#root')
+                    .findByPlaceholderText('Slash Command')
+                    .should('have.value', '/');
 
                 // # Blur the slash command without having typed anything more
                 cy.get('#root').findByPlaceholderText('Slash Command').blur();
 
                 // * Verify the Add a slash command button returns
-                cy.get('#root').findByText('Add a slash command').should('exist');
+                cy.get('#root')
+                    .findByText('Add a slash command')
+                    .should('exist');
             });
         });
     });
 
-    describe('preferences', () => {
-        const playbookName = 'Playbook (' + Date.now() + ')';
-        let teamId;
+    describe('actions', () => {
+        let playbookName;
         let playbookId;
+        let teamId;
+        let userId;
         let privateChannelId;
         let privateChannelName;
 
@@ -115,127 +139,24 @@ describe('backstage playbook details', () => {
             // # Login as user-1
             cy.legacyApiLogin('user-1');
 
-            // # Create a playbook
             cy.legacyApiGetTeamByName('ad-1').then((team) => {
                 teamId = team.id;
 
-                cy.legacyApiGetCurrentUser().then((user) => {
-                    cy.apiCreateTestPlaybook({
-                        teamId: team.id,
-                        title: playbookName,
-                        userId: user.id,
-                    }).then((playbook) => {
-                        playbookId = playbook.id;
-                    });
-
-                    cy.verifyPlaybookCreated(team.id, playbookName);
-                });
-
                 // # Create a private channel
-                cy.legacyApiCreateChannel(teamId, 'private-channel', 'Private Channel', 'P').then(({channel}) => {
+                cy.legacyApiCreateChannel(
+                    teamId,
+                    'private-channel',
+                    'Private Channel',
+                    'P'
+                ).then(({channel}) => {
                     privateChannelId = channel.id;
                     privateChannelName = channel.name;
                 });
             });
         });
 
-        it('shows "Select a channel" when no broadcast channel configured', () => {
-            // # Visit the selected playbook
-            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
-
-            // # Switch to Templates tab
-            cy.get('#root').findByText('Templates').click();
-
-            // * Verify placeholder text is present
-            cy.get('#playbook-preferences-broadcast-channel').should('have.text', 'Select a channel');
-        });
-
-        it('shows channel name when public broadcast channel configured', () => {
-            // # Visit the selected playbook
-            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
-
-            // # Switch to Templates tab
-            cy.get('#root').findByText('Templates').click();
-
-            // # Open the broadcast channel widget and select a public channel
-            cy.get('#playbook-preferences-broadcast-channel').click().type('saepe-5{enter}', {delay: 200});
-
-            // # Save the playbook
-            cy.findByTestId('save_playbook').click();
-
-            // # Visit the selected playbook
-            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
-
-            // # Switch to Templates tab
-            cy.get('#root').findByText('Templates').click();
-
-            // * Verify placeholder text is present
-            cy.get('#playbook-preferences-broadcast-channel').should('have.text', 'doloremque');
-        });
-
-        it('shows channel name when private broadcast channel configured and user is a member', () => {
-            // # Visit the selected playbook
-            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
-
-            // # Switch to Templates tab
-            cy.get('#root').findByText('Templates').click();
-
-            // # Open the broadcast channel widget and select a public channel
-            cy.get('#playbook-preferences-broadcast-channel').click().type('autem-2{enter}', {delay: 200});
-
-            // # Save the playbook
-            cy.findByTestId('save_playbook').click();
-
-            // # Visit the selected playbook
-            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
-
-            // # Switch to Templates tab
-            cy.get('#root').findByText('Templates').click();
-
-            // * Verify placeholder text is present
-            cy.get('#playbook-preferences-broadcast-channel').should('have.text', 'commodi');
-        });
-
-        it('shows "Unknown channel" when private broadcast channel configured and user is not a member', () => {
-            // # Visit the selected playbook
-            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
-
-            // # Switch to Templates tab
-            cy.get('#root').findByText('Templates').click();
-
-            // # Open the broadcast channel widget and select the private channel
-            cy.get('#playbook-preferences-broadcast-channel').click().type(privateChannelId + '{enter}', {delay: 200});
-
-            // # Save the playbook
-            cy.findByTestId('save_playbook').click();
-
-            // # Browse to the private channel
-            cy.visit('/ad-1/channels/' + privateChannelName);
-
-            // # Leave the private channel
-            cy.executeSlashCommand('/leave');
-            cy.get('#confirmModalButton').click();
-
-            // # Visit the selected playbook
-            cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
-
-            // # Switch to Templates tab
-            cy.get('#root').findByText('Templates').click();
-
-            // * Verify placeholder text is present
-            cy.get('#playbook-preferences-broadcast-channel').should('have.text', 'Unknown Channel');
-        });
-    });
-
-    describe('automation', () => {
-        const playbookName = 'Playbook (' + Date.now() + ')';
-        let playbookId;
-        let teamId;
-        let userId;
-
-        before(() => {
-            // # Login as user-1
-            cy.legacyApiLogin('user-1');
+        beforeEach(() => {
+            playbookName = 'Playbook (' + Date.now() + ')';
 
             // # Create a playbook
             cy.legacyApiGetTeamByName('ad-1').then((team) => {
@@ -255,7 +176,7 @@ describe('backstage playbook details', () => {
             });
         });
 
-        describe('when an playbook run starts', () => {
+        describe('when a playbook run starts', () => {
             describe('invite members setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
@@ -265,7 +186,9 @@ describe('backstage playbook details', () => {
                     cy.get('#root').findByText('Actions').click();
 
                     // * Verify that the toggle is unchecked
-                    cy.get('#invite-users label input').should('not.be.checked');
+                    cy.get('#invite-users label input').should(
+                        'not.be.checked'
+                    );
                 });
 
                 it('can be enabled', () => {
@@ -295,11 +218,16 @@ describe('backstage playbook details', () => {
                     cy.get('#root').findByText('Actions').click();
 
                     // * Verify that the toggle is unchecked
-                    cy.get('#invite-users label input').should('not.be.checked');
+                    cy.get('#invite-users label input').should(
+                        'not.be.checked'
+                    );
 
                     // * Verify that the menu is disabled
                     cy.get('#invite-users').within(() => {
-                        cy.getStyledComponent('StyledReactSelect').should('have.class', 'invite-users-selector--is-disabled');
+                        cy.getStyledComponent('StyledReactSelect').should(
+                            'have.class',
+                            'invite-users-selector--is-disabled'
+                        );
                     });
                 });
 
@@ -332,9 +260,11 @@ describe('backstage playbook details', () => {
                             .should('eq', '1 MEMBER');
 
                         // * Verify that the user shows in the group of invited members
-                        cy.findByText('INVITED MEMBERS').parent().within(() => {
-                            cy.findByText('aaron.medina');
-                        });
+                        cy.findByText('INVITED MEMBERS')
+                            .parent()
+                            .within(() => {
+                                cy.findByText('aaron.medina');
+                            });
                     });
                 });
 
@@ -362,9 +292,11 @@ describe('backstage playbook details', () => {
                         cy.addInvitedUser('aaron.medina');
 
                         // * Verify that the user shows in the group of invited members
-                        cy.findByText('INVITED MEMBERS').parent().within(() => {
-                            cy.findByText('aaron.medina');
-                        });
+                        cy.findByText('INVITED MEMBERS')
+                            .parent()
+                            .within(() => {
+                                cy.findByText('aaron.medina');
+                            });
 
                         // # Add a new user
                         cy.addInvitedUser('alice.johnston');
@@ -375,10 +307,12 @@ describe('backstage playbook details', () => {
                             .should('eq', '2 MEMBERS');
 
                         // * Verify that the user shows in the group of invited members
-                        cy.findByText('INVITED MEMBERS').parent().within(() => {
-                            cy.findByText('aaron.medina');
-                            cy.findByText('alice.johnston');
-                        });
+                        cy.findByText('INVITED MEMBERS')
+                            .parent()
+                            .within(() => {
+                                cy.findByText('aaron.medina');
+                                cy.findByText('alice.johnston');
+                            });
                     });
                 });
 
@@ -412,20 +346,24 @@ describe('backstage playbook details', () => {
                             .should('eq', '2 MEMBERS');
 
                         // # Remove the first users added
-                        cy.get('.invite-users-selector__option').eq(0).within(() => {
-                            cy.findByText('Remove').click();
-                        });
+                        cy.get('.invite-users-selector__option')
+                            .eq(0)
+                            .within(() => {
+                                cy.findByText('Remove').click();
+                            });
 
                         // * Verify that there is only one user, the one not removed
                         cy.get('.invite-users-selector__control')
                             .after('content')
                             .should('eq', '1 MEMBER');
 
-                        cy.findByText('INVITED MEMBERS').parent().within(() => {
-                            cy.get('.invite-users-selector__option')
-                                .should('have.length', 1)
-                                .contains('alice.johnston');
-                        });
+                        cy.findByText('INVITED MEMBERS')
+                            .parent()
+                            .within(() => {
+                                cy.get('.invite-users-selector__option')
+                                    .should('have.length', 1)
+                                    .contains('alice.johnston');
+                            });
                     });
                 });
 
@@ -493,10 +431,12 @@ describe('backstage playbook details', () => {
                         cy.openSelector();
 
                         // * Verify that the user shows in the group of invited members
-                        cy.findByText('INVITED MEMBERS').parent().within(() => {
-                            cy.findByText('aaron.medina');
-                            cy.findByText('alice.johnston');
-                        });
+                        cy.findByText('INVITED MEMBERS')
+                            .parent()
+                            .within(() => {
+                                cy.findByText('aaron.medina');
+                                cy.findByText('alice.johnston');
+                            });
                     });
                 });
 
@@ -504,55 +444,72 @@ describe('backstage playbook details', () => {
                     let userToRemove;
 
                     // # Create a playbook with a user that is later removed from the team
-                    cy.legacyApiLogin('sysadmin').then(() => {
-                        cy.apiCreateUser().then((result) => {
-                            userToRemove = result.user;
-                            cy.legacyApiAddUserToTeam(teamId, userToRemove.id);
+                    cy.legacyApiLogin('sysadmin')
+                        .then(() => {
+                            cy.apiCreateUser().then((result) => {
+                                userToRemove = result.user;
+                                cy.legacyApiAddUserToTeam(
+                                    teamId,
+                                    userToRemove.id
+                                );
 
-                            // # Create a playbook with the user that will be removed from the team.
-                            cy.apiCreatePlaybook({
-                                teamId,
-                                title: 'Playbook (' + Date.now() + ')',
-                                createPublicPlaybookRun: true,
-                                memberIDs: [userId],
-                                invitedUserIds: [userToRemove.id],
-                                inviteUsersEnabled: true,
-                            }).then((playbook) => {
-                                playbookId = playbook.id;
+                                // # Create a playbook with the user that will be removed from the team.
+                                cy.apiCreatePlaybook({
+                                    teamId,
+                                    title: 'Playbook (' + Date.now() + ')',
+                                    createPublicPlaybookRun: true,
+                                    memberIDs: [userId],
+                                    invitedUserIds: [userToRemove.id],
+                                    inviteUsersEnabled: true,
+                                }).then((playbook) => {
+                                    playbookId = playbook.id;
+                                });
+
+                                // # Remove user from the team
+                                cy.legacyApiRemoveUserFromTeam(
+                                    teamId,
+                                    userToRemove.id
+                                );
+                            });
+                        })
+                        .then(() => {
+                            cy.legacyApiLogin('user-1');
+
+                            // # Navigate again to the playbook
+                            cy.visit(
+                                '/playbooks/playbooks/' + playbookId + '/edit'
+                            );
+
+                            // # Switch to Actions tab
+                            cy.get('#root').findByText('Actions').click();
+
+                            // # Save the playbook
+                            cy.findByTestId('save_playbook').click();
+
+                            // * Make sure the playbook is correctly saved
+                            cy.url().should(
+                                'not.include',
+                                playbookId + '/edit'
+                            );
+
+                            // # Navigate again to the playbook
+                            cy.visit(
+                                '/playbooks/playbooks/' + playbookId + '/edit'
+                            );
+
+                            // # Switch to Actions tab
+                            cy.get('#root').findByText('Actions').click();
+
+                            // # Open the invited users selector
+                            cy.get('#invite-users').within(() => {
+                                cy.openSelector();
                             });
 
-                            // # Remove user from the team
-                            cy.legacyApiRemoveUserFromTeam(teamId, userToRemove.id);
+                            // * Verify that there are no invited members
+                            cy.findByText('INVITED MEMBERS').should(
+                                'not.exist'
+                            );
                         });
-                    }).then(() => {
-                        cy.legacyApiLogin('user-1');
-
-                        // # Navigate again to the playbook
-                        cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
-
-                        // # Switch to Actions tab
-                        cy.get('#root').findByText('Actions').click();
-
-                        // # Save the playbook
-                        cy.findByTestId('save_playbook').click();
-
-                        // * Make sure the playbook is correctly saved
-                        cy.url().should('not.include', playbookId + '/edit');
-
-                        // # Navigate again to the playbook
-                        cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
-
-                        // # Switch to Actions tab
-                        cy.get('#root').findByText('Actions').click();
-
-                        // # Open the invited users selector
-                        cy.get('#invite-users').within(() => {
-                            cy.openSelector();
-                        });
-
-                        // * Verify that there are no invited members
-                        cy.findByText('INVITED MEMBERS').should('not.exist');
-                    });
                 });
             });
 
@@ -565,7 +522,9 @@ describe('backstage playbook details', () => {
                     cy.get('#root').findByText('Actions').click();
 
                     // * Verify that the toggle is unchecked
-                    cy.get('#assign-owner label input').should('not.be.checked');
+                    cy.get('#assign-owner label input').should(
+                        'not.be.checked'
+                    );
                 });
 
                 it('can be enabled', () => {
@@ -595,11 +554,16 @@ describe('backstage playbook details', () => {
                     cy.get('#root').findByText('Actions').click();
 
                     // * Verify that the toggle is unchecked
-                    cy.get('#assign-owner label input').should('not.be.checked');
+                    cy.get('#assign-owner label input').should(
+                        'not.be.checked'
+                    );
 
                     // * Verify that the mwsenu is disabled
                     cy.get('#assign-owner').within(() => {
-                        cy.getStyledComponent('StyledReactSelect').should('have.class', 'assign-owner-selector--is-disabled');
+                        cy.getStyledComponent('StyledReactSelect').should(
+                            'have.class',
+                            'assign-owner-selector--is-disabled'
+                        );
                     });
                 });
 
@@ -627,7 +591,9 @@ describe('backstage playbook details', () => {
                         cy.selectOwner('aaron.medina');
 
                         // * Verify that the control shows the selected owner
-                        cy.get('.assign-owner-selector__control').contains('aaron.medina');
+                        cy.get('.assign-owner-selector__control').contains(
+                            'aaron.medina'
+                        );
                     });
                 });
 
@@ -655,16 +621,22 @@ describe('backstage playbook details', () => {
                         cy.selectOwner('aaron.medina');
 
                         // * Verify that the control shows the selected owner
-                        cy.get('.assign-owner-selector__control').contains('aaron.medina');
+                        cy.get('.assign-owner-selector__control').contains(
+                            'aaron.medina'
+                        );
 
                         // # Open the owner selector
-                        cy.get('.assign-owner-selector__control').click({force: true});
+                        cy.get('.assign-owner-selector__control').click({
+                            force: true,
+                        });
 
                         // # Select a new owner
                         cy.selectOwner('alice.johnston');
 
                         // * Verify that the control shows the selected owner
-                        cy.get('.assign-owner-selector__control').contains('alice.johnston');
+                        cy.get('.assign-owner-selector__control').contains(
+                            'alice.johnston'
+                        );
                     });
                 });
 
@@ -692,7 +664,9 @@ describe('backstage playbook details', () => {
                         cy.selectOwner('aaron.medina');
 
                         // * Verify that the control shows the selected owner
-                        cy.get('.assign-owner-selector__control').contains('aaron.medina');
+                        cy.get('.assign-owner-selector__control').contains(
+                            'aaron.medina'
+                        );
 
                         // # Click on the toggle to disable the setting
                         cy.get('label input').click({force: true});
@@ -721,7 +695,9 @@ describe('backstage playbook details', () => {
                         cy.get('label input').should('be.checked');
 
                         // * Verify that the control shows the selected owner
-                        cy.get('.assign-owner-selector__control').contains('aaron.medina');
+                        cy.get('.assign-owner-selector__control').contains(
+                            'aaron.medina'
+                        );
                     });
                 });
 
@@ -729,68 +705,83 @@ describe('backstage playbook details', () => {
                     let userToRemove;
 
                     // # Create a playbook with a user that is later removed from the team
-                    cy.legacyApiLogin('sysadmin').then(() => {
-                        // # We need to increase the maximum number of users per team; otherwise,
-                        // adding a new member to the team fails in CI
+                    cy.legacyApiLogin('sysadmin')
+                        .then(() => {
+                            // # We need to increase the maximum number of users per team; otherwise,
+                            // adding a new member to the team fails in CI
 
-                        cy.apiCreateUser().then((result) => {
-                            userToRemove = result.user;
-                            cy.legacyApiAddUserToTeam(teamId, userToRemove.id);
+                            cy.apiCreateUser().then((result) => {
+                                userToRemove = result.user;
+                                cy.legacyApiAddUserToTeam(
+                                    teamId,
+                                    userToRemove.id
+                                );
 
-                            // # Create a playbook with the user that will be removed from the team as
-                            // the default owner
-                            cy.apiCreatePlaybook({
-                                teamId,
-                                title: 'Playbook (' + Date.now() + ')',
-                                createPublicPlaybookRun: true,
-                                memberIDs: [userId],
-                                defaultOwnerId: userToRemove.id,
-                                defaultOwnerEnabled: true,
-                            }).then((playbook) => {
-                                playbookId = playbook.id;
+                                // # Create a playbook with the user that will be removed from the team as
+                                // the default owner
+                                cy.apiCreatePlaybook({
+                                    teamId,
+                                    title: 'Playbook (' + Date.now() + ')',
+                                    createPublicPlaybookRun: true,
+                                    memberIDs: [userId],
+                                    defaultOwnerId: userToRemove.id,
+                                    defaultOwnerEnabled: true,
+                                }).then((playbook) => {
+                                    playbookId = playbook.id;
+                                });
+
+                                // # Remove user from the team
+                                cy.legacyApiRemoveUserFromTeam(
+                                    teamId,
+                                    userToRemove.id
+                                );
                             });
+                        })
+                        .then(() => {
+                            cy.legacyApiLogin('user-1');
 
-                            // # Remove user from the team
-                            cy.legacyApiRemoveUserFromTeam(teamId, userToRemove.id);
-                        });
-                    }).then(() => {
-                        cy.legacyApiLogin('user-1');
+                            // # Navigate again to the playbook
+                            cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
-                        // # Navigate again to the playbook
-                        cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
+                            // # Switch to Actions tab
+                            cy.get('#root').findByText('Actions').click();
 
-                        // # Switch to Actions tab
-                        cy.get('#root').findByText('Actions').click();
+                            // # Save the playbook
+                            cy.findByTestId('save_playbook').click();
 
-                        // # Save the playbook
-                        cy.findByTestId('save_playbook').click();
+                            // * Make sure the playbook is correctly saved
+                            cy.url().should(
+                                'not.include',
+                                playbookId + '/edit'
+                            );
 
-                        // * Make sure the playbook is correctly saved
-                        cy.url().should('not.include', playbookId + '/edit');
+                            // # Navigate again to the playbook
+                            cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
-                        // # Navigate again to the playbook
-                        cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
+                            // # Switch to Actions tab
+                            cy.get('#root').findByText('Actions').click();
 
-                        // # Switch to Actions tab
-                        cy.get('#root').findByText('Actions').click();
+                            cy.get('#assign-owner').within(() => {
+                                // * Verify that the toggle is unchecked
+                                cy.get('label input').should('not.be.checked');
 
-                        cy.get('#assign-owner').within(() => {
-                            // * Verify that the toggle is unchecked
-                            cy.get('label input').should('not.be.checked');
+                                // # Click on the toggle to enable the setting
+                                cy.get('label input').click({force: true});
 
-                            // # Click on the toggle to enable the setting
-                            cy.get('label input').click({force: true});
-
-                            // * Verify that the control shows the selected owner
-                            cy.get('.assign-owner-selector__control').within(() => {
-                                cy.findByText('Search for member');
+                                // * Verify that the control shows the selected owner
+                                cy.get(
+                                    '.assign-owner-selector__control'
+                                ).within(() => {
+                                    cy.findByText('Search for member');
+                                });
                             });
                         });
-                    });
                 });
             });
+        });
 
-            describe('announcement channel setting', () => {
+        describe('when an update is posted', () => {
+            describe('broadcast channel setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
                     cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
@@ -799,7 +790,9 @@ describe('backstage playbook details', () => {
                     cy.get('#root').findByText('Actions').click();
 
                     // * Verify that the toggle is unchecked
-                    cy.get('#announcement-channel label input').should('not.be.checked');
+                    cy.get('#broadcast-channels label input').should(
+                        'not.be.checked'
+                    );
                 });
 
                 it('can be enabled', () => {
@@ -809,7 +802,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
 
-                    cy.get('#announcement-channel').within(() => {
+                    cy.get('#broadcast-channels').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -829,11 +822,16 @@ describe('backstage playbook details', () => {
                     cy.get('#root').findByText('Actions').click();
 
                     // * Verify that the toggle is unchecked
-                    cy.get('#announcement-channel label input').should('not.be.checked');
+                    cy.get('#broadcast-channels label input').should(
+                        'not.be.checked'
+                    );
 
                     // * Verify that the channel selector is disabled
-                    cy.get('#announcement-channel').within(() => {
-                        cy.getStyledComponent('StyledSelect').should('have.class', 'channel-selector--is-disabled');
+                    cy.get('#broadcast-channels').within(() => {
+                        cy.getStyledComponent('StyledSelect').should(
+                            'have.class',
+                            'channel-selector--is-disabled'
+                        );
                     });
                 });
 
@@ -844,7 +842,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
 
-                    cy.get('#announcement-channel').within(() => {
+                    cy.get('#broadcast-channels').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -861,7 +859,9 @@ describe('backstage playbook details', () => {
                         cy.selectChannel('Town Square');
 
                         // * Verify that the control shows the selected owner
-                        cy.get('.channel-selector__control').contains('Town Square');
+                        cy.get('.channel-selector__control').contains(
+                            'Town Square'
+                        );
                     });
                 });
 
@@ -872,7 +872,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
 
-                    cy.get('#announcement-channel').within(() => {
+                    cy.get('#broadcast-channels').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -889,16 +889,22 @@ describe('backstage playbook details', () => {
                         cy.selectChannel('Town Square');
 
                         // * Verify that the control shows the selected channel
-                        cy.get('.channel-selector__control').contains('Town Square');
+                        cy.get('.channel-selector__control').contains(
+                            'Town Square'
+                        );
 
                         // # Open the channel selector
-                        cy.get('.channel-selector__control').click({force: true});
+                        cy.get('.channel-selector__control').click({
+                            force: true,
+                        });
 
                         // # Select a new channel
                         cy.selectChannel('commodi');
 
                         // * Verify that the control shows the selected channel
-                        cy.get('.channel-selector__control').contains('commodi');
+                        cy.get('.channel-selector__control').contains(
+                            'commodi'
+                        );
                     });
                 });
 
@@ -909,7 +915,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
 
-                    cy.get('#announcement-channel').within(() => {
+                    cy.get('#broadcast-channels').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -926,7 +932,9 @@ describe('backstage playbook details', () => {
                         cy.selectChannel('Town Square');
 
                         // * Verify that the control shows the selected channel
-                        cy.get('.channel-selector__control').contains('Town Square');
+                        cy.get('.channel-selector__control').contains(
+                            'Town Square'
+                        );
 
                         // # Click on the toggle to disable the setting
                         cy.get('label input').click({force: true});
@@ -944,7 +952,7 @@ describe('backstage playbook details', () => {
                     // # Switch to Actions tab
                     cy.get('#root').findByText('Actions').click();
 
-                    cy.get('#announcement-channel').within(() => {
+                    cy.get('#broadcast-channels').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
 
@@ -955,65 +963,202 @@ describe('backstage playbook details', () => {
                         cy.get('label input').should('be.checked');
 
                         // * Verify that the control still shows the selected channel
-                        cy.get('.channel-selector__control').contains('Town Square');
+                        cy.get('.channel-selector__control').contains(
+                            'Town Square'
+                        );
                     });
                 });
 
                 it('removes the channel and disables the setting if the channel no longer exists', () => {
                     // # Create a playbook with a user that is later removed from the team
-                    cy.legacyApiLogin('sysadmin').then(() => {
-                        const channelDisplayName = String('Channel to delete ' + Date.now());
-                        const channelName = channelDisplayName.replace(/ /g, '-').toLowerCase();
-                        cy.legacyApiCreateChannel(teamId, channelName, channelDisplayName).then(({channel}) => {
-                            // # Create a playbook with the channel to be deleted as the announcement channel
-                            cy.apiCreatePlaybook({
+                    cy.legacyApiLogin('sysadmin')
+                        .then(() => {
+                            const channelDisplayName = String(
+                                'Channel to delete ' + Date.now()
+                            );
+                            const channelName = channelDisplayName
+                                .replace(/ /g, '-')
+                                .toLowerCase();
+                            cy.legacyApiCreateChannel(
                                 teamId,
-                                title: 'Playbook (' + Date.now() + ')',
-                                createPublicPlaybookRun: true,
-                                memberIDs: [userId],
-                                announcementChannelId: channel.id,
-                                announcementChannelEnabled: true,
-                            }).then((playbook) => {
-                                playbookId = playbook.id;
+                                channelName,
+                                channelDisplayName
+                            ).then(({channel}) => {
+                                // # Create a playbook with the channel to be deleted as the announcement channel
+                                cy.apiCreatePlaybook({
+                                    teamId,
+                                    title: 'Playbook (' + Date.now() + ')',
+                                    createPublicPlaybookRun: true,
+                                    memberIDs: [userId],
+                                    announcementChannelId: channel.id,
+                                    announcementChannelEnabled: true,
+                                }).then((playbook) => {
+                                    playbookId = playbook.id;
+                                });
+
+                                // # Delete channel
+                                cy.legacyApiDeleteChannel(channel.id);
                             });
+                        })
+                        .then(() => {
+                            cy.legacyApiLogin('user-1');
 
-                            // # Delete channel
-                            cy.legacyApiDeleteChannel(channel.id);
-                        });
-                    }).then(() => {
-                        cy.legacyApiLogin('user-1');
+                            // # Navigate again to the playbook
+                            cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
-                        // # Navigate again to the playbook
-                        cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
+                            // # Switch to Actions tab
+                            cy.get('#root').findByText('Actions').click();
 
-                        // # Switch to Actions tab
-                        cy.get('#root').findByText('Actions').click();
+                            // # Save the playbook
+                            cy.findByTestId('save_playbook').click();
 
-                        // # Save the playbook
-                        cy.findByTestId('save_playbook').click();
+                            // * Make sure the playbook is correctly saved
+                            cy.url().should(
+                                'not.include',
+                                playbookId + '/edit'
+                            );
 
-                        // * Make sure the playbook is correctly saved
-                        cy.url().should('not.include', playbookId + '/edit');
+                            // # Navigate again to the playbook
+                            cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
 
-                        // # Navigate again to the playbook
-                        cy.visit(`/playbooks/playbooks/${playbookId}/edit`);
+                            // # Switch to Actions tab
+                            cy.get('#root').findByText('Actions').click();
 
-                        // # Switch to Actions tab
-                        cy.get('#root').findByText('Actions').click();
+                            cy.get('#broadcast-channels').within(() => {
+                                // * Verify that the toggle is unchecked
+                                cy.get('label input').should('not.be.checked');
 
-                        cy.get('#announcement-channel').within(() => {
-                            // * Verify that the toggle is unchecked
-                            cy.get('label input').should('not.be.checked');
+                                // # Click on the toggle to enable the setting
+                                cy.get('label input').click({force: true});
 
-                            // # Click on the toggle to enable the setting
-                            cy.get('label input').click({force: true});
-
-                            // * Verify that the control shows no selected channel
-                            cy.get('.channel-selector__control').within(() => {
-                                cy.findByText('Search for channel');
+                                // * Verify that the control shows no selected channel
+                                cy.get('.channel-selector__control').within(
+                                    () => {
+                                        cy.findByText('Select a channel');
+                                    }
+                                );
                             });
                         });
+                });
+
+                it('shows "Select a channel" when no broadcast channel configured', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
+
+                    // # Switch to Templates tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    // * Verify placeholder text is present
+                    cy.get('#playbook-automation-broadcast').should(
+                        'have.text',
+                        'Select a channel'
+                    );
+                });
+
+                it('shows channel name when public broadcast channel configured', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('#broadcast-channels').within(() => {
+                        cy.get('label input').click({force: true});
                     });
+
+                    // # Open the broadcast channel widget and select a public channel
+                    cy.get('#playbook-automation-broadcast')
+                        .click()
+                        .type('saepe-5{enter}', {delay: 200});
+
+                    // # Save the playbook
+                    cy.findByTestId('save_playbook').click();
+
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    // * Verify placeholder text is present
+                    cy.get('#playbook-automation-broadcast').should(
+                        'have.text',
+                        'doloremque'
+                    );
+                });
+
+                it('shows channel name when private broadcast channel configured and user is a member', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('#broadcast-channels').within(() => {
+                        cy.get('label input').click({force: true});
+                    });
+
+                    // # Open the broadcast channel widget and select a public channel
+                    cy.get('#playbook-automation-broadcast')
+                        .click()
+                        .type('autem-2{enter}', {delay: 200});
+
+                    // # Save the playbook
+                    cy.findByTestId('save_playbook').click();
+
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    // * Verify placeholder text is present
+                    cy.get('#playbook-automation-broadcast').should(
+                        'have.text',
+                        'commodi'
+                    );
+                });
+
+                it('shows "Unknown channel" when private broadcast channel configured and user is not a member', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('#broadcast-channels').within(() => {
+                        cy.get('label input').click({force: true});
+                    });
+
+                    // # Open the broadcast channel widget and select the private channel
+                    cy.get('#playbook-automation-broadcast')
+                        .click()
+                        .type(privateChannelId + '{enter}', {delay: 200});
+
+                    // # Save the playbook
+                    cy.findByTestId('save_playbook').click();
+
+                    // # Browse to the private channel
+                    cy.visit('/ad-1/channels/' + privateChannelName);
+
+                    // # Leave the private channel
+                    cy.executeSlashCommand('/leave');
+                    cy.get('#confirmModalButton').click();
+
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    // * Verify placeholder text is present
+                    cy.get('#playbook-automation-broadcast').should(
+                        'have.text',
+                        'Unknown Channel'
+                    );
                 });
             });
         });

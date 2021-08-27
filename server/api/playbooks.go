@@ -260,12 +260,17 @@ func doPlaybookModificationChecks(playbook *app.Playbook, userID string, pluginA
 		playbook.DefaultOwnerEnabled = false
 	}
 
-	if playbook.AnnouncementChannelID != "" &&
-		!pluginAPI.User.HasPermissionToChannel(userID, playbook.AnnouncementChannelID, model.PermissionCreatePost) {
-		pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
-		playbook.AnnouncementChannelID = ""
-		playbook.AnnouncementChannelEnabled = false
+	filteredBroadcastChannelIDs := []string{}
+	for _, channelID := range playbook.BroadcastChannelIDs {
+		if !pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
+			pluginAPI.Log.Warn("broadcast channel is not valid, removing channel from list", "channel_id", channelID)
+			continue
+		}
+
+		filteredBroadcastChannelIDs = append(filteredBroadcastChannelIDs, channelID)
 	}
+
+	playbook.BroadcastChannelIDs = filteredBroadcastChannelIDs
 
 	return nil
 }

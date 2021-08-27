@@ -11,8 +11,8 @@ import {StyledSelect} from './styles';
 
 export interface Props {
     id?: string;
-    onChannelSelected: (channelID: string | undefined) => void;
-    channelId?: string;
+    onChannelsSelected: (channelIds: string[]) => void;
+    channelIds: string[];
     isClearable?: boolean;
     selectComponents?: SelectComponentsConfig<Channel>;
     isDisabled: boolean;
@@ -32,11 +32,11 @@ const ChannelSelector = (props: Props & { className?: string }) => {
 
     const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID) || {display_name: 'Unknown Channel', id: channelID});
 
-    const onChange = (channel: Channel | null, {action}: {action: string}) => {
+    const onChange = (channels: Channel[], {action}: {action: string}) => {
         if (action === 'clear') {
-            props.onChannelSelected('');
+            props.onChannelsSelected([]);
         } else {
-            props.onChannelSelected(channel?.id);
+            props.onChannelsSelected(channels.map((c) => c.id));
         }
     };
 
@@ -64,7 +64,7 @@ const ChannelSelector = (props: Props & { className?: string }) => {
                channel.id.toLowerCase() === term.toLowerCase();
     };
 
-    const value = props.channelId && getChannelFromID(props.channelId);
+    const values = props.channelIds?.map(getChannelFromID);
 
     const components = props.selectComponents || defaultComponents;
 
@@ -72,7 +72,7 @@ const ChannelSelector = (props: Props & { className?: string }) => {
         <StyledSelect
             className={props.className}
             id={props.id}
-            isMulti={false}
+            isMulti={true}
             controlShouldRenderValue={props.shouldRenderValue}
             options={selectableChannels}
             filterOption={filterOption}
@@ -82,7 +82,7 @@ const ChannelSelector = (props: Props & { className?: string }) => {
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
             isClearable={props.isClearable}
-            value={value}
+            value={values}
             placeholder={props.placeholder || 'Select a channel'}
             classNamePrefix='channel-selector'
             components={components}
