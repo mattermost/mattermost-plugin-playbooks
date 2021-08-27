@@ -164,12 +164,8 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbookTitle, pla
 		announcementMsg += " Visit the link above for more information."
 	}
 
-	// TODO: Fix merge:
-	if _, err := s.poster.PostMessage(broadcastChannelID, announcementMsg); err != nil {
-		return err
-	}
-	if _, err := s.postMessageToThreadAndSaveRootID(playbookRun.ID, playbookRun.AnnouncementChannelID, announcementMsg); err != nil {
-		return errors.Wrapf(err, "error creating first broadcast message on run creation, for playbook: %s, to channelID: %s", playbookRun.ID, playbookRun.AnnouncementChannelID)
+	if _, err := s.postMessageToThreadAndSaveRootID(playbookRun.ID, broadcastChannelID, announcementMsg); err != nil {
+		return errors.Wrapf(err, "error creating first broadcast message on run creation, for playbook: %s, to channelID: %s", playbookRun.ID, broadcastChannelID)
 	}
 
 	return nil
@@ -398,8 +394,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		return nil, errors.Wrapf(err, "error creating start message on run creation, for playbook: %s, to channelID: %s", playbookRun.ID, channel.Id)
 	}
 
-	// TODO: merge these
-	// Alejandro's vers:
 	if pb != nil {
 		for _, broadcastChannelID := range pb.BroadcastChannelIDs {
 			err = s.broadcastPlaybookRunCreation(pb.Title, pb.ID, broadcastChannelID, playbookRun, owner)
@@ -412,18 +406,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			}
 		}
 	}
-
-	// My version:
-	if playbookRun.AnnouncementChannelID != "" {
-		if err = s.broadcastPlaybookRunCreation(pb, playbookRun, owner); err != nil {
-			s.pluginAPI.Log.Warn("failed to broadcast the playbook run creation to channel", "ChannelID", playbookRun.AnnouncementChannelID)
-
-			if _, err = s.poster.PostMessage(channel.Id, "Failed to announce the creation of this playbook run in the configured channel."); err != nil {
-				return nil, errors.Wrapf(err, "failed to post to channel")
-			}
-		}
-	}
-
 
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRun.ID,
@@ -668,8 +650,7 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRun
 		return errors.Wrapf(err, "failed to retrieve playbook run for id: %s", playbookRunID)
 	}
 
-	// TODO: add Alejandro's changes
-	if playbookRun.BroadcastChannelID == "" {
+	if len(playbookRun.BroadcastChannelIDs) == 0 {
 		return nil
 	}
 
@@ -695,23 +676,12 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRun
 	broadcastedMsg += "***\n"
 	broadcastedMsg += statusUpdate
 
-	// TODO: merge
-	// Alejandro's:
 	for _, channelID := range playbookRun.BroadcastChannelIDs {
-		if _, err := s.poster.PostMessage(channelID, broadcastedMsg); err != nil {
+		if _, err := s.postMessageToThreadAndSaveRootID(playbookRunID, channelID, broadcastedMsg); err != nil {
 			return errors.Wrap(err, "failed to post broadcast message")
 		}
 	}
 
-	// Mine:
-	_, err = s.postMessageToThreadAndSaveRootID(playbookRunID, playbookRun.BroadcastChannelID, broadcastedMsg)
-	if err != nil {
-		return errors.Wrap(err, "failed to post broadcast message")
-
-	}
-
-
-}
 	return nil
 }
 
@@ -817,7 +787,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	}
 
 	if err = s.broadcastStatusUpdate(options.Message, playbookRunID, userID, post.Id); err != nil {
-		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", playbookRunToModify.BroadcastChannelID, "error", err)
+		s.pluginAPI.Log.Warn("failed to broadcast the status update", "error", err)
 	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
@@ -2296,7 +2266,7 @@ func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID,
 		newRootID = newPost.Id
 	}
 
-	if channelIDsToRootIDs[channelID] != newRootID {
+	if newRootID != channelIDsToRootIDs[channelID] {
 		channelIDsToRootIDs[channelID] = newRootID
 		if err = s.store.SetChannelIDsToRootID(playbookRunID, channelIDsToRootIDs); err != nil {
 			return newPost, errors.Wrapf(err, "failed to SetChannelIDsToRootID for playbookID: '%s'", playbookRunID)
