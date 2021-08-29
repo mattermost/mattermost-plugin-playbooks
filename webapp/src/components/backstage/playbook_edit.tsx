@@ -27,6 +27,9 @@ import {RegularHeading} from 'src/styles/headings';
 import './playbook.scss';
 import {useAllowRetrospectiveAccess, useExperimentalFeaturesEnabled} from 'src/hooks';
 
+import {useReminderTimer} from 'src/components/modals/update_run_status_modal';
+import {InputMode} from 'src/components/datetime_input';
+
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import ChannelSelector from './channel_selector';
@@ -218,6 +221,17 @@ const PlaybookEdit = (props: Props) => {
     const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     const retrospectiveAccess = useAllowRetrospectiveAccess();
+
+    const {input: reminderTimerInput, reminder: reminderSeconds} = useReminderTimer(playbook, InputMode.Duration);
+    useEffect(() => {
+        if (reminderSeconds && playbook.reminder_timer_default_seconds !== reminderSeconds) {
+            setPlaybook({
+                ...playbook,
+                reminder_timer_default_seconds: reminderSeconds,
+            });
+            setChangesMade(true);
+        }
+    }, [reminderSeconds]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -596,19 +610,7 @@ const PlaybookEdit = (props: Props) => {
                                             {'Prompts the owner at a specified interval to provide a status update.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
-                                    <StyledSelect
-                                        value={timerOptions.find((option) => option.value === playbook.reminder_timer_default_seconds)}
-                                        onChange={(option: {label: string, value: number}) => {
-                                            setPlaybook({
-                                                ...playbook,
-                                                reminder_timer_default_seconds: option ? option.value : option,
-                                            });
-                                            setChangesMade(true);
-                                        }}
-                                        classNamePrefix='channel-selector'
-                                        options={timerOptions}
-                                        isClearable={true}
-                                    />
+                                    {reminderTimerInput}
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>

@@ -1,17 +1,21 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, ComponentProps} from 'react';
+import React, {useState, ComponentProps, useMemo, useRef, useEffect} from 'react';
 import styled from 'styled-components';
-import {parse, parseDate} from 'chrono-node';
+import {parse, parseDate, ParsedResult, ParsingOption} from 'chrono-node';
+import parseDuration from 'parse-duration';
 
 import {debounce} from 'debounce';
-import AsyncSelect from 'react-select/async';
-import {ControlProps, OptionsType} from 'react-select';
+import Select from 'react-select';
+
+import moment from 'moment';
+
+import {useIntl} from 'react-intl';
 
 import {Timestamp} from 'src/webapp_globals';
 
-const StyledAsyncSelect = styled(AsyncSelect)`
+const StyledSelect = styled(Select)`
     flex-grow: 1;
     background-color: var(--center-channel-bg);
 
@@ -72,101 +76,147 @@ const StyledAsyncSelect = styled(AsyncSelect)`
     }
 `;
 
-type Props = {
-    defaultInputValue: number | null;
-    setValue: (value: number | null) => void;
-    makeDefaultOptions?: (query: string) => OptionsType<Option>;
-} & Omit<Partial<ComponentProps<typeof AsyncSelect>>, 'value'>;
+export enum InputMode {
+    DateTime = 'DateTime',
+    Duration = 'Duration',
 
-export const makeOption = (query: string): Option => ({label: query, ts: parseDate(query).getTime()});
-
-type Option = {
-    label?: string;
-    ts: number | null;
-    showTimestamp?: boolean;
+    Auto = 'Auto'
 }
 
+const durationFromQuery = (query: string) => {
+    const ms = parseDuration(query);
+    return (ms && moment.duration(ms, 'millisecond')) || null;
+};
+
+export function infer(query: string, mode: InputMode.DateTime): ReturnType<typeof parseDate>;
+export function infer(query: string, mode: InputMode.Duration): ReturnType<typeof durationFromQuery>;
+export function infer(query: string, mode?: InputMode): Option['value'];
+export function infer(query: string, mode = InputMode.Auto) {
+    switch (mode) {
+    case InputMode.DateTime:
+        return parseDate(query);
+    case InputMode.Duration:
+        return durationFromQuery(query);
+    case InputMode.Auto:
+    default:
+        return parseDate(query) ?? durationFromQuery(query);
+    }
+}
+
+export const ms = (value: Option['value']): number => {
+    if (value instanceof Date) {
+        return value.getTime();
+    }
+    if (moment.isDuration(value)) {
+        return value.asMilliseconds();
+    }
+    return 0;
+};
+
+export const makeOption = (query: string, mode = InputMode.Auto): Option => {
+    const value = infer(query, mode);
+    return {label: query, value};
+};
+export type Option = {
+    label?: string;
+    value: Date | moment.Duration | null;
+}
+
+type Props = {
+    mode?: InputMode;
+    onChange: (value: Option | null) => void;
+    defaultOption?: Option;
+    defaultOptions?: Option[];
+    makeOptions?: (
+        query: string,
+        datetimeResults: ParsedResult[],
+        durationResults: moment.Duration[],
+    ) => Option[] | null;
+    parsingOptions?: ParsingOption;
+} & Partial<ComponentProps<typeof StyledSelect>>;
+
 const DateTimeInput = ({
-    defaultInputValue,
-    setValue,
-    makeDefaultOptions,
+    mode = InputMode.DateTime,
+    value,
+    defaultOptions,
+    makeOptions = (query, datetimeResults, durationResults) => {
+        switch (mode) {
+        case InputMode.DateTime:
+            return datetimeResults.length ? datetimeResults.map(({start}) => ({value: start.date()})) : null;
+        case InputMode.Duration:
+            return durationResults.length ? durationResults.map((duration) => ({label: duration.humanize(), value: duration})) : null;
+        case InputMode.Auto:
+        default:
+            return null;
+        }
+    },
+    parsingOptions,
     ...selectProps
 }: Props) => {
-    const onChange = (option?: Option) => {
-        setValue(option?.ts ?? null);
-    };
+    const [options, setOptions] = useState<Option[] | null>(null);
+    const {formatMessage} = useIntl();
 
-    const loadOptions = (query: string, setOptions: (options: OptionsType<Option>) => void) => {
-        getOptions(query, setOptions, makeDefaultOptions);
-    };
+    const updateOptions = useMemo(() => debounce((query: string) => {
+        // eslint-disable-next-line no-undefined
+        const datetimeResults = parse(query, undefined, parsingOptions);
+
+        const durationResult = infer(query, InputMode.Duration);
+
+        setOptions(makeOptions(query, datetimeResults, durationResult ? [durationResult] : []) || null);
+    }, 150), [setOptions, makeOptions, parsingOptions]);
 
     return (
-        <StyledAsyncSelect
-            isMulti={false}
-            cacheOptions={false}
-            defaultOptions={true}
-            loadOptions={loadOptions}
-            filterOption={() => true}
-            onChange={onChange}
-            getOptionValue={getValue}
-            getOptionLabel={getLabel}
-            formatOptionLabel={OptionLabel}
-            defaultMenuIsOpen={false}
-            openMenuOnClick={true}
-            isClearable={true}
-            isOptionDisabled={(option: Option) => !option.ts}
-            placeholder={'Add reminder'}
-            components={{
-                IndicatorSeparator,
-            }}
-            styles={customStyles}
-            classNamePrefix='datetime-autocomplete'
+        <StyledSelect
             {...selectProps}
+            filterOption={null}
+            isMulti={false}
+
+            //
+            placeholder={formatMessage({
+                id: 'datetime_input.placeholder',
+                defaultMessage: 'Select or specify a {mode, select, Duration {time span ("4 hours", "7 days"...)} DateTime {time ("in 4 hours", "May 1", "Tomorrow at 1 PM"...)} other {time or time span}}',
+            }, {mode})}
+
+            // options & value
+            onInputChange={updateOptions}
+            options={options ?? defaultOptions}
+            value={value}
+            isClearable={true}
+
+            // styling
+            maxMenuHeight={380}
+            styles={customStyles}
+            formatOptionLabel={OptionLabel}
         />
     );
 };
 
-const getOptions = debounce((
-    query: string,
-    setOptions: (options: OptionsType<Option>) => void,
-    makeDefaultOptions?: (query: string) => OptionsType<Option>,
-) => {
-    const results = parse(query);
-    if (query.trim().length !== 0) {
-        setOptions(results.map(({start}) => ({
-            ts: start.date().getTime(),
-        })));
-    } else if (makeDefaultOptions) {
-        setOptions(makeDefaultOptions(query));
-    }
-}, 150);
-
-const customStyles = {
-    control: (provided: ControlProps<Option>) => ({
-        ...provided,
-        minHeight: 34,
-    }),
+const customStyles: ComponentProps<typeof Select>['styles'] = {
+    control: (provided) => ({...provided, minHeight: 34}),
 };
 
-const IndicatorSeparator = () => null;
-const OptionLabel = ({label, ts}: Option) => label ?? (ts && (
+const OptionLabel = ({label, value}: Option) => label ?? (value && (
     <Timestamp
-        value={ts}
+        value={value}
         {...TIME_SPEC}
     />
 ));
-const getValue = ({ts}: Option) => ts;
-const getLabel = ({label, ts}: Option) => label ?? ts;
 
 const TIME_SPEC = {
     locale: 'en',
-    useDate: (value: string, {weekday, day, month, year}: any) => ({weekday, day, month, year}),
+    useDate: (_: string, {weekday, day, month, year}: any) => ({weekday, day, month, year}),
 };
 
-export const useDateTimeInput = (defaultInputValue: number | null, makeDefaultOptions?: () => OptionsType<Option>) => {
-    const [value, setValue] = useState(defaultInputValue ?? null);
+export const useDateTimeInput = ({defaultValue, ...props}: Partial<Exclude<Props, 'value' | 'onChange'>>) => {
+    const [value, setValue] = useState<Option | null>(null);
 
-    const input = <DateTimeInput {...{defaultInputValue, setValue, makeDefaultOptions}}/>;
+    const input = (
+        <DateTimeInput
+            {...props}
+            value={defaultValue ?? value}
+            onChange={setValue}
+        />
+    );
 
     return {input, value};
 };
