@@ -1,19 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React from 'react';
 
 import {MenuListComponentProps} from 'react-select';
 import {Scrollbars} from 'react-custom-scrollbars';
 import styled from 'styled-components';
-import General from 'mattermost-redux/constants/general';
 
-import {ActionFunc} from 'mattermost-redux/types/actions';
 import {Channel} from 'mattermost-redux/types/channels';
 
-import {fetchMyChannels} from 'src/client';
-
-import Profile from 'src/components/profile/profile';
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
 import {Toggle} from 'src/components/backstage/automation/toggle';
 import ChannelSelector from 'src/components/backstage/channel_selector';
@@ -22,11 +17,11 @@ import ClearIcon from 'src/components/assets/icons/clear_icon';
 interface Props {
     enabled: boolean;
     onToggle: () => void;
-    channelId?: string;
-    onChannelSelected: (channelID: string | undefined) => void;
+    channelIds: string[];
+    onChannelsSelected: (channelIds: string[]) => void;
 }
 
-export const Announcement = (props: Props) => {
+export const Broadcast = (props: Props) => {
     return (
         <AutomationHeader>
             <AutomationTitle>
@@ -34,19 +29,19 @@ export const Announcement = (props: Props) => {
                     isChecked={props.enabled}
                     onChange={props.onToggle}
                 />
-                <div>{'Announce in another channel'}</div>
+                <div>{'Broadcast update to other channels'}</div>
             </AutomationTitle>
             <SelectorWrapper>
                 <StyledChannelSelector
-                    id='playbook-automation-announcement'
-                    onChannelSelected={props.onChannelSelected}
-                    channelId={props.channelId}
+                    id='playbook-automation-broadcast'
+                    onChannelsSelected={props.onChannelsSelected}
+                    channelIds={props.channelIds}
                     isClearable={true}
-                    selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
+                    selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList, MultiValueRemove}}
                     isDisabled={!props.enabled}
                     captureMenuScroll={false}
                     shouldRenderValue={props.enabled}
-                    placeholder={'Search for channel'}
+                    placeholder={'Select a channel'}
                 />
             </SelectorWrapper>
         </AutomationHeader>
@@ -57,8 +52,7 @@ const StyledChannelSelector = styled(ChannelSelector)`
     background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
 
     .channel-selector__control {
-        padding-left: 3.2rem;
-        padding-right: 16px;
+        padding: 4px 16px 4px 3.2rem;
 
         &:before {
             left: 16px;
@@ -125,3 +119,28 @@ const ClearIndicator = ({clearValue}: {clearValue: () => void}) => (
         <ClearIcon/>
     </div>
 );
+
+interface MultiValueRemoveProps {
+    innerProps: {
+        onClick: () => void;
+    }
+}
+
+const MultiValueRemove = (props: MultiValueRemoveProps) => (
+    <StyledClearIcon
+        onClick={(e) => {
+            props.innerProps.onClick();
+            e.stopPropagation();
+        }}
+    />
+);
+
+const StyledClearIcon = styled(ClearIcon)`
+    color: rgba(var(--center-channel-color-rgb), 0.32);
+    font-size: 15px;
+    cursor: pointer;
+
+    :hover {
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+    }
+`;

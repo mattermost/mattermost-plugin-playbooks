@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-api/cluster"
@@ -86,10 +86,6 @@ type PlaybookRun struct {
 	// scheduled status update will be posted.
 	PreviousReminder time.Duration `json:"previous_reminder"`
 
-	// BroadcastChannelID, if not empty, is the identifier of the channel to which all status
-	// updates are broadcasted.
-	BroadcastChannelID string `json:"broadcast_channel_id"`
-
 	// ReminderMessageTemplate, if not empty, is the template shown when updating the status of the
 	// playbook run for the first time.
 	ReminderMessageTemplate string `json:"reminder_message_template"`
@@ -109,9 +105,9 @@ type PlaybookRun struct {
 	// as owner of the playbook run when it was created.
 	DefaultOwnerID string `json:"default_owner_id"`
 
-	// AnnouncementChannelID, if not empty, is the identifier of the channel where the playbook run
-	// creation was announced.
-	AnnouncementChannelID string `json:"announcement_channel_id"`
+	// BroadcastChannelIDs is an array of the identifiers of the channels where the playbook run
+	// creation and status updates are announced.
+	BroadcastChannelIDs []string `json:"broadcast_channel_ids"`
 
 	// WebhookOnCreationURL, if not empty, is the URL to which a POST request is made with the whole
 	// playbook run as payload when the run is created.
@@ -197,6 +193,9 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	if old.ParticipantIDs == nil {
 		old.ParticipantIDs = []string{}
 	}
+	if old.BroadcastChannelIDs == nil {
+		old.BroadcastChannelIDs = []string{}
+	}
 
 	return json.Marshal(old)
 }
@@ -229,7 +228,7 @@ type Metadata struct {
 	ChannelName        string `json:"channel_name"`
 	ChannelDisplayName string `json:"channel_display_name"`
 	TeamName           string `json:"team_name"`
-	NumMembers         int64  `json:"num_members"`
+	NumParticipants    int64  `json:"num_participants"`
 	TotalPosts         int64  `json:"total_posts"`
 }
 
@@ -515,10 +514,10 @@ type PlaybookRunStore interface {
 	// GetPlaybookRunByChannel gets a playbook run associated with the given channel id.
 	GetPlaybookRunIDForChannel(channelID string) (string, error)
 
-	// GetAllPlaybookRunMembersCount returns the count of all members of the
+	// GetHistoricalPlaybookRunParticipantsCount returns the count of all participants of the
 	// playbook run associated with the given channel id since the beginning of the
 	// playbook run, excluding bots.
-	GetAllPlaybookRunMembersCount(channelID string) (int64, error)
+	GetHistoricalPlaybookRunParticipantsCount(channelID string) (int64, error)
 
 	// GetOwners returns the owners of the playbook runs selected by options
 	GetOwners(requesterInfo RequesterInfo, options PlaybookRunFilterOptions) ([]OwnerInfo, error)
@@ -619,17 +618,14 @@ type PlaybookRunFilterOptions struct {
 	// Direction orders by ascending or descending, defaulting to ascending.
 	Direction SortDirection `url:"direction,omitempty"`
 
-	// Status filters by current status
-	Status string
-
 	// Statuses filters by all statuses in the list (inclusive)
 	Statuses []string
 
 	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter).
 	OwnerID string `url:"owner_user_id,omitempty"`
 
-	// MemberID filters playbook runs that have this member. Defaults to blank (no filter).
-	MemberID string `url:"member_id,omitempty"`
+	// ParticipantID filters playbook runs that have this member. Defaults to blank (no filter).
+	ParticipantID string `url:"participant_id,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
@@ -660,7 +656,9 @@ type PlaybookRunFilterOptions struct {
 // Clone duplicates the given options.
 func (o *PlaybookRunFilterOptions) Clone() PlaybookRunFilterOptions {
 	newPlaybookRunFilterOptions := *o
-	newPlaybookRunFilterOptions.Statuses = append([]string{}, o.Statuses...)
+	if len(o.Statuses) > 0 {
+		newPlaybookRunFilterOptions.Statuses = append([]string{}, o.Statuses...)
+	}
 
 	return newPlaybookRunFilterOptions
 }
@@ -707,8 +705,8 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'owner_id': must be 26 characters or blank")
 	}
 
-	if options.MemberID != "" && !model.IsValidId(options.MemberID) {
-		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'member_id': must be 26 characters or blank")
+	if options.ParticipantID != "" && !model.IsValidId(options.ParticipantID) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'participant_id': must be 26 characters or blank")
 	}
 
 	if options.PlaybookID != "" && !model.IsValidId(options.PlaybookID) {
@@ -726,10 +724,6 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	}
 	if options.StartedLT < 0 {
 		options.StartedLT = 0
-	}
-
-	if options.Status != "" && !validStatus(options.Status) {
-		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'status': must be InProgress or Finished")
 	}
 
 	for _, s := range options.Statuses {

@@ -2,6 +2,10 @@ package client
 
 import "time"
 
+// Me is a constant that refers to the current user, and can be used in various APIs in place of
+// explicitly specifying the current user's id.
+const Me = "me"
+
 // PlaybookRun represents a playbook run.
 type PlaybookRun struct {
 	ID                             string          `json:"id"`
@@ -43,7 +47,7 @@ type PlaybookRunMetadata struct {
 	ChannelName        string `json:"channel_name"`
 	ChannelDisplayName string `json:"channel_display_name"`
 	TeamName           string `json:"team_name"`
-	NumMembers         int64  `json:"num_members"`
+	NumParticipants    int64  `json:"num_participants"`
 	TotalPosts         int64  `json:"total_posts"`
 }
 
@@ -139,14 +143,14 @@ type PlaybookRunListOptions struct {
 	Sort      Sort          `url:"sort,omitempty"`
 	Direction SortDirection `url:"direction,omitempty"`
 
-	// Status filters by All, Ongoing, or Ended; defaults to All.
-	Status Status `url:"status,omitempty"`
+	// Statuses filters by InProgress or Ended; defaults to All when no status specified.
+	Statuses []Status `url:"statuses,omitempty"`
 
-	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter).
+	// OwnerID filters by owner's Mattermost user ID. Defaults to blank (no filter). Specify "me" for current user.
 	OwnerID string `url:"owner_user_id,omitempty"`
 
-	// MemberID filters playbook runs that have this member. Defaults to blank (no filter).
-	MemberID string `url:"member_id,omitempty"`
+	// ParticipantID filters playbook runs that have this user as a participant. Defaults to blank (no filter). Specify "me" for current user.
+	ParticipantID string `url:"participant_id,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are

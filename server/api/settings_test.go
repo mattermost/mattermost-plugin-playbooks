@@ -12,8 +12,8 @@ import (
 	mock_poster "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	mock_config "github.com/mattermost/mattermost-plugin-playbooks/server/config/mocks"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin/plugintest"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/stretchr/testify/require"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -40,7 +40,7 @@ func TestGetSettings(t *testing.T) {
 	server := httptest.NewServer(mattermostHandler)
 	t.Cleanup(server.Close)
 
-	c, err := icClient.New(&model.Client4{Url: server.URL})
+	c, err := icClient.New(&model.Client4{URL: server.URL})
 	require.NoError(t, err)
 
 	reset := func(t *testing.T) {
@@ -139,7 +139,7 @@ func TestSetSettings(t *testing.T) {
 	server := httptest.NewServer(mattermostHandler)
 	t.Cleanup(server.Close)
 
-	c, err := icClient.New(&model.Client4{Url: server.URL})
+	c, err := icClient.New(&model.Client4{URL: server.URL})
 	require.NoError(t, err)
 
 	reset := func(t *testing.T) {
@@ -188,7 +188,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(false)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -213,7 +213,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(false)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -245,7 +245,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(true)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -276,7 +276,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(false)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -304,7 +304,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(false)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -337,7 +337,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(true)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -369,7 +369,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(false)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -401,7 +401,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(true)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -433,7 +433,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(true)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -465,7 +465,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(false)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -497,7 +497,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(true)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -530,7 +530,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(true)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -562,7 +562,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(false)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(false)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().
@@ -594,7 +594,7 @@ func TestSetSettings(t *testing.T) {
 
 		NewSettingsHandler(handler.APIRouter, client, logger, configService)
 
-		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PERMISSION_MANAGE_SYSTEM).Return(true)
+		pluginAPI.On("HasPermissionTo", mattermostUserID, model.PermissionManageSystem).Return(true)
 		configService.EXPECT().
 			GetConfiguration().
 			AnyTimes().

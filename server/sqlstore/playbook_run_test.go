@@ -13,7 +13,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	mock_sqlstore "github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore/mocks"
-	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -511,7 +511,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 				Direction: app.DirectionAsc,
 				Page:      1,
 				PerPage:   2,
-				Status:    app.StatusInProgress,
+				Statuses:  []string{app.StatusInProgress},
 			},
 			Want: app.GetPlaybookRunsResults{
 				TotalCount: 3,
@@ -529,7 +529,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 			},
 			Options: app.PlaybookRunFilterOptions{
 				TeamID:    team1id,
-				Status:    app.StatusInProgress,
+				Statuses:  []string{app.StatusInProgress},
 				OwnerID:   owner3.UserID,
 				Sort:      app.SortByCreateAt,
 				Direction: app.DirectionDesc,
@@ -664,7 +664,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 			Options: app.PlaybookRunFilterOptions{
 				TeamID:     team1id,
 				SearchTerm: "sbsm",
-				Status:     app.StatusInProgress,
+				Statuses:   []string{app.StatusInProgress},
 				Sort:       app.SortByCreateAt,
 				Direction:  app.DirectionAsc,
 				Page:       0,
@@ -840,12 +840,12 @@ func TestGetPlaybookRuns(t *testing.T) {
 				IsAdmin: true,
 			},
 			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				MemberID:  john.ID,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
+				TeamID:        team1id,
+				ParticipantID: john.ID,
+				Sort:          app.SortByCreateAt,
+				Direction:     app.DirectionAsc,
+				Page:          0,
+				PerPage:       1000,
 			},
 			Want: app.GetPlaybookRunsResults{
 				TotalCount: 3,
@@ -862,12 +862,12 @@ func TestGetPlaybookRuns(t *testing.T) {
 				IsAdmin: true,
 			},
 			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				MemberID:  jane.ID,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
+				TeamID:        team1id,
+				ParticipantID: jane.ID,
+				Sort:          app.SortByCreateAt,
+				Direction:     app.DirectionAsc,
+				Page:          0,
+				PerPage:       1000,
 			},
 			Want: app.GetPlaybookRunsResults{
 				TotalCount: 3,
@@ -883,12 +883,12 @@ func TestGetPlaybookRuns(t *testing.T) {
 				UserID: john.ID,
 			},
 			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				MemberID:  john.ID,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
+				TeamID:        team1id,
+				ParticipantID: john.ID,
+				Sort:          app.SortByCreateAt,
+				Direction:     app.DirectionAsc,
+				Page:          0,
+				PerPage:       1000,
 			},
 			Want: app.GetPlaybookRunsResults{
 				TotalCount: 3,
@@ -904,12 +904,12 @@ func TestGetPlaybookRuns(t *testing.T) {
 				UserID: jane.ID,
 			},
 			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				MemberID:  jane.ID,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
+				TeamID:        team1id,
+				ParticipantID: jane.ID,
+				Sort:          app.SortByCreateAt,
+				Direction:     app.DirectionAsc,
+				Page:          0,
+				PerPage:       1000,
 			},
 			Want: app.GetPlaybookRunsResults{
 				TotalCount: 3,
@@ -1718,7 +1718,7 @@ func TestGetOwners(t *testing.T) {
 		addUsersToChannels(t, store, []userInfo{bob}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel05.Id, channel06.Id, channel07.Id, channel08.Id, channel09.Id})
 
 		queryBuilder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
-		if driverName == model.DATABASE_DRIVER_POSTGRES {
+		if driverName == model.DatabaseDriverPostgres {
 			queryBuilder = queryBuilder.PlaceholderFormat(sq.Dollar)
 		}
 
@@ -1886,7 +1886,7 @@ func TestCheckAndSendMessageOnJoin(t *testing.T) {
 			require.Equal(t, 3, int(rows))
 
 			// cannot add a duplicate row
-			if driverName == model.DATABASE_DRIVER_POSTGRES {
+			if driverName == model.DatabaseDriverPostgres {
 				_, err = db.Exec("INSERT INTO IR_ViewedChannel (UserID, ChannelID) VALUES ($1, $2)", oldID, channelID)
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "duplicate key value")

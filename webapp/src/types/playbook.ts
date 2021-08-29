@@ -27,8 +27,8 @@ export interface PlaybookWithChecklist extends Playbook {
     invite_users_enabled: boolean;
     default_owner_id: string;
     default_owner_enabled: boolean;
-    announcement_channel_id: string;
-    announcement_channel_enabled: boolean;
+    broadcast_channel_ids: string[];
+    broadcast_enabled: boolean;
     webhook_on_creation_url: string;
     webhook_on_creation_enabled: boolean;
     webhook_on_status_update_url: string;
@@ -112,8 +112,8 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         invite_users_enabled: false,
         default_owner_id: '',
         default_owner_enabled: false,
-        announcement_channel_id: '',
-        announcement_channel_enabled: false,
+        broadcast_channel_ids: [],
+        broadcast_enabled: false,
         webhook_on_creation_url: '',
         webhook_on_creation_enabled: false,
         webhook_on_status_update_url: '',

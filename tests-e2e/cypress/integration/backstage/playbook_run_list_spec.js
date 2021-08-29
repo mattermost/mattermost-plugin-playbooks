@@ -8,59 +8,40 @@
 
 const BACKSTAGE_LIST_PER_PAGE = 15;
 
-import {HALF_SEC} from '../../fixtures/timeouts';
-
 describe('backstage playbook run list', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
-    let teamId;
-    let userId;
-    let playbookId;
+    let testTeam;
+    let testUser;
+    let testAnotherUser;
+    let testPlaybook;
 
     before(() => {
-        // # Login as the sysadmin
-        cy.legacyApiLogin('sysadmin');
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Create a new team for the welcome page test
-        cy.legacyApiCreateTeam('team', 'Team').then(({team}) => {
-            // # Add user-1 to team
-            cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
-                cy.legacyApiAddUserToTeam(team.id, user.id);
-            });
-        });
-
-        // # Create a new team for the welcome page test when filtering
-        cy.legacyApiCreateTeam('team', 'Team With No Active Playbook Runs').then(({team}) => {
-            // # Add user-1 to team
-            cy.apiGetUserByEmail('user-1@sample.mattermost.com').then(({user}) => {
-                cy.legacyApiAddUserToTeam(team.id, user.id);
+            // # Turn off growth onboarding screens
+            cy.apiUpdateConfig({
+                ServiceSettings: {EnableOnboardingFlow: false},
             });
 
-            // # Create a playbook
-            cy.legacyApiGetCurrentUser().then((user) => {
-                cy.apiCreateTestPlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    userId: user.id,
-                });
+            // # Create another user
+            cy.apiCreateUser().then(({user: anotherUser}) => {
+                testAnotherUser = anotherUser;
+
+                cy.apiAddUserToTeam(testTeam.id, anotherUser.id);
             });
-        });
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+            // # Login as testUser
+            cy.apiLogin(testUser);
 
-        // # Create a playbook
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
-            cy.legacyApiGetCurrentUser().then((user) => {
-                userId = user.id;
-
-                cy.apiCreateTestPlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    userId: user.id,
-                }).then((playbook) => {
-                    playbookId = playbook.id;
-                });
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Public Playbook',
+                memberIDs: [],
+                createPublicPlaybookRun: true,
+            }).then((playbook) => {
+                testPlaybook = playbook;
             });
         });
     });
@@ -69,8 +50,8 @@ describe('backstage playbook run list', () => {
         // # Size the viewport to show all of the backstage.
         cy.viewport('macbook-13');
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+        // # Login as testUser
+        cy.apiLogin(testUser);
     });
 
     it('has "Runs" and team name in heading', () => {
@@ -78,10 +59,10 @@ describe('backstage playbook run list', () => {
         const now = Date.now();
         const playbookRunName = 'Playbook Run (' + now + ')';
         cy.apiRunPlaybook({
-            teamId,
-            playbookId,
+            teamId: testTeam.id,
+            playbookId: testPlaybook.id,
             playbookRunName,
-            ownerUserId: userId,
+            ownerUserId: testUser.id,
         });
 
         // # Open backstage
@@ -99,10 +80,10 @@ describe('backstage playbook run list', () => {
         const now = Date.now();
         const playbookRunName = 'Playbook Run (' + now + ')';
         cy.apiRunPlaybook({
-            teamId,
-            playbookId,
+            teamId: testTeam.id,
+            playbookId: testPlaybook.id,
             playbookRunName,
-            ownerUserId: userId,
+            ownerUserId: testUser.id,
         });
 
         // # Open backstage
@@ -120,29 +101,99 @@ describe('backstage playbook run list', () => {
         cy.findByTestId('playbook-run-title').contains(playbookRunName);
     });
 
+    describe('filters my runs only', () => {
+        before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            // # Run a playbook with testUser as a participant
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName: 'testUsers Run',
+                ownerUserId: testUser.id,
+            });
+
+            // # Login as testAnotherUser
+            cy.apiLogin(testAnotherUser);
+
+            // # Run a playbook with testAnotherUser as a participant
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName: 'testAnotherUsers Run',
+                // ownerUserId: testUser.id,
+                ownerUserId: testAnotherUser.id,
+            });
+        });
+
+        it('for testUser', () => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            // # Open backstage
+            cy.visit('/playbooks');
+
+            // # Make sure both runs are visible by default
+            cy.findByText('testUsers Run').should('be.visible');
+            cy.findByText('testAnotherUsers Run').should('be.visible');
+
+            // # Filter to only my runs
+            cy.findByTestId('my-runs-only').click();
+
+            // # Verify runs by testAnotherUser are not visible
+            cy.findByText('testAnotherUsers Run').should('not.exist');
+
+            // # Verify runs by testUser remain visible
+            cy.findByText('testUsers Run').should('be.visible');
+
+        });
+
+        it('for testAnotherUser', () => {
+            // # Login as testAnotherUser
+            cy.apiLogin(testAnotherUser);
+
+            // # Open backstage
+            cy.visit('/playbooks');
+
+            // Make sure both runs are visible by default
+            cy.findByText('testUsers Run').should('be.visible');
+            cy.findByText('testAnotherUsers Run').should('be.visible');
+
+            // # Filter to only my runs
+            cy.findByTestId('my-runs-only').click();
+
+            // # Verify runs by testUser are not visible
+            cy.findByText('testUsers Run').should('not.exist');
+
+            // # Verify runs by testAnotherUser remain visible
+            cy.findByText('testAnotherUsers Run').should('be.visible');
+        });
+    });
+
     describe('resets pagination when filtering', () => {
         const playbookRunTimestamps = [];
 
         before(() => {
-            // # Login as user-1
-            cy.legacyApiLogin('user-1');
+            // # Login as testUser
+            cy.apiLogin(testUser);
 
             // # Start sufficient playbook runs to ensure pagination is possible.
             for (let i = 0; i < BACKSTAGE_LIST_PER_PAGE + 1; i++) {
                 const now = Date.now();
                 cy.apiRunPlaybook({
-                    teamId,
-                    playbookId,
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
                     playbookRunName: 'Playbook Run (' + now + ')',
-                    ownerUserId: userId,
+                    ownerUserId: testUser.id,
                 });
                 playbookRunTimestamps.push(now);
             }
         });
 
         beforeEach(() => {
-            // # Login as user-1
-            cy.legacyApiLogin('user-1');
+            // # Login as testUser
+            cy.apiLogin(testUser);
 
             // # Open backstage
             cy.visit('/playbooks');
@@ -159,10 +210,7 @@ describe('backstage playbook run list', () => {
 
         it('by playbook run name', () => {
             // # Search for a playbook run by name
-            cy.get('#playbookRunList input').type(playbookRunTimestamps[0]);
-
-            // # Wait for the playbook run list to update.
-            cy.wait(HALF_SEC);
+            cy.findByTestId('search-filter').type(playbookRunTimestamps[0]);
 
             // * Verify "Previous" no longer shown
             cy.findByText('Previous').should('not.exist');
@@ -175,9 +223,6 @@ describe('backstage playbook run list', () => {
             // # Find the list and chose the first owner in the list
             cy.get('.playbook-run-user-select__container')
                 .find('.PlaybookRunProfile').first().parent().click({force: true});
-
-            // # Wait for the playbook run list to update.
-            cy.wait(HALF_SEC);
 
             // * Verify "Previous" no longer shown
             cy.findByText('Previous').should('not.exist');
