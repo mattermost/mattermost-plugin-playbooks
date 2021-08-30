@@ -8,7 +8,7 @@
 
 import users from '../../fixtures/users.json';
 
-describe('backstage playbook details', () => {
+describe.only('backstage playbook details', () => {
     before(() => {
         // # Turn off growth onboarding screens
         cy.apiLogin(users.sysadmin);
@@ -129,7 +129,7 @@ describe('backstage playbook details', () => {
         });
     });
 
-    describe('actions', () => {
+    describe.only('actions', () => {
         let playbookName;
         let playbookId;
         let teamId;
@@ -178,8 +178,8 @@ describe('backstage playbook details', () => {
             });
         });
 
-        describe('when a playbook run starts', () => {
-            describe('invite members setting', () => {
+        describe.only('when a playbook run starts', () => {
+            describe.only('invite members setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
                     cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
@@ -442,7 +442,7 @@ describe('backstage playbook details', () => {
                     });
                 });
 
-                it('removes invitation from users that are no longer in the team', () => {
+                it.only('removes invitation from users that are no longer in the team', () => {
                     let userToRemove;
 
                     // # Create a playbook with a user that is later removed from the team

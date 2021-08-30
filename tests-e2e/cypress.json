@@ -4,7 +4,7 @@
     "ignoreTestFiles": "**/node_modules/**/*",
     "integrationFolder": "..",
     "taskTimeout": 20000,
-    "testFiles": "**/*_spec.js",
+    "testFiles": "**/playbook_edit_spec.js",
     "video": true,
     "viewportWidth": 1300,
     "env": {
@@ -35,7 +35,6 @@
         "storybookUrl": "http://localhost:6006/",
         "webhookBaseUrl": "http://localhost:3000"
     },
-    "testFiles": "**/*_spec.js",
     "reporter": "cypress-multi-reporters",
     "reporterOptions": {
         "configFile": "reporter-config.json"
