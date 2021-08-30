@@ -468,7 +468,7 @@ func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) 
 			"EndAt":         endAt,
 		}).
 		Where(sq.Eq{"ID": playbookRunID})); err != nil {
-		return errors.Wrapf(err, "failed to finish run for id: %s", playbookRunID)
+		return errors.Wrapf(err, "failed to finish run for id '%s'", playbookRunID)
 	}
 
 	return nil
@@ -790,7 +790,7 @@ func (s *playbookRunStore) SetViewedChannel(userID, channelID string) error {
 	return nil
 }
 
-func (s *playbookRunStore) GetChannelIDsToRootIDs(playbookRunID string) (map[string]string, error) {
+func (s *playbookRunStore) GetBroadcastChannelIDsToRootIDs(playbookRunID string) (map[string]string, error) {
 	var retAsJSON string
 	query := s.store.builder.Select("COALESCE(ChannelIDToRootID, '')").
 		From("IR_Incident").
@@ -798,7 +798,7 @@ func (s *playbookRunStore) GetChannelIDsToRootIDs(playbookRunID string) (map[str
 
 	err := s.store.getBuilder(s.store.db, &retAsJSON, query)
 	if err == sql.ErrNoRows {
-		return nil, errors.Wrapf(app.ErrNotFound, "could not find playbook with id: '%s'", playbookRunID)
+		return nil, errors.Wrapf(app.ErrNotFound, "could not find playbook with id '%s'", playbookRunID)
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "failed to get channelID to rootID map for playbookRunID '%s'", playbookRunID)
 	}
@@ -815,7 +815,7 @@ func (s *playbookRunStore) GetChannelIDsToRootIDs(playbookRunID string) (map[str
 	return ret, nil
 }
 
-func (s *playbookRunStore) SetChannelIDsToRootID(playbookRunID string, channelIDsToRootIDs map[string]string) error {
+func (s *playbookRunStore) SetBroadcastChannelIDsToRootID(playbookRunID string, channelIDsToRootIDs map[string]string) error {
 	data, err := json.Marshal(channelIDsToRootIDs)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal channelIDsToRootIDs map")
@@ -826,7 +826,7 @@ func (s *playbookRunStore) SetChannelIDsToRootID(playbookRunID string, channelID
 			Set("ChannelIDToRootID", data).
 			Where(sq.Eq{"ID": playbookRunID}))
 	if err != nil {
-		return errors.Wrapf(err, "failed to set ChannelIDsToRootID column for playbookRunID: '%s'", playbookRunID)
+		return errors.Wrapf(err, "failed to set ChannelIDsToRootID column for playbookRunID '%s'", playbookRunID)
 	}
 
 	return nil
@@ -910,7 +910,7 @@ func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {
 	newChecklists := populateChecklistIDs(playbookRun.Checklists)
 	checklistsJSON, err := checklistsToJSON(newChecklists)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook run id: '%s'", playbookRun.ID)
+		return nil, errors.Wrapf(err, "failed to marshal checklist json for playbook run id '%s'", playbookRun.ID)
 	}
 
 	return &sqlPlaybookRun{

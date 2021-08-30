@@ -92,19 +92,19 @@ func (mr *MockPlaybookRunStoreMockRecorder) FinishPlaybookRun(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishPlaybookRun", reflect.TypeOf((*MockPlaybookRunStore)(nil).FinishPlaybookRun), arg0, arg1)
 }
 
-// GetChannelIDsToRootIDs mocks base method
-func (m *MockPlaybookRunStore) GetChannelIDsToRootIDs(arg0 string) (map[string]string, error) {
+// GetBroadcastChannelIDsToRootIDs mocks base method
+func (m *MockPlaybookRunStore) GetBroadcastChannelIDsToRootIDs(arg0 string) (map[string]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetChannelIDsToRootIDs", arg0)
+	ret := m.ctrl.Call(m, "GetBroadcastChannelIDsToRootIDs", arg0)
 	ret0, _ := ret[0].(map[string]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetChannelIDsToRootIDs indicates an expected call of GetChannelIDsToRootIDs
-func (mr *MockPlaybookRunStoreMockRecorder) GetChannelIDsToRootIDs(arg0 interface{}) *gomock.Call {
+// GetBroadcastChannelIDsToRootIDs indicates an expected call of GetBroadcastChannelIDsToRootIDs
+func (mr *MockPlaybookRunStoreMockRecorder) GetBroadcastChannelIDsToRootIDs(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChannelIDsToRootIDs", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetChannelIDsToRootIDs), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBroadcastChannelIDsToRootIDs", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetBroadcastChannelIDsToRootIDs), arg0)
 }
 
 // GetHistoricalPlaybookRunParticipantsCount mocks base method
@@ -225,18 +225,18 @@ func (mr *MockPlaybookRunStoreMockRecorder) NukeDB() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NukeDB", reflect.TypeOf((*MockPlaybookRunStore)(nil).NukeDB))
 }
 
-// SetChannelIDsToRootID mocks base method
-func (m *MockPlaybookRunStore) SetChannelIDsToRootID(arg0 string, arg1 map[string]string) error {
+// SetBroadcastChannelIDsToRootID mocks base method
+func (m *MockPlaybookRunStore) SetBroadcastChannelIDsToRootID(arg0 string, arg1 map[string]string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetChannelIDsToRootID", arg0, arg1)
+	ret := m.ctrl.Call(m, "SetBroadcastChannelIDsToRootID", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetChannelIDsToRootID indicates an expected call of SetChannelIDsToRootID
-func (mr *MockPlaybookRunStoreMockRecorder) SetChannelIDsToRootID(arg0, arg1 interface{}) *gomock.Call {
+// SetBroadcastChannelIDsToRootID indicates an expected call of SetBroadcastChannelIDsToRootID
+func (mr *MockPlaybookRunStoreMockRecorder) SetBroadcastChannelIDsToRootID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetChannelIDsToRootID", reflect.TypeOf((*MockPlaybookRunStore)(nil).SetChannelIDsToRootID), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBroadcastChannelIDsToRootID", reflect.TypeOf((*MockPlaybookRunStore)(nil).SetBroadcastChannelIDsToRootID), arg0, arg1)
 }
 
 // SetViewedChannel mocks base method
