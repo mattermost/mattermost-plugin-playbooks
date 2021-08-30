@@ -9,13 +9,15 @@
 import users from '../../fixtures/users.json';
 
 describe('backstage playbook details', () => {
-    beforeEach(() => {
+    before(() => {
         // # Turn off growth onboarding screens
         cy.apiLogin(users.sysadmin);
         cy.apiUpdateConfig({
             ServiceSettings: {EnableOnboardingFlow: false},
         });
+    });
 
+    beforeEach(() => {
         // # Login as user-1
         cy.legacyApiLogin('user-1');
     });

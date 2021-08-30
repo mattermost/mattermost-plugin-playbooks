@@ -13,6 +13,12 @@ describe('playbook run automation', () => {
     let userId;
 
     before(() => {
+        // # Turn off growth onboarding screens
+        cy.apiLogin(users.sysadmin);
+        cy.apiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
+
         // # Login as user-1
         cy.legacyApiLogin('user-1');
 
@@ -29,12 +35,6 @@ describe('playbook run automation', () => {
     beforeEach(() => {
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
-
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
 
         // # Login as user-1
         cy.legacyApiLogin('user-1');
