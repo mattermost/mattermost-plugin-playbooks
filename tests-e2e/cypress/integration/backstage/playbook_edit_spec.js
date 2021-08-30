@@ -11,10 +11,10 @@ import users from '../../fixtures/users.json';
 describe.only('backstage playbook details', () => {
     before(() => {
         // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
+        // cy.apiLogin(users.sysadmin);
+        // cy.apiUpdateConfig({
+        //     ServiceSettings: {EnableOnboardingFlow: false},
+        // });
     });
 
     beforeEach(() => {
@@ -448,6 +448,10 @@ describe.only('backstage playbook details', () => {
                     // # Create a playbook with a user that is later removed from the team
                     cy.legacyApiLogin('sysadmin')
                         .then(() => {
+                            cy.apiUpdateConfig({
+                                ServiceSettings: {EnableOnboardingFlow: false},
+                            });
+
                             cy.apiCreateUser().then((result) => {
                                 userToRemove = result.user;
                                 cy.legacyApiAddUserToTeam(
