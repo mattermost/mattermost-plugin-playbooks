@@ -152,17 +152,8 @@ Cypress.Commands.add('apiUpdateConfig', (newConfig = {}) => {
         // * Check if config can be updated
         expectConfigToBeUpdatable(currentConfig, newConfig);
 
-        const oldWayOfMakingConfig = merge.all([currentConfig, newConfig]);
-        cy.log('Old way of making config:');
-        cy.log(oldWayOfMakingConfig);
-
         const altWayOfMakingConfig = merge.all([getDefaultConfig(), currentConfig, newConfig]);
-        cy.log('Alt way of making config:');
-        cy.log(altWayOfMakingConfig);
-
-        const config = merge.all([currentConfig, getDefaultConfig(), newConfig]);
-        cy.log('Working way of making config:');
-        cy.log(config);
+        //const config = merge.all([currentConfig, getDefaultConfig(), newConfig]);
 
         // # Set the modified config
         return cy.request({
