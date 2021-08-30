@@ -455,16 +455,13 @@ describe.only('backstage playbook details', () => {
                                 const newConfig = {ServiceSettings: {EnableOnboardingFlow: false}};
 
                                 const oldWayOfMakingConfig = merge.all([currentConfig, newConfig]);
-                                cy.log('Old way of making config:');
-                                cy.log(JSON.stringify(oldWayOfMakingConfig));
+                                cy.log('Old way of making config:', oldWayOfMakingConfig);
 
                                 const altWayOfMakingConfig = merge.all([getDefaultConfig(), currentConfig, newConfig]);
-                                cy.log('Alt way of making config:');
-                                cy.log(JSON.stringify(altWayOfMakingConfig));
+                                cy.log('Alt way of making config:', altWayOfMakingConfig);
 
                                 const config = merge.all([currentConfig, getDefaultConfig(), newConfig]);
-                                cy.log('Working way of making config:');
-                                cy.log(JSON.stringify(config));
+                                cy.log('Working way of making config:', config);
                             });
 
                             cy.apiUpdateConfig({
