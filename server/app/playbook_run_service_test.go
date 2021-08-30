@@ -134,7 +134,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
 
 		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunWithID.ID).Return(map[string]string{}, nil)
-		poster.EXPECT().PostMessageToThread("channel_id", "", "This run has been started by @username.").
+		poster.EXPECT().PostMessage("channel_id", "This run has been started by @username.").
 			Return(&model.Post{Id: "testPostId"}, nil)
 		store.EXPECT().SetBroadcastChannelIDsToRootID(playbookRunWithID.ID, map[string]string{"channel_id": "testPostId"}).Return(nil)
 
@@ -215,7 +215,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
 
 		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunWithID.ID).Return(map[string]string{}, nil)
-		poster.EXPECT().PostMessageToThread("channel_id", "", "This run has been started by @username.").
+		poster.EXPECT().PostMessage("channel_id", "This run has been started by @username.").
 			Return(&model.Post{Id: "testPostId"}, nil)
 		store.EXPECT().SetBroadcastChannelIDsToRootID(playbookRunWithID.ID, map[string]string{"channel_id": "testPostId"}).Return(nil)
 
@@ -266,7 +266,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
 
 		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunWithID.ID).Return(map[string]string{}, nil)
-		poster.EXPECT().PostMessageToThread("channel_id", "", "This run has been started by @username.").
+		poster.EXPECT().PostMessage("channel_id", "This run has been started by @username.").
 			Return(&model.Post{Id: "testPostId"}, nil)
 		store.EXPECT().SetBroadcastChannelIDsToRootID(playbookRunWithID.ID, map[string]string{"channel_id": "testPostId"}).Return(nil)
 
@@ -330,7 +330,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), "channel_id")
 
 		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunWithID.ID).Return(map[string]string{}, nil)
-		poster.EXPECT().PostMessageToThread("channel_id", "", "This run has been started by @username.").
+		poster.EXPECT().PostMessage("channel_id", "This run has been started by @username.").
 			Return(&model.Post{Id: "testPostId"}, nil)
 		store.EXPECT().SetBroadcastChannelIDsToRootID(playbookRunWithID.ID, map[string]string{"channel_id": "testPostId"}).Return(nil)
 
@@ -442,7 +442,7 @@ func TestUpdateStatus(t *testing.T) {
 				broadcastChannelID1: "broadcastRootPostID1",
 				broadcastChannelID2: "broadcastRootPostID2",
 			}, nil).Times(3)
-		poster.EXPECT().PostMessageToThread(homeChannelID, "homeRootPostID", statusUpdateOptions.Message).
+		poster.EXPECT().PostMessage(homeChannelID, statusUpdateOptions.Message).
 			Return(&model.Post{Id: "testPostId", RootId: "homeRootPostID"}, nil)
 		poster.EXPECT().PostMessageToThread(broadcastChannelID1, "broadcastRootPostID1", gomock.AssignableToTypeOf("")).
 			Return(&model.Post{Id: "testPostId", RootId: "broadcastRootPostID1"}, nil)
