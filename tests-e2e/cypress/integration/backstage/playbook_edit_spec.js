@@ -456,15 +456,15 @@ describe.only('backstage playbook details', () => {
 
                                 const oldWayOfMakingConfig = merge.all([currentConfig, newConfig]);
                                 cy.log('Old way of making config:');
-                                cy.log(oldWayOfMakingConfig);
+                                cy.log(JSON.stringify(oldWayOfMakingConfig));
 
                                 const altWayOfMakingConfig = merge.all([getDefaultConfig(), currentConfig, newConfig]);
                                 cy.log('Alt way of making config:');
-                                cy.log(altWayOfMakingConfig);
+                                cy.log(JSON.stringify(altWayOfMakingConfig));
 
                                 const config = merge.all([currentConfig, getDefaultConfig(), newConfig]);
                                 cy.log('Working way of making config:');
-                                cy.log(config);
+                                cy.log(JSON.stringify(config));
                             });
 
                             cy.apiUpdateConfig({
