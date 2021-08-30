@@ -110,7 +110,7 @@ describe('playbook run broadcast', () => {
                                                 teamId,
                                                 title: playbookName + ' - test deleting root posts',
                                                 userId,
-                                                broadcastChannelIds: [publicBroadcastChannelId1],
+                                                broadcastChannelIds: [publicBroadcastChannelId1, privateBroadcastChannelId1],
                                                 broadcastEnabled: true,
                                                 otherMembers: [sysadminId],
                                                 invitedUserIds: [sysadminId],
@@ -120,6 +120,7 @@ describe('playbook run broadcast', () => {
 
                                             // # invite sysadmin to the channel they will need to be in to delete the post
                                             cy.apiAddUserToChannel(publicBroadcastChannelId1, sysadminId);
+                                            cy.apiAddUserToChannel(privateBroadcastChannelId1, sysadminId);
                                         });
                                 });
                         });
@@ -158,10 +159,8 @@ describe('playbook run broadcast', () => {
         cy.updateStatus(updateMessage, 0);
 
         // * Verify the posts
-        const initialMessage = 'This run has been started by @user-1';
-        const broadcastInitialMessage = `New run started: ${playbookRunName}`;
-        verifyInitialAndStatusPostInHome(playbookRunChannelName, initialMessage, updateMessage);
-        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName1, playbookRunName, broadcastInitialMessage, updateMessage);
+        const initialMessage = `New run started: ${playbookRunName}`;
+        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName1, playbookRunName, initialMessage, updateMessage);
     });
 
     it('to private channels', () => {
@@ -184,10 +183,8 @@ describe('playbook run broadcast', () => {
         cy.updateStatus(updateMessage, 0);
 
         // * Verify the posts
-        const initialMessage = 'This run has been started by @user-1';
-        const broadcastInitialMessage = `New run started: ${playbookRunName}`;
-        verifyInitialAndStatusPostInHome(playbookRunChannelName, initialMessage, updateMessage);
-        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName1, playbookRunName, broadcastInitialMessage, updateMessage);
+        const initialMessage = `New run started: ${playbookRunName}`;
+        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName1, playbookRunName, initialMessage, updateMessage);
     });
 
     it('to 4 public and private channels', () => {
@@ -210,16 +207,14 @@ describe('playbook run broadcast', () => {
         cy.updateStatus(updateMessage, 0);
 
         // * Verify the posts
-        const initialMessage = 'This run has been started by @user-1';
-        const broadcastInitialMessage = `New run started: ${playbookRunName}`;
-        verifyInitialAndStatusPostInHome(playbookRunChannelName, initialMessage, updateMessage);
-        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName1, playbookRunName, broadcastInitialMessage, updateMessage);
-        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName1, playbookRunName, broadcastInitialMessage, updateMessage);
-        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName2, playbookRunName, broadcastInitialMessage, updateMessage);
-        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName2, playbookRunName, broadcastInitialMessage, updateMessage);
+        const initialMessage = `New run started: ${playbookRunName}`;
+        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName1, playbookRunName, initialMessage, updateMessage);
+        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName1, playbookRunName, initialMessage, updateMessage);
+        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName2, playbookRunName, initialMessage, updateMessage);
+        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName2, playbookRunName, initialMessage, updateMessage);
     });
 
-    it('to 1 channel, delete the root posts, update again', () => {
+    it('to 2 channels, delete the root post, update again', () => {
         // # need to be sysadmin to delete the bot's posts
         cy.apiLogin(users.sysadmin);
 
@@ -242,14 +237,13 @@ describe('playbook run broadcast', () => {
         cy.updateStatus(updateMessage, 0);
 
         // * Verify the posts
-        const initialMessage = 'This run has been started by @sysadmin';
-        const broadcastInitialMessage = `New run started: ${playbookRunName}`;
-        verifyInitialAndStatusPostInHome(playbookRunChannelName, initialMessage, updateMessage);
-        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName1, playbookRunName, broadcastInitialMessage, updateMessage, '@sysadmin');
+        const initialMessage = `New run started: ${playbookRunName}`;
+        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName1, playbookRunName, initialMessage, updateMessage, '@sysadmin');
+        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName1, playbookRunName, initialMessage, updateMessage, '@sysadmin');
 
         // # Delete both root posts
-        deleteLatestPostRoot(playbookRunChannelName);
         deleteLatestPostRoot(publicBroadcastChannelName1);
+        deleteLatestPostRoot(privateBroadcastChannelName1);
 
         // # Make two more updates
         // # Navigate directly to the application and the playbook run channel
@@ -262,8 +256,8 @@ describe('playbook run broadcast', () => {
         cy.updateStatus(updateMessage3, 0);
 
         // * Verify the posts
-        verifyInitialAndStatusPostInHome(playbookRunChannelName, updateMessage2, updateMessage3);
         verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName1, playbookRunName, updateMessage2, updateMessage3, '@sysadmin');
+        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName1, playbookRunName, updateMessage2, updateMessage3, '@sysadmin');
     });
 });
 
@@ -287,28 +281,6 @@ const verifyInitialAndStatusPostInBroadcast = (channelName, runName, initialMess
             cy.get(`#rhsPostMessageText_${lastPostId}`).contains(`Status Update: ${runName}`);
             cy.get(`#rhsPostMessageText_${lastPostId}`)
                 .contains(`By ${byUser} | Duration: < 1m | Status: In Progress`);
-            cy.get(`#rhsPostMessageText_${lastPostId}`).contains(updateMessage);
-        });
-    });
-};
-
-const verifyInitialAndStatusPostInHome = (channelName, initialMessage, updateMessage) => {
-    // # Navigate to the channel
-    cy.visit('/ad-1/channels/' + channelName);
-
-    // * Verify that the last post contains the expected header and the update message verbatim
-    cy.getLastPostId().then((lastPostId) => {
-        // # Open RHS comment menu
-        cy.clickPostCommentIcon(lastPostId);
-
-        cy.get('#rhsContainer').should('exist').within(() => {
-            // * Thread should have two posts
-            cy.findAllByRole('listitem').should('have.length', 2);
-
-            // * Root should be announcement
-            cy.get('.thread__root').contains(initialMessage);
-
-            // * Latest post should be update
             cy.get(`#rhsPostMessageText_${lastPostId}`).contains(updateMessage);
         });
     });

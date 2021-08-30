@@ -389,7 +389,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		startMessage = fmt.Sprintf("This run has been started by @%s and is commanded by @%s.", reporter.Username, owner.Username)
 	}
 
-	newPost, err := s.postMessageToThreadAndSaveRootID(playbookRun.ID, channel.Id, startMessage)
+	newPost, err := s.poster.PostMessage(channel.Id, startMessage)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error creating start message on run creation, for playbook '%s', to channelID '%s'", playbookRun.ID, channel.Id)
 	}
@@ -762,7 +762,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	post, err := s.postMessageToThreadAndSaveRootID(playbookRunID, playbookRunToModify.ChannelID, options.Message)
+	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, options.Message)
 	if err != nil {
 		return errors.Wrap(err, "failed to post update status message")
 	}
@@ -890,14 +890,14 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	message := fmt.Sprintf("@%s finished the playbook run.", user.Username)
 	postID := ""
-	post, err := s.postMessageToThreadAndSaveRootID(playbookRunID, playbookRunToModify.ChannelID, message)
+	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
 		s.pluginAPI.Log.Warn("failed to post the status update to channel", "ChannelID", playbookRunToModify.ChannelID)
 	} else {
 		postID = post.Id
 	}
 
-	if err2 := s.broadcastStatusUpdate(message, playbookRunID, userID, postID); err2 != nil {
+	if err = s.broadcastStatusUpdate(message, playbookRunID, userID, postID); err != nil {
 		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel")
 	}
 
