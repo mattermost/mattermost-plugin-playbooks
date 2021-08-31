@@ -56,18 +56,6 @@ const StyledSelect = styled(Select)`
         &--is-focused {
             box-shadow: inset 0 0 0px 2px var(--button-bg);
         }
-
-        &:before {
-            left: 16px;
-            top: 8px;
-            position: absolute;
-            color: var(--center-channel-color-56);
-            content: '\f150';
-            font-size: 18px;
-            font-family: 'compass-icons', mattermosticons;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
     }
 
     .datetime-autocomplete__option {
