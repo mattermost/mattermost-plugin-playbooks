@@ -284,15 +284,6 @@ func CreatePlaybook(userID string, playbook Playbook, cfgService config.Service,
 		)
 	}
 
-	if playbook.BroadcastChannelID != "" &&
-		!pluginAPI.User.HasPermissionToChannel(userID, playbook.BroadcastChannelID, model.PermissionCreatePost) {
-		return errors.Errorf(
-			"userID %s does not have permission to create posts in the channel %s",
-			userID,
-			playbook.BroadcastChannelID,
-		)
-	}
-
 	if !CanViewTeam(userID, playbook.TeamID, pluginAPI) {
 		return errors.Errorf(
 			"userID %s does not have permission to create playbook on teamID %s",
@@ -301,13 +292,11 @@ func CreatePlaybook(userID string, playbook Playbook, cfgService config.Service,
 		)
 	}
 
-	if playbook.AnnouncementChannelID != "" &&
-		!pluginAPI.User.HasPermissionToChannel(userID, playbook.AnnouncementChannelID, model.PermissionCreatePost) {
-		return errors.Errorf(
-			"userID %s does not have permission to create posts in the channel %s",
-			userID,
-			playbook.AnnouncementChannelID,
-		)
+	// Check the user has permissions over all broadcast channels
+	for _, channelID := range playbook.BroadcastChannelIDs {
+		if !pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
+			return errors.Errorf("userID %s does not have permission to create posts in the channel %s", userID, channelID)
+		}
 	}
 
 	// Check all invited users have permissions to the team.
@@ -345,15 +334,21 @@ func PlaybookModify(userID string, playbook, oldPlaybook Playbook, cfgService co
 		return err
 	}
 
-	if playbook.BroadcastChannelID != "" &&
-		playbook.BroadcastChannelID != oldPlaybook.BroadcastChannelID &&
-		!pluginAPI.User.HasPermissionToChannel(userID, playbook.BroadcastChannelID, model.PermissionCreatePost) {
-		return errors.Wrapf(
-			ErrNoPermissions,
-			"userID %s does not have permission to create posts in the channel %s",
-			userID,
-			playbook.BroadcastChannelID,
-		)
+	oldChannelsSet := make(map[string]bool)
+	for _, channelID := range oldPlaybook.BroadcastChannelIDs {
+		oldChannelsSet[channelID] = true
+	}
+
+	for _, channelID := range playbook.BroadcastChannelIDs {
+		if !oldChannelsSet[channelID] &&
+			!pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
+			return errors.Wrapf(
+				ErrNoPermissions,
+				"userID %s does not have permission to create posts in the channel %s",
+				userID,
+				channelID,
+			)
+		}
 	}
 
 	return nil

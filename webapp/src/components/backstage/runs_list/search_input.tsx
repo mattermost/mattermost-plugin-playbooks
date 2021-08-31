@@ -6,6 +6,7 @@ import React, {useState} from 'react';
 import './seach_input.scss';
 
 interface Props {
+    testId: string;
     default: string | undefined;
     onSearch: (term: string) => void;
 }
@@ -19,7 +20,10 @@ export default function SearchInput(props: Props) {
     const [term, setTerm] = useState(props.default ? props.default : '');
 
     return (
-        <div className='PlaybookRunList-search'>
+        <div
+            className='PlaybookRunList-search'
+            data-testId={props.testId}
+        >
             <input
                 type='text'
                 placeholder='Search by run name'

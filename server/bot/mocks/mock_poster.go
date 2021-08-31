@@ -5,10 +5,9 @@
 package mock_bot
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	model "github.com/mattermost/mattermost-server/v6/model"
+	reflect "reflect"
 )
 
 // MockPoster is a mock of Poster interface
@@ -129,6 +128,26 @@ func (mr *MockPosterMockRecorder) PostMessage(arg0, arg1 interface{}, arg2 ...in
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostMessage", reflect.TypeOf((*MockPoster)(nil).PostMessage), varargs...)
+}
+
+// PostMessageToThread mocks base method
+func (m *MockPoster) PostMessageToThread(arg0, arg1, arg2 string, arg3 ...interface{}) (*model.Post, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PostMessageToThread", varargs...)
+	ret0, _ := ret[0].(*model.Post)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PostMessageToThread indicates an expected call of PostMessageToThread
+func (mr *MockPosterMockRecorder) PostMessageToThread(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostMessageToThread", reflect.TypeOf((*MockPoster)(nil).PostMessageToThread), varargs...)
 }
 
 // PostMessageWithAttachments mocks base method

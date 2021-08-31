@@ -509,12 +509,12 @@ func (r *Runner) actionList() {
 	}
 
 	options := app.PlaybookRunFilterOptions{
-		TeamID:    r.args.TeamId,
-		MemberID:  r.args.UserId,
-		Page:      0,
-		PerPage:   maxPlaybookRunsToList,
-		Sort:      app.SortByCreateAt,
-		Direction: app.DirectionDesc,
+		TeamID:        r.args.TeamId,
+		ParticipantID: r.args.UserId,
+		Page:          0,
+		PerPage:       maxPlaybookRunsToList,
+		Sort:          app.SortByCreateAt,
+		Direction:     app.DirectionDesc,
 	}
 
 	result, err := r.playbookRunService.GetPlaybookRuns(requesterInfo, options)
@@ -977,12 +977,12 @@ And... yes, of course, we have emojis
 	}
 
 	playbookRun, err := r.playbookRunService.CreatePlaybookRun(&app.PlaybookRun{
-		Name:               "Cloud Incident 4739",
-		TeamID:             r.args.TeamId,
-		OwnerUserID:        r.args.UserId,
-		PlaybookID:         gotplaybook.ID,
-		Checklists:         gotplaybook.Checklists,
-		BroadcastChannelID: gotplaybook.BroadcastChannelID,
+		Name:                "Cloud Incident 4739",
+		TeamID:              r.args.TeamId,
+		OwnerUserID:         r.args.UserId,
+		PlaybookID:          gotplaybook.ID,
+		Checklists:          gotplaybook.Checklists,
+		BroadcastChannelIDs: gotplaybook.BroadcastChannelIDs,
 	}, &gotplaybook, r.args.UserId, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test playbook run: " + err.Error())
