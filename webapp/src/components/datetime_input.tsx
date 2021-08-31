@@ -130,10 +130,6 @@ export type Option = {
     value: DateTime | Duration | null;
     label?: string | null;
     mode?: Mode.DateTimeValue | Mode.DurationValue;
-} | {
-    value: Duration | null;
-    label: string;
-    mode?: Mode.DurationValue;
 }
 
 type Props = {
