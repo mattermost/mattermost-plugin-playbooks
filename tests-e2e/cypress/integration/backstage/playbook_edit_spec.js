@@ -6,21 +6,16 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import merge from 'deepmerge';
-
 import users from '../../fixtures/users.json';
-import {getDefaultConfig} from '../../support/api/system';
 
-describe.only('backstage playbook details', () => {
-    before(() => {
+describe('backstage playbook details', () => {
+    beforeEach(() => {
         // # Turn off growth onboarding screens
         cy.apiLogin(users.sysadmin);
-        cy.legacyApiUpdateConfig({
+        cy.apiUpdateConfig({
             ServiceSettings: {EnableOnboardingFlow: false},
         });
-    });
 
-    beforeEach(() => {
         // # Login as user-1
         cy.legacyApiLogin('user-1');
     });
@@ -132,7 +127,7 @@ describe.only('backstage playbook details', () => {
         });
     });
 
-    describe.only('actions', () => {
+    describe('actions', () => {
         let playbookName;
         let playbookId;
         let teamId;
@@ -181,8 +176,8 @@ describe.only('backstage playbook details', () => {
             });
         });
 
-        describe.only('when a playbook run starts', () => {
-            describe.only('invite members setting', () => {
+        describe('when a playbook run starts', () => {
+            describe('invite members setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
                     cy.visit('/playbooks/playbooks/' + playbookId + '/edit');
@@ -445,29 +440,12 @@ describe.only('backstage playbook details', () => {
                     });
                 });
 
-                it.only('removes invitation from users that are no longer in the team', () => {
+                it('removes invitation from users that are no longer in the team', () => {
                     let userToRemove;
 
                     // # Create a playbook with a user that is later removed from the team
                     cy.legacyApiLogin('sysadmin')
                         .then(() => {
-                            // cy.apiGetConfig().then(({config: currentConfig}) => {
-                            //     const newConfig = {ServiceSettings: {EnableOnboardingFlow: false}};
-                            //
-                            //     const oldWayOfMakingConfig = merge.all([currentConfig, newConfig]);
-                            //     cy.log('Old way of making config:', oldWayOfMakingConfig);
-                            //
-                            //     const altWayOfMakingConfig = merge.all([getDefaultConfig(), currentConfig, newConfig]);
-                            //     cy.log('Alt way of making config:', altWayOfMakingConfig);
-                            //
-                            //     const config = merge.all([currentConfig, getDefaultConfig(), newConfig]);
-                            //     cy.log('Working way of making config:', config);
-                            // });
-                            //
-                            // cy.apiUpdateConfig({
-                            //     ServiceSettings: {EnableOnboardingFlow: false},
-                            // });
-
                             cy.apiCreateUser().then((result) => {
                                 userToRemove = result.user;
                                 cy.legacyApiAddUserToTeam(

@@ -6,8 +6,6 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import users from '../../fixtures/users.json';
-
 const BACKSTAGE_LIST_PER_PAGE = 15;
 
 describe('backstage playbook run list', () => {
@@ -17,15 +15,14 @@ describe('backstage playbook run list', () => {
     let testPlaybook;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
-
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            // # Turn off growth onboarding screens
+            cy.apiUpdateConfig({
+                ServiceSettings: {EnableOnboardingFlow: false},
+            });
 
             // # Create another user
             cy.apiCreateUser().then(({user: anotherUser}) => {

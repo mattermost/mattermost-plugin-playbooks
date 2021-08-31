@@ -1,8 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import users from '../../fixtures/users.json';
-
 describe('playbook overview', () => {
     let testTeam;
     let testUser;
@@ -11,15 +9,14 @@ describe('playbook overview', () => {
     let testPrivateSharedPlaybook;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
-
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            // # Turn off growth onboarding screens
+            cy.apiUpdateConfig({
+                ServiceSettings: {EnableOnboardingFlow: false},
+            });
 
             // # Create another user
             cy.apiCreateUser().then(({user: anotherUser}) => {
