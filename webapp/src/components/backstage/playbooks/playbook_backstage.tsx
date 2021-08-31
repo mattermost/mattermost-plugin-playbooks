@@ -128,20 +128,7 @@ const PlaybookBackstage = () => {
         subTitle = 'Everyone in this team can access this playbook';
     }
 
-    const RunButton = () => {
-        if (playbook?.delete_at !== 0) {
-            return null;
-        }
-        return (
-            <PrimaryButtonLarger onClick={runPlaybook}>
-                <RightMarginedIcon
-                    path={mdiClipboardPlayOutline}
-                    size={1.25}
-                />
-                {'Run'}
-            </PrimaryButtonLarger>
-        );
-    };
+    const enableRunPlaybook = playbook?.delete_at === 0;
 
     return (
         <OuterContainer>
@@ -162,7 +149,16 @@ const PlaybookBackstage = () => {
                         <i className={'icon icon-pencil-outline'}/>
                         {'Edit'}
                     </SecondaryButtonLargerRight>
-                    <RunButton/>
+                    <PrimaryButtonLarger
+                        onClick={runPlaybook}
+                        disabled={!enableRunPlaybook}
+                    >
+                        <RightMarginedIcon
+                            path={mdiClipboardPlayOutline}
+                            size={1.25}
+                        />
+                        {'Run'}
+                    </PrimaryButtonLarger>
                 </TitleRow>
             </TopContainer>
             <BottomContainer>
