@@ -28,7 +28,7 @@ import './playbook.scss';
 import {useAllowRetrospectiveAccess, useExperimentalFeaturesEnabled} from 'src/hooks';
 
 import {useReminderTimer} from 'src/components/modals/update_run_status_modal';
-import {InputMode} from 'src/components/datetime_input';
+import {Mode} from 'src/components/datetime_input';
 
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
@@ -221,12 +221,12 @@ const PlaybookEdit = (props: Props) => {
 
     const retrospectiveAccess = useAllowRetrospectiveAccess();
 
-    const {input: reminderTimerInput, reminder: reminderSeconds} = useReminderTimer(playbook, InputMode.Duration);
+    const {input: reminderTimerInput, reminder: reminderSeconds} = useReminderTimer(playbook, Mode.DurationValue);
     useEffect(() => {
-        if (reminderSeconds && playbook.reminder_timer_default_seconds !== reminderSeconds) {
+        if (playbook.reminder_timer_default_seconds !== reminderSeconds) {
             setPlaybook({
                 ...playbook,
-                reminder_timer_default_seconds: reminderSeconds,
+                reminder_timer_default_seconds: reminderSeconds ?? 0,
             });
             setChangesMade(true);
         }

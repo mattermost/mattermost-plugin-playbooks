@@ -2,36 +2,54 @@
 // See LICENSE.txt for license information.
 
 import moment from 'moment';
+import luxon, {Duration, DurationUnit} from 'luxon';
 import React from 'react';
 
 import {useNow} from 'src/hooks';
+
+/** See {@link Intl.RelativeTimeFormatStyle} */
+type FormatStyle = 'long' | 'narrow';
 
 interface DurationProps {
     from: number;
     to: number; // setting to = 0 means "now"
     ago?: boolean;
+    style?: FormatStyle;
 }
 
-export const renderDuration = (duration: moment.Duration) => {
-    if (duration.asSeconds() < 60) {
-        return '< 1m';
+export const renderDuration = (value: Duration | moment.Duration, style: FormatStyle = 'narrow') => {
+    const duration = Duration.isDuration(value) ? value : Duration.fromMillis(value.as('milliseconds'));
+
+    if (duration.as('seconds') < 60) {
+        return style === 'narrow' ? '< 1m' : 'less than 1 minute';
     }
 
-    const durationComponents = [];
-    if (duration.asDays() >= 1) {
-        durationComponents.push(Math.floor(duration.asDays()) + 'd');
+    const label = (num: number, narrow: string, singular: string, plural: string) => {
+        if (style === 'narrow') {
+            return narrow;
+        }
+
+        return num > 1 ? plural : singular;
+    };
+
+    const formatParts = [];
+
+    const {days, hours, minutes} = duration.shiftTo('days', 'hours', 'minutes').toObject();
+
+    if (days) {
+        formatParts.push(`d'${label(days, 'd', ' day', ' days')}'`);
     }
-    if (duration.hours() > 0) {
-        durationComponents.push(duration.hours() + 'h');
+    if (hours) {
+        formatParts.push(`h'${label(hours, 'h', ' hour', ' hours')}'`);
     }
-    if (duration.minutes() > 0) {
-        durationComponents.push(duration.minutes() + 'm');
+    if (minutes) {
+        formatParts.push(`m'${label(minutes, 'm', ' minute', ' minutes')}'`);
     }
 
-    return durationComponents.join(' ');
+    return duration.toFormat(formatParts.join(' '));
 };
 
-const Duration = (props: DurationProps) => {
+const DurationComponent = (props: DurationProps) => {
     const now = useNow();
 
     if (!props.from) {
@@ -47,4 +65,4 @@ const Duration = (props: DurationProps) => {
     );
 };
 
-export default Duration;
+export default DurationComponent;

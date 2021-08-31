@@ -18,42 +18,55 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
-import moment, {duration} from 'moment';
+import luxon, {DateTime, Duration} from 'luxon';
 
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 
-import {useDateTimeInput, makeOption, ms, InputMode, Option} from 'src/components/datetime_input';
+import {
+    useDateTimeInput,
+    makeOption,
+    ms,
+    Mode,
+    Option,
+} from 'src/components/datetime_input';
 import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playbook';
 
 import {usePlaybook} from 'src/hooks';
 import MarkdownTextbox from '../markdown_textbox';
 import {pluginUrl} from 'src/browser_routing';
 import {postStatusUpdate} from 'src/client';
+import {renderDuration} from '../duration';
 
 const ID = 'playbooks_update_run_status_dialog';
 
-export const useReminderTimer = (playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist | undefined, mode: InputMode.DateTime | InputMode.Duration) => {
+export const useReminderTimer = (
+    playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist | undefined,
+    mode: Mode.DateTimeValue | Mode.DurationValue,
+) => {
     const defaults = useMemo(() => {
         const options = [
-            makeOption(mode === InputMode.DateTime ? 'in 60 minutes' : '60 minutes'),
-            makeOption(mode === InputMode.DateTime ? 'in 24 hours' : '24 hours'),
-            makeOption(mode === InputMode.DateTime ? 'in 7 days' : '7 days'),
+            makeOption(mode === Mode.DateTimeValue ? 'in 60 minutes' : '60 minutes', mode),
+            makeOption(mode === Mode.DateTimeValue ? 'in 24 hours' : '24 hours', mode),
+            makeOption(mode === Mode.DateTimeValue ? 'in 7 days' : '7 days', mode),
         ];
 
         let value: Option | undefined;
         if (playbook?.reminder_timer_default_seconds) {
-            if (mode === InputMode.DateTime) {
-                const defaultReminderMoment = moment().add(playbook.reminder_timer_default_seconds, 'seconds');
-                value = {label: defaultReminderMoment.fromNow(), value: defaultReminderMoment.toDate()};
+            const defaultReminderDuration = Duration.fromObject({seconds: playbook.reminder_timer_default_seconds});
+            let label;
+            if (mode === Mode.DateTimeValue) {
+                label = DateTime.now().plus(defaultReminderDuration).toRelative({locale: 'en', padding: 5_000});
             } else {
-                const defaultReminderDuration = duration(playbook.reminder_timer_default_seconds, 'seconds');
-                value = {label: defaultReminderDuration.humanize(), value: defaultReminderDuration};
+                label = renderDuration(defaultReminderDuration, 'long');
             }
+
+            value = {label, value: defaultReminderDuration, mode};
+
             const found = options.find((o) => value && ms(o.value) === ms(value.value));
 
             if (found) {
                 value = found;
-            } else {
+            } else if (value) {
                 options.push(value);
             }
         }
@@ -64,14 +77,14 @@ export const useReminderTimer = (playbook: DraftPlaybookWithChecklist | Playbook
 
     const {input, value} = useDateTimeInput({
         mode,
-        parseOption: {forwardDate: true},
+        parsingOptions: {forwardDate: true, defaultUnit: 'minutes'},
         defaultOptions: defaults.options,
         defaultValue: defaults.value,
     });
 
     let reminder;
-    if (value) {
-        reminder = value.value instanceof Date ? Math.abs(moment().diff(moment(value.value), 'second')) : value.value?.asSeconds();
+    if (value?.value) {
+        reminder = (Duration.isDuration(value.value) ? value.value : value.value.diff(DateTime.now())).as('seconds');
     }
 
     return {input, reminder};
@@ -107,7 +120,7 @@ const UpdateRunStatusModal = ({
     const channel = useSelector((state: GlobalState) => getChannel(state, channelId) || {display_name: 'Unknown Channel', id: channelId});
     const team = useSelector((state: GlobalState) => playbook && getTeam(state, playbook.team_id));
 
-    const {input: reminderInput, reminder} = useReminderTimer(playbook, InputMode.DateTime);
+    const {input: reminderInput, reminder} = useReminderTimer(playbook, Mode.DateTimeValue);
 
     const onConfirm = () => {
         if (!message || !hasPermission) {
