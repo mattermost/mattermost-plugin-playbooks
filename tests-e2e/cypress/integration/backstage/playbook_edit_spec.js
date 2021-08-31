@@ -14,10 +14,10 @@ import {getDefaultConfig} from '../../support/api/system';
 describe.only('backstage playbook details', () => {
     before(() => {
         // # Turn off growth onboarding screens
-        // cy.apiLogin(users.sysadmin);
-        // cy.apiUpdateConfig({
-        //     ServiceSettings: {EnableOnboardingFlow: false},
-        // });
+        cy.apiLogin(users.sysadmin);
+        cy.legacyApiUpdateConfig({
+            ServiceSettings: {EnableOnboardingFlow: false},
+        });
     });
 
     beforeEach(() => {
@@ -451,22 +451,22 @@ describe.only('backstage playbook details', () => {
                     // # Create a playbook with a user that is later removed from the team
                     cy.legacyApiLogin('sysadmin')
                         .then(() => {
-                            cy.apiGetConfig().then(({config: currentConfig}) => {
-                                const newConfig = {ServiceSettings: {EnableOnboardingFlow: false}};
-
-                                const oldWayOfMakingConfig = merge.all([currentConfig, newConfig]);
-                                cy.log('Old way of making config:', oldWayOfMakingConfig);
-
-                                const altWayOfMakingConfig = merge.all([getDefaultConfig(), currentConfig, newConfig]);
-                                cy.log('Alt way of making config:', altWayOfMakingConfig);
-
-                                const config = merge.all([currentConfig, getDefaultConfig(), newConfig]);
-                                cy.log('Working way of making config:', config);
-                            });
-
-                            cy.apiUpdateConfig({
-                                ServiceSettings: {EnableOnboardingFlow: false},
-                            });
+                            // cy.apiGetConfig().then(({config: currentConfig}) => {
+                            //     const newConfig = {ServiceSettings: {EnableOnboardingFlow: false}};
+                            //
+                            //     const oldWayOfMakingConfig = merge.all([currentConfig, newConfig]);
+                            //     cy.log('Old way of making config:', oldWayOfMakingConfig);
+                            //
+                            //     const altWayOfMakingConfig = merge.all([getDefaultConfig(), currentConfig, newConfig]);
+                            //     cy.log('Alt way of making config:', altWayOfMakingConfig);
+                            //
+                            //     const config = merge.all([currentConfig, getDefaultConfig(), newConfig]);
+                            //     cy.log('Working way of making config:', config);
+                            // });
+                            //
+                            // cy.apiUpdateConfig({
+                            //     ServiceSettings: {EnableOnboardingFlow: false},
+                            // });
 
                             cy.apiCreateUser().then((result) => {
                                 userToRemove = result.user;

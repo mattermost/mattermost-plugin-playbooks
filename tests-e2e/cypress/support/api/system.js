@@ -152,15 +152,14 @@ Cypress.Commands.add('apiUpdateConfig', (newConfig = {}) => {
         // * Check if config can be updated
         expectConfigToBeUpdatable(currentConfig, newConfig);
 
-        const altWayOfMakingConfig = merge.all([getDefaultConfig(), currentConfig, newConfig]);
-        //const config = merge.all([currentConfig, getDefaultConfig(), newConfig]);
+        const config = merge.all([currentConfig, getDefaultConfig(), newConfig]);
 
         // # Set the modified config
         return cy.request({
             url: '/api/v4/config',
             headers: {'X-Requested-With': 'XMLHttpRequest'},
             method: 'PUT',
-            body: altWayOfMakingConfig,
+            body: config,
         }).then((updateResponse) => {
             expect(updateResponse.status).to.equal(200);
             return cy.apiGetConfig();
