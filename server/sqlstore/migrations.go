@@ -25,16 +25,15 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.0.0"),
 		toVersion:   semver.MustParse("0.1.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if _, err := e.Exec(`
-				CREATE TABLE IF NOT EXISTS IR_System (
-					SKey VARCHAR(64) PRIMARY KEY,
-					SValue VARCHAR(1024) NULL
-				);
-			`); err != nil {
-				return errors.Wrapf(err, "failed creating table IR_System")
-			}
-
 			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_System (
+						SKey VARCHAR(64) PRIMARY KEY,
+						SValue VARCHAR(1024) NULL
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_System")
+				}
 
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
@@ -90,6 +89,15 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_PlaybookMember")
 				}
 			} else {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_System (
+						SKey VARCHAR(64) PRIMARY KEY,
+						SValue VARCHAR(1024) NULL
+					);
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_System")
+				}
+
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
 						ID TEXT PRIMARY KEY,
@@ -1143,6 +1151,19 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed setting value in columns ConcatenatedBroadcastChannelIds and BroadcastEnabled of table IR_Playbook")
 				}
 			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.27.0"),
+		toVersion:   semver.MustParse("0.28.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`ALTER TABLE IR_System CONVERT TO CHARACTER SET utf8mb4`); err != nil {
+					return errors.Wrapf(err, "failed to migrate charactor set")
+				}
+			}
+
 			return nil
 		},
 	},
