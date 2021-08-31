@@ -1159,6 +1159,23 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.28.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ChannelIDToRootID", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelIDToRootID to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "ChannelIDToRootID", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelIDToRootID to table IR_Incident")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.28.0"),
+		toVersion:   semver.MustParse("0.29.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec(`ALTER TABLE IR_System CONVERT TO CHARACTER SET utf8mb4`); err != nil {
 					return errors.Wrapf(err, "failed to migrate charactor set")
 				}
