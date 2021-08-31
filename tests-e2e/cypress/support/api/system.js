@@ -152,7 +152,10 @@ Cypress.Commands.add('apiUpdateConfig', (newConfig = {}) => {
         // * Check if config can be updated
         expectConfigToBeUpdatable(currentConfig, newConfig);
 
-        const config = merge.all([currentConfig, getDefaultConfig(), newConfig]);
+        // # Do not override developer's config.json
+        const defaultConfig = Cypress.env('developerMode') ? {} : getDefaultConfig();
+
+        const config = merge.all([currentConfig, defaultConfig, newConfig]);
 
         // # Set the modified config
         return cy.request({
