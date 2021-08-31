@@ -98,7 +98,7 @@ func TestHasConsistantCharset(t *testing.T) {
 											 'performance_schema',
 											 'sys' )
 			AND tab.table_schema = (SELECT DATABASE())
-			AND tab.table_collation != 'utf8mb4_general_ci'
+			AND NOT (tab.table_collation = 'utf8mb4_general_ci' OR tab.table_collation = 'utf8mb4_0900_ai_ci')
 		`)
 		require.Len(t, badCharsets, 0)
 		require.NoError(t, err)
