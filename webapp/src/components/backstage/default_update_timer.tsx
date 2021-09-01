@@ -65,11 +65,10 @@ const DefaultUpdateTimer = (props: Props) => {
 type OptionType = {label: string, value: number};
 
 const defaultTimerOptions = [
-    {label: '15 minutes', value: 900},
-    {label: '30 minutes', value: 1800},
+    {label: 'Never', value: 0},
     {label: '60 minutes', value: 3600},
-    {label: '4 hours', value: 14400},
     {label: '24 hours', value: 86400},
+    {label: '7 days', value: 604800},
 ];
 
 const customLabel = 'Custom duration';
