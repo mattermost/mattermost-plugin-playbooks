@@ -27,8 +27,6 @@ const DefaultUpdateTimer = (props: Props) => {
         {label: customLabel, value: customValue},
     ];
 
-    const selectedOption = props.seconds === 0 ? null : timerOptions.find((option) => option.value === props.seconds);
-
     return (
         <>
             <BackstageSubheader>
@@ -38,7 +36,7 @@ const DefaultUpdateTimer = (props: Props) => {
                 </BackstageSubheaderDescription>
             </BackstageSubheader>
             <StyledSelect
-                value={selectedOption}
+                value={timerOptions.filter((option) => option.value === props.seconds)}
                 onChange={(option: OptionType) => {
                     if (option?.label === customLabel) {
                         setShowModal(true);
@@ -48,7 +46,7 @@ const DefaultUpdateTimer = (props: Props) => {
                 }}
                 classNamePrefix='channel-selector'
                 options={timerOptions}
-                isClearable={true}
+                isClearable={false}
                 placeholder={'Select duration'}
                 components={{SingleValue}}
             />
