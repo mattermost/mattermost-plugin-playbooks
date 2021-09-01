@@ -86,7 +86,7 @@ func TestMigrationIdempotency(t *testing.T) {
 	}
 }
 
-func TestHasConsistantCharset(t *testing.T) {
+func TestHasConsistentCharset(t *testing.T) {
 	t.Run("MySQL", func(t *testing.T) {
 		db := setupTestDB(t, model.DatabaseDriverMysql)
 		setupPlaybookStore(t, db) // To run the migrations and everything

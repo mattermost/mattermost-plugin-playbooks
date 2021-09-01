@@ -1177,7 +1177,7 @@ var migrations = []Migration{
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec(`ALTER TABLE IR_System CONVERT TO CHARACTER SET utf8mb4`); err != nil {
-					return errors.Wrapf(err, "failed to migrate charactor set")
+					return errors.Wrapf(err, "failed to migrate character set")
 				}
 			}
 
