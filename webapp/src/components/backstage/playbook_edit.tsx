@@ -187,6 +187,7 @@ const PlaybookEdit = (props: Props) => {
 
     const [playbook, setPlaybook] = useState<DraftPlaybookWithChecklist | PlaybookWithChecklist>({
         ...emptyPlaybook(),
+        reminder_timer_default_seconds: 86400,
         team_id: props.teamId || '',
     });
     const [changesMade, setChangesMade] = useState(false);
