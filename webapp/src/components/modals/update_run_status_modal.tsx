@@ -31,55 +31,78 @@ import {
 } from 'src/components/datetime_input';
 import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playbook';
 
-import {usePlaybook} from 'src/hooks';
+import {usePlaybook, usePost, useRun} from 'src/hooks';
 import MarkdownTextbox from '../markdown_textbox';
 import {pluginUrl} from 'src/browser_routing';
 import {postStatusUpdate} from 'src/client';
-import {renderDuration} from '../duration';
+import {formatDuration} from '../formatted_duration';
+import {PlaybookRun} from 'src/types/playbook_run';
+import {roundToNearest} from 'src/utils';
 
 const ID = 'playbooks_update_run_status_dialog';
 
+const optionFromSeconds = (seconds: number) => {
+    const duration = Duration.fromObject({seconds});
+
+    return {
+        label: `in ${formatDuration(duration, 'long')}`,
+        value: duration,
+    };
+};
+
 export const useReminderTimer = (
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist | undefined,
-    mode: Mode.DateTimeValue | Mode.DurationValue,
+    run: PlaybookRun | undefined
 ) => {
     const defaults = useMemo(() => {
         const options = [
-            makeOption(mode === Mode.DateTimeValue ? 'in 60 minutes' : '60 minutes', mode),
-            makeOption(mode === Mode.DateTimeValue ? 'in 24 hours' : '24 hours', mode),
-            makeOption(mode === Mode.DateTimeValue ? 'in 7 days' : '7 days', mode),
+            makeOption('in 60 minutes', Mode.DurationValue),
+            makeOption('in 24 hours', Mode.DurationValue),
+            makeOption('in 7 days', Mode.DurationValue),
         ];
 
         let value: Option | undefined;
-        if (playbook?.reminder_timer_default_seconds) {
-            const defaultReminderDuration = Duration.fromObject({seconds: playbook.reminder_timer_default_seconds});
-            let label;
-            if (mode === Mode.DateTimeValue) {
-                label = DateTime.now().plus(defaultReminderDuration).toRelative({locale: 'en', padding: 5_000});
-            } else {
-                label = renderDuration(defaultReminderDuration, 'long');
+        if (playbook && run) {
+            // wait until both default value data sources are available
+
+            if (run.previous_reminder) {
+                value = optionFromSeconds(roundToNearest(run.previous_reminder * 1e-9, 60));
             }
 
-            value = {label, value: defaultReminderDuration, mode};
+            if (playbook.reminder_timer_default_seconds) {
+                const defaultReminderOption = optionFromSeconds(playbook.reminder_timer_default_seconds);
+                if (!options.find((o) => ms(o.value) === ms(defaultReminderOption.value))) {
+                    // don't duplicate an option that exists already
+                    options.push(defaultReminderOption);
+                }
 
-            const found = options.find((o) => value && ms(o.value) === ms(value.value));
+                if (!value && !run.status_posts.some(({delete_at}) => !delete_at)) {
+                    // set preselected-default if it was not set previously
+                    // and there are no previous status posts (excluding deleted)
+                    // (the previous reminder timer specified take precedence)
+                    value = defaultReminderOption;
+                }
+            }
 
-            if (found) {
-                value = found;
+            const matched = options.find((o) => value && ms(o.value) === ms(value.value));
+            if (matched) {
+                // don't duplicate an option that exists already
+                value = matched;
             } else if (value) {
                 options.push(value);
             }
+            options.sort((a, b) => ms(a.value) - ms(b.value));
         }
 
-        options.sort((a, b) => ms(a.value) - ms(b.value));
         return {options, value};
-    }, [playbook]);
+    }, [playbook, run]);
 
     const {input, value} = useDateTimeInput({
-        mode,
+        mode: Mode.DateTimeValue,
         parsingOptions: {forwardDate: true, defaultUnit: 'minutes'},
         defaultOptions: defaults.options,
         defaultValue: defaults.value,
+        id: 'reminder_timer_datetime',
     });
 
     let reminder;
@@ -113,23 +136,34 @@ const UpdateRunStatusModal = ({
     const {formatMessage} = useIntl();
     const [message, setMessage] = useState<string | null>(null);
     const playbook = usePlaybook(playbookId);
-    if (playbook && message == null) {
-        setMessage(playbook.reminder_message_template);
+    const run = useRun(playbookRunId);
+    const lastStatusPostMeta = run?.status_posts?.slice().reverse().find(({delete_at}) => !delete_at);
+    const lastStatusPost = usePost(lastStatusPostMeta?.id ?? '');
+    if (
+        playbook && // playbook is loaded and
+        (
+            (lastStatusPostMeta && lastStatusPost) || // last status post found
+            (run && !lastStatusPostMeta) // or run loaded and there is no last status post
+        ) &&
+        message == null // and message is empty
+    ) {
+        setMessage(lastStatusPost?.message ?? playbook.reminder_message_template);
     }
     const currentUserId = useSelector(getCurrentUserId);
     const channel = useSelector((state: GlobalState) => getChannel(state, channelId) || {display_name: 'Unknown Channel', id: channelId});
     const team = useSelector((state: GlobalState) => playbook && getTeam(state, playbook.team_id));
 
-    const {input: reminderInput, reminder} = useReminderTimer(playbook, Mode.DateTimeValue);
+    // eslint-disable-next-line no-undefined
+    const {input: reminderInput, reminder} = useReminderTimer(playbook, run);
 
     const onConfirm = () => {
-        if (!message || !hasPermission) {
-            return false;
+        if (hasPermission && message?.trim() && currentUserId && channel && team) {
+            postStatusUpdate(
+                playbookRunId,
+                {message, reminder},
+                {user_id: currentUserId, channel_id: channel.id, team_id: team.id}
+            );
         }
-        if (message && currentUserId && channel && team) {
-            postStatusUpdate(playbookRunId, {message, reminder}, {user_id: currentUserId, channel_id: channel.id, team_id: team.id});
-        }
-        return true;
     };
 
     const form = (
@@ -193,7 +227,7 @@ const UpdateRunStatusModal = ({
             confirmButtonText={hasPermission ? 'Post' : 'Ok'}
             handleCancel={() => true}
             handleConfirm={hasPermission ? onConfirm : null}
-            isConfirmDisabled={!(message && currentUserId && channel && team && hasPermission)}
+            isConfirmDisabled={!(message?.trim() && currentUserId && channel && team && hasPermission)}
             {...modalProps}
             id={ID}
         >
