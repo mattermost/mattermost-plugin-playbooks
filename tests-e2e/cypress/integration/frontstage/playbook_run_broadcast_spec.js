@@ -103,7 +103,7 @@ describe('playbook run broadcast', () => {
 
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
-        cy.updateStatus(updateMessage, 0);
+        cy.updateStatus(updateMessage);
 
         // # Navigate to the broadcast channel
         cy.visit(`/ad-1/channels/${publicBroadcastChannelName}`);
@@ -133,7 +133,7 @@ describe('playbook run broadcast', () => {
 
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
-        cy.updateStatus(updateMessage, 0);
+        cy.updateStatus(updateMessage);
 
         // # Navigate to the broadcast channel
         cy.visit('/ad-1/channels/' + privateBroadcastChannelName);

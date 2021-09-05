@@ -68,32 +68,28 @@ describe('playbook run rhs > latest update', () => {
         cy.visit('/ad-1/channels/' + channelName);
     });
 
-    describe('status update interactive dialog', () => {
-        it('shows an error when entering an update message with whitespace', () => {
+    describe('post update dialog', () => {
+        it('prevents posting an update message with only whitespace', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // # Type the invalid data
-                cy.findByTestId('messageinput').clear().type(' {enter} {enter}  ');
+                cy.findByTestId('update_run_status_textbox').clear().type(' {enter} {enter}  ');
 
-                // # Submit the dialog.
-                cy.get('#interactiveDialogSubmit').click();
-
-                // * Verify the error is provided.
-                cy.findByTestId('messagehelp-text').should('exist')
-                    .contains('This field is required.');
+                // * Verify submit is disabled.
+                cy.get('button.confirm').should('be.disabled');
 
                 // # Enter valid data
-                cy.findByTestId('messageinput').type('valid update');
+                cy.findByTestId('update_run_status_textbox').type('valid update');
 
                 // # Submit the dialog.
-                cy.get('#interactiveDialogSubmit').click();
+                cy.get('button.confirm').click();
             });
 
-            // * Verify that the interactive dialog has gone.
-            cy.get('#interactiveDialogModal').should('not.exist');
+            // * Verify that the Post update dialog has gone.
+            cy.get('.GenericModal').should('not.exist');
         });
     });
 
@@ -102,14 +98,15 @@ describe('playbook run rhs > latest update', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the first message is there.
-                cy.findByTestId('messageinput').within(() => {
+                cy.findByTestId('update_run_status_textbox').within(() => {
                     cy.findByText(defaultReminderMessage).should('exist');
                 });
             });
         });
+
         it('when we have made a previous update', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;
@@ -120,10 +117,10 @@ describe('playbook run rhs > latest update', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the first message is there.
-                cy.findByTestId('messageinput').within(() => {
+                cy.findByTestId('update_run_status_textbox').within(() => {
                     cy.findByText(firstMessage).should('exist');
                 });
             });
@@ -135,16 +132,16 @@ describe('playbook run rhs > latest update', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', '60min');
+                cy.get('#reminder_timer_datetime').within(() => {
+                    cy.get('[class$=singleValue]').should('have.text', 'in 60 minutes');
                 });
             });
         });
 
-        it('shows the last reminder we typed in: None', () => {
+        it('shows the last reminder we typed in: none', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;
 
@@ -154,106 +151,68 @@ describe('playbook run rhs > latest update', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', 'None');
+                cy.get('#reminder_timer_datetime').within(() => {
+                    cy.get('[class$=placeholder]');
                 });
             });
         });
 
-        it('shows the last reminder we typed in: 15min', () => {
+        it('shows the last reminder we typed in: 15 minutes', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;
 
             // # Create a first status update
-            cy.updateStatus(firstMessage, '15');
+            cy.updateStatus(firstMessage, '15 minutes');
 
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', '15min');
+                cy.get('#reminder_timer_datetime').within(() => {
+                    cy.get('[class$=singleValue]').should('have.text', 'in 15 minutes');
                 });
             });
         });
 
-        it('shows the last reminder we typed in: 30min', () => {
+        it('shows the last reminder we typed in: 90 minutes', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;
 
             // # Create a first status update
-            cy.updateStatus(firstMessage, '30');
+            cy.updateStatus(firstMessage, '90 minutes');
 
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', '30min');
+                cy.get('#reminder_timer_datetime').within(() => {
+                    cy.get('[class$=singleValue]').should('have.text', 'in 1 hour 30 minutes');
                 });
             });
         });
 
-        it('shows the last reminder we typed in: 60min', () => {
+        it('shows the last reminder we typed in: 7 days', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;
 
             // # Create a first status update
-            cy.updateStatus(firstMessage, '60');
+            cy.updateStatus(firstMessage, '7 days');
 
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', '60min');
-                });
-            });
-        });
-
-        it('shows the last reminder we typed in: 4hr', () => {
-            const now = Date.now();
-            const firstMessage = 'Update - ' + now;
-
-            // # Create a first status update
-            cy.updateStatus(firstMessage, '4');
-
-            // # Run the `/playbook update` slash command.
-            cy.executeSlashCommand('/playbook update');
-
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
-                // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', '4hr');
-                });
-            });
-        });
-
-        it('shows the last reminder we typed in: 24hr', () => {
-            const now = Date.now();
-            const firstMessage = 'Update - ' + now;
-
-            // # Create a first status update
-            cy.updateStatus(firstMessage, '24');
-
-            // # Run the `/playbook update` slash command.
-            cy.executeSlashCommand('/playbook update');
-
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
-                // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', '24hr');
+                cy.get('#reminder_timer_datetime').within(() => {
+                    cy.get('[class$=singleValue]').should('have.text', 'in 7 days');
                 });
             });
         });
