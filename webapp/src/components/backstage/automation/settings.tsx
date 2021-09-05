@@ -9,6 +9,7 @@ import {ActionFunc} from 'mattermost-redux/types/actions';
 
 import {PatternedInput} from 'src/components/backstage/automation/patterned_input';
 import {InputKeywords} from 'src/components/backstage/automation/input_keywords';
+import {PatternedTextArea} from 'src/components/backstage/automation/patterned_text_area';
 
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/automation/auto_assign_owner';
@@ -101,16 +102,18 @@ export const AutomationSettings = (props: Props) => {
                     />
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
-                    <PatternedInput
+                    <PatternedTextArea
                         enabled={props.webhookOnCreationEnabled}
                         onToggle={props.onToggleWebhookOnCreation}
                         input={props.webhookOnCreationURL}
                         onChange={props.webhookOnCreationChange}
                         pattern={'https?://.*'}
+                        delimiter={'\n'}
+                        maxLength={1000}
+                        rows={3}
                         placeholderText={'Enter webhook'}
-                        textOnToggle={'Send outgoing webhook'}
-                        type={'url'}
-                        errorText={'URL is not valid.'}
+                        textOnToggle={'Send outgoing webhook (One Per Line)'}
+                        errorText={'Invalid webhook URLs'}
                     />
                 </Setting>
             </Section>
@@ -127,16 +130,18 @@ export const AutomationSettings = (props: Props) => {
                     />
                 </Setting>
                 <Setting id={'playbook-run-status-update__outgoing-webhook'}>
-                    <PatternedInput
+                    <PatternedTextArea
                         enabled={props.webhookOnStatusUpdateEnabled}
                         onToggle={props.onToggleWebhookOnStatusUpdate}
                         input={props.webhookOnStatusUpdateURL}
                         onChange={props.webhookOnStatusUpdateChange}
                         pattern={'https?://.*'}
+                        delimiter={'\n'}
+                        maxLength={1000}
+                        rows={3}
                         placeholderText={'Enter webhook'}
                         textOnToggle={'Send outgoing webhook'}
-                        type={'url'}
-                        errorText={'URL is not valid.'}
+                        errorText={'Invalid webhook URLs'}
                     />
                 </Setting>
             </Section>
