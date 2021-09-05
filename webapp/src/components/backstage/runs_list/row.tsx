@@ -13,7 +13,7 @@ import {useSelector} from 'react-redux';
 
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {PlaybookRun} from 'src/types/playbook_run';
-import Duration from 'src/components/duration';
+import FormattedDuration from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
 import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
@@ -96,9 +96,8 @@ const Row = (props: Props) => {
                     status={props.playbookRun.current_status}
                 />
                 <SmallText>
-                    <Duration
+                    <FormattedDuration
                         from={findLastUpdatedWithDefault(props.playbookRun)}
-                        to={0}
                         ago={true}
                     />
                 </SmallText>
@@ -107,7 +106,7 @@ const Row = (props: Props) => {
                 className='col-sm-2'
             >
                 <NormalText>
-                    <Duration
+                    <FormattedDuration
                         from={props.playbookRun.create_at}
                         to={props.playbookRun.end_at}
                     />

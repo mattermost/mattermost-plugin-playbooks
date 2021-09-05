@@ -14,7 +14,7 @@ import {DateTime, Duration} from 'luxon';
 import {useIntl} from 'react-intl';
 
 import {Timestamp} from 'src/webapp_globals';
-import {renderDuration} from 'src/components/duration';
+import {formatDuration} from 'src/components/formatted_duration';
 
 const StyledSelect = styled(Select)`
     flex-grow: 1;
@@ -223,7 +223,7 @@ const OptionLabel = ({label, value, mode}: Option) => {
             />
         );
     }
-    return Duration.isDuration(value) && renderDuration(value, 'long');
+    return Duration.isDuration(value) && formatDuration(value, 'long');
 };
 
 export const useDateTimeInput = ({defaultValue, ...props}: Partial<Exclude<Props, 'value' | 'onChange'>>) => {

@@ -12,7 +12,7 @@ import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
-import {renderDuration} from 'src/components/duration';
+import {formatDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {clientRemoveTimelineEvent} from 'src/client';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
@@ -114,9 +114,9 @@ const RHSTimelineEventItem = (props: Props) => {
     let summary = '';
     let testid = '';
     const diff = moment(props.event.event_at).diff(moment(props.reportedAt));
-    let stamp = renderDuration(duration(diff));
+    let stamp = formatDuration(duration(diff));
     if (diff < 0) {
-        stamp = '-' + renderDuration(duration(diff).abs());
+        stamp = '-' + formatDuration(duration(diff).abs());
     }
     let timeSince: JSX.Element | null = <TimeDay>{'Time: ' + stamp}</TimeDay>;
 
