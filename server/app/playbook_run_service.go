@@ -708,6 +708,28 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRun
 	return nil
 }
 
+func (s *PlaybookRunServiceImpl) broadcastPlaybookRunFinish(message, broadcastChannelID string, playbookRun *PlaybookRun, author *model.User) error {
+	if err := IsChannelActiveInTeam(broadcastChannelID, playbookRun.TeamID, s.pluginAPI); err != nil {
+		return errors.Wrap(err, "announcement channel is not active")
+	}
+
+	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if siteURL == nil {
+		return errors.New("SiteURL not set")
+	}
+
+	post := &model.Post{
+		Message:   message,
+		ChannelId: broadcastChannelID,
+	}
+
+	if err := s.postMessageToThreadAndSaveRootID(playbookRun.ID, broadcastChannelID, post); err != nil {
+		return errors.Wrapf(err, "error creating first broadcast message on run creation, for playbook '%s', to channelID '%s'", playbookRun.ID, broadcastChannelID)
+	}
+
+	return nil
+}
+
 func formatStatus(status string) string {
 	switch status {
 	case StatusInProgress:
@@ -911,7 +933,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
-	message := fmt.Sprintf("@%s finished the playbook run.", user.Username)
+	message := fmt.Sprintf("@%s marked this run as finished.", user.Username)
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, message)
 	if err != nil {
@@ -920,8 +942,10 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		postID = post.Id
 	}
 
-	if err = s.broadcastStatusUpdate(message, playbookRunID, userID, postID); err != nil {
-		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel")
+	for _, broadcastChannelID := range playbookRunToModify.BroadcastChannelIDs {
+		if err = s.broadcastPlaybookRunFinish(message, broadcastChannelID, playbookRunToModify, user); err != nil {
+			s.pluginAPI.Log.Warn("failed to broadcast the status update to channel")
+		}
 	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
