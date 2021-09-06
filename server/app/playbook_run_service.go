@@ -164,7 +164,12 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbookTitle, pla
 		announcementMsg += " Visit the link above for more information."
 	}
 
-	if _, err := s.postMessageToThreadAndSaveRootID(playbookRun.ID, broadcastChannelID, announcementMsg); err != nil {
+	post := &model.Post{
+		Message:   announcementMsg,
+		ChannelId: broadcastChannelID,
+	}
+
+	if err := s.postMessageToThreadAndSaveRootID(playbookRun.ID, broadcastChannelID, post); err != nil {
 		return errors.Wrapf(err, "error creating first broadcast message on run creation, for playbook '%s', to channelID '%s'", playbookRun.ID, broadcastChannelID)
 	}
 
@@ -2250,30 +2255,30 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID, channelID, format string, args ...interface{}) (*model.Post, error) {
+func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID, channelID string, post *model.Post) error {
 	channelIDsToRootIDs, err := s.store.GetBroadcastChannelIDsToRootIDs(playbookRunID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error when trying to retrieve ChannelIDsToRootIDs map for playbookRunId '%s'", playbookRunID)
+		return errors.Wrapf(err, "error when trying to retrieve ChannelIDsToRootIDs map for playbookRunId '%s'", playbookRunID)
 	}
 
-	newPost, err := s.poster.PostMessageToThread(channelID, channelIDsToRootIDs[channelID], format, args...)
+	err = s.poster.PostMessageToThread(channelIDsToRootIDs[channelID], post)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to PostMessageToThread for channelID '%s'", channelID)
+		return errors.Wrapf(err, "failed to PostMessageToThread for channelID '%s'", channelID)
 	}
 
-	newRootID := newPost.RootId
+	newRootID := post.RootId
 	if newRootID == "" {
-		newRootID = newPost.Id
+		newRootID = post.Id
 	}
 
 	if newRootID != channelIDsToRootIDs[channelID] {
 		channelIDsToRootIDs[channelID] = newRootID
 		if err = s.store.SetBroadcastChannelIDsToRootID(playbookRunID, channelIDsToRootIDs); err != nil {
-			return newPost, errors.Wrapf(err, "failed to SetBroadcastChannelIDsToRootID for playbookID '%s'", playbookRunID)
+			return errors.Wrapf(err, "failed to SetBroadcastChannelIDsToRootID for playbookID '%s'", playbookRunID)
 		}
 	}
 
-	return newPost, nil
+	return nil
 }
 
 func getUserDisplayName(user *model.User) string {
