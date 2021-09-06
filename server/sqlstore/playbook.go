@@ -16,11 +16,13 @@ import (
 
 type sqlPlaybook struct {
 	app.Playbook
-	ChecklistsJSON                  json.RawMessage
-	ConcatenatedInvitedUserIDs      string
-	ConcatenatedInvitedGroupIDs     string
-	ConcatenatedSignalAnyKeywords   string
-	ConcatenatedBroadcastChannelIDs string
+	ChecklistsJSON                        json.RawMessage
+	ConcatenatedInvitedUserIDs            string
+	ConcatenatedInvitedGroupIDs           string
+	ConcatenatedSignalAnyKeywords         string
+	ConcatenatedBroadcastChannelIDs       string
+	ConcatenatedWebhookOnCreationURLs     string
+	ConcatenatedWebhookOnStatusUpdateURLs string
 }
 
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
@@ -126,13 +128,13 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"DefaultCommanderEnabled AS DefaultOwnerEnabled",
 			"ConcatenatedBroadcastChannelIDs",
 			"BroadcastEnabled",
-			"WebhookOnCreationURL",
+			"WebhookOnCreationURLs",
 			"WebhookOnCreationEnabled",
 			"MessageOnJoin",
 			"MessageOnJoinEnabled",
 			"RetrospectiveReminderIntervalSeconds",
 			"RetrospectiveTemplate",
-			"WebhookOnStatusUpdateURL",
+			"ConcatenatedWebhookOnStatusUpdateURLs",
 			"WebhookOnStatusUpdateEnabled",
 			"ExportChannelOnFinishedEnabled",
 			"ConcatenatedSignalAnyKeywords",
@@ -199,13 +201,13 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"DefaultCommanderEnabled":              rawPlaybook.DefaultOwnerEnabled,
 			"ConcatenatedBroadcastChannelIDs":      rawPlaybook.ConcatenatedBroadcastChannelIDs,
 			"BroadcastEnabled":                     rawPlaybook.BroadcastEnabled,
-			"WebhookOnCreationURL":                 rawPlaybook.WebhookOnCreationURL,
+			"WebhookOnCreationURLs":                rawPlaybook.WebhookOnCreationURLs,
 			"WebhookOnCreationEnabled":             rawPlaybook.WebhookOnCreationEnabled,
 			"MessageOnJoin":                        rawPlaybook.MessageOnJoin,
 			"MessageOnJoinEnabled":                 rawPlaybook.MessageOnJoinEnabled,
 			"RetrospectiveReminderIntervalSeconds": rawPlaybook.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
-			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
+			"WebhookOnStatusUpdateURLs":            rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs,
 			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
 			"ExportChannelOnFinishedEnabled":       rawPlaybook.ExportChannelOnFinishedEnabled,
 			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
@@ -555,13 +557,13 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"DefaultCommanderEnabled":              rawPlaybook.DefaultOwnerEnabled,
 			"ConcatenatedBroadcastChannelIDs":      rawPlaybook.ConcatenatedBroadcastChannelIDs,
 			"BroadcastEnabled":                     rawPlaybook.BroadcastEnabled,
-			"WebhookOnCreationURL":                 rawPlaybook.WebhookOnCreationURL,
+			"WebhookOnCreationURLs":                rawPlaybook.WebhookOnCreationURLs,
 			"WebhookOnCreationEnabled":             rawPlaybook.WebhookOnCreationEnabled,
 			"MessageOnJoin":                        rawPlaybook.MessageOnJoin,
 			"MessageOnJoinEnabled":                 rawPlaybook.MessageOnJoinEnabled,
 			"RetrospectiveReminderIntervalSeconds": rawPlaybook.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
-			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
+			"WebhookOnStatusUpdateURLs":            rawPlaybook.WebhookOnStatusUpdateURLs,
 			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
 			"ExportChannelOnFinishedEnabled":       rawPlaybook.ExportChannelOnFinishedEnabled,
 			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
@@ -673,12 +675,14 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 	}
 
 	return &sqlPlaybook{
-		Playbook:                        playbook,
-		ChecklistsJSON:                  checklistsJSON,
-		ConcatenatedInvitedUserIDs:      strings.Join(playbook.InvitedUserIDs, ","),
-		ConcatenatedInvitedGroupIDs:     strings.Join(playbook.InvitedGroupIDs, ","),
-		ConcatenatedSignalAnyKeywords:   strings.Join(playbook.SignalAnyKeywords, ","),
-		ConcatenatedBroadcastChannelIDs: strings.Join(playbook.BroadcastChannelIDs, ","),
+		Playbook:                              playbook,
+		ChecklistsJSON:                        checklistsJSON,
+		ConcatenatedInvitedUserIDs:            strings.Join(playbook.InvitedUserIDs, ","),
+		ConcatenatedInvitedGroupIDs:           strings.Join(playbook.InvitedGroupIDs, ","),
+		ConcatenatedSignalAnyKeywords:         strings.Join(playbook.SignalAnyKeywords, ","),
+		ConcatenatedBroadcastChannelIDs:       strings.Join(playbook.BroadcastChannelIDs, ","),
+		ConcatenatedWebhookOnCreationURLs:     strings.Join(playbook.WebhookOnCreationURLs, ","),
+		ConcatenatedWebhookOnStatusUpdateURLs: strings.Join(playbook.WebhookOnStatusUpdateURLs, ","),
 	}, nil
 }
 
@@ -708,6 +712,16 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 	p.BroadcastChannelIDs = []string(nil)
 	if rawPlaybook.ConcatenatedBroadcastChannelIDs != "" {
 		p.BroadcastChannelIDs = strings.Split(rawPlaybook.ConcatenatedBroadcastChannelIDs, ",")
+	}
+
+	p.WebhookOnCreationURLs = []string(nil)
+	if rawPlaybook.ConcatenatedWebhookOnCreationURLs != "" {
+		p.WebhookOnCreationURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnCreationURLs, ",")
+	}
+
+	p.WebhookOnStatusUpdateURLs = []string(nil)
+	if rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs != "" {
+		p.WebhookOnStatusUpdateURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs, ",")
 	}
 
 	return p, nil

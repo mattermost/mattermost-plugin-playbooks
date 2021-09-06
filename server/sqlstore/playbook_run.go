@@ -27,11 +27,13 @@ const (
 
 type sqlPlaybookRun struct {
 	app.PlaybookRun
-	ChecklistsJSON                  json.RawMessage
-	ConcatenatedInvitedUserIDs      string
-	ConcatenatedInvitedGroupIDs     string
-	ConcatenatedParticipantIDs      string
-	ConcatenatedBroadcastChannelIDs string
+	ChecklistsJSON                        json.RawMessage
+	ConcatenatedInvitedUserIDs            string
+	ConcatenatedInvitedGroupIDs           string
+	ConcatenatedParticipantIDs            string
+	ConcatenatedBroadcastChannelIDs       string
+	ConcatenatedWebhookOnCreationURLs     string
+	ConcatenatedWebhookOnStatusUpdateURLs string
 }
 
 // playbookRunStore holds the information needed to fulfill the methods in the store interface.
@@ -141,8 +143,8 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
-			"ConcatenatedBroadcastChannelIDs", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL", "ExportChannelOnFinishedEnabled",
+			"ConcatenatedBroadcastChannelIDs", "WebhookOnCreationURLs", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
+			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURLs", "ExportChannelOnFinishedEnabled",
 			"COALESCE(CategoryName, '') CategoryName").
 		Column(participantsCol).
 		From("IR_Incident AS i").
@@ -367,13 +369,13 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"ConcatenatedInvitedGroupIDs":          rawPlaybookRun.ConcatenatedInvitedGroupIDs,
 			"DefaultCommanderID":                   rawPlaybookRun.DefaultOwnerID,
 			"ConcatenatedBroadcastChannelIDs":      rawPlaybookRun.ConcatenatedBroadcastChannelIDs,
-			"WebhookOnCreationURL":                 rawPlaybookRun.WebhookOnCreationURL,
+			"WebhookOnCreationURLs":                rawPlaybookRun.WebhookOnCreationURLs,
 			"Retrospective":                        rawPlaybookRun.Retrospective,
 			"RetrospectivePublishedAt":             rawPlaybookRun.RetrospectivePublishedAt,
 			"MessageOnJoin":                        rawPlaybookRun.MessageOnJoin,
 			"RetrospectiveReminderIntervalSeconds": rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":             rawPlaybookRun.RetrospectiveWasCanceled,
-			"WebhookOnStatusUpdateURL":             rawPlaybookRun.WebhookOnStatusUpdateURL,
+			"WebhookOnStatusUpdateURLs":            rawPlaybookRun.WebhookOnStatusUpdateURLs,
 			"ExportChannelOnFinishedEnabled":       rawPlaybookRun.ExportChannelOnFinishedEnabled,
 			"CategoryName":                         rawPlaybookRun.CategoryName,
 			// Preserved for backwards compatibility with v1.2
@@ -419,13 +421,13 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 			"ConcatenatedInvitedGroupIDs":          rawPlaybookRun.ConcatenatedInvitedGroupIDs,
 			"DefaultCommanderID":                   rawPlaybookRun.DefaultOwnerID,
 			"ConcatenatedBroadcastChannelIDs":      rawPlaybookRun.ConcatenatedBroadcastChannelIDs,
-			"WebhookOnCreationURL":                 rawPlaybookRun.WebhookOnCreationURL,
+			"WebhookOnCreationURLs":                rawPlaybookRun.WebhookOnCreationURLs,
 			"Retrospective":                        rawPlaybookRun.Retrospective,
 			"RetrospectivePublishedAt":             rawPlaybookRun.RetrospectivePublishedAt,
 			"MessageOnJoin":                        rawPlaybookRun.MessageOnJoin,
 			"RetrospectiveReminderIntervalSeconds": rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":             rawPlaybookRun.RetrospectiveWasCanceled,
-			"WebhookOnStatusUpdateURL":             rawPlaybookRun.WebhookOnStatusUpdateURL,
+			"WebhookOnStatusUpdateURLs":            rawPlaybookRun.WebhookOnStatusUpdateURLs,
 			"ExportChannelOnFinishedEnabled":       rawPlaybookRun.ExportChannelOnFinishedEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
@@ -910,6 +912,16 @@ func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.Pl
 		playbookRun.BroadcastChannelIDs = strings.Split(rawPlaybookRun.ConcatenatedBroadcastChannelIDs, ",")
 	}
 
+	playbookRun.WebhookOnCreationURLs = []string(nil)
+	if rawPlaybookRun.ConcatenatedWebhookOnCreationURLs != "" {
+		playbookRun.WebhookOnCreationURLs = strings.Split(rawPlaybookRun.ConcatenatedWebhookOnCreationURLs, ",")
+	}
+
+	playbookRun.WebhookOnStatusUpdateURLs = []string(nil)
+	if rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs != "" {
+		playbookRun.WebhookOnStatusUpdateURLs = strings.Split(rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs, ",")
+	}
+
 	return &playbookRun, nil
 }
 
@@ -921,11 +933,13 @@ func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {
 	}
 
 	return &sqlPlaybookRun{
-		PlaybookRun:                     playbookRun,
-		ChecklistsJSON:                  checklistsJSON,
-		ConcatenatedInvitedUserIDs:      strings.Join(playbookRun.InvitedUserIDs, ","),
-		ConcatenatedInvitedGroupIDs:     strings.Join(playbookRun.InvitedGroupIDs, ","),
-		ConcatenatedBroadcastChannelIDs: strings.Join(playbookRun.BroadcastChannelIDs, ","),
+		PlaybookRun:                           playbookRun,
+		ChecklistsJSON:                        checklistsJSON,
+		ConcatenatedInvitedUserIDs:            strings.Join(playbookRun.InvitedUserIDs, ","),
+		ConcatenatedInvitedGroupIDs:           strings.Join(playbookRun.InvitedGroupIDs, ","),
+		ConcatenatedBroadcastChannelIDs:       strings.Join(playbookRun.BroadcastChannelIDs, ","),
+		ConcatenatedWebhookOnCreationURLs:     strings.Join(playbookRun.WebhookOnCreationURLs, ","),
+		ConcatenatedWebhookOnStatusUpdateURLs: strings.Join(playbookRun.WebhookOnStatusUpdateURLs, ","),
 	}, nil
 }
 
