@@ -397,12 +397,14 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.BroadcastChannelIDs = pb.BroadcastChannelIDs
 		}
 
+		playbookRun.WebhookOnCreationURLs = []string{}
 		if pb.WebhookOnCreationEnabled {
-			playbookRun.WebhookOnCreationURL = pb.WebhookOnCreationURL
+			playbookRun.WebhookOnCreationURLs = pb.WebhookOnCreationURLs
 		}
 
+		playbookRun.WebhookOnStatusUpdateURLs = []string{}
 		if pb.WebhookOnStatusUpdateEnabled {
-			playbookRun.WebhookOnStatusUpdateURL = pb.WebhookOnStatusUpdateURL
+			playbookRun.WebhookOnStatusUpdateURLs = pb.WebhookOnStatusUpdateURLs
 		}
 
 		if pb.MessageOnJoinEnabled {

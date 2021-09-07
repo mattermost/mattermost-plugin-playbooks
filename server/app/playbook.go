@@ -35,13 +35,13 @@ type Playbook struct {
 	DefaultOwnerEnabled                  bool        `json:"default_owner_enabled"`
 	BroadcastChannelIDs                  []string    `json:"broadcast_channel_ids"`
 	BroadcastEnabled                     bool        `json:"broadcast_enabled"`
-	WebhookOnCreationURL                 string      `json:"webhook_on_creation_url"`
+	WebhookOnCreationURLs                []string    `json:"webhook_on_creation_urls"`
 	WebhookOnCreationEnabled             bool        `json:"webhook_on_creation_enabled"`
 	MessageOnJoin                        string      `json:"message_on_join"`
 	MessageOnJoinEnabled                 bool        `json:"message_on_join_enabled"`
 	RetrospectiveReminderIntervalSeconds int64       `json:"retrospective_reminder_interval_seconds"`
 	RetrospectiveTemplate                string      `json:"retrospective_template"`
-	WebhookOnStatusUpdateURL             string      `json:"webhook_on_status_update_url"`
+	WebhookOnStatusUpdateURLs            []string    `json:"webhook_on_status_update_urls"`
 	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
 	ExportChannelOnFinishedEnabled       bool        `json:"export_channel_on_finished_enabled"`
 	SignalAnyKeywords                    []string    `json:"signal_any_keywords"`
@@ -69,6 +69,12 @@ func (p Playbook) Clone() Playbook {
 	}
 	if len(p.BroadcastChannelIDs) != 0 {
 		newPlaybook.BroadcastChannelIDs = append([]string(nil), p.BroadcastChannelIDs...)
+	}
+	if len(p.WebhookOnCreationURLs) != 0 {
+		newPlaybook.WebhookOnCreationURLs = append([]string(nil), p.WebhookOnCreationURLs...)
+	}
+	if len(p.WebhookOnStatusUpdateURLs) != 0 {
+		newPlaybook.WebhookOnStatusUpdateURLs = append([]string(nil), p.WebhookOnStatusUpdateURLs...)
 	}
 	return newPlaybook
 }
@@ -100,6 +106,12 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	}
 	if old.BroadcastChannelIDs == nil {
 		old.BroadcastChannelIDs = []string{}
+	}
+	if old.WebhookOnCreationURLs == nil {
+		old.WebhookOnCreationURLs = []string{}
+	}
+	if old.WebhookOnStatusUpdateURLs == nil {
+		old.WebhookOnStatusUpdateURLs = []string{}
 	}
 
 	return json.Marshal(old)
