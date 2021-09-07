@@ -50,10 +50,10 @@ export const ChannelHeaderButton = () => {
 export const ChannelHeaderText = () => {
     const currentChannelIsPlaybookRun = useSelector(inPlaybookRunChannel);
     if (currentChannelIsPlaybookRun) {
-        return 'View Run Details';
+        return 'Toggle Run Details';
     }
 
-    return 'Run Playbook';
+    return 'Toggle Playbook List';
 };
 
 export const ChannelHeaderTooltip = ChannelHeaderText;
