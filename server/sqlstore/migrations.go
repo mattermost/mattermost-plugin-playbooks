@@ -82,7 +82,6 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_PlaybookMember (
 						PlaybookID VARCHAR(26) NOT NULL REFERENCES IR_Playbook(ID),
 						MemberID VARCHAR(26) NOT NULL,
-						PRIMARY KEY (MemberID, PlaybookID),
 						INDEX IR_PlaybookMember_PlaybookID (PlaybookID),
 						INDEX IR_PlaybookMember_MemberID (MemberID)
 					)
@@ -141,7 +140,7 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_PlaybookMember (
 						PlaybookID TEXT NOT NULL REFERENCES IR_Playbook(ID),
 						MemberID TEXT NOT NULL,
-						PRIMARY KEY (MemberID, PlaybookID)
+						UNIQUE (PlaybookID, MemberID)
 					);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_PlaybookMember")
@@ -251,7 +250,6 @@ var migrations = []Migration{
 						IncidentID VARCHAR(26) NOT NULL REFERENCES IR_Incident(ID),
 						PostID VARCHAR(26) NOT NULL,
 						CONSTRAINT posts_unique UNIQUE (IncidentID, PostID),
-						PRIMARY KEY (IncidentID, PostID),
 						INDEX IR_StatusPosts_IncidentID (IncidentID),
 						INDEX IR_StatusPosts_PostID (PostID)
 					)
@@ -276,7 +274,7 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_StatusPosts (
 						IncidentID TEXT NOT NULL REFERENCES IR_Incident(ID),
 						PostID TEXT NOT NULL,
-						PRIMARY KEY (IncidentID, PostID)
+						UNIQUE (IncidentID, PostID)
 					);
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_StatusPosts")
@@ -379,7 +377,7 @@ var migrations = []Migration{
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_TimelineEvent
 					(
-						ID            VARCHAR(26)   NOT NULL PRIMARY KEY,
+						ID            VARCHAR(26)   NOT NULL,
 						IncidentID    VARCHAR(26)   NOT NULL REFERENCES IR_Incident(ID),
 						CreateAt      BIGINT        NOT NULL,
 						DeleteAt      BIGINT        NOT NULL DEFAULT 0,
@@ -401,7 +399,7 @@ var migrations = []Migration{
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_TimelineEvent
 					(
-						ID            TEXT   NOT NULL PRIMARY KEY,
+						ID            TEXT   NOT NULL,
 						IncidentID    TEXT   NOT NULL REFERENCES IR_Incident(ID),
 						CreateAt      BIGINT NOT NULL,
 					    DeleteAt      BIGINT NOT NULL DEFAULT 0,
@@ -703,7 +701,6 @@ var migrations = []Migration{
 					(
 						ChannelID     VARCHAR(26) NOT NULL,
 						UserID        VARCHAR(26) NOT NULL,
-						PRIMARY KEY (ChannelID, UserID),
 						UNIQUE INDEX  IR_ViewedChannel_ChannelID_UserID (ChannelID, UserID)
 					)
 				` + MySQLCharset); err != nil {
@@ -726,8 +723,7 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_ViewedChannel
 					(
 						ChannelID TEXT NOT NULL,
-						UserID    TEXT NOT NULL,
-						PRIMARY KEY (ChannelID, UserID)
+						UserID    TEXT NOT NULL
 					)
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_ViewedChannel")
