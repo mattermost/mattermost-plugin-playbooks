@@ -64,7 +64,7 @@ const TextBox = styled.input<TextBoxProps>`
         opacity: 0.64;
     }
 
-    height: 100%;
+    height: 40px;
     width: 100%;
 
     background-color: ${(props) => (props.enabled ? 'var(--center-channel-bg)' : 'rgba(var(--center-channel-bg-rgb), 0.16)')};

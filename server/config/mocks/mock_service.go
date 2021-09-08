@@ -7,7 +7,7 @@ package mock_config
 import (
 	gomock "github.com/golang/mock/gomock"
 	config "github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	model "github.com/mattermost/mattermost-server/v5/model"
+	model "github.com/mattermost/mattermost-server/v6/model"
 	reflect "reflect"
 )
 

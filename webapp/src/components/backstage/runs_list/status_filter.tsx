@@ -7,54 +7,62 @@ import {MultiSelect, SelectOption} from 'src/components/multi_select';
 import {PlaybookRunFilterButton} from '../styles';
 
 interface Props {
-    statuses: string[];
+    default: string[] | undefined;
     onChange: (statuses: string[]) => void;
 }
 
-const statusOptions: SelectOption[] = [
-    {value: '', display: 'All', selected: false, disabled: false},
-    {value: 'divider', display: '', selected: false, disabled: false},
-    {value: 'InProgress', display: 'In Progress', selected: false, disabled: false},
-    {value: 'Finished', display: 'Finished', selected: false, disabled: false},
+export const statusOptions: StatusOption[] = [
+    {value: '', label: 'All'},
+    {value: 'InProgress', label: 'In Progress'},
+    {value: 'Finished', label: 'Finished'},
 ];
 
-function statusesToOptions(statuses: string[]) {
-    // All Selected
-    if (statuses.length === 0) {
-        return [
-            {value: '', display: 'All', selected: true, disabled: false},
-            {value: 'divider', display: '', selected: false, disabled: false},
-            {value: 'InProgress', display: 'In Progress', selected: true, disabled: true},
-            {value: 'Finished', display: 'Finished', selected: true, disabled: true},
-        ];
-    }
-
-    // None Selected
-    if (statuses.length === 1 && statuses[0] === 'None') {
-        return [...statusOptions];
-    }
-
-    // Somewhere in the middle
-    return statusOptions.map((statusOption: SelectOption) => {
-        return {
-            ...statusOption,
-            selected: statuses.includes(statusOption.value),
-        };
-    });
+interface StatusOption {
+    value: string;
+    label: string;
 }
 
 export function StatusFilter(props: Props) {
+    const opts = statusOptions.map((opt) => ({
+        display: opt.label,
+        value: opt.value,
+        selected: props.default?.includes(opt.value) || false,
+        disabled: false,
+    }));
+
+    // add devider
+    opts.splice(1, 0, {
+        display: '',
+        value: 'divider',
+        selected: false,
+        disabled: false,
+    });
+
+    const [options, setOptions] = useState<SelectOption[]>(opts);
     const [filterOpen, setFilterOpen] = useState(false);
 
-    const onSelectedChange = async (newOptions: SelectOption[]) => {
-        const numberOfOptionsSelected = newOptions
+    const onSelectedChange = async (newOpts: SelectOption[], lastAction: SelectOption) => {
+        let newOptions = newOpts;
+
+        if (lastAction.value === '') {
+            newOptions = newOptions.map((opt) => ({
+                ...opt,
+                disabled: lastAction.selected,
+            }));
+        }
+
+        const selectCnt = newOptions
             .filter((opt) => opt.value !== '')
             .reduce((acm, opt) => (acm + (opt.selected ? 1 : 0)), 0);
 
         const allCheckbox = newOptions.filter((opt) => opt.value === '')[0];
+        allCheckbox.disabled = false;
+
+        setOptions(newOptions);
+
         if (allCheckbox.selected) { // everything is selected shouldn't filter using status at all
             props.onChange([]);
-        } else if (numberOfOptionsSelected > 0) {
+        } else if (selectCnt > 0) {
             props.onChange(
                 newOptions
                     .filter((opt) => opt.selected && opt.value !== '' && opt.value !== 'divider')
@@ -77,7 +85,7 @@ export function StatusFilter(props: Props) {
                     {<i className='icon-chevron-down icon--small ml-2'/>}
                 </PlaybookRunFilterButton>
             }
-            options={statusesToOptions(props.statuses)}
+            options={options}
             onChange={onSelectedChange}
             isOpenChange={isOpenChange}
         />

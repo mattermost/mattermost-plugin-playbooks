@@ -29,11 +29,11 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
-import {useHistory, useLocation, useParams} from 'react-router-dom';
+import {useHistory, useLocation} from 'react-router-dom';
 
 import qs from 'qs';
 
-import {FetchPlaybookRunsParams, PlaybookRun, StatusPost} from 'src/types/playbook_run';
+import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';

@@ -29,7 +29,6 @@ import {useAllowRetrospectiveAccess, useExperimentalFeaturesEnabled} from 'src/h
 
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
-import ChannelSelector from './channel_selector';
 import {
     BackstageSubheader,
     BackstageSubheaderDescription,
@@ -159,11 +158,11 @@ const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
 });
 
 const timerOptions = [
-    {value: 900, label: '15min'},
-    {value: 1800, label: '30min'},
-    {value: 3600, label: '60min'},
-    {value: 14400, label: '4hr'},
-    {value: 86400, label: '24hr'},
+    {value: 900, label: '15 minutes'},
+    {value: 1800, label: '30 minutes'},
+    {value: 3600, label: '60 minutes'},
+    {value: 14400, label: '4 hours'},
+    {value: 86400, label: '24 hours'},
 ] as const;
 
 export const tabInfo = [
@@ -360,11 +359,12 @@ const PlaybookEdit = (props: Props) => {
         }
     };
 
-    const handleAnnouncementChannelSelected = (channelId: string | undefined) => {
-        if ((channelId || channelId === '') && playbook.announcement_channel_id !== channelId) {
+    const handleBroadcastChannelSelected = (channelIds: string[]) => {
+        // assumes no repeated elements on any of the arrays
+        if (channelIds.length !== playbook.broadcast_channel_ids.length || channelIds.some((id) => !playbook.broadcast_channel_ids.includes(id))) {
             setPlaybook({
                 ...playbook,
-                announcement_channel_id: channelId,
+                broadcast_channel_ids: channelIds,
             });
             setChangesMade(true);
         }
@@ -424,10 +424,10 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleToggleAnnouncementChannel = () => {
+    const handleToggleBroadcastChannels = () => {
         setPlaybook({
             ...playbook,
-            announcement_channel_enabled: !playbook.announcement_channel_enabled,
+            broadcast_enabled: !playbook.broadcast_enabled,
         });
         setChangesMade(true);
     };
@@ -440,10 +440,10 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleSignalAnyKeywordsChange = (keywords: string) => {
+    const handleSignalAnyKeywordsChange = (keywords: string[]) => {
         setPlaybook({
             ...playbook,
-            signal_any_keywords: keywords.split(','),
+            signal_any_keywords: [...keywords],
         });
         setChangesMade(true);
     };
@@ -574,26 +574,9 @@ const PlaybookEdit = (props: Props) => {
                             <TabContainer>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Broadcast channel'}
+                                        {'Default update timer'}
                                         <BackstageSubheaderDescription>
-                                            {'Updates will be automatically posted as a message to the configured channel below in addition to the primary channel.'}
-                                        </BackstageSubheaderDescription>
-                                    </BackstageSubheader>
-                                    <ChannelSelector
-                                        id='playbook-preferences-broadcast-channel'
-                                        onChannelSelected={handleBroadcastInput}
-                                        channelId={playbook.broadcast_channel_id}
-                                        isClearable={true}
-                                        shouldRenderValue={true}
-                                        isDisabled={false}
-                                        captureMenuScroll={false}
-                                    />
-                                </SidebarBlock>
-                                <SidebarBlock>
-                                    <BackstageSubheader>
-                                        {'Reminder timer'}
-                                        <BackstageSubheaderDescription>
-                                            {'Prompts the owner at a specified interval to provide a status update.'}
+                                            {'How often should an update be posted?'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <StyledSelect
@@ -608,6 +591,7 @@ const PlaybookEdit = (props: Props) => {
                                         classNamePrefix='channel-selector'
                                         options={timerOptions}
                                         isClearable={true}
+                                        placeholder={'Select duration'}
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>
@@ -706,10 +690,10 @@ const PlaybookEdit = (props: Props) => {
                                     defaultOwnerID={playbook.default_owner_id}
                                     onToggleDefaultOwner={handleToggleDefaultOwner}
                                     onAssignOwner={handleAssignDefaultOwner}
-                                    announcementChannelID={playbook.announcement_channel_id}
-                                    announcementChannelEnabled={playbook.announcement_channel_enabled}
-                                    onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
-                                    onAnnouncementChannelSelected={handleAnnouncementChannelSelected}
+                                    broadcastChannelIds={playbook.broadcast_channel_ids}
+                                    broadcastEnabled={playbook.broadcast_enabled}
+                                    onToggleBroadcastChannel={handleToggleBroadcastChannels}
+                                    onBroadcastChannelsSelected={handleBroadcastChannelSelected}
                                     webhookOnCreationEnabled={playbook.webhook_on_creation_enabled}
                                     onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
                                     webhookOnCreationChange={handleWebhookOnCreationChange}

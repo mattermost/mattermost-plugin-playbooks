@@ -22,6 +22,7 @@ import TeamSelector from 'src/components/team/team_selector';
 import {fetchOwnersInTeam} from 'src/client';
 
 import SearchInput from './search_input';
+import CheckboxInput from './checkbox_input';
 import {StatusFilter} from './status_filter';
 
 interface Props {
@@ -64,6 +65,13 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
     const teams = useSelector(getMyTeams);
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
     const [teamSelectorToggle, setTeamSelectorToggle] = useState(false);
+
+    const myRunsOnly = fetchParams.participant_id === 'me';
+    const setMyRunsOnly = (checked?: boolean) => {
+        setFetchParams((oldParams) => {
+            return {...oldParams, participant_id: checked ? 'me' : ''};
+        });
+    };
 
     const setOwnerId = (userId?: string) => {
         setFetchParams((oldParams) => {
@@ -114,8 +122,15 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
     return (
         <div className='PlaybookRunList__filters'>
             <SearchInput
+                testId={'search-filter'}
                 default={fetchParams.search_term}
                 onSearch={debounce(setSearchTerm, searchDebounceDelayMilliseconds)}
+            />
+            <CheckboxInput
+                testId={'my-runs-only'}
+                text={'My runs only'}
+                checked={myRunsOnly}
+                onChange={setMyRunsOnly}
             />
             <ProfileSelector
                 testId={'owner-filter'}
@@ -133,7 +148,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                 onSelectedChange={setOwnerId}
             />
             <StatusFilter
-                statuses={fetchParams.statuses || []}
+                default={fetchParams.statuses}
                 onChange={setStatus}
             />
             {teams.length > 1 && !fixedTeam &&

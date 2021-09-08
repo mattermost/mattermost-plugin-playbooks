@@ -16,8 +16,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -128,8 +128,8 @@ func fromSliceToMap(slice []string) map[string]bool {
 	return result
 }
 
-func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbook *Playbook, playbookRun *PlaybookRun, owner *model.User) error {
-	if err := IsChannelActiveInTeam(playbookRun.AnnouncementChannelID, playbookRun.TeamID, s.pluginAPI); err != nil {
+func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbookTitle, playbookID, broadcastChannelID string, playbookRun *PlaybookRun, owner *model.User) error {
+	if err := IsChannelActiveInTeam(broadcastChannelID, playbookRun.TeamID, s.pluginAPI); err != nil {
 		return errors.Wrap(err, "announcement channel is not active")
 	}
 
@@ -151,11 +151,11 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbook *Playbook
 	announcementMsg += fmt.Sprintf(
 		"@%s just ran the [%s](%s) playbook.",
 		owner.Username,
-		playbook.Title,
-		getPlaybookDetailsURL(*siteURL, s.configService.GetManifest().Id, playbook.ID),
+		playbookTitle,
+		getPlaybookDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookID),
 	)
 
-	if playbookRunChannel.Type == model.CHANNEL_OPEN {
+	if playbookRunChannel.Type == model.ChannelTypeOpen {
 		announcementMsg += fmt.Sprintf(
 			" Visit the link above for more information or join ~%v to participate.",
 			playbookRunChannel.Name,
@@ -164,8 +164,8 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbook *Playbook
 		announcementMsg += " Visit the link above for more information."
 	}
 
-	if _, err := s.poster.PostMessage(playbookRun.AnnouncementChannelID, announcementMsg); err != nil {
-		return err
+	if _, err := s.postMessageToThreadAndSaveRootID(playbookRun.ID, broadcastChannelID, announcementMsg); err != nil {
+		return errors.Wrapf(err, "error creating first broadcast message on run creation, for playbook '%s', to channelID '%s'", playbookRun.ID, broadcastChannelID)
 	}
 
 	return nil
@@ -251,7 +251,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookRun.ReporterUserID = userID
 	playbookRun.ID = model.NewId()
 
-	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	siteURL := model.ServiceSettingsDefaultSiteURL
 	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
 		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	}
@@ -391,15 +391,18 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	newPost, err := s.poster.PostMessage(channel.Id, startMessage)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to post to channel")
+		return nil, errors.Wrapf(err, "error creating start message on run creation, for playbook '%s', to channelID '%s'", playbookRun.ID, channel.Id)
 	}
 
-	if playbookRun.AnnouncementChannelID != "" {
-		if err2 := s.broadcastPlaybookRunCreation(pb, playbookRun, owner); err2 != nil {
-			s.pluginAPI.Log.Warn("failed to broadcast the playbook run creation to channel", "ChannelID", playbookRun.AnnouncementChannelID)
+	if pb != nil {
+		for _, broadcastChannelID := range pb.BroadcastChannelIDs {
+			err = s.broadcastPlaybookRunCreation(pb.Title, pb.ID, broadcastChannelID, playbookRun, owner)
+			if err != nil {
+				s.pluginAPI.Log.Warn("failed to broadcast the playbook run creation to channel", "ChannelID", playbookRun.BroadcastChannelIDs, "error", err)
 
-			if _, err = s.poster.PostMessage(channel.Id, "Failed to announce the creation of this playbook run in the configured channel."); err != nil {
-				return nil, errors.Wrapf(err, "failed to post to channel")
+				if _, err = s.poster.PostMessage(channel.Id, "Failed to announce the creation of this playbook run in the configured channel."); err != nil {
+					return nil, errors.Wrapf(err, "failed to post to channel")
+				}
 			}
 		}
 	}
@@ -488,7 +491,7 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, triggerID
 		message = currentPlaybookRun.ReminderMessageTemplate
 	}
 
-	dialog, err := s.newUpdatePlaybookRunDialog(currentPlaybookRun.Description, message, currentPlaybookRun.BroadcastChannelID, currentPlaybookRun.PreviousReminder)
+	dialog, err := s.newUpdatePlaybookRunDialog(currentPlaybookRun.Description, message, currentPlaybookRun.BroadcastChannelIDs, currentPlaybookRun.PreviousReminder)
 	if err != nil {
 		return errors.Wrap(err, "failed to create update status dialog")
 	}
@@ -510,12 +513,12 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, triggerID
 
 func (s *PlaybookRunServiceImpl) OpenAddToTimelineDialog(requesterInfo RequesterInfo, postID, teamID, triggerID string) error {
 	options := PlaybookRunFilterOptions{
-		TeamID:    teamID,
-		MemberID:  requesterInfo.UserID,
-		Sort:      SortByCreateAt,
-		Direction: DirectionDesc,
-		Page:      0,
-		PerPage:   PerPageDefault,
+		TeamID:        teamID,
+		ParticipantID: requesterInfo.UserID,
+		Sort:          SortByCreateAt,
+		Direction:     DirectionDesc,
+		Page:          0,
+		PerPage:       PerPageDefault,
 	}
 
 	result, err := s.GetPlaybookRuns(requesterInfo, options)
@@ -609,7 +612,7 @@ func (s *PlaybookRunServiceImpl) AddPostToTimeline(playbookRunID, userID, postID
 	s.telemetry.AddPostToTimeline(playbookRunModified, userID)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -635,7 +638,7 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 	s.telemetry.RemoveTimelineEvent(playbookRunModified, userID)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -644,7 +647,11 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRunID, authorID, originalPostID string) error {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve playbook run for id: %s", playbookRunID)
+		return errors.Wrapf(err, "failed to retrieve playbook run for id '%s'", playbookRunID)
+	}
+
+	if len(playbookRun.BroadcastChannelIDs) == 0 {
+		return nil
 	}
 
 	playbookRunChannel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
@@ -669,8 +676,10 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRun
 	broadcastedMsg += "***\n"
 	broadcastedMsg += statusUpdate
 
-	if _, err := s.poster.PostMessage(playbookRun.BroadcastChannelID, broadcastedMsg); err != nil {
-		return err
+	for _, channelID := range playbookRun.BroadcastChannelIDs {
+		if _, err := s.postMessageToThreadAndSaveRootID(playbookRunID, channelID, broadcastedMsg); err != nil {
+			return errors.Wrap(err, "failed to post broadcast message")
+		}
 	}
 
 	return nil
@@ -753,12 +762,8 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	post := model.Post{
-		Message:   options.Message,
-		UserId:    userID,
-		ChannelId: playbookRunToModify.ChannelID,
-	}
-	if err = s.pluginAPI.Post.CreatePost(&post); err != nil {
+	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, options.Message)
+	if err != nil {
 		return errors.Wrap(err, "failed to post update status message")
 	}
 
@@ -784,8 +789,8 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state.")
 	}
 
-	if err2 := s.broadcastStatusUpdate(options.Message, playbookRunID, userID, post.Id); err2 != nil {
-		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", playbookRunToModify.BroadcastChannelID)
+	if err = s.broadcastStatusUpdate(options.Message, playbookRunID, userID, post.Id); err != nil {
+		s.pluginAPI.Log.Warn("failed to broadcast the status update", "error", err)
 	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
@@ -892,8 +897,8 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		postID = post.Id
 	}
 
-	if err2 := s.broadcastStatusUpdate(message, playbookRunID, userID, postID); err2 != nil {
-		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel", "ChannelID", playbookRunToModify.BroadcastChannelID)
+	if err = s.broadcastStatusUpdate(message, playbookRunID, userID, postID); err != nil {
+		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel")
 	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
@@ -930,7 +935,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		channel, err = s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
 		if err != nil {
 			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
-			return errors.Wrapf(err, "failed to get channel in export channel on finished, in FinishPlaybookRun, for channelID: %s", playbookRunToModify.ChannelID)
+			return errors.Wrapf(err, "failed to get channel in export channel on finished, in FinishPlaybookRun, for channelID '%s'", playbookRunToModify.ChannelID)
 		}
 
 		if err = s.poster.DM(playbookRunToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Playbook run ~%s exported successfully", channel.Name), FileIds: []string{fileID}}); err != nil {
@@ -985,7 +990,7 @@ func (s *PlaybookRunServiceImpl) exportChannelToFile(playbookRunName string, own
 	res := s.pluginAPI.Plugin.HTTP(req)
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return "", errors.New(fmt.Sprintf("There was an error when making a request to upload file with status code %s", strconv.Itoa(res.StatusCode)))
+		return "", errors.Errorf("There was an error when making a request to upload file with status code %s", strconv.Itoa(res.StatusCode))
 	}
 
 	file, err := s.pluginAPI.File.Upload(res.Body, fmt.Sprintf("%s.csv", playbookRunName), channelID)
@@ -1057,7 +1062,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 		return nil, errors.Wrapf(err, "failed to retrieve team id '%s'", channel.TeamId)
 	}
 
-	numMembers, err := s.store.GetAllPlaybookRunMembersCount(playbookRun.ChannelID)
+	numParticipants, err := s.store.GetHistoricalPlaybookRunParticipantsCount(playbookRun.ChannelID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get the count of playbook run members for channel id '%s'", playbookRun.ChannelID)
 	}
@@ -1067,7 +1072,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 		ChannelDisplayName: channel.DisplayName,
 		TeamName:           team.Name,
 		TotalPosts:         channel.TotalMsgCount,
-		NumMembers:         numMembers,
+		NumParticipants:    numParticipants,
 	}, nil
 }
 
@@ -1176,7 +1181,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	s.telemetry.ChangeOwner(playbookRunToModify, userID)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -1237,7 +1242,7 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	}
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -1335,7 +1340,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	}
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return err
+		return errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return nil
@@ -1398,7 +1403,7 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	}
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to send playbook run to client")
 	}
 
 	return cmdResponse.TriggerId, nil
@@ -1606,13 +1611,13 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve user for userID: %s; error: %s", userID, err.Error())
+		s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
 		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(channelID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve channel for channelID: %s; error: %s", channelID, err.Error())
+		s.logger.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
 		return
 	}
 
@@ -1622,7 +1627,7 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	if actorID != "" {
 		actor, err2 := s.pluginAPI.User.Get(actorID)
 		if err2 != nil {
-			s.logger.Errorf("failed to resolve user for userID: %s; error: %s", actorID, err2.Error())
+			s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err2.Error())
 			return
 		}
 
@@ -1736,7 +1741,7 @@ func (s *PlaybookRunServiceImpl) CheckAndSendMessageOnJoin(userID, givenPlaybook
 
 	playbookRunID, err := s.store.GetPlaybookRunIDForChannel(channelID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve playbook run for channelID: %s; error: %s", channelID, err.Error())
+		s.logger.Errorf("failed to resolve playbook run for channelID '%s'; error: %s", channelID, err.Error())
 		return false
 	}
 
@@ -1747,7 +1752,7 @@ func (s *PlaybookRunServiceImpl) CheckAndSendMessageOnJoin(userID, givenPlaybook
 
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve playbook run for playbookRunID: %s; error: %s", playbookRunID, err.Error())
+		s.logger.Errorf("failed to resolve playbook run for playbookRunID '%s'; error: %s", playbookRunID, err.Error())
 		return false
 	}
 
@@ -1793,13 +1798,13 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve user for userID: %s; error: %s", userID, err.Error())
+		s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
 		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(channelID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve channel for channelID: %s; error: %s", channelID, err.Error())
+		s.logger.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
 		return
 	}
 
@@ -1809,7 +1814,7 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 	if actorID != "" {
 		actor, err2 := s.pluginAPI.User.Get(actorID)
 		if err2 != nil {
-			s.logger.Errorf("failed to resolve user for userID: %s; error: %s", actorID, err2.Error())
+			s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err2.Error())
 			return
 		}
 
@@ -1836,13 +1841,13 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 
 func (s *PlaybookRunServiceImpl) hasPermissionToModifyPlaybookRun(playbookRun *PlaybookRun, userID string) bool {
 	// PlaybookRun main channel membership is required to modify playbook run
-	return s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PERMISSION_READ_CHANNEL)
+	return s.pluginAPI.User.HasPermissionToChannel(userID, playbookRun.ChannelID, model.PermissionReadChannel)
 }
 
 func (s *PlaybookRunServiceImpl) createPlaybookRunChannel(playbookRun *PlaybookRun, header string, public bool) (*model.Channel, error) {
-	channelType := model.CHANNEL_PRIVATE
+	channelType := model.ChannelTypePrivate
 	if public {
-		channelType = model.CHANNEL_OPEN
+		channelType = model.ChannelTypeOpen
 	}
 
 	channel := &model.Channel{
@@ -1902,7 +1907,7 @@ func (s *PlaybookRunServiceImpl) addPlaybookRunUsers(playbookRun *PlaybookRun, c
 		}
 	}
 
-	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", model.CHANNEL_ADMIN_ROLE_ID, model.CHANNEL_USER_ROLE_ID)); err != nil {
+	if _, err := s.pluginAPI.Channel.UpdateChannelMemberRoles(channel.Id, playbookRun.OwnerUserID, fmt.Sprintf("%s %s", model.ChannelAdminRoleId, model.ChannelUserRoleId)); err != nil {
 		s.pluginAPI.Log.Warn("failed to promote owner to admin", "ChannelID", channel.Id, "OwnerUserID", playbookRun.OwnerUserID, "err", err.Error())
 	}
 
@@ -1947,7 +1952,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 		})
 	}
 
-	siteURL := model.SERVICE_SETTINGS_DEFAULT_SITE_URL
+	siteURL := model.ServiceSettingsDefaultSiteURL
 	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
 		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	}
@@ -1990,22 +1995,16 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 	}, nil
 }
 
-func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message, broadcastChannelID string, reminderTimer time.Duration) (*model.Dialog, error) {
+func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message string, broadcastChannelIDs []string, reminderTimer time.Duration) (*model.Dialog, error) {
 	introductionText := "Provide an update to the stakeholders."
 
-	broadcastChannel, err := s.pluginAPI.Channel.Get(broadcastChannelID)
-	if err == nil {
-		if broadcastChannel.Type == model.CHANNEL_OPEN {
-			team, err := s.pluginAPI.Team.Get(broadcastChannel.TeamId)
-			if err != nil {
-				return nil, err
-			}
-
-			introductionText += fmt.Sprintf(" This post will be broadcasted to [%s](/%s/channels/%s).", broadcastChannel.DisplayName, team.Name, broadcastChannel.Id)
-		} else {
-			introductionText += " This post will be broadcasted to a private channel."
+	if len(broadcastChannelIDs) > 0 {
+		plural := ""
+		if len(broadcastChannelIDs) > 1 {
+			plural = "s"
 		}
 
+		introductionText += fmt.Sprintf(" This post will be broadcasted to %d channel%s.", len(broadcastChannelIDs), plural)
 	}
 
 	reminderOptions := []*model.PostActionOptions{
@@ -2249,6 +2248,32 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 	}
 
 	return nil
+}
+
+func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID, channelID, format string, args ...interface{}) (*model.Post, error) {
+	channelIDsToRootIDs, err := s.store.GetBroadcastChannelIDsToRootIDs(playbookRunID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error when trying to retrieve ChannelIDsToRootIDs map for playbookRunId '%s'", playbookRunID)
+	}
+
+	newPost, err := s.poster.PostMessageToThread(channelID, channelIDsToRootIDs[channelID], format, args...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to PostMessageToThread for channelID '%s'", channelID)
+	}
+
+	newRootID := newPost.RootId
+	if newRootID == "" {
+		newRootID = newPost.Id
+	}
+
+	if newRootID != channelIDsToRootIDs[channelID] {
+		channelIDsToRootIDs[channelID] = newRootID
+		if err = s.store.SetBroadcastChannelIDsToRootID(playbookRunID, channelIDsToRootIDs); err != nil {
+			return newPost, errors.Wrapf(err, "failed to SetBroadcastChannelIDsToRootID for playbookID '%s'", playbookRunID)
+		}
+	}
+
+	return newPost, nil
 }
 
 func getUserDisplayName(user *model.User) string {
