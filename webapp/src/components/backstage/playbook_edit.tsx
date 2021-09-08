@@ -365,7 +365,7 @@ const PlaybookEdit = (props: Props) => {
     const handleWebhookOnCreationChange = (urls: string) => {
         setPlaybook({
             ...playbook,
-            webhook_on_creation_url: urls.split('\n'),
+            webhook_on_creation_urls: urls.split('\n'),
         });
         setChangesMade(true);
     };
@@ -373,7 +373,7 @@ const PlaybookEdit = (props: Props) => {
     const handleWebhookOnStatusUpdateChange = (urls: string) => {
         setPlaybook({
             ...playbook,
-            webhook_on_status_update_url: urls.split('\n'),
+            webhook_on_status_update_urls: urls.split('\n'),
         });
         setChangesMade(true);
     };
@@ -676,10 +676,10 @@ const PlaybookEdit = (props: Props) => {
                                     webhookOnCreationEnabled={playbook.webhook_on_creation_enabled}
                                     onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
                                     webhookOnCreationChange={handleWebhookOnCreationChange}
-                                    webhookOnCreationURL={playbook.webhook_on_creation_url}
+                                    webhookOnCreationURLs={playbook.webhook_on_creation_urls}
                                     webhookOnStatusUpdateEnabled={playbook.webhook_on_status_update_enabled}
                                     onToggleWebhookOnStatusUpdate={handleToggleWebhookOnStatusUpdate}
-                                    webhookOnStatusUpdateURL={playbook.webhook_on_status_update_url}
+                                    webhookOnStatusUpdateURLs={playbook.webhook_on_status_update_urls}
                                     webhookOnStatusUpdateChange={handleWebhookOnStatusUpdateChange}
                                     messageOnJoinEnabled={playbook.message_on_join_enabled}
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}

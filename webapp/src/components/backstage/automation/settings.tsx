@@ -37,10 +37,10 @@ interface Props {
     webhookOnCreationEnabled: boolean;
     onToggleWebhookOnCreation: () => void;
     webhookOnCreationChange: (url: string) => void;
-    webhookOnCreationURL: string[];
+    webhookOnCreationURLs: string[];
     webhookOnStatusUpdateEnabled: boolean;
     onToggleWebhookOnStatusUpdate: () => void;
-    webhookOnStatusUpdateURL: string[];
+    webhookOnStatusUpdateURLs: string[];
     webhookOnStatusUpdateChange: (url: string) => void;
     messageOnJoinEnabled: boolean;
     onToggleMessageOnJoin: () => void;
@@ -105,7 +105,7 @@ export const AutomationSettings = (props: Props) => {
                     <PatternedTextArea
                         enabled={props.webhookOnCreationEnabled}
                         onToggle={props.onToggleWebhookOnCreation}
-                        input={props.webhookOnCreationURL.join('\n')}
+                        input={props.webhookOnCreationURLs.join('\n')}
                         onChange={props.webhookOnCreationChange}
                         pattern={'https?://.*'}
                         delimiter={'\n'}
@@ -133,7 +133,7 @@ export const AutomationSettings = (props: Props) => {
                     <PatternedTextArea
                         enabled={props.webhookOnStatusUpdateEnabled}
                         onToggle={props.onToggleWebhookOnStatusUpdate}
-                        input={props.webhookOnStatusUpdateURL.join('\n')}
+                        input={props.webhookOnStatusUpdateURLs.join('\n')}
                         onChange={props.webhookOnStatusUpdateChange}
                         pattern={'https?://.*'}
                         delimiter={'\n'}
