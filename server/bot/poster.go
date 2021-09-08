@@ -23,6 +23,31 @@ func (b *Bot) PostMessage(channelID, format string, args ...interface{}) (*model
 	return post, nil
 }
 
+// PostMessageToThread posts a message to a specified channel and thread identified by rootPostID.
+// If the rootPostID is blank, or the rootPost is deleted, it will create a standalone post. The
+// returned post's RootID will be the correct rootID (save that if you want to continue the thread).
+func (b *Bot) PostMessageToThread(channelID, rootPostID, format string, args ...interface{}) (*model.Post, error) {
+	rootID := ""
+	if rootPostID != "" {
+		root, err := b.pluginAPI.Post.GetPost(rootPostID)
+		if err == nil && root != nil && root.DeleteAt == 0 {
+			rootID = root.Id
+		}
+	}
+
+	post := &model.Post{
+		Message:   fmt.Sprintf(format, args...),
+		UserId:    b.botUserID,
+		ChannelId: channelID,
+		RootId:    rootID,
+	}
+	if err := b.pluginAPI.Post.CreatePost(post); err != nil {
+		return nil, err
+	}
+
+	return post, nil
+}
+
 // PostMessageWithAttachments posts a message with slack attachments to channelID. Returns the post id if
 // posting was successful. Often used to include post actions.
 func (b *Bot) PostMessageWithAttachments(channelID string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error) {

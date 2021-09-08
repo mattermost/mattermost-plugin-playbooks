@@ -143,6 +143,8 @@ const PlaybookBackstage = () => {
         subTitle = 'Everyone in this team can access this playbook';
     }
 
+    const enableRunPlaybook = playbook?.delete_at === 0;
+
     return (
         <OuterContainer>
             <TopContainer>
@@ -162,7 +164,10 @@ const PlaybookBackstage = () => {
                         <i className={'icon icon-pencil-outline'}/>
                         {'Edit'}
                     </SecondaryButtonLargerRight>
-                    <PrimaryButtonLarger onClick={runPlaybook}>
+                    <PrimaryButtonLarger
+                        onClick={runPlaybook}
+                        disabled={!enableRunPlaybook}
+                    >
                         <RightMarginedIcon
                             path={mdiClipboardPlayOutline}
                             size={1.25}

@@ -181,7 +181,7 @@ function printServerDetails() {
 }
 
 function sysadminSetup(user) {
-    if (Cypress.env('firstTest')) {
+    if (Cypress.env('firstTest') && !Cypress.env('developerMode')) {
         // Sends dummy call to update the config to server
         // Without this, first call to `cy.apiUpdateConfig()` consistently getting time out error in CI against remote server.
         cy.externalRequest({user, method: 'put', path: 'config', data: getDefaultConfig(), failOnStatusCode: false});

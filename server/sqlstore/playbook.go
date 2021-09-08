@@ -144,7 +144,8 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 
 	memberIDsSelect := sqlStore.builder.
 		Select("PlaybookID", "MemberID").
-		From("IR_PlaybookMember")
+		From("IR_PlaybookMember").
+		OrderBy("MemberID ASC") // Entirely for consistancy for the tests
 
 	newStore := &playbookStore{
 		pluginAPI:       pluginAPI,

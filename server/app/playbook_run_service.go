@@ -164,8 +164,8 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbookTitle, pla
 		announcementMsg += " Visit the link above for more information."
 	}
 
-	if _, err := s.poster.PostMessage(broadcastChannelID, announcementMsg); err != nil {
-		return err
+	if _, err := s.postMessageToThreadAndSaveRootID(playbookRun.ID, broadcastChannelID, announcementMsg); err != nil {
+		return errors.Wrapf(err, "error creating first broadcast message on run creation, for playbook '%s', to channelID '%s'", playbookRun.ID, broadcastChannelID)
 	}
 
 	return nil
@@ -391,7 +391,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	newPost, err := s.poster.PostMessage(channel.Id, startMessage)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to post to channel")
+		return nil, errors.Wrapf(err, "error creating start message on run creation, for playbook '%s', to channelID '%s'", playbookRun.ID, channel.Id)
 	}
 
 	if pb != nil {
@@ -647,7 +647,11 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRunID, authorID, originalPostID string) error {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve playbook run for id: %s", playbookRunID)
+		return errors.Wrapf(err, "failed to retrieve playbook run for id '%s'", playbookRunID)
+	}
+
+	if len(playbookRun.BroadcastChannelIDs) == 0 {
+		return nil
 	}
 
 	playbookRunChannel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
@@ -673,7 +677,7 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRun
 	broadcastedMsg += statusUpdate
 
 	for _, channelID := range playbookRun.BroadcastChannelIDs {
-		if _, err := s.poster.PostMessage(channelID, broadcastedMsg); err != nil {
+		if _, err := s.postMessageToThreadAndSaveRootID(playbookRunID, channelID, broadcastedMsg); err != nil {
 			return errors.Wrap(err, "failed to post broadcast message")
 		}
 	}
@@ -758,12 +762,8 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	post := model.Post{
-		Message:   options.Message,
-		UserId:    userID,
-		ChannelId: playbookRunToModify.ChannelID,
-	}
-	if err = s.pluginAPI.Post.CreatePost(&post); err != nil {
+	post, err := s.poster.PostMessage(playbookRunToModify.ChannelID, options.Message)
+	if err != nil {
 		return errors.Wrap(err, "failed to post update status message")
 	}
 
@@ -789,8 +789,8 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state.")
 	}
 
-	if err2 := s.broadcastStatusUpdate(options.Message, playbookRunID, userID, post.Id); err2 != nil {
-		s.pluginAPI.Log.Warn("failed to broadcast the status update", "error", err2)
+	if err = s.broadcastStatusUpdate(options.Message, playbookRunID, userID, post.Id); err != nil {
+		s.pluginAPI.Log.Warn("failed to broadcast the status update", "error", err)
 	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
@@ -897,7 +897,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		postID = post.Id
 	}
 
-	if err2 := s.broadcastStatusUpdate(message, playbookRunID, userID, postID); err2 != nil {
+	if err = s.broadcastStatusUpdate(message, playbookRunID, userID, postID); err != nil {
 		s.pluginAPI.Log.Warn("failed to broadcast the status update to channel")
 	}
 
@@ -935,7 +935,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		channel, err = s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
 		if err != nil {
 			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
-			return errors.Wrapf(err, "failed to get channel in export channel on finished, in FinishPlaybookRun, for channelID: %s", playbookRunToModify.ChannelID)
+			return errors.Wrapf(err, "failed to get channel in export channel on finished, in FinishPlaybookRun, for channelID '%s'", playbookRunToModify.ChannelID)
 		}
 
 		if err = s.poster.DM(playbookRunToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Playbook run ~%s exported successfully", channel.Name), FileIds: []string{fileID}}); err != nil {
@@ -1611,13 +1611,13 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve user for userID: %s; error: %s", userID, err.Error())
+		s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
 		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(channelID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve channel for channelID: %s; error: %s", channelID, err.Error())
+		s.logger.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
 		return
 	}
 
@@ -1627,7 +1627,7 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	if actorID != "" {
 		actor, err2 := s.pluginAPI.User.Get(actorID)
 		if err2 != nil {
-			s.logger.Errorf("failed to resolve user for userID: %s; error: %s", actorID, err2.Error())
+			s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err2.Error())
 			return
 		}
 
@@ -1741,7 +1741,7 @@ func (s *PlaybookRunServiceImpl) CheckAndSendMessageOnJoin(userID, givenPlaybook
 
 	playbookRunID, err := s.store.GetPlaybookRunIDForChannel(channelID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve playbook run for channelID: %s; error: %s", channelID, err.Error())
+		s.logger.Errorf("failed to resolve playbook run for channelID '%s'; error: %s", channelID, err.Error())
 		return false
 	}
 
@@ -1752,7 +1752,7 @@ func (s *PlaybookRunServiceImpl) CheckAndSendMessageOnJoin(userID, givenPlaybook
 
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve playbook run for playbookRunID: %s; error: %s", playbookRunID, err.Error())
+		s.logger.Errorf("failed to resolve playbook run for playbookRunID '%s'; error: %s", playbookRunID, err.Error())
 		return false
 	}
 
@@ -1798,13 +1798,13 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve user for userID: %s; error: %s", userID, err.Error())
+		s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
 		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(channelID)
 	if err != nil {
-		s.logger.Errorf("failed to resolve channel for channelID: %s; error: %s", channelID, err.Error())
+		s.logger.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
 		return
 	}
 
@@ -1814,7 +1814,7 @@ func (s *PlaybookRunServiceImpl) UserHasLeftChannel(userID, channelID, actorID s
 	if actorID != "" {
 		actor, err2 := s.pluginAPI.User.Get(actorID)
 		if err2 != nil {
-			s.logger.Errorf("failed to resolve user for userID: %s; error: %s", actorID, err2.Error())
+			s.logger.Errorf("failed to resolve user for userID '%s'; error: %s", actorID, err2.Error())
 			return
 		}
 
@@ -2248,6 +2248,32 @@ func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID s
 	}
 
 	return nil
+}
+
+func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID, channelID, format string, args ...interface{}) (*model.Post, error) {
+	channelIDsToRootIDs, err := s.store.GetBroadcastChannelIDsToRootIDs(playbookRunID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error when trying to retrieve ChannelIDsToRootIDs map for playbookRunId '%s'", playbookRunID)
+	}
+
+	newPost, err := s.poster.PostMessageToThread(channelID, channelIDsToRootIDs[channelID], format, args...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to PostMessageToThread for channelID '%s'", channelID)
+	}
+
+	newRootID := newPost.RootId
+	if newRootID == "" {
+		newRootID = newPost.Id
+	}
+
+	if newRootID != channelIDsToRootIDs[channelID] {
+		channelIDsToRootIDs[channelID] = newRootID
+		if err = s.store.SetBroadcastChannelIDsToRootID(playbookRunID, channelIDsToRootIDs); err != nil {
+			return newPost, errors.Wrapf(err, "failed to SetBroadcastChannelIDsToRootID for playbookID '%s'", playbookRunID)
+		}
+	}
+
+	return newPost, nil
 }
 
 func getUserDisplayName(user *model.User) string {

@@ -432,10 +432,10 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleSignalAnyKeywordsChange = (keywords: string) => {
+    const handleSignalAnyKeywordsChange = (keywords: string[]) => {
         setPlaybook({
             ...playbook,
-            signal_any_keywords: keywords.split(','),
+            signal_any_keywords: [...keywords],
         });
         setChangesMade(true);
     };
