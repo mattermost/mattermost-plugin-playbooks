@@ -362,24 +362,20 @@ const PlaybookEdit = (props: Props) => {
         }
     };
 
-    const handleWebhookOnCreationChange = (url: string) => {
-        if (playbook.webhook_on_creation_url !== url) {
-            setPlaybook({
-                ...playbook,
-                webhook_on_creation_url: url,
-            });
-            setChangesMade(true);
-        }
+    const handleWebhookOnCreationChange = (urls: string) => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_creation_url: urls.split('\n'),
+        });
+        setChangesMade(true);
     };
 
-    const handleWebhookOnStatusUpdateChange = (url: string) => {
-        if (playbook.webhook_on_status_update_url !== url) {
-            setPlaybook({
-                ...playbook,
-                webhook_on_status_update_url: url,
-            });
-            setChangesMade(true);
-        }
+    const handleWebhookOnStatusUpdateChange = (urls: string) => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_status_update_url: urls.split('\n'),
+        });
+        setChangesMade(true);
     };
 
     const handleMessageOnJoinChange = (message: string) => {
