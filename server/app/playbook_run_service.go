@@ -188,16 +188,19 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on creation, please set siteURL")
+		return
 	}
 
 	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 	if err != nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on creation, not able to get playbookRun.TeamID")
+		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on creation, not able to get playbookRun.ChannelID")
+		return
 	}
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
@@ -213,6 +216,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 	body, err := json.Marshal(payload)
 	if err != nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on creation, unable to marshal payload")
+		return
 	}
 
 	triggerWebhooks(s, playbookRun.WebhookOnCreationURLs, body)
@@ -678,21 +682,25 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on update, not able to get playbookRun")
+		return
 	}
 
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on update, please set siteURL")
+		return
 	}
 
 	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 	if err != nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on update, not able to get playbookRun.TeamID")
+		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on update, not able to get playbookRun.TeamID")
+		return
 	}
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
@@ -708,6 +716,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 	body, err := json.Marshal(payload)
 	if err != nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on update, unable to marshal payload")
+		return
 	}
 
 	triggerWebhooks(s, playbookRun.WebhookOnStatusUpdateURLs, body)
