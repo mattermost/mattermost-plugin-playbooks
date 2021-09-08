@@ -309,12 +309,12 @@ func TestCreatePlaybookRun(t *testing.T) {
 
 		teamID := model.NewId()
 		playbookRun := &app.PlaybookRun{
-			ID:                   model.NewId(),
-			Name:                 "Name",
-			TeamID:               teamID,
-			OwnerUserID:          "user_id",
-			WebhookOnCreationURL: server.URL,
-			ReporterUserID:       "user_id",
+			ID:                    model.NewId(),
+			Name:                  "Name",
+			TeamID:                teamID,
+			OwnerUserID:           "user_id",
+			ReporterUserID:        "user_id",
+			WebhookOnCreationURLs: []string{server.URL},
 		}
 
 		playbookRunWithID := *playbookRun
@@ -409,16 +409,16 @@ func TestUpdateStatus(t *testing.T) {
 		broadcastChannelID1 := "broadcast_channel_id"
 		broadcastChannelID2 := "broadcast_channel_id_2"
 		playbookRun := &app.PlaybookRun{
-			ID:                       playbookRunID,
-			Name:                     "Name",
-			TeamID:                   teamID,
-			ChannelID:                homeChannelID,
-			BroadcastChannelIDs:      []string{broadcastChannelID1, broadcastChannelID2},
-			OwnerUserID:              "user_id",
-			ReporterUserID:           "user_id",
-			CurrentStatus:            app.StatusInProgress,
-			CreateAt:                 1620018358404,
-			WebhookOnStatusUpdateURL: server.URL,
+			ID:                        playbookRunID,
+			Name:                      "Name",
+			TeamID:                    teamID,
+			ChannelID:                 homeChannelID,
+			BroadcastChannelIDs:       []string{broadcastChannelID1, broadcastChannelID2},
+			OwnerUserID:               "user_id",
+			ReporterUserID:            "user_id",
+			CurrentStatus:             app.StatusInProgress,
+			CreateAt:                  1620018358404,
+			WebhookOnStatusUpdateURLs: []string{server.URL},
 		}
 		statusUpdateOptions := app.StatusUpdateOptions{
 			Message:  "latest-message",
