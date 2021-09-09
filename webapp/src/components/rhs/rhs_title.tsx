@@ -3,7 +3,7 @@
 
 import React from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -49,6 +49,7 @@ const RHSTitle = () => {
                     <RHSTitleText
                         data-testid='rhs-title'
                         role={'button'}
+                        clickable={true}
                         tabIndex={0}
                         onClick={() => navigateToPluginUrl(`/runs/${playbookRun?.id}`)}
                         onKeyDown={(e) => {
@@ -59,7 +60,7 @@ const RHSTitle = () => {
                         }}
                     >
                         {'Run details'}
-                        <StyledButtonIcon >
+                        <StyledButtonIcon>
                             <ExternalLink/>
                         </StyledButtonIcon>
                     </RHSTitleText>
@@ -82,7 +83,7 @@ const RHSTitleContainer = styled.div`
     overflow: visible;
 `;
 
-const RHSTitleText = styled.div`
+const RHSTitleText = styled.div<{ clickable?: boolean }>`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -94,18 +95,20 @@ const RHSTitleText = styled.div`
 
     border-radius: 4px;
 
-    &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-        fill: var(--center-channel-color-72);
-    }
+    ${(props) => props.clickable && css`
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+            fill: var(--center-channel-color-72);
+        }
 
-    &:active,
-    &--active,
-    &--active:hover {
-        background: rgba(var(--button-bg-rgb), 0.08);
-        color: var(--button-bg);
-        fill: var(--button-bg);
-    }
+        &:active,
+        &--active,
+        &--active:hover {
+            background: rgba(var(--button-bg-rgb), 0.08);
+            color: var(--button-bg);
+            fill: var(--button-bg);
+        }
+    `}
 `;
 
 const Button = styled.button`
