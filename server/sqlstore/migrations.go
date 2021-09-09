@@ -1184,4 +1184,39 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.29.0"),
+		toVersion:   semver.MustParse("0.30.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addPrimaryKey(e, sqlStore, "IR_PlaybookMember", "(MemberID, PlaybookID)"); err != nil {
+					return err
+				}
+				if err := addPrimaryKey(e, sqlStore, "IR_StatusPosts", "(IncidentID, PostID)"); err != nil {
+					return err
+				}
+				if err := addPrimaryKey(e, sqlStore, "IR_TimelineEvent", "(ID)"); err != nil {
+					return err
+				}
+				if err := addPrimaryKey(e, sqlStore, "IR_ViewedChannel", "(ChannelID, UserID)"); err != nil {
+					return err
+				}
+			} else {
+				if err := addPrimaryKey(e, sqlStore, "ir_playbookmember", "(MemberID, PlaybookID)"); err != nil {
+					return err
+				}
+				if err := addPrimaryKey(e, sqlStore, "ir_statusposts", "(IncidentID, PostID)"); err != nil {
+					return err
+				}
+				if err := addPrimaryKey(e, sqlStore, "ir_timelineevent", "(ID)"); err != nil {
+					return err
+				}
+				if err := addPrimaryKey(e, sqlStore, "ir_viewedchannel", "(ChannelID, UserID)"); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	},
 }
