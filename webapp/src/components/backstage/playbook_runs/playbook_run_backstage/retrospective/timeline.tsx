@@ -35,7 +35,7 @@ const TimelineLine = styled.ul`
 `;
 
 const NoEventsNotice = styled.div`
-    margin: 35px 20px 0 20px;
+    margin: 35px 20px 35px;
     font-size: 14px;
     font-weight: 600;
 `;
@@ -53,6 +53,14 @@ const Timeline = (props: Props) => {
         return (
             <NoEventsNotice>
                 {'Timeline events are displayed here as they occur. Hover over an event to remove it.'}
+            </NoEventsNotice>
+        );
+    }
+
+    if (props.filteredEvents.length === 0) {
+        return (
+            <NoEventsNotice>
+                {'There are no Timeline events matching those filters.'}
             </NoEventsNotice>
         );
     }
