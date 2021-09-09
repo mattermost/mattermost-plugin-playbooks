@@ -86,7 +86,7 @@ function rhsState(state = RHSState.ViewingPlaybookRun, action: SetRHSState) {
     }
 }
 
-// myPlaybookRunsByTeam is a map of teamId->{channelId->playbookRuns} for which the current user is an playbook run member. Note
+// myPlaybookRunsByTeam is a map of teamId->{channelId->playbookRuns} for which the current user is a playbook run member. Note
 // that it is lazy loaded on team change, but will also track incremental updates as provided by
 // websocket events.
 // Aditnally it handles the plugin being disabled on the team

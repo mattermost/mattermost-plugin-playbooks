@@ -70,7 +70,7 @@ export async function fetchPlaybookRun(id: string) {
     if (process.env.NODE_ENV !== 'production') {
         if (!isPlaybookRun(data)) {
             // eslint-disable-next-line no-console
-            console.error('expected an PlaybookRun in fetchPlaybookRun, received:', data);
+            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
         }
     }
 
@@ -132,7 +132,7 @@ export async function fetchPlaybookRunByChannel(channelId: string) {
     if (process.env.NODE_ENV !== 'production') {
         if (!isPlaybookRun(data)) {
             // eslint-disable-next-line no-console
-            console.error('expected an PlaybookRun in fetchPlaybookRun, received:', data);
+            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
         }
     }
 

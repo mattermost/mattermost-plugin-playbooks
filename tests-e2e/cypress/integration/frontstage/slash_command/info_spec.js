@@ -87,7 +87,7 @@ describe('slash command > info', () => {
     });
 
     describe('/playbook info', () => {
-        it('should show an error when not in an playbook run channel', () => {
+        it('should show an error when not in a playbook run channel', () => {
             // # Navigate to a non-playbook run channel.
             cy.visit('/ad-1/channels/town-square');
 
@@ -102,7 +102,7 @@ describe('slash command > info', () => {
             // # Navigate directly to the application and the playbook run channel.
             cy.visit('/ad-1/channels/' + playbookRunChannelName);
 
-            // # Close the RHS, which is opened by default when navigating to an playbook run channel.
+            // # Close the RHS, which is opened by default when navigating to a playbook run channel.
             cy.get('#searchResultsCloseButton').click();
 
             // * Verify that the RHS is indeed closed.
