@@ -444,10 +444,16 @@ func TestUpdateStatus(t *testing.T) {
 			}, nil).Times(3)
 		poster.EXPECT().PostMessage(homeChannelID, statusUpdateOptions.Message).
 			Return(&model.Post{Id: "testPostId", RootId: "homeRootPostID"}, nil)
-		poster.EXPECT().PostMessageToThread(broadcastChannelID1, "broadcastRootPostID1", gomock.AssignableToTypeOf("")).
-			Return(&model.Post{Id: "testPostId", RootId: "broadcastRootPostID1"}, nil)
-		poster.EXPECT().PostMessageToThread(broadcastChannelID2, "broadcastRootPostID2", gomock.AssignableToTypeOf("")).
-			Return(&model.Post{Id: "testPostId", RootId: "broadcastRootPostID2"}, nil)
+		poster.EXPECT().PostMessageToThread("broadcastRootPostID1", gomock.Any()).
+			// Set thet post RootID to the expected root ID from the map, so SetBroadcastChannelIDsToRootIDs is not called
+			SetArg(1, model.Post{RootId: "broadcastRootPostID1"}).
+			Return(nil)
+		poster.EXPECT().PostMessageToThread("broadcastRootPostID2", gomock.Any()).
+			// Set thet post RootID to the expected root ID from the map, so SetBroadcastChannelIDsToRootIDs is not called
+			SetArg(1, model.Post{RootId: "broadcastRootPostID2"}).
+			Return(nil)
+		poster.EXPECT().Post(gomock.Any()).
+			Return(nil)
 
 		scheduler.EXPECT().Cancel(playbookRun.ID)
 
