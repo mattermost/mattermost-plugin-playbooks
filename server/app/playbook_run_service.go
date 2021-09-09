@@ -722,17 +722,6 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunFinish(message, broadcastCh
 	return nil
 }
 
-func formatStatus(status string) string {
-	switch status {
-	case StatusInProgress:
-		return "In Progress"
-	case StatusFinished:
-		return "Finished"
-	default:
-		return status
-	}
-}
-
 // sendWebhookOnUpdateStatus sends a POST request to the status update webhook URL.
 // It blocks until a response is received.
 func (s *PlaybookRunServiceImpl) sendWebhookOnUpdateStatus(playbookRunID string) error {
