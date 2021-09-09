@@ -64,7 +64,7 @@ interface PlaybookActionMenuProps {
 
 const IconWrapper = styled.div`
     display: inline-flex;
-    padding: 10px 5px;
+    padding: 10px 5px 10px 3px;
 `;
 
 const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
