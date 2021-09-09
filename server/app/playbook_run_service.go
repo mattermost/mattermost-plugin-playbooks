@@ -649,7 +649,7 @@ func (s *PlaybookRunServiceImpl) RemoveTimelineEvent(playbookRunID, userID, even
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRunID, authorID, originalPostID string) error {
+func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRunID, authorID string) error {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve playbook run for id '%s'", playbookRunID)
@@ -659,30 +659,48 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(statusUpdate, playbookRun
 		return nil
 	}
 
-	playbookRunChannel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
-	if err != nil {
-		return err
-	}
-
-	playbookRunTeam, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
-	if err != nil {
-		return err
-	}
-
-	author, err := s.pluginAPI.User.Get(authorID)
-	if err != nil {
-		return err
-	}
-
 	duration := timeutils.DurationString(timeutils.GetTimeForMillis(playbookRun.CreateAt), time.Now())
 
-	broadcastedMsg := fmt.Sprintf("# Status Update: [%s](/%s/pl/%s)\n", playbookRunChannel.DisplayName, playbookRunTeam.Name, originalPostID)
-	broadcastedMsg += fmt.Sprintf("By @%s | Duration: %s | Status: %s\n", author.Username, duration, formatStatus(playbookRun.CurrentStatus))
-	broadcastedMsg += "***\n"
-	broadcastedMsg += statusUpdate
+	ownerUser, err := s.pluginAPI.User.Get(playbookRun.OwnerUserID)
+	if err != nil {
+		return errors.Wrapf(err, "error when trying to get the owner user with ID '%s'", playbookRun.OwnerUserID)
+	}
+
+	authorUser, err := s.pluginAPI.User.Get(authorID)
+	if err != nil {
+		return errors.Wrapf(err, "error when trying to get the author user with ID '%s'", authorID)
+	}
+
+	numTasks := 0
+	numTasksChecked := 0
+	for _, checklist := range playbookRun.Checklists {
+		numTasks += len(checklist.Items)
+		for _, task := range checklist.Items {
+			if task.State == ChecklistItemStateClosed {
+				numTasksChecked += 1
+			}
+		}
+	}
+
+	post := &model.Post{
+		Message: statusUpdate,
+		Type:    "custom_run_update",
+		Props: map[string]interface{}{
+			"numTasksChecked": numTasksChecked,
+			"numTasks":        numTasks,
+			"ownerName":       ownerUser.Username,
+			"numParticipants": len(playbookRun.ParticipantIDs),
+			"duration":        duration,
+			"playbookName":    "Feature Release",
+			"author":          authorUser.Username,
+			"playbookRunId":   playbookRun.ID,
+			"playbookRunName": playbookRun.Name,
+		},
+	}
 
 	for _, channelID := range playbookRun.BroadcastChannelIDs {
-		if _, err := s.postMessageToThreadAndSaveRootID(playbookRunID, channelID, broadcastedMsg); err != nil {
+		post.ChannelId = channelID
+		if err := s.postMessageToThreadAndSaveRootID(playbookRunID, channelID, post); err != nil {
 			return errors.Wrap(err, "failed to post broadcast message")
 		}
 	}
@@ -794,7 +812,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state.")
 	}
 
-	if err = s.broadcastStatusUpdate(options.Message, playbookRunID, userID, post.Id); err != nil {
+	if err = s.broadcastStatusUpdate(options.Message, playbookRunID, userID); err != nil {
 		s.pluginAPI.Log.Warn("failed to broadcast the status update", "error", err)
 	}
 
