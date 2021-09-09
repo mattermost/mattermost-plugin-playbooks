@@ -196,8 +196,8 @@ interface PlaybookRunFilterButtonProps {
 export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProps>`
     display: flex;
     align-items: center;
+    border: none;
     border-radius: 4px;
-    border: 1px solid var(--center-channel-color-16);
     color: var(--center-channel-color-56);
     background: transparent;
     cursor: pointer;
