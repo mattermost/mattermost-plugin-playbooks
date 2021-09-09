@@ -23,6 +23,22 @@ func (b *Bot) PostMessage(channelID, format string, args ...interface{}) (*model
 	return post, nil
 }
 
+// Post posts a custom post. The Message and ChannelId fields should be provided in the specified
+// post
+func (b *Bot) Post(post *model.Post) error {
+	if post.Message == "" {
+		return fmt.Errorf("the post does not contain a message")
+	}
+
+	if !model.IsValidId(post.ChannelId) {
+		return fmt.Errorf("the post does not contain a valid ChannelId")
+	}
+
+	post.UserId = b.botUserID
+
+	return b.pluginAPI.Post.CreatePost(post)
+}
+
 // PostMessageToThread posts a message to a specified thread identified by rootPostID.
 // If the rootPostID is blank, or the rootPost is deleted, it will create a standalone post. The
 // overwritten post's RootID will be the correct rootID (save that if you want to continue the thread).

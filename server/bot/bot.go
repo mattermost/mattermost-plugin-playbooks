@@ -29,6 +29,9 @@ type Logger interface {
 
 // Poster interface - a small subset of the plugin posting API.
 type Poster interface {
+	// Post posts a custom post, which should provide the Message and ChannelId fields
+	Post(post *model.Post) error
+
 	// PostMessage posts a simple message to channelID. Returns the post id if posting was successful.
 	PostMessage(channelID, format string, args ...interface{}) (*model.Post, error)
 

@@ -90,6 +90,20 @@ func (mr *MockPosterMockRecorder) NotifyAdmins(arg0, arg1, arg2 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyAdmins", reflect.TypeOf((*MockPoster)(nil).NotifyAdmins), arg0, arg1, arg2)
 }
 
+// Post mocks base method
+func (m *MockPoster) Post(arg0 *model.Post) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Post", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Post indicates an expected call of Post
+func (mr *MockPosterMockRecorder) Post(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Post", reflect.TypeOf((*MockPoster)(nil).Post), arg0)
+}
+
 // PostCustomMessageWithAttachments mocks base method
 func (m *MockPoster) PostCustomMessageWithAttachments(arg0, arg1 string, arg2 []*model.SlackAttachment, arg3 string, arg4 ...interface{}) (*model.Post, error) {
 	m.ctrl.T.Helper()
