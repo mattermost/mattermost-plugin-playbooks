@@ -161,13 +161,15 @@ func TestPlaybookRuns(t *testing.T) {
 			Times(1)
 
 		i := app.PlaybookRun{
-			OwnerUserID:     dialogRequest.UserId,
-			TeamID:          dialogRequest.TeamId,
-			Name:            "playbookRunName",
-			PlaybookID:      "playbookid1",
-			Description:     "description",
-			InvitedUserIDs:  []string{},
-			InvitedGroupIDs: []string{},
+			OwnerUserID:               dialogRequest.UserId,
+			TeamID:                    dialogRequest.TeamId,
+			Name:                      "playbookRunName",
+			PlaybookID:                "playbookid1",
+			Description:               "description",
+			InvitedUserIDs:            []string{},
+			InvitedGroupIDs:           []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 		retI := i.Clone()
 		retI.ChannelID = "channelID"
@@ -222,14 +224,16 @@ func TestPlaybookRuns(t *testing.T) {
 			Times(1)
 
 		i := app.PlaybookRun{
-			OwnerUserID:     dialogRequest.UserId,
-			TeamID:          dialogRequest.TeamId,
-			Name:            "playbookRunName",
-			Description:     "description",
-			PlaybookID:      withid.ID,
-			Checklists:      withid.Checklists,
-			InvitedUserIDs:  []string{},
-			InvitedGroupIDs: []string{},
+			OwnerUserID:               dialogRequest.UserId,
+			TeamID:                    dialogRequest.TeamId,
+			Name:                      "playbookRunName",
+			Description:               "description",
+			PlaybookID:                withid.ID,
+			Checklists:                withid.Checklists,
+			InvitedUserIDs:            []string{},
+			InvitedGroupIDs:           []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -597,14 +601,16 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		testPlaybookRun := app.PlaybookRun{
-			OwnerUserID:     "testUserID",
-			TeamID:          teamID,
-			Name:            "playbookRunName",
-			Description:     "description",
-			PlaybookID:      testPlaybook.ID,
-			Checklists:      testPlaybook.Checklists,
-			InvitedUserIDs:  []string{},
-			InvitedGroupIDs: []string{},
+			OwnerUserID:               "testUserID",
+			TeamID:                    teamID,
+			Name:                      "playbookRunName",
+			Description:               "description",
+			PlaybookID:                testPlaybook.ID,
+			Checklists:                testPlaybook.Checklists,
+			InvitedUserIDs:            []string{},
+			InvitedGroupIDs:           []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 
 		playbookService.EXPECT().
@@ -653,14 +659,16 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		testPlaybookRun := app.PlaybookRun{
-			OwnerUserID:     "testUserID",
-			TeamID:          teamID,
-			Name:            "playbookRunName",
-			Description:     "description",
-			PlaybookID:      testPlaybook.ID,
-			Checklists:      testPlaybook.Checklists,
-			InvitedUserIDs:  []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs: []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			OwnerUserID:               "testUserID",
+			TeamID:                    teamID,
+			Name:                      "playbookRunName",
+			Description:               "description",
+			PlaybookID:                testPlaybook.ID,
+			Checklists:                testPlaybook.Checklists,
+			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 
 		playbookService.EXPECT().
@@ -826,14 +834,16 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		testPlaybookRun := app.PlaybookRun{
-			OwnerUserID:     "testUserID",
-			TeamID:          teamID,
-			Name:            "playbookRunName",
-			Description:     "description",
-			PlaybookID:      testPlaybook.ID,
-			Checklists:      testPlaybook.Checklists,
-			InvitedUserIDs:  []string{},
-			InvitedGroupIDs: []string{},
+			OwnerUserID:               "testUserID",
+			TeamID:                    teamID,
+			Name:                      "playbookRunName",
+			Description:               "description",
+			PlaybookID:                testPlaybook.ID,
+			Checklists:                testPlaybook.Checklists,
+			InvitedUserIDs:            []string{},
+			InvitedGroupIDs:           []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 
 		playbookService.EXPECT().
