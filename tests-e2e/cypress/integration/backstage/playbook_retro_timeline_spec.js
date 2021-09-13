@@ -49,19 +49,11 @@ describe('timeline', () => {
         });
     });
 
-    beforeEach(() => {
-        // # Size the viewport to show the RHS without covering posts.
-        cy.viewport('macbook-13');
-
-        // # Login as testUser
-        cy.apiLogin(testUser);
-
-        // # Navigate directly to the retro tab
-        cy.visit(`/playbooks/runs/${runId}/retrospective`);
-    });
-
     describe('timeline updates', () => {
         it('can be deleted', () => {
+            // # Navigate directly to the retro tab
+            cy.visit(`/playbooks/runs/${runId}/retrospective`);
+
             // * Verify playbook run created message is visible in the timeline
             verifyTimelineEvent('incident_created', 1, 0, `Run started by ${testUser.username}`);
 
