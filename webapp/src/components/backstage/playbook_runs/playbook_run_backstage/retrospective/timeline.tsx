@@ -14,7 +14,7 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import {TimelineEvent} from 'src/types/rhs';
-import RHSTimelineEventItem from 'src/components/rhs/rhs_timeline_event_item';
+import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
 import {ChannelNamesMap} from 'src/types/backstage';
 
 const TimelineLine = styled.ul`
@@ -43,6 +43,7 @@ const NoEventsNotice = styled.div`
 interface Props {
     playbookRun: PlaybookRun;
     filteredEvents: TimelineEvent[];
+    deleteTimelineEvent: (id: string) => void;
 }
 
 const Timeline = (props: Props) => {
@@ -68,12 +69,13 @@ const Timeline = (props: Props) => {
     return (
         <TimelineLine data-testid='timeline-view'>
             {props.filteredEvents.map((event) => (
-                <RHSTimelineEventItem
+                <TimelineEventItem
                     key={event.id}
                     event={event}
                     reportedAt={moment(props.playbookRun.create_at)}
                     channelNames={channelNamesMap}
                     team={team}
+                    deleteEvent={() => props.deleteTimelineEvent(event.id)}
                 />
             ))}
         </TimelineLine>
