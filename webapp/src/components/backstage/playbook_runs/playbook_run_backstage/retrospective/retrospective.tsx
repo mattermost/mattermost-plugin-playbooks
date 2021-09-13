@@ -14,7 +14,12 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import Report from './report';
 import TimelineRetro from './timeline_retro';
 
-export const Retrospective = (props: { playbookRun: PlaybookRun }) => {
+interface Props {
+    playbookRun: PlaybookRun;
+    deleteTimelineEvent: (id: string) => void;
+}
+
+export const Retrospective = (props: Props) => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
 
     if (!allowRetrospectiveAccess) {
@@ -35,7 +40,10 @@ export const Retrospective = (props: { playbookRun: PlaybookRun }) => {
                 <Report playbookRun={props.playbookRun}/>
             </Left>
             <Right>
-                <TimelineRetro playbookRun={props.playbookRun}/>
+                <TimelineRetro
+                    playbookRun={props.playbookRun}
+                    deleteTimelineEvent={props.deleteTimelineEvent}
+                />
             </Right>
         </Container>
     );
