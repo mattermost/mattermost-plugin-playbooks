@@ -15,6 +15,7 @@ import {useIntl} from 'react-intl';
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {DateTime, Duration} from 'luxon';
 
@@ -37,7 +38,6 @@ import {formatDuration} from '../formatted_duration';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {roundToNearest} from 'src/utils';
 import Tooltip from 'src/components/widgets/tooltip';
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 const ID = 'playbooks_update_run_status_dialog';
 
@@ -170,7 +170,6 @@ const UpdateRunStatusModal = ({
         </GenericModal>
     );
 };
-
 
 const optionFromSeconds = (seconds: number) => {
     const duration = Duration.fromObject({seconds});
