@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/pkg/errors"
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -135,4 +137,25 @@ var dropColumnPG = func(e sqlx.Ext, tableName, colName string) error {
 	`, tableName, colName, colName, tableName))
 
 	return err
+}
+
+func addPrimaryKey(e sqlx.Ext, sqlStore *SQLStore, tableName, primaryKey string) error {
+	hasPK := 0
+	if err := sqlStore.db.Get(&hasPK, fmt.Sprintf(`
+		SELECT 1 FROM information_schema.table_constraints tco
+		WHERE tco.table_name = '%s'
+		AND tco.constraint_type = 'PRIMARY KEY'
+	`, tableName)); err != nil && err != sql.ErrNoRows {
+		return errors.Wrap(err, "unable to determine if a primary key exists")
+	}
+
+	if hasPK == 0 {
+		if _, err := e.Exec(fmt.Sprintf(`
+			ALTER TABLE %s ADD PRIMARY KEY %s 
+		`, tableName, primaryKey)); err != nil {
+			return errors.Wrap(err, "unable to add a primary key")
+		}
+	}
+
+	return nil
 }

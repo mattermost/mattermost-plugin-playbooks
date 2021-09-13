@@ -47,7 +47,7 @@ describe('channel header', () => {
     });
 
     describe('tooltip text', () => {
-        it('should show "Run Playbook" outside a playbook run channel', () => {
+        it('should show "Toggle Playbook List" outside a playbook run channel', () => {
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
@@ -57,10 +57,10 @@ describe('channel header', () => {
             });
 
             // # Verify tooltip text
-            cy.get('#pluginTooltip').contains('Run Playbook');
+            cy.get('#pluginTooltip').contains('Toggle Playbook List');
         });
 
-        it('should show "View Run Details" inside a playbook run channel', () => {
+        it('should show "Toggle Run Details" inside a playbook run channel', () => {
             // # Navigate directly to a playbook run channel
             cy.visit(`/${testTeam.name}/channels/playbook-run`);
 
@@ -70,7 +70,7 @@ describe('channel header', () => {
             });
 
             // # Verify tooltip text
-            cy.get('#pluginTooltip').contains('View Run Details');
+            cy.get('#pluginTooltip').contains('Toggle Run Details');
         });
     });
 });

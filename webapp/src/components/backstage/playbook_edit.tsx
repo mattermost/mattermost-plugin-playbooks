@@ -23,9 +23,10 @@ import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
 import {RegularHeading} from 'src/styles/headings';
+import DefaultUpdateTimer from 'src/components/backstage/default_update_timer';
 
 import './playbook.scss';
-import {useAllowRetrospectiveAccess, useExperimentalFeaturesEnabled} from 'src/hooks';
+import {useAllowRetrospectiveAccess} from 'src/hooks';
 
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
@@ -157,14 +158,6 @@ const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
     })),
 });
 
-const timerOptions = [
-    {value: 900, label: '15 minutes'},
-    {value: 1800, label: '30 minutes'},
-    {value: 3600, label: '60 minutes'},
-    {value: 14400, label: '4 hours'},
-    {value: 86400, label: '24 hours'},
-] as const;
-
 export const tabInfo = [
     {id: 'checklists', name: 'Checklists'},
     {id: 'templates', name: 'Templates'},
@@ -194,6 +187,7 @@ const PlaybookEdit = (props: Props) => {
 
     const [playbook, setPlaybook] = useState<DraftPlaybookWithChecklist | PlaybookWithChecklist>({
         ...emptyPlaybook(),
+        reminder_timer_default_seconds: 86400,
         team_id: props.teamId || '',
     });
     const [changesMade, setChangesMade] = useState(false);
@@ -213,8 +207,6 @@ const PlaybookEdit = (props: Props) => {
     }
 
     const [currentTab, setCurrentTab] = useState<number>(tab);
-
-    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     const retrospectiveAccess = useAllowRetrospectiveAccess();
 
@@ -440,10 +432,10 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleSignalAnyKeywordsChange = (keywords: string) => {
+    const handleSignalAnyKeywordsChange = (keywords: string[]) => {
         setPlaybook({
             ...playbook,
-            signal_any_keywords: keywords.split(','),
+            signal_any_keywords: [...keywords],
         });
         setChangesMade(true);
     };
@@ -573,25 +565,16 @@ const PlaybookEdit = (props: Props) => {
                             />
                             <TabContainer>
                                 <SidebarBlock>
-                                    <BackstageSubheader>
-                                        {'Default update timer'}
-                                        <BackstageSubheaderDescription>
-                                            {'How often should an update be posted?'}
-                                        </BackstageSubheaderDescription>
-                                    </BackstageSubheader>
-                                    <StyledSelect
-                                        value={timerOptions.find((option) => option.value === playbook.reminder_timer_default_seconds)}
-                                        onChange={(option: {label: string, value: number}) => {
-                                            setPlaybook({
-                                                ...playbook,
-                                                reminder_timer_default_seconds: option ? option.value : option,
-                                            });
-                                            setChangesMade(true);
+                                    <DefaultUpdateTimer
+                                        seconds={playbook.reminder_timer_default_seconds}
+                                        setSeconds={(seconds: number) => {
+                                            if (seconds !== playbook.reminder_timer_default_seconds) {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    reminder_timer_default_seconds: seconds,
+                                                });
+                                            }
                                         }}
-                                        classNamePrefix='channel-selector'
-                                        options={timerOptions}
-                                        isClearable={true}
-                                        placeholder={'Select duration'}
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>

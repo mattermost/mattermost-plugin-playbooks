@@ -8,6 +8,7 @@
   "plugins": [
     "react",
     "import",
+    "formatjs",
     "@typescript-eslint"
   ],
   "env": {

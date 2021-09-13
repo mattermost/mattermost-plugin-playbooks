@@ -197,9 +197,9 @@ export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProp
     display: flex;
     align-items: center;
     border: none;
-    padding: 8px;
     border-radius: 4px;
     color: var(--center-channel-color-56);
+    background: transparent;
     cursor: pointer;
     font-weight: 600;
     font-size: 14px;

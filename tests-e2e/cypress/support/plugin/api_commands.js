@@ -255,7 +255,9 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         broadcastEnabled,
         broadcastChannelIds,
         reminderMessageTemplate,
-        reminderTimerDefaultSeconds
+        reminderTimerDefaultSeconds,
+        otherMembers = [],
+        invitedUserIds = [],
     }) => (
     cy.apiCreatePlaybook({
         teamId,
@@ -269,11 +271,13 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         }],
         memberIDs: [
             userId,
+            ...otherMembers,
         ],
         broadcastEnabled,
         broadcastChannelIds,
         reminderMessageTemplate,
         reminderTimerDefaultSeconds,
+        invitedUserIds,
     })
 ));
 

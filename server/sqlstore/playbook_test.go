@@ -1132,6 +1132,7 @@ func TestUpdatePlaybook(t *testing.T) {
 					WithMembers([]userInfo{jon, andrew, bob}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
 					old.MemberIDs = []string{matt.ID, bill.ID, alice.ID, jen.ID}
+					sort.Strings(old.MemberIDs)
 					return old
 				},
 				expectedErr: nil,
@@ -1142,6 +1143,7 @@ func TestUpdatePlaybook(t *testing.T) {
 					WithMembers([]userInfo{jon, andrew, bob}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
 					old.MemberIDs = []string{jon.ID, andrew.ID, bob.ID, alice.ID}
+					sort.Strings(old.MemberIDs)
 					return old
 				},
 				expectedErr: nil,
@@ -1151,6 +1153,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
 					old.MemberIDs = []string{alice.ID, jen.ID}
+					sort.Strings(old.MemberIDs)
 					return old
 				},
 				expectedErr: nil,
@@ -1240,14 +1243,10 @@ func TestDeletePlaybook(t *testing.T) {
 			expected := pb02.Clone()
 			expected.ID = id
 
-			actual, err := playbookStore.Get(id)
-			require.NoError(t, err)
-			require.Equal(t, expected, actual)
-
 			err = playbookStore.Delete(id)
 			require.NoError(t, err)
 
-			actual, err = playbookStore.Get(id)
+			actual, err := playbookStore.Get(id)
 			require.NoError(t, err)
 			require.Greater(t, actual.DeleteAt, before)
 
@@ -1743,6 +1742,7 @@ func (p *PlaybookBuilder) WithMembers(members []userInfo) *PlaybookBuilder {
 	for i, member := range members {
 		p.MemberIDs[i] = member.ID
 	}
+	sort.Strings(p.MemberIDs)
 
 	return p
 }

@@ -12,13 +12,11 @@ import styled from 'styled-components';
 
 import {useIntl} from 'react-intl';
 
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
-import luxon, {DateTime, Duration} from 'luxon';
+import {DateTime, Duration} from 'luxon';
 
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 
@@ -38,8 +36,141 @@ import {postStatusUpdate} from 'src/client';
 import {formatDuration} from '../formatted_duration';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {roundToNearest} from 'src/utils';
+import Tooltip from 'src/components/widgets/tooltip';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 const ID = 'playbooks_update_run_status_dialog';
+
+type Props = {
+    playbookRunId: string;
+    playbookId: string;
+    channelId: string;
+    hasPermission: boolean;
+} & Partial<ComponentProps<typeof GenericModal>>;
+
+export const makeModalDefinition = (props: Props) => ({
+    modalId: ID,
+    dialogType: UpdateRunStatusModal,
+    dialogProps: props,
+});
+
+const UpdateRunStatusModal = ({
+    playbookRunId,
+    playbookId,
+    channelId,
+    hasPermission,
+    ...modalProps
+}: Props) => {
+    const {formatMessage} = useIntl();
+    const [message, setMessage] = useState<string | null>(null);
+    const playbook = usePlaybook(playbookId);
+    const run = useRun(playbookRunId);
+    const lastStatusPostMeta = run?.status_posts?.slice().reverse().find(({delete_at}) => !delete_at);
+    const lastStatusPost = usePost(lastStatusPostMeta?.id ?? '');
+    if (
+        playbook && // playbook is loaded and
+        (
+            (lastStatusPostMeta && lastStatusPost) || // last status post found
+            (run && !lastStatusPostMeta) // or run loaded and there is no last status post
+        ) &&
+        message == null // and message is empty
+    ) {
+        setMessage(lastStatusPost?.message ?? playbook.reminder_message_template);
+    }
+    const currentUserId = useSelector(getCurrentUserId);
+    const team = useSelector((state: GlobalState) => playbook && getTeam(state, playbook.team_id));
+
+    const {input: reminderInput, reminder} = useReminderTimer(playbook, run);
+
+    const onConfirm = () => {
+        if (hasPermission && message?.trim() && currentUserId && channelId && team) {
+            postStatusUpdate(
+                playbookRunId,
+                {message, reminder},
+                {user_id: currentUserId, channel_id: channelId, team_id: team.id}
+            );
+        }
+    };
+
+    const broadcastChannelNames = useSelector((state: GlobalState) => {
+        return playbook?.broadcast_channel_ids.reduce<string[]>((result, id) => {
+            const displayName = getChannel(state, id)?.display_name;
+
+            if (displayName) {
+                result.push(displayName);
+            }
+            return result;
+        }, [])?.join(', ');
+    });
+
+    const form = (
+        <FormContainer>
+            <Description>
+                {formatMessage({
+                    id: `${ID}_description`,
+                    defaultMessage: 'This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcast to <ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip>} other {}}.',
+                }, {
+                    OverviewLink: (...chunks) => (
+                        <Link
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            to={pluginUrl(`/runs/${playbookRunId}`)}
+                        >
+                            {chunks}
+                        </Link>
+                    ),
+                    ChannelsTooltip: (...chunks) => (
+                        <Tooltip
+                            id={`${ID}_broadcast_tooltip`}
+                            content={broadcastChannelNames}
+                        >
+                            <span tabIndex={0}>{chunks}</span>
+                        </Tooltip>
+                    ),
+                    hasBroadcast: Boolean(playbook?.broadcast_channel_ids?.length).toString(),
+                    broadcastChannelCount: playbook?.broadcast_channel_ids.length ?? 0,
+                })}
+            </Description>
+            <Label>
+                {'Change since last update'}
+            </Label>
+            <MarkdownTextbox
+                id='update_run_status_textbox'
+                value={message ?? ''}
+                setValue={setMessage}
+                channelId={channelId}
+            />
+            <Label>
+                {'Timer for next update'}
+            </Label>
+            {reminderInput}
+        </FormContainer>
+    );
+
+    const warning = (
+        <WarningBlock>
+            <span>
+                {'You do not have permission to post an update.'}
+            </span>
+        </WarningBlock>
+    );
+
+    return (
+        <GenericModal
+            modalHeaderText={'Post update'}
+            cancelButtonText={hasPermission ? 'Cancel' : 'Close'}
+            confirmButtonText={hasPermission ? 'Post' : 'Ok'}
+            handleCancel={() => true}
+            handleConfirm={hasPermission ? onConfirm : null}
+            isConfirmDisabled={!(message?.trim() && currentUserId && channelId && team && hasPermission)}
+            {...modalProps}
+            id={ID}
+        >
+            {hasPermission ? form : warning}
+        </GenericModal>
+    );
+};
+
 
 const optionFromSeconds = (seconds: number) => {
     const duration = Duration.fromObject({seconds});
@@ -113,133 +244,16 @@ export const useReminderTimer = (
     return {input, reminder};
 };
 
-type Props = {
-    playbookRunId: string;
-    playbookId: string;
-    channelId: string;
-    hasPermission: boolean;
-} & Partial<ComponentProps<typeof GenericModal>>;
-
-export const makeModalDefinition = (props: Props) => ({
-    modalId: ID,
-    dialogType: UpdateRunStatusModal,
-    dialogProps: props,
-});
-
-const UpdateRunStatusModal = ({
-    playbookRunId,
-    playbookId,
-    channelId,
-    hasPermission,
-    ...modalProps
-}: Props) => {
-    const {formatMessage} = useIntl();
-    const [message, setMessage] = useState<string | null>(null);
-    const playbook = usePlaybook(playbookId);
-    const run = useRun(playbookRunId);
-    const lastStatusPostMeta = run?.status_posts?.slice().reverse().find(({delete_at}) => !delete_at);
-    const lastStatusPost = usePost(lastStatusPostMeta?.id ?? '');
-    if (
-        playbook && // playbook is loaded and
-        (
-            (lastStatusPostMeta && lastStatusPost) || // last status post found
-            (run && !lastStatusPostMeta) // or run loaded and there is no last status post
-        ) &&
-        message == null // and message is empty
-    ) {
-        setMessage(lastStatusPost?.message ?? playbook.reminder_message_template);
-    }
-    const currentUserId = useSelector(getCurrentUserId);
-    const channel = useSelector((state: GlobalState) => getChannel(state, channelId) || {display_name: 'Unknown Channel', id: channelId});
-    const team = useSelector((state: GlobalState) => playbook && getTeam(state, playbook.team_id));
-
-    // eslint-disable-next-line no-undefined
-    const {input: reminderInput, reminder} = useReminderTimer(playbook, run);
-
-    const onConfirm = () => {
-        if (hasPermission && message?.trim() && currentUserId && channel && team) {
-            postStatusUpdate(
-                playbookRunId,
-                {message, reminder},
-                {user_id: currentUserId, channel_id: channel.id, team_id: team.id}
-            );
-        }
-    };
-
-    const form = (
-        <FormContainer>
-            <Description>
-                {formatMessage({
-                    id: `${ID}_description`,
-                    defaultMessage: 'This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcast to {broadcastChannel}} other {}}.',
-                }, {
-                    OverviewLink: (...chunks) => {
-                        return (
-                            <Link
-                                target='_blank'
-                                rel='noopener noreferrer'
-                                to={pluginUrl(`/runs/${playbookRunId}`)}
-                            >
-                                {chunks}
-                            </Link>
-                        );
-                    },
-                    hasBroadcast: playbook?.broadcast_channel_id ? 'true' : 'false',
-                    broadcastChannel: team && channel && (
-                        <Link
-                            target='_blank'
-                            rel='noopener noreferrer'
-                            to={`/${team.name}/channels/${channel.id}`}
-                        >
-                            {`~${channel.name}`}
-                        </Link>
-                    ),
-                })}
-            </Description>
-            <Label>
-                {'Change since last update'}
-            </Label>
-            <MarkdownTextbox
-                id='update_run_status_textbox'
-                value={message ?? ''}
-                setValue={setMessage}
-                channelId={channelId}
-            />
-            <Label>
-                {'Timer for next update'}
-            </Label>
-            {reminderInput}
-        </FormContainer>
-    );
-
-    const warning = (
-        <WarningBlock>
-            <span>
-                {'You do not have permission to post an update.'}
-            </span>
-        </WarningBlock>
-    );
-
-    return (
-        <GenericModal
-            modalHeaderText={'Post update'}
-            cancelButtonText={hasPermission ? 'Cancel' : 'Close'}
-            confirmButtonText={hasPermission ? 'Post' : 'Ok'}
-            handleCancel={() => true}
-            handleConfirm={hasPermission ? onConfirm : null}
-            isConfirmDisabled={!(message?.trim() && currentUserId && channel && team && hasPermission)}
-            {...modalProps}
-            id={ID}
-        >
-            {hasPermission ? form : warning}
-        </GenericModal>
-    );
-};
-
 const FormContainer = styled.div`
     display: flex;
     flex-direction: column;
     color: var(--center-channel-color);
+    ${Description} {
+        span {
+            text-decoration: underline;
+            font-weight: bold;
+        }
+    }
 `;
 
 const WarningBlock = styled.div`
