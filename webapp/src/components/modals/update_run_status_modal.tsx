@@ -62,23 +62,16 @@ const UpdateRunStatusModal = ({
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
-    const [message, setMessage] = useState<string | null>(null);
+    const currentUserId = useSelector(getCurrentUserId);
     const playbook = usePlaybook(playbookId);
     const run = useRun(playbookRunId);
-    const lastStatusPostMeta = run?.status_posts?.slice().reverse().find(({delete_at}) => !delete_at);
-    const lastStatusPost = usePost(lastStatusPostMeta?.id ?? '');
-    if (
-        playbook && // playbook is loaded and
-        (
-            (lastStatusPostMeta && lastStatusPost) || // last status post found
-            (run && !lastStatusPostMeta) // or run loaded and there is no last status post
-        ) &&
-        message == null // and message is empty
-    ) {
-        setMessage(lastStatusPost?.message ?? playbook.reminder_message_template);
-    }
-    const currentUserId = useSelector(getCurrentUserId);
     const team = useSelector((state: GlobalState) => playbook && getTeam(state, playbook.team_id));
+
+    const [message, setMessage] = useState<string | null>(null);
+    const defaultMessage = useDefaultMessage(playbook, run);
+    if (message == null && defaultMessage) {
+        setMessage(defaultMessage);
+    }
 
     const {input: reminderInput, reminder} = useReminderTimer(playbook, run);
 
@@ -169,6 +162,25 @@ const UpdateRunStatusModal = ({
             {hasPermission ? form : warning}
         </GenericModal>
     );
+};
+
+const useDefaultMessage = (
+    playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist | undefined,
+    run: PlaybookRun | undefined
+) => {
+    const lastStatusPostMeta = run?.status_posts?.slice().reverse().find(({delete_at}) => !delete_at);
+    const lastStatusPost = usePost(lastStatusPostMeta?.id ?? '');
+
+    if (lastStatusPostMeta) {
+        // last status exist and should have a post-message
+        return lastStatusPost?.message;
+    }
+    if (run && !lastStatusPostMeta) {
+        // run loaded and was no last status post, but there might be a message template
+        return playbook?.reminder_message_template;
+    }
+
+    return null;
 };
 
 const optionFromSeconds = (seconds: number) => {
