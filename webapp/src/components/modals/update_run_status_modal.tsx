@@ -65,7 +65,6 @@ const UpdateRunStatusModal = ({
     const currentUserId = useSelector(getCurrentUserId);
     const playbook = usePlaybook(playbookId);
     const run = useRun(playbookRunId);
-    const team = useSelector((state: GlobalState) => playbook && getTeam(state, playbook.team_id));
 
     const [message, setMessage] = useState<string | null>(null);
     const defaultMessage = useDefaultMessage(playbook, run);
@@ -76,11 +75,11 @@ const UpdateRunStatusModal = ({
     const {input: reminderInput, reminder} = useReminderTimer(playbook, run);
 
     const onConfirm = () => {
-        if (hasPermission && message?.trim() && currentUserId && channelId && team) {
+        if (hasPermission && message?.trim() && currentUserId && channelId && playbook?.team_id) {
             postStatusUpdate(
                 playbookRunId,
                 {message, reminder},
-                {user_id: currentUserId, channel_id: channelId, team_id: team.id}
+                {user_id: currentUserId, channel_id: channelId, team_id: playbook?.team_id}
             );
         }
     };
@@ -155,7 +154,7 @@ const UpdateRunStatusModal = ({
             confirmButtonText={hasPermission ? 'Post' : 'Ok'}
             handleCancel={() => true}
             handleConfirm={hasPermission ? onConfirm : null}
-            isConfirmDisabled={!(message?.trim() && currentUserId && channelId && team && hasPermission)}
+            isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && playbook?.team_id)}
             {...modalProps}
             id={ID}
         >
