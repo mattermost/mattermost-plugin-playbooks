@@ -870,6 +870,7 @@ func TestMultipleWebhooks(t *testing.T) {
 			Name:                  "Name",
 			TeamID:                teamID,
 			OwnerUserID:           "user_id",
+			ReporterUserID:        "user_id",
 			WebhookOnCreationURLs: []string{server.URL, server2.URL},
 		}
 
@@ -965,17 +966,22 @@ func TestMultipleWebhooks(t *testing.T) {
 
 		playbookRunID := model.NewId()
 		teamID := model.NewId()
+		homeChannelID := "home_channel_id"
+		broadcastChannelID1 := "broadcast_channel_id"
+		broadcastChannelID2 := "broadcast_channel_id_2"
 		playbookRun := &app.PlaybookRun{
 			ID:                        playbookRunID,
 			Name:                      "Name",
 			TeamID:                    teamID,
-			ChannelID:                 "channel_id",
-			BroadcastChannelID:        "broadcast_channel_id",
+			ChannelID:                 homeChannelID,
+			BroadcastChannelIDs:       []string{broadcastChannelID1, broadcastChannelID2},
 			OwnerUserID:               "user_id",
+			ReporterUserID:            "user_id",
 			CurrentStatus:             app.StatusInProgress,
 			CreateAt:                  1620018358404,
 			WebhookOnStatusUpdateURLs: []string{server.URL, server2.URL},
 		}
+
 		statusUpdateOptions := app.StatusUpdateOptions{
 			Message:  "latest-message",
 			Reminder: 0,
