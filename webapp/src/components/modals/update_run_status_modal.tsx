@@ -36,7 +36,7 @@ import {pluginUrl} from 'src/browser_routing';
 import {postStatusUpdate} from 'src/client';
 import {formatDuration} from '../formatted_duration';
 import {PlaybookRun} from 'src/types/playbook_run';
-import {roundToNearest} from 'src/utils';
+import {nearest} from 'src/utils';
 import Tooltip from 'src/components/widgets/tooltip';
 
 const ID = 'playbooks_update_run_status_dialog';
@@ -196,7 +196,7 @@ export const useReminderTimer = (
             // wait until both default value data sources are available
 
             if (run.previous_reminder) {
-                value = optionFromSeconds(roundToNearest(run.previous_reminder * 1e-9, 60));
+                value = optionFromSeconds(nearest(run.previous_reminder * 1e-9, 60));
             }
 
             if (playbook.reminder_timer_default_seconds) {

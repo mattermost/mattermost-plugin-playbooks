@@ -32,11 +32,9 @@ export const findLastUpdatedWithDefault = (playbookRun: PlaybookRun) => {
     return lastUpdated > 0 ? lastUpdated : playbookRun.create_at;
 };
 
-export const roundToNearest = (n: number, multiple: number) => {
-    if (n > 0) {
-        return Math.ceil(n / multiple) * multiple;
-    } else if (n < 0) {
-        return Math.floor(n / multiple) * multiple;
-    }
-    return n;
-};
+/** Smart rounding with `multiple` support */
+export const nearest = (
+    n: number,
+    multiple = 1,
+    method: 'round' | 'floor' | 'ceil' = 'round',
+) => Math[method](n / multiple) * multiple;
