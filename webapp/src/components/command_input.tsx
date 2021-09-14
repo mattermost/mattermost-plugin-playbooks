@@ -1,36 +1,12 @@
 import React, {useEffect, useRef, useState} from 'react';
 
-import styled, {createGlobalStyle} from 'styled-components';
+import styled from 'styled-components';
 
 import {useUniqueId} from 'src/utils';
 
+import {Textbox as AutocompleteTextbox} from 'src/webapp_globals';
+
 import {BaseInput, InputTrashIcon} from './assets/inputs';
-
-// @ts-ignore
-const AutocompleteTextbox = window.Components.Textbox;
-
-const OverrideWebappStyle = createGlobalStyle`
-    input.custom-textarea.custom-textarea {
-        border: none;
-        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
-        height: 40px;
-        min-height: 40px;
-    }
-
-    input.custom-textarea.custom-textarea:focus {
-        border: none;
-        box-shadow: inset 0 0 0 2px var(--button-bg);
-        padding: 12px 30px 12px 16px;
-    }
-
-    .GenericModal .modal-body .form-control.form-control {
-        border: none;
-    }
-
-    .modal-body.modal-body {
-        overflow: visible;
-    }
-`;
 
 const AutocompleteWrapper = styled.div`
     position: relative;
@@ -40,6 +16,27 @@ const AutocompleteWrapper = styled.div`
 
     input {
         padding-right: 30px;
+    }
+
+    &&& {
+        input.custom-textarea.custom-textarea {
+            border: none;
+            box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
+            height: 40px;
+            min-height: 40px;
+            &:focus {
+                box-shadow: inset 0 0 0 2px var(--button-bg);
+                padding: 12px 30px 12px 16px;
+            }
+        }
+
+        .GenericModal .modal-body .form-control.form-control {
+            border: none;
+        }
+
+        .modal-body.modal-body {
+            overflow: visible;
+        }
     }
 `;
 
@@ -75,7 +72,6 @@ const CommandInput = (props: CommandInputProps) => {
 
     return (
         <>
-            <OverrideWebappStyle/>
             <AutocompleteWrapper
                 onMouseOver={() => setHover(true)}
                 onMouseLeave={() => setHover(false)}
