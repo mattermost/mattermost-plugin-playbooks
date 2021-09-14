@@ -63,13 +63,7 @@ func (h *TelemetryHandler) checkPlaybookRunViewPermissions(next http.Handler) ht
 		vars := mux.Vars(r)
 		userID := r.Header.Get("Mattermost-User-ID")
 
-		playbookRun, err := h.playbookRunService.GetPlaybookRun(vars["id"])
-		if err != nil {
-			h.HandleError(w, err)
-			return
-		}
-
-		if err := app.ViewPlaybookRunFromChannelID(userID, playbookRun.ChannelID, h.pluginAPI); err != nil {
+		if err := app.UserCanViewPlaybookRun(userID, vars["id"], h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
 			if errors.Is(err, app.ErrNoPermissions) {
 				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
@@ -87,13 +81,7 @@ func (h *TelemetryHandler) checkPlaybookViewPermissions(next http.Handler) http.
 		vars := mux.Vars(r)
 		userID := r.Header.Get("Mattermost-User-ID")
 
-		playbook, err := h.playbookService.Get(vars["id"])
-		if err != nil {
-			h.HandleError(w, err)
-			return
-		}
-
-		if err := app.PlaybookAccess(userID, playbook, h.pluginAPI); err != nil {
+		if err := app.PlaybookAccess(userID, vars["id"], h.playbookService, h.pluginAPI); err != nil {
 			if errors.Is(err, app.ErrNoPermissions) {
 				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
