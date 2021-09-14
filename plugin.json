@@ -1,5 +1,5 @@
 {
-    "id": "com.mattermost.plugin-incident-management",
+    "id": "playbooks",
     "name": "Playbooks",
     "description": "The playbooks plugin",
     "homepage_url": "https://github.com/mattermost/mattermost-plugin-playbooks/",

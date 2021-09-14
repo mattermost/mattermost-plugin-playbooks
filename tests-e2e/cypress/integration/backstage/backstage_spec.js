@@ -44,7 +44,7 @@ describe('backstage', () => {
 
     // it('opens statistics view by default', () => {
     //     // # Open the backstage
-    //     cy.visit('/ad-1/com.mattermost.plugin-incident-management/stats');
+    //     cy.visit('/ad-1/playbooks/stats');
 
     //     // * Verify that when backstage loads, the heading is visible and contains "Statistics"
     //     cy.findByTestId('titleStats').should('exist').contains('Statistics');
