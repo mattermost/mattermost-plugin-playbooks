@@ -940,7 +940,7 @@ func TestMultipleWebhooks(t *testing.T) {
 			StatusUpdate app.StatusUpdateOptions `json:"status_update"`
 		}
 
-		webhookChan := make(chan webhookPayload, 2)
+		webhookChan := make(chan webhookPayload)
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			body, err := ioutil.ReadAll(r.Body)
@@ -981,13 +981,11 @@ func TestMultipleWebhooks(t *testing.T) {
 			CreateAt:                  1620018358404,
 			WebhookOnStatusUpdateURLs: []string{server.URL, server2.URL},
 		}
-
 		statusUpdateOptions := app.StatusUpdateOptions{
 			Message:  "latest-message",
 			Reminder: 0,
 		}
 		siteURL := "http://example.com"
-		channelID := "channel_id"
 
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		store.EXPECT().UpdatePlaybookRun(gomock.AssignableToTypeOf(&app.PlaybookRun{})).Return(nil)
@@ -996,8 +994,21 @@ func TestMultipleWebhooks(t *testing.T) {
 
 		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
 
-		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), channelID)
-		poster.EXPECT().PostMessage("broadcast_channel_id", gomock.Any()).Return(&model.Post{}, nil)
+		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), homeChannelID)
+
+		// there is an existing rootID stored, so no call to set.
+		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunID).
+			Return(map[string]string{
+				homeChannelID:       "homeRootPostID",
+				broadcastChannelID1: "broadcastRootPostID1",
+				broadcastChannelID2: "broadcastRootPostID2",
+			}, nil).Times(3)
+		poster.EXPECT().PostMessage(homeChannelID, statusUpdateOptions.Message).
+			Return(&model.Post{Id: "testPostId", RootId: "homeRootPostID"}, nil)
+		poster.EXPECT().PostMessageToThread(broadcastChannelID1, "broadcastRootPostID1", gomock.AssignableToTypeOf("")).
+			Return(&model.Post{Id: "testPostId", RootId: "broadcastRootPostID1"}, nil)
+		poster.EXPECT().PostMessageToThread(broadcastChannelID2, "broadcastRootPostID2", gomock.AssignableToTypeOf("")).
+			Return(&model.Post{Id: "testPostId", RootId: "broadcastRootPostID2"}, nil)
 
 		scheduler.EXPECT().Cancel(playbookRun.ID)
 
@@ -1005,7 +1016,7 @@ func TestMultipleWebhooks(t *testing.T) {
 		mattermostConfig.SetDefaults()
 		mattermostConfig.ServiceSettings.SiteURL = &siteURL
 		pluginAPI.On("CreatePost", mock.Anything).Return(&model.Post{}, nil)
-		pluginAPI.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Name: "channel_name"}, nil)
+		pluginAPI.On("GetChannel", homeChannelID).Return(&model.Channel{Id: homeChannelID, Name: "channel_name"}, nil)
 		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "team_name"}, nil)
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 		pluginAPI.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
