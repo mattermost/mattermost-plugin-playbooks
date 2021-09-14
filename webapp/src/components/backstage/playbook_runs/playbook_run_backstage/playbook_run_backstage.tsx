@@ -18,7 +18,12 @@ import {
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
-import {clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookRunMetadata} from 'src/client';
+import {
+    clientFetchPlaybook,
+    clientRemoveTimelineEvent,
+    fetchPlaybookRun,
+    fetchPlaybookRunMetadata,
+} from 'src/client';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
@@ -198,6 +203,17 @@ const PlaybookRunBackstage = () => {
         fetchData();
     }, [playbookRun?.playbook_id]);
 
+    const deleteTimelineEvent = async (id: string) => {
+        if (!playbookRun) {
+            return;
+        }
+        await clientRemoveTimelineEvent(playbookRun.id, id);
+        setPlaybookRun({
+            ...playbookRun,
+            timeline_events: playbookRun.timeline_events.filter((event) => event.id !== id),
+        });
+    };
+
     if (fetchingState === FetchingStateType.loading) {
         return null;
     }
@@ -264,7 +280,10 @@ const PlaybookRunBackstage = () => {
                             <Overview playbookRun={playbookRun}/>
                         </Route>
                         <Route path={`${match.url}/retrospective`}>
-                            <Retrospective playbookRun={playbookRun}/>
+                            <Retrospective
+                                playbookRun={playbookRun}
+                                deleteTimelineEvent={deleteTimelineEvent}
+                            />
                         </Route>
                         <Redirect to={`${match.url}/overview`}/>
                     </Switch>
