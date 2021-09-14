@@ -610,7 +610,7 @@ describe('playbook run automation', () => {
                     title: playbookName,
                     createPublicPlaybookRun: true,
                     memberIDs: [userId],
-                    webhookOnCreationURL: 'http://example.com/not-an-actual-endpoint',
+                    webhookOnCreationURL: ['http://example.com/not-an-actual-endpoint'],
                     webhookOnCreationEnabled: true,
                 }).then((playbook) => {
                     // # Create a new playbook run with that playbook
