@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
 	"github.com/jmoiron/sqlx"
@@ -141,11 +142,18 @@ var dropColumnPG = func(e sqlx.Ext, tableName, colName string) error {
 
 func addPrimaryKey(e sqlx.Ext, sqlStore *SQLStore, tableName, primaryKey string) error {
 	hasPK := 0
+
+	dbSelectionLine := "AND tco.table_schema = (SELECT DATABASE())"
+	if e.DriverName() == model.DatabaseDriverPostgres {
+		dbSelectionLine = "AND tco.table_catalog = (SELECT current_database())"
+	}
+
 	if err := sqlStore.db.Get(&hasPK, fmt.Sprintf(`
 		SELECT 1 FROM information_schema.table_constraints tco
 		WHERE tco.table_name = '%s'
+		%s
 		AND tco.constraint_type = 'PRIMARY KEY'
-	`, tableName)); err != nil && err != sql.ErrNoRows {
+	`, tableName, dbSelectionLine)); err != nil && err != sql.ErrNoRows {
 		return errors.Wrap(err, "unable to determine if a primary key exists")
 	}
 
