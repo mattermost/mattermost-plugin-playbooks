@@ -82,9 +82,9 @@ const RHSAboutTitle = (props: Props) => {
                 }}
             />
             {invalidValue &&
-                <ErrorMessage>
-                    {'Run name must have at least two characters'}
-                </ErrorMessage>
+            <ErrorMessage>
+                {'Run name must have at least two characters'}
+            </ErrorMessage>
             }
         </>
     );
