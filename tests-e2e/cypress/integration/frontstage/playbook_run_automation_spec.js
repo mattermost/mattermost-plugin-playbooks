@@ -575,7 +575,7 @@ describe('playbook run automation', () => {
                     title: playbookName,
                     createPublicPlaybookRun: true,
                     memberIDs: [userId],
-                    webhookOnCreationURL: 'https://httpbin.org/post',
+                    webhookOnCreationURLs: ['https://httpbin.org/post'],
                     webhookOnCreationEnabled: true,
                 }).then((playbook) => {
                     // # Create a new playbook run with that playbook
