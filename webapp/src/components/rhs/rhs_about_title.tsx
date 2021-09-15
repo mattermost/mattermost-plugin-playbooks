@@ -82,9 +82,9 @@ const RHSAboutTitle = (props: Props) => {
                 }}
             />
             {invalidValue &&
-            <ErrorMessage>
-                {'Run name must have at least two characters'}
-            </ErrorMessage>
+                <ErrorMessage>
+                    {'Run name must have at least two characters'}
+                </ErrorMessage>
             }
         </>
     );
@@ -92,6 +92,9 @@ const RHSAboutTitle = (props: Props) => {
 
 const hasPermissionsToChangeChannelName = (state: GlobalState) => {
     const channel = getCurrentChannel(state);
+    if (!channel) {
+        return false;
+    }
 
     const permission = channel.type === General.OPEN_CHANNEL ? Permissions.MANAGE_PUBLIC_CHANNEL_PROPERTIES : Permissions.MANAGE_PRIVATE_CHANNEL_PROPERTIES;
 
