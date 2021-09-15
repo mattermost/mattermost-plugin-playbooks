@@ -18,7 +18,7 @@ const AutocompleteWrapper = styled.div`
         padding-right: 30px;
     }
 
-    &&& {
+    && {
         input.custom-textarea.custom-textarea {
             transition: all 0.15s ease;
             border: none;
@@ -29,14 +29,6 @@ const AutocompleteWrapper = styled.div`
                 box-shadow: inset 0 0 0 2px var(--button-bg);
                 padding: 12px 30px 12px 16px;
             }
-        }
-
-        .GenericModal .modal-body .form-control.form-control {
-            border: none;
-        }
-
-        .modal-body.modal-body {
-            overflow: visible;
         }
     }
 `;
