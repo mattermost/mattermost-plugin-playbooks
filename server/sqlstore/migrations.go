@@ -1223,8 +1223,8 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.30.0"),
 		toVersion:   semver.MustParse("0.31.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if _, err := e.Exec("UPDATE PluginKeyValueStore SET pluginid='playbooks' WHERE pluginid='com.mattermost.plugin-incident-management'"); err != nil {
-				return errors.Wrapf(err, "failed setting default value in column CategoryName of table IR_Playbook")
+			if _, err := e.Exec("UPDATE PluginKeyValueStore SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management'"); err != nil {
+				return errors.Wrapf(err, "failed to migrate KV store plugin id")
 			}
 
 			return nil
