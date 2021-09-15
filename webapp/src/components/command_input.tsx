@@ -20,6 +20,7 @@ const AutocompleteWrapper = styled.div`
 
     &&& {
         input.custom-textarea.custom-textarea {
+            transition: all 0.15s ease;
             border: none;
             box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
             height: 40px;

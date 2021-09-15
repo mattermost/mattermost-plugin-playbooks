@@ -28,13 +28,27 @@ import DefaultUpdateTimer from 'src/components/backstage/default_update_timer';
 import './playbook.scss';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 
+import MarkdownTextbox from 'src/components/markdown_textbox';
+
+const StyledMarkdownTextbox = styled(MarkdownTextbox)`
+    .custom-textarea {
+        background: white;
+        border-radius: 4px;
+        padding: 10px 25px 0 16px;
+        font-size: 14px;
+        line-height: 20px;
+    }
+    .textbox-preview-area {
+        z-index: auto;
+    }
+`;
+
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import {
     BackstageSubheader,
     BackstageSubheaderDescription,
     TabContainer,
-    StyledTextarea,
     StyledSelect,
 } from './styles';
 
@@ -584,13 +598,15 @@ const PlaybookEdit = (props: Props) => {
                                             {'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
-                                    <StyledTextarea
+                                    <StyledMarkdownTextbox
+                                        className={'playbook_description'}
+                                        id={'playbook_description_edit'}
                                         placeholder={'Use Markdown to create a template.'}
                                         value={playbook.description}
-                                        onChange={(e) => {
+                                        setValue={(description: string) => {
                                             setPlaybook({
                                                 ...playbook,
-                                                description: e.target.value,
+                                                description,
                                             });
                                             setChangesMade(true);
                                         }}
@@ -603,13 +619,15 @@ const PlaybookEdit = (props: Props) => {
                                             {'This template helps to standardize the format for recurring updates that take place throughout each run to keep.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
-                                    <StyledTextarea
+                                    <StyledMarkdownTextbox
+                                        className={'playbook_reminder_message'}
+                                        id={'playbook_reminder_message_edit'}
                                         placeholder={'Use Markdown to create a template.'}
                                         value={playbook.reminder_message_template}
-                                        onChange={(e) => {
+                                        setValue={(value: string) => {
                                             setPlaybook({
                                                 ...playbook,
-                                                reminder_message_template: e.target.value,
+                                                reminder_message_template: value,
                                             });
                                             setChangesMade(true);
                                         }}
@@ -645,13 +663,15 @@ const PlaybookEdit = (props: Props) => {
                                                     {'Default text for the retrospective.'}
                                                 </BackstageSubheaderDescription>
                                             </BackstageSubheader>
-                                            <StyledTextarea
+                                            <StyledMarkdownTextbox
+                                                className={'playbook_retrospective_template'}
+                                                id={'playbook_retrospective_template_edit'}
                                                 placeholder={'Enter retrospective template'}
                                                 value={playbook.retrospective_template}
-                                                onChange={(e) => {
+                                                setValue={(value: string) => {
                                                     setPlaybook({
                                                         ...playbook,
-                                                        retrospective_template: e.target.value,
+                                                        retrospective_template: value,
                                                     });
                                                     setChangesMade(true);
                                                 }}

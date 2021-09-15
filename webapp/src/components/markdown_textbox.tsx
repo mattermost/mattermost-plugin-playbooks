@@ -18,7 +18,7 @@ const DEFAULT_CHAR_LIMIT = 4000;
 type Props = {
     value: string;
     setValue: (val: string) => void;
-    createMessage?: string;
+    placeholder?: string;
     id: string;
     className?: string;
 } & ComponentProps<typeof Textbox>;
@@ -27,6 +27,7 @@ const MarkdownTextbox = ({
     value,
     setValue,
     className,
+    placeholder = '',
     ...textboxProps
 }: Props) => {
     const [showPreview, setShowPreview] = useState(false);
@@ -47,7 +48,7 @@ const MarkdownTextbox = ({
                 useChannelMentions={false}
                 onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setValue(e.target.value)}
                 characterLimit={charLimit}
-                createMessage={''}
+                createMessage={placeholder}
                 onKeyPress={() => true}
                 openWhenEmpty={true}
                 {...textboxProps}
