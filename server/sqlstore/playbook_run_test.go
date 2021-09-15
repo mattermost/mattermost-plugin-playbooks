@@ -794,7 +794,7 @@ func TestGetPlaybookRuns(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - Alice (in no channels but member of team (because request must have made it through the API team membership test to the store), can see public playbook runs)",
+			Name: "team1 - Alice (in no channels but member of team, can see all public playbook runs)",
 			RequesterInfo: app.RequesterInfo{
 				UserID: alice.ID,
 			},
@@ -806,15 +806,15 @@ func TestGetPlaybookRuns(t *testing.T) {
 				PerPage:   1000,
 			},
 			Want: app.GetPlaybookRunsResults{
-				TotalCount: 3,
+				TotalCount: 5,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []app.PlaybookRun{inc01, inc02, inc03},
+				Items:      []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05},
 			},
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team2 - Charlotte (in no channels but member of team -- because her request must have made it to the store through the API's team membership check)",
+			Name: "team2 - Charlotte is in team2, but in no channels, should see public playbook runs",
 			RequesterInfo: app.RequesterInfo{
 				UserID: charlotte.ID,
 			},
@@ -826,10 +826,10 @@ func TestGetPlaybookRuns(t *testing.T) {
 				PerPage:   1000,
 			},
 			Want: app.GetPlaybookRunsResults{
-				TotalCount: 1,
+				TotalCount: 2,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []app.PlaybookRun{inc06},
+				Items:      []app.PlaybookRun{inc06, inc07},
 			},
 			ExpectedErr: nil,
 		},
@@ -1654,7 +1654,7 @@ func TestGetOwners(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			Name: "team1 - Alice (in no channels but member of team (because must have made it through API team membership test), can see public playbook runs)",
+			Name: "team1 - Alice (in no channels but member of team, can see public playbook runs)",
 			RequesterInfo: app.RequesterInfo{
 				UserID: "Alice",
 			},
@@ -1665,7 +1665,7 @@ func TestGetOwners(t *testing.T) {
 				Page:      0,
 				PerPage:   1000,
 			},
-			Expected:    []app.OwnerInfo{owner1, owner2},
+			Expected:    []app.OwnerInfo{owner1, owner2, owner3},
 			ExpectedErr: nil,
 		},
 		{

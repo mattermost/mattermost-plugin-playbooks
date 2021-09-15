@@ -24,7 +24,10 @@ export const PresetTemplates: PresetTemplate[] = [
     {
         title: 'Blank',
         icon: <FileIcon/>,
-        template: emptyPlaybook(),
+        template: {
+            ...emptyPlaybook(),
+            reminder_timer_default_seconds: 86400,
+        },
     },
     {
         title: 'Product Release',

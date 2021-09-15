@@ -19,12 +19,12 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
-import {PlaybookRun} from 'src/types/playbook_run';
 
 import {usePlaybook} from 'src/hooks';
 import MarkdownTextbox from '../markdown_textbox';
 import {pluginUrl} from 'src/browser_routing';
 import {postStatusUpdate} from 'src/client';
+import Tooltip from 'src/components/widgets/tooltip';
 
 const ID = 'playbooks_update_run_status_dialog';
 
@@ -55,15 +55,25 @@ const UpdateRunStatusModal = ({
         setMessage(playbook.reminder_message_template);
     }
     const currentUserId = useSelector(getCurrentUserId);
-    const channel = useSelector((state: GlobalState) => getChannel(state, channelId) || {display_name: 'Unknown Channel', id: channelId});
     const team = useSelector((state: GlobalState) => playbook && getTeam(state, playbook.team_id));
+
+    const broadcastChannelNames = useSelector((state: GlobalState) => {
+        return playbook?.broadcast_channel_ids.reduce<string[]>((result, id) => {
+            const displayName = getChannel(state, id)?.display_name;
+
+            if (displayName) {
+                result.push(displayName);
+            }
+            return result;
+        }, [])?.join(', ');
+    });
 
     const onConfirm = () => {
         if (!message || !hasPermission) {
             return false;
         }
-        if (message && currentUserId && channel && team) {
-            postStatusUpdate(playbookRunId, {message}, {user_id: currentUserId, channel_id: channel.id, team_id: team.id});
+        if (message && currentUserId && channelId && team) {
+            postStatusUpdate(playbookRunId, {message}, {user_id: currentUserId, channel_id: channelId, team_id: team.id});
         }
         return true;
     };
@@ -73,29 +83,27 @@ const UpdateRunStatusModal = ({
             <Description>
                 {formatMessage({
                     id: `${ID}_description`,
-                    defaultMessage: 'This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcast to {broadcastChannel}} other {}}.',
+                    defaultMessage: 'This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcast to <ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip>} other {}}.',
                 }, {
-                    OverviewLink: (...chunks) => {
-                        return (
-                            <Link
-                                target='_blank'
-                                rel='noopener noreferrer'
-                                to={pluginUrl(`/runs/${playbookRunId}`)}
-                            >
-                                {chunks}
-                            </Link>
-                        );
-                    },
-                    hasBroadcast: playbook?.broadcast_channel_id ? 'true' : 'false',
-                    broadcastChannel: team && channel && (
+                    OverviewLink: (...chunks) => (
                         <Link
                             target='_blank'
                             rel='noopener noreferrer'
-                            to={`/${team.name}/channels/${channel.id}`}
+                            to={pluginUrl(`/runs/${playbookRunId}`)}
                         >
-                            {`~${channel.name}`}
+                            {chunks}
                         </Link>
                     ),
+                    ChannelsTooltip: (...chunks) => (
+                        <Tooltip
+                            id={`${ID}_broadcast_tooltip`}
+                            content={broadcastChannelNames}
+                        >
+                            <span tabIndex={0}>{chunks}</span>
+                        </Tooltip>
+                    ),
+                    hasBroadcast: Boolean(playbook?.broadcast_channel_ids?.length).toString(),
+                    broadcastChannelCount: playbook?.broadcast_channel_ids.length ?? 0,
                 })}
             </Description>
             <Label>
@@ -125,7 +133,7 @@ const UpdateRunStatusModal = ({
             confirmButtonText={hasPermission ? 'Post' : 'Ok'}
             handleCancel={() => true}
             handleConfirm={hasPermission ? onConfirm : null}
-            isConfirmDisabled={!(message && currentUserId && channel && team && hasPermission)}
+            isConfirmDisabled={!(message && currentUserId && channelId && team && hasPermission)}
             {...modalProps}
             id={ID}
         >
@@ -138,6 +146,12 @@ const FormContainer = styled.div`
     display: flex;
     flex-direction: column;
     color: var(--center-channel-color);
+    ${Description} {
+        span {
+            text-decoration: underline;
+            font-weight: bold;
+        }
+    }
 `;
 
 const WarningBlock = styled.div`
