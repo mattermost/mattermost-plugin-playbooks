@@ -77,6 +77,7 @@ const Wrapper = styled.div`
             min-height: 104px;
             max-height: 324px;
             overflow: auto;
+            padding: 12px 30px 12px 16px;
 
             transition: box-shadow ease-in-out .15s;
             box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);

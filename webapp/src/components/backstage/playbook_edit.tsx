@@ -28,27 +28,13 @@ import DefaultUpdateTimer from 'src/components/backstage/default_update_timer';
 import './playbook.scss';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 
-import MarkdownTextbox from 'src/components/markdown_textbox';
-
-const StyledMarkdownTextbox = styled(MarkdownTextbox)`
-    .custom-textarea {
-        background: white;
-        border-radius: 4px;
-        padding: 10px 25px 0 16px;
-        font-size: 14px;
-        line-height: 20px;
-    }
-    .textbox-preview-area {
-        z-index: auto;
-    }
-`;
-
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import {
     BackstageSubheader,
     BackstageSubheaderDescription,
     TabContainer,
+    StyledMarkdownTextbox,
     StyledSelect,
 } from './styles';
 
