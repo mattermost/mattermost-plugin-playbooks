@@ -51,6 +51,7 @@ const MarkdownTextbox = ({
                 createMessage={placeholder}
                 onKeyPress={() => true}
                 openWhenEmpty={true}
+                channelId={''}
                 {...textboxProps}
             />
             <StyledTextboxLinks
