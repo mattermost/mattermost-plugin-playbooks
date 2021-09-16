@@ -324,7 +324,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		store.EXPECT().UpdatePlaybookRun(gomock.Any()).Return(nil)
 
-		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
 		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), "channel_id")
@@ -431,7 +431,7 @@ func TestUpdateStatus(t *testing.T) {
 		store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&app.SQLStatusPost{})).Return(nil)
 		store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(4)
 
-		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
 
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), homeChannelID)
 

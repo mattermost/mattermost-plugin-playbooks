@@ -124,7 +124,7 @@ func TestPlaybooks(t *testing.T) {
 
 	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
 	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/com.mattermost.plugin-incident-management")
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/playbooks")
 		r.Header.Add("Mattermost-User-ID", mattermostUserID)
 
 		handler.ServeHTTP(w, r)
@@ -1623,7 +1623,7 @@ func TestSortingPlaybooks(t *testing.T) {
 
 	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
 	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/com.mattermost.plugin-incident-management")
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/playbooks")
 		r.Header.Add("Mattermost-User-ID", "testuserid")
 
 		handler.ServeHTTP(w, r)
@@ -1844,7 +1844,7 @@ func TestPagingPlaybooks(t *testing.T) {
 
 	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
 	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/com.mattermost.plugin-incident-management")
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/playbooks")
 		r.Header.Add("Mattermost-User-ID", "testuserid")
 
 		handler.ServeHTTP(w, r)
