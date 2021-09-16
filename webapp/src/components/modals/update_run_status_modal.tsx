@@ -72,7 +72,7 @@ const UpdateRunStatusModal = ({
         setMessage(defaultMessage);
     }
 
-    const {input: reminderInput, reminder} = useReminderTimer(playbook, run);
+    const {input: reminderInput, reminder} = useReminderTimerSetting(playbook, run);
 
     const onConfirm = () => {
         if (hasPermission && message?.trim() && currentUserId && channelId && playbook?.team_id) {
@@ -191,7 +191,7 @@ const optionFromSeconds = (seconds: number) => {
     };
 };
 
-export const useReminderTimer = (
+export const useReminderTimerSetting = (
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist | undefined,
     run: PlaybookRun | undefined
 ) => {
