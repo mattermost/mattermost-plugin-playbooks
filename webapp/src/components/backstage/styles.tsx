@@ -6,6 +6,7 @@ import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
 
 import {RegularHeading} from 'src/styles/headings';
+import MarkdownTextbox from 'src/components/markdown_textbox';
 
 export const Banner = styled.div`
     color: var(--button-color);
@@ -70,6 +71,19 @@ export const StyledTextarea = styled.textarea`
 
     &:focus {
         box-shadow: inset 0 0 0 2px var(--button-bg);
+    }
+`;
+
+export const StyledMarkdownTextbox = styled(MarkdownTextbox)`
+    .custom-textarea {
+        background: white;
+        border-radius: 4px;
+        padding: 10px 25px 0 16px;
+        font-size: 14px;
+        line-height: 20px;
+    }
+    .textbox-preview-area {
+        z-index: auto;
     }
 `;
 
