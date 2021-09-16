@@ -116,6 +116,29 @@ export type Option = {
     mode?: Mode.DateTimeValue | Mode.DurationValue;
 }
 
+const defaultMakeOptions: Props['makeOptions'] = (query, datetimes, durations, mode) => {
+    if (!query) {
+        return null;
+    }
+
+    let options: Option[] = [];
+
+    if (datetimes.length && mode === Mode.DateTimeValue) {
+        options = options.concat(datetimes.map((datetime) => ({value: datetime})));
+    }
+
+    if (durations.length) {
+        if (
+            mode === Mode.DurationValue ||
+            (mode === Mode.DateTimeValue && !options.length)
+        ) {
+            options = options.concat(durations.map((duration) => ({value: duration, mode})));
+        }
+    }
+
+    return options;
+};
+
 type Props = {
     mode?: Mode.DateTimeValue | Mode.DurationValue;
     onChange: (value: Option | null) => void;
@@ -125,6 +148,7 @@ type Props = {
         query: string,
         datetimeResults: DateTime[],
         durationResults: Duration[],
+        mode: Mode,
     ) => Option[] | null;
 } & Partial<ComponentProps<typeof StyledSelect>>;
 
@@ -132,29 +156,7 @@ const DateTimeInput = ({
     mode = Mode.DateTimeValue,
     value,
     defaultOptions,
-    makeOptions = (query, datetimes, durations) => {
-        if (!query) {
-            return null;
-        }
-
-        let options: Option[] = [];
-
-        if (datetimes.length && mode === Mode.DateTimeValue) {
-            options = options.concat(datetimes.map((datetime) => ({value: datetime})));
-        }
-
-        if (durations.length) {
-            if (
-                mode === Mode.DurationValue ||
-                (mode === Mode.DateTimeValue && !options.length)
-            ) {
-                options = options.concat(durations.map((duration) => ({value: duration, mode})));
-            }
-        }
-
-        return options;
-    },
-
+    makeOptions = defaultMakeOptions,
     ...selectProps
 }: Props) => {
     const [options, setOptions] = useState<Option[] | null>(null);
@@ -164,7 +166,7 @@ const DateTimeInput = ({
         // eslint-disable-next-line no-undefined
         const datetimes = parse(query, undefined, chronoParsingOptions).map(({start}) => DateTime.fromJSDate(start.date()));
         const duration = infer(query, Mode.DurationValue);
-        setOptions(makeOptions(query, datetimes, duration ? [duration] : []) || null);
+        setOptions(makeOptions(query, datetimes, duration ? [duration] : [], mode) || null);
     }, 150), [setOptions, makeOptions]);
 
     return (
