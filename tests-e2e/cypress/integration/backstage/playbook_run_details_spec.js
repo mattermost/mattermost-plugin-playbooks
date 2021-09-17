@@ -54,7 +54,6 @@ describe('backstage playbook run details', () => {
                 playbookRunName: 'visible user icons',
                 ownerUserId: testUser.id,
             }).then((playbookRun) => {
-                console.log('here', playbookRun.id);
                 cy.apiUpdateStatus({
                     playbookRunId: playbookRun.id,
                     userId: testUser.id,
