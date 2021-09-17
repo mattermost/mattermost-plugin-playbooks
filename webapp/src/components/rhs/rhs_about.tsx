@@ -72,6 +72,7 @@ const RHSAbout = (props: Props) => {
                 value={props.playbookRun.name}
                 onEdit={onTitleEdit}
                 renderedTitle={RenderedTitle}
+                status={props.playbookRun.current_status}
             />
             {!collapsed &&
             <>
