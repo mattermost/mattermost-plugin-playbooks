@@ -913,6 +913,61 @@ func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.Pl
 	return &playbookRun, nil
 }
 
+// GetAssignedTasks returns the list of tasks assigned to userID
+func (s *playbookRunStore) GetAssignedTasks(userID string) ([]app.AssignedRun, error) {
+	var raw []struct {
+		app.AssignedRun
+		ChecklistsJSON json.RawMessage
+	}
+
+	query := s.store.builder.Select("i.ID AS PlaybookRunID", "i.Name AS PlaybookRunName",
+		"t.Name AS TeamName", "c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName",
+		"i.ChecklistsJSON AS ChecklistsJSON").
+		From("IR_Incident AS i").
+		Join("Teams AS t ON (i.TeamID = t.Id)").
+		Join("Channels AS c ON (i.ChannelID = c.Id)")
+	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+		query = query.Where(sq.Like{"i.ChecklistsJSON": fmt.Sprintf("%%\"%s\"%%", userID)})
+	} else {
+		query = query.Where(sq.Like{"i.ChecklistsJSON::text": fmt.Sprintf("%%\"%s\"%%", userID)})
+	}
+
+	if err := s.store.selectBuilder(s.store.db, &raw, query); err != nil {
+		return nil, errors.Wrap(err, "failed to query for assigned tasks")
+	}
+
+	var ret []app.AssignedRun
+	for _, rawItem := range raw {
+		run := rawItem.AssignedRun
+
+		var checklists []app.Checklist
+		err := json.Unmarshal(rawItem.ChecklistsJSON, &checklists)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to unmarshal checklists json for playbook run id: %s", rawItem.PlaybookRunID)
+		}
+
+		// Check which item(s) have this user as an assignee and add them to the list
+		for _, checklist := range checklists {
+			for _, item := range checklist.Items {
+				if item.AssigneeID == userID && item.State == "" {
+					task := app.AssignedTask{
+						ChecklistID:    checklist.ID,
+						ChecklistTitle: checklist.Title,
+						ChecklistItem:  item,
+					}
+					run.Tasks = append(run.Tasks, task)
+				}
+			}
+		}
+
+		if len(run.Tasks) > 0 {
+			ret = append(ret, run)
+		}
+	}
+
+	return ret, nil
+}
+
 func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {
 	newChecklists := populateChecklistIDs(playbookRun.Checklists)
 	checklistsJSON, err := checklistsToJSON(newChecklists)

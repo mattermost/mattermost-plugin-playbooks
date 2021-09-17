@@ -1903,6 +1903,102 @@ func TestCheckAndSendMessageOnJoin(t *testing.T) {
 	}
 }
 
+func TestGetAssignedTasks(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		_, store := setupSQLStore(t, db)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		setupTeamsTable(t, db)
+
+		userId := "testUserID"
+
+		team1 := model.Team{
+			Id:   model.NewId(),
+			Name: "Team1",
+		}
+		team2 := model.Team{
+			Id:   model.NewId(),
+			Name: "Team2",
+		}
+		createTeams(t, store, []model.Team{team1, team2})
+
+		channel01 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-01"}
+		channel02 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-02"}
+		channel03 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-03"}
+		channels := []model.Channel{channel01, channel02, channel03}
+
+		// three assigned tasks for inc01
+		inc01 := *NewBuilder(nil).
+			WithName("inc01 - this is the playbook name for channel 01").
+			WithChannel(&channel01).
+			WithTeamID(team1.Id).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc01.Checklists[0].Items[0].AssigneeID = userId
+		inc01.Checklists[1].Items[1].AssigneeID = userId
+		inc01.Checklists[2].Items[2].AssigneeID = userId
+		inc01TaskTitles := []string{
+			inc01.Checklists[0].Items[0].Title,
+			inc01.Checklists[1].Items[1].Title,
+			inc01.Checklists[2].Items[2].Title,
+		}
+		// This should not trigger an assigned task:
+		inc01.Checklists[3].Items[0].Title = userId
+
+		// one assigned task for inc02, works cross team
+		inc02 := *NewBuilder(nil).
+			WithName("inc02 - this is the playbook name for channel 02").
+			WithChannel(&channel02).
+			WithTeamID(team2.Id).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc02.Checklists[3].Items[2].AssigneeID = userId
+		inc02TaskTitles := []string{inc02.Checklists[3].Items[2].Title}
+
+		// no assigned task for inc03
+		inc03 := *NewBuilder(nil).
+			WithName("inc03 - this is the playbook name for channel 03").
+			WithChannel(&channel03).
+			WithTeamID(team1.Id).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc03.Checklists[3].Items[2].AssigneeID = "someotheruserid"
+
+		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03}
+
+		for i := range playbookRuns {
+			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
+			require.NoError(t, err)
+		}
+
+		createChannels(t, store, channels)
+
+		t.Run("gets assigned tasks only", func(t *testing.T) {
+			runs, err := playbookRunStore.GetAssignedTasks(userId)
+			require.NoError(t, err)
+
+			total := 0
+			for _, run := range runs {
+				total += len(run.Tasks)
+			}
+
+			require.Equal(t, 4, total)
+
+			// don't make assumptions about ordering until we figure that out PM-side
+			expected := map[string][]string{
+				inc01.Name: inc01TaskTitles,
+				inc02.Name: inc02TaskTitles,
+			}
+
+			for _, run := range runs {
+				for _, task := range run.Tasks {
+					require.Contains(t, expected[run.PlaybookRunName], task.Title)
+				}
+			}
+		})
+	}
+}
+
 func setupPlaybookRunStore(t *testing.T, db *sqlx.DB) app.PlaybookRunStore {
 	mockCtrl := gomock.NewController(t)
 
