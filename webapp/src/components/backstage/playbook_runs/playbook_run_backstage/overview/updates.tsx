@@ -48,7 +48,7 @@ const Updates = (props: Props) => {
     }
 
     return (
-        <TabPageContainer data-testid="updates">
+        <TabPageContainer data-testid='updates'>
             <Title>{'Updates'}</Title>
             {updates}
         </TabPageContainer>
