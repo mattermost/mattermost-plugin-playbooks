@@ -34,7 +34,7 @@ import {
     BackstageSubheader,
     BackstageSubheaderDescription,
     TabContainer,
-    StyledTextarea,
+    StyledMarkdownTextbox,
     StyledSelect,
 } from './styles';
 
@@ -585,13 +585,15 @@ const PlaybookEdit = (props: Props) => {
                                             {'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
-                                    <StyledTextarea
+                                    <StyledMarkdownTextbox
+                                        className={'playbook_description'}
+                                        id={'playbook_description_edit'}
                                         placeholder={'Use Markdown to create a template.'}
                                         value={playbook.description}
-                                        onChange={(e) => {
+                                        setValue={(description: string) => {
                                             setPlaybook({
                                                 ...playbook,
-                                                description: e.target.value,
+                                                description,
                                             });
                                             setChangesMade(true);
                                         }}
@@ -604,13 +606,15 @@ const PlaybookEdit = (props: Props) => {
                                             {'This template helps to standardize the format for recurring updates that take place throughout each run to keep.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
-                                    <StyledTextarea
+                                    <StyledMarkdownTextbox
+                                        className={'playbook_reminder_message'}
+                                        id={'playbook_reminder_message_edit'}
                                         placeholder={'Use Markdown to create a template.'}
                                         value={playbook.reminder_message_template}
-                                        onChange={(e) => {
+                                        setValue={(value: string) => {
                                             setPlaybook({
                                                 ...playbook,
-                                                reminder_message_template: e.target.value,
+                                                reminder_message_template: value,
                                             });
                                             setChangesMade(true);
                                         }}
@@ -646,13 +650,15 @@ const PlaybookEdit = (props: Props) => {
                                                     {'Default text for the retrospective.'}
                                                 </BackstageSubheaderDescription>
                                             </BackstageSubheader>
-                                            <StyledTextarea
+                                            <StyledMarkdownTextbox
+                                                className={'playbook_retrospective_template'}
+                                                id={'playbook_retrospective_template_edit'}
                                                 placeholder={'Enter retrospective template'}
                                                 value={playbook.retrospective_template}
-                                                onChange={(e) => {
+                                                setValue={(value: string) => {
                                                     setPlaybook({
                                                         ...playbook,
-                                                        retrospective_template: e.target.value,
+                                                        retrospective_template: value,
                                                     });
                                                     setChangesMade(true);
                                                 }}

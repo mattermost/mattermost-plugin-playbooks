@@ -1223,6 +1223,17 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.30.0"),
 		toVersion:   semver.MustParse("0.31.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if _, err := e.Exec("UPDATE PluginKeyValueStore SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management'"); err != nil {
+				return errors.Wrapf(err, "failed to migrate KV store plugin id")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.31.0"),
+		toVersion:   semver.MustParse("0.32.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := renameColumnMySQL(e, "IR_Playbook", "WebhookOnCreationURL", "ConcatenatedWebhookOnCreationURLs", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed renaming column WebhookOnCreationURL to ConcatenatedWebhookOnCreationURLs in table IR_Playbook")

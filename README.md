@@ -30,7 +30,7 @@ To quickly test Mattermost Playbooks, use the following test commands to create 
 
   * An example command looks like: `/playbook test create-playbooks 5`
 
-- `/playbook test create-playbook-run [playbook ID] [timestamp] [playbook run name]` - Provide the ID of an existing playbook to which the current user has access, a timestamp, and an playbook run name. The command creates an ongoing playbook run with the creation date set to the specified timestamp.
+- `/playbook test create-playbook-run [playbook ID] [timestamp] [playbook run name]` - Provide the ID of an existing playbook to which the current user has access, a timestamp, and a playbook run name. The command creates an ongoing playbook run with the creation date set to the specified timestamp.
 
   * An example command looks like: `/playbook test create-playbook-run 6utgh6qg7p8ndeef9edc583cpc 2020-11-23 PR-Testing`
 
