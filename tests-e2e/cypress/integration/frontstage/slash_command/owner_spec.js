@@ -87,7 +87,7 @@ describe('slash command > owner', () => {
     });
 
     describe('/playbook owner', () => {
-        it('should show an error when not in an playbook run channel', () => {
+        it('should show an error when not in a playbook run channel', () => {
             // # Navigate to a non-playbook run channel
             cy.visit('/ad-1/channels/town-square');
 
@@ -111,7 +111,7 @@ describe('slash command > owner', () => {
     });
 
     describe('/playbook owner @username', () => {
-        it('should show an error when not in an playbook run channel', () => {
+        it('should show an error when not in a playbook run channel', () => {
             // # Navigate to a non-playbook run channel
             cy.visit('/ad-1/channels/town-square');
 

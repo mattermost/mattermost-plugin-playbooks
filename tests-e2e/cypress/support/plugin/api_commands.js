@@ -49,7 +49,7 @@ Cypress.Commands.add('apiGetPlaybookRunByName', (teamId, name) => {
 });
 
 /**
- * Get an playbook run directly via API
+ * Get a playbook run directly via API
  * @param {String} playbookRunId
  * All parameters required
  */
@@ -65,7 +65,7 @@ Cypress.Commands.add('apiGetPlaybookRun', (playbookRunId) => {
 });
 
 /**
- * Start an playbook run directly via API.
+ * Start a playbook run directly via API.
  */
 Cypress.Commands.add('apiRunPlaybook', (
     {
@@ -105,7 +105,7 @@ Cypress.Commands.add('apiFinishRun', (playbookRunId) => {
     });
 });
 
-// Update an playbook run's status programmatically.
+// Update a playbook run's status programmatically.
 Cypress.Commands.add('apiUpdateStatus', (
     {
         playbookRunId,
@@ -136,7 +136,7 @@ Cypress.Commands.add('apiUpdateStatus', (
 });
 
 /**
- * Change the owner of an playbook run directly via API
+ * Change the owner of a playbook run directly via API
  * @param {String} playbookRunId
  * @param {String} userId
  * All parameters required

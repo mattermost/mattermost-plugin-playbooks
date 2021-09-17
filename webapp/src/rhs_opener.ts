@@ -65,7 +65,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
             return;
         }
 
-        // Don't do anything unless we're in an playbook run channel.
+        // Don't do anything unless we're in a playbook run channel.
         if (!currentChannelIsPlaybookRun) {
             return;
         }
