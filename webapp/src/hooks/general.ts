@@ -234,7 +234,7 @@ export function useProfilesInChannel(channelId: string) {
  * Use thing from API and/or Store
  *
  * @param fetch required thing fetcher
- * @param select thing from store available
+ * @param select thing from store if available
  * @param afterFetch side effect or dispatch thing back to store
  */
 function useThing<T extends NonNullable<any>>(
