@@ -39,6 +39,8 @@ func TestMigrationIdempotency(t *testing.T) {
 			setupChannelsTable(t, db)
 			// Migration to 0.21.0 need the Posts table
 			setupPostsTable(t, db)
+			// Migration to 0.31.0 needs the PluginKeyValueStore
+			setupKVStoreTable(t, db)
 
 			// Apply each migration twice
 			for _, migration := range migrations {
@@ -70,6 +72,8 @@ func TestMigrationIdempotency(t *testing.T) {
 			setupChannelsTable(t, db)
 			// Migration to 0.21.0 need the Posts table
 			setupPostsTable(t, db)
+			// Migration to 0.31.0 needs the PluginKeyValueStore
+			setupKVStoreTable(t, db)
 
 			// Apply the whole set of migrations twice
 			for i := 0; i < 2; i++ {
@@ -122,10 +126,7 @@ func TestHasPrimaryKeys(t *testing.T) {
 						  ON tco.constraint_schema = kcu.constraint_schema
 							 AND tco.constraint_name = kcu.constraint_name
 							 AND tco.table_name = kcu.table_name
-			WHERE  tab.table_schema NOT IN ( 'mysql', 'information_schema',
-											 'performance_schema',
-											 'sys' )
-			AND tab.table_schema = (SELECT DATABASE())
+			WHERE tab.table_schema = (SELECT DATABASE())
 			AND tco.constraint_name is NULL
 			GROUP  BY tab.table_schema,
 					  tab.table_name,

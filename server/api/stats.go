@@ -73,13 +73,7 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playbookOfInterest, err := h.playbookService.Get(filters.PlaybookID)
-	if err != nil {
-		h.HandleError(w, err)
-		return
-	}
-
-	if err2 := app.PlaybookAccess(userID, playbookOfInterest, h.pluginAPI); err2 != nil {
+	if err2 := app.PlaybookAccess(userID, filters.PlaybookID, h.playbookService, h.pluginAPI); err2 != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err2)
 		return
 	}

@@ -249,7 +249,7 @@
             "com.mattermost.nps": {
                 "Enable": false
             },
-            "com.mattermost.plugin-incident-management": {
+            "playbooks": {
                 "Enable": true
             }
         }

@@ -14,16 +14,8 @@ import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import Timeline from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline';
-
 import {PlaybookRun} from 'src/types/playbook_run';
-
-import {
-    Content,
-    PrimaryButtonRight,
-    TabPageContainer,
-    Title,
-} from 'src/components/backstage/playbook_runs/shared';
-
+import {Content, TabPageContainer, Title} from 'src/components/backstage/playbook_runs/shared';
 import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {TimelineEvent, TimelineEventsFilter, TimelineEventType} from 'src/types/rhs';
 import {setRHSEventsFilter} from 'src/actions';
@@ -66,13 +58,14 @@ const FakeButton = styled.div`
     }
 `;
 
-const PrimaryButtonNotRight = styled(PrimaryButtonRight)`
-    margin-left: 20px;
-`;
-
 type IdToUserFn = (userId: string) => UserProfile;
 
-const TimelineRetro = (props: { playbookRun: PlaybookRun }) => {
+interface Props {
+    playbookRun: PlaybookRun;
+    deleteTimelineEvent: (id: string) => void;
+}
+
+const TimelineRetro = (props: Props) => {
     const dispatch = useDispatch();
     const displayPreference = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || 'username';
     const [allEvents, setAllEvents] = useState<TimelineEvent[]>([]);
@@ -188,6 +181,7 @@ const TimelineRetro = (props: { playbookRun: PlaybookRun }) => {
                 <Timeline
                     playbookRun={props.playbookRun}
                     filteredEvents={filteredEvents}
+                    deleteTimelineEvent={props.deleteTimelineEvent}
                 />
             </Content>
         </TabPageContainer>

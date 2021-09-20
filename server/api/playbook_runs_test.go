@@ -43,7 +43,7 @@ func TestPlaybookRuns(t *testing.T) {
 
 	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
 	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/com.mattermost.plugin-incident-management")
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/playbooks")
 		r.Header.Add("Mattermost-User-ID", mattermostUserID)
 
 		handler.ServeHTTP(w, r)
@@ -921,18 +921,26 @@ func TestPlaybookRuns(t *testing.T) {
 		require.Nil(t, resultPlaybookRun)
 	})
 
-	t.Run("get playbook run by channel id - not authorized", func(t *testing.T) {
+	t.Run("get playbook run by channel id - not admin, not channel member, private playbook, +not playbook member", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		userID := "testUserID"
+		playbookRunID := "playbookRunID"
+		playbookID := "playbookID"
 
 		teamID := model.NewId()
 		testPlaybookRun := app.PlaybookRun{
-			ID:          "playbookRunID",
-			OwnerUserID: "testUserID",
+			ID:          playbookRunID,
+			OwnerUserID: userID,
 			TeamID:      teamID,
 			Name:        "playbookRunName",
 			ChannelID:   "channelID",
+			PlaybookID:  playbookID,
+		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{"someone_else"},
 		}
 
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
@@ -940,6 +948,8 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
 		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil)
 		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil)
+		playbookService.EXPECT().Get(testPlaybookRun.PlaybookID).Return(testPlaybook, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
@@ -948,203 +958,456 @@ func TestPlaybookRuns(t *testing.T) {
 		require.Nil(t, resultPlaybookRun)
 	})
 
-	t.Run("get private playbook run - not part of channel", func(t *testing.T) {
+	t.Run("get playbook run by channel id - not admin, not channel member, private playbook, +is playbook member", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		userID := "testUserID"
+		playbookRunID := "playbookRunID"
+		playbookID := "playbookID"
+
+		teamID := model.NewId()
+		testPlaybookRun := app.PlaybookRun{
+			ID:              playbookRunID,
+			OwnerUserID:     userID,
+			TeamID:          teamID,
+			Name:            "playbookRunName",
+			ChannelID:       "channelID",
+			PlaybookID:      playbookID,
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
+			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+			TimelineEvents:  []app.TimelineEvent{},
+		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{"someone_else", userID},
+		}
+
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(false)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil).Times(2)
+		playbookService.EXPECT().Get(testPlaybookRun.PlaybookID).Return(testPlaybook, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(true)
+		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil).Times(2)
+
+		resultPlaybookRun, err := c.PlaybookRuns.GetByChannelID(context.TODO(), testPlaybookRun.ChannelID)
+		require.NoError(t, err)
+		require.Equal(t, testPlaybookRun, toInternalPlaybookRun(*resultPlaybookRun))
+	})
+
+	t.Run("get playbook run by channel id - not admin, not channel member, public playbook, +not team member", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		userID := "testUserID"
 
 		teamID := model.NewId()
 		testPlaybookRun := app.PlaybookRun{
 			ID:          "playbookRunID",
-			OwnerUserID: "testUserID",
+			OwnerUserID: userID,
 			TeamID:      teamID,
 			Name:        "playbookRunName",
 			ChannelID:   "channelID",
-			PostID:      "",
-			PlaybookID:  "",
-			Checklists:  nil,
+			PlaybookID:  "playbookID",
+		}
+		testPlaybook := app.Playbook{
+			TeamID: teamID,
 		}
 
-		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.ChannelTypePrivate}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
-			Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(false)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil)
+		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil)
+		playbookService.EXPECT().Get(testPlaybookRun.PlaybookID).Return(testPlaybook, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(false)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
-		playbookRunService.EXPECT().
-			GetPlaybookRun("playbookRunID").
-			Return(&testPlaybookRun, nil)
+		resultPlaybookRun, err := c.PlaybookRuns.GetByChannelID(context.TODO(), testPlaybookRun.ChannelID)
+		requireErrorWithStatusCode(t, err, http.StatusNotFound)
+		require.Nil(t, resultPlaybookRun)
+	})
+
+	t.Run("get playbook run by channel id - not admin, not channel member, public playbook, +is team member", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		userID := "testUserID"
+		playbookRunID := "playbookRunID"
+		playbookID := "playbookID"
+
+		teamID := model.NewId()
+		testPlaybookRun := app.PlaybookRun{
+			ID:              playbookRunID,
+			OwnerUserID:     userID,
+			TeamID:          teamID,
+			Name:            "playbookRunName",
+			ChannelID:       "channelID",
+			PlaybookID:      playbookID,
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
+			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+			TimelineEvents:  []app.TimelineEvent{},
+		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{},
+		}
+
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(false)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil).Times(2)
+		playbookService.EXPECT().Get(testPlaybookRun.PlaybookID).Return(testPlaybook, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(true)
+		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil).Times(2)
+
+		resultPlaybookRun, err := c.PlaybookRuns.GetByChannelID(context.TODO(), testPlaybookRun.ChannelID)
+		require.NoError(t, err)
+		require.Equal(t, testPlaybookRun, toInternalPlaybookRun(*resultPlaybookRun))
+	})
+
+	t.Run("get playbook run by channel id - not admin, +is channel member, public playbook, not team member", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		userID := "testUserID"
+		playbookRunID := "playbookRunID"
+
+		teamID := model.NewId()
+		testPlaybookRun := app.PlaybookRun{
+			ID:              playbookRunID,
+			OwnerUserID:     userID,
+			TeamID:          teamID,
+			Name:            "playbookRunName",
+			ChannelID:       "channelID",
+			PlaybookID:      "playbookID",
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
+			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+			TimelineEvents:  []app.TimelineEvent{},
+		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{},
+		}
+
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(true)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil).Times(2)
+		playbookService.EXPECT().Get(testPlaybookRun.ID).Return(testPlaybook, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(false)
+		playbookRunService.EXPECT().GetPlaybookRun(playbookRunID).Return(&testPlaybookRun, nil)
+
+		resultPlaybookRun, err := c.PlaybookRuns.GetByChannelID(context.TODO(), testPlaybookRun.ChannelID)
+		require.NoError(t, err)
+		require.Equal(t, testPlaybookRun, toInternalPlaybookRun(*resultPlaybookRun))
+	})
+
+	t.Run("get playbook run by channel id - +is admin, not channel member, public playbook, not team member", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		userID := "testUserID"
+		playbookRunID := "playbookRunID"
+
+		teamID := model.NewId()
+		testPlaybookRun := app.PlaybookRun{
+			ID:              playbookRunID,
+			OwnerUserID:     userID,
+			TeamID:          teamID,
+			Name:            "playbookRunName",
+			ChannelID:       "channelID",
+			PlaybookID:      "playbookID",
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
+			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+			TimelineEvents:  []app.TimelineEvent{},
+		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{},
+		}
+
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(true)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(false)
+		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{}, nil)
+		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil).Times(2)
+		playbookService.EXPECT().Get(testPlaybookRun.ID).Return(testPlaybook, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(false)
+		playbookRunService.EXPECT().GetPlaybookRun(playbookRunID).Return(&testPlaybookRun, nil)
+
+		resultPlaybookRun, err := c.PlaybookRuns.GetByChannelID(context.TODO(), testPlaybookRun.ChannelID)
+		require.NoError(t, err)
+		require.Equal(t, testPlaybookRun, toInternalPlaybookRun(*resultPlaybookRun))
+	})
+
+	t.Run("get playbook run by runID - not admin, not channel member, private playbook, +not playbook member", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		userID := "testUserID"
+		playbookRunID := "playbookRunID"
+		playbookID := "playbookID"
+
+		teamID := model.NewId()
+		testPlaybookRun := app.PlaybookRun{
+			ID:              playbookRunID,
+			OwnerUserID:     userID,
+			TeamID:          teamID,
+			Name:            "playbookRunName",
+			ChannelID:       "channelID",
+			PlaybookID:      playbookID,
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
+			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+			TimelineEvents:  []app.TimelineEvent{},
+		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{"someone_else"},
+		}
+
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
+		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil).Times(2)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(false)
+		playbookService.EXPECT().Get(testPlaybookRun.PlaybookID).Return(testPlaybook, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(true)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
 		resultPlaybookRun, err := c.PlaybookRuns.Get(context.TODO(), testPlaybookRun.ID)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		require.Nil(t, resultPlaybookRun)
 	})
 
-	t.Run("get private playbook run - part of channel", func(t *testing.T) {
+	t.Run("get playbook run by runID - not admin, not channel member, private playbook, +is playbook member", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		userID := "testUserID"
+		playbookRunID := "playbookRunID"
+		playbookID := "playbookID"
 
 		teamID := model.NewId()
 		testPlaybookRun := app.PlaybookRun{
-			ID:              "playbookRunID",
-			OwnerUserID:     "testUserID",
+			ID:              playbookRunID,
+			OwnerUserID:     userID,
 			TeamID:          teamID,
 			Name:            "playbookRunName",
 			ChannelID:       "channelID",
-			PostID:          "",
-			PlaybookID:      "",
+			PlaybookID:      playbookID,
 			Checklists:      []app.Checklist{},
 			StatusPosts:     []app.StatusPost{},
 			InvitedUserIDs:  []string{},
 			InvitedGroupIDs: []string{},
 			TimelineEvents:  []app.TimelineEvent{},
 		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{"someone_else", userID},
+		}
 
-		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.ChannelTypePrivate}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
-			Return(true)
+		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil).Times(2)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(false)
+		playbookService.EXPECT().Get(testPlaybookRun.PlaybookID).Return(testPlaybook, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
-
-		playbookRunService.EXPECT().
-			GetPlaybookRun("playbookRunID").
-			Return(&testPlaybookRun, nil).Times(2)
 
 		resultPlaybookRun, err := c.PlaybookRuns.Get(context.TODO(), testPlaybookRun.ID)
 		require.NoError(t, err)
-		assert.Equal(t, testPlaybookRun, toInternalPlaybookRun(*resultPlaybookRun))
+		require.Equal(t, testPlaybookRun, toInternalPlaybookRun(*resultPlaybookRun))
 	})
 
-	t.Run("get public playbook run - not part of channel or team", func(t *testing.T) {
+	t.Run("get playbook run by runID - not admin, not channel member, public playbook, +not team member", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		userID := "testUserID"
+		playbookRunID := "playbookRunID"
+		playbookID := "playbookID"
 
 		teamID := model.NewId()
 		testPlaybookRun := app.PlaybookRun{
-			ID:              "playbookRunID",
-			OwnerUserID:     "testUserID",
+			ID:              playbookRunID,
+			OwnerUserID:     userID,
 			TeamID:          teamID,
 			Name:            "playbookRunName",
 			ChannelID:       "channelID",
-			PostID:          "",
-			PlaybookID:      "",
-			Checklists:      nil,
+			PlaybookID:      playbookID,
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
 			InvitedUserIDs:  []string{},
 			InvitedGroupIDs: []string{},
 		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{},
+		}
 
-		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.ChannelTypeOpen, TeamId: testPlaybookRun.TeamID}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
-			Return(false)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PermissionListTeamChannels).
-			Return(false)
+		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil).Times(2)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(false)
+		playbookService.EXPECT().Get(testPlaybookRun.PlaybookID).Return(testPlaybook, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(false)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
-
-		playbookRunService.EXPECT().
-			GetPlaybookRun("playbookRunID").
-			Return(&testPlaybookRun, nil)
 
 		resultPlaybookRun, err := c.PlaybookRuns.Get(context.TODO(), testPlaybookRun.ID)
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		require.Nil(t, resultPlaybookRun)
 	})
 
-	t.Run("get public playbook run - not part of channel, but part of team", func(t *testing.T) {
+	t.Run("get playbook run by runID - not admin, not channel member, public playbook, +is team member ", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		userID := "testUserID"
+		playbookRunID := "playbookRunID"
+		playbookID := "playbookID"
 
 		teamID := model.NewId()
 		testPlaybookRun := app.PlaybookRun{
-			ID:              "playbookRunID",
-			OwnerUserID:     "testUserID",
+			ID:              playbookRunID,
+			OwnerUserID:     userID,
 			TeamID:          teamID,
 			Name:            "playbookRunName",
 			ChannelID:       "channelID",
-			PostID:          "",
-			PlaybookID:      "",
+			PlaybookID:      playbookID,
 			Checklists:      []app.Checklist{},
 			StatusPosts:     []app.StatusPost{},
 			InvitedUserIDs:  []string{},
 			InvitedGroupIDs: []string{},
 			TimelineEvents:  []app.TimelineEvent{},
 		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{},
+		}
 
-		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.ChannelTypeOpen, TeamId: testPlaybookRun.TeamID}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
-			Return(false)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PermissionListTeamChannels).
-			Return(true)
+		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil).Times(2)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(false)
+		playbookService.EXPECT().Get(testPlaybookRun.PlaybookID).Return(testPlaybook, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(true)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
-		playbookRunService.EXPECT().
-			GetPlaybookRun("playbookRunID").
-			Return(&testPlaybookRun, nil).Times(2)
-
 		resultPlaybookRun, err := c.PlaybookRuns.Get(context.TODO(), testPlaybookRun.ID)
 		require.NoError(t, err)
-		assert.Equal(t, testPlaybookRun, toInternalPlaybookRun(*resultPlaybookRun))
+		require.Equal(t, testPlaybookRun, toInternalPlaybookRun(*resultPlaybookRun))
 	})
 
-	t.Run("get public playbook run - part of channel", func(t *testing.T) {
+	t.Run("get playbook run by runID - not admin, +is channel member, private playbook, is team member ", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		userID := "testUserID"
+		playbookID := "playbookRunID"
 
 		teamID := model.NewId()
 		testPlaybookRun := app.PlaybookRun{
-			ID:              "playbookRunID",
-			OwnerUserID:     "testUserID",
+			ID:              playbookID,
+			OwnerUserID:     userID,
 			TeamID:          teamID,
 			Name:            "playbookRunName",
 			ChannelID:       "channelID",
-			PostID:          "",
-			PlaybookID:      "",
+			PlaybookID:      "playbookID",
 			Checklists:      []app.Checklist{},
 			StatusPosts:     []app.StatusPost{},
 			InvitedUserIDs:  []string{},
 			InvitedGroupIDs: []string{},
 			TimelineEvents:  []app.TimelineEvent{},
 		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{"someone_else"},
+		}
 
-		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
-			Return(&model.Channel{Type: model.ChannelTypeOpen, TeamId: testPlaybookRun.TeamID}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
-		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
-			Return(true)
+		playbookRunService.EXPECT().GetPlaybookRun(playbookID).Return(&testPlaybookRun, nil).Times(2)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(true)
+		playbookService.EXPECT().Get(testPlaybookRun.ID).Return(testPlaybook, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(false)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
-		playbookRunService.EXPECT().
-			GetPlaybookRun("playbookRunID").
-			Return(&testPlaybookRun, nil).Times(2)
-
 		resultPlaybookRun, err := c.PlaybookRuns.Get(context.TODO(), testPlaybookRun.ID)
 		require.NoError(t, err)
-		assert.Equal(t, testPlaybookRun, toInternalPlaybookRun(*resultPlaybookRun))
+		require.Equal(t, testPlaybookRun, toInternalPlaybookRun(*resultPlaybookRun))
 	})
 
-	t.Run("get private playbook run metadata - not part of channel", func(t *testing.T) {
+	t.Run("get playbook run by runID - +is admin, not channel member, private playbook, is team member ", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		userID := "testUserID"
+		playbookID := "playbookRunID"
 
 		teamID := model.NewId()
 		testPlaybookRun := app.PlaybookRun{
-			ID:          "playbookRunID",
-			OwnerUserID: "testUserID",
+			ID:              playbookID,
+			OwnerUserID:     userID,
+			TeamID:          teamID,
+			Name:            "playbookRunName",
+			ChannelID:       "channelID",
+			PlaybookID:      "playbookID",
+			Checklists:      []app.Checklist{},
+			StatusPosts:     []app.StatusPost{},
+			InvitedUserIDs:  []string{},
+			InvitedGroupIDs: []string{},
+			TimelineEvents:  []app.TimelineEvent{},
+		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{"someone_else"},
+		}
+
+		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(true)
+		playbookRunService.EXPECT().GetPlaybookRun(playbookID).Return(&testPlaybookRun, nil).Times(2)
+		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(false)
+		playbookService.EXPECT().Get(testPlaybookRun.ID).Return(testPlaybook, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(false)
+
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
+
+		resultPlaybookRun, err := c.PlaybookRuns.Get(context.TODO(), testPlaybookRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, testPlaybookRun, toInternalPlaybookRun(*resultPlaybookRun))
+	})
+
+	t.Run("get private playbook run metadata - not part of channel, not playbook member", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+		userID := "testUserID"
+		playbookRunID := "playbookRunID"
+		playbookID := "playbookID"
+
+		teamID := model.NewId()
+		testPlaybookRun := app.PlaybookRun{
+			ID:          playbookRunID,
+			OwnerUserID: userID,
 			TeamID:      teamID,
 			Name:        "playbookRunName",
 			ChannelID:   "channelID",
 			PostID:      "",
-			PlaybookID:  "",
+			PlaybookID:  playbookID,
 			Checklists:  nil,
+		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{"someone_else"},
 		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
@@ -1152,6 +1415,8 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(false)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(false)
+		playbookService.EXPECT().Get(testPlaybookRun.PlaybookID).Return(testPlaybook, nil)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
@@ -1179,6 +1444,10 @@ func TestPlaybookRuns(t *testing.T) {
 			PlaybookID:  "",
 			Checklists:  []app.Checklist{},
 		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{"someone_else"},
+		}
 
 		testPlaybookRunMetadata := app.Metadata{
 			ChannelName:        "theChannelName",
@@ -1193,6 +1462,7 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(true)
+		playbookService.EXPECT().Get(testPlaybookRun.ID).Return(testPlaybook, nil)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
@@ -1212,17 +1482,23 @@ func TestPlaybookRuns(t *testing.T) {
 	t.Run("get public playbook run metadata - not part of channel or team", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		playbookRunID := "playbookRunID"
+		playbookID := "playbookID"
 
 		teamID := model.NewId()
 		testPlaybookRun := app.PlaybookRun{
-			ID:          "playbookRunID",
+			ID:          playbookRunID,
 			OwnerUserID: "testUserID",
 			TeamID:      teamID,
 			Name:        "playbookRunName",
 			ChannelID:   "channelID",
 			PostID:      "",
-			PlaybookID:  "",
+			PlaybookID:  playbookID,
 			Checklists:  nil,
+		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{},
 		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
@@ -1230,8 +1506,9 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(false)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PermissionListTeamChannels).
+		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PermissionViewTeam).
 			Return(false)
+		playbookService.EXPECT().Get(testPlaybookRun.PlaybookID).Return(testPlaybook, nil)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
@@ -1247,16 +1524,18 @@ func TestPlaybookRuns(t *testing.T) {
 	t.Run("get public playbook run metadata - not part of channel, but part of team", func(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
+		playbookRunID := "playbookRunID"
+		playbookID := "playbookID"
 
 		teamID := model.NewId()
 		testPlaybookRun := app.PlaybookRun{
-			ID:          "playbookRunID",
+			ID:          playbookRunID,
 			OwnerUserID: "testUserID",
 			TeamID:      teamID,
 			Name:        "playbookRunName",
 			ChannelID:   "channelID",
 			PostID:      "",
-			PlaybookID:  "",
+			PlaybookID:  playbookID,
 			Checklists:  []app.Checklist{},
 		}
 
@@ -1267,14 +1546,19 @@ func TestPlaybookRuns(t *testing.T) {
 			NumParticipants:    11,
 			TotalPosts:         42,
 		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{},
+		}
 
 		pluginAPI.On("GetChannel", testPlaybookRun.ChannelID).
 			Return(&model.Channel{Type: model.ChannelTypeOpen, TeamId: testPlaybookRun.TeamID}, nil)
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(false)
-		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PermissionListTeamChannels).
+		pluginAPI.On("HasPermissionToTeam", "testUserID", testPlaybookRun.TeamID, model.PermissionViewTeam).
 			Return(true)
+		playbookService.EXPECT().Get(testPlaybookRun.PlaybookID).Return(testPlaybook, nil)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
@@ -1306,6 +1590,10 @@ func TestPlaybookRuns(t *testing.T) {
 			PlaybookID:  "",
 			Checklists:  []app.Checklist{},
 		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{},
+		}
 
 		testPlaybookRunMetadata := app.Metadata{
 			ChannelName:        "theChannelName",
@@ -1320,6 +1608,7 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", mock.Anything, model.PermissionManageSystem).Return(false)
 		pluginAPI.On("HasPermissionToChannel", "testUserID", testPlaybookRun.ChannelID, model.PermissionReadChannel).
 			Return(true)
+		playbookService.EXPECT().Get(testPlaybookRun.ID).Return(testPlaybook, nil)
 
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any())
 
@@ -1736,14 +2025,22 @@ func TestPlaybookRuns(t *testing.T) {
 		reset(t)
 		setDefaultExpectations(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+		playbookRunID := "playbookRunID"
+		playbookID := "playbookID"
 
 		teamID := model.NewId()
+		userID := "testUserID"
 		testPlaybookRun := app.PlaybookRun{
-			ID:          "playbookRunID",
-			OwnerUserID: "testUserID",
+			ID:          playbookRunID,
+			OwnerUserID: userID,
 			TeamID:      teamID,
 			Name:        "playbookRunName",
 			ChannelID:   "channelID",
+			PlaybookID:  playbookID,
+		}
+		testPlaybook := app.Playbook{
+			TeamID:    teamID,
+			MemberIDs: []string{},
 		}
 
 		playbookRunService.EXPECT().GetPlaybookRunIDForChannel(testPlaybookRun.ChannelID).Return(testPlaybookRun.ID, nil)
@@ -1751,6 +2048,8 @@ func TestPlaybookRuns(t *testing.T) {
 		playbookRunService.EXPECT().GetPlaybookRun(testPlaybookRun.ID).Return(&testPlaybookRun, nil)
 		pluginAPI.On("HasPermissionToChannel", mock.Anything, mock.Anything, model.PermissionReadChannel).Return(false)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Type: model.ChannelTypePrivate}, nil)
+		pluginAPI.On("HasPermissionToTeam", userID, teamID, model.PermissionViewTeam).Return(false)
+		playbookService.EXPECT().Get(testPlaybookRun.PlaybookID).Return(testPlaybook, nil)
 
 		testrecorder := httptest.NewRecorder()
 		testreq, err := http.NewRequest("GET", "/api/v0/runs/checklist-autocomplete?channel_id="+testPlaybookRun.ChannelID, nil)

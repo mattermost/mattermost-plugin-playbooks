@@ -107,6 +107,7 @@ const selectStyles: StylesConfig = {
     control: (provided, {isDisabled}) => ({
         ...provided,
         backgroundColor: isDisabled ? 'rgba(var(--center-channel-bg-rgb),0.16)' : 'var(--center-channel-bg)',
+        border: '1px solid var(--center-channel-color-16)',
     }),
     placeholder: (provided) => ({
         ...provided,
@@ -115,6 +116,29 @@ const selectStyles: StylesConfig = {
     input: (provided) => ({
         ...provided,
         marginLeft: '8px',
+        color: 'var(--center-channel-color)',
+    }),
+    multiValue: (provided) => ({
+        ...provided,
+        backgroundColor: 'rgba(var(--center-channel-bg-rgb),0.50)',
+        borderRadius: '4px',
+    }),
+    multiValueLabel: (provided) => ({
+        ...provided,
+        backgroundColor: 'var(--center-channel-color-08)',
+        color: 'var(--center-channel-color)',
+    }),
+    multiValueRemove: (provided) => ({
+        ...provided,
+        backgroundColor: 'var(--center-channel-color-04)',
+        color: 'var(--center-channel-color-56)',
+        ':hover': {
+            backgroundColor: 'rgba(var(--button-bg-rgb), 0.12)',
+            color: 'var(--button-bg)',
+        },
+        ':active': {
+            backgroundColor: 'rgba(var(--button-bg-rgb), 0.16)',
+        },
     }),
 };
 

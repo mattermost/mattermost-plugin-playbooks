@@ -16,9 +16,9 @@ const (
 	StatusFinished   = "Finished"
 )
 
-// PlaybookRun holds the detailed information of an playbook run.
+// PlaybookRun holds the detailed information of a playbook run.
 //
-// NOTE: When adding a column to the db, search for "When adding an Playbook Run column" to see where
+// NOTE: When adding a column to the db, search for "When adding a Playbook Run column" to see where
 // that column needs to be added in the sqlstore code.
 type PlaybookRun struct {
 	// ID is the unique identifier of the playbook run.
@@ -216,7 +216,7 @@ type StatusPost struct {
 type UpdateOptions struct {
 }
 
-// StatusUpdateOptions encapsulates the fields that can be set when updating an playbook run's status
+// StatusUpdateOptions encapsulates the fields that can be set when updating a playbook run's status
 // NOTE: changes made to this should be reflected in the client package.
 type StatusUpdateOptions struct {
 	Message  string        `json:"message"`

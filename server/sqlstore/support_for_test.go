@@ -67,6 +67,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	setupPostsTable(t, db)
 	setupBotsTable(t, db)
 	setupChannelMembersTable(t, db)
+	setupKVStoreTable(t, db)
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		err = sqlStore.Migrate(currentSchemaVersion)
@@ -436,6 +437,37 @@ func setupBotsTable(t testing.TB, db *sqlx.DB) {
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 		`)
 	require.NoError(t, err)
+}
+
+func setupKVStoreTable(t *testing.T, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	if db.DriverName() == model.DatabaseDriverPostgres {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.pluginkeyvaluestore (
+				pluginid character varying(190) NOT NULL,
+				pkey character varying(50) NOT NULL,
+				pvalue bytea,
+				expireat bigint,
+				PRIMARY KEY (PluginId,PKey)
+			);
+		`)
+		require.NoError(t, err)
+	} else {
+		// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS PluginKeyValueStore (
+			  PluginId varchar(190) NOT NULL,
+			  PKey varchar(50) NOT NULL,
+			  PValue mediumblob,
+			  ExpireAt bigint(20) DEFAULT NULL,
+			  PRIMARY KEY (PluginId,PKey)
+		  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+		require.NoError(t, err)
+	}
+
 }
 
 type userInfo struct {

@@ -245,7 +245,7 @@ func (s *PlaybookRunServiceImpl) sendWebhookOnCreation(playbookRun PlaybookRun) 
 func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb *Playbook, userID string, public bool) (*PlaybookRun, error) {
 	if playbookRun.DefaultOwnerID != "" {
 		// Check if the user is a member of the team to which the playbook run belongs.
-		if !IsMemberOfTeamID(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.pluginAPI) {
+		if !IsMemberOfTeam(playbookRun.DefaultOwnerID, playbookRun.TeamID, s.pluginAPI) {
 			s.pluginAPI.Log.Warn("default owner specified, but it is not a member of the playbook run's team", "userID", playbookRun.DefaultOwnerID, "teamID", playbookRun.TeamID)
 		} else {
 			playbookRun.OwnerUserID = playbookRun.DefaultOwnerID

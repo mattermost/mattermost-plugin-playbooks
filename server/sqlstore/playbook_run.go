@@ -342,7 +342,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		return nil, err
 	}
 
-	// When adding an PlaybookRun column #2: add to the SetMap
+	// When adding a PlaybookRun column #2: add to the SetMap
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Insert("IR_Incident").
 		SetMap(map[string]interface{}{
@@ -404,7 +404,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 		return err
 	}
 
-	// When adding an PlaybookRun column #3: add to this SetMap (if it is a column that can be updated)
+	// When adding a PlaybookRun column #3: add to this SetMap (if it is a column that can be updated)
 	_, err = s.store.execBuilder(s.store.db, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
@@ -659,7 +659,7 @@ func (s *playbookRunStore) GetPlaybookRunIDForChannel(channelID string) (string,
 	return id, nil
 }
 
-// GetHistoricalPlaybookRunParticipantsCount returns the count of all members of an playbook run's channel
+// GetHistoricalPlaybookRunParticipantsCount returns the count of all members of a playbook run's channel
 // since the beginning of the playbook run, excluding bots.
 func (s *playbookRunStore) GetHistoricalPlaybookRunParticipantsCount(channelID string) (int64, error) {
 	query := s.queryBuilder.
@@ -847,20 +847,27 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 		`, info.UserID)
 	}
 
-	// is the requester a channel member, or is the channel public?
+	// 1. Is the user a channel member? If so, they have permission to view the run.
+	// 2. Is the playbook open to everyone on the team, or is the user a member of the playbook?
+	//    If so, they have permission to view the run.
 	return sq.Expr(`
-		  (
-			  -- If requester is a channel member
-			  EXISTS(SELECT 1
-						 FROM ChannelMembers as cm
-						 WHERE cm.ChannelId = i.ChannelID
-						   AND cm.UserId = ?)
-			  -- Or if channel is public
-			  OR EXISTS(SELECT 1
-							FROM Channels as c
-							WHERE c.Id = i.ChannelID
-							  AND c.Type = 'O')
-		  )`, info.UserID)
+        ((
+			EXISTS (
+                    SELECT 1
+						FROM ChannelMembers as cm
+						WHERE cm.ChannelId = i.ChannelId
+						  AND cm.UserId = ?)
+			) OR (
+				  NOT EXISTS(
+						SELECT 1
+							FROM IR_PlaybookMember
+							WHERE PlaybookID = i.PlaybookID)
+				  OR EXISTS(
+						SELECT 1
+							FROM IR_PlaybookMember
+							WHERE PlaybookID = i.PlaybookID
+							  AND MemberID = ?)
+		))`, info.UserID, info.UserID)
 }
 
 func buildTeamLimitExpr(userID, teamID, tableName string) sq.Sqlizer {
