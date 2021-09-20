@@ -156,7 +156,7 @@ describe('playbook run broadcast', () => {
 
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
-        cy.updateStatus(updateMessage, 0);
+        cy.updateStatus(updateMessage);
 
         // * Verify the posts
         const initialMessage = `New run started: ${playbookRunName}`;
@@ -180,7 +180,7 @@ describe('playbook run broadcast', () => {
 
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
-        cy.updateStatus(updateMessage, 0);
+        cy.updateStatus(updateMessage);
 
         // * Verify the posts
         const initialMessage = `New run started: ${playbookRunName}`;
