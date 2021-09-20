@@ -75,7 +75,7 @@ const ReminderCommon = (props: ReminderCommonProps) => {
                 </CustomPostHeader>
                 <CustomPostButtonRow>
                     <PrimaryButton
-                        onClick={() => navigateToPluginUrl(`/runs/${playbookRun?.id}/retrospective`)}
+                        onClick={() => playbookRun && navigateToPluginUrl(`/runs/${playbookRun.id}/retrospective`)}
                         disabled={disableButtons}
                     >
                         {props.primary}
