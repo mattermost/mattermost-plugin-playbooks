@@ -324,7 +324,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		store.EXPECT().UpdatePlaybookRun(gomock.Any()).Return(nil)
 
-		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
 		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), "channel_id")
@@ -431,7 +431,7 @@ func TestUpdateStatus(t *testing.T) {
 		store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&app.SQLStatusPost{})).Return(nil)
 		store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(4)
 
-		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
 
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), homeChannelID)
 
@@ -444,10 +444,16 @@ func TestUpdateStatus(t *testing.T) {
 			}, nil).Times(3)
 		poster.EXPECT().PostMessage(homeChannelID, statusUpdateOptions.Message).
 			Return(&model.Post{Id: "testPostId", RootId: "homeRootPostID"}, nil)
-		poster.EXPECT().PostMessageToThread(broadcastChannelID1, "broadcastRootPostID1", gomock.AssignableToTypeOf("")).
-			Return(&model.Post{Id: "testPostId", RootId: "broadcastRootPostID1"}, nil)
-		poster.EXPECT().PostMessageToThread(broadcastChannelID2, "broadcastRootPostID2", gomock.AssignableToTypeOf("")).
-			Return(&model.Post{Id: "testPostId", RootId: "broadcastRootPostID2"}, nil)
+		poster.EXPECT().PostMessageToThread("broadcastRootPostID1", gomock.Any()).
+			// Set thet post RootID to the expected root ID from the map, so SetBroadcastChannelIDsToRootIDs is not called
+			SetArg(1, model.Post{RootId: "broadcastRootPostID1"}).
+			Return(nil)
+		poster.EXPECT().PostMessageToThread("broadcastRootPostID2", gomock.Any()).
+			// Set thet post RootID to the expected root ID from the map, so SetBroadcastChannelIDsToRootIDs is not called
+			SetArg(1, model.Post{RootId: "broadcastRootPostID2"}).
+			Return(nil)
+		poster.EXPECT().Post(gomock.Any()).
+			Return(nil)
 
 		scheduler.EXPECT().Cancel(playbookRun.ID)
 

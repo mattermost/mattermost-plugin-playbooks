@@ -114,7 +114,7 @@ if (targetIsDevServer) {
             proxy: [{
                 context: () => true,
                 bypass(req) {
-                    if (req.url.indexOf('/static/plugins/com.mattermost.plugin-incident-management/') === 0) {
+                    if (req.url.indexOf('/static/plugins/playbooks/') === 0) {
                         return '/main.js'; // return the webpacked asset
                     }
                     return null;

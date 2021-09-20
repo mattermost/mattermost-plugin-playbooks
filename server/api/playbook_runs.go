@@ -354,7 +354,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
 	}
 
-	if playbookRun.Name == "" {
+	if strings.TrimSpace(playbookRun.Name) == "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
