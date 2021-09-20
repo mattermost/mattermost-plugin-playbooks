@@ -2,7 +2,6 @@ import {useEffect, useState} from 'react';
 
 import {clientFetchPlaybook, clientFetchPlaybooks, deletePlaybook as clientDeletePlaybook, fetchPlaybookRun} from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
-import {PlaybookRun} from 'src/types/playbook_run';
 
 type ParamsState = Required<FetchPlaybooksParams>;
 
@@ -110,16 +109,4 @@ export function usePlaybooksCrud(
         {isLoading, totalCount, hasMore, params, selectedPlaybook},
         {setPage, setParams, sortBy, setSelectedPlaybook, deletePlaybook},
     ] as const;
-}
-
-/**
- * Read-only logic to fetch playbook run
- */
-export function useRun(id: PlaybookRun['id']) {
-    const [run, setRun] = useState<PlaybookRun | undefined>();
-    useEffect(() => {
-        fetchPlaybookRun(id).then(setRun);
-    }, [id]);
-
-    return run;
 }

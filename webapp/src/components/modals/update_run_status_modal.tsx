@@ -6,8 +6,6 @@ import {Link} from 'react-router-dom';
 
 import {useSelector} from 'react-redux';
 
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-
 import styled from 'styled-components';
 
 import {useIntl} from 'react-intl';
@@ -64,7 +62,7 @@ const UpdateRunStatusModal = ({
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const playbook = usePlaybook(playbookId);
-    const run = useRun(playbookRunId);
+    const run = useRun(playbookRunId, playbook?.team_id, channelId);
 
     const [message, setMessage] = useState<string | null>(null);
     const defaultMessage = useDefaultMessage(playbook, run);
@@ -165,7 +163,7 @@ const UpdateRunStatusModal = ({
 
 const useDefaultMessage = (
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist | undefined,
-    run: PlaybookRun | undefined
+    run: PlaybookRun | null | undefined
 ) => {
     const lastStatusPostMeta = run?.status_posts?.slice().reverse().find(({delete_at}) => !delete_at);
     const lastStatusPost = usePost(lastStatusPostMeta?.id ?? '');
@@ -193,7 +191,7 @@ const optionFromSeconds = (seconds: number) => {
 
 export const useReminderTimerOption = (
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist | undefined,
-    run: PlaybookRun | undefined
+    run: PlaybookRun | null | undefined,
 ) => {
     const defaults = useMemo(() => {
         const options = [

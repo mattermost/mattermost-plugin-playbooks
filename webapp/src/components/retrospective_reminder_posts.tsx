@@ -81,7 +81,7 @@ const ReminderCommon = (props: ReminderCommonProps) => {
                         {props.primary}
                     </PrimaryButton>
                     <StyledTertiaryButton
-                        onClick={() => noRetrospective(playbookRun?.id)}
+                        onClick={() => playbookRun && noRetrospective(playbookRun.id)}
                         disabled={disableButtons}
                     >
                         {props.secondary}

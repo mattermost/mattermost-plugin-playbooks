@@ -229,8 +229,10 @@ const RHSHome = () => {
     }, [currentRun, playbooks]);
 
     const viewCurrentPlaybookRun = () => {
-        dispatch(setRHSViewingPlaybookRun());
-        navigateToUrl(`/${currentTeam.name}/channels/${currentRun.channel_id}`);
+        if (currentRun) {
+            dispatch(setRHSViewingPlaybookRun());
+            navigateToUrl(`/${currentTeam.name}/channels/${currentRun.channel_id}`);
+        }
     };
 
     let headerContent;

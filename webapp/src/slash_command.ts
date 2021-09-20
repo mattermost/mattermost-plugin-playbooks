@@ -27,6 +27,7 @@ type SlashCommandObj = {message?: string; args?: string[];} | {error: string;} |
 export function makeSlashCommandHook(store: Store) {
     return async (inMessage: any, args: any): Promise<SlashCommandObj> => {
         const state = store.getState();
+        const currentRun = currentPlaybookRun(state);
         const message = inMessage && typeof inMessage === 'string' ? inMessage.trim() : null;
 
         if (message?.startsWith('/playbook run')) {
@@ -36,9 +37,8 @@ export function makeSlashCommandHook(store: Store) {
             return {message: `/playbook run ${clientId}`, args};
         }
 
-        if (message?.startsWith('/playbook update') && inPlaybookRunChannel(state)) {
+        if (message?.startsWith('/playbook update') && inPlaybookRunChannel(state) && currentRun) {
             const clientId = generateId();
-            const currentRun = currentPlaybookRun(state);
             store.dispatch(setClientId(clientId));
             store.dispatch(promptUpdateStatus(currentRun.team_id, currentRun.id, currentRun.playbook_id, currentRun.channel_id));
             return {};
