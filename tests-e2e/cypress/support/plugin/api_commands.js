@@ -114,6 +114,7 @@ Cypress.Commands.add('apiUpdateStatus', (
         teamId,
         message,
         description,
+        reminder = '300',
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -126,7 +127,7 @@ Cypress.Commands.add('apiUpdateStatus', (
             user_id: userId,
             channel_id: channelId,
             team_id: teamId,
-            submission: {message, description, reminder: '15'},
+            submission: {message, description, reminder},
             cancelled: false,
         },
     }).then((response) => {
