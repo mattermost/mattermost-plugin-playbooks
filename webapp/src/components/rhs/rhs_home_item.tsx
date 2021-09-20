@@ -101,7 +101,7 @@ const Meta = styled.div`
 
 `;
 
-const MetaItem = styled(PillBox)`
+export const MetaItem = styled(PillBox)`
     font-family: Open Sans;
     font-weight: 600;
     font-size: 11px;

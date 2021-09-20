@@ -134,7 +134,7 @@ describe('playbook creation button', () => {
 });
 
 function verifyPlaybookCreationPageOpened(url, playbookName) {
-    // * Verify the page url contains 'com.mattermost.plugin-incident-management/playbooks/new'
+    // * Verify the page url contains 'playbooks/playbooks/new'
     cy.url().should('include', url);
 
     // * Verify the playbook name matches the one provided

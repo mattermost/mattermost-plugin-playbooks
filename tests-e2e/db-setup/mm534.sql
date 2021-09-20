@@ -2759,7 +2759,7 @@ COPY public.outgoingwebhooks (id, token, createat, updateat, deleteat, creatorid
 --
 
 COPY public.pluginkeyvaluestore (pluginid, pkey, pvalue, expireat) FROM stdin;
-com.mattermost.plugin-incident-management	mmi_botid	\\x706f663562657a6a6e6938796d6b6172337174657364357a3377	0
+playbooks	mmi_botid	\\x706f663562657a6a6e6938796d6b6172337174657364357a3377	0
 \.
 
 

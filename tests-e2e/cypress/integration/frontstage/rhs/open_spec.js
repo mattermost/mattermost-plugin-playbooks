@@ -65,7 +65,7 @@ describe('playbook run rhs', () => {
             cy.get('#rhsContainer').should('not.exist');
         });
 
-        it('when navigating to an playbook run channel with the RHS already open', () => {
+        it('when navigating to a playbook run channel with the RHS already open', () => {
             // # Navigate to the application.
             cy.visit('/ad-1/');
 
