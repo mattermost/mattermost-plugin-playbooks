@@ -13,53 +13,10 @@ import {DateTime, Duration} from 'luxon';
 
 import {useIntl} from 'react-intl';
 
+import {StyledSelect} from 'src/components/backstage/styles';
+
 import {Timestamp} from 'src/webapp_globals';
 import {formatDuration} from 'src/components/formatted_duration';
-
-const StyledSelect = styled(Select)`
-    flex-grow: 1;
-    background-color: var(--center-channel-bg);
-
-    .datetime-autocomplete__menu-list {
-        background-color: var(--center-channel-bg);
-        border: none;
-    }
-
-    .datetime-autocomplete__input {
-        color: var(--center-channel-color);
-    }
-
-    .datetime-autocomplete__option--is-selected {
-        background-color: var(--center-channel-color-08);
-    }
-
-    .datetime-autocomplete__option--is-focused {
-        background-color: var(--center-channel-color-16);
-    }
-
-    .datetime-autocomplete__control {
-        transition: all 0.15s ease;
-        transition-delay: 0s;
-        background-color: transparent;
-        border-radius: 4px;
-        border: none;
-        box-shadow: inset 0 0 0 1px var(--center-channel-color-16);
-        width: 100%;
-        height: 4rem;
-        font-size: 14px;
-        padding-left: 3.2rem;
-
-        &--is-focused {
-            box-shadow: inset 0 0 0px 2px var(--button-bg);
-        }
-    }
-
-    .datetime-autocomplete__option {
-        &:active {
-            background-color: var(--center-channel-color-08);
-        }
-    }
-`;
 
 export enum Mode {
     DateTimeValue = 'DateTimeValue',
@@ -172,6 +129,7 @@ const DateTimeInput = ({
     return (
         <StyledSelect
             {...selectProps}
+            classNamePrefix='channel-selector'
             filterOption={null}
             isMulti={false}
 
