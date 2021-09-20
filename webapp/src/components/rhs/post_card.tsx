@@ -23,6 +23,7 @@ import {ChannelNamesMap} from 'src/types/backstage';
 import {promptUpdateStatus, toggleRHS} from 'src/actions';
 import ShowMore from 'src/components/rhs/show_more';
 import PostText from 'src/components/post_text';
+import {useEnsureProfiles} from 'src/hooks';
 
 const NoRecentUpdates = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
@@ -71,6 +72,7 @@ const EditedIndicator = styled.div`
 function useAuthorInfo(userID: string) : [string, string] {
     const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
     const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userID));
+    useEnsureProfiles([userID]);
 
     let profileUrl = '';
     let preferredName = '';
