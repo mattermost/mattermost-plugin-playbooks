@@ -1910,7 +1910,7 @@ func TestGetAssignedTasks(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		setupTeamsTable(t, db)
 
-		userId := "testUserID"
+		userID := "testUserID"
 
 		team1 := model.Team{
 			Id:   model.NewId(),
@@ -1934,16 +1934,16 @@ func TestGetAssignedTasks(t *testing.T) {
 			WithTeamID(team1.Id).
 			WithChecklists([]int{1, 2, 3, 4}).
 			ToPlaybookRun()
-		inc01.Checklists[0].Items[0].AssigneeID = userId
-		inc01.Checklists[1].Items[1].AssigneeID = userId
-		inc01.Checklists[2].Items[2].AssigneeID = userId
+		inc01.Checklists[0].Items[0].AssigneeID = userID
+		inc01.Checklists[1].Items[1].AssigneeID = userID
+		inc01.Checklists[2].Items[2].AssigneeID = userID
 		inc01TaskTitles := []string{
 			inc01.Checklists[0].Items[0].Title,
 			inc01.Checklists[1].Items[1].Title,
 			inc01.Checklists[2].Items[2].Title,
 		}
 		// This should not trigger an assigned task:
-		inc01.Checklists[3].Items[0].Title = userId
+		inc01.Checklists[3].Items[0].Title = userID
 
 		// one assigned task for inc02, works cross team
 		inc02 := *NewBuilder(nil).
@@ -1952,7 +1952,7 @@ func TestGetAssignedTasks(t *testing.T) {
 			WithTeamID(team2.Id).
 			WithChecklists([]int{1, 2, 3, 4}).
 			ToPlaybookRun()
-		inc02.Checklists[3].Items[2].AssigneeID = userId
+		inc02.Checklists[3].Items[2].AssigneeID = userID
 		inc02TaskTitles := []string{inc02.Checklists[3].Items[2].Title}
 
 		// no assigned task for inc03
@@ -1974,7 +1974,7 @@ func TestGetAssignedTasks(t *testing.T) {
 		createChannels(t, store, channels)
 
 		t.Run("gets assigned tasks only", func(t *testing.T) {
-			runs, err := playbookRunStore.GetAssignedTasks(userId)
+			runs, err := playbookRunStore.GetAssignedTasks(userID)
 			require.NoError(t, err)
 
 			total := 0

@@ -850,7 +850,9 @@ func (r *Runner) actionTodo(args []string) {
 		}
 	}
 
-	r.poster.DM(r.args.UserId, &model.Post{Message: message})
+	if err = r.poster.DM(r.args.UserId, &model.Post{Message: message}); err != nil {
+		r.warnUserAndLogErrorf("failed to send digest: %v", err)
+	}
 }
 
 func (r *Runner) actionTestSelf(args []string) {
