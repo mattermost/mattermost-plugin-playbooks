@@ -16,6 +16,8 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {Client4} from 'mattermost-redux/client';
 
+import {browserHistory} from 'src/webapp_globals';
+
 import {isMobile} from 'src/mobile';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {promptUpdateStatus, toggleRHS} from 'src/actions';
@@ -113,8 +115,9 @@ const PostCard = (props: Props) => {
                         onClick={(e) => {
                             e.preventDefault();
 
-                            // @ts-ignore
-                            window.WebappUtils.browserHistory.push(`/_redirect/pl/${latestUpdate.id}`);
+                            if (props.post) {
+                                browserHistory.push(`/_redirect/pl/${props.post.id}`);
+                            }
 
                             if (isMobile()) {
                                 dispatch(toggleRHS());
