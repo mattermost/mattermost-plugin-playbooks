@@ -111,15 +111,3 @@ export function usePlaybooksCrud(
         {setPage, setParams, sortBy, setSelectedPlaybook, deletePlaybook},
     ] as const;
 }
-
-/**
- * Read-only logic to fetch playbook run
- */
-export function useRun(id: PlaybookRun['id']) {
-    const [run, setRun] = useState<PlaybookRun | undefined>();
-    useEffect(() => {
-        fetchPlaybookRun(id).then(setRun);
-    }, [id]);
-
-    return run;
-}
