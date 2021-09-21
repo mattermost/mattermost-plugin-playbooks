@@ -14,7 +14,7 @@ import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 
-import {FetchPlaybookRunsParams} from 'src/types/playbook_run';
+import {FetchPlaybookRunsParams, PlaybookRunStatus} from 'src/types/playbook_run';
 import ProfileSelector from 'src/components/profile/profile_selector';
 
 import TeamSelector from 'src/components/team/team_selector';
@@ -87,10 +87,10 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
         });
     };
 
-    const setStatus = (statuses: string[]) => {
+    const setFinishedRuns = (checked?: boolean) => {
+        const statuses = checked ? [PlaybookRunStatus.InProgress, PlaybookRunStatus.Finished] : [PlaybookRunStatus.InProgress];
         setFetchParams((oldParams) => {
-            return {...oldParams, statuses, page: 0}
-            ;
+            return {...oldParams, statuses, page: 0};
         });
     };
 
@@ -147,9 +147,11 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                 getUsers={fetchOwners}
                 onSelectedChange={setOwnerId}
             />
-            <StatusFilter
-                default={fetchParams.statuses}
-                onChange={setStatus}
+            <CheckboxInput
+                testId={'finished-runs'}
+                text={'Finished Runs'}
+                checked={(fetchParams.statuses?.length ?? 0) > 1}
+                onChange={setFinishedRuns}
             />
             {teams.length > 1 && !fixedTeam &&
                 <TeamSelector
