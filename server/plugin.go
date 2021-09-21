@@ -138,6 +138,11 @@ func (p *Plugin) OnActivate() error {
 
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
+	categoryMutex, err := cluster.NewMutex(p.API, "playbooks_category_mutex")
+	if err != nil {
+		return errors.Wrapf(err, "failed creating cluster mutex")
+	}
+
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,
 		playbookRunStore,
@@ -147,6 +152,7 @@ func (p *Plugin) OnActivate() error {
 		scheduler,
 		telemetryClient,
 		p.API,
+		categoryMutex,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {

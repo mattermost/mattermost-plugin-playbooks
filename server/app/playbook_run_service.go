@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
+	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -39,6 +40,7 @@ type PlaybookRunServiceImpl struct {
 	scheduler     JobOnceScheduler
 	telemetry     PlaybookRunTelemetry
 	api           plugin.API
+	categoryMutex *cluster.Mutex
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -78,7 +80,7 @@ const DialogFieldItemCommandKey = "command"
 
 // NewPlaybookRunService creates a new PlaybookRunServiceImpl.
 func NewPlaybookRunService(pluginAPI *pluginapi.Client, store PlaybookRunStore, poster bot.Poster, logger bot.Logger,
-	configService config.Service, scheduler JobOnceScheduler, telemetry PlaybookRunTelemetry, api plugin.API) *PlaybookRunServiceImpl {
+	configService config.Service, scheduler JobOnceScheduler, telemetry PlaybookRunTelemetry, api plugin.API, mutex *cluster.Mutex) *PlaybookRunServiceImpl {
 	return &PlaybookRunServiceImpl{
 		pluginAPI:     pluginAPI,
 		store:         store,
@@ -89,6 +91,7 @@ func NewPlaybookRunService(pluginAPI *pluginapi.Client, store PlaybookRunStore, 
 		telemetry:     telemetry,
 		httpClient:    &http.Client{Timeout: 30 * time.Second},
 		api:           api,
+		categoryMutex: mutex,
 	}
 }
 
@@ -1702,6 +1705,9 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 // createOrUpdatePlaybookRunSidebarCategory creates or updates a "Playbook Runs" sidebar category if
 // it does not already exist and adds the channel within the sidebar category
 func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID, categoryName string) error {
+	s.categoryMutex.Lock()
+	defer s.categoryMutex.Unlock()
+
 	sidebar, err := s.pluginAPI.Channel.GetSidebarCategories(userID, teamID)
 	if err != nil {
 		return err
