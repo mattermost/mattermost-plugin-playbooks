@@ -113,12 +113,12 @@ const PostCard = (props: Props) => {
                 <UpdateHeader>
                     <UpdateAuthor>{authorUserName}</UpdateAuthor>
                     <UpdateTimeLink
-                        href={`/_redirect/pl/${props.post.id}`}
+                        href={`/${props.team.name}/pl/${props.post.id}`}
                         onClick={(e) => {
                             e.preventDefault();
 
                             if (props.post) {
-                                browserHistory.push(`/_redirect/pl/${props.post.id}`);
+                                browserHistory.push(`/${props.team.name}/pl/${props.post.id}`);
                             }
 
                             if (isMobile()) {
