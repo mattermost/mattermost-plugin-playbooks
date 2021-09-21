@@ -15,6 +15,7 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/httptools"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 
@@ -87,7 +88,7 @@ func NewPlaybookRunService(pluginAPI *pluginapi.Client, store PlaybookRunStore, 
 		configService: configService,
 		scheduler:     scheduler,
 		telemetry:     telemetry,
-		httpClient:    &http.Client{Timeout: 30 * time.Second},
+		httpClient:    httptools.MakeClient(pluginAPI),
 		api:           api,
 	}
 }
