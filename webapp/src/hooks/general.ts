@@ -300,7 +300,7 @@ export function useAllowPlaybookCreationInTeams() {
     return allowPlaybookCreationInTeams;
 }
 
-export function useDropdownPosition(numOptions: number) {
+export function useDropdownPosition(numOptions: number, optionWidth = 264) {
     const [dropdownPosition, setDropdownPosition] = useState({x: 0, y: 0, isOpen: false});
 
     const toggleOpen = (x: number, y: number) => {
@@ -313,8 +313,6 @@ export function useDropdownPosition(numOptions: number) {
         const dropdownBottom = y + selectBox + spacePerOption + (numOptionsShown * spacePerOption) + bottomPadding + extraSpace;
         const deltaY = Math.max(0, dropdownBottom - window.innerHeight);
 
-        // width of the dropdown. This is a magic number for now, to simplify and avoid needing to measure the rect.
-        const optionWidth = 264;
         const dropdownRight = x + optionWidth + extraSpace;
         const deltaX = Math.max(0, dropdownRight - window.innerWidth);
 
