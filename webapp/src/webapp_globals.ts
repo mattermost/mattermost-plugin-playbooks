@@ -10,6 +10,7 @@ export const {
 
 export const {
     modals,
+    browserHistory,
 
     // @ts-ignore
 } = global.WebappUtils ?? {};
