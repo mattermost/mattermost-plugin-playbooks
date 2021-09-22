@@ -80,7 +80,7 @@ describe('playbook run rhs', () => {
             });
 
             // # Open the flagged posts RHS
-            cy.get('.icon-bookmark-outline').click({force: true});
+            cy.get('#channelHeaderFlagButton').click({force: true});
 
             // # Open the playbook run channel from the LHS.
             cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
