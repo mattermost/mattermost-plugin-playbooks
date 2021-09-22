@@ -243,26 +243,26 @@ function useThing<T extends NonNullable<any>>(
     select?: (state: GlobalState, id: string) => T,
     afterFetch?: (x: T) => void,
 ) {
-    const [x, setX] = useState<T | null>(null);
-    const xFromState = useSelector<GlobalState, T | null>((state) => select?.(state, id || '') ?? null);
+    const [thing, setThing] = useState<T | null>(null);
+    const thingFromState = useSelector<GlobalState, T | null>((state) => select?.(state, id || '') ?? null);
 
     useEffect(() => {
-        if (xFromState) {
-            setX(xFromState);
+        if (thingFromState) {
+            setThing(thingFromState);
             return;
         }
 
         if (id) {
-            fetch(id).then(setX);
-            if (x) {
-                afterFetch?.(x);
+            fetch(id).then(setThing);
+            if (thing) {
+                afterFetch?.(thing);
             }
             return;
         }
-        setX(null);
-    }, [xFromState, id]);
+        setThing(null);
+    }, [thingFromState, id]);
 
-    return x;
+    return thing;
 }
 
 export function usePost(postId: string) {

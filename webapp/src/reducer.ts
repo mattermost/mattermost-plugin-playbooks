@@ -161,9 +161,9 @@ const myPlaybookRunsByTeam = (
             ...state,
             [teamId]: {...state[teamId]},
         };
-        const tx = newState[teamId];
-        if (tx) {
-            delete tx[channelId];
+        const runMap = newState[teamId];
+        if (runMap) {
+            delete runMap[channelId];
         }
         return newState;
     }

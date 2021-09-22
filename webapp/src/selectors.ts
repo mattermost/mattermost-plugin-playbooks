@@ -98,7 +98,7 @@ export const currentChecklistAllCollapsed = createSelector(
     currentChecklistCollapsedState,
     (playbookRun, checklistsState) => {
         if (!playbookRun) {
-            return false;
+            return true;
         }
         for (let i = 0; i < playbookRun.checklists.length; i++) {
             if (!checklistsState[i]) {
@@ -118,13 +118,13 @@ export const myActivePlaybookRunsList = createSelector(
     getCurrentTeamId,
     myPlaybookRunsByTeam,
     (teamId, playbookRunMapByTeam) => {
-        const tx = playbookRunMapByTeam[teamId];
-        if (!tx) {
+        const runMap = playbookRunMapByTeam[teamId];
+        if (!runMap) {
             return [];
         }
 
         // return active playbook runs, sorted descending by create_at
-        return Object.values(tx)
+        return Object.values(runMap)
             .filter((i) => playbookRunIsActive(i))
             .sort((a, b) => b.create_at - a.create_at);
     },
