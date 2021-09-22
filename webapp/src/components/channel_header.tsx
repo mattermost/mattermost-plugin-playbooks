@@ -5,7 +5,7 @@ import React, {useRef} from 'react';
 import {useSelector} from 'react-redux';
 import {createGlobalStyle} from 'styled-components';
 
-import IncidentIcon, {Ref as PlaybookRunIconRef} from 'src/components/assets/icons/incident_icon';
+import PlaybooksProductIcon, {Ref as PlaybookRunIconRef} from 'src/components/assets/icons/playbooks_product_icon';
 
 import {isPlaybookRunRHSOpen, isDisabledOnCurrentTeam, inPlaybookRunChannel} from 'src/selectors';
 
@@ -39,7 +39,7 @@ export const ChannelHeaderButton = () => {
     return (
         <>
             <DisabledStyle/>
-            <IncidentIcon
+            <PlaybooksProductIcon
                 id='incidentIcon'
                 ref={myRef}
             />
