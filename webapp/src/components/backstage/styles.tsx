@@ -76,7 +76,7 @@ export const StyledTextarea = styled.textarea`
 
 export const StyledMarkdownTextbox = styled(MarkdownTextbox)`
     .custom-textarea {
-		background-color: var(--center-channel-bg);
+        background-color: var(--center-channel-bg);
         border-radius: 4px;
         padding: 10px 25px 0 16px;
         font-size: 14px;
