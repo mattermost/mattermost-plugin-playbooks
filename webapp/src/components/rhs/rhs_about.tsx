@@ -7,7 +7,7 @@ import styled from 'styled-components';
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
@@ -59,6 +59,8 @@ const RHSAbout = (props: Props) => {
         updatePlaybookRunDescription(props.playbookRun.id, value);
     };
 
+    const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
+
     return (
         <Container tabIndex={0}>
             <ButtonsRow>
@@ -88,7 +90,7 @@ const RHSAbout = (props: Props) => {
                             placeholder={'Assign the owner role'}
                             placeholderButtonClass={'NoAssignee-button'}
                             profileButtonClass={'Assigned-button'}
-                            enableEdit={true}
+                            enableEdit={!isFinished}
                             getUsers={fetchUsers}
                             onSelectedChange={onSelectedProfileChange}
                             selfIsFirstOption={true}
