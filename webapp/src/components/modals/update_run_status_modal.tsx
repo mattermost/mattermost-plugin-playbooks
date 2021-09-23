@@ -6,8 +6,6 @@ import {Link} from 'react-router-dom';
 
 import {useSelector} from 'react-redux';
 
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-
 import styled from 'styled-components';
 
 import {useIntl} from 'react-intl';
@@ -28,9 +26,8 @@ import {
     Mode,
     Option,
 } from 'src/components/datetime_input';
-import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playbook';
 
-import {usePlaybook, usePost, useRun} from 'src/hooks';
+import {usePost, useRun} from 'src/hooks';
 import MarkdownTextbox from '../markdown_textbox';
 import {pluginUrl} from 'src/browser_routing';
 import {postStatusUpdate} from 'src/client';
@@ -43,7 +40,6 @@ const ID = 'playbooks_update_run_status_dialog';
 
 type Props = {
     playbookRunId: string;
-    playbookId: string;
     channelId: string;
     hasPermission: boolean;
 } & Partial<ComponentProps<typeof GenericModal>>;
@@ -56,36 +52,34 @@ export const makeModalDefinition = (props: Props) => ({
 
 const UpdateRunStatusModal = ({
     playbookRunId,
-    playbookId,
     channelId,
     hasPermission,
     ...modalProps
 }: Props) => {
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
-    const playbook = usePlaybook(playbookId);
     const run = useRun(playbookRunId);
 
     const [message, setMessage] = useState<string | null>(null);
-    const defaultMessage = useDefaultMessage(playbook, run);
+    const defaultMessage = useDefaultMessage(run);
     if (message == null && defaultMessage) {
         setMessage(defaultMessage);
     }
 
-    const {input: reminderInput, reminder} = useReminderTimerOption(playbook, run);
+    const {input: reminderInput, reminder} = useReminderTimerOption(run);
 
     const onConfirm = () => {
-        if (hasPermission && message?.trim() && currentUserId && channelId && playbook?.team_id) {
+        if (hasPermission && message?.trim() && currentUserId && channelId && run?.team_id) {
             postStatusUpdate(
                 playbookRunId,
                 {message, reminder},
-                {user_id: currentUserId, channel_id: channelId, team_id: playbook?.team_id}
+                {user_id: currentUserId, channel_id: channelId, team_id: run?.team_id}
             );
         }
     };
 
     const broadcastChannelNames = useSelector((state: GlobalState) => {
-        return playbook?.broadcast_channel_ids.reduce<string[]>((result, id) => {
+        return run?.broadcast_channel_ids.reduce<string[]>((result, id) => {
             const displayName = getChannel(state, id)?.display_name;
 
             if (displayName) {
@@ -119,8 +113,8 @@ const UpdateRunStatusModal = ({
                             <span tabIndex={0}>{chunks}</span>
                         </Tooltip>
                     ),
-                    hasBroadcast: Boolean(playbook?.broadcast_channel_ids?.length).toString(),
-                    broadcastChannelCount: playbook?.broadcast_channel_ids.length ?? 0,
+                    hasBroadcast: Boolean(run?.broadcast_channel_ids?.length).toString(),
+                    broadcastChannelCount: run?.broadcast_channel_ids.length ?? 0,
                 })}
             </Description>
             <Label>
@@ -154,7 +148,7 @@ const UpdateRunStatusModal = ({
             confirmButtonText={hasPermission ? 'Post' : 'Ok'}
             handleCancel={() => true}
             handleConfirm={hasPermission ? onConfirm : null}
-            isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && playbook?.team_id)}
+            isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id)}
             {...modalProps}
             id={ID}
         >
@@ -164,7 +158,6 @@ const UpdateRunStatusModal = ({
 };
 
 const useDefaultMessage = (
-    playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist | undefined,
     run: PlaybookRun | undefined
 ) => {
     const lastStatusPostMeta = run?.status_posts?.slice().reverse().find(({delete_at}) => !delete_at);
@@ -192,7 +185,6 @@ const optionFromSeconds = (seconds: number) => {
 };
 
 export const useReminderTimerOption = (
-    playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist | undefined,
     run: PlaybookRun | undefined
 ) => {
     const defaults = useMemo(() => {
@@ -203,9 +195,7 @@ export const useReminderTimerOption = (
         ];
 
         let value: Option | undefined;
-        if (playbook && run) {
-            // wait until both default value data sources are available
-
+        if (run) {
             if (run.previous_reminder) {
                 value = optionFromSeconds(nearest(run.previous_reminder * 1e-9, 60));
             }
@@ -236,7 +226,7 @@ export const useReminderTimerOption = (
         }
 
         return {options, value};
-    }, [playbook, run]);
+    }, [run]);
 
     const {input, value} = useDateTimeInput({
         mode: Mode.DateTimeValue,
