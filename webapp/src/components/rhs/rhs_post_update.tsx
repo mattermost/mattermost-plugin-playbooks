@@ -47,13 +47,13 @@ const RHSPostUpdate = (props: Props) => {
 
     const timespec = (isDue || !isNextUpdateScheduled) ? PastTimeSpec : FutureTimeSpec;
 
-    let icon;
+    let icon: JSX.Element;
     if (isFinished) {
         icon = <Icon path={mdiFlagCheckered}/>;
     } else if (isDue) {
-        icon = Exclamation;
+        icon = <Exclamation />;
     } else {
-        icon = Clock;
+        icon = <Clock />;
     }
 
     return (
