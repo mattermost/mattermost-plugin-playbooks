@@ -1705,6 +1705,13 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 // createOrUpdatePlaybookRunSidebarCategory creates or updates a "Playbook Runs" sidebar category if
 // it does not already exist and adds the channel within the sidebar category
 func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID, categoryName string) error {
+	// Wait for 5 seconds for the webapp to get the `user_added` event,
+	// finish channel categorization and update it's state in redux.
+	// Currently there is no way to detect when webapp finished the job.
+	// After that we can update the categories safely.
+	time.Sleep(5 * time.Second)
+
+	// Prevent a race condition on category updates, when user creates multiple runs at once.
 	s.categoryMutex.Lock()
 	defer s.categoryMutex.Unlock()
 
