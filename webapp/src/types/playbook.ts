@@ -7,6 +7,7 @@ export interface Playbook {
     description: string;
     team_id: string;
     create_public_playbook_run: boolean;
+    delete_at: number;
 
     /** @alias num_checklists */
     num_stages: number;
@@ -27,8 +28,8 @@ export interface PlaybookWithChecklist extends Playbook {
     invite_users_enabled: boolean;
     default_owner_id: string;
     default_owner_enabled: boolean;
-    announcement_channel_id: string;
-    announcement_channel_enabled: boolean;
+    broadcast_channel_ids: string[];
+    broadcast_enabled: boolean;
     webhook_on_creation_url: string;
     webhook_on_creation_enabled: boolean;
     webhook_on_status_update_url: string;
@@ -97,6 +98,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         description: '',
         team_id: '',
         create_public_playbook_run: false,
+        delete_at: 0,
         num_stages: 0,
         num_steps: 0,
         num_runs: 0,
@@ -112,8 +114,8 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         invite_users_enabled: false,
         default_owner_id: '',
         default_owner_enabled: false,
-        announcement_channel_id: '',
-        announcement_channel_enabled: false,
+        broadcast_channel_ids: [],
+        broadcast_enabled: false,
         webhook_on_creation_url: '',
         webhook_on_creation_enabled: false,
         webhook_on_status_update_url: '',
@@ -179,6 +181,7 @@ export function isPlaybook(arg: any): arg is PlaybookWithChecklist {
         typeof arg.title === 'string' &&
         typeof arg.team_id === 'string' &&
         typeof arg.create_public_playbook_run === 'boolean' &&
+        typeof arg.delete_at === 'number' &&
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
         arg.member_ids && Array.isArray(arg.member_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
         typeof arg.broadcast_channel_id === 'string' &&

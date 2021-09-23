@@ -18,7 +18,7 @@ const DEFAULT_CHAR_LIMIT = 4000;
 type Props = {
     value: string;
     setValue: (val: string) => void;
-    createMessage?: string;
+    placeholder?: string;
     id: string;
     className?: string;
 } & ComponentProps<typeof Textbox>;
@@ -27,6 +27,7 @@ const MarkdownTextbox = ({
     value,
     setValue,
     className,
+    placeholder = '',
     ...textboxProps
 }: Props) => {
     const [showPreview, setShowPreview] = useState(false);
@@ -47,9 +48,10 @@ const MarkdownTextbox = ({
                 useChannelMentions={false}
                 onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setValue(e.target.value)}
                 characterLimit={charLimit}
-                createMessage={''}
+                createMessage={placeholder}
                 onKeyPress={() => true}
                 openWhenEmpty={true}
+                channelId={''}
                 {...textboxProps}
             />
             <StyledTextboxLinks
@@ -77,6 +79,14 @@ const Wrapper = styled.div`
             max-height: 324px;
             overflow: auto;
             padding: 12px 30px 12px 16px;
+
+            transition: box-shadow ease-in-out .15s;
+            box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
+
+            border: medium none;
+            &:focus:not(.textbox-preview-area) {
+                box-shadow: inset 0 0 0 2px var(--button-bg);
+            }
         }
     }
 `;

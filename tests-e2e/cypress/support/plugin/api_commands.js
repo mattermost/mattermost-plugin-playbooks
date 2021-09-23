@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-const playbookRunsEndpoint = '/plugins/com.mattermost.plugin-incident-management/api/v0/runs';
+const playbookRunsEndpoint = '/plugins/playbooks/api/v0/runs';
 
 /**
  * Get all playbook runs directly via API
@@ -9,7 +9,7 @@ const playbookRunsEndpoint = '/plugins/com.mattermost.plugin-incident-management
 Cypress.Commands.add('apiGetAllPlaybookRuns', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
+        url: '/plugins/playbooks/api/v0/runs',
         qs: {team_id: teamId, per_page: 10000},
         method: 'GET',
     }).then((response) => {
@@ -24,7 +24,7 @@ Cypress.Commands.add('apiGetAllPlaybookRuns', (teamId) => {
 Cypress.Commands.add('apiGetAllInProgressPlaybookRuns', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
+        url: '/plugins/playbooks/api/v0/runs',
         qs: {team_id: teamId, status: 'InProgress', participant_id: userId},
         method: 'GET',
     }).then((response) => {
@@ -39,7 +39,7 @@ Cypress.Commands.add('apiGetAllInProgressPlaybookRuns', (teamId, userId = '') =>
 Cypress.Commands.add('apiGetPlaybookRunByName', (teamId, name) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
+        url: '/plugins/playbooks/api/v0/runs',
         qs: {team_id: teamId, search_term: name},
         method: 'GET',
     }).then((response) => {
@@ -49,7 +49,7 @@ Cypress.Commands.add('apiGetPlaybookRunByName', (teamId, name) => {
 });
 
 /**
- * Get an playbook run directly via API
+ * Get a playbook run directly via API
  * @param {String} playbookRunId
  * All parameters required
  */
@@ -65,7 +65,7 @@ Cypress.Commands.add('apiGetPlaybookRun', (playbookRunId) => {
 });
 
 /**
- * Start an playbook run directly via API.
+ * Start a playbook run directly via API.
  */
 Cypress.Commands.add('apiRunPlaybook', (
     {
@@ -105,7 +105,7 @@ Cypress.Commands.add('apiFinishRun', (playbookRunId) => {
     });
 });
 
-// Update an playbook run's status programmatically.
+// Update a playbook run's status programmatically.
 Cypress.Commands.add('apiUpdateStatus', (
     {
         playbookRunId,
@@ -114,6 +114,7 @@ Cypress.Commands.add('apiUpdateStatus', (
         teamId,
         message,
         description,
+        reminder = '300',
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -126,7 +127,7 @@ Cypress.Commands.add('apiUpdateStatus', (
             user_id: userId,
             channel_id: channelId,
             team_id: teamId,
-            submission: {message, description, reminder: '15'},
+            submission: {message, description, reminder},
             cancelled: false,
         },
     }).then((response) => {
@@ -136,7 +137,7 @@ Cypress.Commands.add('apiUpdateStatus', (
 });
 
 /**
- * Change the owner of an playbook run directly via API
+ * Change the owner of a playbook run directly via API
  * @param {String} playbookRunId
  * @param {String} userId
  * All parameters required
@@ -192,7 +193,8 @@ Cypress.Commands.add('apiCreatePlaybook', (
         createPublicPlaybookRun,
         checklists,
         memberIDs,
-        broadcastChannelId,
+        broadcastEnabled,
+        broadcastChannelIds,
         reminderMessageTemplate,
         reminderTimerDefaultSeconds,
         invitedUserIds,
@@ -212,7 +214,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
+        url: '/plugins/playbooks/api/v0/playbooks',
         method: 'POST',
         body: {
             title,
@@ -220,7 +222,8 @@ Cypress.Commands.add('apiCreatePlaybook', (
             create_public_playbook_run: createPublicPlaybookRun,
             checklists,
             member_ids: memberIDs,
-            broadcast_channel_id: broadcastChannelId,
+            broadcast_enabled: broadcastEnabled,
+            broadcast_channel_ids: broadcastChannelIds,
             reminder_message_template: reminderMessageTemplate,
             reminder_timer_default_seconds: reminderTimerDefaultSeconds,
             invited_user_ids: invitedUserIds,
@@ -250,9 +253,12 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         teamId,
         title,
         userId,
-        broadcastChannelId,
+        broadcastEnabled,
+        broadcastChannelIds,
         reminderMessageTemplate,
-        reminderTimerDefaultSeconds
+        reminderTimerDefaultSeconds,
+        otherMembers = [],
+        invitedUserIds = [],
     }) => (
     cy.apiCreatePlaybook({
         teamId,
@@ -266,10 +272,13 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         }],
         memberIDs: [
             userId,
+            ...otherMembers,
         ],
-        broadcastChannelId,
+        broadcastEnabled,
+        broadcastChannelIds,
         reminderMessageTemplate,
         reminderTimerDefaultSeconds,
+        invitedUserIds,
     })
 ));
 
@@ -277,7 +286,7 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
 Cypress.Commands.add('verifyPlaybookCreated', (teamId, playbookTitle) => (
     cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
+        url: '/plugins/playbooks/api/v0/playbooks',
         qs: {team_id: teamId, sort: 'title', direction: 'asc'},
         method: 'GET'
     }).then((response) => {

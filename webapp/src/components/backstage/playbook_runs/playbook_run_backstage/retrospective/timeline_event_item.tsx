@@ -12,9 +12,8 @@ import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
-import {renderDuration} from 'src/components/duration';
+import {formatDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {clientRemoveTimelineEvent} from 'src/client';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 const Circle = styled.div`
@@ -83,9 +82,10 @@ interface Props {
     reportedAt: Moment;
     channelNames: ChannelNamesMap;
     team: Team;
+    deleteEvent: () => void;
 }
 
-const RHSTimelineEventItem = (props: Props) => {
+const TimelineEventItem = (props: Props) => {
     const dispatch = useDispatch();
     const [showMenu, setShowMenu] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -114,9 +114,9 @@ const RHSTimelineEventItem = (props: Props) => {
     let summary = '';
     let testid = '';
     const diff = moment(props.event.event_at).diff(moment(props.reportedAt));
-    let stamp = renderDuration(duration(diff));
+    let stamp = formatDuration(duration(diff));
     if (diff < 0) {
-        stamp = '-' + renderDuration(duration(diff).abs());
+        stamp = '-' + formatDuration(duration(diff).abs());
     }
     let timeSince: JSX.Element | null = <TimeDay>{'Time: ' + stamp}</TimeDay>;
 
@@ -221,13 +221,14 @@ const RHSTimelineEventItem = (props: Props) => {
                 title={'Confirm Entry Delete'}
                 message={'Are you sure you want to delete this event? Deleted events will be permanently removed from the timeline.'}
                 confirmButtonText={'Delete Entry'}
-                onConfirm={() =>
-                    clientRemoveTimelineEvent(props.event.playbook_run_id, props.event.id)
-                }
+                onConfirm={() => {
+                    props.deleteEvent();
+                    setShowDeleteConfirm(false);
+                }}
                 onCancel={() => setShowDeleteConfirm(false)}
             />
         </TimelineItem>
     );
 };
 
-export default RHSTimelineEventItem;
+export default TimelineEventItem;

@@ -68,194 +68,28 @@ describe('playbook run rhs > latest update', () => {
         cy.visit('/ad-1/channels/' + channelName);
     });
 
-    describe('status update interactive dialog', () => {
-        it('shows the broadcast channel when it is public', () => {
+    describe('post update dialog', () => {
+        it('prevents posting an update message with only whitespace', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
-                cy.get('#interactiveDialogModalIntroductionText')
-                    .contains('Provide an update to the stakeholders. This post will be broadcasted to Town Square.');
-            });
-        });
-
-        it('shows a generic message when the broadcast channel is private', () => {
-            // # Create a private channel
-            const now = Date.now();
-            const broadcastDisplayName = 'Private channel (' + now + ')';
-            const broadcastName = 'private-channel-' + now;
-            cy.legacyApiCreateChannel(teamId, broadcastName, broadcastDisplayName, 'P')
-                .then(({channel}) => {
-                    // # Create a playbook with a private broadcast channel configured
-                    cy.apiCreateTestPlaybook({
-                        teamId,
-                        title: playbookName,
-                        userId,
-                        broadcastChannelId: channel.id,
-                    }).then((playbook) => {
-                        // # Create a new playbook run
-                        const name = 'Playbook Run (' + now + ')';
-                        const playbookRunChannelName = 'playbook-run-' + now;
-                        cy.apiRunPlaybook({
-                            teamId,
-                            playbookId: playbook.id,
-                            playbookRunName: name,
-                            ownerUserId: userId,
-                        });
-
-                        // # Navigate to the playbook run channel
-                        cy.visit('/ad-1/channels/' + playbookRunChannelName);
-
-                        // # Run the `/playbook update` slash command.
-                        cy.executeSlashCommand('/playbook update');
-
-                        // * Verify that the interactive dialog contains a generic message
-                        cy.get('#interactiveDialogModal').within(() => {
-                            cy.get('#interactiveDialogModalIntroductionText')
-                                .contains('Provide an update to the stakeholders. This post will be broadcasted to a private channel.');
-                        });
-                    });
-                });
-        });
-
-        it('shows a generic message when the broadcast channel is a direct message', () => {
-            // # Create a DM
-            cy.legacyApiGetUsers(['user-1', 'douglas.daniels']).then((res) => {
-                const userIds = res.body.map((user) => user.id);
-                cy.legacyApiCreateDM(userIds[0], userIds[1]).then(({channel}) => {
-                    // # Create a playbook with a private broadcast channel configured
-                    cy.apiCreateTestPlaybook({
-                        teamId,
-                        title: playbookName,
-                        userId,
-                        broadcastChannelId: channel.id,
-                    }).then((playbook) => {
-                        // # Create a new playbook run
-                        const now = Date.now();
-                        const name = 'Playbook Run (' + now + ')';
-                        const playbookRunChannelName = 'playbook-run-' + now;
-                        cy.apiRunPlaybook({
-                            teamId,
-                            playbookId: playbook.id,
-                            playbookRunName: name,
-                            ownerUserId: userId,
-                        });
-
-                        // # Navigate to the playbook run channel
-                        cy.visit('/ad-1/channels/' + playbookRunChannelName);
-
-                        // # Run the `/playbook update` slash command.
-                        cy.executeSlashCommand('/playbook update');
-
-                        // * Verify that the interactive dialog contains a generic message
-                        cy.get('#interactiveDialogModal').within(() => {
-                            cy.get('#interactiveDialogModalIntroductionText')
-                                .contains('Provide an update to the stakeholders. This post will be broadcasted to a private channel.');
-                        });
-                    });
-                });
-            });
-        });
-
-        it('shows a generic message when the broadcast channel is a group channel', () => {
-            // # Create a GM
-            cy.legacyApiGetUsers(['user-1', 'douglas.daniels', 'christina.wilson']).then((res) => {
-                const userIds = res.body.map((user) => user.id);
-                cy.legacyApiCreateGroup(userIds).then((resp) => {
-                    // # Create a playbook with a private broadcast channel configured
-                    cy.apiCreateTestPlaybook({
-                        teamId,
-                        title: playbookName,
-                        userId,
-                        broadcastChannelId: resp.body.id,
-                    }).then((playbook) => {
-                        // # Create a new playbook run
-                        const now = Date.now();
-                        const name = 'Playbook Run (' + now + ')';
-                        const playbookRunChannelName = 'playbook-run-' + now;
-                        cy.apiRunPlaybook({
-                            teamId,
-                            playbookId: playbook.id,
-                            playbookRunName: name,
-                            ownerUserId: userId,
-                        });
-
-                        // # Navigate to the playbook run channel
-                        cy.visit('/ad-1/channels/' + playbookRunChannelName);
-
-                        // # Run the `/playbook update` slash command.
-                        cy.executeSlashCommand('/playbook update');
-
-                        // * Verify that the interactive dialog contains a generic message
-                        cy.get('#interactiveDialogModal').within(() => {
-                            cy.get('#interactiveDialogModalIntroductionText')
-                                .contains('Provide an update to the stakeholders. This post will be broadcasted to a private channel.');
-                        });
-                    });
-                });
-            });
-        });
-
-        it('does not show anything when there is not a broadcast channel', () => {
-            // # Create a playbook with no broadcast channel configured
-            cy.apiCreateTestPlaybook({
-                teamId,
-                title: playbookName,
-                userId,
-            }).then((playbook) => {
-                // # Create a new playbook run
-                const now = Date.now();
-                const name = 'Playbook Run (' + now + ')';
-                const playbookRunChannelName = 'playbook-run-' + now;
-                cy.apiRunPlaybook({
-                    teamId,
-                    playbookId: playbook.id,
-                    playbookRunName: name,
-                    ownerUserId: userId,
-                });
-
-                // # Navigate to the playbook run channel
-                cy.visit('/ad-1/channels/' + playbookRunChannelName);
-
-                // # Run the `/playbook update` slash command.
-                cy.executeSlashCommand('/playbook update');
-
-                // # Get the interactive dialog modal.
-                cy.get('#interactiveDialogModal').within(() => {
-                    cy.get('#interactiveDialogModalIntroductionText')
-                        .contains('Provide an update to the stakeholders.');
-                    cy.get('#interactiveDialogModalIntroductionText')
-                        .should('not.contain', 'This post will be broadcasted');
-                });
-            });
-        });
-
-        it('shows an error when entering an update message with whitespace', () => {
-            // # Run the `/playbook update` slash command.
-            cy.executeSlashCommand('/playbook update');
-
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // # Type the invalid data
-                cy.findByTestId('messageinput').clear().type(' {enter} {enter}  ');
+                cy.findByTestId('update_run_status_textbox').clear().type(' {enter} {enter}  ');
 
-                // # Submit the dialog.
-                cy.get('#interactiveDialogSubmit').click();
-
-                // * Verify the error is provided.
-                cy.findByTestId('messagehelp-text').should('exist')
-                    .contains('This field is required.');
+                // * Verify submit is disabled.
+                cy.get('button.confirm').should('be.disabled');
 
                 // # Enter valid data
-                cy.findByTestId('messageinput').type('valid update');
+                cy.findByTestId('update_run_status_textbox').type('valid update');
 
                 // # Submit the dialog.
-                cy.get('#interactiveDialogSubmit').click();
+                cy.get('button.confirm').click();
             });
 
-            // * Verify that the interactive dialog has gone.
-            cy.get('#interactiveDialogModal').should('not.exist');
+            // * Verify that the Post update dialog has gone.
+            cy.get('.GenericModal').should('not.exist');
         });
     });
 
@@ -264,14 +98,15 @@ describe('playbook run rhs > latest update', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the first message is there.
-                cy.findByTestId('messageinput').within(() => {
+                cy.findByTestId('update_run_status_textbox').within(() => {
                     cy.findByText(defaultReminderMessage).should('exist');
                 });
             });
         });
+
         it('when we have made a previous update', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;
@@ -282,10 +117,10 @@ describe('playbook run rhs > latest update', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the first message is there.
-                cy.findByTestId('messageinput').within(() => {
+                cy.findByTestId('update_run_status_textbox').within(() => {
                     cy.findByText(firstMessage).should('exist');
                 });
             });
@@ -297,16 +132,16 @@ describe('playbook run rhs > latest update', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', '60min');
+                cy.get('#reminder_timer_datetime').within(() => {
+                    cy.get('[class$=singleValue]').should('have.text', 'in 60 minutes');
                 });
             });
         });
 
-        it('shows the last reminder we typed in: None', () => {
+        it('shows the last reminder we typed in: none', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;
 
@@ -316,106 +151,68 @@ describe('playbook run rhs > latest update', () => {
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', 'None');
+                cy.get('#reminder_timer_datetime').within(() => {
+                    cy.get('[class$=placeholder]');
                 });
             });
         });
 
-        it('shows the last reminder we typed in: 15min', () => {
+        it('shows the last reminder we typed in: 15 minutes', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;
 
             // # Create a first status update
-            cy.updateStatus(firstMessage, '15');
+            cy.updateStatus(firstMessage, '15 minutes');
 
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', '15min');
+                cy.get('#reminder_timer_datetime').within(() => {
+                    cy.get('[class$=singleValue]').should('have.text', 'in 15 minutes');
                 });
             });
         });
 
-        it('shows the last reminder we typed in: 30min', () => {
+        it('shows the last reminder we typed in: 90 minutes', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;
 
             // # Create a first status update
-            cy.updateStatus(firstMessage, '30');
+            cy.updateStatus(firstMessage, '90 minutes');
 
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', '30min');
+                cy.get('#reminder_timer_datetime').within(() => {
+                    cy.get('[class$=singleValue]').should('have.text', 'in 1 hour 30 minutes');
                 });
             });
         });
 
-        it('shows the last reminder we typed in: 60min', () => {
+        it('shows the last reminder we typed in: 7 days', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;
 
             // # Create a first status update
-            cy.updateStatus(firstMessage, '60');
+            cy.updateStatus(firstMessage, '7 days');
 
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
 
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', '60min');
-                });
-            });
-        });
-
-        it('shows the last reminder we typed in: 4hr', () => {
-            const now = Date.now();
-            const firstMessage = 'Update - ' + now;
-
-            // # Create a first status update
-            cy.updateStatus(firstMessage, '4');
-
-            // # Run the `/playbook update` slash command.
-            cy.executeSlashCommand('/playbook update');
-
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
-                // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', '4hr');
-                });
-            });
-        });
-
-        it('shows the last reminder we typed in: 24hr', () => {
-            const now = Date.now();
-            const firstMessage = 'Update - ' + now;
-
-            // # Create a first status update
-            cy.updateStatus(firstMessage, '24');
-
-            // # Run the `/playbook update` slash command.
-            cy.executeSlashCommand('/playbook update');
-
-            // # Get the interactive dialog modal.
-            cy.get('#interactiveDialogModal').within(() => {
-                // * Verify the default is as expected
-                cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                    cy.get('input').should('have.value', '24hr');
+                cy.get('#reminder_timer_datetime').within(() => {
+                    cy.get('[class$=singleValue]').should('have.text', 'in 7 days');
                 });
             });
         });

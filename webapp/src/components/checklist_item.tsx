@@ -582,6 +582,7 @@ const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {
                     value={description ?? ''}
                     setValue={setDescription}
                     channelId={props.channelId}
+                    createMessage='Task description'
                 />
             </FormContainer>
         </GenericModal>

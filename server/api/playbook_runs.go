@@ -354,7 +354,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
 	}
 
-	if playbookRun.Name == "" {
+	if strings.TrimSpace(playbookRun.Name) == "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
@@ -378,7 +378,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.Checklists = pb.Checklists
 		public = pb.CreatePublicPlaybookRun
 
-		playbookRun.BroadcastChannelID = pb.BroadcastChannelID
 		playbookRun.Description = pb.Description
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
@@ -394,8 +393,8 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.DefaultOwnerID = pb.DefaultOwnerID
 		}
 
-		if pb.AnnouncementChannelEnabled {
-			playbookRun.AnnouncementChannelID = pb.AnnouncementChannelID
+		if pb.BroadcastEnabled {
+			playbookRun.BroadcastChannelIDs = pb.BroadcastChannelIDs
 		}
 
 		if pb.WebhookOnCreationEnabled {
@@ -439,7 +438,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get playbook run original post")
 		}
-		if !app.MemberOfChannelID(userID, post.ChannelId, h.pluginAPI) {
+		if !app.IsMemberOfChannel(userID, post.ChannelId, h.pluginAPI) {
 			return nil, errors.New("user is not a member of the channel containing the playbook run's original post")
 		}
 	}
@@ -481,14 +480,14 @@ func (h *PlaybookRunHandler) getPlaybookRun(w http.ResponseWriter, r *http.Reque
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbookRunToGet, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		h.HandleError(w, err)
+	if err := app.UserCanViewPlaybookRun(userID, playbookRunID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook run.", err)
 		return
 	}
 
-	if err := app.ViewPlaybookRunFromChannelID(userID, playbookRunToGet.ChannelID, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook run.", nil)
+	playbookRunToGet, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		h.HandleError(w, err)
 		return
 	}
 
@@ -501,15 +500,8 @@ func (h *PlaybookRunHandler) getPlaybookRunMetadata(w http.ResponseWriter, r *ht
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbookRunToGet, incErr := h.playbookRunService.GetPlaybookRun(playbookRunID)
-	if incErr != nil {
-		h.HandleError(w, incErr)
-		return
-	}
-
-	if err := app.ViewPlaybookRunFromChannelID(userID, playbookRunToGet.ChannelID, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized",
-			errors.Errorf("userid: %s does not have permissions to view the playbook run details", userID))
+	if err := app.UserCanViewPlaybookRun(userID, playbookRunID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
@@ -528,7 +520,7 @@ func (h *PlaybookRunHandler) getPlaybookRunByChannel(w http.ResponseWriter, r *h
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := app.ViewPlaybookRunFromChannelID(userID, channelID, h.pluginAPI); err != nil {
+	if err := app.UserCanViewPlaybookRunFromChannelID(userID, channelID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
 		h.log.Warnf("User %s does not have permissions to get playbook run for channel %s", userID, channelID)
 		h.HandleErrorWithCode(w, http.StatusNotFound, "Not found",
 			errors.Errorf("playbook run for channel id %s not found", channelID))
@@ -944,14 +936,14 @@ func (h *PlaybookRunHandler) getChecklistAutocompleteItem(w http.ResponseWriter,
 	channelID := query.Get("channel_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
-	if err != nil {
-		h.HandleError(w, err)
+	if err := app.UserCanViewPlaybookRunFromChannelID(userID, channelID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}
 
-	if err = app.ViewPlaybookRunFromChannelID(userID, channelID, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
+	playbookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
+	if err != nil {
+		h.HandleError(w, err)
 		return
 	}
 
@@ -969,14 +961,14 @@ func (h *PlaybookRunHandler) getChecklistAutocomplete(w http.ResponseWriter, r *
 	channelID := query.Get("channel_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
-	if err != nil {
-		h.HandleError(w, err)
+	if err := app.UserCanViewPlaybookRunFromChannelID(userID, channelID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
 		return
 	}
 
-	if err = app.ViewPlaybookRunFromChannelID(userID, channelID, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions", err)
+	playbookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
+	if err != nil {
+		h.HandleError(w, err)
 		return
 	}
 

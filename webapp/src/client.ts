@@ -40,7 +40,18 @@ import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 
-const apiUrl = `/plugins/${pluginId}/api/v0`;
+let basePath = '';
+let apiUrl = `${basePath}/plugins/${pluginId}/api/v0`;
+
+export const setSiteUrl = (siteUrl?: string): void => {
+    if (siteUrl) {
+        basePath = new URL(siteUrl).pathname.replace(/\/+$/, '');
+    } else {
+        basePath = '';
+    }
+
+    apiUrl = `${basePath}/plugins/${pluginId}/api/v0`;
+};
 
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
     const queryParams = qs.stringify(params, {addQueryPrefix: true, indices: false});
@@ -59,7 +70,7 @@ export async function fetchPlaybookRun(id: string) {
     if (process.env.NODE_ENV !== 'production') {
         if (!isPlaybookRun(data)) {
             // eslint-disable-next-line no-console
-            console.error('expected an PlaybookRun in fetchPlaybookRun, received:', data);
+            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
         }
     }
 
@@ -121,7 +132,7 @@ export async function fetchPlaybookRunByChannel(channelId: string) {
     if (process.env.NODE_ENV !== 'production') {
         if (!isPlaybookRun(data)) {
             // eslint-disable-next-line no-console
-            console.error('expected an PlaybookRun in fetchPlaybookRun, received:', data);
+            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
         }
     }
 
@@ -445,7 +456,7 @@ export const promptForFeedback = async () => {
 };
 
 export const changeChannelName = async (channelId: string, newName: string) => {
-    await doFetchWithoutResponse(`/api/v4/channels/${channelId}/patch`, {
+    await doFetchWithoutResponse(`${basePath}/api/v4/channels/${channelId}/patch`, {
         method: 'PUT',
         body: JSON.stringify({display_name: newName}),
     });

@@ -100,12 +100,17 @@ func TestCreatePlaybookRun(t *testing.T) {
 
 		teamID := model.NewId()
 		playbookRun := &app.PlaybookRun{
-			Name:        "###",
-			TeamID:      teamID,
-			OwnerUserID: "user_id",
+			Name:                "###",
+			TeamID:              teamID,
+			OwnerUserID:         "user_id",
+			ReporterUserID:      "user_id",
+			BroadcastChannelIDs: []string{},
 		}
 
-		store.EXPECT().CreatePlaybookRun(gomock.Any()).Return(playbookRun, nil)
+		playbookRunWithID := *playbookRun
+		playbookRunWithID.ID = model.NewId()
+
+		store.EXPECT().CreatePlaybookRun(gomock.Any()).Return(&playbookRunWithID, nil)
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		pluginAPI.On("CreateChannel", &model.Channel{
 			TeamId:      teamID,
@@ -127,8 +132,11 @@ func TestCreatePlaybookRun(t *testing.T) {
 		store.EXPECT().UpdatePlaybookRun(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), "channel_id")
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
+
+		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunWithID.ID).Return(map[string]string{}, nil)
 		poster.EXPECT().PostMessage("channel_id", "This run has been started by @username.").
-			Return(&model.Post{Id: "testId"}, nil)
+			Return(&model.Post{Id: "testPostId"}, nil)
+		store.EXPECT().SetBroadcastChannelIDsToRootID(playbookRunWithID.ID, map[string]string{"channel_id": "testPostId"}).Return(nil)
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
@@ -180,12 +188,16 @@ func TestCreatePlaybookRun(t *testing.T) {
 
 		teamID := model.NewId()
 		playbookRun := &app.PlaybookRun{
-			Name:        "###",
-			TeamID:      teamID,
-			OwnerUserID: "user_id",
+			Name:           "###",
+			TeamID:         teamID,
+			OwnerUserID:    "user_id",
+			ReporterUserID: "user_id",
 		}
 
-		store.EXPECT().CreatePlaybookRun(gomock.Any()).Return(playbookRun, nil)
+		playbookRunWithID := *playbookRun
+		playbookRunWithID.ID = model.NewId()
+
+		store.EXPECT().CreatePlaybookRun(gomock.Any()).Return(&playbookRunWithID, nil)
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()
@@ -201,8 +213,11 @@ func TestCreatePlaybookRun(t *testing.T) {
 		store.EXPECT().UpdatePlaybookRun(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), "channel_id")
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
+
+		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunWithID.ID).Return(map[string]string{}, nil)
 		poster.EXPECT().PostMessage("channel_id", "This run has been started by @username.").
-			Return(&model.Post{Id: "testid"}, nil)
+			Return(&model.Post{Id: "testPostId"}, nil)
+		store.EXPECT().SetBroadcastChannelIDsToRootID(playbookRunWithID.ID, map[string]string{"channel_id": "testPostId"}).Return(nil)
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
@@ -223,12 +238,16 @@ func TestCreatePlaybookRun(t *testing.T) {
 
 		teamID := model.NewId()
 		playbookRun := &app.PlaybookRun{
-			Name:        "ททททท",
-			TeamID:      teamID,
-			OwnerUserID: "user_id",
+			Name:           "ททททท",
+			TeamID:         teamID,
+			OwnerUserID:    "user_id",
+			ReporterUserID: "user_id",
 		}
 
-		store.EXPECT().CreatePlaybookRun(gomock.Any()).Return(playbookRun, nil)
+		playbookRunWithID := *playbookRun
+		playbookRunWithID.ID = model.NewId()
+
+		store.EXPECT().CreatePlaybookRun(gomock.Any()).Return(&playbookRunWithID, nil)
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		mattermostConfig := &model.Config{}
 		mattermostConfig.SetDefaults()
@@ -245,8 +264,11 @@ func TestCreatePlaybookRun(t *testing.T) {
 		store.EXPECT().UpdatePlaybookRun(gomock.Any()).Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), "channel_id")
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{Id: "user_id", Username: "username"}, nil)
+
+		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunWithID.ID).Return(map[string]string{}, nil)
 		poster.EXPECT().PostMessage("channel_id", "This run has been started by @username.").
-			Return(&model.Post{Id: "testId"}, nil)
+			Return(&model.Post{Id: "testPostId"}, nil)
+		store.EXPECT().SetBroadcastChannelIDsToRootID(playbookRunWithID.ID, map[string]string{"channel_id": "testPostId"}).Return(nil)
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
@@ -292,23 +314,33 @@ func TestCreatePlaybookRun(t *testing.T) {
 			TeamID:               teamID,
 			OwnerUserID:          "user_id",
 			WebhookOnCreationURL: server.URL,
+			ReporterUserID:       "user_id",
 		}
 
-		store.EXPECT().CreatePlaybookRun(gomock.Any()).Return(playbookRun, nil)
+		playbookRunWithID := *playbookRun
+		playbookRunWithID.ID = model.NewId()
+
+		store.EXPECT().CreatePlaybookRun(gomock.Any()).Return(&playbookRunWithID, nil)
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		store.EXPECT().UpdatePlaybookRun(gomock.Any()).Return(nil)
 
-		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
 		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), "channel_id")
-		poster.EXPECT().PostMessage("channel_id", gomock.Any()).Return(&model.Post{Id: "testId"}, nil)
 
-		mattermostConfig := &model.Config{}
-		mattermostConfig.SetDefaults()
+		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunWithID.ID).Return(map[string]string{}, nil)
+		poster.EXPECT().PostMessage("channel_id", "This run has been started by @username.").
+			Return(&model.Post{Id: "testPostId"}, nil)
+		store.EXPECT().SetBroadcastChannelIDsToRootID(playbookRunWithID.ID, map[string]string{"channel_id": "testPostId"}).Return(nil)
+
 		siteURL := "http://example.com"
-		mattermostConfig.ServiceSettings.SiteURL = &siteURL
-		pluginAPI.On("GetConfig").Return(mattermostConfig)
+		pluginAPI.On("GetConfig").Return(&model.Config{
+			ServiceSettings: model.ServiceSettings{
+				SiteURL:                             &siteURL,
+				AllowedUntrustedInternalConnections: model.NewString("localhost,127.0.0.1"),
+			},
+		})
 		pluginAPI.On("CreateChannel", mock.Anything).Return(&model.Channel{Id: "channel_id", TeamId: "team_id"}, nil)
 		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", mock.Anything).Return(nil, nil)
@@ -342,7 +374,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 }
 
 func TestUpdateStatus(t *testing.T) {
-	t.Run("webhook is sent on status update", func(t *testing.T) {
+	t.Run("webhook is sent on status update; status messages are broadcast", func(t *testing.T) {
 		controller := gomock.NewController(t)
 		pluginAPI := &plugintest.API{}
 		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
@@ -375,13 +407,17 @@ func TestUpdateStatus(t *testing.T) {
 
 		playbookRunID := model.NewId()
 		teamID := model.NewId()
+		homeChannelID := "home_channel_id"
+		broadcastChannelID1 := "broadcast_channel_id"
+		broadcastChannelID2 := "broadcast_channel_id_2"
 		playbookRun := &app.PlaybookRun{
 			ID:                       playbookRunID,
 			Name:                     "Name",
 			TeamID:                   teamID,
-			ChannelID:                "channel_id",
-			BroadcastChannelID:       "broadcast_channel_id",
+			ChannelID:                homeChannelID,
+			BroadcastChannelIDs:      []string{broadcastChannelID1, broadcastChannelID2},
 			OwnerUserID:              "user_id",
+			ReporterUserID:           "user_id",
 			CurrentStatus:            app.StatusInProgress,
 			CreateAt:                 1620018358404,
 			WebhookOnStatusUpdateURL: server.URL,
@@ -391,17 +427,35 @@ func TestUpdateStatus(t *testing.T) {
 			Reminder: 0,
 		}
 		siteURL := "http://example.com"
-		channelID := "channel_id"
 
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		store.EXPECT().UpdatePlaybookRun(gomock.AssignableToTypeOf(&app.PlaybookRun{})).Return(nil)
 		store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&app.SQLStatusPost{})).Return(nil)
 		store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(4)
 
-		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
 
-		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), channelID)
-		poster.EXPECT().PostMessage("broadcast_channel_id", gomock.Any()).Return(&model.Post{}, nil)
+		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), homeChannelID)
+
+		// there is an existing rootID stored, so no call to set.
+		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunID).
+			Return(map[string]string{
+				homeChannelID:       "homeRootPostID",
+				broadcastChannelID1: "broadcastRootPostID1",
+				broadcastChannelID2: "broadcastRootPostID2",
+			}, nil).Times(3)
+		poster.EXPECT().PostMessage(homeChannelID, statusUpdateOptions.Message).
+			Return(&model.Post{Id: "testPostId", RootId: "homeRootPostID"}, nil)
+		poster.EXPECT().PostMessageToThread("broadcastRootPostID1", gomock.Any()).
+			// Set thet post RootID to the expected root ID from the map, so SetBroadcastChannelIDsToRootIDs is not called
+			SetArg(1, model.Post{RootId: "broadcastRootPostID1"}).
+			Return(nil)
+		poster.EXPECT().PostMessageToThread("broadcastRootPostID2", gomock.Any()).
+			// Set thet post RootID to the expected root ID from the map, so SetBroadcastChannelIDsToRootIDs is not called
+			SetArg(1, model.Post{RootId: "broadcastRootPostID2"}).
+			Return(nil)
+		poster.EXPECT().Post(gomock.Any()).
+			Return(nil)
 
 		scheduler.EXPECT().Cancel(playbookRun.ID)
 
@@ -409,10 +463,15 @@ func TestUpdateStatus(t *testing.T) {
 		mattermostConfig.SetDefaults()
 		mattermostConfig.ServiceSettings.SiteURL = &siteURL
 		pluginAPI.On("CreatePost", mock.Anything).Return(&model.Post{}, nil)
-		pluginAPI.On("GetChannel", channelID).Return(&model.Channel{Id: channelID, Name: "channel_name"}, nil)
+		pluginAPI.On("GetChannel", homeChannelID).Return(&model.Channel{Id: homeChannelID, Name: "channel_name"}, nil)
 		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "team_name"}, nil)
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
-		pluginAPI.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
+		pluginAPI.On("GetConfig").Return(&model.Config{
+			ServiceSettings: model.ServiceSettings{
+				SiteURL:                             &siteURL,
+				AllowedUntrustedInternalConnections: model.NewString("localhost,127.0.0.1"),
+			},
+		})
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
@@ -433,6 +492,108 @@ func TestUpdateStatus(t *testing.T) {
 			require.Fail(t, "did not receive webhook on status update")
 		}
 	})
+}
+
+func TestUpdateStatusWebhookFailure(t *testing.T) {
+	controller := gomock.NewController(t)
+	pluginAPI := &plugintest.API{}
+	client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+	store := mock_app.NewMockPlaybookRunStore(controller)
+	poster := mock_bot.NewMockPoster(controller)
+	logger := mock_bot.NewMockLogger(controller)
+	configService := mock_config.NewMockService(controller)
+	telemetryService := &telemetry.NoopTelemetry{}
+	scheduler := mock_app.NewMockJobOnceScheduler(controller)
+
+	type webhookPayload struct {
+		app.PlaybookRun
+		ChannelURL   string                  `json:"channel_url"`
+		DetailsURL   string                  `json:"details_url"`
+		StatusUpdate app.StatusUpdateOptions `json:"status_update"`
+	}
+
+	webhookChan := make(chan webhookPayload)
+
+	playbookRunID := model.NewId()
+	teamID := model.NewId()
+	homeChannelID := "home_channel_id"
+	broadcastChannelID1 := "broadcast_channel_id"
+	broadcastChannelID2 := "broadcast_channel_id_2"
+	playbookRun := &app.PlaybookRun{
+		ID:                       playbookRunID,
+		Name:                     "Name",
+		TeamID:                   teamID,
+		ChannelID:                homeChannelID,
+		BroadcastChannelIDs:      []string{broadcastChannelID1, broadcastChannelID2},
+		OwnerUserID:              "user_id",
+		ReporterUserID:           "user_id",
+		CurrentStatus:            app.StatusInProgress,
+		CreateAt:                 1620018358404,
+		WebhookOnStatusUpdateURL: "http://localhost",
+	}
+	statusUpdateOptions := app.StatusUpdateOptions{
+		Message:  "latest-message",
+		Reminder: 0,
+	}
+	siteURL := "http://example.com"
+
+	store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
+	store.EXPECT().UpdatePlaybookRun(gomock.AssignableToTypeOf(&app.PlaybookRun{})).Return(nil)
+	store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&app.SQLStatusPost{})).Return(nil)
+	store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(4)
+
+	configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
+
+	poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), homeChannelID)
+
+	// there is an existing rootID stored, so no call to set.
+	store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunID).
+		Return(map[string]string{
+			homeChannelID:       "homeRootPostID",
+			broadcastChannelID1: "broadcastRootPostID1",
+			broadcastChannelID2: "broadcastRootPostID2",
+		}, nil).Times(3)
+	poster.EXPECT().PostMessage(homeChannelID, statusUpdateOptions.Message).
+		Return(&model.Post{Id: "testPostId", RootId: "homeRootPostID"}, nil)
+	poster.EXPECT().PostMessageToThread("broadcastRootPostID1", gomock.Any()).
+		// Set thet post RootID to the expected root ID from the map, so SetBroadcastChannelIDsToRootIDs is not called
+		SetArg(1, model.Post{RootId: "broadcastRootPostID1"}).
+		Return(nil)
+	poster.EXPECT().PostMessageToThread("broadcastRootPostID2", gomock.Any()).
+		// Set thet post RootID to the expected root ID from the map, so SetBroadcastChannelIDsToRootIDs is not called
+		SetArg(1, model.Post{RootId: "broadcastRootPostID2"}).
+		Return(nil)
+	poster.EXPECT().Post(gomock.Any()).
+		Return(nil)
+
+	scheduler.EXPECT().Cancel(playbookRun.ID)
+
+	mattermostConfig := &model.Config{}
+	mattermostConfig.SetDefaults()
+	mattermostConfig.ServiceSettings.SiteURL = &siteURL
+	pluginAPI.On("CreatePost", mock.Anything).Return(&model.Post{}, nil)
+	pluginAPI.On("GetChannel", homeChannelID).Return(&model.Channel{Id: homeChannelID, Name: "channel_name"}, nil)
+	pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "team_name"}, nil)
+	pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
+	pluginAPI.On("GetConfig").Return(&model.Config{
+		ServiceSettings: model.ServiceSettings{
+			SiteURL:                             &siteURL,
+			AllowedUntrustedInternalConnections: model.NewString("localhost,127.0.0.1"),
+		},
+	})
+	pluginAPI.On("LogWarn", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	poster.EXPECT().PostMessage(homeChannelID, gomock.Any()).Return(nil, nil)
+
+	s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
+
+	err := s.UpdateStatus(playbookRun.ID, "user_id", statusUpdateOptions)
+	require.NoError(t, err)
+
+	select {
+	case <-webhookChan:
+		require.Fail(t, "recieved webhook when it shouldn't be allowed by AllowedUntrustedInternalConnections")
+	case <-time.After(time.Second * 5):
+	}
 }
 
 func TestOpenCreatePlaybookRunDialog(t *testing.T) {
@@ -551,9 +712,8 @@ func TestOpenCreatePlaybookRunDialog(t *testing.T) {
 			configService := mock_config.NewMockService(controller)
 			telemetryService := &telemetry.NoopTelemetry{}
 			scheduler := mock_app.NewMockJobOnceScheduler(controller)
-			service := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, api)
-
 			tt.prepMocks(t, store, poster, api, configService)
+			service := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, api)
 
 			err := service.OpenCreatePlaybookRunDialog(tt.args.teamID, tt.args.ownerID, tt.args.triggerID, tt.args.postID, tt.args.clientID, tt.args.playbooks, tt.args.isMobileApp)
 			if (err != nil) != tt.wantErr {
@@ -602,6 +762,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 			"team_id",
 			[]*model.SidebarCategoryWithChannels(orderedSidebarCategories.Categories),
 		).Return(sidebarCategories, nil)
+		pluginAPI.On("GetConfig").Return(&model.Config{})
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
@@ -660,6 +821,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 			"team_id",
 			newSidebarCategory,
 		).Return(newSidebarCategory, nil)
+		pluginAPI.On("GetConfig").Return(&model.Config{})
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
@@ -707,6 +869,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 			"team_id",
 			[]*model.SidebarCategoryWithChannels(orderedSidebarCategories.Categories),
 		).Return(sidebarCategories, nil)
+		pluginAPI.On("GetConfig").Return(&model.Config{})
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
@@ -765,6 +928,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 			"team_id",
 			newSidebarCategory,
 		).Return(newSidebarCategory, nil)
+		pluginAPI.On("GetConfig").Return(&model.Config{})
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 

@@ -5,11 +5,10 @@
 package mock_app
 
 import (
-	reflect "reflect"
-	time "time"
-
 	gomock "github.com/golang/mock/gomock"
 	app "github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	reflect "reflect"
+	time "time"
 )
 
 // MockPlaybookRunStore is a mock of PlaybookRunStore interface
@@ -91,6 +90,21 @@ func (m *MockPlaybookRunStore) FinishPlaybookRun(arg0 string, arg1 int64) error 
 func (mr *MockPlaybookRunStoreMockRecorder) FinishPlaybookRun(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishPlaybookRun", reflect.TypeOf((*MockPlaybookRunStore)(nil).FinishPlaybookRun), arg0, arg1)
+}
+
+// GetBroadcastChannelIDsToRootIDs mocks base method
+func (m *MockPlaybookRunStore) GetBroadcastChannelIDsToRootIDs(arg0 string) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBroadcastChannelIDsToRootIDs", arg0)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBroadcastChannelIDsToRootIDs indicates an expected call of GetBroadcastChannelIDsToRootIDs
+func (mr *MockPlaybookRunStoreMockRecorder) GetBroadcastChannelIDsToRootIDs(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBroadcastChannelIDsToRootIDs", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetBroadcastChannelIDsToRootIDs), arg0)
 }
 
 // GetHistoricalPlaybookRunParticipantsCount mocks base method
@@ -209,6 +223,20 @@ func (m *MockPlaybookRunStore) NukeDB() error {
 func (mr *MockPlaybookRunStoreMockRecorder) NukeDB() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NukeDB", reflect.TypeOf((*MockPlaybookRunStore)(nil).NukeDB))
+}
+
+// SetBroadcastChannelIDsToRootID mocks base method
+func (m *MockPlaybookRunStore) SetBroadcastChannelIDsToRootID(arg0 string, arg1 map[string]string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetBroadcastChannelIDsToRootID", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetBroadcastChannelIDsToRootID indicates an expected call of SetBroadcastChannelIDsToRootID
+func (mr *MockPlaybookRunStoreMockRecorder) SetBroadcastChannelIDsToRootID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBroadcastChannelIDsToRootID", reflect.TypeOf((*MockPlaybookRunStore)(nil).SetBroadcastChannelIDsToRootID), arg0, arg1)
 }
 
 // SetViewedChannel mocks base method

@@ -20,7 +20,7 @@ import {noRetrospective} from 'src/client';
 import {CustomPostContainer, CustomPostContent, CustomPostHeader, CustomPostButtonRow} from 'src/components/custom_post_styles';
 
 import {PrimaryButton, TertiaryButton} from './assets/buttons';
-import {renderDuration} from './duration';
+import {formatDuration} from './formatted_duration';
 
 const Divider = styled.div`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
@@ -62,7 +62,7 @@ const ReminderCommon = (props: ReminderCommonProps) => {
         reminderText = (
             <>
                 {'A reminder will be sent in '}
-                <b>{renderDuration(moment.duration(reminderDuration, 'seconds'))}</b>
+                <b>{formatDuration(moment.duration(reminderDuration, 'seconds'))}</b>
             </>
         );
     }

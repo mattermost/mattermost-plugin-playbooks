@@ -16,9 +16,9 @@ const (
 	StatusFinished   = "Finished"
 )
 
-// PlaybookRun holds the detailed information of an playbook run.
+// PlaybookRun holds the detailed information of a playbook run.
 //
-// NOTE: When adding a column to the db, search for "When adding an Playbook Run column" to see where
+// NOTE: When adding a column to the db, search for "When adding a Playbook Run column" to see where
 // that column needs to be added in the sqlstore code.
 type PlaybookRun struct {
 	// ID is the unique identifier of the playbook run.
@@ -86,10 +86,6 @@ type PlaybookRun struct {
 	// scheduled status update will be posted.
 	PreviousReminder time.Duration `json:"previous_reminder"`
 
-	// BroadcastChannelID, if not empty, is the identifier of the channel to which all status
-	// updates are broadcasted.
-	BroadcastChannelID string `json:"broadcast_channel_id"`
-
 	// ReminderMessageTemplate, if not empty, is the template shown when updating the status of the
 	// playbook run for the first time.
 	ReminderMessageTemplate string `json:"reminder_message_template"`
@@ -109,9 +105,9 @@ type PlaybookRun struct {
 	// as owner of the playbook run when it was created.
 	DefaultOwnerID string `json:"default_owner_id"`
 
-	// AnnouncementChannelID, if not empty, is the identifier of the channel where the playbook run
-	// creation was announced.
-	AnnouncementChannelID string `json:"announcement_channel_id"`
+	// BroadcastChannelIDs is an array of the identifiers of the channels where the playbook run
+	// creation and status updates are announced.
+	BroadcastChannelIDs []string `json:"broadcast_channel_ids"`
 
 	// WebhookOnCreationURL, if not empty, is the URL to which a POST request is made with the whole
 	// playbook run as payload when the run is created.
@@ -197,6 +193,9 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	if old.ParticipantIDs == nil {
 		old.ParticipantIDs = []string{}
 	}
+	if old.BroadcastChannelIDs == nil {
+		old.BroadcastChannelIDs = []string{}
+	}
 
 	return json.Marshal(old)
 }
@@ -217,7 +216,7 @@ type StatusPost struct {
 type UpdateOptions struct {
 }
 
-// StatusUpdateOptions encapsulates the fields that can be set when updating an playbook run's status
+// StatusUpdateOptions encapsulates the fields that can be set when updating a playbook run's status
 // NOTE: changes made to this should be reflected in the client package.
 type StatusUpdateOptions struct {
 	Message  string        `json:"message"`
@@ -535,6 +534,14 @@ type PlaybookRunStore interface {
 	// SetViewedChannel records that userID has viewed channelID. NOTE: does not check if there is already a
 	// record of that userID/channelID (i.e., will create duplicate rows)
 	SetViewedChannel(userID, channelID string) error
+
+	// GetBroadcastChannelIDsToRootIDs takes a playbookRunID and returns the mapping of
+	// broadcastChannelID->rootID (to keep track of the status updates thread in each of the
+	// playbook's broadcast channels).
+	GetBroadcastChannelIDsToRootIDs(playbookRunID string) (map[string]string, error)
+
+	// SetBroadcastChannelIDsToRootID sets the broadcastChannelID->rootID mappings for playbookRunID
+	SetBroadcastChannelIDsToRootID(playbookRunID string, channelIDsToRootIDs map[string]string) error
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

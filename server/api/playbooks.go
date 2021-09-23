@@ -104,8 +104,8 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if playbook.CategorizeChannelEnabled {
-		if err2 := h.validateCategoryName(playbook.CategoryName); err2 != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err2)
+		if err := h.validateCategoryName(playbook.CategoryName); err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
 			return
 		}
 	}
@@ -131,16 +131,17 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 
 func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbook, err := h.playbookService.Get(vars["id"])
-	if err != nil {
-		h.HandleError(w, err)
+	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
-	if err := app.PlaybookAccess(userID, playbook, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, err)
 		return
 	}
 
@@ -158,54 +159,55 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 
 	// Force parsed playbook id to be URL parameter id
 	playbook.ID = vars["id"]
-
-	oldPlaybook, err := h.playbookService.Get(vars["id"])
+	oldPlaybook, err := h.playbookService.Get(playbook.ID)
 	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
 
-	if err3 := app.PlaybookModify(userID, playbook, oldPlaybook, h.config, h.pluginAPI, h.playbookService); err3 != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err3)
+	if err = app.PlaybookModify(userID, playbook, oldPlaybook, h.config, h.pluginAPI, h.playbookService); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
-	if err4 := doPlaybookModificationChecks(&playbook, userID, h.pluginAPI); err4 != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err4)
+	if err = doPlaybookModificationChecks(&playbook, userID, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
 	if playbook.WebhookOnCreationEnabled {
-		url, err2 := url.ParseRequestURI(playbook.WebhookOnCreationURL)
-		if err2 != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err2)
+		var parsedURL *url.URL
+		parsedURL, err = url.ParseRequestURI(playbook.WebhookOnCreationURL)
+		if err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
 			return
 		}
 
-		if url.Scheme != "http" && url.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+		if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
 			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
 	}
 
 	if playbook.WebhookOnStatusUpdateEnabled {
-		url, err2 := url.ParseRequestURI(playbook.WebhookOnStatusUpdateURL)
-		if err2 != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err2)
+		var parsedURL *url.URL
+		parsedURL, err = url.ParseRequestURI(playbook.WebhookOnStatusUpdateURL)
+		if err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
 			return
 		}
 
-		if url.Scheme != "http" && url.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+		if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
 			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
 	}
 
 	if playbook.CategorizeChannelEnabled {
-		if err2 := h.validateCategoryName(playbook.CategoryName); err2 != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err2)
+		if err = h.validateCategoryName(playbook.CategoryName); err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
 			return
 		}
 	}
@@ -254,34 +256,40 @@ func doPlaybookModificationChecks(playbook *app.Playbook, userID string, pluginA
 	}
 	playbook.InvitedGroupIDs = filteredGroups
 
-	if playbook.DefaultOwnerID != "" && !app.IsMemberOfTeamID(playbook.DefaultOwnerID, playbook.TeamID, pluginAPI) {
+	if playbook.DefaultOwnerID != "" && !app.IsMemberOfTeam(playbook.DefaultOwnerID, playbook.TeamID, pluginAPI) {
 		pluginAPI.Log.Warn("owner is not a member of the playbook's team, disabling default owner", "teamID", playbook.TeamID, "userID", playbook.DefaultOwnerID)
 		playbook.DefaultOwnerID = ""
 		playbook.DefaultOwnerEnabled = false
 	}
 
-	if playbook.AnnouncementChannelID != "" &&
-		!pluginAPI.User.HasPermissionToChannel(userID, playbook.AnnouncementChannelID, model.PermissionCreatePost) {
-		pluginAPI.Log.Warn("announcement channel is not valid, disabling announcement channel setting")
-		playbook.AnnouncementChannelID = ""
-		playbook.AnnouncementChannelEnabled = false
+	filteredBroadcastChannelIDs := []string{}
+	for _, channelID := range playbook.BroadcastChannelIDs {
+		if !pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
+			pluginAPI.Log.Warn("broadcast channel is not valid, removing channel from list", "channel_id", channelID)
+			continue
+		}
+
+		filteredBroadcastChannelIDs = append(filteredBroadcastChannelIDs, channelID)
 	}
+
+	playbook.BroadcastChannelIDs = filteredBroadcastChannelIDs
 
 	return nil
 }
 
 func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	playbookToDelete, err := h.playbookService.Get(vars["id"])
-	if err != nil {
-		h.HandleError(w, err)
+	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
-	if err2 := app.PlaybookAccess(userID, playbookToDelete, h.pluginAPI); err2 != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err2)
+	playbookToDelete, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, err)
 		return
 	}
 

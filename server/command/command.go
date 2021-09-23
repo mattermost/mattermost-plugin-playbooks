@@ -837,7 +837,7 @@ func (r *Runner) actionTestSelf(args []string) {
 	}
 
 	shortDescription := "A short description."
-	longDescription := `A very long description describing the item in a very descriptive way. Now with Markdown syntax! We have *italics* and **bold**. We have [external](http://example.com) and [internal links](/ad-1/com.mattermost.plugin-incident-management/playbooks). We have even links to channels: ~town-square. And links to users: @sysadmin, @user-1. We do have the usual headings and lists, of course:
+	longDescription := `A very long description describing the item in a very descriptive way. Now with Markdown syntax! We have *italics* and **bold**. We have [external](http://example.com) and [internal links](/ad-1/playbooks/playbooks). We have even links to channels: ~town-square. And links to users: @sysadmin, @user-1. We do have the usual headings and lists, of course:
 ## Unordered List
 - One
 - Two
@@ -977,12 +977,12 @@ And... yes, of course, we have emojis
 	}
 
 	playbookRun, err := r.playbookRunService.CreatePlaybookRun(&app.PlaybookRun{
-		Name:               "Cloud Incident 4739",
-		TeamID:             r.args.TeamId,
-		OwnerUserID:        r.args.UserId,
-		PlaybookID:         gotplaybook.ID,
-		Checklists:         gotplaybook.Checklists,
-		BroadcastChannelID: gotplaybook.BroadcastChannelID,
+		Name:                "Cloud Incident 4739",
+		TeamID:              r.args.TeamId,
+		OwnerUserID:         r.args.UserId,
+		PlaybookID:          gotplaybook.ID,
+		Checklists:          gotplaybook.Checklists,
+		BroadcastChannelIDs: gotplaybook.BroadcastChannelIDs,
 	}, &gotplaybook, r.args.UserId, true)
 	if err != nil {
 		r.postCommandResponse("Unable to create test playbook run: " + err.Error())

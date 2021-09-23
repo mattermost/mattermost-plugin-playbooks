@@ -33,9 +33,9 @@
         "secondServerURL": "http://localhost/s/p",
         "smtpUrl": "http://localhost:10080",
         "storybookUrl": "http://localhost:6006/",
-        "webhookBaseUrl": "http://localhost:3000"
+        "webhookBaseUrl": "http://localhost:3000",
+        "developerMode": false
     },
-    "testFiles": "**/*_spec.js",
     "reporter": "cypress-multi-reporters",
     "reporterOptions": {
         "configFile": "reporter-config.json"

@@ -32,10 +32,6 @@ const StyledAsyncSelect = styled(AsyncSelect)`
     }
 
     .profile-autocomplete__control {
-        -webkit-transition: all 0.15s ease;
-        -webkit-transition-delay: 0s;
-        -moz-transition: all 0.15s ease;
-        -o-transition: all 0.15s ease;
         transition: all 0.15s ease;
         transition-delay: 0s;
         background-color: transparent;

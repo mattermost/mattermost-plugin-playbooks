@@ -48,9 +48,10 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:       []string{},
-		InvitedUserIDs:  []string{},
-		InvitedGroupIDs: []string{},
+		MemberIDs:           []string{},
+		InvitedUserIDs:      []string{},
+		InvitedGroupIDs:     []string{},
+		BroadcastChannelIDs: []string{},
 	}
 	withid := app.Playbook{
 		ID:     "testplaybookid",
@@ -66,9 +67,10 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:       []string{},
-		InvitedUserIDs:  []string{},
-		InvitedGroupIDs: []string{},
+		MemberIDs:           []string{},
+		InvitedUserIDs:      []string{},
+		InvitedGroupIDs:     []string{},
+		BroadcastChannelIDs: []string{},
 	}
 
 	withMember := app.Playbook{
@@ -85,9 +87,10 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:       []string{"testuserid"},
-		InvitedUserIDs:  []string{},
-		InvitedGroupIDs: []string{},
+		MemberIDs:           []string{"testuserid"},
+		InvitedUserIDs:      []string{},
+		InvitedGroupIDs:     []string{},
+		BroadcastChannelIDs: []string{},
 	}
 	withBroadcastChannel := app.Playbook{
 		ID:     "testplaybookid",
@@ -103,10 +106,10 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:          []string{"testuserid"},
-		BroadcastChannelID: "nonemptychannelid",
-		InvitedUserIDs:     []string{},
-		InvitedGroupIDs:    []string{},
+		MemberIDs:           []string{"testuserid"},
+		BroadcastChannelIDs: []string{"nonemptychannelid"},
+		InvitedUserIDs:      []string{},
+		InvitedGroupIDs:     []string{},
 	}
 
 	var mockCtrl *gomock.Controller
@@ -121,7 +124,7 @@ func TestPlaybooks(t *testing.T) {
 
 	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
 	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/com.mattermost.plugin-incident-management")
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/playbooks")
 		r.Header.Add("Mattermost-User-ID", mattermostUserID)
 
 		handler.ServeHTTP(w, r)
@@ -255,12 +258,13 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:           playbooktest.Title,
-			TeamID:          playbooktest.TeamID,
-			Checklists:      toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:       playbooktest.MemberIDs,
-			InvitedUserIDs:  playbooktest.InvitedUserIDs,
-			InvitedGroupIDs: playbooktest.InvitedGroupIDs,
+			Title:               playbooktest.Title,
+			TeamID:              playbooktest.TeamID,
+			Checklists:          toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:           playbooktest.MemberIDs,
+			InvitedUserIDs:      playbooktest.InvitedUserIDs,
+			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
+			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -314,12 +318,13 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:           playbooktest.Title,
-			TeamID:          playbooktest.TeamID,
-			Checklists:      toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:       playbooktest.MemberIDs,
-			InvitedUserIDs:  playbooktest.InvitedUserIDs,
-			InvitedGroupIDs: playbooktest.InvitedGroupIDs,
+			Title:               playbooktest.Title,
+			TeamID:              playbooktest.TeamID,
+			Checklists:          toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:           playbooktest.MemberIDs,
+			InvitedUserIDs:      playbooktest.InvitedUserIDs,
+			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
+			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -373,12 +378,13 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:           playbooktest.Title,
-			TeamID:          playbooktest.TeamID,
-			Checklists:      toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:       playbooktest.MemberIDs,
-			InvitedUserIDs:  playbooktest.InvitedUserIDs,
-			InvitedGroupIDs: playbooktest.InvitedGroupIDs,
+			Title:               playbooktest.Title,
+			TeamID:              playbooktest.TeamID,
+			Checklists:          toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:           playbooktest.MemberIDs,
+			InvitedUserIDs:      playbooktest.InvitedUserIDs,
+			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
+			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -427,12 +433,13 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:           playbooktest.Title,
-			TeamID:          playbooktest.TeamID,
-			Checklists:      toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:       playbooktest.MemberIDs,
-			InvitedUserIDs:  playbooktest.InvitedUserIDs,
-			InvitedGroupIDs: playbooktest.InvitedGroupIDs,
+			Title:               playbooktest.Title,
+			TeamID:              playbooktest.TeamID,
+			Checklists:          toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:           playbooktest.MemberIDs,
+			InvitedUserIDs:      playbooktest.InvitedUserIDs,
+			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
+			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -488,12 +495,13 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:           withMember.Title,
-			TeamID:          withMember.TeamID,
-			Checklists:      toAPIChecklists(withMember.Checklists),
-			MemberIDs:       withMember.MemberIDs,
-			InvitedUserIDs:  withMember.InvitedUserIDs,
-			InvitedGroupIDs: withMember.InvitedGroupIDs,
+			Title:               withMember.Title,
+			TeamID:              withMember.TeamID,
+			Checklists:          toAPIChecklists(withMember.Checklists),
+			MemberIDs:           withMember.MemberIDs,
+			InvitedUserIDs:      withMember.InvitedUserIDs,
+			InvitedGroupIDs:     withMember.InvitedGroupIDs,
+			BroadcastChannelIDs: withMember.BroadcastChannelIDs,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		assert.Nil(t, resultPlaybook)
@@ -549,12 +557,13 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:           withMember.Title,
-			TeamID:          withMember.TeamID,
-			Checklists:      toAPIChecklists(withMember.Checklists),
-			MemberIDs:       withMember.MemberIDs,
-			InvitedUserIDs:  withMember.InvitedUserIDs,
-			InvitedGroupIDs: withMember.InvitedGroupIDs,
+			Title:               withMember.Title,
+			TeamID:              withMember.TeamID,
+			Checklists:          toAPIChecklists(withMember.Checklists),
+			MemberIDs:           withMember.MemberIDs,
+			InvitedUserIDs:      withMember.InvitedUserIDs,
+			InvitedGroupIDs:     withMember.InvitedGroupIDs,
+			BroadcastChannelIDs: withMember.BroadcastChannelIDs,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		assert.Nil(t, resultPlaybook)
@@ -577,12 +586,13 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:           playbooktest.Title,
-			TeamID:          playbooktest.TeamID,
-			Checklists:      toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:       playbooktest.MemberIDs,
-			InvitedUserIDs:  playbooktest.InvitedUserIDs,
-			InvitedGroupIDs: playbooktest.InvitedGroupIDs,
+			Title:               playbooktest.Title,
+			TeamID:              playbooktest.TeamID,
+			Checklists:          toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:           playbooktest.MemberIDs,
+			InvitedUserIDs:      playbooktest.InvitedUserIDs,
+			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
+			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -638,7 +648,7 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			}),
-			BroadcastChannelID: broadcastChannelID,
+			BroadcastChannelIDs: []string{broadcastChannelID},
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		assert.Nil(t, resultPlaybook)
@@ -853,7 +863,7 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			Get("testplaybookid").
 			Return(withMember, nil).
-			Times(1)
+			Times(2)
 
 		result, err := c.Playbooks.Get(context.TODO(), "testplaybookid")
 		require.NoError(t, err)
@@ -992,7 +1002,7 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			Get("playbookwithmember").
 			Return(withMember, nil).
-			Times(1)
+			Times(2)
 
 		playbookService.EXPECT().
 			Update(withMember, "testuserid").
@@ -1012,8 +1022,8 @@ func TestPlaybooks(t *testing.T) {
 
 		playbookService.EXPECT().
 			Get("testplaybookid").
-			Return(playbooktest, nil).
-			Times(1)
+			Return(withid, nil).
+			Times(2)
 
 		playbookService.EXPECT().
 			Update(withid, "testuserid").
@@ -1023,7 +1033,9 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 
-		pluginAPI.On("HasPermissionToChannel", "testuserid", withBroadcastChannel.BroadcastChannelID, model.PermissionCreatePost).Return(false)
+		for _, channelID := range withBroadcastChannel.BroadcastChannelIDs {
+			pluginAPI.On("HasPermissionToChannel", "testuserid", channelID, model.PermissionCreatePost).Return(false)
+		}
 
 		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withBroadcastChannel))
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
@@ -1035,14 +1047,22 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			Get("testplaybookid").
 			Return(withBroadcastChannel, nil).
-			Times(1)
+			Times(2)
+
+		filteredPlaybook := withBroadcastChannel
+		filteredPlaybook.BroadcastChannelIDs = []string{}
 
 		playbookService.EXPECT().
-			Update(withBroadcastChannel, "testuserid").
+			Update(filteredPlaybook, "testuserid").
 			Return(nil).
 			Times(1)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("LogWarn", "broadcast channel is not valid, removing channel from list", "channel_id", withBroadcastChannel.BroadcastChannelIDs[0])
+
+		for _, channelID := range withBroadcastChannel.BroadcastChannelIDs {
+			pluginAPI.On("HasPermissionToChannel", "testuserid", channelID, model.PermissionCreatePost).Return(false)
+		}
 
 		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withBroadcastChannel))
 		require.NoError(t, err)
@@ -1052,6 +1072,7 @@ func TestPlaybooks(t *testing.T) {
 		reset(t)
 
 		playbook := app.Playbook{
+			ID:     "testplaybookid",
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: []app.Checklist{
@@ -1064,12 +1085,12 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:          []string{"testuserid"},
-			BroadcastChannelID: "nonemptychannelid",
-			InviteUsersEnabled: true,
-			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
-			SignalAnyKeywords:  []string{},
+			MemberIDs:           []string{"testuserid"},
+			BroadcastChannelIDs: []string{},
+			InviteUsersEnabled:  true,
+			InvitedUserIDs:      []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:     []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:   []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
@@ -1080,9 +1101,8 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			Get("testplaybookid").
 			Return(playbook, nil).
-			Times(1)
+			Times(2)
 
-		playbook.ID = "testplaybookid"
 		playbookService.EXPECT().
 			Update(playbook, "testuserid").
 			Return(nil).
@@ -1110,6 +1130,7 @@ func TestPlaybooks(t *testing.T) {
 		reset(t)
 
 		playbook := app.Playbook{
+			ID:     "testplaybookid",
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: []app.Checklist{
@@ -1122,12 +1143,12 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:          []string{"testuserid"},
-			BroadcastChannelID: "nonemptychannelid",
-			InviteUsersEnabled: false,
-			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
-			SignalAnyKeywords:  []string{},
+			MemberIDs:           []string{"testuserid"},
+			BroadcastChannelIDs: []string{},
+			InviteUsersEnabled:  false,
+			InvitedUserIDs:      []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:     []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:   []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
@@ -1138,7 +1159,7 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			Get("testplaybookid").
 			Return(playbook, nil).
-			Times(1)
+			Times(2)
 
 		playbook.ID = "testplaybookid"
 		playbookService.EXPECT().
@@ -1169,6 +1190,7 @@ func TestPlaybooks(t *testing.T) {
 		reset(t)
 
 		playbook := app.Playbook{
+			ID:     "testplaybookid",
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: []app.Checklist{
@@ -1181,12 +1203,12 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:          []string{"testuserid"},
-			BroadcastChannelID: "nonemptychannelid",
-			InviteUsersEnabled: false,
-			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
-			SignalAnyKeywords:  []string{},
+			MemberIDs:           []string{"testuserid"},
+			BroadcastChannelIDs: []string{},
+			InviteUsersEnabled:  false,
+			InvitedUserIDs:      []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:     []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:   []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
@@ -1197,7 +1219,7 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			Get("testplaybookid").
 			Return(playbook, nil).
-			Times(1)
+			Times(2)
 
 		playbook.ID = "testplaybookid"
 		playbook.InvitedGroupIDs = []string{"testInvitedGroupID1"}
@@ -1233,7 +1255,7 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			Get("testplaybookid").
 			Return(withMember, nil).
-			Times(1)
+			Times(2)
 
 		playbookService.EXPECT().
 			Delete(withMember, "testuserid").
@@ -1319,7 +1341,7 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			Get("testplaybookid").
 			Return(withid, nil).
-			Times(1)
+			Times(2)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(false)
 
@@ -1336,7 +1358,7 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			Get("playbookwithmember").
 			Return(withMember, nil).
-			Times(1)
+			Times(2)
 
 		result, err := c.Playbooks.Get(context.TODO(), "playbookwithmember")
 		require.NoError(t, err)
@@ -1367,7 +1389,7 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			Get("playbookwithmember").
 			Return(withMember, nil).
-			Times(1)
+			Times(2)
 
 		updatedPlaybook := playbooktest
 		updatedPlaybook.ID = "playbookwithmember"
@@ -1392,7 +1414,7 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			Get("playbookwithmember").
 			Return(withMember, nil).
-			Times(1)
+			Times(2)
 
 		updatedPlaybook := playbooktest
 		updatedPlaybook.ID = "playbookwithmember"
@@ -1415,7 +1437,7 @@ func TestPlaybooks(t *testing.T) {
 		playbookService.EXPECT().
 			Get("playbookwithmember").
 			Return(withMember, nil).
-			Times(1)
+			Times(2)
 
 		playbookService.EXPECT().
 			Delete(withMember, "testuserid").
@@ -1601,7 +1623,7 @@ func TestSortingPlaybooks(t *testing.T) {
 
 	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
 	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/com.mattermost.plugin-incident-management")
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/playbooks")
 		r.Header.Add("Mattermost-User-ID", "testuserid")
 
 		handler.ServeHTTP(w, r)
@@ -1822,7 +1844,7 @@ func TestPagingPlaybooks(t *testing.T) {
 
 	// mattermostHandler simulates the Mattermost server routing HTTP requests to a plugin.
 	mattermostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/com.mattermost.plugin-incident-management")
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/plugins/playbooks")
 		r.Header.Add("Mattermost-User-ID", "testuserid")
 
 		handler.ServeHTTP(w, r)

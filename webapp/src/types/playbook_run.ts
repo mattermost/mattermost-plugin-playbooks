@@ -21,6 +21,8 @@ export interface PlaybookRun {
     current_status: PlaybookRunStatus;
     last_status_update_at: number;
     reminder_post_id: string;
+
+    /** Previous reminder timer as nanoseconds */
     previous_reminder: number;
     broadcast_channel_id: string;
     timeline_events: TimelineEvent[];

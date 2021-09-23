@@ -17,7 +17,6 @@ import {
     inPlaybookRunChannel,
     isPlaybookRunRHSOpen,
     currentRHSState,
-    selectExperimentalFeatures,
     currentPlaybookRun,
 } from 'src/selectors';
 
@@ -28,9 +27,7 @@ type SlashCommandObj = {message?: string; args?: string[];} | {error: string;} |
 export function makeSlashCommandHook(store: Store) {
     return async (inMessage: any, args: any): Promise<SlashCommandObj> => {
         const state = store.getState();
-        const isInPlaybookRunChannel = inPlaybookRunChannel(state);
         const message = inMessage && typeof inMessage === 'string' ? inMessage.trim() : null;
-        const experimentalFeaturesEnabled = selectExperimentalFeatures(store.getState());
 
         if (message?.startsWith('/playbook run')) {
             const clientId = generateId();
@@ -39,7 +36,7 @@ export function makeSlashCommandHook(store: Store) {
             return {message: `/playbook run ${clientId}`, args};
         }
 
-        if (experimentalFeaturesEnabled && message?.startsWith('/playbook update') && isInPlaybookRunChannel) {
+        if (message?.startsWith('/playbook update') && inPlaybookRunChannel(state)) {
             const clientId = generateId();
             const currentRun = currentPlaybookRun(state);
             store.dispatch(setClientId(clientId));

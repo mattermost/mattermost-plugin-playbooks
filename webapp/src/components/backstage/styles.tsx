@@ -6,6 +6,7 @@ import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
 
 import {RegularHeading} from 'src/styles/headings';
+import MarkdownTextbox from 'src/components/markdown_textbox';
 
 export const Banner = styled.div`
     color: var(--button-color);
@@ -73,6 +74,19 @@ export const StyledTextarea = styled.textarea`
     }
 `;
 
+export const StyledMarkdownTextbox = styled(MarkdownTextbox)`
+    .custom-textarea {
+        background-color: var(--center-channel-bg);
+        border-radius: 4px;
+        padding: 10px 25px 0 16px;
+        font-size: 14px;
+        line-height: 20px;
+    }
+    .textbox-preview-area {
+        z-index: auto;
+    }
+`;
+
 const commonSelectStyle = css`
     flex-grow: 1;
     background-color: var(--center-channel-bg);
@@ -103,7 +117,6 @@ const commonSelectStyle = css`
         border: none;
         box-shadow: inset 0 0 0 1px var(--center-channel-color-16);
         width: 100%;
-        height: 4rem;
         font-size: 14px;
 
         &--is-focused {
@@ -119,6 +132,20 @@ const commonSelectStyle = css`
 
     .channel-selector__single-value {
         color: var(--center-channel-color);
+    }
+
+    .channel-selector__multi-value {
+        height: 20px;
+        line-height: 19px;
+
+        border-radius: 10px;
+        padding-left: 8px;
+
+        .channel-selector__multi-value__label {
+            padding: 0;
+        }
+        .channel-selector__multi-value__remove {
+        }
     }
 `;
 
@@ -184,9 +211,9 @@ export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProp
     display: flex;
     align-items: center;
     border: none;
-    padding: 8px;
     border-radius: 4px;
     color: var(--center-channel-color-56);
+    background: transparent;
     cursor: pointer;
     font-weight: 600;
     font-size: 14px;

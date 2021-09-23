@@ -1,14 +1,14 @@
-import React, {useState, useCallback, useRef, useEffect} from 'react';
-import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+import React, {useState, useCallback, useRef, useEffect, ComponentProps} from 'react';
+
 import {debounce} from 'debounce';
 
-import {OVERLAY_DELAY} from 'src/constants';
+import Tooltip from './tooltip';
 
 interface Props {
     id: string;
     text: string;
     className?: string;
-    placement?: 'top' | 'bottom' | 'right' | 'left';
+    placement?: ComponentProps<typeof Tooltip>['placement'];
 }
 
 const TextWithTooltip = (props: Props) => {
@@ -52,21 +52,17 @@ const TextWithTooltip = (props: Props) => {
 
     if (showTooltip) {
         return (
-            <OverlayTrigger
+            <Tooltip
+                id={`${props.id}_name`}
                 placement={props.placement}
-                delay={OVERLAY_DELAY}
-                overlay={<Tooltip id={`${props.id}_name`}>{props.text}</Tooltip>}
+                content={props.text}
             >
                 {text}
-            </OverlayTrigger>
+            </Tooltip>
         );
     }
 
     return text;
-};
-
-TextWithTooltip.defaultProps = {
-    placement: 'top',
 };
 
 export default TextWithTooltip;

@@ -5,10 +5,9 @@
 package mock_bot
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	model "github.com/mattermost/mattermost-server/v6/model"
+	reflect "reflect"
 )
 
 // MockPoster is a mock of Poster interface
@@ -91,6 +90,20 @@ func (mr *MockPosterMockRecorder) NotifyAdmins(arg0, arg1, arg2 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyAdmins", reflect.TypeOf((*MockPoster)(nil).NotifyAdmins), arg0, arg1, arg2)
 }
 
+// Post mocks base method
+func (m *MockPoster) Post(arg0 *model.Post) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Post", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Post indicates an expected call of Post
+func (mr *MockPosterMockRecorder) Post(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Post", reflect.TypeOf((*MockPoster)(nil).Post), arg0)
+}
+
 // PostCustomMessageWithAttachments mocks base method
 func (m *MockPoster) PostCustomMessageWithAttachments(arg0, arg1 string, arg2 []*model.SlackAttachment, arg3 string, arg4 ...interface{}) (*model.Post, error) {
 	m.ctrl.T.Helper()
@@ -129,6 +142,20 @@ func (mr *MockPosterMockRecorder) PostMessage(arg0, arg1 interface{}, arg2 ...in
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostMessage", reflect.TypeOf((*MockPoster)(nil).PostMessage), varargs...)
+}
+
+// PostMessageToThread mocks base method
+func (m *MockPoster) PostMessageToThread(arg0 string, arg1 *model.Post) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PostMessageToThread", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PostMessageToThread indicates an expected call of PostMessageToThread
+func (mr *MockPosterMockRecorder) PostMessageToThread(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostMessageToThread", reflect.TypeOf((*MockPoster)(nil).PostMessageToThread), arg0, arg1)
 }
 
 // PostMessageWithAttachments mocks base method

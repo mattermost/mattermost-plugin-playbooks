@@ -158,7 +158,7 @@ Cypress.Commands.add('openSelector', () => {
 });
 
 Cypress.Commands.add('openChannelSelector', () => {
-    cy.findByText('Search for channel').click({force: true});
+    cy.findByText('Select a channel').click({force: true});
 });
 
 Cypress.Commands.add('addInvitedUser', (userName) => {
@@ -182,30 +182,35 @@ Cypress.Commands.add('selectChannel', (channelName) => {
 /**
  * Update the status of the current playbook run through the slash command.
  */
-Cypress.Commands.add('updateStatus', (message, reminder) => {
+Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
     // # Run the slash command to update status.
     cy.executeSlashCommand('/playbook update');
 
     // # Get the interactive dialog modal.
-    cy.get('#interactiveDialogModal').within(() => {
-        // # remove what's there (if this is a second update)
-        cy.findByTestId('messageinput').clear();
+    cy.get('.GenericModal').within(() => {
+        // # remove what's there if applicable, and type the new update in the textbox.
+        cy.findByTestId('update_run_status_textbox').clear().type(message);
 
-        // # Type the new update in the text box.
-        cy.findByTestId('messageinput').type(message);
+        if (reminderQuery && reminderQuery !== 'none') {
+            cy.get('#reminder_timer_datetime').within(() => {
+                cy.get('input').type(reminderQuery, {delay: 200, force: true}).type('{enter}', {force: true});
+            });
+        } else if (reminderQuery === 'none') {
+            // there MUST be a pre-selected option or this will fail
 
-        if (reminder) {
-            cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                cy.get('input').type(reminder, {delay: 200}).type('{enter}');
+            // # click clear button
+            cy.get('#reminder_timer_datetime').within(() => {
+
+                cy.get('[class$=indicatorContainer]').eq(0).click();
             });
         }
 
         // # Submit the dialog.
-        cy.get('#interactiveDialogSubmit').click();
+        cy.get('button.confirm').click();
     });
 
     // * Verify that the interactive dialog has gone.
-    cy.get('#interactiveDialogModal').should('not.exist');
+    cy.get('.GenericModal').should('not.exist');
 
     // # Return the post ID of the status update.
     return cy.getLastPostId();

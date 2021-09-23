@@ -67,6 +67,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	setupPostsTable(t, db)
 	setupBotsTable(t, db)
 	setupChannelMembersTable(t, db)
+	setupKVStoreTable(t, db)
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		err = sqlStore.Migrate(currentSchemaVersion)
@@ -248,6 +249,7 @@ func setupChannelMembersTable(t *testing.T, db *sqlx.DB) {
 				notifyprops character varying(2000),
 				lastupdateat bigint,
 				schemeuser boolean,
+				PRIMARY KEY (ChannelId,UserId),
 				schemeadmin boolean
 			);
 		`)
@@ -298,6 +300,7 @@ func setupChannelsTable(t *testing.T, db *sqlx.DB) {
 				totalmsgcount bigint,
 				extraupdateat bigint,
 				creatorid character varying(26),
+				PRIMARY KEY (Id),
 				schemeid character varying(26)
 			);
 		`)
@@ -361,6 +364,7 @@ func setupPostsTable(t testing.TB, db *sqlx.DB) {
 				hashtags character varying(1000),
 				filenames character varying(4000),
 				fileids character varying(150),
+				PRIMARY KEY (Id),
 				hasreactions boolean
 			);
 		`)
@@ -414,7 +418,7 @@ func setupBotsTable(t testing.TB, db *sqlx.DB) {
 	if db.DriverName() == model.DatabaseDriverPostgres {
 		_, err := db.Exec(`
 			CREATE TABLE IF NOT EXISTS public.bots (
-				userid character varying(26) NOT NULL,
+				userid character varying(26) NOT NULL PRIMARY KEY,
 				description character varying(1024),
 			    ownerid character varying(190)
 			);
@@ -427,12 +431,43 @@ func setupBotsTable(t testing.TB, db *sqlx.DB) {
 	// handmade
 	_, err := db.Exec(`
 			CREATE TABLE IF NOT EXISTS Bots (
-				UserId varchar(26) NOT NULL,
+				UserId varchar(26) NOT NULL PRIMARY KEY,
 				Description varchar(1024),
 			    OwnerId varchar(190)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 		`)
 	require.NoError(t, err)
+}
+
+func setupKVStoreTable(t *testing.T, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	if db.DriverName() == model.DatabaseDriverPostgres {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.pluginkeyvaluestore (
+				pluginid character varying(190) NOT NULL,
+				pkey character varying(50) NOT NULL,
+				pvalue bytea,
+				expireat bigint,
+				PRIMARY KEY (PluginId,PKey)
+			);
+		`)
+		require.NoError(t, err)
+	} else {
+		// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS PluginKeyValueStore (
+			  PluginId varchar(190) NOT NULL,
+			  PKey varchar(50) NOT NULL,
+			  PValue mediumblob,
+			  ExpireAt bigint(20) DEFAULT NULL,
+			  PRIMARY KEY (PluginId,PKey)
+		  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+		require.NoError(t, err)
+	}
+
 }
 
 type userInfo struct {

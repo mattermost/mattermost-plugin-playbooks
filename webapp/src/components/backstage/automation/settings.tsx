@@ -8,10 +8,11 @@ import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
 import {PatternedInput} from 'src/components/backstage/automation/patterned_input';
+import {InputKeywords} from 'src/components/backstage/automation/input_keywords';
 
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/automation/auto_assign_owner';
-import {Announcement} from 'src/components/backstage/automation/announcement';
+import {Broadcast} from 'src/components/backstage/automation/broadcast';
 import {ExportChannelOnArchive} from 'src/components/backstage/automation/export_channel_on_archive';
 
 import {MessageOnJoin} from 'src/components/backstage/automation/message_on_join';
@@ -28,10 +29,10 @@ interface Props {
     defaultOwnerEnabled: boolean;
     onToggleDefaultOwner: () => void;
     onAssignOwner: (userId: string | undefined) => void;
-    announcementChannelID: string;
-    announcementChannelEnabled: boolean;
-    onToggleAnnouncementChannel: () => void;
-    onAnnouncementChannelSelected: (channelID: string | undefined) => void;
+    broadcastChannelIds: string[];
+    broadcastEnabled: boolean;
+    onToggleBroadcastChannel: () => void;
+    onBroadcastChannelsSelected: (channelIds: string[]) => void;
     webhookOnCreationEnabled: boolean;
     onToggleWebhookOnCreation: () => void;
     webhookOnCreationChange: (url: string) => void;
@@ -48,7 +49,7 @@ interface Props {
     onToggleExportChannelOnFinishedEnabled: () => void;
     signalAnyKeywordsEnabled: boolean;
     onToggleSignalAnyKeywords: () => void;
-    signalAnyKeywordsChange: (keywords: string) => void;
+    signalAnyKeywordsChange: (keywords: string[]) => void;
     signalAnyKeywords: string[];
     categorizePlaybookRun: boolean;
     onToggleCategorizePlaybookRun: () => void;
@@ -64,16 +65,13 @@ export const AutomationSettings = (props: Props) => {
                     {'Prompt to run the playbook when a user posts a message'}
                 </SectionTitle>
                 <Setting id={'signal-any-keywords'}>
-                    <PatternedInput
+                    <InputKeywords
                         enabled={props.signalAnyKeywordsEnabled}
                         onToggle={props.onToggleSignalAnyKeywords}
-                        input={props.signalAnyKeywords.join(',')}
-                        onChange={props.signalAnyKeywordsChange}
-                        pattern={'[\\s\\S]*'} // pretty much everything
-                        placeholderText={'Add comma separated keywords'}
                         textOnToggle={'Containing any of these keywords'}
-                        type={'text'}
-                        errorText={'Keywords are not valid.'} // this should not happen
+                        placeholderText={'Add keywords'}
+                        keywords={props.signalAnyKeywords}
+                        onKeywordsChange={props.signalAnyKeywordsChange}
                     />
                 </Setting>
             </Section>
@@ -102,14 +100,6 @@ export const AutomationSettings = (props: Props) => {
                         onAssignOwner={props.onAssignOwner}
                     />
                 </Setting>
-                <Setting id={'announcement-channel'}>
-                    <Announcement
-                        enabled={props.announcementChannelEnabled}
-                        onToggle={props.onToggleAnnouncementChannel}
-                        channelId={props.announcementChannelID}
-                        onChannelSelected={props.onAnnouncementChannelSelected}
-                    />
-                </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
                     <PatternedInput
                         enabled={props.webhookOnCreationEnabled}
@@ -126,8 +116,16 @@ export const AutomationSettings = (props: Props) => {
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When a status update is posted'}
+                    {'When an update is posted'}
                 </SectionTitle>
+                <Setting id={'broadcast-channels'}>
+                    <Broadcast
+                        enabled={props.broadcastEnabled}
+                        onToggle={props.onToggleBroadcastChannel}
+                        channelIds={props.broadcastChannelIds}
+                        onChannelsSelected={props.onBroadcastChannelsSelected}
+                    />
+                </Setting>
                 <Setting id={'playbook-run-status-update__outgoing-webhook'}>
                     <PatternedInput
                         enabled={props.webhookOnStatusUpdateEnabled}

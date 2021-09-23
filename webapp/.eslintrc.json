@@ -2,21 +2,14 @@
   "extends": [
       "eslint:recommended",
       "plugin:react-hooks/recommended"
+
   ],
-  "parserOptions": {
-    "ecmaVersion": 8,
-    "sourceType": "module",
-    "ecmaFeatures": {
-      "jsx": true,
-      "impliedStrict": true,
-      "modules": true,
-      "experimentalObjectRestSpread": true
-    }
-  },
-  "parser": "babel-eslint",
+  "parser": "@typescript-eslint/parser",
   "plugins": [
     "react",
-    "import"
+    "import",
+    "formatjs",
+    "@typescript-eslint"
   ],
   "env": {
     "browser": true,
@@ -133,7 +126,7 @@
     "global-require": 2,
     "guard-for-in": 2,
     "id-blacklist": 0,
-    "import/no-unresolved": 2,
+    "import/no-unresolved": 0, // ts handles this better
     "import/order": [
       "error",
       {

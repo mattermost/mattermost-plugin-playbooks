@@ -23,18 +23,18 @@ import {AutomationSettings} from 'src/components/backstage/automation/settings';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
 import {RegularHeading} from 'src/styles/headings';
+import DefaultUpdateTimer from 'src/components/backstage/default_update_timer';
 
 import './playbook.scss';
-import {useAllowRetrospectiveAccess, useExperimentalFeaturesEnabled} from 'src/hooks';
+import {useAllowRetrospectiveAccess} from 'src/hooks';
 
 import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
-import ChannelSelector from './channel_selector';
 import {
     BackstageSubheader,
     BackstageSubheaderDescription,
     TabContainer,
-    StyledTextarea,
+    StyledMarkdownTextbox,
     StyledSelect,
 } from './styles';
 
@@ -158,14 +158,6 @@ const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
     })),
 });
 
-const timerOptions = [
-    {value: 900, label: '15min'},
-    {value: 1800, label: '30min'},
-    {value: 3600, label: '60min'},
-    {value: 14400, label: '4hr'},
-    {value: 86400, label: '24hr'},
-] as const;
-
 export const tabInfo = [
     {id: 'checklists', name: 'Checklists'},
     {id: 'templates', name: 'Templates'},
@@ -195,6 +187,7 @@ const PlaybookEdit = (props: Props) => {
 
     const [playbook, setPlaybook] = useState<DraftPlaybookWithChecklist | PlaybookWithChecklist>({
         ...emptyPlaybook(),
+        reminder_timer_default_seconds: 86400,
         team_id: props.teamId || '',
     });
     const [changesMade, setChangesMade] = useState(false);
@@ -214,8 +207,6 @@ const PlaybookEdit = (props: Props) => {
     }
 
     const [currentTab, setCurrentTab] = useState<number>(tab);
-
-    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     const retrospectiveAccess = useAllowRetrospectiveAccess();
 
@@ -360,11 +351,12 @@ const PlaybookEdit = (props: Props) => {
         }
     };
 
-    const handleAnnouncementChannelSelected = (channelId: string | undefined) => {
-        if ((channelId || channelId === '') && playbook.announcement_channel_id !== channelId) {
+    const handleBroadcastChannelSelected = (channelIds: string[]) => {
+        // assumes no repeated elements on any of the arrays
+        if (channelIds.length !== playbook.broadcast_channel_ids.length || channelIds.some((id) => !playbook.broadcast_channel_ids.includes(id))) {
             setPlaybook({
                 ...playbook,
-                announcement_channel_id: channelId,
+                broadcast_channel_ids: channelIds,
             });
             setChangesMade(true);
         }
@@ -424,10 +416,10 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleToggleAnnouncementChannel = () => {
+    const handleToggleBroadcastChannels = () => {
         setPlaybook({
             ...playbook,
-            announcement_channel_enabled: !playbook.announcement_channel_enabled,
+            broadcast_enabled: !playbook.broadcast_enabled,
         });
         setChangesMade(true);
     };
@@ -440,10 +432,10 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleSignalAnyKeywordsChange = (keywords: string) => {
+    const handleSignalAnyKeywordsChange = (keywords: string[]) => {
         setPlaybook({
             ...playbook,
-            signal_any_keywords: keywords.split(','),
+            signal_any_keywords: [...keywords],
         });
         setChangesMade(true);
     };
@@ -573,41 +565,16 @@ const PlaybookEdit = (props: Props) => {
                             />
                             <TabContainer>
                                 <SidebarBlock>
-                                    <BackstageSubheader>
-                                        {'Broadcast channel'}
-                                        <BackstageSubheaderDescription>
-                                            {'Updates will be automatically posted as a message to the configured channel below in addition to the primary channel.'}
-                                        </BackstageSubheaderDescription>
-                                    </BackstageSubheader>
-                                    <ChannelSelector
-                                        id='playbook-preferences-broadcast-channel'
-                                        onChannelSelected={handleBroadcastInput}
-                                        channelId={playbook.broadcast_channel_id}
-                                        isClearable={true}
-                                        shouldRenderValue={true}
-                                        isDisabled={false}
-                                        captureMenuScroll={false}
-                                    />
-                                </SidebarBlock>
-                                <SidebarBlock>
-                                    <BackstageSubheader>
-                                        {'Reminder timer'}
-                                        <BackstageSubheaderDescription>
-                                            {'Prompts the owner at a specified interval to provide a status update.'}
-                                        </BackstageSubheaderDescription>
-                                    </BackstageSubheader>
-                                    <StyledSelect
-                                        value={timerOptions.find((option) => option.value === playbook.reminder_timer_default_seconds)}
-                                        onChange={(option: {label: string, value: number}) => {
-                                            setPlaybook({
-                                                ...playbook,
-                                                reminder_timer_default_seconds: option ? option.value : option,
-                                            });
-                                            setChangesMade(true);
+                                    <DefaultUpdateTimer
+                                        seconds={playbook.reminder_timer_default_seconds}
+                                        setSeconds={(seconds: number) => {
+                                            if (seconds !== playbook.reminder_timer_default_seconds) {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    reminder_timer_default_seconds: seconds,
+                                                });
+                                            }
                                         }}
-                                        classNamePrefix='channel-selector'
-                                        options={timerOptions}
-                                        isClearable={true}
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>
@@ -617,13 +584,15 @@ const PlaybookEdit = (props: Props) => {
                                             {'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
-                                    <StyledTextarea
+                                    <StyledMarkdownTextbox
+                                        className={'playbook_description'}
+                                        id={'playbook_description_edit'}
                                         placeholder={'Use Markdown to create a template.'}
                                         value={playbook.description}
-                                        onChange={(e) => {
+                                        setValue={(description: string) => {
                                             setPlaybook({
                                                 ...playbook,
-                                                description: e.target.value,
+                                                description,
                                             });
                                             setChangesMade(true);
                                         }}
@@ -636,13 +605,15 @@ const PlaybookEdit = (props: Props) => {
                                             {'This template helps to standardize the format for recurring updates that take place throughout each run to keep.'}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
-                                    <StyledTextarea
+                                    <StyledMarkdownTextbox
+                                        className={'playbook_reminder_message'}
+                                        id={'playbook_reminder_message_edit'}
                                         placeholder={'Use Markdown to create a template.'}
                                         value={playbook.reminder_message_template}
-                                        onChange={(e) => {
+                                        setValue={(value: string) => {
                                             setPlaybook({
                                                 ...playbook,
-                                                reminder_message_template: e.target.value,
+                                                reminder_message_template: value,
                                             });
                                             setChangesMade(true);
                                         }}
@@ -678,13 +649,15 @@ const PlaybookEdit = (props: Props) => {
                                                     {'Default text for the retrospective.'}
                                                 </BackstageSubheaderDescription>
                                             </BackstageSubheader>
-                                            <StyledTextarea
+                                            <StyledMarkdownTextbox
+                                                className={'playbook_retrospective_template'}
+                                                id={'playbook_retrospective_template_edit'}
                                                 placeholder={'Enter retrospective template'}
                                                 value={playbook.retrospective_template}
-                                                onChange={(e) => {
+                                                setValue={(value: string) => {
                                                     setPlaybook({
                                                         ...playbook,
-                                                        retrospective_template: e.target.value,
+                                                        retrospective_template: value,
                                                     });
                                                     setChangesMade(true);
                                                 }}
@@ -706,10 +679,10 @@ const PlaybookEdit = (props: Props) => {
                                     defaultOwnerID={playbook.default_owner_id}
                                     onToggleDefaultOwner={handleToggleDefaultOwner}
                                     onAssignOwner={handleAssignDefaultOwner}
-                                    announcementChannelID={playbook.announcement_channel_id}
-                                    announcementChannelEnabled={playbook.announcement_channel_enabled}
-                                    onToggleAnnouncementChannel={handleToggleAnnouncementChannel}
-                                    onAnnouncementChannelSelected={handleAnnouncementChannelSelected}
+                                    broadcastChannelIds={playbook.broadcast_channel_ids}
+                                    broadcastEnabled={playbook.broadcast_enabled}
+                                    onToggleBroadcastChannel={handleToggleBroadcastChannels}
+                                    onBroadcastChannelsSelected={handleBroadcastChannelSelected}
                                     webhookOnCreationEnabled={playbook.webhook_on_creation_enabled}
                                     onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
                                     webhookOnCreationChange={handleWebhookOnCreationChange}

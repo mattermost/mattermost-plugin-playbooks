@@ -25,16 +25,15 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.0.0"),
 		toVersion:   semver.MustParse("0.1.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if _, err := e.Exec(`
-				CREATE TABLE IF NOT EXISTS IR_System (
-					SKey VARCHAR(64) PRIMARY KEY,
-					SValue VARCHAR(1024) NULL
-				);
-			`); err != nil {
-				return errors.Wrapf(err, "failed creating table IR_System")
-			}
-
 			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_System (
+						SKey VARCHAR(64) PRIMARY KEY,
+						SValue VARCHAR(1024) NULL
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_System")
+				}
 
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
@@ -90,6 +89,15 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_PlaybookMember")
 				}
 			} else {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_System (
+						SKey VARCHAR(64) PRIMARY KEY,
+						SValue VARCHAR(1024) NULL
+					);
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_System")
+				}
+
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Incident (
 						ID TEXT PRIMARY KEY,
@@ -1062,6 +1070,171 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed setting default value in column CategoryName of table IR_Incident")
 				}
 			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.26.0"),
+		toVersion:   semver.MustParse("0.27.0"),
+		// This deprecates columns BroadcastChannelID (in singular), AnnouncementChannelID and AnnouncementChannelEnabled
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			updateIncidentTableQuery := `
+				UPDATE IR_Incident SET
+					ConcatenatedBroadcastChannelIds = (
+						COALESCE(
+							CONCAT_WS(
+								',',
+								CASE WHEN AnnouncementChannelID = '' THEN NULL ELSE AnnouncementChannelID END,
+								CASE WHEN BroadcastChannelID = ''  OR BroadcastChannelID = AnnouncementChannelID THEN NULL ELSE BroadcastChannelID END
+							),
+						'')
+					)
+			`
+
+			updatePlaybookTableQuery := `
+				UPDATE IR_Playbook SET
+					ConcatenatedBroadcastChannelIds = (
+						COALESCE(
+							CONCAT_WS(
+								',',
+								CASE WHEN AnnouncementChannelID = '' THEN NULL ELSE AnnouncementChannelID END,
+								CASE WHEN BroadcastChannelID = ''  OR BroadcastChannelID = AnnouncementChannelID THEN NULL ELSE BroadcastChannelID END
+							),
+						'')
+					)
+				, BroadcastEnabled = (CASE
+					WHEN BroadcastChannelID != '' THEN TRUE
+					WHEN AnnouncementChannelEnabled = TRUE THEN TRUE
+					ELSE FALSE
+				END)
+			`
+
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ConcatenatedBroadcastChannelIds", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedBroadcastChannelIds to table IR_Incident")
+				}
+
+				if _, err := e.Exec(updateIncidentTableQuery); err != nil {
+					return errors.Wrapf(err, "failed setting value in column ConcatenatedBroadcastChannelIds of table IR_Incident")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ConcatenatedBroadcastChannelIds", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedBroadcastChannelIds to table IR_Playbook")
+				}
+
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "BroadcastEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column BroadcastEnabled to table IR_Playbook")
+				}
+
+				if _, err := e.Exec(updatePlaybookTableQuery); err != nil {
+					return errors.Wrapf(err, "failed setting value in columns ConcatenatedBroadcastChannelIds and BroadcastEnabled of table IR_Playbook")
+				}
+
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "ConcatenatedBroadcastChannelIds", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedBroadcastChannelIds to table IR_Incident")
+				}
+
+				if _, err := e.Exec(updateIncidentTableQuery); err != nil {
+					return errors.Wrapf(err, "failed setting value in column ConcatenatedBroadcastChannelIds of table IR_Incident")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "ConcatenatedBroadcastChannelIds", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ConcatenatedBroadcastChannelIds to table IR_Playbook")
+				}
+
+				if err := addColumnToPGTable(e, "IR_Playbook", "BroadcastEnabled", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column BroadcastEnabled to table IR_Playbook")
+				}
+
+				if _, err := e.Exec(updatePlaybookTableQuery); err != nil {
+					return errors.Wrapf(err, "failed setting value in columns ConcatenatedBroadcastChannelIds and BroadcastEnabled of table IR_Playbook")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.27.0"),
+		toVersion:   semver.MustParse("0.28.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ChannelIDToRootID", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelIDToRootID to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "ChannelIDToRootID", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelIDToRootID to table IR_Incident")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.28.0"),
+		toVersion:   semver.MustParse("0.29.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`ALTER TABLE IR_System CONVERT TO CHARACTER SET utf8mb4`); err != nil {
+					return errors.Wrapf(err, "failed to migrate character set")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.29.0"),
+		toVersion:   semver.MustParse("0.30.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addPrimaryKey(e, sqlStore, "IR_PlaybookMember", "(MemberID, PlaybookID)"); err != nil {
+					return err
+				}
+				if err := addPrimaryKey(e, sqlStore, "IR_StatusPosts", "(IncidentID, PostID)"); err != nil {
+					return err
+				}
+				if err := addPrimaryKey(e, sqlStore, "IR_TimelineEvent", "(ID)"); err != nil {
+					return err
+				}
+				if err := addPrimaryKey(e, sqlStore, "IR_ViewedChannel", "(ChannelID, UserID)"); err != nil {
+					return err
+				}
+			} else {
+				if err := addPrimaryKey(e, sqlStore, "ir_playbookmember", "(MemberID, PlaybookID)"); err != nil {
+					return err
+				}
+				if err := addPrimaryKey(e, sqlStore, "ir_statusposts", "(IncidentID, PostID)"); err != nil {
+					return err
+				}
+				if err := addPrimaryKey(e, sqlStore, "ir_timelineevent", "(ID)"); err != nil {
+					return err
+				}
+				if err := addPrimaryKey(e, sqlStore, "ir_viewedchannel", "(ChannelID, UserID)"); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.30.0"),
+		toVersion:   semver.MustParse("0.31.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Best effort migration so we just log the error to avoid killing the plugin.
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec("UPDATE IGNORE PluginKeyValueStore SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management'"); err != nil {
+					sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to migrate KV store plugin id"))
+				}
+			} else {
+
+				if _, err := e.Exec("UPDATE PluginKeyValueStore k SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management' AND NOT EXISTS ( SELECT 1 FROM PluginKeyValueStore WHERE PluginId='playbooks' AND PKey = k.PKey )"); err != nil {
+					sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to migrate KV store plugin id"))
+				}
+			}
+
 			return nil
 		},
 	},
