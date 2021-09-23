@@ -51,9 +51,9 @@ const RHSPostUpdate = (props: Props) => {
     if (isFinished) {
         icon = <Icon path={mdiFlagCheckered}/>;
     } else if (isDue) {
-        icon = <Exclamation />;
+        icon = <Exclamation/>;
     } else {
-        icon = <Clock />;
+        icon = <Clock/>;
     }
 
     return (
