@@ -77,22 +77,22 @@ describe('playbook run rhs', () => {
                 playbookId: testPlaybook.id,
                 playbookRunName,
                 ownerUserId: testUser.id,
-            }).then(() => {
-                // # Open the flagged posts RHS
-                cy.get('#channelHeaderFlagButton').click({force: true});
-
-                // # Open the playbook run channel from the LHS.
-                cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
-
-                // # Wait until the channel loads enough to show the post textbox.
-                cy.get('#post-create').should('exist');
-
-                // # Wait a bit longer to be confident.
-                cy.wait(TIMEOUTS.TWO_SEC);
-
-                // * Verify the playbook run RHS is not open.
-                cy.get('#rhsContainer').should('not.exist');
             });
+
+            // # Open the flagged posts RHS
+            cy.get('#channelHeaderFlagButton').click({force: true});
+
+            // # Open the playbook run channel from the LHS.
+            cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
+
+            // # Wait until the channel loads enough to show the post textbox.
+            cy.get('#post-create').should('exist');
+
+            // # Wait a bit longer to be confident.
+            cy.wait(TIMEOUTS.TWO_SEC);
+
+            // * Verify the playbook run RHS is not open.
+            cy.get('#rhsContainer').should('not.exist');
         });
 
         it('when navigating directly to a finished playbook run channel', () => {
@@ -107,17 +107,17 @@ describe('playbook run rhs', () => {
                 ownerUserId: testUser.id,
             }).then((playbookRun) => {
                 // # End the playbook run
-                return cy.apiFinishRun(playbookRun.id);
-            }).then(() => {
-                // # Navigate directly to the application and the playbook run channel
-                cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
-
-                // # Wait a bit longer to be confident.
-                cy.wait(TIMEOUTS.TWO_SEC);
-
-                // * Verify the playbook run RHS is not open.
-                cy.get('#rhsContainer').should('not.exist');
+                cy.apiFinishRun(playbookRun.id);
             });
+
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+            // # Wait a bit longer to be confident.
+            cy.wait(TIMEOUTS.TWO_SEC);
+
+            // * Verify the playbook run RHS is not open.
+            cy.get('#rhsContainer').should('not.exist');
         });
 
         it('for an existing, finished playbook run channel opened from the lhs', () => {
@@ -133,23 +133,23 @@ describe('playbook run rhs', () => {
                 ownerUserId: testUser.id,
             }).then((playbookRun) => {
                 // # End the playbook run
-                return cy.apiFinishRun(playbookRun.id);
-            }).then(() => {
-                // # Navigate to a channel without a playbook run.
-                cy.visit(`/${testTeam.name}/channels/off-topic`);
-
-                // # Ensure the channel is loaded before continuing (allows redux to sync).
-                cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-                // # Open the playbook run channel from the LHS.
-                cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
-
-                // # Wait a bit longer to be confident.
-                cy.wait(TIMEOUTS.TWO_SEC);
-
-                // * Verify the playbook run RHS is not open.
-                cy.get('#rhsContainer').should('not.exist');
+                cy.apiFinishRun(playbookRun.id);
             });
+
+            // # Navigate to a channel without a playbook run.
+            cy.visit(`/${testTeam.name}/channels/off-topic`);
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # Open the playbook run channel from the LHS.
+            cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
+
+            // # Wait a bit longer to be confident.
+            cy.wait(TIMEOUTS.TWO_SEC);
+
+            // * Verify the playbook run RHS is not open.
+            cy.get('#rhsContainer').should('not.exist');
         });
 
         it('for a new, finished playbook run channel opened from the lhs', () => {
@@ -173,17 +173,17 @@ describe('playbook run rhs', () => {
                 ownerUserId: testUser.id,
             }).then((playbookRun) => {
                 // # End the playbook run
-                return cy.apiFinishRun(playbookRun.id);
-            }).then(() => {
-                // # Open the playbook run channel from the LHS.
-                cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
-
-                // # Wait a bit longer to be confident.
-                cy.wait(TIMEOUTS.TWO_SEC);
-
-                // * Verify the playbook run RHS is not open.
-                cy.get('#rhsContainer').should('not.exist');
+                cy.apiFinishRun(playbookRun.id);
             });
+
+            // # Open the playbook run channel from the LHS.
+            cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
+
+            // # Wait a bit longer to be confident.
+            cy.wait(TIMEOUTS.TWO_SEC);
+
+            // * Verify the playbook run RHS is not open.
+            cy.get('#rhsContainer').should('not.exist');
         });
     });
 
@@ -198,14 +198,14 @@ describe('playbook run rhs', () => {
                 playbookId: testPlaybook.id,
                 playbookRunName,
                 ownerUserId: testUser.id,
-            }).then(() => {
-                // # Navigate directly to the application and the playbook run channel
-                cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+            });
 
-                // * Verify the playbook run RHS is open.
-                cy.get('#rhsContainer').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
-                });
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+            // * Verify the playbook run RHS is open.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText(playbookRunName).should('exist');
             });
         });
 
@@ -228,14 +228,14 @@ describe('playbook run rhs', () => {
                 playbookId: testPlaybook.id,
                 playbookRunName,
                 ownerUserId: testUser.id,
-            }).then(() => {
-                // # Open the playbook run channel from the LHS.
-                cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
+            });
 
-                // * Verify the playbook run RHS is open.
-                cy.get('#rhsContainer').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
-                });
+            // # Open the playbook run channel from the LHS.
+            cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
+
+            // * Verify the playbook run RHS is open.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText(playbookRunName).should('exist');
             });
         });
 
@@ -249,20 +249,20 @@ describe('playbook run rhs', () => {
                 playbookId: testPlaybook.id,
                 playbookRunName,
                 ownerUserId: testUser.id,
-            }).then(() => {
-                // # Navigate to a channel without a playbook run.
-                cy.visit(`/${testTeam.name}/channels/off-topic`);
+            });
 
-                // # Ensure the channel is loaded before continuing (allows redux to sync).
-                cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+            // # Navigate to a channel without a playbook run.
+            cy.visit(`/${testTeam.name}/channels/off-topic`);
 
-                // # Open the playbook run channel from the LHS.
-                cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
 
-                // * Verify the playbook run RHS is open.
-                cy.get('#rhsContainer').should('exist').within(() => {
-                    cy.findByText(playbookRunName).should('exist');
-                });
+            // # Open the playbook run channel from the LHS.
+            cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
+
+            // * Verify the playbook run RHS is open.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText(playbookRunName).should('exist');
             });
         });
 
