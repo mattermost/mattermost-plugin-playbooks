@@ -176,7 +176,7 @@ const useDefaultMessage = (
     }
     if (run && !lastStatusPostMeta) {
         // run loaded and was no last status post, but there might be a message template
-        return playbook?.reminder_message_template;
+        return run.reminder_message_template;
     }
 
     return null;
