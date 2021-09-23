@@ -22,6 +22,7 @@ export interface PlaybookRun {
     last_status_update_at: number;
     reminder_post_id: string;
     reminder_message_template: string;
+    reminder_timer_default_seconds: number;
 
     /** Previous reminder timer as nanoseconds */
     previous_reminder: number;
@@ -79,6 +80,7 @@ export function isPlaybookRun(arg: any): arg is PlaybookRun {
         arg.status_posts && Array.isArray(arg.status_posts) && arg.status_posts.every(isStatusPost) &&
         typeof arg.reminder_post_id === 'string' &&
         typeof arg.reminder_message_template === 'string' &&
+        typeof arg.reminder_timer_default_seconds === 'number' &&
         arg.broadcast_channel_ids && Array.isArray(arg.broadcast_channel_ids) && arg.broadcast_channel_ids.every(isString) &&
         arg.timeline_events && Array.isArray(arg.timeline_events) && arg.timeline_events.every(isTimelineEvent) &&
         arg.participant_ids && Array.isArray(arg.participant_ids) && arg.participant_ids.every(isString)) &&

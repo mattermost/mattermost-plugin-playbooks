@@ -210,8 +210,8 @@ export const useReminderTimerOption = (
                 value = optionFromSeconds(nearest(run.previous_reminder * 1e-9, 60));
             }
 
-            if (playbook.reminder_timer_default_seconds) {
-                const defaultReminderOption = optionFromSeconds(playbook.reminder_timer_default_seconds);
+            if (run.reminder_timer_default_seconds) {
+                const defaultReminderOption = optionFromSeconds(run.reminder_timer_default_seconds);
                 if (!options.find((o) => ms(o.value) === ms(defaultReminderOption.value))) {
                     // don't duplicate an option that exists already
                     options.push(defaultReminderOption);
