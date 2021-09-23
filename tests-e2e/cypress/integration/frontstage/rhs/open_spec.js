@@ -172,6 +172,9 @@ describe('playbook run rhs', () => {
                 playbookRunName,
                 ownerUserId: testUser.id,
             }).then((playbookRun) => {
+                // # Wait a bit longer to avoid websocket events potentially being out-of-order.
+                cy.wait(TIMEOUTS.TWO_SEC);
+
                 // # End the playbook run
                 cy.apiFinishRun(playbookRun.id);
             });
