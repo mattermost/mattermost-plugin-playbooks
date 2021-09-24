@@ -20,14 +20,15 @@ import {haveIChannelPermission, haveISystemPermission} from 'mattermost-redux/se
 import Permissions from 'mattermost-redux/constants/permissions';
 
 import {pluginId} from 'src/manifest';
-import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
+import {playbookRunIsActive} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter, TimelineEventsFilterDefault} from 'src/types/rhs';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter, ChecklistItemsFilterDefault} from 'src/types/playbook';
+import {PlaybooksPluginState} from 'src/reducer';
 
-//@ts-ignore GlobalState is not complete
-const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
+// Assert known typing
+const pluginState = (state: GlobalState): PlaybooksPluginState => state['plugins-' + pluginId as keyof GlobalState] as unknown as PlaybooksPluginState || {} as PlaybooksPluginState;
 
 export const selectToggleRHS = (state: GlobalState): () => void => pluginState(state).toggleRHSFunction;
 
@@ -39,13 +40,14 @@ export const getAdminAnalytics = (state: GlobalState): Dictionary<number> => sta
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
-export const isDisabledOnCurrentTeam = (state: GlobalState): boolean => pluginState(state).myPlaybookRunsByTeam[getCurrentTeamId(state)] === false;
+export const isDisabledOnCurrentTeam = (state: GlobalState): boolean => pluginState(state).myPlaybookRunsByTeam[getCurrentTeamId(state)] === null;
 
 export const globalSettings = (state: GlobalState): GlobalSettings | null => pluginState(state).globalSettings;
 
-// reminder: myPlaybookRunsByTeam indexes teamId->channelId->playbookRun
-const myPlaybookRunsByTeam = (state: GlobalState): Record<string, Record<string, PlaybookRun>> =>
-    pluginState(state).myPlaybookRunsByTeam;
+/**
+ * @returns runs indexed by teamId->{channelId->playbookRun}
+ */
+export const myPlaybookRunsByTeam = (state: GlobalState) => pluginState(state).myPlaybookRunsByTeam;
 
 export const canIPostUpdateForRun = (state: GlobalState, channelId: string, teamId: string) => {
     const canPost = haveIChannelPermission(state, {
@@ -95,7 +97,10 @@ export const currentChecklistAllCollapsed = createSelector(
     currentPlaybookRun,
     currentChecklistCollapsedState,
     (playbookRun, checklistsState) => {
-        for (let i = 0; i < playbookRun?.checklists.length; i++) {
+        if (!playbookRun) {
+            return true;
+        }
+        for (let i = 0; i < playbookRun.checklists.length; i++) {
             if (!checklistsState[i]) {
                 return false;
             }
@@ -113,12 +118,13 @@ export const myActivePlaybookRunsList = createSelector(
     getCurrentTeamId,
     myPlaybookRunsByTeam,
     (teamId, playbookRunMapByTeam) => {
-        if (!playbookRunMapByTeam[teamId]) {
+        const runMap = playbookRunMapByTeam[teamId];
+        if (!runMap) {
             return [];
         }
 
         // return active playbook runs, sorted descending by create_at
-        return Object.values(playbookRunMapByTeam[teamId])
+        return Object.values(runMap)
             .filter((i) => playbookRunIsActive(i))
             .sort((a, b) => b.create_at - a.create_at);
     },

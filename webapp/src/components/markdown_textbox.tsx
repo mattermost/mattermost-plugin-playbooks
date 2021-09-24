@@ -70,10 +70,11 @@ const Wrapper = styled.div`
     }
 
     &&&& {
-        .form-control.textbox-preview-area {
-            background: rgba(var(--center-channel-color-rgb), 0.04);
-        }
         .custom-textarea.custom-textarea {
+            background-color: var(--center-channel-bg);;
+            &.textbox-preview-area {
+                background-color: rgba(var(--center-channel-color-rgb), 0.04);
+            }
             height: unset;
             min-height: 104px;
             max-height: 324px;

@@ -157,9 +157,7 @@ const UpdateRunStatusModal = ({
     );
 };
 
-const useDefaultMessage = (
-    run: PlaybookRun | undefined
-) => {
+const useDefaultMessage = (run: PlaybookRun | null | undefined) => {
     const lastStatusPostMeta = run?.status_posts?.slice().reverse().find(({delete_at}) => !delete_at);
     const lastStatusPost = usePost(lastStatusPostMeta?.id ?? '');
 
@@ -184,9 +182,7 @@ const optionFromSeconds = (seconds: number) => {
     };
 };
 
-export const useReminderTimerOption = (
-    run: PlaybookRun | undefined
-) => {
+export const useReminderTimerOption = (run: PlaybookRun | null | undefined) => {
     const defaults = useMemo(() => {
         const options = [
             makeOption('in 60 minutes', Mode.DurationValue),

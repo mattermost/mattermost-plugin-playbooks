@@ -37,11 +37,13 @@ export function makeSlashCommandHook(store: Store) {
         }
 
         if (message?.startsWith('/playbook update') && inPlaybookRunChannel(state)) {
-            const clientId = generateId();
             const currentRun = currentPlaybookRun(state);
-            store.dispatch(setClientId(clientId));
-            store.dispatch(promptUpdateStatus(currentRun.team_id, currentRun.id, currentRun.playbook_id, currentRun.channel_id));
-            return {};
+            if (currentRun) {
+                const clientId = generateId();
+                store.dispatch(setClientId(clientId));
+                store.dispatch(promptUpdateStatus(currentRun.team_id, currentRun.id, currentRun.playbook_id, currentRun.channel_id));
+                return {};
+            }
         }
 
         if (message?.startsWith('/playbook info')) {

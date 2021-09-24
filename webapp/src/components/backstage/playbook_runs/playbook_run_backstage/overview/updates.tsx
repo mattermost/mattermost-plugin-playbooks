@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {Team} from 'mattermost-redux/types/teams';
@@ -32,19 +32,25 @@ const Updates = (props: Props) => {
     const statusPosts = props.playbookRun.status_posts.sort((a, b) => b.create_at - a.create_at);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
-    let updates: JSX.Element | JSX.Element[] =
+    let updates: ReactNode =
         <EmptyBody>{'There are no updates available.'}</EmptyBody>;
     if (statusPosts.length) {
-        updates = statusPosts.map((sp) => (
-            <PostContent
-                key={sp.id}
-                postId={sp.id}
-                channelId={props.playbookRun.channel_id}
-                playbookRunId={props.playbookRun.id}
-                playbookId={props.playbookRun.playbook_id}
-                team={team}
-            />
-        ));
+        updates = statusPosts.reduce((result, sp) => {
+            if (sp.delete_at === 0) {
+                result.push(
+                    <PostContent
+                        key={sp.id}
+                        postId={sp.id}
+                        channelId={props.playbookRun.channel_id}
+                        playbookRunId={props.playbookRun.id}
+                        playbookId={props.playbookRun.playbook_id}
+                        team={team}
+                    />
+                );
+            }
+
+            return result;
+        }, [] as ReactNode[]);
     }
 
     return (
