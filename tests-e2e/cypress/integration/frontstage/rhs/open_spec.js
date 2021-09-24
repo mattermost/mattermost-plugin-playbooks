@@ -80,7 +80,7 @@ describe('playbook run rhs', () => {
             });
 
             // # Open the flagged posts RHS
-             cy.get("body").then($body => {
+            cy.get("body").then($body => {
                 if ($body.find("#channelHeaderFlagButton").length > 0) {
                     cy.get('#channelHeaderFlagButton').click({force: true});
                 } else {
