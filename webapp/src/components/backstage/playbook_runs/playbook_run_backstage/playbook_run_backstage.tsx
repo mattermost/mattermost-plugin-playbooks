@@ -245,10 +245,12 @@ const PlaybookRunBackstage = () => {
                     />
                     <VerticalBlock>
                         <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
+                        {playbook &&
                         <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
                             <SmallPlaybookIcon/>
                             <SubTitle>{playbook?.title}</SubTitle>
                         </PlaybookDiv>
+                        }
                     </VerticalBlock>
                     <Badge status={playbookRun.current_status}/>
                     <SecondaryButtonLargerRight onClick={goToChannel}>
