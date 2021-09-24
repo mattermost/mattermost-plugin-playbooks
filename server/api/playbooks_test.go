@@ -1041,7 +1041,7 @@ func TestPlaybooks(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
-	t.Run("update playbook but no premissions in broadcast channel, but no edit", func(t *testing.T) {
+	t.Run("update playbook but no premissions in broadcast channel, but it already exists", func(t *testing.T) {
 		reset(t)
 
 		playbookService.EXPECT().
@@ -1053,16 +1053,11 @@ func TestPlaybooks(t *testing.T) {
 		filteredPlaybook.BroadcastChannelIDs = []string{}
 
 		playbookService.EXPECT().
-			Update(filteredPlaybook, "testuserid").
+			Update(withBroadcastChannel, "testuserid").
 			Return(nil).
 			Times(1)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
-		pluginAPI.On("LogWarn", "broadcast channel is not valid, removing channel from list", "channel_id", withBroadcastChannel.BroadcastChannelIDs[0])
-
-		for _, channelID := range withBroadcastChannel.BroadcastChannelIDs {
-			pluginAPI.On("HasPermissionToChannel", "testuserid", channelID, model.PermissionCreatePost).Return(false)
-		}
 
 		err := c.Playbooks.Update(context.TODO(), toAPIPlaybook(withBroadcastChannel))
 		require.NoError(t, err)
