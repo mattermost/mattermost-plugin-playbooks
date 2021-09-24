@@ -103,7 +103,7 @@ export function promptUpdateStatus(
         const state = getState();
         const hasPermission = canIPostUpdateForRun(state, channelId, teamId);
 
-        dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookId, playbookRunId, channelId, hasPermission})));
+        dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookRunId, channelId, hasPermission})));
     };
 }
 

@@ -381,6 +381,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.Description = pb.Description
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
+		playbookRun.ReminderTimerDefaultSeconds = pb.ReminderTimerDefaultSeconds
 
 		playbookRun.InvitedUserIDs = []string{}
 		playbookRun.InvitedGroupIDs = []string{}

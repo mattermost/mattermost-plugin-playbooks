@@ -5,7 +5,7 @@ import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import classNames from 'classnames';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -308,13 +308,17 @@ const Blanket = styled.div`
 `;
 
 interface ChildContainerProps {
-    moveUp?: number
+    moveUp?: number;
+    showOnRight?: boolean;
 }
 
 const ChildContainer = styled.div<ChildContainerProps>`
     margin: 4px 0 0;
     min-width: 20rem;
     top: ${(props) => 27 - (props.moveUp || 0)}px;
+    ${(props) => props.showOnRight && css`
+        right: -55px;
+    `}
 `;
 
 const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: DropdownProps) => {
@@ -323,7 +327,7 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
     }
 
     const classes = classNames('PlaybookRunFilter', 'profile-dropdown',
-        'PlaybookRunFilter--active', 'profile-dropdown--active', {'show-on-right': showOnRight});
+        'PlaybookRunFilter--active', 'profile-dropdown--active');
 
     return (
         <ProfileDropdown className={classes}>
@@ -331,6 +335,7 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
             <ChildContainer
                 className='playbook-run-user-select__container'
                 moveUp={moveUp}
+                showOnRight={showOnRight}
             >
                 {children}
             </ChildContainer>
