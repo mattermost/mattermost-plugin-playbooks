@@ -82,11 +82,11 @@ const Wrapper = styled.div`
             padding: 12px 30px 12px 16px;
 
             transition: box-shadow ease-in-out .15s;
-            box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
+            box-shadow: 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
 
             border: medium none;
             &:focus:not(.textbox-preview-area) {
-                box-shadow: inset 0 0 0 2px var(--button-bg);
+                box-shadow: 0 0 0 2px var(--button-bg);
             }
         }
     }
