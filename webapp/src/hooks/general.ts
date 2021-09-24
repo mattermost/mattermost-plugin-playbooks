@@ -300,10 +300,25 @@ export function useAllowPlaybookCreationInTeams() {
     return allowPlaybookCreationInTeams;
 }
 
-export function useDropdownPosition() {
+export function useDropdownPosition(numOptions: number, optionWidth = 264) {
     const [dropdownPosition, setDropdownPosition] = useState({x: 0, y: 0, isOpen: false});
+
     const toggleOpen = (x: number, y: number) => {
-        setDropdownPosition({x, y, isOpen: !dropdownPosition.isOpen});
+        // height of the dropdown:
+        const numOptionsShown = Math.min(6, numOptions);
+        const selectBox = 56;
+        const spacePerOption = 40;
+        const bottomPadding = 12;
+        const extraSpace = 20;
+        const dropdownBottom = y + selectBox + spacePerOption + (numOptionsShown * spacePerOption) + bottomPadding + extraSpace;
+        const deltaY = Math.max(0, dropdownBottom - window.innerHeight);
+
+        const dropdownRight = x + optionWidth + extraSpace;
+        const deltaX = Math.max(0, dropdownRight - window.innerWidth);
+
+        const shiftedX = x - deltaX;
+        const shiftedY = y - deltaY;
+        setDropdownPosition({x: shiftedX, y: shiftedY, isOpen: !dropdownPosition.isOpen});
     };
     return [dropdownPosition, toggleOpen] as const;
 }
