@@ -262,18 +262,6 @@ func doPlaybookModificationChecks(playbook *app.Playbook, userID string, pluginA
 		playbook.DefaultOwnerEnabled = false
 	}
 
-	filteredBroadcastChannelIDs := []string{}
-	for _, channelID := range playbook.BroadcastChannelIDs {
-		if !pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
-			pluginAPI.Log.Warn("broadcast channel is not valid, removing channel from list", "channel_id", channelID)
-			continue
-		}
-
-		filteredBroadcastChannelIDs = append(filteredBroadcastChannelIDs, channelID)
-	}
-
-	playbook.BroadcastChannelIDs = filteredBroadcastChannelIDs
-
 	return nil
 }
 
