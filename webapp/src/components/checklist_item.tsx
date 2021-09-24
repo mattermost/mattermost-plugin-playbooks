@@ -48,6 +48,7 @@ interface ChecklistItemDetailsProps {
     onRedirect?: () => void;
     draggableProvided: DraggableProvided;
     dragging: boolean;
+    disabled: boolean;
 }
 
 const RunningTimeout = 1000;
@@ -185,6 +186,10 @@ export const CheckboxContainer = styled.div`
 
     input[type="checkbox"]:checked::before {
         transform: scale(1) rotate(0deg);
+    }
+
+    input[type="checkbox"]:disabled {
+        opacity: 0.38;
     }
 
     label {
@@ -381,13 +386,15 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 data-testid='checkbox-item-container'
             >
                 <CheckboxContainer>
-                    {showMenu &&
+                    {showMenu && (!props.disabled || props.checklistItem.description !== '') &&
                     <HoverMenu>
-                        <HoverMenuButton
-                            title={'Drag me to reorder'}
-                            className={'icon icon-menu'}
-                            {...props.draggableProvided.dragHandleProps}
-                        />
+                        {!props.disabled &&
+                            <HoverMenuButton
+                                title={'Drag me to reorder'}
+                                className={'icon icon-menu'}
+                                {...props.draggableProvided.dragHandleProps}
+                            />
+                        }
                         {props.checklistItem.description !== '' &&
                         <StepDescription
                             text={props.checklistItem.description}
@@ -395,44 +402,49 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             team={team}
                         />
                         }
-                        <ProfileSelector
-                            selectedUserId={props.checklistItem.assignee_id}
-                            onlyPlaceholder={true}
-                            placeholder={
-                                <HoverMenuButton
-                                    title={'Assign'}
-                                    className={'icon-account-plus-outline icon-16 btn-icon'}
+                        {!props.disabled &&
+                            <>
+                                <ProfileSelector
+                                    selectedUserId={props.checklistItem.assignee_id}
+                                    onlyPlaceholder={true}
+                                    placeholder={
+                                        <HoverMenuButton
+                                            title={'Assign'}
+                                            className={'icon-account-plus-outline icon-16 btn-icon'}
+                                        />
+                                    }
+                                    enableEdit={true}
+                                    getUsers={fetchUsers}
+                                    onSelectedChange={onAssigneeChange}
+                                    selfIsFirstOption={true}
+                                    customControl={ControlComponent}
+                                    customControlProps={{
+                                        showCustomReset: Boolean(assignee_id),
+                                        onCustomReset: resetAssignee,
+                                    }}
+                                    controlledOpenToggle={profileSelectorToggle}
+                                    showOnRight={true}
                                 />
-                            }
-                            enableEdit={true}
-                            getUsers={fetchUsers}
-                            onSelectedChange={onAssigneeChange}
-                            selfIsFirstOption={true}
-                            customControl={ControlComponent}
-                            customControlProps={{
-                                showCustomReset: Boolean(assignee_id),
-                                onCustomReset: resetAssignee,
-                            }}
-                            controlledOpenToggle={profileSelectorToggle}
-                            showOnRight={true}
-                        />
-                        <HoverMenuButton
-                            title={'Edit'}
-                            className={'icon-pencil-outline icon-16 btn-icon'}
-                            onClick={() => {
-                                setShowEditDialog(true);
-                            }}
-                        />
-                        <HoverMenuButton
-                            title={'Delete'}
-                            className={'icon-trash-can-outline icon-16 btn-icon'}
-                            onClick={() => {
-                                setShowDeleteConfirm(true);
-                            }}
-                        />
+                                <HoverMenuButton
+                                    title={'Edit'}
+                                    className={'icon-pencil-outline icon-16 btn-icon'}
+                                    onClick={() => {
+                                        setShowEditDialog(true);
+                                    }}
+                                />
+                                <HoverMenuButton
+                                    title={'Delete'}
+                                    className={'icon-trash-can-outline icon-16 btn-icon'}
+                                    onClick={() => {
+                                        setShowDeleteConfirm(true);
+                                    }}
+                                />
+                            </>
+                        }
                     </HoverMenu>
                     }
                     <ChecklistItemButton
+                        disabled={props.disabled}
                         item={props.checklistItem}
                         onChange={(item: ChecklistItemState) => {
                             if (props.onChange) {
@@ -457,18 +469,20 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     {
                         props.checklistItem.command !== '' &&
                         <div ref={commandRef}>
-                            <Run
-                                data-testid={'run'}
-                                running={running}
-                                onClick={() => {
-                                    if (!running) {
-                                        setRunning(true);
-                                        clientRunChecklistItemSlashCommand(dispatch, props.playbookRunId, props.checklistNum, props.itemNum);
-                                    }
-                                }}
-                            >
-                                {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
-                            </Run>
+                            {!props.disabled &&
+                                <Run
+                                    data-testid={'run'}
+                                    running={running}
+                                    onClick={() => {
+                                        if (!running) {
+                                            setRunning(true);
+                                            clientRunChecklistItemSlashCommand(dispatch, props.playbookRunId, props.checklistNum, props.itemNum);
+                                        }
+                                    }}
+                                >
+                                    {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
+                                </Run>
+                            }
                             <Command>
                                 <TextWithTooltipWhenEllipsis
                                     id={props.checklistNum.toString(10)}
