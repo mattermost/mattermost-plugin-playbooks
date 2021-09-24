@@ -183,7 +183,7 @@ describe('playbook run rhs', () => {
             cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
 
             // # Wait a bit longer to be confident.
-            cy.wait(TIMEOUTS.TWO_SEC);
+            cy.wait(TIMEOUTS.FIVE_SEC);
 
             // * Verify the playbook run RHS is not open.
             cy.get('#rhsContainer').should('not.exist');
