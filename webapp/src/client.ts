@@ -484,6 +484,15 @@ export const doPost = async <TData = any>(url: string, body = {}) => {
     return data;
 };
 
+export const doDelete = async <TData = any>(url: string, body = {}) => {
+    const {data} = await doFetchWithResponse<TData>(url, {
+        method: 'DELETE',
+        body,
+    });
+
+    return data;
+};
+
 export const doPut = async <TData = any>(url: string, body = {}) => {
     const {data} = await doFetchWithResponse<TData>(url, {
         method: 'PUT',
