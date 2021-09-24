@@ -235,13 +235,11 @@ export function useProfilesInChannel(channelId: string) {
  *
  * @param fetch required thing fetcher
  * @param select thing from store if available
- * @param afterFetch side effect or dispatch thing back to store
  */
 function useThing<T extends NonNullable<any>>(
     id: string,
     fetch: (id: string) => Promise<T>,
     select?: (state: GlobalState, id: string) => T,
-    afterFetch?: (x: T) => void,
 ) {
     const [thing, setThing] = useState<T | null>(null);
     const thingFromState = useSelector<GlobalState, T | null>((state) => select?.(state, id || '') ?? null);
@@ -254,9 +252,6 @@ function useThing<T extends NonNullable<any>>(
 
         if (id) {
             fetch(id).then(setThing);
-            if (thing) {
-                afterFetch?.(thing);
-            }
             return;
         }
         setThing(null);
