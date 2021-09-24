@@ -140,7 +140,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
-			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
+			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"ConcatenatedBroadcastChannelIDs", "WebhookOnCreationURL", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
 			"RetrospectiveWasCanceled", "WebhookOnStatusUpdateURL", "ExportChannelOnFinishedEnabled",
 			"COALESCE(CategoryName, '') CategoryName").
@@ -361,6 +361,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"ReminderPostID":                       rawPlaybookRun.ReminderPostID,
 			"PreviousReminder":                     rawPlaybookRun.PreviousReminder,
 			"ReminderMessageTemplate":              rawPlaybookRun.ReminderMessageTemplate,
+			"ReminderTimerDefaultSeconds":          rawPlaybookRun.ReminderTimerDefaultSeconds,
 			"CurrentStatus":                        rawPlaybookRun.CurrentStatus,
 			"LastStatusUpdateAt":                   rawPlaybookRun.LastStatusUpdateAt,
 			"ConcatenatedInvitedUserIDs":           rawPlaybookRun.ConcatenatedInvitedUserIDs,

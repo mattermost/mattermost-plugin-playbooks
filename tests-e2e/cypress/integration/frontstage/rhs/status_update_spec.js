@@ -9,39 +9,36 @@
 import users from '../../../fixtures/users.json';
 
 describe('playbook run rhs > latest update', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
     const defaultReminderMessage = '# Default reminder message';
-    let teamId;
-    let userId;
-    let playbookId;
+    let testTeam;
+    let testChannel;
+    let testUser;
+    let testPlaybook;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
+        cy.apiInitSetup().then(({team, channel, user}) => {
+            testTeam = team;
+            testChannel = channel;
+            testUser = user;
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+            // # Turn off growth onboarding screens
+            cy.apiUpdateConfig({
+                ServiceSettings: {EnableOnboardingFlow: false},
+            });
 
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
-            cy.legacyApiGetCurrentUser().then((user) => {
-                userId = user.id;
-                cy.legacyApiGetChannelByName('ad-1', 'town-square').then(({channel}) => {
-                    // # Create a playbook
-                    cy.apiCreateTestPlaybook({
-                        teamId,
-                        title: playbookName,
-                        userId,
-                        broadcastChannelId: channel.id,
-                        reminderTimerDefaultSeconds: 3600,
-                        reminderMessageTemplate: defaultReminderMessage,
-                    }).then((playbook) => {
-                        playbookId = playbook.id;
-                    });
-                });
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                userId: testUser,
+                broadcastChannelId: testChannel.id,
+                reminderTimerDefaultSeconds: 3600,
+                reminderMessageTemplate: defaultReminderMessage,
+            }).then((playbook) => {
+                testPlaybook = playbook;
             });
         });
     });
@@ -50,22 +47,22 @@ describe('playbook run rhs > latest update', () => {
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+        // # Login as testUser
+        cy.apiLogin(testUser);
 
         // # Create a new playbook run
         const now = Date.now();
         const name = 'Playbook Run (' + now + ')';
         const channelName = 'playbook-run-' + now;
         cy.apiRunPlaybook({
-            teamId,
-            playbookId,
+            teamId: testTeam.id,
+            playbookId: testPlaybook.id,
             playbookRunName: name,
-            ownerUserId: userId,
+            ownerUserId: testUser.id,
         });
 
         // # Navigate directly to the application and the playbook run channel
-        cy.visit('/ad-1/channels/' + channelName);
+        cy.visit(`/${testTeam.name}/channels/${channelName}`);
     });
 
     describe('post update dialog', () => {
@@ -90,6 +87,60 @@ describe('playbook run rhs > latest update', () => {
 
             // * Verify that the Post update dialog has gone.
             cy.get('.GenericModal').should('not.exist');
+        });
+
+        it('lets users with no access to the playbook post an update', () => {
+            let channelName;
+            const updateMessage = 'status update ' + Date.now();
+
+            // # Login as sysadmin and create a private playbook and a run
+            cy.apiLogin(users.sysadmin).then(({user: sysadmin}) => {
+                // # Create a private playbook
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Playbook - Private',
+                    memberIDs: [sysadmin.id], // Make it accesible only to sysadmin
+                    inviteUsersEnabled: true,
+                    invitedUserIds: [testUser.id], // Invite the test user
+                }).then((playbook) => {
+                    // # Create a new playbook run
+                    const now = Date.now();
+                    const name = 'Playbook Run (' + now + ')';
+                    channelName = 'playbook-run-' + now;
+                    cy.apiRunPlaybook({
+                        teamId: testTeam.id,
+                        playbookId: playbook.id,
+                        playbookRunName: name,
+                        ownerUserId: sysadmin.id,
+                    });
+                });
+            }).then(() => {
+                // # Login as the test user
+                cy.apiLogin(testUser);
+
+                // # Navigate directly to the application and the playbook run channel
+                cy.visit(`/${testTeam.name}/channels/${channelName}`);
+
+                // # Run the `/playbook update` slash command.
+                cy.executeSlashCommand('/playbook update');
+
+                // # Get dialog modal.
+                cy.get('.GenericModal').within(() => {
+                    // # Enter valid data
+                    cy.findByTestId('update_run_status_textbox').type(updateMessage);
+
+                    // # Submit the dialog.
+                    cy.get('button.confirm').click();
+                });
+
+                // * Verify that the Post update dialog has gone.
+                cy.get('.GenericModal').should('not.exist');
+
+                // * Verify that the status update was posted.
+                cy.getLastPost().within(() => {
+                    cy.findByText(updateMessage).should('exist');
+                });
+            });
         });
     });
 
