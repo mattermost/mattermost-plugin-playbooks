@@ -694,7 +694,8 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(post *model.Post, playboo
 		post.Id = "" // Reset the ID so we avoid cloning the whole object
 		post.ChannelId = channelID
 		if err := s.postMessageToThreadAndSaveRootID(playbookRunID, channelID, post); err != nil {
-			return errors.Wrap(err, "failed to post broadcast message")
+			s.pluginAPI.Log.Warn("failed to broadcast the status update to channel",
+				"channel_id", channelID, "error", err.Error())
 		}
 	}
 
