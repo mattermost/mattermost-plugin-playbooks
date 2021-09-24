@@ -81,7 +81,7 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
-export function startPlaybookRunById(teamId: string, playbookId: string) {
+export function startPlaybookRunById(teamId: string, playbookId: string, timeout = 0) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
@@ -89,7 +89,14 @@ export function startPlaybookRunById(teamId: string, playbookId: string) {
 
         const command = `/playbook run-playbook ${playbookId} ${clientId}`;
 
-        await clientExecuteCommand(dispatch, getState, command, teamId);
+        // When dispatching from the playbooks product, the switch to channels resets the websocket
+        // connection, losing the event that opens this dialog. Allow the caller to specify a
+        // timeout as a gross workaround.
+        await new Promise((resolve) => setTimeout(() => {
+            clientExecuteCommand(dispatch, getState, command, teamId);
+            // eslint-disable-next-line no-undefined
+            resolve(undefined);
+        }, timeout));
     };
 }
 

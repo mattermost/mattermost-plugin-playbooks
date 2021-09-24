@@ -123,7 +123,7 @@ const PlaybookBackstage = () => {
 
         if (playbook?.id) {
             telemetryEventForPlaybook(playbook.id, 'playbook_dashboard_run_clicked');
-            dispatch(startPlaybookRunById(team.id, playbook.id));
+            dispatch(startPlaybookRunById(team.id, playbook.id, 3000));
         }
     };
 
@@ -167,6 +167,7 @@ const PlaybookBackstage = () => {
                     <PrimaryButtonLarger
                         onClick={runPlaybook}
                         disabled={!enableRunPlaybook}
+                        data-testid='run-playbook'
                     >
                         <RightMarginedIcon
                             path={mdiClipboardPlayOutline}
