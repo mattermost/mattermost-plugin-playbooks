@@ -836,16 +836,16 @@ func (h *PlaybookRunHandler) reminderButtonDismiss(w http.ResponseWriter, r *htt
 	ReturnJSON(w, nil, http.StatusOK)
 }
 
-func (h *PlaybookRunHandler) removeReminderPost(w http.ResponseWriter, userID, playbookID, channelID string) {
-	storedPlaybookID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
+func (h *PlaybookRunHandler) removeReminderPost(w http.ResponseWriter, userID, playbookRunID, channelID string) {
+	storedPlaybookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
 	if err != nil {
 		h.log.Errorf("reminderButtonDismiss: no playbook run for requestData's channelID: %s", channelID)
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "no playbook run for requestData's channelID", err)
 		return
 	}
-	if storedPlaybookID != playbookID {
+	if storedPlaybookRunID != playbookRunID {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder",
-			fmt.Errorf("storedPlaybookRunID: %s for channelID: %s did not match playbookID in url path: %s", storedPlaybookID, channelID, playbookID))
+			fmt.Errorf("storedPlaybookRunID: %s for channelID: %s did not match playbookID in url path: %s", storedPlaybookRunID, channelID, playbookRunID))
 		return
 	}
 
@@ -858,13 +858,13 @@ func (h *PlaybookRunHandler) removeReminderPost(w http.ResponseWriter, userID, p
 		return
 	}
 
-	if err := h.playbookRunService.RemoveReminderPost(playbookID); err != nil {
+	if err := h.playbookRunService.RemoveReminderPost(playbookRunID); err != nil {
 		h.log.Errorf("reminderButtonDismiss: error removing reminder for channelID: %s; error: %s", channelID, err.Error())
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder", err)
 		return
 	}
 
-	if err := h.playbookRunService.ResetReminderTimer(playbookID); err != nil {
+	if err := h.playbookRunService.ResetReminderTimer(playbookRunID); err != nil {
 		h.log.Errorf("reminderButtonDismiss: error resetting reminder for channelID: %s; error: %s", channelID, err.Error())
 		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error resetting reminder", err)
 		return
