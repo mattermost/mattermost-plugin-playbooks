@@ -77,6 +77,11 @@ const Row = (props: Props) => {
     const teamName = useSelector(teamNameSelector(props.playbookRun.team_id));
     const [completedTasks, totalTasks] = tasksCompletedTotal(props.playbookRun.checklists);
 
+    let infoLine: React.ReactNode = null;
+    if (!props.fixedTeam) {
+        infoLine = <InfoLine>{playbookName ? teamName + ' • ' + playbookName : teamName}</InfoLine>;
+    }
+
     function openPlaybookRunDetails(playbookRun: PlaybookRun) {
         navigateToPluginUrl(`/runs/${playbookRun.id}`);
     }
@@ -89,7 +94,7 @@ const Row = (props: Props) => {
         >
             <div className='col-sm-4'>
                 <RunName>{props.playbookRun.name}</RunName>
-                {!props.fixedTeam && <InfoLine>{teamName + ' • ' + playbookName}</InfoLine>}
+                {infoLine}
             </div>
             <div className='col-sm-2'>
                 <SmallStatusBadge
