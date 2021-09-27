@@ -30,9 +30,12 @@ export const UpdateRequestPost = (props: Props) => {
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel.team_id));
     const currentRun = useSelector(currentPlaybookRun);
     const targetUsername = props.post.props.targetUsername ?? '';
-    const playbookRunId = currentRun?.id;
-    const dismissUrl = `/plugins/${pluginId}/api/v0/runs/${playbookRunId}/reminder`;
+    const dismissUrl = `/plugins/${pluginId}/api/v0/runs/${currentRun?.id}/reminder`;
     const dismissBody = JSON.stringify({channel_id: channel.id});
+
+    if (!currentRun) {
+        return null;
+    }
 
     return (
         <>
@@ -45,7 +48,7 @@ export const UpdateRequestPost = (props: Props) => {
                     onClick={() => {
                         dispatch(promptUpdateStatus(
                             team.id,
-                            playbookRunId,
+                            currentRun?.id,
                             currentRun?.playbook_id,
                             props.post.channel_id,
                         ));
