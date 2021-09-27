@@ -2003,7 +2003,7 @@ func TestGetAssignedTasks(t *testing.T) {
 
 			for _, run := range runs {
 				for _, task := range run.Tasks {
-					require.Contains(t, expected[run.PlaybookRunName], task.Title)
+					require.Contains(t, expected[run.ChannelDisplayName], task.Title)
 				}
 			}
 		})
