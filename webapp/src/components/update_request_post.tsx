@@ -14,10 +14,11 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {currentPlaybookRun} from 'src/selectors';
 import PostText from 'src/components/post_text';
-import {DestructiveButton, TertiaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
 import {doDelete} from 'src/client';
 import {pluginId} from 'src/manifest';
+import {CustomPostContainer} from 'src/components/custom_post_styles';
 
 interface Props {
     post: Post;
@@ -40,7 +41,7 @@ export const UpdateRequestPost = (props: Props) => {
                 team={team}
             />
             <Container>
-                <PostUpdateDestructiveButton
+                <PostUpdatePrimaryButton
                     onClick={() => {
                         dispatch(promptUpdateStatus(
                             team.id,
@@ -51,7 +52,7 @@ export const UpdateRequestPost = (props: Props) => {
                     }}
                 >
                     {'Post update'}
-                </PostUpdateDestructiveButton>
+                </PostUpdatePrimaryButton>
                 <Spacer/>
                 <PostUpdateTertiaryButton onClick={() => doDelete(dismissUrl, dismissBody)}>
                     {'Dismiss'}
@@ -67,7 +68,7 @@ const PostUpdateButtonCommon = css`
     max-width: 135px;
 `;
 
-const PostUpdateDestructiveButton = styled(DestructiveButton)`
+const PostUpdatePrimaryButton = styled(PrimaryButton)`
     ${PostUpdateButtonCommon}
 `;
 
@@ -78,12 +79,13 @@ const PostUpdateTertiaryButton = styled(TertiaryButton)`
 const Spacer = styled.div`
     flex-grow: 0;
     flex-shrink: 0;
-    width: 18px;
+    width: 12px;
 `;
 
-const Container = styled.div`
+const Container = styled(CustomPostContainer)`
     display: flex;
     flex-direction: row;
+    padding: 12px;
 `;
 
 const StyledPostText = styled(PostText)`
