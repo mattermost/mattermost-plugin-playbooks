@@ -14,7 +14,7 @@ import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 
 import {UserProfile} from 'mattermost-redux/types/users';
 
-import {FetchPlaybookRunsParams} from 'src/types/playbook_run';
+import {FetchPlaybookRunsParams, PlaybookRunStatus} from 'src/types/playbook_run';
 import ProfileSelector from 'src/components/profile/profile_selector';
 
 import TeamSelector from 'src/components/team/team_selector';
@@ -87,10 +87,10 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
         });
     };
 
-    const setStatus = (statuses: string[]) => {
+    const setFinishedRuns = (checked?: boolean) => {
+        const statuses = checked ? [PlaybookRunStatus.InProgress, PlaybookRunStatus.Finished] : [PlaybookRunStatus.InProgress];
         setFetchParams((oldParams) => {
-            return {...oldParams, statuses, page: 0}
-            ;
+            return {...oldParams, statuses, page: 0};
         });
     };
 
@@ -132,6 +132,12 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                 checked={myRunsOnly}
                 onChange={setMyRunsOnly}
             />
+            <CheckboxInput
+                testId={'finished-runs'}
+                text={'Finished Runs'}
+                checked={(fetchParams.statuses?.length ?? 0) > 1}
+                onChange={setFinishedRuns}
+            />
             <ProfileSelector
                 testId={'owner-filter'}
                 selectedUserId={fetchParams.owner_user_id}
@@ -146,10 +152,6 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                 controlledOpenToggle={profileSelectorToggle}
                 getUsers={fetchOwners}
                 onSelectedChange={setOwnerId}
-            />
-            <StatusFilter
-                default={fetchParams.statuses}
-                onChange={setStatus}
             />
             {teams.length > 1 && !fixedTeam &&
                 <TeamSelector
