@@ -921,13 +921,13 @@ func (s *playbookRunStore) GetAssignedTasks(userID string) ([]app.AssignedRun, e
 		ChecklistsJSON json.RawMessage
 	}
 
-	query := s.store.builder.Select("i.ID AS PlaybookRunID", "i.Name AS PlaybookRunName",
-		"t.Name AS TeamName", "c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName",
+	query := s.store.builder.Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
+		"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName",
 		"i.ChecklistsJSON AS ChecklistsJSON").
 		From("IR_Incident AS i").
 		Join("Teams AS t ON (i.TeamID = t.Id)").
 		Join("Channels AS c ON (i.ChannelID = c.Id)").
-		Where(sq.Eq{"i.CurrentStatus": "InProgress"})
+		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress})
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
 		query = query.Where(sq.Like{"i.ChecklistsJSON": fmt.Sprintf("%%\"%s\"%%", userID)})
 	} else {
@@ -965,6 +965,33 @@ func (s *playbookRunStore) GetAssignedTasks(userID string) ([]app.AssignedRun, e
 		if len(run.Tasks) > 0 {
 			ret = append(ret, run)
 		}
+	}
+
+	return ret, nil
+}
+
+// GetParticipatingRuns returns the list of runs that you are participating in
+func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, error) {
+	membershipClause := s.queryBuilder.
+		Select("1").
+		Prefix("EXISTS(").
+		From("ChannelMembers AS cm").
+		Where("cm.ChannelId = i.ChannelID").
+		Where(sq.Eq{"cm.UserId": userID}).
+		Suffix(")")
+
+	query := s.store.builder.
+		Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
+			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName").
+		From("IR_Incident AS i").
+		Join("Teams AS t ON (i.TeamID = t.Id)").
+		Join("Channels AS c ON (c.Id = i.ChannelId)").
+		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
+		Where(membershipClause)
+
+	var ret []app.RunLink
+	if err := s.store.selectBuilder(s.store.db, &ret, query); err != nil {
+		return nil, errors.Wrap(err, "failed to query for active runs")
 	}
 
 	return ret, nil

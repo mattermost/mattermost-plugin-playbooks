@@ -1587,6 +1587,10 @@ func (s *PlaybookRunServiceImpl) GetAssignedTasks(userID string) ([]AssignedRun,
 	return s.store.GetAssignedTasks(userID)
 }
 
+func (s *PlaybookRunServiceImpl) GetParticipatingRuns(userID string) ([]RunLink, error) {
+	return s.store.GetParticipatingRuns(userID)
+}
+
 func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID string, checklistNumber int) (*PlaybookRun, error) {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
