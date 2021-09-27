@@ -849,7 +849,7 @@ func buildAssignedTaskMessage(runs []app.AssignedRun, siteURL string) string {
 	}
 
 	if total == 0 {
-		return "### Your Assigned Tasks:\nYou have 0 assigned tasks."
+		return "### Your Assigned Tasks:\nYou have 0 assigned tasks.\n"
 	}
 
 	message := fmt.Sprintf("### Your Assigned Tasks:\nYou have %d total assigned tasks:\n", total)
@@ -875,10 +875,10 @@ func buildRunsInProgressMessage(runs []app.RunLink, siteURL string) string {
 	total := len(runs)
 
 	if total == 0 {
-		return "### Runs in Progress\nYou have 0 runs currently in progress:"
+		return "### Runs in Progress\nYou have 0 runs currently in progress.\n"
 	}
 
-	message := fmt.Sprintf("\n### Runs in Progress\nYou have %d runs currently in progress:\n", total)
+	message := fmt.Sprintf("### Runs in Progress\nYou have %d runs currently in progress:\n", total)
 
 	for _, run := range runs {
 		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
