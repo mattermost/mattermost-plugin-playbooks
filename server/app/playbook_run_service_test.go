@@ -771,6 +771,8 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		actorID := ""
 		s.UserHasJoinedChannel(userID, channelID, actorID)
 
+		time.Sleep(6 * time.Second)
+
 		assert.Equal(t, len(sidebarCategories[0].Channels), 1)
 		assert.Equal(t, sidebarCategories[0].Channels[0], "channel_id")
 	})
@@ -877,6 +879,8 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		channelID := "channel_id"
 		actorID := ""
 		s.UserHasJoinedChannel(userID, channelID, actorID)
+
+		time.Sleep(6 * time.Second)
 
 		assert.Equal(t, len(sidebarCategories[0].Channels), 1)
 		assert.Equal(t, sidebarCategories[0].Channels[0], "channel_id")
