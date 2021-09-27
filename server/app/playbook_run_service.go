@@ -2349,7 +2349,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 			req, err := http.NewRequest("POST", url, bytes.NewReader(body))
 
 			if err != nil {
-				s.pluginAPI.Log.Warn("failed to send a POST request to webhook URL", "webhook URL", url, "error", err)
+				s.pluginAPI.Log.Warn("failed to create a POST request to webhook URL", "webhook URL", url, "error", err.Error())
 				return
 			}
 
@@ -2357,7 +2357,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 			resp, err := s.httpClient.Do(req)
 			if err != nil {
-				s.pluginAPI.Log.Warn("failed to send a POST request to webhook URL", "webhook URL", url, "error", err)
+				s.pluginAPI.Log.Warn("failed to send a POST request to webhook URL", "webhook URL", url, "error", err.Error())
 				return
 			}
 
@@ -2365,7 +2365,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 			if resp.StatusCode < 200 || resp.StatusCode > 299 {
 				err := errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
-				s.pluginAPI.Log.Warn("failed to send a POST request to webhook URL", "webhook URL", url, "error", err)
+				s.pluginAPI.Log.Warn("failed to finish a POST request to webhook URL", "webhook URL", url, "error", err.Error())
 			}
 		}()
 	}
