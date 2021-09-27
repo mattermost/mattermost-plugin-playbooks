@@ -1443,10 +1443,13 @@ paths:
                     type: string
                     description: User ID of the playbook member.
                     example: ilh6s1j4yefbdhxhtlzt179i6m
-                broadcast_channel_id:
-                  description: The ID of the channel where all the status updates will be broadcasted. The team of the broadcast channel must be the same as the playbook's team.
-                  type: string
-                  example: 2zh7rpashwfwapwaqyslmhwbax
+                broadcast_channel_ids:
+                  description: The IDs of the channels where all the status updates will be broadcasted. The team of the broadcast channel must be the same as the playbook's team.
+                  type: array
+                  items:
+                    type: string
+                    description: ID of the broadcast channel.
+                    example: 2zh7rpashwfwapwaqyslmhwbax
                 invited_user_ids:
                   description: A list with the IDs of the members to be automatically invited to the playbook run's channel as soon as the playbook run is created.
                   type: array

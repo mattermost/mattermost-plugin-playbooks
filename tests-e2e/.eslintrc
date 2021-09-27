@@ -4,7 +4,7 @@
     "plugin:cypress/recommended",
     "plugin:react/recommended"
   ],
-  "plugins": ["mattermost", "import", "cypress, @typescript-eslint"],
+  "plugins": ["mattermost", "import", "cypress", "@typescript-eslint"],
   "globals": {
     "Cypress": true,
     "cy": true

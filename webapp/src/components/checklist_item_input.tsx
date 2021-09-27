@@ -130,6 +130,7 @@ export const ChecklistItemDescription = (props: ChecklistItemDescriptionProps) =
 interface ChecklistItemButtonProps {
     onChange: (item: ChecklistItemState) => void;
     item: ChecklistItem;
+    disabled: boolean;
 }
 
 export const ChecklistItemButton = (props: ChecklistItemButtonProps) => {
@@ -140,6 +141,7 @@ export const ChecklistItemButton = (props: ChecklistItemButtonProps) => {
             className='checkbox'
             type='checkbox'
             checked={isChecked}
+            disabled={props.disabled}
             onChange={() => {
                 if (isChecked) {
                     props.onChange(ChecklistItemState.Open);

@@ -47,7 +47,8 @@ describe('backstage playbook run details', () => {
     });
 
     describe('updates', () => {
-        it('should show user icons', () => {
+        const message = 'This is a status update';
+        beforeEach(() => {
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
                 playbookId: testPublicPlaybook.id,
@@ -59,22 +60,33 @@ describe('backstage playbook run details', () => {
                     userId: testUser.id,
                     channelId: playbookRun.channel_id,
                     teamId: testTeam.id,
-                    message: 'This is a status update',
+                    message,
                     description: 'This is a description',
                 });
 
                 // # Visit the playbook run
                 cy.visit(`/playbooks/runs/${playbookRun.id}`);
-
-                // # Verify the status update is present
-                cy.findByTestId('updates').contains('This is a status update');
-
-                // # Verify the playbook user and icon is visible
-                cy.findByTestId('updates').find('img').should('be.visible').and(($img) => {
-                    // https://stackoverflow.com/questions/51246606/test-loading-of-image-in-cypress
-                    expect($img[0].naturalWidth).to.be.greaterThan(0);
-                });
             });
+        });
+
+        it('should shows user icons', () => {
+            // * Verify the status update is present
+            cy.findByTestId('updates').contains(message);
+
+            // * Verify the playbook user and icon is visible
+            cy.findByTestId('updates').find('img').should('be.visible').and(($img) => {
+                // https://stackoverflow.com/questions/51246606/test-loading-of-image-in-cypress
+                expect($img[0].naturalWidth).to.be.greaterThan(0);
+            });
+        });
+
+        it('links back to original post in channel', () => {
+            cy.findByTestId('updates').within(() => {
+                // # Click status post permalink
+                cy.get('[class^="UpdateTimeLink"]').click();
+            });
+            // * Verify post message
+            cy.get('.post').contains(message);
         });
     });
 });

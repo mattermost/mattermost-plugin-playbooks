@@ -58,7 +58,7 @@ const CheckboxInput = (props: Props) => {
     };
 
     return (
-        <Component data-testId={props.testId}>
+        <Component data-testid={props.testId}>
             <input
                 type='checkbox'
                 onChange={onChange}

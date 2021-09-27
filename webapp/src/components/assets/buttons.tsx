@@ -78,7 +78,6 @@ export const TertiaryButton = styled.button`
     display: inline-flex;
     align-items: center;
     height: 40px;
-    color: var(--button-bg);
     border-radius: 4px;
     border: 0px;
     font-weight: 600;
@@ -87,18 +86,20 @@ export const TertiaryButton = styled.button`
     padding: 0 20px;
     transition: all 0.15s ease-out;
 
+    color: var(--button-bg);
     background: rgba(var(--button-bg-rgb), 0.08);
+
+    &:disabled {
+        color: rgba(var(--center-channel-color-rgb), 0.32);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
 
     &:hover:enabled {
         background: rgba(var(--button-bg-rgb), 0.12);
     }
 
-    &:active  {
+    &:active:enabled  {
         background: rgba(var(--button-bg-rgb), 0.16);
-    }
-
-    &:disabled {
-        color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     i {

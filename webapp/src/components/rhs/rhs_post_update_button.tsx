@@ -11,6 +11,7 @@ interface Props {
     isDue: boolean;
     isNextUpdateScheduled: boolean;
     updatesExist: boolean;
+    disabled: boolean;
     onClick: () => void;
 }
 
@@ -26,6 +27,7 @@ const RHSPostUpdateButton = (props: Props) => {
     return (
         <ButtonComponent
             collapsed={props.collapsed}
+            disabled={props.disabled}
             onClick={props.onClick}
         >
             {'Post update'}

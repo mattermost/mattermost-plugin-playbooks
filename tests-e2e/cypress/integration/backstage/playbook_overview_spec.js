@@ -101,4 +101,17 @@ describe('playbook overview', () => {
             cy.findByTestId('playbookPermissionsDescription').contains('2 people can access this playbook');
         });
     });
+
+    it('should switch to channels and prompt to run when clicking run', () => {
+        // # Navigate directly to the playbook
+        cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
+
+        // # Click Run Playbook
+        cy.findByTestId('run-playbook').click({force: true});
+
+        // * Verify the playbook run creation dialog has opened
+        cy.get('#interactiveDialogModal').should('exist').within(() => {
+            cy.findByText('Start run').should('exist');
+        });
+    });
 });
