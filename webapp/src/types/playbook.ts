@@ -20,7 +20,6 @@ export interface Playbook {
 
 export interface PlaybookWithChecklist extends Playbook {
     checklists: Checklist[];
-    broadcast_channel_id: string;
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
     invited_user_ids: string[];
@@ -106,7 +105,6 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         last_run_at: 0,
         checklists: [emptyChecklist()],
         member_ids: [],
-        broadcast_channel_id: '',
         reminder_message_template: '',
         reminder_timer_default_seconds: 0,
         invited_user_ids: [],
@@ -184,7 +182,7 @@ export function isPlaybook(arg: any): arg is PlaybookWithChecklist {
         typeof arg.delete_at === 'number' &&
         arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
         arg.member_ids && Array.isArray(arg.member_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
-        typeof arg.broadcast_channel_id === 'string' &&
+        arg.broadcast_channel_ids && Array.isArray(arg.broadcast_channel_ids) && arg.broadcast_channel_ids.every((id: any) => typeof id === 'string') &&
         typeof arg.reminder_message_template == 'string' &&
         typeof arg.reminder_timer_default_seconds == 'number' &&
         arg.invited_user_ids && Array.isArray(arg.invited_user_ids) && arg.invited_user_ids.every((id: any) => typeof id === 'string') &&

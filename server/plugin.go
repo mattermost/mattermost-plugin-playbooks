@@ -54,9 +54,9 @@ func (p *Plugin) OnActivate() error {
 	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
 
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
-		Username:    "playbook",
-		DisplayName: "Playbook Bot",
-		Description: "Playbook's bot.",
+		Username:    "playbooks",
+		DisplayName: "Playbooks",
+		Description: "Playbooks bot.",
 	},
 		pluginapi.ProfileImagePath("assets/plugin_icon.png"),
 	)

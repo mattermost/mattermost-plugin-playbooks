@@ -9,7 +9,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {Content, TabPageContainer, Title} from 'src/components/backstage/playbook_runs/shared';
 
 import Profile from 'src/components/profile/profile';
-import Duration from 'src/components/duration';
+import FormattedDuration from 'src/components/formatted_duration';
 
 const StyledContent = styled(Content)`
     padding: 24px;
@@ -52,7 +52,7 @@ const About = (props: { playbookRun: PlaybookRun }) => {
                         <SmallProfile userId={props.playbookRun.owner_user_id}/>
                     </ColItem>
                     <ColItem>
-                        <Duration
+                        <FormattedDuration
                             from={props.playbookRun.create_at}
                             to={props.playbookRun.end_at}
                         />

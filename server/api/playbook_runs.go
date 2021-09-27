@@ -354,7 +354,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
 	}
 
-	if playbookRun.Name == "" {
+	if strings.TrimSpace(playbookRun.Name) == "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
@@ -381,6 +381,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.Description = pb.Description
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
+		playbookRun.ReminderTimerDefaultSeconds = pb.ReminderTimerDefaultSeconds
 
 		playbookRun.InvitedUserIDs = []string{}
 		playbookRun.InvitedGroupIDs = []string{}

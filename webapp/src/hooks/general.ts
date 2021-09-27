@@ -23,17 +23,16 @@ import {
     getProfilesInChannel,
 } from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
-import {Post} from 'mattermost-redux/types/posts';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
-import {FetchPlaybookRunsParams, PlaybookRun, StatusPost} from 'src/types/playbook_run';
+import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';
-import {clientFetchPlaybooksCount, fetchPlaybookRuns, clientFetchPlaybook} from 'src/client';
+import {clientFetchPlaybooksCount, fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
 import {
@@ -46,6 +45,7 @@ import {
     globalSettings,
     isCurrentUserAdmin,
     numPlaybooksByTeam,
+    myPlaybookRunsByTeam,
 } from '../selectors';
 
 /**
@@ -230,32 +230,49 @@ export function useProfilesInChannel(channelId: string) {
     return profilesInChannel;
 }
 
-export function usePost(postId: string) {
-    const postFromState = useSelector<GlobalState, Post | null>((state) =>
-        getPostFromState(state, postId || ''),
-    );
-    const [post, setPost] = useState<Post | null>(null);
+/**
+ * Use thing from API and/or Store
+ *
+ * @param fetch required thing fetcher
+ * @param select thing from store if available
+ */
+function useThing<T extends NonNullable<any>>(
+    id: string,
+    fetch: (id: string) => Promise<T>,
+    select?: (state: GlobalState, id: string) => T,
+) {
+    const [thing, setThing] = useState<T | null>(null);
+    const thingFromState = useSelector<GlobalState, T | null>((state) => select?.(state, id || '') ?? null);
 
     useEffect(() => {
-        const updateLatestUpdate = async () => {
-            if (postFromState) {
-                setPost(postFromState);
-                return;
-            }
+        if (thingFromState) {
+            setThing(thingFromState);
+            return;
+        }
 
-            if (postId) {
-                const fromServer = await Client4.getPost(postId);
-                setPost(fromServer);
-                return;
-            }
+        if (id) {
+            fetch(id).then(setThing);
+            return;
+        }
+        setThing(null);
+    }, [thingFromState, id]);
 
-            setPost(null);
-        };
+    return thing;
+}
 
-        updateLatestUpdate();
-    }, [postFromState, postId]);
+export function usePost(postId: string) {
+    return useThing(postId, Client4.getPost, getPostFromState);
+}
 
-    return post;
+export function useRun(runId: string, teamId?: string, channelId?: string) {
+    return useThing(runId, fetchPlaybookRun, (state) => {
+        const runsByTeam = myPlaybookRunsByTeam(state);
+        if (teamId && channelId) {
+            // use efficient path
+            return runsByTeam[teamId]?.[channelId];
+        }
+        return Object.values(runsByTeam).flatMap((x) => x && Object.values(x)).find((run) => run?.id === runId);
+    });
 }
 
 export function useNumPlaybooksInCurrentTeam() {
@@ -300,10 +317,25 @@ export function useAllowPlaybookCreationInTeams() {
     return allowPlaybookCreationInTeams;
 }
 
-export function useDropdownPosition() {
+export function useDropdownPosition(numOptions: number, optionWidth = 264) {
     const [dropdownPosition, setDropdownPosition] = useState({x: 0, y: 0, isOpen: false});
+
     const toggleOpen = (x: number, y: number) => {
-        setDropdownPosition({x, y, isOpen: !dropdownPosition.isOpen});
+        // height of the dropdown:
+        const numOptionsShown = Math.min(6, numOptions);
+        const selectBox = 56;
+        const spacePerOption = 40;
+        const bottomPadding = 12;
+        const extraSpace = 20;
+        const dropdownBottom = y + selectBox + spacePerOption + (numOptionsShown * spacePerOption) + bottomPadding + extraSpace;
+        const deltaY = Math.max(0, dropdownBottom - window.innerHeight);
+
+        const dropdownRight = x + optionWidth + extraSpace;
+        const deltaX = Math.max(0, dropdownRight - window.innerWidth);
+
+        const shiftedX = x - deltaX;
+        const shiftedY = y - deltaY;
+        setDropdownPosition({x: shiftedX, y: shiftedY, isOpen: !dropdownPosition.isOpen});
     };
     return [dropdownPosition, toggleOpen] as const;
 }

@@ -3,16 +3,18 @@
 
 import React, {useState} from 'react';
 import {useDispatch} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import moment, {duration, Moment} from 'moment';
 import {Team} from 'mattermost-redux/types/teams';
+
+import {DateTime} from 'luxon';
 
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
-import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
-import {renderDuration} from 'src/components/duration';
+import {messageHtmlToComponent, formatText, browserHistory, Timestamp} from 'src/webapp_globals';
+import {formatDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
@@ -62,13 +64,24 @@ const SummaryContainer = styled.div`
     min-height: 36px;
 `;
 
-const SummaryTitle = styled.div`
+const SummaryTitle = styled.div<{deleted: boolean}>`
     font-size: 12px;
     font-weight: 600;
 
-    :hover {
-        cursor: pointer;
-    }
+    ${({deleted}) => (deleted ? css`
+        text-decoration: line-through;
+    ` : css`
+        :hover {
+            cursor: pointer;
+        }
+    `)}
+
+`;
+
+const SummaryDeleted = styled.span`
+    font-size: 10px;
+    margin-top: 3px;
+    display: inline-block;
 `;
 
 const SummaryDetail = styled.div`
@@ -94,6 +107,9 @@ const TimelineEventItem = (props: Props) => {
         team: props.team,
         channelNamesMap: props.channelNames,
     };
+    const statusPostDeleted =
+        props.event.event_type === TimelineEventType.StatusUpdated &&
+        props.event.status_delete_at !== 0;
 
     const goToPost = (e: React.MouseEvent<Element, MouseEvent>, postId?: string) => {
         e.preventDefault();
@@ -101,8 +117,7 @@ const TimelineEventItem = (props: Props) => {
             return;
         }
 
-        // @ts-ignore
-        window.WebappUtils.browserHistory.push(`/_redirect/pl/${postId}`);
+        browserHistory.push(`/${props.team.name}/pl/${postId}`);
 
         if (isMobile()) {
             dispatch(toggleRHS());
@@ -114,9 +129,9 @@ const TimelineEventItem = (props: Props) => {
     let summary = '';
     let testid = '';
     const diff = moment(props.event.event_at).diff(moment(props.reportedAt));
-    let stamp = renderDuration(duration(diff));
+    let stamp = formatDuration(duration(diff));
     if (diff < 0) {
-        stamp = '-' + renderDuration(duration(diff).abs());
+        stamp = '-' + formatDuration(duration(diff).abs());
     }
     let timeSince: JSX.Element | null = <TimeDay>{'Time: ' + stamp}</TimeDay>;
 
@@ -211,9 +226,23 @@ const TimelineEventItem = (props: Props) => {
                 <i className={iconClass}/>
             </Circle>
             <SummaryContainer>
-                <SummaryTitle onClick={(e) => goToPost(e, props.event.post_id)}>
+                <SummaryTitle
+                    onClick={(e) => !statusPostDeleted && goToPost(e, props.event.post_id)}
+                    deleted={statusPostDeleted}
+                >
                     {summaryTitle}
                 </SummaryTitle>
+                {statusPostDeleted && (
+                    <SummaryDeleted>
+                        {'Status post deleted: '}
+                        <Timestamp
+                            value={props.event.status_delete_at}
+                            // eslint-disable-next-line no-undefined
+                            useDate={{...DateTime.DATE_MED, year: undefined}}
+                            useTime={DateTime.TIME_24_SIMPLE}
+                        />
+                    </SummaryDeleted>
+                )}
                 <SummaryDetail>{messageHtmlToComponent(formatText(summary, markdownOptions), true, {})}</SummaryDetail>
             </SummaryContainer>
             <ConfirmModal

@@ -16,11 +16,14 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {Client4} from 'mattermost-redux/client';
 
+import {browserHistory} from 'src/webapp_globals';
+
 import {isMobile} from 'src/mobile';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {promptUpdateStatus, toggleRHS} from 'src/actions';
 import ShowMore from 'src/components/rhs/show_more';
 import PostText from 'src/components/post_text';
+import {useEnsureProfiles} from 'src/hooks';
 
 const NoRecentUpdates = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
@@ -69,6 +72,7 @@ const EditedIndicator = styled.div`
 function useAuthorInfo(userID: string) : [string, string] {
     const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
     const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userID));
+    useEnsureProfiles([userID]);
 
     let profileUrl = '';
     let preferredName = '';
@@ -109,12 +113,13 @@ const PostCard = (props: Props) => {
                 <UpdateHeader>
                     <UpdateAuthor>{authorUserName}</UpdateAuthor>
                     <UpdateTimeLink
-                        href={`/_redirect/pl/${props.post.id}`}
+                        href={`/${props.team.name}/pl/${props.post.id}`}
                         onClick={(e) => {
                             e.preventDefault();
 
-                            // @ts-ignore
-                            window.WebappUtils.browserHistory.push(`/_redirect/pl/${latestUpdate.id}`);
+                            if (props.post) {
+                                browserHistory.push(`/${props.team.name}/pl/${props.post.id}`);
+                            }
 
                             if (isMobile()) {
                                 dispatch(toggleRHS());

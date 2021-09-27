@@ -109,6 +109,9 @@ const RunDetail = styled.div<RunDetailProps>`
             rgba(var(--center-channel-bg-rgb), 0.25) 100%
         ),
         rgba(var(${({exists}) => (exists ? '--button-bg-rgb' : '--center-channel-color-rgb')}), 0.08);
+    mask-mode: alpha;
+    mask-size: cover;
+    mask-repeat: round;
     mask-image: url('${RunDetailMaskSvg}');
 
     > div {
@@ -229,8 +232,10 @@ const RHSHome = () => {
     }, [currentRun, playbooks]);
 
     const viewCurrentPlaybookRun = () => {
-        dispatch(setRHSViewingPlaybookRun());
-        navigateToUrl(`/${currentTeam.name}/channels/${currentRun.channel_id}`);
+        if (currentRun) {
+            dispatch(setRHSViewingPlaybookRun());
+            navigateToUrl(`/${currentTeam.name}/channels/${currentRun.channel_id}`);
+        }
     };
 
     let headerContent;

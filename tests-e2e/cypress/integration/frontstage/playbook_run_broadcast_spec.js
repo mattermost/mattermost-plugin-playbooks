@@ -156,7 +156,7 @@ describe('playbook run broadcast', () => {
 
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
-        cy.updateStatus(updateMessage, 0);
+        cy.updateStatus(updateMessage);
 
         // * Verify the posts
         const initialMessage = `New run started: ${playbookRunName}`;
@@ -180,7 +180,7 @@ describe('playbook run broadcast', () => {
 
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
-        cy.updateStatus(updateMessage, 0);
+        cy.updateStatus(updateMessage);
 
         // * Verify the posts
         const initialMessage = `New run started: ${playbookRunName}`;
@@ -270,19 +270,23 @@ const verifyInitialAndStatusPostInBroadcast = (channelName, runName, initialMess
         // # Open RHS comment menu
         cy.clickPostCommentIcon(lastPostId);
 
-        cy.get('#rhsContainer').should('exist').within(() => {
-            // * Thread should have two posts
-            cy.findAllByRole('listitem').should('have.length', 2);
+        cy.get('#rhsContainer')
+            .should('exist')
+            .within(() => {
+                // * Thread should have two posts
+                cy.findAllByRole('listitem').should('have.length', 2);
 
-            // * Root should be announcement
-            cy.get('.thread__root').contains(initialMessage);
+                // * Root should be announcement
+                cy.get('.thread__root').contains(initialMessage);
 
-            // * Latest post should be update
-            cy.get(`#rhsPostMessageText_${lastPostId}`).contains(`Status Update: ${runName}`);
-            cy.get(`#rhsPostMessageText_${lastPostId}`)
-                .contains(`By ${byUser} | Duration: < 1m | Status: In Progress`);
-            cy.get(`#rhsPostMessageText_${lastPostId}`).contains(updateMessage);
-        });
+                // * Latest post should be update
+                cy.get(`#rhsPost_${lastPostId}`).contains(
+                    `posted an update for ${runName}`
+                );
+                cy.get(`#rhsPost_${lastPostId}`).contains('tasks checked');
+                cy.get(`#rhsPost_${lastPostId}`).contains('participant');
+                cy.get(`#rhsPost_${lastPostId}`).contains(updateMessage);
+            });
     });
 };
 

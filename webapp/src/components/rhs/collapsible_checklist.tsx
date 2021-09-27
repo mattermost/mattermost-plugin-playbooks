@@ -16,6 +16,7 @@ export interface Props {
     setCollapsed: (newState: boolean) => void;
     items: ChecklistItem[];
     children: React.ReactNode;
+    disabled: boolean;
 }
 
 const CollapsibleChecklist = ({
@@ -25,6 +26,7 @@ const CollapsibleChecklist = ({
     setCollapsed,
     items,
     children,
+    disabled,
 }: Props) => {
     const dispatch = useDispatch();
     const titleRef = useRef(null);
@@ -52,7 +54,7 @@ const CollapsibleChecklist = ({
                 </Title>
                 <TasksCompleted>{`${completed} / ${total} done`}</TasksCompleted>
                 {
-                    showMenu &&
+                    showMenu && !disabled &&
                     <AddNewTask
                         data-testid={'addNewTask'}
                         onClick={(e) => {

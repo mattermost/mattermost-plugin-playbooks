@@ -6,42 +6,47 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import users from '../../fixtures/users.json';
-
 describe('playbook run creation dialog', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
-    let teamId;
+    let testTeam;
+    let testUser;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+            // # Turn off growth onboarding screens
+            cy.apiUpdateConfig({
+                ServiceSettings: {EnableOnboardingFlow: false},
+            });
 
-        // # Create a playbook
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
+            // # Login as testUser
+            cy.apiLogin(testUser);
 
-            cy.legacyApiGetCurrentUser().then((user) => {
-                cy.apiCreateTestPlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    userId: user.id,
-                });
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                memberIDs: [],
+                createPublicPlaybookRun: true,
+            });
+
+            // # Create a second playbook, so as to force dropdown.
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Second Playbook',
+                memberIDs: [],
+                createPublicPlaybookRun: true,
             });
         });
     });
 
     beforeEach(() => {
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+        // # Login as testUser
+        cy.apiLogin(testUser);
 
         // # Navigate to the application
-        cy.visit('/ad-1/');
+        cy.visit(`${testTeam.name}`);
 
         // # Trigger the playbook run creation dialog
         cy.openPlaybookRunDialogFromSlashCommand();
@@ -69,6 +74,30 @@ describe('playbook run creation dialog', () => {
         cy.findByTestId('playbookRunName').contains('This field is required.');
     });
 
+    it('rejects invalid channel names', () => {
+        cy.selectPlaybookFromDropdown('Playbook');
+
+        const invalidPlaybookRunName = '  ';
+        cy.get('#interactiveDialogModal').within(() => {
+            cy.findByTestId('playbookRunNameinput').type(invalidPlaybookRunName, {force: true});
+        });
+
+        cy.get('#interactiveDialogModal').within(() => {
+            cy.findByText('Start run').should('exist');
+
+            // # Attempt to submit
+            cy.get('#interactiveDialogSubmit').click();
+        });
+
+        // * Verify it didn't submit
+        cy.get('#interactiveDialogModal').should('exist');
+
+        // * Verify error message
+        cy.get('#interactiveDialogModal').within(() => {
+            cy.get('div.error-text').contains('unable to create playbook run');
+        });
+    });
+
     it('shows create playbook link', () => {
         cy.get('#interactiveDialogModal').within(() => {
             // # Follow link
@@ -82,7 +111,7 @@ describe('playbook run creation dialog', () => {
     it('shows expected metadata', () => {
         cy.get('#interactiveDialogModal').within(() => {
             // * Shows current user as owner.
-            cy.findByText('Victor Welch').should('exist');
+            cy.findByText(`${testUser.first_name} ${testUser.last_name}`).should('exist');
 
             // * Verify playbook dropdown prompt
             cy.findByText('Playbook').should('exist');
@@ -96,7 +125,7 @@ describe('playbook run creation dialog', () => {
         // # Populate the interactive dialog
         const playbookRunName = 'New Run' + Date.now();
         cy.get('#interactiveDialogModal').within(() => {
-            cy.findByTestId('playbookRunNameinput').type(playbookRunName, {force: true});
+            cy.findByTestId('playbookRunNameinput').type('Playbook', {force: true});
         });
 
         // # Cancel the interactive dialog
@@ -106,7 +135,7 @@ describe('playbook run creation dialog', () => {
         cy.get('#interactiveDialogModal').should('not.exist');
 
         // * Verify the playbook run did not get created
-        cy.apiGetAllPlaybookRuns(teamId).then((response) => {
+        cy.apiGetAllPlaybookRuns(testTeam.id).then((response) => {
             const allPlaybookRuns = response.body;
             const playbookRun = allPlaybookRuns.items.find((inc) => inc.name === playbookRunName);
             expect(playbookRun).to.be.undefined;

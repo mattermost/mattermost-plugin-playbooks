@@ -9,9 +9,9 @@ import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
+import {PlaybookRun} from 'src/types/playbook_run';
 
-import {selectExperimentalFeatures, selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
+import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
 
 import {
@@ -81,7 +81,7 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
-export function startPlaybookRunById(teamId: string, playbookId: string) {
+export function startPlaybookRunById(teamId: string, playbookId: string, timeout = 0) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
@@ -89,7 +89,14 @@ export function startPlaybookRunById(teamId: string, playbookId: string) {
 
         const command = `/playbook run-playbook ${playbookId} ${clientId}`;
 
-        await clientExecuteCommand(dispatch, getState, command, teamId);
+        // When dispatching from the playbooks product, the switch to channels resets the websocket
+        // connection, losing the event that opens this dialog. Allow the caller to specify a
+        // timeout as a gross workaround.
+        await new Promise((resolve) => setTimeout(() => {
+            clientExecuteCommand(dispatch, getState, command, teamId);
+            // eslint-disable-next-line no-undefined
+            resolve(undefined);
+        }, timeout));
     };
 }
 
@@ -101,14 +108,9 @@ export function promptUpdateStatus(
 ) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         const state = getState();
-        const experimentalFeaturesEnabled = selectExperimentalFeatures(state);
         const hasPermission = canIPostUpdateForRun(state, channelId, teamId);
 
-        if (experimentalFeaturesEnabled) {
-            dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookId, playbookRunId, channelId, hasPermission})));
-        } else {
-            await clientExecuteCommand(dispatch, getState, '/playbook update', teamId);
-        }
+        dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookRunId, channelId, hasPermission})));
     };
 }
 

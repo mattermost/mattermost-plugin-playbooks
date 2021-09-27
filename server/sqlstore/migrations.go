@@ -1223,8 +1223,16 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.30.0"),
 		toVersion:   semver.MustParse("0.31.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if _, err := e.Exec("UPDATE PluginKeyValueStore SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management'"); err != nil {
-				return errors.Wrapf(err, "failed to migrate KV store plugin id")
+			// Best effort migration so we just log the error to avoid killing the plugin.
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec("UPDATE IGNORE PluginKeyValueStore SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management'"); err != nil {
+					sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to migrate KV store plugin id"))
+				}
+			} else {
+
+				if _, err := e.Exec("UPDATE PluginKeyValueStore k SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management' AND NOT EXISTS ( SELECT 1 FROM PluginKeyValueStore WHERE PluginId='playbooks' AND PKey = k.PKey )"); err != nil {
+					sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to migrate KV store plugin id"))
+				}
 			}
 
 			return nil
@@ -1233,6 +1241,22 @@ var migrations = []Migration{
 	{
 		fromVersion: semver.MustParse("0.31.0"),
 		toVersion:   semver.MustParse("0.32.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ReminderTimerDefaultSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderTimerDefaultSeconds to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "ReminderTimerDefaultSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderTimerDefaultSeconds to table IR_Incident")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.32.0"),
+		toVersion:   semver.MustParse("0.33.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := renameColumnMySQL(e, "IR_Playbook", "WebhookOnCreationURL", "ConcatenatedWebhookOnCreationURLs", "TEXT"); err != nil {

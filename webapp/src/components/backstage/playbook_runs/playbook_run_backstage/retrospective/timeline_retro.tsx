@@ -80,25 +80,36 @@ const TimelineRetro = (props: Props) => {
     }, [eventsFilter, allEvents]);
 
     useEffect(() => {
-        Promise.all(props.playbookRun.timeline_events.map(async (e) => {
-            let user = selectUser(e.subject_user_id) as UserProfile | undefined;
+        const {
+            status_posts: statuses,
+            timeline_events: events,
+        } = props.playbookRun;
+        const statusDeleteAtByPostId = statuses.reduce<{[id: string]: number}>((map, post) => {
+            if (post.delete_at !== 0) {
+                map[post.id] = post.delete_at;
+            }
+
+            return map;
+        }, {});
+        Promise.all(events.map(async (event) => {
+            let user = selectUser(event.subject_user_id) as UserProfile | undefined;
 
             if (!user) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const ret = await getUserFn(e.subject_user_id) as { data?: UserProfile, error?: any };
+                const ret = await getUserFn(event.subject_user_id) as { data?: UserProfile, error?: any };
                 if (!ret.data) {
                     return null;
                 }
                 user = ret.data;
             }
             return {
-                ...e,
+                ...event,
+                status_delete_at: statusDeleteAtByPostId[event.post_id] ?? 0,
                 subject_display_name: displayUsername(user, displayPreference),
             } as TimelineEvent;
         })).then((eventArray) => {
             setAllEvents(eventArray.filter((e) => e) as TimelineEvent[]);
         });
-    }, [props.playbookRun.timeline_events, displayPreference]);
+    }, [props.playbookRun.timeline_events, displayPreference, props.playbookRun.status_posts]);
 
     const selectOption = (value: string, checked: boolean) => {
         if (eventsFilter.all && value !== 'all') {

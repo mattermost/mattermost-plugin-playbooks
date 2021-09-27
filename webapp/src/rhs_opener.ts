@@ -8,8 +8,9 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {fetchPlaybookRuns} from 'src/client';
+import {currentPlaybookRun, isPlaybookRunRHSOpen, inPlaybookRunChannel} from 'src/selectors';
+import {PlaybookRunStatus} from 'src/types/playbook_run';
 
-import {isPlaybookRunRHSOpen, inPlaybookRunChannel} from 'src/selectors';
 import {toggleRHS, receivedTeamPlaybookRuns, receivedDisabledOnTeam} from 'src/actions';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
@@ -21,6 +22,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         const state = store.getState();
         const currentChannel = getCurrentChannel(state);
         const currentTeam = getCurrentTeam(state);
+        const playbookRun = currentPlaybookRun(state);
 
         //@ts-ignore Views not in global state
         const mmRhsOpen = state.views.rhs.isSidebarOpen;
@@ -67,6 +69,11 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
 
         // Don't do anything unless we're in a playbook run channel.
         if (!currentChannelIsPlaybookRun) {
+            return;
+        }
+
+        // Don't do anything if the playbook run is finished.
+        if (playbookRun && playbookRun.current_status === PlaybookRunStatus.Finished) {
             return;
         }
 
