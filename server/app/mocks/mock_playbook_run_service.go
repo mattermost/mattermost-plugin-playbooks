@@ -222,6 +222,21 @@ func (mr *MockPlaybookRunServiceMockRecorder) GetOwners(arg0, arg1 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOwners", reflect.TypeOf((*MockPlaybookRunService)(nil).GetOwners), arg0, arg1)
 }
 
+// GetParticipatingRuns mocks base method
+func (m *MockPlaybookRunService) GetParticipatingRuns(arg0 string) ([]app.RunLink, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetParticipatingRuns", arg0)
+	ret0, _ := ret[0].([]app.RunLink)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetParticipatingRuns indicates an expected call of GetParticipatingRuns
+func (mr *MockPlaybookRunServiceMockRecorder) GetParticipatingRuns(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParticipatingRuns", reflect.TypeOf((*MockPlaybookRunService)(nil).GetParticipatingRuns), arg0)
+}
+
 // GetPlaybookRun mocks base method
 func (m *MockPlaybookRunService) GetPlaybookRun(arg0 string) (*app.PlaybookRun, error) {
 	m.ctrl.T.Helper()
