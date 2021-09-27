@@ -15,7 +15,8 @@
     "test": "jest --forceExit --detectOpenHandles --verbose",
     "test:watch": "jest --watch",
     "test-ci": "jest --forceExit --detectOpenHandles --maxWorkers=2",
-    "check-types": "tsc"
+    "check-types": "tsc",
+    "extract": "formatjs extract 'src/**/*.{ts,tsx}' --out-file i18n/temp.json --extract-source-location --id-interpolation-pattern 'playbooks.[sha512:contenthash:base64:6]' && formatjs compile 'i18n/temp.json' --out-file i18n/en.json && rm i18n/temp.json"
   },
   "author": "",
   "license": "",
@@ -28,6 +29,7 @@
     "@babel/preset-env": "7.14.7",
     "@babel/preset-react": "7.14.5",
     "@babel/preset-typescript": "7.14.5",
+    "@formatjs/cli": "4.3.1",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
     "@types/classnames": "2.3.1",
     "@types/debounce": "1.2.0",
