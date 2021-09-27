@@ -513,7 +513,7 @@ type PlaybookRunService interface {
 	// GetAssignedTasks returns the list of tasks assigned to userID
 	GetAssignedTasks(userID string) ([]AssignedRun, error)
 
-	// GetParticipatingRuns returns the list of active runs that you are participating in
+	// GetParticipatingRuns returns the list of active runs with userID as participant
 	GetParticipatingRuns(userID string) ([]RunLink, error)
 }
 
@@ -581,7 +581,7 @@ type PlaybookRunStore interface {
 	// GetAssignedTasks returns the list of tasks assigned to userID
 	GetAssignedTasks(userID string) ([]AssignedRun, error)
 
-	// GetActiveRuns returns the list of runs that you are participating in
+	// GetParticipatingRuns returns the list of active runs with userID as a participant
 	GetParticipatingRuns(userID string) ([]RunLink, error)
 }
 
