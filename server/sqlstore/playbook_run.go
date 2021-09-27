@@ -925,7 +925,8 @@ func (s *playbookRunStore) GetAssignedTasks(userID string) ([]app.AssignedRun, e
 		"i.ChecklistsJSON AS ChecklistsJSON").
 		From("IR_Incident AS i").
 		Join("Teams AS t ON (i.TeamID = t.Id)").
-		Join("Channels AS c ON (i.ChannelID = c.Id)")
+		Join("Channels AS c ON (i.ChannelID = c.Id)").
+		Where(sq.Eq{"i.CurrentStatus": "InProgress"})
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
 		query = query.Where(sq.Like{"i.ChecklistsJSON": fmt.Sprintf("%%\"%s\"%%", userID)})
 	} else {
