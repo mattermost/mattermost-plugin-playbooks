@@ -970,7 +970,7 @@ func (s *playbookRunStore) GetAssignedTasks(userID string) ([]app.AssignedRun, e
 	return ret, nil
 }
 
-// GetParticipatingRuns returns the list of runs that you are participating in
+// GetParticipatingRuns returns the list of active runs with userID as a participant
 func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, error) {
 	membershipClause := s.queryBuilder.
 		Select("1").
