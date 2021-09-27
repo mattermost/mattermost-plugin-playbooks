@@ -155,6 +155,7 @@ before(() => {
             cy.apiSaveTutorialStep(user.id, '999');
             cy.apiSaveOnboardingPreference(user.id, 'hide', 'true');
             cy.apiHideSidebarWhatsNewModalPreference(user.id, 'true');
+            cy.apiPatchUser(user.id, {notify_props: {desktop_sound: 'false'}});
         }));
     });
 });

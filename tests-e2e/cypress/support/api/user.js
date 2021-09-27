@@ -224,6 +224,7 @@ Cypress.Commands.add('apiCreateUser', ({
     bypassTutorial = true,
     hideOnboarding = true,
     bypassWhatsNewModal = true,
+    disableNotifications = true,
     user = null,
 } = {}) => {
     const newUser = user || generateRandomUser(prefix);
@@ -252,6 +253,10 @@ Cypress.Commands.add('apiCreateUser', ({
             cy.apiHideSidebarWhatsNewModalPreference(createdUser.id, 'false');
         }
 
+        if (disableNotifications) {
+            cy.apiPatchUser(createdUser.id, {notify_props: {desktop: 'none'}});
+        }
+
         return cy.wrap({user: {...createdUser, password: newUser.password}});
     });
 });
@@ -261,8 +266,9 @@ Cypress.Commands.add('apiCreateGuestUser', ({
     bypassTutorial = true,
     hideOnboarding = true,
     bypassWhatsNewModal = true,
+    disableNotifications = true,
 } = {}) => {
-    return cy.apiCreateUser({prefix, bypassTutorial, hideOnboarding, bypassWhatsNewModal}).then(({user}) => {
+    return cy.apiCreateUser({prefix, bypassTutorial, hideOnboarding, bypassWhatsNewModal, disableNotifications}).then(({user}) => {
         cy.apiDemoteUserToGuest(user.id);
 
         return cy.wrap({guest: user});
