@@ -1693,25 +1693,28 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	}
 
 	if playbookRun.CategoryName != "" {
-		err = s.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, playbookRun.CategoryName)
-		if err != nil {
-			s.logger.Errorf("failed to categorize channel; error: %s", err.Error())
-		}
+		// Update sidebar category in the go-routine not to block the UserHasJoinedChannel hook
+		go func() {
+			// Wait for 5 seconds(a magic number) for the webapp to get the `user_added` event,
+			// finish channel categorization and update it's state in redux.
+			// Currently there is no way to detect when webapp finishes the job.
+			// After that we can update the categories safely.
+			// Technically if user starts multiple runs simultaneously we will still get the race condition
+			// on category update. Since that's not realistic at the moment we are not adding the
+			// distributed lock here.
+			time.Sleep(5 * time.Second)
+
+			err = s.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, playbookRun.CategoryName)
+			if err != nil {
+				s.logger.Errorf("failed to categorize channel; error: %s", err.Error())
+			}
+		}()
 	}
 }
 
 // createOrUpdatePlaybookRunSidebarCategory creates or updates a "Playbook Runs" sidebar category if
 // it does not already exist and adds the channel within the sidebar category
 func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID, categoryName string) error {
-	// Wait for 5 seconds(a magic number) for the webapp to get the `user_added` event,
-	// finish channel categorization and update it's state in redux.
-	// Currently there is no way to detect when webapp finishes the job.
-	// After that we can update the categories safely.
-	// Technically if user starts multiple runs simultaneously we will still get the race condition
-	// on category update. Since that's not realistic at the moment we are not adding the
-	// distributed lock here.
-	time.Sleep(5 * time.Second)
-
 	sidebar, err := s.pluginAPI.Channel.GetSidebarCategories(userID, teamID)
 	if err != nil {
 		return err
