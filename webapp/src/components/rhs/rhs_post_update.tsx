@@ -49,7 +49,12 @@ const RHSPostUpdate = (props: Props) => {
 
     let icon: JSX.Element;
     if (isFinished) {
-        icon = <Icon path={mdiFlagCheckered}/>;
+        icon = (
+            <Icon
+                path={mdiFlagCheckered}
+                size={2.6}
+            />
+        );
     } else if (isDue) {
         icon = <Exclamation/>;
     } else {
