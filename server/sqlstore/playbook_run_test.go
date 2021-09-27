@@ -1903,7 +1903,7 @@ func TestCheckAndSendMessageOnJoin(t *testing.T) {
 	}
 }
 
-func TestGetAssignedTasks(t *testing.T) {
+func TestTasksAndRunsDiges(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		_, store := setupSQLStore(t, db)
@@ -1911,6 +1911,7 @@ func TestGetAssignedTasks(t *testing.T) {
 		setupTeamsTable(t, db)
 
 		userID := "testUserID"
+		testUser := userInfo{ID: userID}
 
 		team1 := model.Team{
 			Id:   model.NewId(),
@@ -1926,7 +1927,9 @@ func TestGetAssignedTasks(t *testing.T) {
 		channel02 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-02"}
 		channel03 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-03"}
 		channel04 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-04"}
-		channels := []model.Channel{channel01, channel02, channel03, channel04}
+		channel05 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-05"}
+		channels := []model.Channel{channel01, channel02, channel03, channel04, channel05}
+		addUsersToChannels(t, store, []userInfo{testUser}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id})
 
 		// three assigned tasks for inc01
 		inc01 := *NewBuilder(nil).
@@ -1975,7 +1978,16 @@ func TestGetAssignedTasks(t *testing.T) {
 			ToPlaybookRun()
 		inc04.Checklists[3].Items[2].AssigneeID = userID
 
-		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04}
+		// no assigned task for inc05, and not participant in inc05
+		inc05 := *NewBuilder(nil).
+			WithName("inc05 - this is the playbook name for channel 05").
+			WithChannel(&channel05).
+			WithTeamID(team1.Id).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc05.Checklists[3].Items[2].AssigneeID = "someotheruserid"
+
+		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05}
 
 		for i := range playbookRuns {
 			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
@@ -1997,15 +2009,39 @@ func TestGetAssignedTasks(t *testing.T) {
 
 			// don't make assumptions about ordering until we figure that out PM-side
 			expected := map[string][]string{
-				inc01.Name: inc01TaskTitles,
-				inc02.Name: inc02TaskTitles,
+				channel01.Name: inc01TaskTitles,
+				channel02.Name: inc02TaskTitles,
 			}
 
 			for _, run := range runs {
 				for _, task := range run.Tasks {
-					require.Contains(t, expected[run.ChannelDisplayName], task.Title)
+					require.Contains(t, expected[run.ChannelName], task.Title)
 				}
 			}
+		})
+
+		t.Run("gets participating runs only", func(t *testing.T) {
+			runs, err := playbookRunStore.GetParticipatingRuns(userID)
+			require.NoError(t, err)
+
+			total := len(runs)
+
+			require.Equal(t, 3, total)
+
+			// don't make assumptions about ordering until we figure that out PM-side
+			expected := map[string]int{
+				channel01.Name: 1,
+				channel02.Name: 1,
+				channel03.Name: 1,
+			}
+
+			actual := make(map[string]int)
+
+			for _, run := range runs {
+				actual[run.ChannelName] += 1
+			}
+
+			require.Equal(t, expected, actual)
 		})
 	}
 }
