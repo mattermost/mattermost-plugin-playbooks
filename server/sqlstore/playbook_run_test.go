@@ -1925,7 +1925,8 @@ func TestGetAssignedTasks(t *testing.T) {
 		channel01 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-01"}
 		channel02 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-02"}
 		channel03 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-03"}
-		channels := []model.Channel{channel01, channel02, channel03}
+		channel04 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-04"}
+		channels := []model.Channel{channel01, channel02, channel03, channel04}
 
 		// three assigned tasks for inc01
 		inc01 := *NewBuilder(nil).
@@ -1964,7 +1965,17 @@ func TestGetAssignedTasks(t *testing.T) {
 			ToPlaybookRun()
 		inc03.Checklists[3].Items[2].AssigneeID = "someotheruserid"
 
-		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03}
+		// one assigned task for inc04, but inc04 is finished
+		inc04 := *NewBuilder(nil).
+			WithName("inc04 - this is the playbook name for channel 04").
+			WithChannel(&channel04).
+			WithTeamID(team1.Id).
+			WithChecklists([]int{1, 2, 3, 4}).
+			WithCurrentStatus(app.StatusFinished).
+			ToPlaybookRun()
+		inc04.Checklists[3].Items[2].AssigneeID = userID
+
+		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04}
 
 		for i := range playbookRuns {
 			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
