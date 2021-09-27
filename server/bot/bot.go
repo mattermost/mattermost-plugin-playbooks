@@ -39,7 +39,7 @@ type Poster interface {
 	// If the rootPostID is blank, or the rootPost is deleted, it will create a standalone post. The
 	// returned post's RootID (or ID, if there was no root post) should be used as the rootID for
 	// future use (i.e., save that if you want to continue the thread).
-	PostMessageToThread(channelID string, post *model.Post) error
+	PostMessageToThread(rootPostID string, post *model.Post) error
 
 	// PostMessageWithAttachments posts a message with slack attachments to channelID. Returns the post id if
 	// posting was successful. Often used to include post actions.
