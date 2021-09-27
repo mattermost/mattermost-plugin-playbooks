@@ -15,11 +15,6 @@ describe('playbook run creation dialog', () => {
             testTeam = team;
             testUser = user;
 
-            // # Turn off growth onboarding screens
-            cy.apiUpdateConfig({
-                ServiceSettings: {EnableOnboardingFlow: false},
-            });
-
             // # Login as testUser
             cy.apiLogin(testUser);
 

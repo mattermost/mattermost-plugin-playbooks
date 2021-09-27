@@ -30,14 +30,9 @@ describe('playbook run broadcast', () => {
     let rootDeletePlaybookId;
 
     before(() => {
-        // # Turn off growth onboarding screens
         cy.apiLogin(users.sysadmin);
         cy.legacyApiGetCurrentUser().then((user) => {
             sysadminId = user.id;
-        });
-
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
         });
 
         // # Login as user-1

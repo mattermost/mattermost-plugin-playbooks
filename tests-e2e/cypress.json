@@ -34,7 +34,8 @@
         "smtpUrl": "http://localhost:10080",
         "storybookUrl": "http://localhost:6006/",
         "webhookBaseUrl": "http://localhost:3000",
-        "developerMode": false
+        "developerMode": false,
+        "enableOnboardingFlow": false
     },
     "reporter": "cypress-multi-reporters",
     "reporterOptions": {

@@ -16,12 +16,6 @@ describe('playbook run rhs checklist', () => {
     let playbookId;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
-
         // # Login as user-1
         cy.legacyApiLogin('user-1');
 
