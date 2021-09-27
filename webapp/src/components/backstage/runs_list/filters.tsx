@@ -132,6 +132,12 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                 checked={myRunsOnly}
                 onChange={setMyRunsOnly}
             />
+            <CheckboxInput
+                testId={'finished-runs'}
+                text={'Finished Runs'}
+                checked={(fetchParams.statuses?.length ?? 0) > 1}
+                onChange={setFinishedRuns}
+            />
             <ProfileSelector
                 testId={'owner-filter'}
                 selectedUserId={fetchParams.owner_user_id}
@@ -146,12 +152,6 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                 controlledOpenToggle={profileSelectorToggle}
                 getUsers={fetchOwners}
                 onSelectedChange={setOwnerId}
-            />
-            <CheckboxInput
-                testId={'finished-runs'}
-                text={'Finished Runs'}
-                checked={(fetchParams.statuses?.length ?? 0) > 1}
-                onChange={setFinishedRuns}
             />
             {teams.length > 1 && !fixedTeam &&
                 <TeamSelector
