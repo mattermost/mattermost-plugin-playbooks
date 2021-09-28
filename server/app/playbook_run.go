@@ -71,7 +71,7 @@ type PlaybookRun struct {
 	StatusPosts []StatusPost `json:"status_posts"`
 
 	// CurrentStatus is the current status of the playbook run.
-	// It can be Reported, Active, Resolved or Archived.
+	// It can be StatusInProgress ("InProgress") or StatusFinished ("Finished")
 	CurrentStatus string `json:"current_status"`
 
 	// LastStatusUpdateAt is the timestamp, in milliseconds since epoch, of the time the last
@@ -352,14 +352,18 @@ type DialogStateAddToTimeline struct {
 	PostID string `json:"post_id"`
 }
 
-// AssignedRun represents all the info needed to display a Run & ChecklistItem to a user
-type AssignedRun struct {
+// RunLink represents the info needed to display and link to a run
+type RunLink struct {
 	PlaybookRunID      string
-	PlaybookRunName    string
 	TeamName           string
 	ChannelName        string
 	ChannelDisplayName string
-	Tasks              []AssignedTask
+}
+
+// AssignedRun represents all the info needed to display a Run & ChecklistItem to a user
+type AssignedRun struct {
+	RunLink
+	Tasks []AssignedTask
 }
 
 // AssignedTask represents a ChecklistItem + extra info needed to display to a user
@@ -508,6 +512,9 @@ type PlaybookRunService interface {
 
 	// GetAssignedTasks returns the list of tasks assigned to userID
 	GetAssignedTasks(userID string) ([]AssignedRun, error)
+
+	// GetParticipatingRuns returns the list of active runs with userID as participant
+	GetParticipatingRuns(userID string) ([]RunLink, error)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -573,6 +580,9 @@ type PlaybookRunStore interface {
 
 	// GetAssignedTasks returns the list of tasks assigned to userID
 	GetAssignedTasks(userID string) ([]AssignedRun, error)
+
+	// GetParticipatingRuns returns the list of active runs with userID as a participant
+	GetParticipatingRuns(userID string) ([]RunLink, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

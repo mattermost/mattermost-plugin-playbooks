@@ -1587,6 +1587,11 @@ func (s *PlaybookRunServiceImpl) GetAssignedTasks(userID string) ([]AssignedRun,
 	return s.store.GetAssignedTasks(userID)
 }
 
+// GetParticipatingRuns returns the list of active runs with userID as a participant
+func (s *PlaybookRunServiceImpl) GetParticipatingRuns(userID string) ([]RunLink, error) {
+	return s.store.GetParticipatingRuns(userID)
+}
+
 func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID string, checklistNumber int) (*PlaybookRun, error) {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {

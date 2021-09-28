@@ -818,20 +818,38 @@ func (r *Runner) timeSince(event app.TimelineEvent, reported time.Time) string {
 }
 
 func (r *Runner) actionTodo(args []string) {
+	siteURL := model.ServiceSettingsDefaultSiteURL
+	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *r.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
+
 	runs, err := r.playbookRunService.GetAssignedTasks(r.args.UserId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error getting assigned tasks: %v", err)
 		return
 	}
+	message := buildAssignedTaskMessage(runs, siteURL)
 
+	runsInProgress, err := r.playbookRunService.GetParticipatingRuns(r.args.UserId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error getting runs in progress: %v", err)
+		return
+	}
+	message += buildRunsInProgressMessage(runsInProgress, siteURL)
+
+	if err = r.poster.DM(r.args.UserId, &model.Post{Message: message}); err != nil {
+		r.warnUserAndLogErrorf("failed to send digest: %v", err)
+	}
+}
+
+func buildAssignedTaskMessage(runs []app.AssignedRun, siteURL string) string {
 	total := 0
 	for _, run := range runs {
 		total += len(run.Tasks)
 	}
 
-	siteURL := model.ServiceSettingsDefaultSiteURL
-	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-		siteURL = *r.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	if total == 0 {
+		return "### Your Assigned Tasks:\nYou have 0 assigned tasks.\n"
 	}
 
 	message := fmt.Sprintf("### Your Assigned Tasks:\nYou have %d total assigned tasks:\n", total)
@@ -850,9 +868,24 @@ func (r *Runner) actionTodo(args []string) {
 		}
 	}
 
-	if err = r.poster.DM(r.args.UserId, &model.Post{Message: message}); err != nil {
-		r.warnUserAndLogErrorf("failed to send digest: %v", err)
+	return message
+}
+
+func buildRunsInProgressMessage(runs []app.RunLink, siteURL string) string {
+	total := len(runs)
+
+	if total == 0 {
+		return "### Runs in Progress\nYou have 0 runs currently in progress.\n"
 	}
+
+	message := fmt.Sprintf("### Runs in Progress\nYou have %d runs currently in progress:\n", total)
+
+	for _, run := range runs {
+		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
+			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+	}
+
+	return message
 }
 
 func (r *Runner) actionTestSelf(args []string) {
