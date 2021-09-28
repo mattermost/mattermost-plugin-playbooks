@@ -7,7 +7,7 @@ import styled, {css} from 'styled-components';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
-import Duration from 'src/components/duration';
+import FormattedDuration from 'src/components/formatted_duration';
 import {lastUpdatedByPlaybookRunId} from 'src/selectors';
 
 import {SmallerProfile} from 'src/components/rhs/rhs_shared';
@@ -91,7 +91,7 @@ const RHSListPlaybookRun = (props: Props) => {
             <Row>
                 <Col1>{'Duration:'}</Col1>
                 <Col2>
-                    <Duration
+                    <FormattedDuration
                         from={props.playbookRun.create_at}
                         to={props.playbookRun.end_at}
                     />
@@ -108,7 +108,7 @@ const RHSListPlaybookRun = (props: Props) => {
             <Row>
                 <Col1>{'Last updated:'}</Col1>
                 <Col2>
-                    <Duration
+                    <FormattedDuration
                         from={lastUpdatedMap[props.playbookRun.id]}
                         to={0}
                         ago={true}

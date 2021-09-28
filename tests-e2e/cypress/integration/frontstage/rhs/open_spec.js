@@ -10,47 +10,43 @@ import * as TIMEOUTS from '../../../fixtures/timeouts';
 import users from '../../../fixtures/users.json';
 
 describe('playbook run rhs', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
-    let teamId;
-    let userId;
-    let playbookId;
+    let testTeam;
+    let testUser;
+    let testPlaybook;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+            // # Turn off growth onboarding screens
+            cy.apiUpdateConfig({
+                ServiceSettings: {EnableOnboardingFlow: false},
+            });
 
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
-            cy.legacyApiGetCurrentUser().then((user) => {
-                userId = user.id;
+            // # Login as testUser
+            cy.apiLogin(testUser);
 
-                // # Create a playbook
-                cy.apiCreateTestPlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    userId: user.id,
-                }).then((playbook) => {
-                    playbookId = playbook.id;
-                });
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                memberIDs: [],
+            }).then((playbook) => {
+                testPlaybook = playbook;
             });
         });
     });
 
     beforeEach(() => {
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+        // # Login as testUser
+        cy.apiLogin(testUser);
     });
 
     describe('does not open', () => {
         it('when navigating to a non-playbook run channel', () => {
             // # Navigate to the application
-            cy.visit('/ad-1/');
+            cy.visit(`/${testTeam.name}/`);
 
             // # Select a channel without a playbook run.
             cy.get('#sidebarItem_off-topic').click({force: true});
@@ -67,7 +63,7 @@ describe('playbook run rhs', () => {
 
         it('when navigating to a playbook run channel with the RHS already open', () => {
             // # Navigate to the application.
-            cy.visit('/ad-1/');
+            cy.visit(`/${testTeam.name}/`);
 
             // # Select a channel without a playbook run.
             cy.get('#sidebarItem_off-topic').click({force: true});
@@ -77,14 +73,20 @@ describe('playbook run rhs', () => {
             const playbookRunName = 'Playbook Run (' + now + ')';
             const playbookRunChannelName = 'playbook-run-' + now;
             cy.apiRunPlaybook({
-                teamId,
-                playbookId,
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
                 playbookRunName,
-                ownerUserId: userId,
+                ownerUserId: testUser.id,
             });
 
             // # Open the flagged posts RHS
-            cy.get('#channelHeaderFlagButton').click({force: true});
+            cy.get("body").then($body => {
+                if ($body.find("#channelHeaderFlagButton").length > 0) {
+                    cy.get('#channelHeaderFlagButton').click({force: true});
+                } else {
+                    cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'}).click({force: true});
+                }
+            });
 
             // # Open the playbook run channel from the LHS.
             cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
@@ -98,6 +100,100 @@ describe('playbook run rhs', () => {
             // * Verify the playbook run RHS is not open.
             cy.get('#rhsContainer').should('not.exist');
         });
+
+        it('when navigating directly to a finished playbook run channel', () => {
+            // # Run the playbook
+            const now = Date.now();
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            const playbookRunChannelName = 'playbook-run-' + now;
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName,
+                ownerUserId: testUser.id,
+            }).then((playbookRun) => {
+                // # End the playbook run
+                cy.apiFinishRun(playbookRun.id);
+            });
+
+            // # Navigate directly to the application and the playbook run channel
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+
+            // # Wait a bit longer to be confident.
+            cy.wait(TIMEOUTS.TWO_SEC);
+
+            // * Verify the playbook run RHS is not open.
+            cy.get('#rhsContainer').should('not.exist');
+        });
+
+        it('for an existing, finished playbook run channel opened from the lhs', () => {
+            // # Run the playbook before loading the application
+            const now = Date.now();
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            const playbookRunChannelName = 'playbook-run-' + now;
+
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName,
+                ownerUserId: testUser.id,
+            }).then((playbookRun) => {
+                // # End the playbook run
+                cy.apiFinishRun(playbookRun.id);
+            });
+
+            // # Navigate to a channel without a playbook run.
+            cy.visit(`/${testTeam.name}/channels/off-topic`);
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # Open the playbook run channel from the LHS.
+            cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
+
+            // # Wait a bit longer to be confident.
+            cy.wait(TIMEOUTS.TWO_SEC);
+
+            // * Verify the playbook run RHS is not open.
+            cy.get('#rhsContainer').should('not.exist');
+        });
+
+        it('for a new, finished playbook run channel opened from the lhs', () => {
+            // # Navigate to the application.
+            cy.visit(`/${testTeam.name}/`);
+
+            // # Ensure the channel is loaded before continuing (allows redux to sync).
+            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
+
+            // # Select a channel without a playbook run.
+            cy.get('#sidebarItem_off-topic').click({force: true});
+
+            // # Run the playbook after loading the application
+            const now = Date.now();
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            const playbookRunChannelName = 'playbook-run-' + now;
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName,
+                ownerUserId: testUser.id,
+            }).then((playbookRun) => {
+                // # Wait a bit longer to avoid websocket events potentially being out-of-order.
+                cy.wait(TIMEOUTS.TWO_SEC);
+
+                // # End the playbook run
+                cy.apiFinishRun(playbookRun.id);
+            });
+
+            // # Open the playbook run channel from the LHS.
+            cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
+
+            // # Wait a bit longer to be confident.
+            cy.wait(TIMEOUTS.FIVE_SEC);
+
+            // * Verify the playbook run RHS is not open.
+            cy.get('#rhsContainer').should('not.exist');
+        });
     });
 
     describe('opens', () => {
@@ -107,62 +203,14 @@ describe('playbook run rhs', () => {
             const playbookRunName = 'Playbook Run (' + now + ')';
             const playbookRunChannelName = 'playbook-run-' + now;
             cy.apiRunPlaybook({
-                teamId,
-                playbookId,
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
                 playbookRunName,
-                ownerUserId: userId,
+                ownerUserId: testUser.id,
             });
 
             // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
-
-            // * Verify the playbook run RHS is open.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(playbookRunName).should('exist');
-            });
-        });
-
-        it('when navigating directly to a resolved playbook run channel', () => {
-            // # Run the playbook
-            const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
-            const playbookRunChannelName = 'playbook-run-' + now;
-            cy.apiRunPlaybook({
-                teamId,
-                playbookId,
-                playbookRunName,
-                ownerUserId: userId,
-            }).then((playbookRun) => {
-                // # End the playbook run
-                cy.apiFinishRun(playbookRun.id);
-            });
-
-            // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
-
-            // * Verify the playbook run RHS is open.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(playbookRunName).should('exist');
-            });
-        });
-
-        it('when navigating directly to an archived playbook run channel', () => {
-            // # Run the playbook
-            const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
-            const playbookRunChannelName = 'playbook-run-' + now;
-            cy.apiRunPlaybook({
-                teamId,
-                playbookId,
-                playbookRunName,
-                ownerUserId: userId,
-            }).then((playbookRun) => {
-                // # End the playbook run
-                cy.apiFinishRun(playbookRun.id);
-            });
-
-            // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -172,7 +220,7 @@ describe('playbook run rhs', () => {
 
         it('for a new, ongoing playbook run channel opened from the lhs', () => {
             // # Navigate to the application.
-            cy.visit('/ad-1/');
+            cy.visit(`/${testTeam.name}/`);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -185,76 +233,10 @@ describe('playbook run rhs', () => {
             const playbookRunName = 'Playbook Run (' + now + ')';
             const playbookRunChannelName = 'playbook-run-' + now;
             cy.apiRunPlaybook({
-                teamId,
-                playbookId,
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
                 playbookRunName,
-                ownerUserId: userId,
-            });
-
-            // # Open the playbook run channel from the LHS.
-            cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
-
-            // * Verify the playbook run RHS is open.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(playbookRunName).should('exist');
-            });
-        });
-
-        it('for a new, resolved playbook run channel opened from the lhs', () => {
-            // # Navigate to the application.
-            cy.visit('/ad-1/');
-
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Select a channel without a playbook run.
-            cy.get('#sidebarItem_off-topic').click({force: true});
-
-            // # Run the playbook after loading the application
-            const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
-            const playbookRunChannelName = 'playbook-run-' + now;
-            cy.apiRunPlaybook({
-                teamId,
-                playbookId,
-                playbookRunName,
-                ownerUserId: userId,
-            }).then((playbookRun) => {
-                // # End the playbook run
-                cy.apiFinishRun(playbookRun.id);
-            });
-
-            // # Open the playbook run channel from the LHS.
-            cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
-
-            // * Verify the playbook run RHS is open.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(playbookRunName).should('exist');
-            });
-        });
-
-        it('for a new, archived playbook run channel opened from the lhs', () => {
-            // # Navigate to the application.
-            cy.visit('/ad-1/');
-
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Select a channel without a playbook run.
-            cy.get('#sidebarItem_off-topic').click({force: true});
-
-            // # Run the playbook after loading the application
-            const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
-            const playbookRunChannelName = 'playbook-run-' + now;
-            cy.apiRunPlaybook({
-                teamId,
-                playbookId,
-                playbookRunName,
-                ownerUserId: userId,
-            }).then((playbookRun) => {
-                // # End the playbook run
-                cy.apiFinishRun(playbookRun.id);
+                ownerUserId: testUser.id,
             });
 
             // # Open the playbook run channel from the LHS.
@@ -272,76 +254,14 @@ describe('playbook run rhs', () => {
             const playbookRunName = 'Playbook Run (' + now + ')';
             const playbookRunChannelName = 'playbook-run-' + now;
             cy.apiRunPlaybook({
-                teamId,
-                playbookId,
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
                 playbookRunName,
-                ownerUserId: userId,
+                ownerUserId: testUser.id,
             });
 
             // # Navigate to a channel without a playbook run.
-            cy.visit('/ad-1/channels/off-topic');
-
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Open the playbook run channel from the LHS.
-            cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
-
-            // * Verify the playbook run RHS is open.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(playbookRunName).should('exist');
-            });
-        });
-
-        it('for an existing, resolved playbook run channel opened from the lhs', () => {
-            // # Run the playbook before loading the application
-            const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
-            const playbookRunChannelName = 'playbook-run-' + now;
-
-            cy.apiRunPlaybook({
-                teamId,
-                playbookId,
-                playbookRunName,
-                ownerUserId: userId,
-            }).then((playbookRun) => {
-                // # End the playbook run
-                cy.apiFinishRun(playbookRun.id);
-            });
-
-            // # Navigate to a channel without a playbook run.
-            cy.visit('/ad-1/channels/off-topic');
-
-            // # Ensure the channel is loaded before continuing (allows redux to sync).
-            cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
-
-            // # Open the playbook run channel from the LHS.
-            cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
-
-            // * Verify the playbook run RHS is open.
-            cy.get('#rhsContainer').should('exist').within(() => {
-                cy.findByText(playbookRunName).should('exist');
-            });
-        });
-
-        it('for an existing, archived playbook run channel opened from the lhs', () => {
-            // # Run the playbook before loading the application
-            const now = Date.now();
-            const playbookRunName = 'Playbook Run (' + now + ')';
-            const playbookRunChannelName = 'playbook-run-' + now;
-
-            cy.apiRunPlaybook({
-                teamId,
-                playbookId,
-                playbookRunName,
-                ownerUserId: userId,
-            }).then((playbookRun) => {
-                // # End the playbook run
-                cy.apiFinishRun(playbookRun.id);
-            });
-
-            // # Navigate to a channel without a playbook run.
-            cy.visit('/ad-1/channels/off-topic');
+            cy.visit(`/${testTeam.name}/channels/off-topic`);
 
             // # Ensure the channel is loaded before continuing (allows redux to sync).
             cy.get('#centerChannelFooter').findByTestId('post_textbox').should('exist');
@@ -357,14 +277,13 @@ describe('playbook run rhs', () => {
 
         it('when starting a playbook run', () => {
             // # Navigate to the application and a channel without a playbook run
-            cy.visit('/ad-1/channels/off-topic');
+            cy.visit(`/${testTeam.name}/channels/off-topic`);
 
             // # Start a playbook run with a slash command
             const now = Date.now();
             const playbookRunName = 'Playbook Run (' + now + ')';
 
-            // const playbookRunChannelName = 'playbook-run-' + now;
-            cy.startPlaybookRunWithSlashCommand(playbookName, playbookRunName);
+            cy.startPlaybookRunWithSlashCommand("Playbook", playbookRunName);
 
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -379,7 +298,7 @@ describe('playbook run rhs', () => {
             cy.viewport('macbook-13');
 
             // # Navigate to the application and a channel without a playbook run
-            cy.visit('/ad-1/channels/off-topic');
+            cy.visit(`/${testTeam.name}/channels/off-topic`);
 
             // # Click the icon
             cy.get('#channel-header').within(() => {

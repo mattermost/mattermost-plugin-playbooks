@@ -13,7 +13,7 @@ import {useSelector} from 'react-redux';
 
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {PlaybookRun} from 'src/types/playbook_run';
-import Duration from 'src/components/duration';
+import FormattedDuration from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
 import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
@@ -77,6 +77,11 @@ const Row = (props: Props) => {
     const teamName = useSelector(teamNameSelector(props.playbookRun.team_id));
     const [completedTasks, totalTasks] = tasksCompletedTotal(props.playbookRun.checklists);
 
+    let infoLine: React.ReactNode = null;
+    if (!props.fixedTeam) {
+        infoLine = <InfoLine>{playbookName ? teamName + ' • ' + playbookName : teamName}</InfoLine>;
+    }
+
     function openPlaybookRunDetails(playbookRun: PlaybookRun) {
         navigateToPluginUrl(`/runs/${playbookRun.id}`);
     }
@@ -89,16 +94,15 @@ const Row = (props: Props) => {
         >
             <div className='col-sm-4'>
                 <RunName>{props.playbookRun.name}</RunName>
-                {!props.fixedTeam && <InfoLine>{teamName + ' • ' + playbookName}</InfoLine>}
+                {infoLine}
             </div>
             <div className='col-sm-2'>
                 <SmallStatusBadge
                     status={props.playbookRun.current_status}
                 />
                 <SmallText>
-                    <Duration
+                    <FormattedDuration
                         from={findLastUpdatedWithDefault(props.playbookRun)}
-                        to={0}
                         ago={true}
                     />
                 </SmallText>
@@ -107,7 +111,7 @@ const Row = (props: Props) => {
                 className='col-sm-2'
             >
                 <NormalText>
-                    <Duration
+                    <FormattedDuration
                         from={props.playbookRun.create_at}
                         to={props.playbookRun.end_at}
                     />

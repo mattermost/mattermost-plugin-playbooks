@@ -30,6 +30,7 @@ import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import {useForceDocumentTitle, useRunsList} from 'src/hooks';
 import RunList from '../runs_list/runs_list';
 import {RegularHeading} from 'src/styles/headings';
+import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 interface MatchParams {
     playbookId: string
@@ -46,6 +47,7 @@ const defaultPlaybookFetchParams = {
     per_page: BACKSTAGE_LIST_PER_PAGE,
     sort: 'last_status_update_at',
     direction: 'desc',
+    statuses: [PlaybookRunStatus.InProgress],
 };
 
 const RunListContainer = styled.div`
@@ -123,7 +125,7 @@ const PlaybookBackstage = () => {
 
         if (playbook?.id) {
             telemetryEventForPlaybook(playbook.id, 'playbook_dashboard_run_clicked');
-            dispatch(startPlaybookRunById(team.id, playbook.id));
+            dispatch(startPlaybookRunById(team.id, playbook.id, 3000));
         }
     };
 
@@ -167,6 +169,7 @@ const PlaybookBackstage = () => {
                     <PrimaryButtonLarger
                         onClick={runPlaybook}
                         disabled={!enableRunPlaybook}
+                        data-testid='run-playbook'
                     >
                         <RightMarginedIcon
                             path={mdiClipboardPlayOutline}

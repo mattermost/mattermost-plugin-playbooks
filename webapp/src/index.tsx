@@ -3,34 +3,30 @@
 
 import React from 'react';
 import {Store, Unsubscribe} from 'redux';
+import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {debounce} from 'debounce';
-
-import {GlobalState} from 'mattermost-redux/types/store';
-import {getConfig} from 'mattermost-redux/selectors/entities/general';
-import {Client4} from 'mattermost-redux/client';
 
 //@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {getConfig} from 'mattermost-redux/selectors/entities/general';
+import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
-
-import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
-
-import {RetrospectiveFirstReminder, RetrospectiveReminder} from './components/retrospective_reminder_posts';
-
-import {pluginId} from './manifest';
-import {ChannelHeaderButton, ChannelHeaderText, ChannelHeaderTooltip} from './components/channel_header';
-import RightHandSidebar from './components/rhs/rhs_main';
-import RHSTitle from './components/rhs/rhs_title';
-import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from './components/post_menu';
-import Backstage from './components/backstage/backstage';
-import PostMenuModal from './components/post_menu_modal';
+import {RetrospectiveFirstReminder, RetrospectiveReminder} from 'src/components/retrospective_reminder_posts';
+import {pluginId} from 'src/manifest';
+import {ChannelHeaderButton, ChannelHeaderText, ChannelHeaderTooltip} from 'src/components/channel_header';
+import RightHandSidebar from 'src/components/rhs/rhs_main';
+import RHSTitle from 'src/components/rhs/rhs_title';
+import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
+import Backstage from 'src/components/backstage/backstage';
+import PostMenuModal from 'src/components/post_menu_modal';
 import {
     setToggleRHSAction, actionSetGlobalSettings,
-} from './actions';
-import reducer from './reducer';
+} from 'src/actions';
+import reducer from 'src/reducer';
 import {
     handleReconnect,
     handleWebsocketPlaybookRunUpdated,
@@ -41,18 +37,20 @@ import {
     handleWebsocketUserRemoved,
     handleWebsocketPostEditedOrDeleted,
     handleWebsocketChannelUpdated, handleWebsocketChannelViewed,
-} from './websocket_events';
+} from 'src/websocket_events';
 import {
     WEBSOCKET_PLAYBOOK_RUN_UPDATED,
     WEBSOCKET_PLAYBOOK_RUN_CREATED,
     WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_DELETED,
-} from './types/websocket_events';
-import RegistryWrapper from './registry_wrapper';
-import SystemConsoleEnabledTeams from './system_console_enabled_teams';
-import {makeUpdateMainMenu} from './make_update_main_menu';
-import {fetchGlobalSettings, setSiteUrl} from './client';
-import {CloudUpgradePost} from './components/cloud_upgrade_post';
+} from 'src/types/websocket_events';
+import RegistryWrapper from 'src/registry_wrapper';
+import SystemConsoleEnabledTeams from 'src/system_console_enabled_teams';
+import {makeUpdateMainMenu} from 'src/make_update_main_menu';
+import {fetchGlobalSettings, setSiteUrl} from 'src/client';
+import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
+import {UpdatePost} from 'src/components/update_post';
+import {UpdateRequestPost} from 'src/components/update_request_post';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -151,6 +149,8 @@ export default class Plugin {
             r.registerPostTypeComponent('custom_retro_rem_first', RetrospectiveFirstReminder);
             r.registerPostTypeComponent('custom_retro_rem', RetrospectiveReminder);
             r.registerPostTypeComponent('custom_cloud_upgrade', CloudUpgradePost);
+            r.registerPostTypeComponent('custom_run_update', UpdatePost);
+            r.registerPostTypeComponent('custom_update_status', UpdateRequestPost);
 
             return r.unregister;
         };

@@ -75,6 +75,7 @@ const RHSChecklists = (props: Props) => {
     const checklists = props.playbookRun.checklists || [];
     const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
     const active = props.playbookRun.current_status === PlaybookRunStatus.InProgress;
+    const finished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
 
     const selectOption = (value: string, checked: boolean) => {
@@ -127,6 +128,7 @@ const RHSChecklists = (props: Props) => {
                     index={checklistIndex}
                     collapsed={Boolean(checklistsState[checklistIndex])}
                     setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
+                    disabled={finished}
                 >
                     {visibleTasks(checklist, checklistItemsFilter, myUser.id) &&
                     <ChecklistContainer className='checklist'>
@@ -199,6 +201,7 @@ const RHSChecklists = (props: Props) => {
                                                                 }}
                                                                 draggableProvided={draggableProvided}
                                                                 dragging={snapshot.isDragging}
+                                                                disabled={finished}
                                                             />
                                                         )}
                                                     </Draggable>

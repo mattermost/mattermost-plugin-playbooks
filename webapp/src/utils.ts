@@ -31,3 +31,10 @@ export const findLastUpdatedWithDefault = (playbookRun: PlaybookRun) => {
     const lastUpdated = findLastUpdated(playbookRun);
     return lastUpdated > 0 ? lastUpdated : playbookRun.create_at;
 };
+
+/** Smart rounding with `multiple` support */
+export const nearest = (
+    n: number,
+    multiple = 1,
+    method: 'round' | 'floor' | 'ceil' = 'round',
+) => Math[method](n / multiple) * multiple;

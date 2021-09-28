@@ -11,14 +11,26 @@ import Permissions from 'mattermost-redux/constants/permissions';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
 
+import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
 import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
 import {SemiBoldHeading} from 'src/styles/headings';
+import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 interface Props {
     onEdit: (newTitle: string) => void;
     value: string;
     renderedTitle?: StyledComponent<'div', any, {}, never>;
+    status: PlaybookRunStatus;
 }
+
+const TitleWrapper = styled.div`
+    display: flex;
+`;
+
+const StatusBadgeWrapper = styled(StatusBadge) `
+    margin-right: 75px;
+    top: -3px;
+`;
 
 const RHSAboutTitle = (props: Props) => {
     const [editing, setEditing] = useState(false);
@@ -60,9 +72,14 @@ const RHSAboutTitle = (props: Props) => {
         const RenderedTitle = props.renderedTitle ?? DefaultRenderedTitle;
 
         return (
-            <RenderedTitle onClick={onRenderedTitleClick} >
-                {editedValue}
-            </RenderedTitle>
+            <TitleWrapper>
+                <RenderedTitle onClick={onRenderedTitleClick}>
+                    {editedValue}
+                </RenderedTitle>
+                {props.status === PlaybookRunStatus.Finished &&
+                    <StatusBadgeWrapper status={PlaybookRunStatus.Finished}/>
+                }
+            </TitleWrapper>
         );
     }
 

@@ -1,7 +1,8 @@
 import {useEffect, useState} from 'react';
 
-import {clientFetchPlaybook, clientFetchPlaybooks, deletePlaybook as clientDeletePlaybook} from 'src/client';
+import {clientFetchPlaybook, clientFetchPlaybooks, deletePlaybook as clientDeletePlaybook, fetchPlaybookRun} from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 type ParamsState = Required<FetchPlaybooksParams>;
 

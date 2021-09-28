@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled from 'styled-components';
+import styled, {StyledComponentBase} from 'styled-components';
 import classNames from 'classnames';
 import React from 'react';
 import {Modal} from 'react-bootstrap';
@@ -24,6 +24,9 @@ type Props = {
     autoCloseOnConfirmButton?: boolean;
     enforceFocus?: boolean;
     footer?: React.ReactNode;
+    components?: Partial<{
+        FooterContainer: typeof DefaultFooterContainer;
+    }>;
 };
 
 type State = {
@@ -74,7 +77,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
             confirmButton = (
                 <PrimaryButton
                     type='submit'
-                    className={classNames(`confirm ${this.props.confirmButtonClassName}`, {
+                    className={classNames('confirm', this.props.confirmButtonClassName, {
                         disabled: this.props.isConfirmDisabled,
                     })}
                     onClick={this.handleConfirm}
@@ -102,6 +105,8 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 </TertiaryButton>
             );
         }
+
+        const FooterContainer = this.props.components?.FooterContainer || DefaultFooterContainer;
 
         return (
             <StyledModal
@@ -180,7 +185,7 @@ const Buttons = styled.div`
     gap: 10px;
 `;
 
-const FooterContainer = styled.div`
+export const DefaultFooterContainer = styled.div`
     display: flex;
     flex-direction: column;
     align-items: flex-end;

@@ -490,14 +490,6 @@ const PlaybookEdit = (props: Props) => {
         return dispatch(getProfilesInTeam(props.teamId || playbook.team_id, 0, PROFILE_CHUNK_SIZE, '', {active: true}));
     };
 
-    const handleBroadcastInput = (channelId: string | undefined) => {
-        setPlaybook({
-            ...playbook,
-            broadcast_channel_id: channelId || '',
-        });
-        setChangesMade(true);
-    };
-
     if (!props.isNew) {
         switch (fetchingState) {
         case FetchingStateType.notFound:

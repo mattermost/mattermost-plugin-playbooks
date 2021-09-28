@@ -7,7 +7,7 @@ import classNames from 'classnames';
 import styled from 'styled-components';
 import {Team} from 'mattermost-redux/types/teams';
 
-import {useClientRect, useDropdownPosition} from 'src/hooks';
+import {useDropdownPosition} from 'src/hooks';
 
 import TeamWithIcon from './team_with_icon';
 
@@ -25,8 +25,6 @@ interface Props {
     withButton: boolean;
     onSelectedChange: (team: Team) => void;
 }
-
-const dropdownYShift = 40;
 
 interface DropdownPosition {
     x: number;
@@ -47,7 +45,7 @@ export default function CreatePlaybookTeamSelector(props: Props) {
         } as Option);
     });
 
-    const [dropdownPosition, toggleOpen] = useDropdownPosition();
+    const [dropdownPosition, toggleOpen] = useDropdownPosition(teamOptions.length);
 
     const onSelectedChange = async (value: Option | undefined | null | readonly Option[]) => {
         toggleOpen(0, 0);
@@ -57,20 +55,6 @@ export default function CreatePlaybookTeamSelector(props: Props) {
             props.onSelectedChange(team);
         }
     };
-
-    // Decide where to open the team selector
-    const [rect, ref] = useClientRect();
-
-    let moveUp = 0;
-    if (rect) {
-        const innerHeight = window.innerHeight;
-        const numTeamsShown = Math.min(6, teamOptions.length);
-        const spacePerProfile = 48;
-        const dropdownReqSpace = 80;
-        const extraSpace = 20;
-        const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numTeamsShown * spacePerProfile) + extraSpace;
-        moveUp = (Math.max(0, dropdownBottom - innerHeight));
-    }
 
     const target = (
         <div
@@ -90,10 +74,7 @@ export default function CreatePlaybookTeamSelector(props: Props) {
     );
 
     const targetWrapped = (
-        <div
-            data-testid={props.testId}
-            ref={ref}
-        >
+        <div data-testid={props.testId}>
             {target}
         </div>
     );
@@ -102,7 +83,6 @@ export default function CreatePlaybookTeamSelector(props: Props) {
         <Dropdown
             onClose={() => toggleOpen(0, 0)}
             target={targetWrapped}
-            moveUp={moveUp}
             dependsOnMousePosition={!props.withButton}
             position={dropdownPosition}
         >
@@ -178,6 +158,7 @@ const ChildContainer = styled.div<ChildContainerProps>`
         if (props.dependsOnPosition) {
             return props.position ? props.position.y : 0;
         }
+        const dropdownYShift = 40;
         return dropdownYShift - (props.moveUp || 0);
     }}px;
     left: ${(props) => {
