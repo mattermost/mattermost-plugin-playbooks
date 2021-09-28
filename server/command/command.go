@@ -830,19 +830,19 @@ func (r *Runner) actionTodo(args []string) {
 	}
 	message := buildAssignedTaskMessage(runs, siteURL)
 
-	runsInProgress, err := r.playbookRunService.GetParticipatingRuns(r.args.UserId)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error getting runs in progress: %v", err)
-		return
-	}
-	message += buildRunsInProgressMessage(runsInProgress, siteURL)
-
 	runsOverdue, err := r.playbookRunService.GetOverdueUpdateRuns(r.args.UserId)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error getting overdue runs: %v", err)
 		return
 	}
 	message += buildRunsOverdueMessage(runsOverdue, siteURL)
+
+	runsInProgress, err := r.playbookRunService.GetParticipatingRuns(r.args.UserId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error getting runs in progress: %v", err)
+		return
+	}
+	message += buildRunsInProgressMessage(runsInProgress, siteURL)
 
 	if err = r.poster.DM(r.args.UserId, &model.Post{Message: message}); err != nil {
 		r.warnUserAndLogErrorf("failed to send digest: %v", err)
