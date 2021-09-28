@@ -352,6 +352,27 @@ type DialogStateAddToTimeline struct {
 	PostID string `json:"post_id"`
 }
 
+// AssignedRun represents all the info needed to display a Run & ChecklistItem to a user
+type AssignedRun struct {
+	PlaybookRunID      string
+	PlaybookRunName    string
+	TeamName           string
+	ChannelName        string
+	ChannelDisplayName string
+	Tasks              []AssignedTask
+}
+
+// AssignedTask represents a ChecklistItem + extra info needed to display to a user
+type AssignedTask struct {
+	// ID is the identifier of the containing checklist.
+	ChecklistID string
+
+	// Title is the name of the containing checklist.
+	ChecklistTitle string
+
+	ChecklistItem
+}
+
 // PlaybookRunService is the playbook run service interface.
 type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -484,6 +505,9 @@ type PlaybookRunService interface {
 
 	// UpdateDescription updates the description of the specified playbook run.
 	UpdateDescription(playbookRunID, description string) error
+
+	// GetAssignedTasks returns the list of tasks assigned to userID
+	GetAssignedTasks(userID string) ([]AssignedRun, error)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -546,6 +570,9 @@ type PlaybookRunStore interface {
 
 	// SetBroadcastChannelIDsToRootID sets the broadcastChannelID->rootID mappings for playbookRunID
 	SetBroadcastChannelIDsToRootID(playbookRunID string, channelIDsToRootIDs map[string]string) error
+
+	// GetAssignedTasks returns the list of tasks assigned to userID
+	GetAssignedTasks(userID string) ([]AssignedRun, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

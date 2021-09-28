@@ -1582,6 +1582,11 @@ func (s *PlaybookRunServiceImpl) GetChecklistItemAutocomplete(playbookRunID stri
 	return ret, nil
 }
 
+// GetAssignedTasks returns the list of tasks assigned to userID
+func (s *PlaybookRunServiceImpl) GetAssignedTasks(userID string) ([]AssignedRun, error) {
+	return s.store.GetAssignedTasks(userID)
+}
+
 func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID string, checklistNumber int) (*PlaybookRun, error) {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
