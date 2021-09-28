@@ -2038,7 +2038,7 @@ func TestTasksAndRunsDiges(t *testing.T) {
 			actual := make(map[string]int)
 
 			for _, run := range runs {
-				actual[run.ChannelName] += 1
+				actual[run.ChannelName]++
 			}
 
 			require.Equal(t, expected, actual)
