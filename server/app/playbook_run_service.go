@@ -1592,6 +1592,11 @@ func (s *PlaybookRunServiceImpl) GetParticipatingRuns(userID string) ([]RunLink,
 	return s.store.GetParticipatingRuns(userID)
 }
 
+// GetOverdueUpdateRuns returns the list of userID's runs that have overdue updates
+func (s *PlaybookRunServiceImpl) GetOverdueUpdateRuns(userID string) ([]RunLink, error) {
+	return s.store.GetOverdueUpdateRuns(userID)
+}
+
 func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID string, checklistNumber int) (*PlaybookRun, error) {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {

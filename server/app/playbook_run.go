@@ -515,6 +515,9 @@ type PlaybookRunService interface {
 
 	// GetParticipatingRuns returns the list of active runs with userID as participant
 	GetParticipatingRuns(userID string) ([]RunLink, error)
+
+	// GetOverdueUpdateRuns returns the list of userID's runs that have overdue updates
+	GetOverdueUpdateRuns(userID string) ([]RunLink, error)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -583,6 +586,9 @@ type PlaybookRunStore interface {
 
 	// GetParticipatingRuns returns the list of active runs with userID as a participant
 	GetParticipatingRuns(userID string) ([]RunLink, error)
+
+	// GetOverdueUpdateRuns returns the list of userID's runs that have overdue updates
+	GetOverdueUpdateRuns(userID string) ([]RunLink, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

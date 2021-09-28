@@ -837,6 +837,13 @@ func (r *Runner) actionTodo(args []string) {
 	}
 	message += buildRunsInProgressMessage(runsInProgress, siteURL)
 
+	runsOverdue, err := r.playbookRunService.GetOverdueUpdateRuns(r.args.UserId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error getting overdue runs: %v", err)
+		return
+	}
+	message += buildRunsOverdueMessage(runsOverdue, siteURL)
+
 	if err = r.poster.DM(r.args.UserId, &model.Post{Message: message}); err != nil {
 		r.warnUserAndLogErrorf("failed to send digest: %v", err)
 	}
@@ -875,10 +882,37 @@ func buildRunsInProgressMessage(runs []app.RunLink, siteURL string) string {
 	total := len(runs)
 
 	if total == 0 {
-		return "### Runs in Progress\nYou have 0 runs currently in progress.\n"
+		return "\n### Runs in Progress\nYou have 0 runs currently in progress.\n"
 	}
 
-	message := fmt.Sprintf("### Runs in Progress\nYou have %d runs currently in progress:\n", total)
+	runPlural := "run"
+	if total > 1 {
+		runPlural += "s"
+	}
+
+	message := fmt.Sprintf("\n### Runs in Progress\nYou have %d %s currently in progress:\n", total, runPlural)
+
+	for _, run := range runs {
+		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
+			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+	}
+
+	return message
+}
+
+func buildRunsOverdueMessage(runs []app.RunLink, siteURL string) string {
+	total := len(runs)
+
+	if total == 0 {
+		return "\n### Overdue Status Updates\nYou have 0 runs overdue.\n"
+	}
+
+	runPlural := "run"
+	if total > 1 {
+		runPlural += "s"
+	}
+
+	message := fmt.Sprintf("\n### Overdue Status Updates\nYou have %d %s overdue for status update:\n", total, runPlural)
 
 	for _, run := range runs {
 		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
