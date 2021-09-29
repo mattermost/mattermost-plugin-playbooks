@@ -1903,6 +1903,149 @@ func TestCheckAndSendMessageOnJoin(t *testing.T) {
 	}
 }
 
+func TestTasksAndRunsDiges(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		_, store := setupSQLStore(t, db)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		setupTeamsTable(t, db)
+
+		userID := "testUserID"
+		testUser := userInfo{ID: userID}
+
+		team1 := model.Team{
+			Id:   model.NewId(),
+			Name: "Team1",
+		}
+		team2 := model.Team{
+			Id:   model.NewId(),
+			Name: "Team2",
+		}
+		createTeams(t, store, []model.Team{team1, team2})
+
+		channel01 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-01"}
+		channel02 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-02"}
+		channel03 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-03"}
+		channel04 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-04"}
+		channel05 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-05"}
+		channels := []model.Channel{channel01, channel02, channel03, channel04, channel05}
+		addUsersToChannels(t, store, []userInfo{testUser}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id})
+
+		// three assigned tasks for inc01
+		inc01 := *NewBuilder(nil).
+			WithName("inc01 - this is the playbook name for channel 01").
+			WithChannel(&channel01).
+			WithTeamID(team1.Id).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc01.Checklists[0].Items[0].AssigneeID = userID
+		inc01.Checklists[1].Items[1].AssigneeID = userID
+		inc01.Checklists[2].Items[2].AssigneeID = userID
+		inc01TaskTitles := []string{
+			inc01.Checklists[0].Items[0].Title,
+			inc01.Checklists[1].Items[1].Title,
+			inc01.Checklists[2].Items[2].Title,
+		}
+		// This should not trigger an assigned task:
+		inc01.Checklists[3].Items[0].Title = userID
+
+		// one assigned task for inc02, works cross team
+		inc02 := *NewBuilder(nil).
+			WithName("inc02 - this is the playbook name for channel 02").
+			WithChannel(&channel02).
+			WithTeamID(team2.Id).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc02.Checklists[3].Items[2].AssigneeID = userID
+		inc02TaskTitles := []string{inc02.Checklists[3].Items[2].Title}
+
+		// no assigned task for inc03
+		inc03 := *NewBuilder(nil).
+			WithName("inc03 - this is the playbook name for channel 03").
+			WithChannel(&channel03).
+			WithTeamID(team1.Id).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc03.Checklists[3].Items[2].AssigneeID = "someotheruserid"
+
+		// one assigned task for inc04, but inc04 is finished
+		inc04 := *NewBuilder(nil).
+			WithName("inc04 - this is the playbook name for channel 04").
+			WithChannel(&channel04).
+			WithTeamID(team1.Id).
+			WithChecklists([]int{1, 2, 3, 4}).
+			WithCurrentStatus(app.StatusFinished).
+			ToPlaybookRun()
+		inc04.Checklists[3].Items[2].AssigneeID = userID
+
+		// no assigned task for inc05, and not participant in inc05
+		inc05 := *NewBuilder(nil).
+			WithName("inc05 - this is the playbook name for channel 05").
+			WithChannel(&channel05).
+			WithTeamID(team1.Id).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc05.Checklists[3].Items[2].AssigneeID = "someotheruserid"
+
+		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05}
+
+		for i := range playbookRuns {
+			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
+			require.NoError(t, err)
+		}
+
+		createChannels(t, store, channels)
+
+		t.Run("gets assigned tasks only", func(t *testing.T) {
+			runs, err := playbookRunStore.GetAssignedTasks(userID)
+			require.NoError(t, err)
+
+			total := 0
+			for _, run := range runs {
+				total += len(run.Tasks)
+			}
+
+			require.Equal(t, 4, total)
+
+			// don't make assumptions about ordering until we figure that out PM-side
+			expected := map[string][]string{
+				channel01.Name: inc01TaskTitles,
+				channel02.Name: inc02TaskTitles,
+			}
+
+			for _, run := range runs {
+				for _, task := range run.Tasks {
+					require.Contains(t, expected[run.ChannelName], task.Title)
+				}
+			}
+		})
+
+		t.Run("gets participating runs only", func(t *testing.T) {
+			runs, err := playbookRunStore.GetParticipatingRuns(userID)
+			require.NoError(t, err)
+
+			total := len(runs)
+
+			require.Equal(t, 3, total)
+
+			// don't make assumptions about ordering until we figure that out PM-side
+			expected := map[string]int{
+				channel01.Name: 1,
+				channel02.Name: 1,
+				channel03.Name: 1,
+			}
+
+			actual := make(map[string]int)
+
+			for _, run := range runs {
+				actual[run.ChannelName]++
+			}
+
+			require.Equal(t, expected, actual)
+		})
+	}
+}
+
 func setupPlaybookRunStore(t *testing.T, db *sqlx.DB) app.PlaybookRunStore {
 	mockCtrl := gomock.NewController(t)
 

@@ -340,6 +340,65 @@ func setupChannelsTable(t *testing.T, db *sqlx.DB) {
 	require.NoError(t, err)
 }
 
+func setupTeamsTable(t *testing.T, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	if db.DriverName() == model.DatabaseDriverPostgres {
+		_, err := db.Exec(`
+			CREATE TABLE public.teams (
+				id character varying(26) NOT NULL,
+				createat bigint,
+				updateat bigint,
+				deleteat bigint,
+				displayname character varying(64),
+				name character varying(64),
+				description character varying(255),
+				email character varying(128),
+				type text,
+				companyname character varying(64),
+				alloweddomains character varying(500),
+				inviteid character varying(32),
+				schemeid text,
+				allowopeninvite boolean,
+				lastteamiconupdate bigint
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE Teams (
+			  Id varchar(26) NOT NULL,
+			  CreateAt bigint(20) DEFAULT NULL,
+			  UpdateAt bigint(20) DEFAULT NULL,
+			  DeleteAt bigint(20) DEFAULT NULL,
+			  DisplayName varchar(64) DEFAULT NULL,
+			  Name varchar(64) DEFAULT NULL,
+			  Description varchar(255) DEFAULT NULL,
+			  Email varchar(128) DEFAULT NULL,
+			  Type varchar(255) DEFAULT NULL,
+			  CompanyName varchar(64) DEFAULT NULL,
+			  AllowedDomains text,
+			  InviteId varchar(32) DEFAULT NULL,
+			  SchemeId varchar(255) DEFAULT NULL,
+			  AllowOpenInvite tinyint(1) DEFAULT NULL,
+			  LastTeamIconUpdate bigint(20) DEFAULT NULL,
+			  PRIMARY KEY (Id),
+			  UNIQUE KEY Name (Name),
+			  KEY idx_teams_name (Name),
+			  KEY idx_teams_invite_id (InviteId),
+			  KEY idx_teams_update_at (UpdateAt),
+			  KEY idx_teams_create_at (CreateAt),
+			  KEY idx_teams_delete_at (DeleteAt)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
 func setupPostsTable(t testing.TB, db *sqlx.DB) {
 	t.Helper()
 
@@ -532,10 +591,23 @@ func addUsersToChannels(t *testing.T, store *SQLStore, users []userInfo, channel
 func createChannels(t testing.TB, store *SQLStore, channels []model.Channel) {
 	t.Helper()
 
-	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "Type", "CreateAt", "DeleteAt")
+	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "Type", "CreateAt", "DeleteAt", "Name")
 
 	for _, channel := range channels {
-		insertBuilder = insertBuilder.Values(channel.Id, channel.DisplayName, channel.Type, channel.CreateAt, channel.DeleteAt)
+		insertBuilder = insertBuilder.Values(channel.Id, channel.DisplayName, channel.Type, channel.CreateAt, channel.DeleteAt, channel.Name)
+	}
+
+	_, err := store.execBuilder(store.db, insertBuilder)
+	require.NoError(t, err)
+}
+
+func createTeams(t testing.TB, store *SQLStore, teams []model.Team) {
+	t.Helper()
+
+	insertBuilder := store.builder.Insert("Teams").Columns("Id", "Name")
+
+	for _, team := range teams {
+		insertBuilder = insertBuilder.Values(team.Id, team.Name)
 	}
 
 	_, err := store.execBuilder(store.db, insertBuilder)

@@ -29,6 +29,7 @@ const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	"* `/playbook list` - List all your playbook runs. \n" +
 	"* `/playbook info` - Show a summary of the current playbook run. \n" +
 	"* `/playbook timeline` - Show the timeline for the current playbook run. \n" +
+	"* `/playbook todo` - Get a list of your assigned tasks. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -50,7 +51,7 @@ func getCommand(addTestCommands bool) *model.Command {
 		DisplayName:      "Playbook",
 		Description:      "Playbooks",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: run, finish, update, check, list, owner, info",
+		AutoCompleteDesc: "Available commands: run, finish, update, check, list, owner, info, todo",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(addTestCommands),
 	}
@@ -58,7 +59,7 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	command := model.NewAutocompleteData("playbook", "[command]",
-		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline")
+		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline, todo")
 
 	run := model.NewAutocompleteData("run", "", "Starts a new playbook run")
 	command.AddCommand(run)
@@ -106,6 +107,9 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 
 	timeline := model.NewAutocompleteData("timeline", "", "Shows the timeline for the current playbook run")
 	command.AddCommand(timeline)
+
+	todo := model.NewAutocompleteData("todo", "", "Get a list of your assigned tasks")
+	command.AddCommand(todo)
 
 	if addTestCommands {
 		test := model.NewAutocompleteData("test", "", "Commands for testing and debugging.")
@@ -811,6 +815,77 @@ func (r *Runner) timeSince(event app.TimelineEvent, reported time.Time) string {
 		return timeutils.DurationString(reported, eventAt)
 	}
 	return "-" + timeutils.DurationString(eventAt, reported)
+}
+
+func (r *Runner) actionTodo(args []string) {
+	siteURL := model.ServiceSettingsDefaultSiteURL
+	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *r.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
+
+	runs, err := r.playbookRunService.GetAssignedTasks(r.args.UserId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error getting assigned tasks: %v", err)
+		return
+	}
+	message := buildAssignedTaskMessage(runs, siteURL)
+
+	runsInProgress, err := r.playbookRunService.GetParticipatingRuns(r.args.UserId)
+	if err != nil {
+		r.warnUserAndLogErrorf("Error getting runs in progress: %v", err)
+		return
+	}
+	message += buildRunsInProgressMessage(runsInProgress, siteURL)
+
+	if err = r.poster.DM(r.args.UserId, &model.Post{Message: message}); err != nil {
+		r.warnUserAndLogErrorf("failed to send digest: %v", err)
+	}
+}
+
+func buildAssignedTaskMessage(runs []app.AssignedRun, siteURL string) string {
+	total := 0
+	for _, run := range runs {
+		total += len(run.Tasks)
+	}
+
+	if total == 0 {
+		return "### Your Assigned Tasks:\nYou have 0 assigned tasks.\n"
+	}
+
+	message := fmt.Sprintf("### Your Assigned Tasks:\nYou have %d total assigned tasks:\n", total)
+
+	for _, run := range runs {
+		numTasks := len(run.Tasks)
+		taskPlural := "task"
+		if numTasks > 1 {
+			taskPlural += "s"
+		}
+		message += fmt.Sprintf("- You have %d assigned %s in [%s](%s/%s/channels/%s):\n",
+			numTasks, taskPlural, run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+
+		for _, task := range run.Tasks {
+			message += fmt.Sprintf("  - %s: %s\n", task.ChecklistTitle, task.Title)
+		}
+	}
+
+	return message
+}
+
+func buildRunsInProgressMessage(runs []app.RunLink, siteURL string) string {
+	total := len(runs)
+
+	if total == 0 {
+		return "### Runs in Progress\nYou have 0 runs currently in progress.\n"
+	}
+
+	message := fmt.Sprintf("### Runs in Progress\nYou have %d runs currently in progress:\n", total)
+
+	for _, run := range runs {
+		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
+			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+	}
+
+	return message
 }
 
 func (r *Runner) actionTestSelf(args []string) {
@@ -1790,6 +1865,8 @@ func (r *Runner) Execute() error {
 		r.actionAdd(parameters)
 	case "timeline":
 		r.actionTimeline()
+	case "todo":
+		r.actionTodo(parameters)
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "test":
