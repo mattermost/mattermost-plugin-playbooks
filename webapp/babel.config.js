@@ -40,7 +40,7 @@ const config = {
         [
             'formatjs',
             {
-                idInterpolationPattern: 'playbooks.[sha512:contenthash:base64:6]',
+                idInterpolationPattern: '[sha512:contenthash:base64:6]',
                 ast: true,
             },
         ],
