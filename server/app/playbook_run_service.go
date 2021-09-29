@@ -1582,6 +1582,43 @@ func (s *PlaybookRunServiceImpl) GetChecklistItemAutocomplete(playbookRunID stri
 	return ret, nil
 }
 
+// DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
+// and DMs the message to userID. Use force = true to DM even if there are no items.
+func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) error {
+	siteURL := model.ServiceSettingsDefaultSiteURL
+	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
+
+	runs, err := s.GetAssignedTasks(userID)
+	if err != nil {
+		return err
+	}
+	message, total := buildAssignedTaskMessageAndTotal(runs, siteURL)
+
+	runsOverdue, err := s.GetOverdueUpdateRuns(userID)
+	if err != nil {
+		return err
+	}
+	message += buildRunsOverdueMessage(runsOverdue, siteURL)
+
+	runsInProgress, err := s.GetParticipatingRuns(userID)
+	if err != nil {
+		return err
+	}
+	message += buildRunsInProgressMessage(runsInProgress, siteURL)
+
+	if !force && total+len(runsOverdue)+len(runsInProgress) == 0 {
+		return nil
+	}
+
+	if err = s.poster.DM(userID, &model.Post{Message: message}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetAssignedTasks returns the list of tasks assigned to userID
 func (s *PlaybookRunServiceImpl) GetAssignedTasks(userID string) ([]AssignedRun, error) {
 	return s.store.GetAssignedTasks(userID)
@@ -2408,4 +2445,77 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) (string, int) {
+	total := 0
+	for _, run := range runs {
+		total += len(run.Tasks)
+	}
+
+	if total == 0 {
+		return "### Your Assigned Tasks:\nYou have 0 assigned tasks.\n", 0
+	}
+
+	message := fmt.Sprintf("### Your Assigned Tasks\nYou have %d total assigned tasks:\n", total)
+
+	for _, run := range runs {
+		numTasks := len(run.Tasks)
+		taskPlural := "task"
+		if numTasks > 1 {
+			taskPlural += "s"
+		}
+		message += fmt.Sprintf("- You have %d assigned %s in [%s](%s/%s/channels/%s):\n",
+			numTasks, taskPlural, run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+
+		for _, task := range run.Tasks {
+			message += fmt.Sprintf("  - %s: %s\n", task.ChecklistTitle, task.Title)
+		}
+	}
+
+	return message, total
+}
+
+func buildRunsInProgressMessage(runs []RunLink, siteURL string) string {
+	total := len(runs)
+
+	if total == 0 {
+		return "\n### Runs in Progress\nYou have 0 runs currently in progress.\n"
+	}
+
+	runPlural := "run"
+	if total > 1 {
+		runPlural += "s"
+	}
+
+	message := fmt.Sprintf("\n### Runs in Progress\nYou have %d %s currently in progress:\n", total, runPlural)
+
+	for _, run := range runs {
+		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
+			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+	}
+
+	return message
+}
+
+func buildRunsOverdueMessage(runs []RunLink, siteURL string) string {
+	total := len(runs)
+
+	if total == 0 {
+		return "\n### Overdue Status Updates\nYou have 0 runs overdue.\n"
+	}
+
+	runPlural := "run"
+	if total > 1 {
+		runPlural += "s"
+	}
+
+	message := fmt.Sprintf("\n### Overdue Status Updates\nYou have %d %s overdue for status update:\n", total, runPlural)
+
+	for _, run := range runs {
+		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
+			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+	}
+
+	return message
 }

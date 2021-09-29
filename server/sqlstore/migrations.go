@@ -1254,4 +1254,32 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.32.0"),
+		toVersion:   semver.MustParse("0.33.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_UserInfo
+					(
+						ID       VARCHAR(26) PRIMARY KEY,
+						LastDMAt BIGINT
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_UserInfo")
+				}
+			} else {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_UserInfo
+					(
+						ID       TEXT PRIMARY KEY,
+						LastDMAt BIGINT
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_UserInfo")
+				}
+			}
+			return nil
+		},
+	},
 }

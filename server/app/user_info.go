@@ -1,0 +1,25 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+package app
+
+type UserInfo struct {
+	ID       string `json:"id"`
+	LastDMAt int64  `json:"last_dm_at"`
+}
+
+type UserInfoService interface {
+	// Get retrieves a UserInfo struct by the user's userID.
+	Get(userID string) (UserInfo, error)
+
+	// Upsert inserts (creates) or updates the UserInfo struct.
+	Upsert(UserInfo) error
+}
+
+type UserInfoStore interface {
+	// Get retrieves a UserInfo struct by the user's userID.
+	Get(userID string) (UserInfo, error)
+
+	// Upsert inserts (creates) or updates the UserInfo in info.
+	Upsert(info UserInfo) error
+}

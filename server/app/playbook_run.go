@@ -510,6 +510,10 @@ type PlaybookRunService interface {
 	// UpdateDescription updates the description of the specified playbook run.
 	UpdateDescription(playbookRunID, description string) error
 
+	// DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
+	// and DMs the message to userID. Use force = true to DM even if there are no items.
+	DMTodoDigestToUser(userID string, force bool) error
+
 	// GetAssignedTasks returns the list of tasks assigned to userID
 	GetAssignedTasks(userID string) ([]AssignedRun, error)
 
