@@ -131,7 +131,7 @@ commands:
             NODE_ENV=development npm install --ignore-scripts --no-save
             npx cypress install
       - run:
-          name: Install Incident Collaboration plugin
+          name: Install Playbooks
           command: |
             make deploy
       - run:
