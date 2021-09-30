@@ -1612,11 +1612,7 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 		return nil
 	}
 
-	if err = s.poster.DM(userID, &model.Post{Message: message}); err != nil {
-		return err
-	}
-
-	return nil
+	return s.poster.DM(userID, &model.Post{Message: message})
 }
 
 // GetAssignedTasks returns the list of tasks assigned to userID
