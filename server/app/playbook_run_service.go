@@ -2454,10 +2454,10 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) (strin
 	}
 
 	if total == 0 {
-		return "### Your Assigned Tasks:\nYou have 0 assigned tasks.\n", 0
+		return "##### Your Assigned Tasks:\nYou have 0 assigned tasks.\n", 0
 	}
 
-	message := fmt.Sprintf("### Your Assigned Tasks\nYou have %d total assigned tasks:\n", total)
+	message := fmt.Sprintf("##### Your Assigned Tasks\nYou have %d total assigned tasks:\n", total)
 
 	for _, run := range runs {
 		numTasks := len(run.Tasks)
@@ -2480,7 +2480,7 @@ func buildRunsInProgressMessage(runs []RunLink, siteURL string) string {
 	total := len(runs)
 
 	if total == 0 {
-		return "\n### Runs in Progress\nYou have 0 runs currently in progress.\n"
+		return "\n##### Runs in Progress\nYou have 0 runs currently in progress.\n"
 	}
 
 	runPlural := "run"
@@ -2488,7 +2488,7 @@ func buildRunsInProgressMessage(runs []RunLink, siteURL string) string {
 		runPlural += "s"
 	}
 
-	message := fmt.Sprintf("\n### Runs in Progress\nYou have %d %s currently in progress:\n", total, runPlural)
+	message := fmt.Sprintf("\n##### Runs in Progress\nYou have %d %s currently in progress:\n", total, runPlural)
 
 	for _, run := range runs {
 		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
@@ -2502,7 +2502,7 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string) string {
 	total := len(runs)
 
 	if total == 0 {
-		return "\n### Overdue Status Updates\nYou have 0 runs overdue.\n"
+		return "\n##### Overdue Status Updates\nYou have 0 runs overdue.\n"
 	}
 
 	runPlural := "run"
@@ -2510,7 +2510,7 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string) string {
 		runPlural += "s"
 	}
 
-	message := fmt.Sprintf("\n### Overdue Status Updates\nYou have %d %s overdue for status update:\n", total, runPlural)
+	message := fmt.Sprintf("\n##### Overdue Status Updates\nYou have %d %s overdue for status update:\n", total, runPlural)
 
 	for _, run := range runs {
 		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
