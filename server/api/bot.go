@@ -186,7 +186,6 @@ func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request) {
 	now := model.GetMillis()
 	nt := time.Unix(now/1000, 0).In(timezone)
 	lt := time.Unix(info.LastDMAt/1000, 0).In(timezone)
-	h.log.Errorf("<><> user: %s nextTime: %d lastTime: %d\n", userID, nt, lt)
 	if nt.Sub(lt).Hours() >= 1 && (nt.Day() != lt.Day() || nt.Month() != lt.Month() || nt.Year() != lt.Year()) {
 		// record that we're sending a DM now (this will prevent us trying over and over on every
 		// response if there's a failure later)
