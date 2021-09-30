@@ -71,7 +71,7 @@ type PlaybookRun struct {
 	StatusPosts []StatusPost `json:"status_posts"`
 
 	// CurrentStatus is the current status of the playbook run.
-	// It can be Reported, Active, Resolved or Archived.
+	// It can be StatusInProgress ("InProgress") or StatusFinished ("Finished")
 	CurrentStatus string `json:"current_status"`
 
 	// LastStatusUpdateAt is the timestamp, in milliseconds since epoch, of the time the last
@@ -360,6 +360,31 @@ type DialogStateAddToTimeline struct {
 	PostID string `json:"post_id"`
 }
 
+// RunLink represents the info needed to display and link to a run
+type RunLink struct {
+	PlaybookRunID      string
+	TeamName           string
+	ChannelName        string
+	ChannelDisplayName string
+}
+
+// AssignedRun represents all the info needed to display a Run & ChecklistItem to a user
+type AssignedRun struct {
+	RunLink
+	Tasks []AssignedTask
+}
+
+// AssignedTask represents a ChecklistItem + extra info needed to display to a user
+type AssignedTask struct {
+	// ID is the identifier of the containing checklist.
+	ChecklistID string
+
+	// Title is the name of the containing checklist.
+	ChecklistTitle string
+
+	ChecklistItem
+}
+
 // PlaybookRunService is the playbook run service interface.
 type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -492,6 +517,12 @@ type PlaybookRunService interface {
 
 	// UpdateDescription updates the description of the specified playbook run.
 	UpdateDescription(playbookRunID, description string) error
+
+	// GetAssignedTasks returns the list of tasks assigned to userID
+	GetAssignedTasks(userID string) ([]AssignedRun, error)
+
+	// GetParticipatingRuns returns the list of active runs with userID as participant
+	GetParticipatingRuns(userID string) ([]RunLink, error)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -554,6 +585,12 @@ type PlaybookRunStore interface {
 
 	// SetBroadcastChannelIDsToRootID sets the broadcastChannelID->rootID mappings for playbookRunID
 	SetBroadcastChannelIDsToRootID(playbookRunID string, channelIDsToRootIDs map[string]string) error
+
+	// GetAssignedTasks returns the list of tasks assigned to userID
+	GetAssignedTasks(userID string) ([]AssignedRun, error)
+
+	// GetParticipatingRuns returns the list of active runs with userID as a participant
+	GetParticipatingRuns(userID string) ([]RunLink, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

@@ -171,6 +171,47 @@ describe('backstage playbook run list', () => {
         });
     });
 
+    describe('filters Finished Runs correctly', () => {
+        before(() => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            // # Run a playbook with testUser as a participant
+            cy.apiRunPlaybook({
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
+                playbookRunName: 'testUsers Run to be finished',
+                ownerUserId: testUser.id,
+            }).then((playbook) => {
+                cy.apiFinishRun(playbook.id);
+            });
+        });
+
+        it('shows finished runs', () => {
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            // # Open backstage
+            cy.visit('/playbooks');
+
+            // # Make sure runs are visible by default, and finished is not
+            cy.findByText('testUsers Run').should('be.visible');
+            cy.findByText('testAnotherUsers Run').should('be.visible');
+            cy.findByText('testUsers Run to be finished').should('not.exist');
+
+            // # Filter to finished runs as well
+            cy.findByTestId('finished-runs').click();
+
+            // # Verify runs remain visible
+            cy.findByText('testUsers Run').should('be.visible');
+            cy.findByText('testAnotherUsers Run').should('be.visible');
+
+            // # Verify finished run is visible
+            cy.findByText('testUsers Run to be finished').should('be.visible');
+
+        });
+    });
+
     describe('resets pagination when filtering', () => {
         const playbookRunTimestamps = [];
 

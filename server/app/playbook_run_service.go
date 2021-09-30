@@ -1539,6 +1539,16 @@ func (s *PlaybookRunServiceImpl) GetChecklistItemAutocomplete(playbookRunID stri
 	return ret, nil
 }
 
+// GetAssignedTasks returns the list of tasks assigned to userID
+func (s *PlaybookRunServiceImpl) GetAssignedTasks(userID string) ([]AssignedRun, error) {
+	return s.store.GetAssignedTasks(userID)
+}
+
+// GetParticipatingRuns returns the list of active runs with userID as a participant
+func (s *PlaybookRunServiceImpl) GetParticipatingRuns(userID string) ([]RunLink, error) {
+	return s.store.GetParticipatingRuns(userID)
+}
+
 func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID string, checklistNumber int) (*PlaybookRun, error) {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
@@ -1651,10 +1661,22 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	}
 
 	if playbookRun.CategoryName != "" {
-		err = s.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, playbookRun.CategoryName)
-		if err != nil {
-			s.logger.Errorf("failed to categorize channel; error: %s", err.Error())
-		}
+		// Update sidebar category in the go-routine not to block the UserHasJoinedChannel hook
+		go func() {
+			// Wait for 5 seconds(a magic number) for the webapp to get the `user_added` event,
+			// finish channel categorization and update it's state in redux.
+			// Currently there is no way to detect when webapp finishes the job.
+			// After that we can update the categories safely.
+			// Technically if user starts multiple runs simultaneously we will still get the race condition
+			// on category update. Since that's not realistic at the moment we are not adding the
+			// distributed lock here.
+			time.Sleep(5 * time.Second)
+
+			err = s.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, playbookRun.CategoryName)
+			if err != nil {
+				s.logger.Errorf("failed to categorize channel; error: %s", err.Error())
+			}
+		}()
 	}
 }
 

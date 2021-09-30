@@ -80,7 +80,13 @@ describe('playbook run rhs', () => {
             });
 
             // # Open the flagged posts RHS
-            cy.get('#channelHeaderFlagButton').click({force: true});
+            cy.get("body").then($body => {
+                if ($body.find("#channelHeaderFlagButton").length > 0) {
+                    cy.get('#channelHeaderFlagButton').click({force: true});
+                } else {
+                    cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'}).click({force: true});
+                }
+            });
 
             // # Open the playbook run channel from the LHS.
             cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
@@ -183,7 +189,7 @@ describe('playbook run rhs', () => {
             cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});
 
             // # Wait a bit longer to be confident.
-            cy.wait(TIMEOUTS.TWO_SEC);
+            cy.wait(TIMEOUTS.FIVE_SEC);
 
             // * Verify the playbook run RHS is not open.
             cy.get('#rhsContainer').should('not.exist');

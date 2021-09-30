@@ -162,6 +162,21 @@ func (mr *MockPlaybookRunServiceMockRecorder) FinishPlaybookRun(arg0, arg1 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishPlaybookRun", reflect.TypeOf((*MockPlaybookRunService)(nil).FinishPlaybookRun), arg0, arg1)
 }
 
+// GetAssignedTasks mocks base method
+func (m *MockPlaybookRunService) GetAssignedTasks(arg0 string) ([]app.AssignedRun, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssignedTasks", arg0)
+	ret0, _ := ret[0].([]app.AssignedRun)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssignedTasks indicates an expected call of GetAssignedTasks
+func (mr *MockPlaybookRunServiceMockRecorder) GetAssignedTasks(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignedTasks", reflect.TypeOf((*MockPlaybookRunService)(nil).GetAssignedTasks), arg0)
+}
+
 // GetChecklistAutocomplete mocks base method
 func (m *MockPlaybookRunService) GetChecklistAutocomplete(arg0 string) ([]model.AutocompleteListItem, error) {
 	m.ctrl.T.Helper()
@@ -205,6 +220,21 @@ func (m *MockPlaybookRunService) GetOwners(arg0 app.RequesterInfo, arg1 app.Play
 func (mr *MockPlaybookRunServiceMockRecorder) GetOwners(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOwners", reflect.TypeOf((*MockPlaybookRunService)(nil).GetOwners), arg0, arg1)
+}
+
+// GetParticipatingRuns mocks base method
+func (m *MockPlaybookRunService) GetParticipatingRuns(arg0 string) ([]app.RunLink, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetParticipatingRuns", arg0)
+	ret0, _ := ret[0].([]app.RunLink)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetParticipatingRuns indicates an expected call of GetParticipatingRuns
+func (mr *MockPlaybookRunServiceMockRecorder) GetParticipatingRuns(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParticipatingRuns", reflect.TypeOf((*MockPlaybookRunService)(nil).GetParticipatingRuns), arg0)
 }
 
 // GetPlaybookRun mocks base method

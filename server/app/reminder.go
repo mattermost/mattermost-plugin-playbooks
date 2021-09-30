@@ -93,9 +93,17 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 		},
 	}
 
-	post, err := s.poster.PostMessageWithAttachments(playbookRunToModify.ChannelID, attachments,
-		"@%s, please provide a status update.", owner.Username)
-	if err != nil {
+	post := &model.Post{
+		Message:   fmt.Sprintf("@%s, please provide a status update.", owner.Username),
+		ChannelId: playbookRunToModify.ChannelID,
+		Type:      "custom_update_status",
+		Props: map[string]interface{}{
+			"targetUsername": owner.Username,
+		},
+	}
+	model.ParseSlackAttachment(post, attachments)
+
+	if err := s.poster.PostMessageToThread("", post); err != nil {
 		s.logger.Errorf(errors.Wrap(err, "HandleReminder error posting reminder message").Error())
 		return
 	}
