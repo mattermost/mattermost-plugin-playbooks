@@ -1547,29 +1547,29 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	}
 
-	runs, err := s.GetAssignedTasks(userID)
-	if err != nil {
-		return err
-	}
-	message, total := buildAssignedTaskMessageAndTotal(runs, siteURL)
-
 	runsOverdue, err := s.GetOverdueUpdateRuns(userID)
 	if err != nil {
 		return err
 	}
-	message += buildRunsOverdueMessage(runsOverdue, siteURL)
+	part1 := buildRunsOverdueMessage(runsOverdue, siteURL)
+
+	runs, err := s.GetAssignedTasks(userID)
+	if err != nil {
+		return err
+	}
+	part2, total := buildAssignedTaskMessageAndTotal(runs, siteURL)
 
 	runsInProgress, err := s.GetParticipatingRuns(userID)
 	if err != nil {
 		return err
 	}
-	message += buildRunsInProgressMessage(runsInProgress, siteURL)
+	part3 := buildRunsInProgressMessage(runsInProgress, siteURL)
 
 	if !force && total+len(runsOverdue)+len(runsInProgress) == 0 {
 		return nil
 	}
 
-	return s.poster.DM(userID, &model.Post{Message: message})
+	return s.poster.DM(userID, &model.Post{Message: part1 + part2 + part3})
 }
 
 // GetAssignedTasks returns the list of tasks assigned to userID
