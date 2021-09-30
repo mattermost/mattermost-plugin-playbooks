@@ -1,1 +1,7 @@
-{}
+{
+  "/HtNUp": "Select or specify a {mode, select, DurationValue {time span (\"4 hours\", \"7 days\"...)} DateTimeValue {time (\"in 4 hours\", \"May 1\", \"Tomorrow at 1 PM\"...)} other {time or time span}}",
+  "AF9wda": "This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcast to <ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip>} other {}}.",
+  "YDuW/T": "{num_runs, plural, =0 {Not run yet} one {# run} other {# total runs}}",
+  "s3jjqi": "{num_actions, plural, =0 {no actions} one {# action} other {# actions}}",
+  "soePYH": "{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}"
+}

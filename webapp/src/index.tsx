@@ -81,6 +81,15 @@ export default class Plugin {
         setSiteUrl(siteUrl);
         Client4.setUrl(siteUrl);
 
+        registry.registerTranslations((locale: string) => {
+            try {
+                // eslint-disable-next-line global-require
+                return require(`../i18n/${locale}.json`); // TODO make async, this increases bundle size exponentially
+            } catch {
+                return {};
+            }
+        });
+
         const updateMainMenuAction = makeUpdateMainMenu(registry, store);
         updateMainMenuAction();
 

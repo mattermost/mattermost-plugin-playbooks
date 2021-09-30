@@ -93,7 +93,6 @@ const UpdateRunStatusModal = ({
         <FormContainer>
             <Description>
                 {formatMessage({
-                    id: `${ID}_description`,
                     defaultMessage: 'This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcast to <ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip>} other {}}.',
                 }, {
                     OverviewLink: (...chunks) => (

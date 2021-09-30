@@ -207,7 +207,6 @@ export const RHSHomePlaybook = ({
                     ) : null}
                     <span>
                         {formatMessage({
-                            id: 'plugin-ic.rhs_home.rhs_home_item.num_runs',
                             defaultMessage: '{num_runs, plural, =0 {Not run yet} one {# run} other {# total runs}}',
                         }, {num_runs})}
                     </span>
@@ -219,7 +218,6 @@ export const RHSHomePlaybook = ({
                             size={1}
                         />
                         {formatMessage({
-                            id: 'plugin-ic.rhs_home.rhs_home_item.num_checklists',
                             defaultMessage: '{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}',
                         }, {num_checklists: num_stages})}
                     </MetaItem>
@@ -229,7 +227,6 @@ export const RHSHomePlaybook = ({
                             size={1}
                         />
                         {formatMessage({
-                            id: 'plugin-ic.rhs_home.rhs_home_item.num_actions',
                             defaultMessage: '{num_actions, plural, =0 {no actions} one {# action} other {# actions}}',
                         }, {num_actions})}
                     </MetaItem>
@@ -294,7 +291,7 @@ export const RHSHomeTemplate = ({
                             size={1}
                         />
                         {formatMessage({
-                            id: 'plugin-ic.rhs_home.rhs_home_item.num_checklists',
+
                             defaultMessage: '{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}',
                         }, {num_checklists: template.num_stages})}
                     </MetaItem>
@@ -304,7 +301,7 @@ export const RHSHomeTemplate = ({
                             size={1}
                         />
                         {formatMessage({
-                            id: 'plugin-ic.rhs_home.rhs_home_item.num_actions',
+
                             defaultMessage: '{num_actions, plural, =0 {no actions} one {# action} other {# actions}}',
                         }, {num_actions: template.num_actions})}
                     </MetaItem>
