@@ -137,6 +137,21 @@ func (mr *MockPlaybookRunStoreMockRecorder) GetHistoricalPlaybookRunParticipants
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHistoricalPlaybookRunParticipantsCount", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetHistoricalPlaybookRunParticipantsCount), arg0)
 }
 
+// GetOverdueUpdateRuns mocks base method
+func (m *MockPlaybookRunStore) GetOverdueUpdateRuns(arg0 string) ([]app.RunLink, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOverdueUpdateRuns", arg0)
+	ret0, _ := ret[0].([]app.RunLink)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOverdueUpdateRuns indicates an expected call of GetOverdueUpdateRuns
+func (mr *MockPlaybookRunStoreMockRecorder) GetOverdueUpdateRuns(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOverdueUpdateRuns", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetOverdueUpdateRuns), arg0)
+}
+
 // GetOwners mocks base method
 func (m *MockPlaybookRunStore) GetOwners(arg0 app.RequesterInfo, arg1 app.PlaybookRunFilterOptions) ([]app.OwnerInfo, error) {
 	m.ctrl.T.Helper()
