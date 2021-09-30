@@ -14,9 +14,23 @@ import {
 import {currentPlaybookRun} from 'src/selectors';
 import RHSAbout from 'src/components/rhs/rhs_about';
 import RHSChecklists from 'src/components/rhs/rhs_checklists';
+import {browserHistory} from 'src/webapp_globals';
+import {telemetryEventForPlaybookRun} from 'src/client';
 
 const RHSRunDetails = () => {
     const playbookRun = useSelector(currentPlaybookRun);
+    const url = new URL(window.location.href);
+    const searchParams = new URLSearchParams(url.searchParams);
+
+    if (searchParams.has('telem') && playbookRun) {
+        const action = searchParams.get('telem');
+        if (action) {
+            telemetryEventForPlaybookRun(playbookRun.id, action);
+        }
+        searchParams.delete('telem');
+        url.search = searchParams.toString();
+        browserHistory.push({pathname: url.pathname, search: url.search});
+    }
 
     if (!playbookRun) {
         return null;
