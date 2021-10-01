@@ -121,11 +121,9 @@ const PlaybookBackstage = () => {
     };
 
     const runPlaybook = () => {
-        navigateToUrl(`/${team.name || ''}`);
-
         if (playbook?.id) {
             telemetryEventForPlaybook(playbook.id, 'playbook_dashboard_run_clicked');
-            dispatch(startPlaybookRunById(team.id, playbook.id, 3000));
+            navigateToUrl(`/${team.name || ''}/_playbooks/${playbook?.id || ''}/run`);
         }
     };
 
