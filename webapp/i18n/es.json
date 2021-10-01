@@ -1,0 +1,5 @@
+{
+    "soePYH": "{num_checklists, plural, =0 {no hay checklists} one {# checklist} other {# checklists}}",
+    "s3jjqi": "{num_actions, plural, =0 {no hay acciones} one {# acción} other {# acciones}}",
+    "YDuW/T": "{num_runs, plural, =0 {No hay ejecuciones aún} one {# ejecución} other {# ejecuciones en total}}"
+}
