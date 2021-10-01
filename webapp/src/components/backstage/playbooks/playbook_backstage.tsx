@@ -142,7 +142,7 @@ const PlaybookBackstage = () => {
         accessIconClass = 'icon-lock-outline';
     } else if (team) {
         accessIconClass = 'icon-globe';
-        subTitle = formatMessage({defaultMessage: 'Everyone in {team} can access this playbook'}, {teem: team.display_name});
+        subTitle = formatMessage({defaultMessage: 'Everyone in {team} can access this playbook'}, {team: team.display_name});
     } else {
         accessIconClass = 'icon-globe';
         subTitle = formatMessage({defaultMessage: 'Everyone in this team can access this playbook'});
