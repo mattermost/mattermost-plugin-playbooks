@@ -39,16 +39,16 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 }
 
 type PlaybookStats struct {
-	RunsInProgress                 int       `json:"runs_in_progress"`
-	ParticipantsActive             int       `json:"participants_active"`
-	RunsFinishedPrev30Days         int       `json:"runs_finished_prev_30_days"`
-	RunsFinishedPercentageChange   int       `json:"runs_finished_percentage_change"`
-	RunsStartedPerWeek             []int     `json:"runs_started_per_week"`
-	RunsStartedPerWeekTimes        [][]int64 `json:"runs_started_per_week_times"`
-	ActiveRunsPerDay               []int     `json:"active_runs_per_day"`
-	ActiveRunsPerDayTimes          [][]int64 `json:"active_runs_per_day_times"`
-	ActiveParticipantsPerDay	   []int     `json:"active_participants_per_day"`
-	ActiveParticipantsPerDayTimes  [][]int64 `json:"active_participants_per_day_times"`
+	RunsInProgress                int       `json:"runs_in_progress"`
+	ParticipantsActive            int       `json:"participants_active"`
+	RunsFinishedPrev30Days        int       `json:"runs_finished_prev_30_days"`
+	RunsFinishedPercentageChange  int       `json:"runs_finished_percentage_change"`
+	RunsStartedPerWeek            []int     `json:"runs_started_per_week"`
+	RunsStartedPerWeekTimes       [][]int64 `json:"runs_started_per_week_times"`
+	ActiveRunsPerDay              []int     `json:"active_runs_per_day"`
+	ActiveRunsPerDayTimes         [][]int64 `json:"active_runs_per_day_times"`
+	ActiveParticipantsPerDay      []int     `json:"active_participants_per_day"`
+	ActiveParticipantsPerDayTimes [][]int64 `json:"active_participants_per_day_times"`
 }
 
 func parsePlaybookStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
@@ -89,15 +89,15 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	activeParticipantsPerDay, activeParticipantsPerDayTimes := h.statsStore.ActiveParticipantsPerDayLastXDays(14, filters)
 
 	ReturnJSON(w, &PlaybookStats{
-		RunsInProgress:                 h.statsStore.TotalInProgressPlaybookRuns(filters),
-		ParticipantsActive:             h.statsStore.TotalActiveParticipants(filters),
-		RunsFinishedPrev30Days:         runsFinishedLast30Days,
-		RunsFinishedPercentageChange:   percentageChange,
-		RunsStartedPerWeek:             runsStartedPerWeek,
-		RunsStartedPerWeekTimes:        runsStartedPerWeekTimes,
-		ActiveRunsPerDay:               activeRunsPerDay,
-		ActiveRunsPerDayTimes:          activeRunsPerDayTimes,
-		ActiveParticipantsPerDay:       activeParticipantsPerDay,
-		ActiveParticipantsPerDayTimes:  activeParticipantsPerDayTimes,
+		RunsInProgress:                h.statsStore.TotalInProgressPlaybookRuns(filters),
+		ParticipantsActive:            h.statsStore.TotalActiveParticipants(filters),
+		RunsFinishedPrev30Days:        runsFinishedLast30Days,
+		RunsFinishedPercentageChange:  percentageChange,
+		RunsStartedPerWeek:            runsStartedPerWeek,
+		RunsStartedPerWeekTimes:       runsStartedPerWeekTimes,
+		ActiveRunsPerDay:              activeRunsPerDay,
+		ActiveRunsPerDayTimes:         activeRunsPerDayTimes,
+		ActiveParticipantsPerDay:      activeParticipantsPerDay,
+		ActiveParticipantsPerDayTimes: activeParticipantsPerDayTimes,
 	}, http.StatusOK)
 }
