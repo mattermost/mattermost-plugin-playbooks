@@ -138,7 +138,7 @@ const PlaybookBackstage = () => {
         subTitle = formatMessage({defaultMessage: 'Only you can access this playbook'});
         accessIconClass = 'icon-lock-outline';
     } else if (playbook.member_ids.length > 1) {
-        subTitle = formatMessage({defaultMessage: '{members, number} people can access this playbook'}, {members: playbook.member_ids.length});
+        subTitle = formatMessage({defaultMessage: '{members, plural, =0 {No one} =1 {One person} other {# people}} can access this playbook'}, {members: playbook.member_ids.length});
         accessIconClass = 'icon-lock-outline';
     } else if (team) {
         accessIconClass = 'icon-globe';
