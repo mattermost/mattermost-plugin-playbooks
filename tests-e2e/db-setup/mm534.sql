@@ -393,7 +393,7 @@ CREATE TABLE public.ir_playbook (
     defaultcommanderenabled boolean DEFAULT false,
     announcementchannelid text DEFAULT ''::text,
     announcementchannelenabled boolean DEFAULT false,
-    concatenatedwebhookoncreationurls text DEFAULT ''::text,
+    webhookoncreationurl text DEFAULT ''::text,
     webhookoncreationenabled boolean DEFAULT false,
     concatenatedinvitedgroupids text DEFAULT ''::text
 );
@@ -2647,7 +2647,7 @@ COPY public.incomingwebhooks (id, createat, updateat, deleteat, userid, channeli
 -- Data for Name: ir_incident; Type: TABLE DATA; Schema: public; Owner: mmuser
 --
 
-COPY public.ir_incident (id, name, description, isactive, commanderuserid, teamid, channelid, createat, endat, deleteat, activestage, postid, playbookid, checklistsjson, activestagetitle, reminderpostid, broadcastchannelid, previousreminder, remindermessagetemplate, currentstatus, reporteruserid, concatenatedinviteduserids, defaultcommanderid, announcementchannelid, concatenatedwebhookoncreationurls, concatenatedinvitedgroupids) FROM stdin;
+COPY public.ir_incident (id, name, description, isactive, commanderuserid, teamid, channelid, createat, endat, deleteat, activestage, postid, playbookid, checklistsjson, activestagetitle, reminderpostid, broadcastchannelid, previousreminder, remindermessagetemplate, currentstatus, reporteruserid, concatenatedinviteduserids, defaultcommanderid, announcementchannelid, webhookoncreationurl, concatenatedinvitedgroupids) FROM stdin;
 \.
 
 
@@ -2655,7 +2655,7 @@ COPY public.ir_incident (id, name, description, isactive, commanderuserid, teami
 -- Data for Name: ir_playbook; Type: TABLE DATA; Schema: public; Owner: mmuser
 --
 
-COPY public.ir_playbook (id, title, description, teamid, createpublicincident, createat, deleteat, checklistsjson, numstages, numsteps, broadcastchannelid, remindermessagetemplate, remindertimerdefaultseconds, concatenatedinviteduserids, inviteusersenabled, defaultcommanderid, defaultcommanderenabled, announcementchannelid, announcementchannelenabled, concatenatedwebhookoncreationurls, webhookoncreationenabled, concatenatedinvitedgroupids) FROM stdin;
+COPY public.ir_playbook (id, title, description, teamid, createpublicincident, createat, deleteat, checklistsjson, numstages, numsteps, broadcastchannelid, remindermessagetemplate, remindertimerdefaultseconds, concatenatedinviteduserids, inviteusersenabled, defaultcommanderid, defaultcommanderenabled, announcementchannelid, announcementchannelenabled, webhookoncreationurl, webhookoncreationenabled, concatenatedinvitedgroupids) FROM stdin;
 \.
 
 
@@ -2759,7 +2759,7 @@ COPY public.outgoingwebhooks (id, token, createat, updateat, deleteat, creatorid
 --
 
 COPY public.pluginkeyvaluestore (pluginid, pkey, pvalue, expireat) FROM stdin;
-playbooks	mmi_botid	\\x706f663562657a6a6e6938796d6b6172337174657364357a3377	0
+com.mattermost.plugin-incident-management	mmi_botid	\\x706f663562657a6a6e6938796d6b6172337174657364357a3377	0
 \.
 
 

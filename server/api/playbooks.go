@@ -76,6 +76,12 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if playbook.WebhookOnCreationEnabled {
+		if len(playbook.WebhookOnCreationURLs) > 64 {
+			msg := "too many registered creation webhook urls, limit to less than 64"
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
+
 		for _, webhook := range playbook.WebhookOnCreationURLs {
 			url, err := url.ParseRequestURI(webhook)
 			if err != nil {
@@ -92,6 +98,12 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if playbook.WebhookOnStatusUpdateEnabled {
+		if len(playbook.WebhookOnStatusUpdateURLs) > 64 {
+			msg := "too many registered update webhook urls, limit to less than 64"
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return
+		}
+
 		for _, webhook := range playbook.WebhookOnStatusUpdateURLs {
 			url, err := url.ParseRequestURI(webhook)
 			if err != nil {
