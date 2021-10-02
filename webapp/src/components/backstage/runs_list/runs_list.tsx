@@ -12,8 +12,6 @@ import Row from './row';
 import RunListHeader from './run_list_header';
 import Filters from './filters';
 
-import './runs_list.scss';
-
 interface Props {
     playbookRuns: PlaybookRun[]
     totalCount: number
@@ -23,7 +21,47 @@ interface Props {
     fixedTeam?: boolean
 }
 
-const PlaybookRunListContainer = styled.div`
+const PlaybookRunList = styled.div`
+    font-family: 'Open Sans';
+    color: var(--center-channel-color-90);
+
+    .PlaybookRunList__filters {
+        display: flex;
+        align-items: center;
+        margin: 0 -4px 20px;
+
+        > div {
+            padding: 0 4px;
+        }
+    }
+`;
+
+const List = styled.div`
+    .playbook-run-item {
+        display: flex;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        align-items: center;
+        margin: 0;
+        border-bottom: 1px solid var(--center-channel-color-16);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--center-channel-color-04);
+        }
+
+        &__title {
+            display: flex;
+            flex-direction: column;
+
+            > span {
+                font-weight: 600;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                overflow: hidden;
+            }
+        }
+    }
 `;
 
 const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterPill, fixedTeam}: Props) => {
@@ -39,8 +77,8 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
     };
 
     return (
-        <PlaybookRunListContainer className='PlaybookRunList'>
-            <div
+        <PlaybookRunList className='PlaybookRunList'>
+            <List
                 id='playbookRunList'
                 className='list'
             >
@@ -77,8 +115,8 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
                     totalCount={totalCount}
                     setPage={setPage}
                 />
-            </div>
-        </PlaybookRunListContainer>
+            </List>
+        </PlaybookRunList>
     );
 };
 
