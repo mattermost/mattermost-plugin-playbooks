@@ -196,11 +196,14 @@ export const RHSHomePlaybook = ({
                     {num_runs > 0 ? (
                         <>
                             <span>
-                                {'Last run was '}
-                                <Timestamp
-                                    value={last_run_at}
-                                    {...TIME_SPEC}
-                                />
+                                {formatMessage({defaultMessage: 'Last run was {lastRun}'}, {
+                                    lastRun: (
+                                        <Timestamp
+                                            value={last_run_at}
+                                            {...TIME_SPEC}
+                                        />
+                                    ),
+                                })}
                                 <span className='separator'>{'·'}</span>
                             </span>
                         </>
