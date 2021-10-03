@@ -135,7 +135,6 @@ const DateTimeInput = ({
 
             //
             placeholder={formatMessage({
-                id: 'datetime_input.placeholder',
                 defaultMessage: 'Select or specify a {mode, select, DurationValue {time span ("4 hours", "7 days"...)} DateTimeValue {time ("in 4 hours", "May 1", "Tomorrow at 1 PM"...)} other {time or time span}}',
             }, {mode})}
 

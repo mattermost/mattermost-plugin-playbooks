@@ -1931,12 +1931,14 @@ func TestTasksAndRunsDiges(t *testing.T) {
 		channels := []model.Channel{channel01, channel02, channel03, channel04, channel05}
 		addUsersToChannels(t, store, []userInfo{testUser}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id})
 
-		// three assigned tasks for inc01
+		// three assigned tasks for inc01, and an overdue update
 		inc01 := *NewBuilder(nil).
 			WithName("inc01 - this is the playbook name for channel 01").
 			WithChannel(&channel01).
 			WithTeamID(team1.Id).
 			WithChecklists([]int{1, 2, 3, 4}).
+			WithUpdateOverdueBy(2 * time.Minute).
+			WithOwnerUserID(userID).
 			ToPlaybookRun()
 		inc01.Checklists[0].Items[0].AssigneeID = userID
 		inc01.Checklists[1].Items[1].AssigneeID = userID
@@ -1949,31 +1951,37 @@ func TestTasksAndRunsDiges(t *testing.T) {
 		// This should not trigger an assigned task:
 		inc01.Checklists[3].Items[0].Title = userID
 
-		// one assigned task for inc02, works cross team
+		// one assigned task for inc02, works cross team, with overdue update
 		inc02 := *NewBuilder(nil).
 			WithName("inc02 - this is the playbook name for channel 02").
 			WithChannel(&channel02).
 			WithTeamID(team2.Id).
+			WithUpdateOverdueBy(1 * time.Minute).
+			WithOwnerUserID(userID).
 			WithChecklists([]int{1, 2, 3, 4}).
 			ToPlaybookRun()
 		inc02.Checklists[3].Items[2].AssigneeID = userID
 		inc02TaskTitles := []string{inc02.Checklists[3].Items[2].Title}
 
-		// no assigned task for inc03
+		// no assigned task for inc03, with non-overdue update
 		inc03 := *NewBuilder(nil).
 			WithName("inc03 - this is the playbook name for channel 03").
 			WithChannel(&channel03).
 			WithTeamID(team1.Id).
+			WithUpdateOverdueBy(-2 * time.Minute).
+			WithOwnerUserID(userID).
 			WithChecklists([]int{1, 2, 3, 4}).
 			ToPlaybookRun()
 		inc03.Checklists[3].Items[2].AssigneeID = "someotheruserid"
 
-		// one assigned task for inc04, but inc04 is finished
+		// one assigned task for inc04, with overdue update, but inc04 is finished
 		inc04 := *NewBuilder(nil).
 			WithName("inc04 - this is the playbook name for channel 04").
 			WithChannel(&channel04).
 			WithTeamID(team1.Id).
 			WithChecklists([]int{1, 2, 3, 4}).
+			WithUpdateOverdueBy(2 * time.Minute).
+			WithOwnerUserID(userID).
 			WithCurrentStatus(app.StatusFinished).
 			ToPlaybookRun()
 		inc04.Checklists[3].Items[2].AssigneeID = userID
@@ -2033,6 +2041,29 @@ func TestTasksAndRunsDiges(t *testing.T) {
 				channel01.Name: 1,
 				channel02.Name: 1,
 				channel03.Name: 1,
+			}
+
+			actual := make(map[string]int)
+
+			for _, run := range runs {
+				actual[run.ChannelName]++
+			}
+
+			require.Equal(t, expected, actual)
+		})
+
+		t.Run("gets overdue updates", func(t *testing.T) {
+			runs, err := playbookRunStore.GetOverdueUpdateRuns(userID)
+			require.NoError(t, err)
+
+			total := len(runs)
+
+			require.Equal(t, 2, total)
+
+			// don't make assumptions about ordering until we figure that out PM-side
+			expected := map[string]int{
+				channel01.Name: 1,
+				channel02.Name: 1,
 			}
 
 			actual := make(map[string]int)
@@ -2177,6 +2208,18 @@ func (ib *PlaybookRunBuilder) WithChannel(channel *model.Channel) *PlaybookRunBu
 
 func (ib *PlaybookRunBuilder) WithPlaybookID(id string) *PlaybookRunBuilder {
 	ib.playbookRun.PlaybookID = id
+
+	return ib
+}
+
+// WithUpdateOverdueBy sets a PreviousReminder and LastStatusUpdate such that there is an update
+// due overdueAmount ago. Set a negative number for an update due in the future.
+func (ib *PlaybookRunBuilder) WithUpdateOverdueBy(overdueAmount time.Duration) *PlaybookRunBuilder {
+	// simplify the math: set previous reminder to be the overdue amount
+	ib.playbookRun.PreviousReminder = overdueAmount
+
+	// and the lastStatusUpdateAt to be twice as much before that
+	ib.playbookRun.LastStatusUpdateAt = time.Now().Add(-2*overdueAmount).Unix() * 1000
 
 	return ib
 }

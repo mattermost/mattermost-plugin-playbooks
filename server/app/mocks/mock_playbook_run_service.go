@@ -207,6 +207,21 @@ func (mr *MockPlaybookRunServiceMockRecorder) GetChecklistItemAutocomplete(arg0 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChecklistItemAutocomplete", reflect.TypeOf((*MockPlaybookRunService)(nil).GetChecklistItemAutocomplete), arg0)
 }
 
+// GetOverdueUpdateRuns mocks base method
+func (m *MockPlaybookRunService) GetOverdueUpdateRuns(arg0 string) ([]app.RunLink, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOverdueUpdateRuns", arg0)
+	ret0, _ := ret[0].([]app.RunLink)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOverdueUpdateRuns indicates an expected call of GetOverdueUpdateRuns
+func (mr *MockPlaybookRunServiceMockRecorder) GetOverdueUpdateRuns(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOverdueUpdateRuns", reflect.TypeOf((*MockPlaybookRunService)(nil).GetOverdueUpdateRuns), arg0)
+}
+
 // GetOwners mocks base method
 func (m *MockPlaybookRunService) GetOwners(arg0 app.RequesterInfo, arg1 app.PlaybookRunFilterOptions) ([]app.OwnerInfo, error) {
 	m.ctrl.T.Helper()

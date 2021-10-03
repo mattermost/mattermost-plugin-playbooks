@@ -940,6 +940,7 @@ func (s *playbookRunStore) GetAssignedTasks(userID string) ([]app.AssignedRun, e
 		Join("Teams AS t ON (i.TeamID = t.Id)").
 		Join("Channels AS c ON (i.ChannelID = c.Id)").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress})
+
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
 		query = query.Where(sq.Like{"i.ChecklistsJSON": fmt.Sprintf("%%\"%s\"%%", userID)})
 	} else {
@@ -997,9 +998,35 @@ func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, e
 			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName").
 		From("IR_Incident AS i").
 		Join("Teams AS t ON (i.TeamID = t.Id)").
-		Join("Channels AS c ON (c.Id = i.ChannelId)").
+		Join("Channels AS c ON (i.ChannelId = c.Id)").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		Where(membershipClause)
+
+	var ret []app.RunLink
+	if err := s.store.selectBuilder(s.store.db, &ret, query); err != nil {
+		return nil, errors.Wrap(err, "failed to query for active runs")
+	}
+
+	return ret, nil
+}
+
+// GetOverdueUpdateRuns returns the list of userID's runs that have overdue updates
+func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, error) {
+	query := s.store.builder.
+		Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
+			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName").
+		From("IR_Incident AS i").
+		Join("Teams AS t ON (i.TeamID = t.Id)").
+		Join("Channels AS c ON (i.ChannelId = c.Id)").
+		Where(sq.Eq{"i.CommanderUserID": userID}).
+		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
+		Where(sq.NotEq{"i.PreviousReminder": 0})
+
+	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP(CURTIME(4)) * 1000)"))
+	} else {
+		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
+	}
 
 	var ret []app.RunLink
 	if err := s.store.selectBuilder(s.store.db, &ret, query); err != nil {
