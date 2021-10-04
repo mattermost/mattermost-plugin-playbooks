@@ -4,7 +4,6 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import './profile_button.scss';
 import Profile from 'src/components/profile/profile';
 
 interface Props {
