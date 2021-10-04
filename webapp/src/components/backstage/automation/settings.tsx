@@ -112,8 +112,10 @@ export const AutomationSettings = (props: Props) => {
                         maxLength={1000}
                         rows={3}
                         placeholderText={'Enter webhook'}
-                        textOnToggle={'Send outgoing webhook (One Per Line)'}
+                        textOnToggle={'Send outgoing webhook (One per line)'}
                         errorText={'Invalid webhook URLs'}
+                        maxRows={64}
+                        maxErrorText={'Invalid webhooks, limit to less than 64'}
                     />
                 </Setting>
             </Section>
@@ -140,8 +142,10 @@ export const AutomationSettings = (props: Props) => {
                         maxLength={1000}
                         rows={3}
                         placeholderText={'Enter webhook'}
-                        textOnToggle={'Send outgoing webhook'}
+                        textOnToggle={'Send outgoing webhook (One per line)'}
                         errorText={'Invalid webhook URLs'}
+                        maxRows={64}
+                        maxErrorText={'Invalid webhooks, limit to less than 64'}
                     />
                 </Setting>
             </Section>

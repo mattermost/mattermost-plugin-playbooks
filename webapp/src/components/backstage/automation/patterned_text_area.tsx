@@ -20,19 +20,33 @@ interface Props {
     onChange: (updatedInput: string) => void;
     maxLength?: number;
     rows?: number;
+    maxRows?: number;
+    maxErrorText?: string;
 }
 
 export const PatternedTextArea: FC<Props> = (props: Props) => {
     const [invalid, setInvalid] = useState<boolean>(false);
+    const [errorText, setErrorText] = useState<string>(props.errorText);
     const handleOnBlur = (urls: string) => {
         if (!props.enabled) {
             setInvalid(false);
             return;
         }
-        if (!isPatternValid(urls, props.pattern, props.delimiter)) {
+
+        if (props.maxRows && urls.length > props.maxRows) {
             setInvalid(true);
+            if (props.maxErrorText) {
+                setErrorText(props.maxErrorText);
+            }
             return;
         }
+
+        if (!isPatternValid(urls, props.pattern, props.delimiter)) {
+            setInvalid(true);
+            setErrorText(props.errorText);
+            return;
+        }
+
         setInvalid(false);
     };
 
@@ -58,7 +72,7 @@ export const PatternedTextArea: FC<Props> = (props: Props) => {
                     invalid={invalid}
                 />
                 <ErrorMessage>
-                    {props.errorText}
+                    {errorText}
                 </ErrorMessage>
             </SelectorWrapper>
         </AutomationHeader>
@@ -102,15 +116,12 @@ const TextArea = styled.textarea<TextAreaProps>`
     padding-right: 16px;
     resize: ${(props) => !props.enabled && 'none'};
 
-
     ${(props) => props.invalid && props.enabled && props.value && css`
         :not(:focus) {
             box-shadow: inset 0 0 0 1px var(--error-text);
-
             & + ${ErrorMessage} {
                 display: inline-block;
             }
         }
     `}
 `;
-
