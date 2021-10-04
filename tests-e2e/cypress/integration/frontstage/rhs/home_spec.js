@@ -1,3 +1,11 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+// ***************************************************************
+// - [#] indicates a test step (e.g. # Go to a page)
+// - [*] indicates an assertion (e.g. * Check the title)
+// ***************************************************************
+
 describe('playbook run rhs > home', () => {
     let testTeam;
     let testUser;
@@ -26,7 +34,7 @@ describe('playbook run rhs > home', () => {
                 teamId: testTeam.id,
                 title: 'Team Playbook',
                 memberIDs: [],
-            })
+            });
 
             // # Navigate to the application
             cy.visit(`/${testTeam.name}/`);
@@ -37,15 +45,14 @@ describe('playbook run rhs > home', () => {
             });
 
             // * Verify the playbook is shown
-            cy.findByText('Team Playbook').should('exist')
+            cy.findByText('Team Playbook').should('exist');
         });
-        
         it('starter templates', () => {
-            // # templates are defined in `webapp/src/components/backstage/template_selector.tsx`
+            // templates are defined in `webapp/src/components/backstage/template_selector.tsx`
             const templateNames = [
-                'Blank', 
-                'Product Release', 
-                'Customer Onboarding', 
+                'Blank',
+                'Product Release',
+                'Customer Onboarding',
                 'Service Reliability Incident'
             ];
 
