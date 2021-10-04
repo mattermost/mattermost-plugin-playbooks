@@ -29,7 +29,7 @@ const RHSRunDetails = () => {
         }
         searchParams.delete('telem');
         url.search = searchParams.toString();
-        browserHistory.push({pathname: url.pathname, search: url.search});
+        browserHistory.replace({pathname: url.pathname, search: url.search});
     }
 
     if (!playbookRun) {
