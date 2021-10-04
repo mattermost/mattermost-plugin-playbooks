@@ -1262,8 +1262,8 @@ var migrations = []Migration{
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_UserInfo
 					(
-						ID       VARCHAR(26) PRIMARY KEY,
-						LastDMAt BIGINT
+						ID                VARCHAR(26) PRIMARY KEY,
+						LastDailyTodoDMAt BIGINT
 					)
 				` + MySQLCharset); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_UserInfo")
@@ -1272,8 +1272,8 @@ var migrations = []Migration{
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_UserInfo
 					(
-						ID       TEXT PRIMARY KEY,
-						LastDMAt BIGINT
+						ID                TEXT PRIMARY KEY,
+						LastDailyTodoDMAt BIGINT
 					)
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_UserInfo")

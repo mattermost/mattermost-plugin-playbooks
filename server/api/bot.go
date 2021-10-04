@@ -23,18 +23,18 @@ type BotHandler struct {
 	poster             bot.Poster
 	config             config.Service
 	playbookRunService app.PlaybookRunService
-	userInfoService    app.UserInfoService
+	userInfoStore      app.UserInfoStore
 }
 
 func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster, logger bot.Logger,
-	config config.Service, playbookRunService app.PlaybookRunService, userInfoService app.UserInfoService) *BotHandler {
+	config config.Service, playbookRunService app.PlaybookRunService, userInfoStore app.UserInfoStore) *BotHandler {
 	handler := &BotHandler{
 		ErrorHandler:       &ErrorHandler{log: logger},
 		pluginAPI:          api,
 		poster:             poster,
 		config:             config,
 		playbookRunService: playbookRunService,
-		userInfoService:    userInfoService,
+		userInfoStore:      userInfoStore,
 	}
 
 	botRouter := router.PathPrefix("/bot").Subrouter()
@@ -167,7 +167,7 @@ func (h *BotHandler) promptForFeedback(w http.ResponseWriter, r *http.Request) {
 func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	info, err := h.userInfoService.Get(userID)
+	info, err := h.userInfoStore.Get(userID)
 	if errors.Is(err, app.ErrNotFound) {
 		info = app.UserInfo{
 			ID: userID,
@@ -185,12 +185,12 @@ func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request) {
 	// Hat tip to Github plugin for the logic.
 	now := model.GetMillis()
 	nt := time.Unix(now/1000, 0).In(timezone)
-	lt := time.Unix(info.LastDMAt/1000, 0).In(timezone)
+	lt := time.Unix(info.LastDailyTodoDMAt/1000, 0).In(timezone)
 	if nt.Sub(lt).Hours() >= 1 && (nt.Day() != lt.Day() || nt.Month() != lt.Month() || nt.Year() != lt.Year()) {
 		// record that we're sending a DM now (this will prevent us trying over and over on every
 		// response if there's a failure later)
-		info.LastDMAt = now
-		if err = h.userInfoService.Upsert(info); err != nil {
+		info.LastDailyTodoDMAt = now
+		if err = h.userInfoStore.Upsert(info); err != nil {
 			h.HandleError(w, err)
 			return
 		}

@@ -4,16 +4,8 @@
 package app
 
 type UserInfo struct {
-	ID       string `json:"id"`
-	LastDMAt int64  `json:"last_dm_at"`
-}
-
-type UserInfoService interface {
-	// Get retrieves a UserInfo struct by the user's userID.
-	Get(userID string) (UserInfo, error)
-
-	// Upsert inserts (creates) or updates the UserInfo struct.
-	Upsert(UserInfo) error
+	ID                string
+	LastDailyTodoDMAt int64
 }
 
 type UserInfoStore interface {

@@ -26,8 +26,8 @@ func Test_userInfoStore_Get(t *testing.T) {
 
 		t.Run("gets existing userInfo correctly", func(t *testing.T) {
 			expected := app.UserInfo{
-				ID:       model.NewId(),
-				LastDMAt: 12345678,
+				ID:                model.NewId(),
+				LastDailyTodoDMAt: 12345678,
 			}
 			err := userInfoStore.Upsert(expected)
 			require.NoError(t, err)
@@ -71,8 +71,8 @@ func Test_userInfoStore_Upsert(t *testing.T) {
 
 			// insert:
 			expected = app.UserInfo{
-				ID:       userID,
-				LastDMAt: 12345678,
+				ID:                userID,
+				LastDailyTodoDMAt: 12345678,
 			}
 
 			err = userInfoStore.Upsert(expected)
@@ -88,8 +88,8 @@ func Test_userInfoStore_Upsert(t *testing.T) {
 
 		t.Run("upserts userInfo correctly", func(t *testing.T) {
 			expected := app.UserInfo{
-				ID:       model.NewId(),
-				LastDMAt: 12345678,
+				ID:                model.NewId(),
+				LastDailyTodoDMAt: 12345678,
 			}
 
 			// insert:
@@ -104,7 +104,7 @@ func Test_userInfoStore_Upsert(t *testing.T) {
 			}
 
 			// update:
-			expected.LastDMAt = 48102939451
+			expected.LastDailyTodoDMAt = 48102939451
 			err = userInfoStore.Upsert(expected)
 			require.NoError(t, err)
 

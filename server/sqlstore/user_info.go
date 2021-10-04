@@ -24,7 +24,7 @@ var _ app.UserInfoStore = (*userInfoStore)(nil)
 
 func NewUserInfoStore(sqlStore *SQLStore) app.UserInfoStore {
 	userInfoSelect := sqlStore.builder.
-		Select("ID", "LastDMAt").
+		Select("ID", "LastDailyTodoDMAt").
 		From("IR_UserInfo")
 
 	newStore := &userInfoStore{
@@ -58,16 +58,16 @@ func (s *userInfoStore) Upsert(info app.UserInfo) error {
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
 		_, err = s.store.execBuilder(s.store.db,
 			sq.Insert("IR_UserInfo").
-				Columns("ID", "LastDMAt").
-				Values(info.ID, info.LastDMAt).
-				Suffix("ON DUPLICATE KEY UPDATE LastDMAt = ?", info.LastDMAt))
+				Columns("ID", "LastDailyTodoDMAt").
+				Values(info.ID, info.LastDailyTodoDMAt).
+				Suffix("ON DUPLICATE KEY UPDATE LastDailyTodoDMAt = ?", info.LastDailyTodoDMAt))
 
 	} else {
 		_, err = s.store.execBuilder(s.store.db,
 			sq.Insert("IR_UserInfo").
-				Columns("ID", "LastDMAt").
-				Values(info.ID, info.LastDMAt).
-				Suffix("ON CONFLICT (ID) DO UPDATE SET LastDMAt = ?", info.LastDMAt))
+				Columns("ID", "LastDailyTodoDMAt").
+				Values(info.ID, info.LastDailyTodoDMAt).
+				Suffix("ON CONFLICT (ID) DO UPDATE SET LastDailyTodoDMAt = ?", info.LastDailyTodoDMAt))
 	}
 
 	if err != nil {
