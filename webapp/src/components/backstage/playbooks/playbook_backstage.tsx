@@ -64,7 +64,7 @@ const PlaybookBackstage = () => {
     const match = useRouteMatch<MatchParams>();
     const location = useLocation();
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
-    const [filterPill, setFilterPill] = useState<ReactNode | null>(null);
+    const [filterPill, setFilterPill] = useState<ReactNode>(null);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [stats, setStats] = useState(EmptyPlaybookStats);
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
