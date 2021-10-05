@@ -16,7 +16,6 @@ import TemplateSelector, {isPlaybookCreationAllowed, PresetTemplate} from 'src/c
 import {telemetryEventForTemplate} from 'src/client';
 
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
-import './playbook.scss';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
 import {BACKSTAGE_LIST_PER_PAGE, AdminNotificationType} from 'src/constants';
