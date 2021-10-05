@@ -110,7 +110,7 @@ Cypress.Commands.add('apiUpdateStatus', (
     {
         playbookRunId,
         message,
-        reminder = '300',
+        reminder = 300,
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
