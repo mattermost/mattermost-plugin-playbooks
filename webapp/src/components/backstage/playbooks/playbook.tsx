@@ -15,7 +15,7 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
-import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
+import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
 import {clientFetchPlaybook, telemetryEventForPlaybook} from 'src/client';
@@ -142,7 +142,7 @@ const Playbook = () => {
                     </PrimaryButtonLarger>
                 </TitleRow>
             </TopContainer>
-            {(!experimentalFeaturesEnabled && <PlaybookBackstage playbook={playbook}/>) ||
+            {(!experimentalFeaturesEnabled && <PlaybookUsage playbook={playbook}/>) ||
                 <>
                     <Navbar>
                         <NavItem
@@ -169,7 +169,7 @@ const Playbook = () => {
                             <h4>{'Site under construction'}</h4>
                         </Route>
                         <Route path={`${match.path}/usage`}>
-                            <PlaybookBackstage playbook={playbook}/>
+                            <PlaybookUsage playbook={playbook}/>
                         </Route>
                     </Switch>
                 </>

@@ -31,7 +31,7 @@ interface Props {
     playbook: PlaybookWithChecklist;
 }
 
-const PlaybookBackstage = (props: Props) => {
+const PlaybookUsage = (props: Props) => {
     const [filterPill, setFilterPill] = useState<JSX.Element | null>(null);
     const [stats, setStats] = useState(EmptyPlaybookStats);
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
@@ -108,4 +108,4 @@ const BottomInnerContainer = styled.div`
     }
 `;
 
-export default PlaybookBackstage;
+export default PlaybookUsage;
