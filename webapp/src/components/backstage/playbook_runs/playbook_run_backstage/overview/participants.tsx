@@ -23,6 +23,8 @@ import {
 import {useEnsureProfiles} from 'src/hooks';
 import {navigateToUrl} from 'src/browser_routing';
 
+import {useIntl} from 'react-intl';
+
 const StyledContent = styled(Content)`
     padding: 8px 20px 24px 24px;
 `;
@@ -52,19 +54,21 @@ const Participants = (
     const profilesExceptTwoMains = participant_ids
         .filter((id) => id !== playbookRun.owner_user_id && id !== playbookRun.reporter_user_id);
 
+    const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbookRun.team_id));
 
     return (
         <TabPageContainer>
-            <Title>{`Participants (${participant_ids.length})`}</Title>
+            {/* Should this be of type Plural? */}
+            <Title>{formatMessage({defaultMessage:'Participants ({participants})'},{participants:participant_ids.length})}{`Participants (${participant_ids.length})`}</Title>
             <StyledContent>
-                <Heading>{'Owner'}</Heading>
+                <Heading>{formatMessage({defaultMessage: 'Owner'})}</Heading>
                 <Participant
                     userId={playbookRun.owner_user_id}
                     isOwner={true}
                     teamName={team.name}
                 />
-                <Heading>{'Reporter'}</Heading>
+                <Heading>{formatMessage({defaultMessage: 'Reporter'})}</Heading>
                 <Participant
                     userId={playbookRun.reporter_user_id}
                     teamName={team.name}
@@ -72,7 +76,7 @@ const Participants = (
                 {
                     profilesExceptTwoMains.length > 0 &&
                     <>
-                        <Heading>{'Channel members'}</Heading>
+                        <Heading>{formatMessage({defaultMessage: 'Channel members'})}</Heading>
                         {profilesExceptTwoMains.map((id) => (
                             <Participant
                                 key={id}
@@ -98,6 +102,7 @@ interface ParticipantProps {
 function Participant({userId, teamName, isOwner}: ParticipantProps) {
     const [showMessage, setShowMessage] = useState(Boolean(isOwner));
     const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userId));
+    const {formatMessage} = useIntl();
 
     return (
         <ParticipantRow
@@ -109,7 +114,7 @@ function Participant({userId, teamName, isOwner}: ParticipantProps) {
                 <SecondaryButtonRight
                     onClick={() => navigateToUrl(`/${teamName}/messages/@${user.username}`)}
                 >
-                    {'Message'}
+                    {formatMessage({defaultMessage: 'Message'})}
                 </SecondaryButtonRight>
             )}
         </ParticipantRow>

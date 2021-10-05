@@ -20,6 +20,8 @@ import {
 import PostCard from 'src/components/rhs/post_card';
 import {usePost} from 'src/hooks';
 
+import {useIntl} from 'react-intl';
+
 const StyledContent = styled(Content)`
     padding: 24px;
 `;
@@ -30,10 +32,11 @@ interface Props {
 
 const Updates = (props: Props) => {
     const statusPosts = props.playbookRun.status_posts.sort((a, b) => b.create_at - a.create_at);
+    const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
     let updates: ReactNode =
-        <EmptyBody>{'There are no updates available.'}</EmptyBody>;
+        <EmptyBody>{formatMessage({defaultMessage:'There are no updates available.'})}</EmptyBody>;
     if (statusPosts.length) {
         updates = statusPosts.reduce((result, sp) => {
             if (sp.delete_at === 0) {
@@ -55,7 +58,7 @@ const Updates = (props: Props) => {
 
     return (
         <TabPageContainer data-testid='updates'>
-            <Title>{'Updates'}</Title>
+            <Title>{formatMessage({defaultMessage:'Updates'})}</Title>
             {updates}
         </TabPageContainer>
     );

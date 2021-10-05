@@ -19,6 +19,8 @@ import {Banner} from 'src/components/backstage/styles';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 
+import {useIntl} from 'react-intl';
+
 interface ExportLinkProps {
     playbookRun: PlaybookRun
 }
@@ -48,6 +50,7 @@ const ExportLink = (props: ExportLinkProps) => {
     //@ts-ignore plugins state is a thing
     const exportAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
     const allowChannelExport = useAllowChannelExport();
+    const {formatMessage} = useIntl();
     const [showModal, setShowModal] = useState(false);
 
     const [showBanner, setShowBanner] = useState(false);
@@ -68,14 +71,14 @@ const ExportLink = (props: ExportLinkProps) => {
     const downloadStartedBanner = showBanner && (
         <Banner>
             <i className='icon icon-download-outline mr-1'/>
-            {'Downloading channel log'}
+            {formatMessage({defaultMessage:'Downloading channel log'})}
         </Banner>
     );
 
     const linkText = (
         <>
             <i className='icon icon-download-outline export-icon'/>
-            {'Export channel log'}
+            {formatMessage({defaultMessage:'Export channel log'})}
         </>
     );
 
@@ -94,14 +97,14 @@ const ExportLink = (props: ExportLinkProps) => {
 
     let tooltip = (
         <Tooltip id='export'>
-            {'Download a CSV containing all messages from the channel'}
+            {formatMessage({defaultMessage:'Download a CSV containing all messages from the channel'})}
         </Tooltip>
     );
 
     if (!exportAvailable) {
         tooltip = (
             <Tooltip id='exportUnavailable'>
-                {'Install and enable the Channel Export plugin to support exporting the channel'}
+                {formatMessage({defaultMessage:'Install and enable the Channel Export plugin to support exporting the channel'})}
             </Tooltip>
         );
     }

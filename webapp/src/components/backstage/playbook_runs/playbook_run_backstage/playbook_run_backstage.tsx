@@ -34,6 +34,8 @@ import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import ExportLink from '../playbook_run_details/export_link';
 
+import {useIntl} from 'react-intl';
+
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
     display: flex;
@@ -172,6 +174,7 @@ const PlaybookRunBackstage = () => {
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const channel = useSelector<GlobalState, Channel | null>((state) => (playbookRun ? getChannel(state, playbookRun.channel_id) : null));
+    const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
@@ -255,8 +258,9 @@ const PlaybookRunBackstage = () => {
                     <Badge status={playbookRun.current_status}/>
                     <SecondaryButtonLargerRight onClick={goToChannel}>
                         <i className={'icon ' + channelIcon}/>
-                        {'Go to channel'}
+                        {formatMessage({defaultMessage: 'Go to channel'})}
                     </SecondaryButtonLargerRight>
+                    {/* Need to Translate the ExportLink Button ../playbook_run_details  */}
                     <ExportLink playbookRun={playbookRun}/>
                 </FirstRow>
                 <SecondRow>
@@ -264,13 +268,13 @@ const PlaybookRunBackstage = () => {
                         to={`${match.url}/overview`}
                         activeClassName={'active'}
                     >
-                        {'Overview'}
+                        {formatMessage({defaultMessage: 'Overview'})}
                     </TabItem>
                     <TabItem
                         to={`${match.url}/retrospective`}
                         activeClassName={'active'}
                     >
-                        {'Retrospective'}
+                        {formatMessage({defaultMessage: 'Retrospective'})}
                         {!allowRetrospectiveAccess && <PositionedUpgradeBadge/>}
                     </TabItem>
                 </SecondRow>

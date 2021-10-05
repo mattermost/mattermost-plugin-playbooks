@@ -21,6 +21,8 @@ import {publishRetrospective, updateRetrospective} from 'src/client';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import PostText from 'src/components/post_text';
 
+import {useIntl} from 'react-intl';
+
 const Header = styled.div`
     display: flex;
     align-items: center;
@@ -73,6 +75,7 @@ const Report = (props: ReportProps) => {
     const [report, setReport] = useState(props.playbookRun.retrospective);
     const [editing, setEditing] = useState(false);
     const [publishedThisSession, setPublishedThisSession] = useState(false);
+    const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
     const savePressed = () => {
@@ -91,17 +94,17 @@ const Report = (props: ReportProps) => {
         publishButtonText = (
             <>
                 <i className={'icon icon-check'}/>
-                {'Published'}
+                {formatMessage({defaultMessage:'Published'})}
             </>
         );
     } else if (props.playbookRun.retrospective_published_at && !props.playbookRun.retrospective_was_canceled) {
-        publishButtonText = 'Republish';
+        publishButtonText = formatMessage({defaultMessage:'Republish'});
     }
 
     return (
         <ReportContainer>
             <Header>
-                <Title>{'Report'}</Title>
+                <Title>{formatMessage({defaultMessage:'Report'})}</Title>
                 <HeaderButtonsRight>
                     <CustomPrimaryButton
                         onClick={publishPressed}
@@ -149,6 +152,7 @@ const TextContainer = styled.span`
 `;
 
 const EditButton = (props: SaveButtonProps) => {
+    const {formatMessage} = useIntl();
     if (props.editing) {
         return (
             <SecondaryButtonSmaller
@@ -156,7 +160,7 @@ const EditButton = (props: SaveButtonProps) => {
             >
                 <TextContainer>
                     <i className={'fa fa-floppy-o'}/>
-                    {'Save'}
+                    {formatMessage({defaultMessage:'Save'})}
                 </TextContainer>
             </SecondaryButtonSmaller>
         );
@@ -168,7 +172,7 @@ const EditButton = (props: SaveButtonProps) => {
         >
             <TextContainer>
                 <i className={'icon icon-pencil-outline'}/>
-                {'Edit'}
+                {formatMessage({defaultMessage:'Edit'})}
             </TextContainer>
         </SecondaryButtonSmaller>
     );

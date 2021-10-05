@@ -17,6 +17,8 @@ import {TimelineEvent} from 'src/types/rhs';
 import TimelineEventItem from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/timeline_event_item';
 import {ChannelNamesMap} from 'src/types/backstage';
 
+import {useIntl} from 'react-intl';
+
 const TimelineLine = styled.ul`
     margin: 24px 0;
     padding: 0;
@@ -48,12 +50,13 @@ interface Props {
 
 const Timeline = (props: Props) => {
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
     if (props.playbookRun.timeline_events.length === 0) {
         return (
             <NoEventsNotice>
-                {'Timeline events are displayed here as they occur. Hover over an event to remove it.'}
+                {formatMessage({defaultMessage:'Timeline events are displayed here as they occur. Hover over an event to remove it.'})}
             </NoEventsNotice>
         );
     }
@@ -61,7 +64,7 @@ const Timeline = (props: Props) => {
     if (props.filteredEvents.length === 0) {
         return (
             <NoEventsNotice>
-                {'There are no Timeline events matching those filters.'}
+                {formatMessage({defaultMessage:'There are no Timeline events matching those filters.'})}
             </NoEventsNotice>
         );
     }

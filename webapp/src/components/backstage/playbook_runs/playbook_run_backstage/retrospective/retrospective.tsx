@@ -14,6 +14,8 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import Report from './report';
 import TimelineRetro from './timeline_retro';
 
+import {useIntl} from 'react-intl';
+
 interface Props {
     playbookRun: PlaybookRun;
     deleteTimelineEvent: (id: string) => void;
@@ -21,13 +23,14 @@ interface Props {
 
 export const Retrospective = (props: Props) => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
+    const {formatMessage} = useIntl();
 
     if (!allowRetrospectiveAccess) {
         return (
             <UpgradeBanner
                 background={<UpgradeRetrospectiveSvg/>}
-                titleText={'Publish retrospective report and access the timeline'}
-                helpText={'Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes.'}
+                titleText={formatMessage({defaultMessage:'Publish retrospective report and access the timeline'})}
+                helpText={formatMessage({defaultMessage:'Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes.'})}
                 notificationType={AdminNotificationType.RETROSPECTIVE}
                 verticalAdjustment={650}
             />

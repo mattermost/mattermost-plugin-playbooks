@@ -6,6 +6,8 @@ import styled, {css} from 'styled-components';
 
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
+import {useIntl} from 'react-intl'
+
 interface BadgeProps {
     status: PlaybookRunStatus;
     compact?: boolean;
@@ -51,10 +53,11 @@ const Badge = styled.div<BadgeProps>`
     `}
 `;
 
-const StatusBadge = (props: BadgeProps) => (
-    <Badge {...props}>
-        {props.status === PlaybookRunStatus.InProgress ? 'In Progress' : props.status}
+const StatusBadge = (props: BadgeProps) => {
+    const {formatMessage} = useIntl();
+    return <Badge {...props}>
+        {props.status === PlaybookRunStatus.InProgress ? formatMessage({defaultMessage:'In Progress'}) : props.status}
     </Badge>
-);
+};
 
 export default StatusBadge;
