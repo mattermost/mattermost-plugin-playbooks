@@ -39,15 +39,19 @@ const FakeButton = styled.div`
     font-size: 12px;
     transition: all 0.15s ease-out;
     margin-left: auto;
+
     &:hover {
         background: rgba(var(--button-bg-rgb), 0.08);
     }
+
     &:active  {
         background: rgba(var(--button-bg-rgb), 0.16);
     }
+
     i {
         display: flex;
         font-size: 18px;
+
         &:before {
             margin: 0 7px 0 0;
         }

@@ -22,6 +22,7 @@ const TimelineLine = styled.ul`
     padding: 0;
     list-style: none;
     position: relative;
+
     :before {
         content: '';
         position: absolute;

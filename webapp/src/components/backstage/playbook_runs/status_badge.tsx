@@ -19,7 +19,9 @@ const Badge = styled.div<BadgeProps>`
     padding: 0 8px;
     font-weight: 600;
     margin: 2px;
+
     color: var(--sidebar-text);
+
     ${(props) => {
         switch (props.status) {
         case PlaybookRunStatus.InProgress:
@@ -37,9 +39,12 @@ const Badge = styled.div<BadgeProps>`
         `;
         }
     }}
+
+
     top: 1px;
     height: 24px;
     line-height: 24px;
+
     ${(props) => props.compact && css`
         line-height: 20px;
         height: 20px;

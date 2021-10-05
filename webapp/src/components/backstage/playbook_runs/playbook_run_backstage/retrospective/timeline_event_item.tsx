@@ -26,6 +26,7 @@ const Circle = styled.div`
     background: #EFF1F5;
     border-radius: 50%;
     left: 86px;
+
     > .icon {
         font-size: 14px;
         margin: 5px 0 0 2px;
@@ -66,6 +67,7 @@ const SummaryContainer = styled.div`
 const SummaryTitle = styled.div<{deleted: boolean}>`
     font-size: 12px;
     font-weight: 600;
+
     ${({deleted}) => (deleted ? css`
         text-decoration: line-through;
     ` : css`
@@ -73,6 +75,7 @@ const SummaryTitle = styled.div<{deleted: boolean}>`
             cursor: pointer;
         }
     `)}
+
 `;
 
 const SummaryDeleted = styled.span`
