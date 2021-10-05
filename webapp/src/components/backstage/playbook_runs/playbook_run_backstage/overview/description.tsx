@@ -7,10 +7,9 @@ import {useSelector} from 'react-redux';
 import {Team} from 'mattermost-redux/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
+import {useIntl} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
-import {useIntl} from 'react-intl';
 
 import {
     Content,

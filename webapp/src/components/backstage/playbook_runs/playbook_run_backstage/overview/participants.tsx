@@ -4,6 +4,7 @@
 import React, {useState} from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
@@ -22,8 +23,6 @@ import {
 } from 'src/components/backstage/playbook_runs/shared';
 import {useEnsureProfiles} from 'src/hooks';
 import {navigateToUrl} from 'src/browser_routing';
-
-import {useIntl} from 'react-intl';
 
 const StyledContent = styled(Content)`
     padding: 8px 20px 24px 24px;
@@ -60,7 +59,7 @@ const Participants = (
     return (
         <TabPageContainer>
             {/* Should this be of type Plural? */}
-            <Title>{formatMessage({defaultMessage:'Participants ({participants})'},{participants:participant_ids.length})}{`Participants (${participant_ids.length})`}</Title>
+            <Title>{formatMessage({defaultMessage: 'Participants ({participants})'}, {participants: participant_ids.length})}{`Participants (${participant_ids.length})`}</Title>
             <StyledContent>
                 <Heading>{formatMessage({defaultMessage: 'Owner'})}</Heading>
                 <Participant

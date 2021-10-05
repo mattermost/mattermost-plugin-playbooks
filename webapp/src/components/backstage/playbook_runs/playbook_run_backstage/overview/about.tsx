@@ -3,6 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
+import {useIntl} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -10,8 +11,6 @@ import {Content, TabPageContainer, Title} from 'src/components/backstage/playboo
 
 import Profile from 'src/components/profile/profile';
 import FormattedDuration from 'src/components/formatted_duration';
-
-import {useIntl} from 'react-intl';
 
 const StyledContent = styled(Content)`
     padding: 24px;

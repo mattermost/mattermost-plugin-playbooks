@@ -5,6 +5,7 @@ import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
+import {useIntl} from 'react-intl';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Channel} from 'mattermost-redux/types/channels';
@@ -33,8 +34,6 @@ import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import ExportLink from '../playbook_run_details/export_link';
-
-import {useIntl} from 'react-intl';
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
