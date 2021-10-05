@@ -18,8 +18,6 @@ import {formatDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
-import {useIntl} from 'react-intl';
-
 const Circle = styled.div`
     position: absolute;
     width: 24px;
@@ -28,7 +26,6 @@ const Circle = styled.div`
     background: #EFF1F5;
     border-radius: 50%;
     left: 86px;
-
     > .icon {
         font-size: 14px;
         margin: 5px 0 0 2px;
@@ -69,7 +66,6 @@ const SummaryContainer = styled.div`
 const SummaryTitle = styled.div<{deleted: boolean}>`
     font-size: 12px;
     font-weight: 600;
-
     ${({deleted}) => (deleted ? css`
         text-decoration: line-through;
     ` : css`
@@ -77,7 +73,6 @@ const SummaryTitle = styled.div<{deleted: boolean}>`
             cursor: pointer;
         }
     `)}
-
 `;
 
 const SummaryDeleted = styled.span`
@@ -126,8 +121,6 @@ const TimelineEventItem = (props: Props) => {
         }
     };
 
-    const {formatMessage} = useIntl();
-
     let iconClass = '';
     let summaryTitle = '';
     let summary = '';
@@ -142,27 +135,27 @@ const TimelineEventItem = (props: Props) => {
     switch (props.event.event_type) {
     case TimelineEventType.RunCreated:
         iconClass = 'icon icon-shield-alert-outline';
-        summaryTitle = formatMessage({defaultMessage:'Run started by {display_name}'},{display_name:props.event.subject_display_name});
+        summaryTitle = 'Run started by ' + props.event.subject_display_name;
         timeSince = null;
         testid = TimelineEventType.RunCreated;
         break;
     case TimelineEventType.RunFinished:
         iconClass = 'icon icon-shield-alert-outline';
-        summaryTitle = formatMessage({defaultMessage:'Run finished by {display_name}'},{display_name:props.event.subject_display_name});
+        summaryTitle = 'Run finished by ' + props.event.subject_display_name;
         testid = TimelineEventType.RunFinished;
         break;
     case TimelineEventType.StatusUpdated:
         iconClass = 'icon icon-flag-outline';
         if (props.event.summary === '') {
-            summaryTitle = formatMessage({defaultMessage:'{display_name} posted a status update'},{display_name:props.event.subject_display_name});
+            summaryTitle = props.event.subject_display_name + ' posted a status update';
         } else {
-            summaryTitle = formatMessage({defaultMessage:'{dispay_name} changed status from {summary}'},{display_name:props.event.subject_display_name,summary:props.event.summary});
+            summaryTitle = props.event.subject_display_name + ' changed status from ' + props.event.summary;
         }
         testid = TimelineEventType.StatusUpdated;
         break;
     case TimelineEventType.OwnerChanged:
         iconClass = 'icon icon-pencil-outline';
-        summaryTitle = formatMessage({defaultMessage:'Owner changed from {summary}'},{summary:props.event.summary});
+        summaryTitle = 'Owner changed from ' + props.event.summary;
         testid = TimelineEventType.OwnerChanged;
         break;
     case TimelineEventType.TaskStateModified:
@@ -173,13 +166,13 @@ const TimelineEventItem = (props: Props) => {
         break;
     case TimelineEventType.AssigneeChanged:
         iconClass = 'icon icon-pencil-outline';
-        summaryTitle = formatMessage({defaultMessage:'Assignee Changed'});
+        summaryTitle = 'Assignee Changed';
         summary = props.event.subject_display_name + ' ' + props.event.summary;
         testid = TimelineEventType.AssigneeChanged;
         break;
     case TimelineEventType.RanSlashCommand:
         iconClass = 'icon icon-pencil-outline';
-        summaryTitle = formatMessage({defaultMessage:'Slash Command Executed'});
+        summaryTitle = 'Slash Command Executed';
         summary = props.event.subject_display_name + ' ' + props.event.summary;
         testid = TimelineEventType.RanSlashCommand;
         break;
@@ -196,12 +189,12 @@ const TimelineEventItem = (props: Props) => {
         break;
     case TimelineEventType.PublishedRetrospective:
         iconClass = 'icon icon-pencil-outline';
-        summaryTitle = formatMessage({defaultMessage:'Retrospective published by {display_name}'},{display_name:props.event.subject_display_name});
+        summaryTitle = 'Retrospective published by ' + props.event.subject_display_name;
         testid = TimelineEventType.PublishedRetrospective;
         break;
     case TimelineEventType.CanceledRetrospective:
         iconClass = 'icon icon-cancel';
-        summaryTitle = formatMessage({defaultMessage:'Retrospective canceled by {display_name}'},{display_name:props.event.subject_display_name});
+        summaryTitle = 'Retrospective canceled by ' + props.event.subject_display_name;
         testid = TimelineEventType.CanceledRetrospective;
         break;
     }
@@ -238,7 +231,7 @@ const TimelineEventItem = (props: Props) => {
                 </SummaryTitle>
                 {statusPostDeleted && (
                     <SummaryDeleted>
-                        {formatMessage({defaultMessage:'Status post deleted: '})}
+                        {'Status post deleted: '}
                         <Timestamp
                             value={props.event.status_delete_at}
                             // eslint-disable-next-line no-undefined
@@ -251,9 +244,9 @@ const TimelineEventItem = (props: Props) => {
             </SummaryContainer>
             <ConfirmModal
                 show={showDeleteConfirm}
-                title={formatMessage({defaultMessage:'Confirm Entry Delete'})}
-                message={formatMessage({defaultMessage:'Are you sure you want to delete this event? Deleted events will be permanently removed from the timeline.'})}
-                confirmButtonText={formatMessage({defaultMessage:'Delete Entry'})}
+                title={'Confirm Entry Delete'}
+                message={'Are you sure you want to delete this event? Deleted events will be permanently removed from the timeline.'}
+                confirmButtonText={'Delete Entry'}
                 onConfirm={() => {
                     props.deleteEvent();
                     setShowDeleteConfirm(false);

@@ -21,8 +21,6 @@ import {TimelineEvent, TimelineEventsFilter, TimelineEventType} from 'src/types/
 import {setRHSEventsFilter} from 'src/actions';
 import {rhsEventsFilterForChannel} from 'src/selectors';
 
-import {useIntl} from 'react-intl';
-
 const Header = styled.div`
     display: flex;
     align-items: center;
@@ -41,19 +39,15 @@ const FakeButton = styled.div`
     font-size: 12px;
     transition: all 0.15s ease-out;
     margin-left: auto;
-
     &:hover {
         background: rgba(var(--button-bg-rgb), 0.08);
     }
-
     &:active  {
         background: rgba(var(--button-bg-rgb), 0.16);
     }
-
     i {
         display: flex;
         font-size: 18px;
-
         &:before {
             margin: 0 7px 0 0;
         }
@@ -76,7 +70,6 @@ const TimelineRetro = (props: Props) => {
     const getStateFn = useStore().getState;
     const getUserFn = (userId: string) => getUserAction(userId)(dispatch as DispatchFunc, getStateFn);
     const selectUser = useSelector<GlobalState, IdToUserFn>((state) => (userId: string) => getUser(state, userId));
-    const {formatMessage} = useIntl();
 
     useEffect(() => {
         setFilteredEvents(allEvents.filter((e) => showEvent(e.event_type, eventsFilter)));
@@ -127,7 +120,7 @@ const TimelineRetro = (props: Props) => {
 
     const filterOptions = [
         {
-            display: formatMessage({defaultMessage:'All events'}),
+            display: 'All events',
             value: 'all',
             selected: eventsFilter.all,
             disabled: false,
@@ -136,37 +129,37 @@ const TimelineRetro = (props: Props) => {
             value: 'divider',
         } as CheckboxOption,
         {
-            display: formatMessage({defaultMessage:'Role changes'}),
+            display: 'Role changes',
             value: TimelineEventType.OwnerChanged,
             selected: eventsFilter.owner_changed,
             disabled: eventsFilter.all,
         },
         {
-            display: formatMessage({defaultMessage:'Status updates'}),
+            display: 'Status updates',
             value: TimelineEventType.StatusUpdated,
             selected: eventsFilter.status_updated,
             disabled: eventsFilter.all,
         },
         {
-            display: formatMessage({defaultMessage:'Saved messages'}),
+            display: 'Saved messages',
             value: TimelineEventType.EventFromPost,
             selected: eventsFilter.event_from_post,
             disabled: eventsFilter.all,
         },
         {
-            display: formatMessage({defaultMessage:'Task state changes'}),
+            display: 'Task state changes',
             value: TimelineEventType.TaskStateModified,
             selected: eventsFilter.task_state_modified,
             disabled: eventsFilter.all,
         },
         {
-            display: formatMessage({defaultMessage:'Task assignments'}),
+            display: 'Task assignments',
             value: TimelineEventType.AssigneeChanged,
             selected: eventsFilter.assignee_changed,
             disabled: eventsFilter.all,
         },
         {
-            display: formatMessage({defaultMessage:'Slash commands'}),
+            display: 'Slash commands',
             value: TimelineEventType.RanSlashCommand,
             selected: eventsFilter.ran_slash_command,
             disabled: eventsFilter.all,
@@ -176,13 +169,13 @@ const TimelineRetro = (props: Props) => {
     return (
         <TabPageContainer>
             <Header>
-                <Title>{formatMessage({defaultMessage:'Timeline'})}</Title>
+                <Title>{'Timeline'}</Title>
                 <FakeButton>
                     <MultiCheckbox
                         options={filterOptions}
                         onselect={selectOption}
                     />
-                    {formatMessage({defaultMessage:'Filter'})}
+                    {'Filter'}
                 </FakeButton>
                 {/*
                     <PrimaryButtonNotRight>
