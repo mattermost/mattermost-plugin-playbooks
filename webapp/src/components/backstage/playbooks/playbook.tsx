@@ -18,6 +18,7 @@ import {useIntl} from 'react-intl';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
+import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
 
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
 import {clientFetchPlaybook, telemetryEventForPlaybook} from 'src/client';
@@ -166,7 +167,7 @@ const Playbook = () => {
                             <Redirect to={`${match.url}/usage`}/>
                         </Route>
                         <Route path={`${match.path}/preview`}>
-                            <h4>{'Site under construction'}</h4>
+                            <PlaybookPreview playbook={playbook}/>
                         </Route>
                         <Route path={`${match.path}/usage`}>
                             <PlaybookUsage playbook={playbook}/>
