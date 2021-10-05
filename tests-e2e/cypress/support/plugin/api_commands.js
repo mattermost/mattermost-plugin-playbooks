@@ -109,26 +109,16 @@ Cypress.Commands.add('apiFinishRun', (playbookRunId) => {
 Cypress.Commands.add('apiUpdateStatus', (
     {
         playbookRunId,
-        userId,
-        channelId,
-        teamId,
         message,
-        description,
         reminder = '300',
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `${playbookRunsEndpoint}/${playbookRunId}/update-status-dialog`,
+        url: `${playbookRunsEndpoint}/${playbookRunId}/status`,
         method: 'POST',
         body: {
-            type: 'dialog_submission',
-            callback_id: '',
-            state: '',
-            user_id: userId,
-            channel_id: channelId,
-            team_id: teamId,
-            submission: {message, description, reminder},
-            cancelled: false,
+            message,
+            reminder,
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -149,6 +139,49 @@ Cypress.Commands.add('apiChangePlaybookRunOwner', (playbookRunId, userId) => {
         method: 'POST',
         body: {
             owner_id: userId,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
+/**
+ * Change the assignee of a checklist item directly via API
+ * @param {String} playbookRunId
+ * @param {String} checklistId
+ * @param {String} itemId
+ * @param {String} userId
+ * All parameters required
+ */
+Cypress.Commands.add('apiChangeChecklistItemAssignee', (playbookRunId, checklistId, itemId, userId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: playbookRunsEndpoint + `/${playbookRunId}/checklists/${checklistId}/item/${itemId}/assignee`,
+        method: 'PUT',
+        body: {
+            assignee_id: userId,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
+/**
+ * Check a checklist item directly via API
+ * @param {String} playbookRunId
+ * @param {String} checklistId
+ * @param {String} itemId
+ * @param {String} state (optional: 'closed' = default, or 'in_progress')
+ */
+Cypress.Commands.add('apiCheckChecklistItem', (playbookRunId, checklistId, itemId, state = 'closed') => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: playbookRunsEndpoint + `/${playbookRunId}/checklists/${checklistId}/item/${itemId}/state`,
+        method: 'PUT',
+        body: {
+            new_state: state,
         },
     }).then((response) => {
         expect(response.status).to.equal(200);

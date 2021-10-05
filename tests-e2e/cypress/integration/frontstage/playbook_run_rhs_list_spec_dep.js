@@ -1089,7 +1089,7 @@ describe('rhs playbook run list', () => {
 
             // * Verify we reached the playbook backstage
             cy.url()
-                .should('include', `/playbooks/playbooks`);
+                .should('include', '/playbooks/playbooks');
         });
 
         it('should be able to go to playbook run backstage from three dot menu', () => {
@@ -1114,7 +1114,7 @@ describe('rhs playbook run list', () => {
 
             // * Verify we reached the playbook backstage
             cy.url()
-                .should('include', `/playbooks/runs`);
+                .should('include', '/playbooks/runs');
         });
 
         it('should be able to see all playbook runs (runs backstage list)', () => {
@@ -1138,7 +1138,7 @@ describe('rhs playbook run list', () => {
 
             // * Verify we reached the playbook backstage
             cy.url()
-                .should('include', `/playbooks/runs`);
+                .should('include', '/playbooks/runs');
         });
     });
 
@@ -1217,7 +1217,6 @@ describe('rhs playbook run list', () => {
             // # start new playbook run
             const now = Date.now();
             const playbookRunName = 'Playbook Run (' + now + ')';
-            const playbookRunChannelName = 'playbook-run-' + now;
             cy.apiRunPlaybook({
                 teamId: teamId1,
                 playbookId: playbookId1,
@@ -1259,32 +1258,23 @@ describe('rhs playbook run list', () => {
                     });
 
                     // # Update the status
-                    cy.legacyApiGetChannelByName(teamName1, playbookRunChannelName)
-                        .then(({channel}) => {
-                            const channelId = channel.id;
+                    cy.apiUpdateStatus({
+                        playbookRunId,
+                        message: 'Status update 2',
+                    });
 
-                            cy.apiUpdateStatus({
-                                playbookRunId,
-                                userId,
-                                channelId,
-                                teamId: teamId1,
-                                message: 'Status update 2',
-                                description: 'description',
-                            });
+                    // * verify the last updated time is updated
+                    cy.get('#rhsContainer').should('exist').within(() => {
+                        cy.findByText('Runs in progress').should('exist');
 
-                            // * verify the last updated time is updated
-                            cy.get('#rhsContainer').should('exist').within(() => {
-                                cy.findByText('Runs in progress').should('exist');
+                        cy.get('.scrollbar--view').scrollIntoView();
 
-                                cy.get('.scrollbar--view').scrollIntoView();
+                        cy.findByText(playbookRunName).should('exist');
 
-                                cy.findByText(playbookRunName).should('exist');
-
-                                // * Verify the last updated is updated
-                                cy.findAllByText('Last updated:').eq(0).should('exist')
-                                    .next().should('have.text', '< 1m ago');
-                            });
-                        });
+                        // * Verify the last updated is updated
+                        cy.findAllByText('Last updated:').eq(0).should('exist')
+                            .next().should('have.text', '< 1m ago');
+                    });
                 });
         });
     });
