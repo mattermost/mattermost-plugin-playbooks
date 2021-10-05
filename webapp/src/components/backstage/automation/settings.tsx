@@ -115,7 +115,7 @@ export const AutomationSettings = (props: Props) => {
                         textOnToggle={'Send outgoing webhook (One per line)'}
                         errorText={'Invalid webhook URLs'}
                         maxRows={64}
-                        maxErrorText={'Invalid webhooks, limit to less than 64'}
+                        maxErrorText={'Invalid entry: the maximum number of webhooks allowed is 64'}
                     />
                 </Setting>
             </Section>
@@ -145,7 +145,7 @@ export const AutomationSettings = (props: Props) => {
                         textOnToggle={'Send outgoing webhook (One per line)'}
                         errorText={'Invalid webhook URLs'}
                         maxRows={64}
-                        maxErrorText={'Invalid webhooks, limit to less than 64'}
+                        maxErrorText={'Invalid entry: the maximum number of webhooks allowed is 64'}
                     />
                 </Setting>
             </Section>
