@@ -45,15 +45,20 @@ describe('playbook run rhs > home', () => {
             });
 
             // * Verify the playbook is shown
-            cy.findByText('Team Playbook').should('exist');
+            cy.findByText('Your Playbooks')
+                .next()
+                .within(() => {
+                    cy.findByText('Team Playbook').should('exist');
+                });
         });
         it('starter templates', () => {
             // templates are defined in `webapp/src/components/backstage/template_selector.tsx`
-            const templateNames = [
-                'Blank',
-                'Product Release',
-                'Customer Onboarding',
-                'Service Reliability Incident'
+            const templates = [
+                {name: 'Blank', checklists: 'no checklists', actions: 'no actions'},
+                {name: 'Product Release', checklists: '4 checklists', actions: '2 actions'},
+                {name: 'Customer Onboarding', checklists: '4 checklists', actions: '2 actions'},
+                {name: 'Service Reliability Incident', checklists: '4 checklists', actions: '3 actions'},
+                {name: 'Feature Lifecycle', checklists: '5 checklists', actions: '2 actions'},
             ];
 
             // # Navigate to the application
@@ -65,9 +70,19 @@ describe('playbook run rhs > home', () => {
             });
 
             // * Verify the templates are shown
-            templateNames.forEach((name) => {
-                cy.findByText(name).should('exist');
-            });
+            cy.findByText('Playbook Templates')
+                .next()
+                .within(() => {
+                    templates.forEach((template) => {
+                        cy.findByText(template.name)
+                            .should('exist')
+                            .parents('[data-testid="template-details"]')
+                            .within(() => {
+                                cy.findByText(template.checklists).should('exist');
+                                cy.findByText(template.actions).should('exist');
+                            });
+                    });
+                });
         });
     });
 });
