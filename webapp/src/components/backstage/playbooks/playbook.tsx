@@ -57,7 +57,7 @@ const Playbook = () => {
     };
 
     const goToEdit = () => {
-        navigateToUrl(location.pathname + '/edit');
+        navigateToUrl(match.url + '/edit');
     };
 
     const runPlaybook = () => {
