@@ -19,7 +19,7 @@ interface Props {
     totalCount: number
     fetchParams: FetchPlaybookRunsParams
     setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>
-    filterPill: React.ReactNode
+    filterPill: React.ReactNode | null
     fixedTeam?: boolean
 }
 

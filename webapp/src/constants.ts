@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {DateTime} from 'luxon';
+
 export const OVERLAY_DELAY = 400;
 
 export enum ErrorPageTypes {
@@ -25,3 +27,8 @@ export enum AdminNotificationType {
     EXPORT_CHANNEL = 'start_trial_to_export_channel',
     MESSAGE_TO_PLAYBOOK_DASHBOARD = 'start_trial_to_access_playbook_dashboard',
 }
+
+export const DateTimeFormats = {
+    // eslint-disable-next-line no-undefined
+    DATE_MED_NO_YEAR: {...DateTime.DATE_MED, year: undefined},
+};
