@@ -9,6 +9,7 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
+import {useIntl} from 'react-intl';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
@@ -158,9 +159,11 @@ const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
     })),
 });
 
+const {formatMessage} = useIntl();
+
 export const tabInfo = [
     {id: 'checklists', name: 'Checklists'},
-    {id: 'templates', name: 'Templates'},
+    {id: 'templates', name: formatMessage({defaultMessage: 'Templates'})},
     {id: 'actions', name: 'Actions'},
     {id: 'permissions', name: 'Permissions'},
 ] as const;
@@ -571,9 +574,9 @@ const PlaybookEdit = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Description'}
+                                        {formatMessage({defaultMessage: 'Description'})}
                                         <BackstageSubheaderDescription>
-                                            {'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'}
+                                            {formatMessage({defaultMessage: 'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'})}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <StyledMarkdownTextbox
@@ -592,15 +595,15 @@ const PlaybookEdit = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Status updates'}
+                                        {formatMessage({defaultMessage: 'Status updates'})}
                                         <BackstageSubheaderDescription>
-                                            {'This template helps to standardize the format for recurring updates that take place throughout each run to keep.'}
+                                            {formatMessage({defaultMessage: 'This template helps to standardize the format for recurring updates that take place throughout each run to keep.'})}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <StyledMarkdownTextbox
                                         className={'playbook_reminder_message'}
                                         id={'playbook_reminder_message_edit'}
-                                        placeholder={'Use Markdown to create a template.'}
+                                        placeholder={formatMessage({defaultMessage: 'Use Markdown to create a template.'})}
                                         value={playbook.reminder_message_template}
                                         setValue={(value: string) => {
                                             setPlaybook({
@@ -615,9 +618,9 @@ const PlaybookEdit = (props: Props) => {
                                     <>
                                         <SidebarBlock>
                                             <BackstageSubheader>
-                                                {'Retrospective reminder interval'}
+                                                {formatMessage({defaultMessage: 'Retrospective reminder interval'})}
                                                 <BackstageSubheaderDescription>
-                                                    {'Reminds the channel at a specified interval to fill out the retrospective.'}
+                                                    {formatMessage({defaultMessage: 'Reminds the channel at a specified interval to fill out the retrospective.'})}
                                                 </BackstageSubheaderDescription>
                                             </BackstageSubheader>
                                             <StyledSelect
@@ -636,9 +639,9 @@ const PlaybookEdit = (props: Props) => {
                                         </SidebarBlock>
                                         <SidebarBlock>
                                             <BackstageSubheader>
-                                                {'Retrospective template'}
+                                                {formatMessage({defaultMessage: 'Retrospective template'})}
                                                 <BackstageSubheaderDescription>
-                                                    {'Default text for the retrospective.'}
+                                                    {formatMessage({defaultMessage: 'Default text for the retrospective.'})}
                                                 </BackstageSubheaderDescription>
                                             </BackstageSubheader>
                                             <StyledMarkdownTextbox
