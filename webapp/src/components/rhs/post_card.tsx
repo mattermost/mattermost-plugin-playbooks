@@ -128,7 +128,18 @@ const PostCard = (props: Props) => {
                             }
                         }}
                     >
-                        {formatMessage({defaultMessage: '{timestamp}'}, {timestamp: updateTimestamp})}
+                        {formatMessage({
+                            defaultMessage: '{timestamp}',
+                        },
+                        {
+                            timestamp: (
+                                <Timestamp
+                                    value={updateTimestamp}
+                                    useTime={false}
+                                />
+                            ),
+                        })
+                        }
                     </UpdateTimeLink>
                 </UpdateHeader>
                 <ShowMore
