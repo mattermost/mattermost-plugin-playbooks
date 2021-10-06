@@ -17,6 +17,7 @@
   "c8hxKk": "Week of {date}",
   "ebkl6I": "Everyone in this team can access this playbook",
   "lZwZi+": "Day: {date}",
+  "rX08cW": "Date must be in the future.",
   "s3jjqi": "{num_actions, plural, =0 {no actions} one {# action} other {# actions}}",
   "sQu1rA": "{numTotalRuns, plural, =0 {no runs started} =1 {# run started} other {# runs started}}",
   "soePYH": "{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}",
