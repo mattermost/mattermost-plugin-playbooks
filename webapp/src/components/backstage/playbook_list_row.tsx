@@ -68,24 +68,24 @@ const PlaybookListRow = (props: Props) => {
                 onClick={props.onClick}
             >
                 <PlaybookItemTitle>
-                <div className='col-sm-4'>
-                    <TextWithTooltip
-                        id={props.playbook.title}
-                        text={props.playbook.title}
-                    />
-                    {props.displayTeam && <InfoLine>{teamName}</InfoLine>}
-                </div>
+                    <div className='col-sm-4'>
+                        <TextWithTooltip
+                            id={props.playbook.title}
+                            text={props.playbook.title}
+                        />
+                        {props.displayTeam && <InfoLine>{teamName}</InfoLine>}
+                    </div>
                 </PlaybookItemTitle>
                 <div className='col-sm-2'>{props.playbook.num_stages}</div>
                 <div className='col-sm-2'>{props.playbook.num_steps}</div>
                 <div className='col-sm-2'>{props.playbook.num_runs}</div>
                 <ActionCol>
-                <div className='col-sm-2'>
-                    <PlaybookActionMenu
-                        onEdit={props.onEdit}
-                        onDelete={props.onDelete}
-                    />
-                </div>
+                    <div className='col-sm-2'>
+                        <PlaybookActionMenu
+                            onEdit={props.onEdit}
+                            onDelete={props.onDelete}
+                        />
+                    </div>
                 </ActionCol>
             </div>
         </PlaybookItem>
