@@ -177,7 +177,6 @@ const PlaybookList = () => {
                     <LeftDots/>
                     <LeftFade/>
                     <ContainerMedium>
-                
                         <PlaybooksHeader data-testid='titlePlaybook'>
                             {'Playbooks'}
                             {canCreatePlaybooks &&
@@ -235,7 +234,6 @@ const PlaybookList = () => {
                             totalCount={totalCount}
                             setPage={setPage}
                         />
-                    
                     </ContainerMedium>
                     <ConfirmModal
                         show={showConfirmation}
