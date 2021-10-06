@@ -16,7 +16,6 @@ import TemplateSelector, {isPlaybookCreationAllowed, PresetTemplate} from 'src/c
 import {telemetryEventForTemplate} from 'src/client';
 
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
-import './playbook.scss';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
 import {BACKSTAGE_LIST_PER_PAGE, AdminNotificationType} from 'src/constants';
@@ -61,40 +60,6 @@ const ContainerMedium = styled.div`
 const PlaybookContainer = styled.div`
     font-family: $font-family;
     color: var(--center-channel-color-90);
-`;
-
-
-
-const PlaybookListDiv = styled.div`
-    .playbook-item {
-        cursor: pointer;
-        display: flex;
-        padding-top: 15px;
-        padding-bottom: 15px;
-        align-items: center;
-        margin: 0;
-        border-bottom: 1px solid var(--center-channel-color-16);
-
-        &:hover {
-            background: var(--center-channel-color-04);
-        }
-
-        .title {
-            display: flex;
-            flex-direction: column;
-
-            > span {
-                font-weight: 600;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                overflow: hidden;
-            }
-        }
-    }
-
-    .action-col {
-        margin-left: -8px;
-    }
 `;
 
 const PlaybookList = () => {
@@ -212,7 +177,7 @@ const PlaybookList = () => {
                     <LeftDots/>
                     <LeftFade/>
                     <ContainerMedium>
-                    <PlaybookListDiv>
+                
                         <PlaybooksHeader data-testid='titlePlaybook'>
                             {'Playbooks'}
                             {canCreatePlaybooks &&
@@ -270,7 +235,7 @@ const PlaybookList = () => {
                             totalCount={totalCount}
                             setPage={setPage}
                         />
-                    </PlaybookListDiv>
+                    
                     </ContainerMedium>
                     <ConfirmModal
                         show={showConfirmation}

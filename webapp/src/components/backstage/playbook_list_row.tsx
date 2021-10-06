@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
@@ -27,33 +28,69 @@ interface Props {
     onDelete: () => void
 }
 
+const ActionCol = styled.div`
+    margin-left: -8px;
+`;
+
+const PlaybookItem = styled.div`
+    cursor: pointer;
+    display: flex;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    align-items: center;
+    margin: 0;
+    border-bottom: 1px solid var(--center-channel-color-16);
+
+    &:hover {
+        background: var(--center-channel-color-04);
+    }
+`;
+
+const PlaybookItemTitle = styled.div`
+    display: flex;
+    flex-direction: column;
+
+    > span {
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+`;
+
 const teamNameSelector = (teamId: string) => (state: GlobalState): string => getTeam(state, teamId).display_name;
 
 const PlaybookListRow = (props: Props) => {
     const teamName = useSelector(teamNameSelector(props.playbook.team_id));
     return (
+        <PlaybookItem>
         <div
-            className='row playbook-item'
+            className='row'
             key={props.playbook.id}
             onClick={props.onClick}
         >
-            <div className='col-sm-4 title'>
+            <PlaybookItemTitle>
+            <div className='col-sm-4'>
                 <TextWithTooltip
                     id={props.playbook.title}
                     text={props.playbook.title}
                 />
                 {props.displayTeam && <InfoLine>{teamName}</InfoLine>}
             </div>
+            </PlaybookItemTitle>
             <div className='col-sm-2'>{props.playbook.num_stages}</div>
             <div className='col-sm-2'>{props.playbook.num_steps}</div>
             <div className='col-sm-2'>{props.playbook.num_runs}</div>
-            <div className='col-sm-2 action-col'>
+            <ActionCol>
+            <div className='col-sm-2'>
                 <PlaybookActionMenu
                     onEdit={props.onEdit}
                     onDelete={props.onDelete}
                 />
             </div>
+            </ActionCol>
         </div>
+        </PlaybookItem>
     );
 };
 

@@ -25,7 +25,6 @@ import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/sha
 import {RegularHeading} from 'src/styles/headings';
 import DefaultUpdateTimer from 'src/components/backstage/default_update_timer';
 
-import './playbook.scss';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 
 import EditableText from './editable_text';
