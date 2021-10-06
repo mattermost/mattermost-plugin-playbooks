@@ -73,14 +73,12 @@ describe('playbook run rhs > home', () => {
             cy.findByText('Playbook Templates')
                 .next()
                 .within(() => {
-                    templates.forEach((template) => {
-                        cy.findByText(template.name)
-                            .should('exist')
-                            .parents('[data-testid="template-details"]')
-                            .within(() => {
-                                cy.findByText(template.checklists).should('exist');
-                                cy.findByText(template.actions).should('exist');
-                            });
+                    cy.findAllByTestId('template-details').each(($templateElement, index) => {
+                        cy.wrap($templateElement).within(() => {
+                            cy.findByText(templates[index].name).should('exist');
+                            cy.findByText(templates[index].checklists).should('exist');
+                            cy.findByText(templates[index].actions).should('exist');
+                        });
                     });
                 });
         });
