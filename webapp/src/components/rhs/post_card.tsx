@@ -86,7 +86,7 @@ function useAuthorInfo(userID: string) : [string, string] {
 }
 
 interface Props {
-    post: Post | null;
+    post: Post;
     team: Team;
     playbookRunId: string;
     playbookId: string
@@ -97,16 +97,6 @@ const PostCard = (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const [authorProfileUrl, authorUserName] = useAuthorInfo(props.post?.user_id || '');
-
-    if (!props.post) {
-        return (
-            <NoRecentUpdates>
-                {formatMessage({defaultMessage: 'No recent updates. '})}<a onClick={() => dispatch(promptUpdateStatus(props.team.id, props.playbookRunId, props.playbookId, props.channelId))}>{formatMessage({defaultMessage: 'Click here'})}</a>{formatMessage({defaultMessage: ' to update status.'})}
-            </NoRecentUpdates>
-        );
-    }
-
-    const updateTimestamp = props.post.create_at; //eslint-disable-line no-undefined
 
     return (
         <UpdateSection>
@@ -134,7 +124,7 @@ const PostCard = (props: Props) => {
                         {
                             timestamp: (
                                 <Timestamp
-                                    value={updateTimestamp}
+                                    value={props.post.create_at}
                                 />
                             ),
                         })
