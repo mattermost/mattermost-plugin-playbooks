@@ -2439,22 +2439,26 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) (strin
 	}
 
 	if total == 0 {
-		return "##### Your Assigned Tasks:\nYou have 0 assigned tasks.\n", 0
+		return "##### Your Outstanding Tasks\nYou have 0 outstanding tasks.\n", 0
 	}
 
-	message := fmt.Sprintf("##### Your Assigned Tasks\nYou have %d total assigned tasks:\n", total)
+	taskPlural := "1 outstanding task"
+	if total > 1 {
+		taskPlural = fmt.Sprintf("%d total outstanding tasks", total)
+	}
+	runPlural := "1 run"
+	if len(runs) > 1 {
+		runPlural = fmt.Sprintf("%d runs", len(runs))
+	}
+
+	message := fmt.Sprintf("##### Your Outstanding Tasks\nYou have %s in %s:\n\n", taskPlural, runPlural)
 
 	for _, run := range runs {
-		numTasks := len(run.Tasks)
-		taskPlural := "task"
-		if numTasks > 1 {
-			taskPlural += "s"
-		}
-		message += fmt.Sprintf("- You have %d assigned %s in [%s](%s/%s/channels/%s):\n",
-			numTasks, taskPlural, run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+		message += fmt.Sprintf("[%s](%s/%s/channels/%s):\n",
+			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
 
 		for _, task := range run.Tasks {
-			message += fmt.Sprintf("  - %s: %s\n", task.ChecklistTitle, task.Title)
+			message += fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
 		}
 	}
 
