@@ -203,7 +203,7 @@ func (h *PlaybookRunHandler) updatePlaybookRun(w http.ResponseWriter, r *http.Re
 func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	request := submitDialogRequestFromJson(r.Body)
+	request := submitDialogRequestFromJSON(r.Body)
 	if request == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
@@ -292,7 +292,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 func (h *PlaybookRunHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	request := submitDialogRequestFromJson(r.Body)
+	request := submitDialogRequestFromJSON(r.Body)
 	if request == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
@@ -743,7 +743,7 @@ func (h *PlaybookRunHandler) updateStatusDialog(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	request := submitDialogRequestFromJson(r.Body)
+	request := submitDialogRequestFromJSON(r.Body)
 	if request == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
@@ -777,7 +777,7 @@ func (h *PlaybookRunHandler) updateStatusDialog(w http.ResponseWriter, r *http.R
 // reminderButtonUpdate handles the POST /runs/{id}/reminder/button-update endpoint, called when a
 // user clicks on the reminder interactive button
 func (h *PlaybookRunHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Request) {
-	requestData := postActionIntegrationRequestFromJson(r.Body)
+	requestData := postActionIntegrationRequestFromJSON(r.Body)
 	if requestData == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
 		return
@@ -830,7 +830,7 @@ func (h *PlaybookRunHandler) reminderDelete(w http.ResponseWriter, r *http.Reque
 func (h *PlaybookRunHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
-	requestData := postActionIntegrationRequestFromJson(r.Body)
+	requestData := postActionIntegrationRequestFromJSON(r.Body)
 	if requestData == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
 		return
@@ -1149,7 +1149,7 @@ func (h *PlaybookRunHandler) addChecklistItemDialog(w http.ResponseWriter, r *ht
 		return
 	}
 
-	request := submitDialogRequestFromJson(r.Body)
+	request := submitDialogRequestFromJSON(r.Body)
 	if request == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
@@ -1430,7 +1430,7 @@ func sliceContains(strs []string, target string) bool {
 	return false
 }
 
-func submitDialogRequestFromJson(data io.Reader) *model.SubmitDialogRequest {
+func submitDialogRequestFromJSON(data io.Reader) *model.SubmitDialogRequest {
 	var o *model.SubmitDialogRequest
 	err := json.NewDecoder(data).Decode(&o)
 	if err != nil {
@@ -1439,7 +1439,7 @@ func submitDialogRequestFromJson(data io.Reader) *model.SubmitDialogRequest {
 	return o
 }
 
-func postActionIntegrationRequestFromJson(data io.Reader) *model.PostActionIntegrationRequest {
+func postActionIntegrationRequestFromJSON(data io.Reader) *model.PostActionIntegrationRequest {
 	var o *model.PostActionIntegrationRequest
 	err := json.NewDecoder(data).Decode(&o)
 	if err != nil {

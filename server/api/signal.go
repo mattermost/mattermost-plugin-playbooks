@@ -42,7 +42,7 @@ func NewSignalHandler(router *mux.Router, api *pluginapi.Client, logger bot.Logg
 func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 	publicErrorMessage := "unable to decode post action integration request"
 
-	req := postActionIntegrationRequestFromJson(r.Body)
+	req := postActionIntegrationRequestFromJSON(r.Body)
 	id, err := getStringField("selected_option", req.Context, w)
 	if err != nil {
 		h.returnError(publicErrorMessage, err, w)
@@ -82,7 +82,7 @@ func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 func (h *SignalHandler) ignoreKeywords(w http.ResponseWriter, r *http.Request) {
 	publicErrorMessage := "unable to decode post action integration request"
 
-	req := postActionIntegrationRequestFromJson(r.Body)
+	req := postActionIntegrationRequestFromJSON(r.Body)
 
 	postID, err := getStringField("postID", req.Context, w)
 	if err != nil {
