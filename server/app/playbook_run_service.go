@@ -2439,7 +2439,7 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) (strin
 	}
 
 	if total == 0 {
-		return "##### Your Assigned Tasks:\nYou have 0 assigned tasks.\n", 0
+		return "##### Your Outstanding Tasks\nYou have 0 outstanding tasks.\n", 0
 	}
 
 	taskPlural := "1 outstanding task"

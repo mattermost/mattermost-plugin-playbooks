@@ -149,7 +149,7 @@ describe('slash command > todo', () => {
 
             // * Should show titles
             cy.verifyPostedMessage('You have 0 runs overdue.');
-            cy.verifyPostedMessage('You have 0 assigned tasks.');
+            cy.verifyPostedMessage('You have 0 outstanding tasks.');
             cy.verifyPostedMessage('You have 3 runs currently in progress:');
 
             // * Should show three active runs
@@ -168,7 +168,7 @@ describe('slash command > todo', () => {
             });
         });
 
-        it.only('four assigned tasks', () => {
+        it('four assigned tasks', () => {
             // # assign self four tasks
             cy.apiChangeChecklistItemAssignee(run1.id, 0, 0, testUser.id);
             cy.apiChangeChecklistItemAssignee(run1.id, 1, 1, testUser.id);
@@ -183,45 +183,37 @@ describe('slash command > todo', () => {
 
             // * Should show titles
             cy.verifyPostedMessage('You have 0 runs overdue.');
-            cy.verifyPostedMessage('You have 4 total assigned tasks:');
+            cy.verifyPostedMessage('You have 4 total outstanding tasks in 3 runs:');
 
             // * Should show 4 tasks
             cy.wait(TIMEOUTS.HALF_SEC).getLastPostId().then((postId) => {
                 cy.get(`#post_${postId}`).within(() => {
                     cy.get(`#postMessageText_${postId}`).within(() => {
+                        cy.get('a').then((links) => {
+                            expect(links[0]).to.contain.text(runName1);
+                            expect(links[1]).to.contain.text(runName2);
+                            expect(links[2]).to.contain.text(runName3);
+                        });
+
                         cy.get('li').then((items) => {
                             // # first run
                             expect(items[0])
                                 .to
                                 .contain
-                                .text(`You have 2 assigned tasks in ${runName1}:`);
-
-                            expect(items[1])
-                                .to
-                                .contain
                                 .text('Playbook One - Stage 1: Step 1');
-                            expect(items[2])
+                            expect(items[1])
                                 .to
                                 .contain
                                 .text('Playbook One - Stage 2: Step 2');
 
                             // # second run
-                            expect(items[3])
-                                .to
-                                .contain
-                                .text(`You have 1 assigned task in ${runName2}:`);
-                            expect(items[4])
+                            expect(items[2])
                                 .to
                                 .contain
                                 .text('Playbook One - Stage 1: Step 2');
 
                             // # third run
-                            expect(items[5])
-                                .to
-                                .contain
-                                .text(`You have 1 assigned task in ${runName3}:`);
-
-                            expect(items[6])
+                            expect(items[3])
                                 .to
                                 .contain
                                 .text('Playbook Two - Stage 2: Step 1');
@@ -239,30 +231,26 @@ describe('slash command > todo', () => {
 
             // * Should show titles
             cy.verifyPostedMessage('You have 0 runs overdue.');
-            cy.verifyPostedMessage('You have 2 total assigned tasks:');
+            cy.verifyPostedMessage('You have 2 total outstanding tasks in 2 runs:');
 
             // * Should show 4 tasks
             cy.wait(TIMEOUTS.HALF_SEC).getLastPostId().then((postId) => {
                 cy.get(`#post_${postId}`).within(() => {
                     cy.get(`#postMessageText_${postId}`).within(() => {
+                        cy.get('a').then((links) => {
+                            expect(links[0]).to.contain.text(runName1);
+                            expect(links[1]).to.contain.text(runName2);
+                        });
+
                         cy.get('li').then((items) => {
                             // # first run
                             expect(items[0])
                                 .to
                                 .contain
-                                .text(`You have 1 assigned task in ${runName1}:`);
-
-                            expect(items[1])
-                                .to
-                                .contain
                                 .text('Playbook One - Stage 2: Step 2');
 
                             // # second run
-                            expect(items[2])
-                                .to
-                                .contain
-                                .text(`You have 1 assigned task in ${runName2}:`);
-                            expect(items[3])
+                            expect(items[1])
                                 .to
                                 .contain
                                 .text('Playbook One - Stage 1: Step 2');
