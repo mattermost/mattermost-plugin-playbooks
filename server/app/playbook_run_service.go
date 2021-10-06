@@ -187,23 +187,25 @@ type PlaybookRunWebhookPayload struct {
 	DetailsURL string `json:"details_url"`
 }
 
-// sendWebhookOnCreation sends a POST request to the creation webhook URL.
+// sendWebhooksOnCreation sends a POST request to the creation webhook URL.
 // It blocks until a response is received.
-func (s *PlaybookRunServiceImpl) sendWebhookOnCreation(playbookRun PlaybookRun) error {
+func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun) {
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on creation, please set siteURL")
-		return errors.New("Could not send webhook, please set siteURL")
+		return
 	}
 
 	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 	if err != nil {
-		return err
+		s.pluginAPI.Log.Warn("cannot send webhook on creation, not able to get playbookRun.TeamID")
+		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
-		return err
+		s.pluginAPI.Log.Warn("cannot send webhook on creation, not able to get playbookRun.ChannelID")
+		return
 	}
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
@@ -218,28 +220,11 @@ func (s *PlaybookRunServiceImpl) sendWebhookOnCreation(playbookRun PlaybookRun) 
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		s.pluginAPI.Log.Warn("cannot send webhook on creation, unable to marshal payload")
+		return
 	}
 
-	req, err := http.NewRequest("POST", playbookRun.WebhookOnCreationURL, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
-	}
-
-	return nil
+	triggerWebhooks(s, playbookRun.WebhookOnCreationURLs, body)
 }
 
 // CreatePlaybookRun creates a new playbook run. userID is the user who initiated the CreatePlaybookRun.
@@ -426,13 +411,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 	playbookRun.TimelineEvents = append(playbookRun.TimelineEvents, *event)
 
-	if playbookRun.WebhookOnCreationURL != "" {
-		go func() {
-			if err = s.sendWebhookOnCreation(*playbookRun); err != nil {
-				s.pluginAPI.Log.Warn("failed to send a POST request to the creation webhook URL", "webhook URL", playbookRun.WebhookOnCreationURL, "error", err)
-				_, _ = s.poster.PostMessage(channel.Id, "Playbook run creation announcement through the outgoing webhook failed. Contact your System Admin for more information.")
-			}
-		}()
+	if len(playbookRun.WebhookOnCreationURLs) != 0 {
+		s.sendWebhooksOnCreation(*playbookRun)
 	}
 
 	if playbookRun.PostID == "" {
@@ -724,28 +704,31 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunFinish(message, broadcastCh
 	return nil
 }
 
-// sendWebhookOnUpdateStatus sends a POST request to the status update webhook URL.
+// sendWebhooksOnUpdateStatus sends a POST request to the status update webhook URL.
 // It blocks until a response is received.
-func (s *PlaybookRunServiceImpl) sendWebhookOnUpdateStatus(playbookRunID string) error {
+func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string) {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve playbook run")
+		s.pluginAPI.Log.Warn("cannot send webhook on update, not able to get playbookRun")
+		return
 	}
 
 	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
 	if siteURL == nil {
 		s.pluginAPI.Log.Warn("cannot send webhook on update, please set siteURL")
-		return errors.New("siteURL not set")
+		return
 	}
 
 	team, err := s.pluginAPI.Team.Get(playbookRun.TeamID)
 	if err != nil {
-		return err
+		s.pluginAPI.Log.Warn("cannot send webhook on update, not able to get playbookRun.TeamID")
+		return
 	}
 
 	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
-		return err
+		s.pluginAPI.Log.Warn("cannot send webhook on update, not able to get playbookRun.TeamID")
+		return
 	}
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
@@ -760,27 +743,11 @@ func (s *PlaybookRunServiceImpl) sendWebhookOnUpdateStatus(playbookRunID string)
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		s.pluginAPI.Log.Warn("cannot send webhook on update, unable to marshal payload")
+		return
 	}
 
-	req, err := http.NewRequest("POST", playbookRun.WebhookOnStatusUpdateURL, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
-	}
-
-	return nil
+	triggerWebhooks(s, playbookRun.WebhookOnStatusUpdateURLs, body)
 }
 
 // UpdateStatus updates a playbook run's status.
@@ -860,13 +827,8 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return err
 	}
 
-	if playbookRunToModify.WebhookOnStatusUpdateURL != "" {
-		go func() {
-			if err := s.sendWebhookOnUpdateStatus(playbookRunID); err != nil {
-				s.pluginAPI.Log.Warn("failed to send a POST request to the update status webhook URL", "webhook URL", playbookRunToModify.WebhookOnStatusUpdateURL, "error", err)
-				_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Playbook run update announcement through the outgoing webhook failed. Contact your System Admin for more information.")
-			}
-		}()
+	if len(playbookRunToModify.WebhookOnStatusUpdateURLs) != 0 {
+		s.sendWebhooksOnUpdateStatus(playbookRunID)
 	}
 
 	return nil
@@ -999,13 +961,8 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		return err
 	}
 
-	if playbookRunToModify.WebhookOnStatusUpdateURL != "" {
-		go func() {
-			if err := s.sendWebhookOnUpdateStatus(playbookRunID); err != nil {
-				s.pluginAPI.Log.Warn("failed to send a POST request to the update status webhook URL", "webhook URL", playbookRunToModify.WebhookOnStatusUpdateURL, "error", err)
-				_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Playbook run update announcement through the outgoing webhook failed. Contact your System Admin for more information.")
-			}
-		}()
+	if len(playbookRunToModify.WebhookOnStatusUpdateURLs) != 0 {
+		s.sendWebhooksOnUpdateStatus(playbookRunID)
 	}
 
 	return nil
@@ -2408,4 +2365,36 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// Helper function to Trigger webhooks
+func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) {
+	for i := range webhooks {
+		url := webhooks[i]
+
+		go func() {
+			req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+
+			if err != nil {
+				s.pluginAPI.Log.Warn("failed to create a POST request to webhook URL", "webhook URL", url, "error", err.Error())
+				return
+			}
+
+			req.Header.Set("Content-Type", "application/json")
+
+			resp, err := s.httpClient.Do(req)
+			if err != nil {
+				s.pluginAPI.Log.Warn("failed to send a POST request to webhook URL", "webhook URL", url, "error", err.Error())
+				return
+			}
+
+			defer resp.Body.Close()
+
+			if resp.StatusCode < 200 || resp.StatusCode > 299 {
+				err := errors.Errorf("response code is %d; expected a status code in the 2xx range", resp.StatusCode)
+				s.pluginAPI.Log.Warn("failed to finish a POST request to webhook URL", "webhook URL", url, "error", err.Error())
+			}
+		}()
+	}
+
 }

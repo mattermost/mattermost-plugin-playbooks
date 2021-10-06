@@ -275,7 +275,12 @@ const PlaybookEdit = (props: Props) => {
     };
 
     const onSave = async () => {
-        const data = await savePlaybook(setPlaybookDefaults(playbook));
+        const pb = setPlaybookDefaults(playbook);
+
+        pb.webhook_on_creation_urls = pb.webhook_on_creation_urls.filter((url) => url.trim().length > 0);
+        pb.webhook_on_status_update_urls = pb.webhook_on_status_update_urls.filter((url) => url.trim().length > 0);
+
+        const data = await savePlaybook(pb);
         setChangesMade(false);
         onClose(data?.id);
     };
@@ -362,24 +367,20 @@ const PlaybookEdit = (props: Props) => {
         }
     };
 
-    const handleWebhookOnCreationChange = (url: string) => {
-        if (playbook.webhook_on_creation_url !== url) {
-            setPlaybook({
-                ...playbook,
-                webhook_on_creation_url: url,
-            });
-            setChangesMade(true);
-        }
+    const handleWebhookOnCreationChange = (urls: string) => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_creation_urls: urls.split('\n'),
+        });
+        setChangesMade(true);
     };
 
-    const handleWebhookOnStatusUpdateChange = (url: string) => {
-        if (playbook.webhook_on_status_update_url !== url) {
-            setPlaybook({
-                ...playbook,
-                webhook_on_status_update_url: url,
-            });
-            setChangesMade(true);
-        }
+    const handleWebhookOnStatusUpdateChange = (urls: string) => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_status_update_urls: urls.split('\n'),
+        });
+        setChangesMade(true);
     };
 
     const handleMessageOnJoinChange = (message: string) => {
@@ -678,10 +679,10 @@ const PlaybookEdit = (props: Props) => {
                                     webhookOnCreationEnabled={playbook.webhook_on_creation_enabled}
                                     onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
                                     webhookOnCreationChange={handleWebhookOnCreationChange}
-                                    webhookOnCreationURL={playbook.webhook_on_creation_url}
+                                    webhookOnCreationURLs={playbook.webhook_on_creation_urls}
                                     webhookOnStatusUpdateEnabled={playbook.webhook_on_status_update_enabled}
                                     onToggleWebhookOnStatusUpdate={handleToggleWebhookOnStatusUpdate}
-                                    webhookOnStatusUpdateURL={playbook.webhook_on_status_update_url}
+                                    webhookOnStatusUpdateURLs={playbook.webhook_on_status_update_urls}
                                     webhookOnStatusUpdateChange={handleWebhookOnStatusUpdateChange}
                                     messageOnJoinEnabled={playbook.message_on_join_enabled}
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}

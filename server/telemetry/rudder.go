@@ -1,7 +1,6 @@
 package telemetry
 
 import (
-	"strings"
 	"sync"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -309,7 +308,7 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 		"DefaultCommanderEnabled":     playbook.DefaultOwnerEnabled,
 		"BroadcastChannelIDs":         playbook.BroadcastChannelIDs,
 		"BroadcastEnabled":            playbook.BroadcastEnabled,
-		"NumWebhookOnCreationURLs":    len(strings.Split(playbook.WebhookOnCreationURL, "\n")),
+		"NumWebhookOnCreationURLs":    len(playbook.WebhookOnCreationURLs),
 		"WebhookOnCreationEnabled":    playbook.WebhookOnCreationEnabled,
 		"SignalAnyKeywordsEnabled":    playbook.SignalAnyKeywordsEnabled,
 		"NumSignalAnyKeywords":        len(playbook.SignalAnyKeywords),
