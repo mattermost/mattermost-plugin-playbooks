@@ -10,8 +10,6 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {useSelector} from 'react-redux';
 
-import styled from 'styled-components';
-
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from '../widgets/text_with_tooltip';
 
