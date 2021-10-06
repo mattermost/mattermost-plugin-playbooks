@@ -49,7 +49,7 @@ const RunListHeader = ({fetchParams, setFetchParams}: Props) => {
             <div className='row'>
                 <div className='col-sm-4'>
                     <SortableColHeader
-                        name={'Run Name'}
+                        name={'Run name'}
                         direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                         active={fetchParams.sort ? fetchParams.sort === 'name' : false}
                         onClick={() => colHeaderClicked('name')}
