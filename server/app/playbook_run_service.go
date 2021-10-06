@@ -2454,7 +2454,7 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) (strin
 	message := fmt.Sprintf("##### Your Outstanding Tasks\nYou have %s in %s:\n\n", taskPlural, runPlural)
 
 	for _, run := range runs {
-		message += fmt.Sprintf("[%s](%s/%s/channels/%s)\n",
+		message += fmt.Sprintf("[%s](%s/%s/channels/%s?telem=todo_assignedtask_clicked)\n",
 			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
 
 		for _, task := range run.Tasks {
@@ -2480,7 +2480,7 @@ func buildRunsInProgressMessage(runs []RunLink, siteURL string) string {
 	message := fmt.Sprintf("\n##### Runs in Progress\nYou have %d %s currently in progress:\n", total, runPlural)
 
 	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
+		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_runsinprogress_clicked)\n",
 			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
 	}
 
@@ -2502,7 +2502,7 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string) string {
 	message := fmt.Sprintf("\n##### Overdue Status Updates\nYou have %d %s overdue for a status update:\n", total, runPlural)
 
 	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
+		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked)\n",
 			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
 	}
 
