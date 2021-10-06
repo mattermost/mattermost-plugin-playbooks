@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {useEffect, useState} from 'react';
+import React, {ReactNode, useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
@@ -16,6 +16,8 @@ const RightMarginedIcon = styled(Icon)`
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
+
+import {useIntl} from 'react-intl';
 
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
 import {clientFetchPlaybook, fetchPlaybookStats, telemetryEventForPlaybook} from 'src/client';
@@ -58,10 +60,11 @@ const RunListContainer = styled.div`
 
 const PlaybookBackstage = () => {
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
     const location = useLocation();
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
-    const [filterPill, setFilterPill] = useState<JSX.Element | null>(null);
+    const [filterPill, setFilterPill] = useState<ReactNode>(null);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const [stats, setStats] = useState(EmptyPlaybookStats);
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
@@ -121,28 +124,26 @@ const PlaybookBackstage = () => {
     };
 
     const runPlaybook = () => {
-        navigateToUrl(`/${team.name || ''}`);
-
         if (playbook?.id) {
             telemetryEventForPlaybook(playbook.id, 'playbook_dashboard_run_clicked');
-            dispatch(startPlaybookRunById(team.id, playbook.id, 3000));
+            navigateToUrl(`/${team.name || ''}/_playbooks/${playbook?.id || ''}/run`);
         }
     };
 
     let subTitle;
     let accessIconClass;
     if (playbook.member_ids.length === 1) {
-        subTitle = 'Only you can access this playbook';
+        subTitle = formatMessage({defaultMessage: 'Only you can access this playbook'});
         accessIconClass = 'icon-lock-outline';
     } else if (playbook.member_ids.length > 1) {
-        subTitle = `${playbook.member_ids.length} people can access this playbook`;
+        subTitle = formatMessage({defaultMessage: '{members, plural, =0 {No one} =1 {One person} other {# people}} can access this playbook'}, {members: playbook.member_ids.length});
         accessIconClass = 'icon-lock-outline';
     } else if (team) {
         accessIconClass = 'icon-globe';
-        subTitle = `Everyone in ${team.name} can access this playbook`;
+        subTitle = formatMessage({defaultMessage: 'Everyone in {team} can access this playbook'}, {team: team.display_name});
     } else {
         accessIconClass = 'icon-globe';
-        subTitle = 'Everyone in this team can access this playbook';
+        subTitle = formatMessage({defaultMessage: 'Everyone in this team can access this playbook'});
     }
 
     const enableRunPlaybook = playbook?.delete_at === 0;
@@ -164,7 +165,7 @@ const PlaybookBackstage = () => {
                     </VerticalBlock>
                     <SecondaryButtonLargerRight onClick={goToEdit}>
                         <i className={'icon icon-pencil-outline'}/>
-                        {'Edit'}
+                        {formatMessage({defaultMessage: 'Edit'})}
                     </SecondaryButtonLargerRight>
                     <PrimaryButtonLarger
                         onClick={runPlaybook}
@@ -175,7 +176,7 @@ const PlaybookBackstage = () => {
                             path={mdiClipboardPlayOutline}
                             size={1.25}
                         />
-                        {'Run'}
+                        {formatMessage({defaultMessage: 'Run'})}
                     </PrimaryButtonLarger>
                 </TitleRow>
             </TopContainer>

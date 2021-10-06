@@ -259,7 +259,6 @@ const PlaybookRunBackstage = () => {
                         <i className={'icon ' + channelIcon}/>
                         {formatMessage({defaultMessage: 'Go to channel'})}
                     </SecondaryButtonLargerRight>
-                    {/* Need to Translate the ExportLink Button ../playbook_run_details  */}
                     <ExportLink playbookRun={playbookRun}/>
                 </FirstRow>
                 <SecondRow>

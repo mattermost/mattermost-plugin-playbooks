@@ -58,7 +58,6 @@ const Participants = (
 
     return (
         <TabPageContainer>
-            {/* Should this be of type Plural? */}
             <Title>{formatMessage({defaultMessage: 'Participants ({participants})'}, {participants: participant_ids.length})}</Title>
             <StyledContent>
                 <Heading>{formatMessage({defaultMessage: 'Owner'})}</Heading>
