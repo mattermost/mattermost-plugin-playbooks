@@ -2454,7 +2454,7 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) (strin
 	message := fmt.Sprintf("##### Your Outstanding Tasks\nYou have %s in %s:\n\n", taskPlural, runPlural)
 
 	for _, run := range runs {
-		message += fmt.Sprintf("[%s](%s/%s/channels/%s):\n",
+		message += fmt.Sprintf("[%s](%s/%s/channels/%s)\n",
 			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
 
 		for _, task := range run.Tasks {
