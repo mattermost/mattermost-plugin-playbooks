@@ -134,6 +134,20 @@ func (mr *MockPlaybookRunServiceMockRecorder) CreatePlaybookRun(arg0, arg1, arg2
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePlaybookRun", reflect.TypeOf((*MockPlaybookRunService)(nil).CreatePlaybookRun), arg0, arg1, arg2, arg3)
 }
 
+// DMTodoDigestToUser mocks base method
+func (m *MockPlaybookRunService) DMTodoDigestToUser(arg0 string, arg1 bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DMTodoDigestToUser", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DMTodoDigestToUser indicates an expected call of DMTodoDigestToUser
+func (mr *MockPlaybookRunServiceMockRecorder) DMTodoDigestToUser(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DMTodoDigestToUser", reflect.TypeOf((*MockPlaybookRunService)(nil).DMTodoDigestToUser), arg0, arg1)
+}
+
 // EditChecklistItem mocks base method
 func (m *MockPlaybookRunService) EditChecklistItem(arg0, arg1 string, arg2, arg3 int, arg4, arg5, arg6 string) error {
 	m.ctrl.T.Helper()

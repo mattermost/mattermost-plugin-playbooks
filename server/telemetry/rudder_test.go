@@ -387,7 +387,7 @@ func TestPlaybookProperties(t *testing.T) {
 		DefaultOwnerEnabled:         false,
 		BroadcastChannelIDs:         []string{"broadcast_channel_id"},
 		BroadcastEnabled:            true,
-		WebhookOnCreationURL:        "webhook_on_creation_url_1\nwebhook_on_creation_url_2",
+		WebhookOnCreationURLs:       []string{"webhook_on_creation_url_1", "webhook_on_creation_url_2"},
 		WebhookOnCreationEnabled:    false,
 		SignalAnyKeywordsEnabled:    true,
 		SignalAnyKeywords:           []string{"SEV1, SEV2"},

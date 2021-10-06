@@ -469,6 +469,10 @@ export const updatePlaybookRunDescription = async (playbookRunId: string, newDes
     });
 };
 
+export const notifyConnect = async () => {
+    await doFetchWithoutResponse(`${apiUrl}/bot/connect`, {method: 'GET'});
+};
+
 export const doGet = async <TData = any>(url: string) => {
     const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 
