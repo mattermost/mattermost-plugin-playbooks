@@ -135,7 +135,6 @@ const PostCard = (props: Props) => {
                             timestamp: (
                                 <Timestamp
                                     value={updateTimestamp}
-                                    useTime={false}
                                 />
                             ),
                         })
