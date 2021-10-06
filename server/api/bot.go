@@ -72,7 +72,7 @@ func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BotHandler) startTrial(w http.ResponseWriter, r *http.Request) {
-	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
+	requestData := postActionIntegrationRequestFromJson(r.Body)
 	if requestData == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
 		return
