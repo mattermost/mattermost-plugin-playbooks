@@ -161,7 +161,7 @@ const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
 
 export const tabInfo = [
     {id: 'checklists', name: 'Checklists'},
-    {id: 'templates', name: <FormattedMessage defaultMessage='Templates' />},
+    {id: 'templates', name: <FormattedMessage defaultMessage='Templates'/>},
     {id: 'actions', name: 'Actions'},
     {id: 'permissions', name: 'Permissions'},
 ] as const;
