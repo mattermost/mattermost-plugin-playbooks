@@ -1,4 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
+import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
@@ -41,6 +42,8 @@ interface CommandInputProps {
 }
 
 const CommandInput = (props: CommandInputProps) => {
+    const {formatMessage} = useIntl();
+
     const [command, setCommand] = useState(props.command);
     const [hover, setHover] = useState(false);
     const textboxRef = useRef(null);
@@ -73,7 +76,7 @@ const CommandInput = (props: CommandInputProps) => {
                     id={id}
                     ref={textboxRef}
                     inputComponent={BaseInput}
-                    createMessage={'Slash Command'}
+                    createMessage={formatMessage({defaultMessage: 'Slash Command'})}
                     onKeyDown={(e: KeyboardEvent) => {
                         if (e.key === 'Enter' || e.key === 'Escape') {
                             if (textboxRef.current) {

@@ -160,7 +160,7 @@ const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
 });
 
 export const tabInfo = [
-    {id: 'checklists', name: 'Checklists'},
+    {id: 'checklists', name: <FormattedMessage defaultMessage='Checklists'/>},
     {id: 'templates', name: <FormattedMessage defaultMessage='Templates'/>},
     {id: 'actions', name: 'Actions'},
     {id: 'permissions', name: 'Permissions'},
@@ -526,7 +526,7 @@ const PlaybookEdit = (props: Props) => {
                     onClick={() => onClose()}
                 >
                     <span>
-                        {'Cancel'}
+                        {formatMessage({defaultMessage: 'Cancel'})}
                     </span>
                 </SecondaryButtonLarger>
                 <PrimaryButton
@@ -535,7 +535,7 @@ const PlaybookEdit = (props: Props) => {
                     onClick={onSave}
                 >
                     <span>
-                        {'Save'}
+                        {formatMessage({defaultMessage: 'Save'})}
                     </span>
                 </PrimaryButton>
             </PlaybookNavbar>
