@@ -171,7 +171,7 @@ describe('backstage playbook run list', () => {
         });
     });
 
-    describe('filters Finished Runs correctly', () => {
+    describe('filters Finished runs correctly', () => {
         before(() => {
             // # Login as testUser
             cy.apiLogin(testUser);

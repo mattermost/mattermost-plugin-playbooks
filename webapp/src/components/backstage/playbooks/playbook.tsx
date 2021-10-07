@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {useEffect, useState} from 'react';
+import React, {ReactNode, useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Switch, Route, Redirect, NavLink, useRouteMatch, useLocation} from 'react-router-dom';
 
@@ -12,6 +12,8 @@ import {mdiClipboardPlayOutline} from '@mdi/js';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
+
+import {useIntl} from 'react-intl';
 
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
@@ -38,6 +40,7 @@ const FetchingStateType = {
 
 const Playbook = () => {
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
     const location = useLocation();
     const match = useRouteMatch<MatchParams>();
     const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
@@ -95,17 +98,17 @@ const Playbook = () => {
     let subTitle;
     let accessIconClass;
     if (playbook.member_ids.length === 1) {
-        subTitle = 'Only you can access this playbook';
+        subTitle = formatMessage({defaultMessage: 'Only you can access this playbook'});
         accessIconClass = 'icon-lock-outline';
     } else if (playbook.member_ids.length > 1) {
-        subTitle = `${playbook.member_ids.length} people can access this playbook`;
+        subTitle = formatMessage({defaultMessage: '{members, plural, =0 {No one} =1 {One person} other {# people}} can access this playbook'}, {members: playbook.member_ids.length});
         accessIconClass = 'icon-lock-outline';
     } else if (team) {
         accessIconClass = 'icon-globe';
-        subTitle = `Everyone in ${team.name} can access this playbook`;
+        subTitle = formatMessage({defaultMessage: 'Everyone in {team} can access this playbook'}, {team: team.display_name});
     } else {
         accessIconClass = 'icon-globe';
-        subTitle = 'Everyone in this team can access this playbook';
+        subTitle = formatMessage({defaultMessage: 'Everyone in this team can access this playbook'});
     }
 
     const enableRunPlaybook = playbook?.delete_at === 0;
@@ -127,7 +130,7 @@ const Playbook = () => {
                     </VerticalBlock>
                     <SecondaryButtonLargerRight onClick={goToEdit}>
                         <i className={'icon icon-pencil-outline'}/>
-                        {'Edit'}
+                        {formatMessage({defaultMessage: 'Edit'})}
                     </SecondaryButtonLargerRight>
                     <PrimaryButtonLarger
                         onClick={runPlaybook}
@@ -138,7 +141,7 @@ const Playbook = () => {
                             path={mdiClipboardPlayOutline}
                             size={1.25}
                         />
-                        {'Run'}
+                        {formatMessage({defaultMessage: 'Run'})}
                     </PrimaryButtonLarger>
                 </TitleRow>
             </TopContainer>

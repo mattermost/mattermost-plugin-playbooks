@@ -1,13 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 
 import ClearIcon from 'src/components/assets/icons/clear_icon';
 
 interface Props {
-    text: string;
+    text: ReactNode;
     onClose: () => void;
 }
 

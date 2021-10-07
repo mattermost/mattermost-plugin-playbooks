@@ -575,7 +575,7 @@ describe('playbook run automation', () => {
                     title: playbookName,
                     createPublicPlaybookRun: true,
                     memberIDs: [userId],
-                    webhookOnCreationURL: 'https://httpbin.org/post',
+                    webhookOnCreationURLs: ['https://httpbin.org/post'],
                     webhookOnCreationEnabled: true,
                 }).then((playbook) => {
                     // # Create a new playbook run with that playbook
@@ -599,38 +599,6 @@ describe('playbook run automation', () => {
                         cy.get(`#postMessageText_${lastPostId}`)
                             .should('not.contain', 'Playbook run creation announcement through the outgoing webhook failed. Contact your System Admin for more information.');
                     });
-                });
-            });
-            it('with webhook misconfigured and setting enabled', () => {
-                const playbookName = 'Playbook (' + Date.now() + ')';
-
-                // # Create a playbook with a wrong webhook and the setting enabled
-                cy.apiCreatePlaybook({
-                    teamId,
-                    title: playbookName,
-                    createPublicPlaybookRun: true,
-                    memberIDs: [userId],
-                    webhookOnCreationURL: 'http://example.com/not-an-actual-endpoint',
-                    webhookOnCreationEnabled: true,
-                }).then((playbook) => {
-                    // # Create a new playbook run with that playbook
-                    const now = Date.now();
-                    const playbookRunName = `Run (${now})`;
-                    const playbookRunChannelName = `run-${now}`;
-
-                    cy.apiRunPlaybook({
-                        teamId,
-                        playbookId: playbook.id,
-                        playbookRunName,
-                        ownerUserId: userId,
-                        description: 'Playbook run description.',
-                    });
-
-                    // # Navigate to the playbook run channel
-                    cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
-
-                    // * Verify that the bot has posted a message informing of the failure to send the webhook
-                    cy.findByText('Playbook run creation announcement through the outgoing webhook failed. Contact your System Admin for more information.');
                 });
             });
         });
