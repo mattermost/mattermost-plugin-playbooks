@@ -9,7 +9,7 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
-import {useIntl} from 'react-intl';
+import {useIntl, FormattedMessage} from 'react-intl';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
@@ -159,11 +159,9 @@ const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
     })),
 });
 
-const {formatMessage} = useIntl();
-
 export const tabInfo = [
     {id: 'checklists', name: 'Checklists'},
-    {id: 'templates', name: formatMessage({defaultMessage: 'Templates'})},
+    {id: 'templates', name: <FormattedMessage defaultMessage='Templates' />},
     {id: 'actions', name: 'Actions'},
     {id: 'permissions', name: 'Permissions'},
 ] as const;
@@ -504,6 +502,8 @@ const PlaybookEdit = (props: Props) => {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
     }
 
+    const {formatMessage} = useIntl();
+
     return (
         <OuterContainer>
             <PlaybookNavbar
@@ -582,7 +582,7 @@ const PlaybookEdit = (props: Props) => {
                                     <StyledMarkdownTextbox
                                         className={'playbook_description'}
                                         id={'playbook_description_edit'}
-                                        placeholder={'Use Markdown to create a template.'}
+                                        placeholder={formatMessage({defaultMessage: 'Use Markdown to create a template.'})}
                                         value={playbook.description}
                                         setValue={(description: string) => {
                                             setPlaybook({
@@ -647,7 +647,7 @@ const PlaybookEdit = (props: Props) => {
                                             <StyledMarkdownTextbox
                                                 className={'playbook_retrospective_template'}
                                                 id={'playbook_retrospective_template_edit'}
-                                                placeholder={'Enter retrospective template'}
+                                                placeholder={formatMessage({defaultMessage: 'Enter retrospective template'})}
                                                 value={playbook.retrospective_template}
                                                 setValue={(value: string) => {
                                                     setPlaybook({
