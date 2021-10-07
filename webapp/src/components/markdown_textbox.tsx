@@ -128,12 +128,12 @@ function TextboxLinks({
                 className={'help__format-text'}
             >
                 <HelpText>
-                    <b>{formatMessage({defaultMessage: '**bold**'})}</b>
-                    <i>{formatMessage({defaultMessage: '*italic*'})}</i>
-                    <span>{formatMessage({defaultMessage: '~~'})}<s>{formatMessage({defaultMessage: 'strike'})}</s>{formatMessage({defaultMessage: '~~ '})}</span>
-                    <span>{formatMessage({defaultMessage: '`inline code`'})}</span>
-                    <span>{formatMessage({defaultMessage: '```preformatted```'})}</span>
-                    <span>{formatMessage({defaultMessage: '>quote'})}</span>
+                    <b>{'**'}{formatMessage({defaultMessage: 'bold'})}{'**'}</b>
+                    <i>{'*'}{formatMessage({defaultMessage: 'italic'})}{'*'}</i>
+                    <span>{'~~'}<s>{formatMessage({defaultMessage: 'strike'})}</s>{'~~ '}</span>
+                    <span>{'`'}{formatMessage({defaultMessage: 'inline code'})}{'`'}</span>
+                    <span>{'```'}{formatMessage({defaultMessage: 'preformatted'})}{'```'}</span>
+                    <span>{'>'}{formatMessage({defaultMessage: 'quote'})}</span>
                 </HelpText>
             </div>
             <div>
