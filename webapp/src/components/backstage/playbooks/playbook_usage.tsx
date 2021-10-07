@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, ReactNode} from 'react';
 
 import {fetchPlaybookStats} from 'src/client';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
@@ -32,7 +32,7 @@ interface Props {
 }
 
 const PlaybookUsage = (props: Props) => {
-    const [filterPill, setFilterPill] = useState<JSX.Element | null>(null);
+    const [filterPill, setFilterPill] = useState<ReactNode>(null);
     const [stats, setStats] = useState(EmptyPlaybookStats);
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
 
