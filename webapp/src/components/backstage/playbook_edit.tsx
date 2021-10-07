@@ -184,6 +184,8 @@ const PlaybookNavbar = styled(BackstageNavbar)`
 const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
+    const {formatMessage} = useIntl();
+
     const currentUserId = useSelector(getCurrentUserId);
 
     const [playbook, setPlaybook] = useState<DraftPlaybookWithChecklist | PlaybookWithChecklist>({
@@ -503,8 +505,6 @@ const PlaybookEdit = (props: Props) => {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
     }
 
-    const {formatMessage} = useIntl();
-
     return (
         <OuterContainer>
             <PlaybookNavbar
@@ -546,9 +546,7 @@ const PlaybookEdit = (props: Props) => {
                             currentTab={currentTab}
                             setCurrentTab={setCurrentTab}
                         >
-                            {tabInfo.map((item) => {
-                                return (item.name);
-                            })}
+                            {tabInfo.map(({id, name}) => <React.Fragment key={id}>{name}</React.Fragment>)}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>
