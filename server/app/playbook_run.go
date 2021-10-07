@@ -113,13 +113,13 @@ type PlaybookRun struct {
 	// creation and status updates are announced.
 	BroadcastChannelIDs []string `json:"broadcast_channel_ids"`
 
-	// WebhookOnCreationURL, if not empty, is the URL to which a POST request is made with the whole
+	// WebhookOnCreationURLs, if not empty, is the URL to which a POST request is made with the whole
 	// playbook run as payload when the run is created.
-	WebhookOnCreationURL string `json:"webhook_on_creation_url"`
+	WebhookOnCreationURLs []string `json:"webhook_on_creation_urls"`
 
-	// WebhookOnStatusUpdateURL, if not empty, is the URL to which a POST request is made with the
+	// WebhookOnStatusUpdateURLs, if not empty, is the URL to which a POST request is made with the
 	// whole playbook run as payload every time the status of the playbook run is updated.
-	WebhookOnStatusUpdateURL string `json:"webhook_on_status_update_url"`
+	WebhookOnStatusUpdateURLs []string `json:"webhook_on_status_update_urls"`
 
 	// Retrospective is a string containing the currently saved retrospective.
 	// If RetrospectivePublishedAt is different than 0, this is the final published retrospective.
@@ -165,6 +165,8 @@ func (i *PlaybookRun) Clone() *PlaybookRun {
 	newPlaybookRun.InvitedUserIDs = append([]string(nil), i.InvitedUserIDs...)
 	newPlaybookRun.InvitedGroupIDs = append([]string(nil), i.InvitedGroupIDs...)
 	newPlaybookRun.ParticipantIDs = append([]string(nil), i.ParticipantIDs...)
+	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), i.WebhookOnCreationURLs...)
+	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), i.WebhookOnStatusUpdateURLs...)
 
 	return &newPlaybookRun
 }
@@ -199,6 +201,12 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	}
 	if old.BroadcastChannelIDs == nil {
 		old.BroadcastChannelIDs = []string{}
+	}
+	if old.WebhookOnCreationURLs == nil {
+		old.WebhookOnCreationURLs = []string{}
+	}
+	if old.WebhookOnStatusUpdateURLs == nil {
+		old.WebhookOnStatusUpdateURLs = []string{}
 	}
 
 	return json.Marshal(old)
@@ -509,6 +517,10 @@ type PlaybookRunService interface {
 
 	// UpdateDescription updates the description of the specified playbook run.
 	UpdateDescription(playbookRunID, description string) error
+
+	// DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
+	// and DMs the message to userID. Use force = true to DM even if there are no items.
+	DMTodoDigestToUser(userID string, force bool) error
 
 	// GetAssignedTasks returns the list of tasks assigned to userID
 	GetAssignedTasks(userID string) ([]AssignedRun, error)

@@ -76,30 +76,46 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if playbook.WebhookOnCreationEnabled {
-		url, err := url.ParseRequestURI(playbook.WebhookOnCreationURL)
-		if err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
+		if len(playbook.WebhookOnCreationURLs) > 64 {
+			msg := "too many registered creation webhook urls, limit to less than 64"
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
 
-		if url.Scheme != "http" && url.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-			return
+		for _, webhook := range playbook.WebhookOnCreationURLs {
+			url, err := url.ParseRequestURI(webhook)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
+				return
+			}
+
+			if url.Scheme != "http" && url.Scheme != "https" {
+				msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+				return
+			}
 		}
 	}
 
 	if playbook.WebhookOnStatusUpdateEnabled {
-		url, err := url.ParseRequestURI(playbook.WebhookOnStatusUpdateURL)
-		if err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
+		if len(playbook.WebhookOnStatusUpdateURLs) > 64 {
+			msg := "too many registered update webhook urls, limit to less than 64"
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
 
-		if url.Scheme != "http" && url.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-			return
+		for _, webhook := range playbook.WebhookOnStatusUpdateURLs {
+			url, err := url.ParseRequestURI(webhook)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
+				return
+			}
+
+			if url.Scheme != "http" && url.Scheme != "https" {
+				msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+				return
+			}
 		}
 	}
 
@@ -176,32 +192,36 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if playbook.WebhookOnCreationEnabled {
-		var parsedURL *url.URL
-		parsedURL, err = url.ParseRequestURI(playbook.WebhookOnCreationURL)
-		if err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
-			return
-		}
+		for _, webhook := range playbook.WebhookOnCreationURLs {
+			var parsedURL *url.URL
+			parsedURL, err = url.ParseRequestURI(webhook)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
+				return
+			}
 
-		if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-			return
+			if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+				msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
+				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+				return
+			}
 		}
 	}
 
 	if playbook.WebhookOnStatusUpdateEnabled {
-		var parsedURL *url.URL
-		parsedURL, err = url.ParseRequestURI(playbook.WebhookOnStatusUpdateURL)
-		if err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
-			return
-		}
+		for _, webhook := range playbook.WebhookOnStatusUpdateURLs {
+			var parsedURL *url.URL
+			parsedURL, err = url.ParseRequestURI(webhook)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
+				return
+			}
 
-		if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-			return
+			if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+				msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
+				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+				return
+			}
 		}
 	}
 

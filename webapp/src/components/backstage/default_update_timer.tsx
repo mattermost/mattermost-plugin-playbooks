@@ -4,6 +4,7 @@
 import React, {useState} from 'react';
 import styled from 'styled-components';
 import {SingleValueProps} from 'react-select';
+import {useIntl} from 'react-intl';
 
 import GenericModal, {Description} from 'src/components/widgets/generic_modal';
 import {BaseInput} from 'src/components/assets/inputs';
@@ -27,12 +28,14 @@ const DefaultUpdateTimer = (props: Props) => {
         {label: customLabel, value: customValue},
     ];
 
+    const {formatMessage} = useIntl();
+
     return (
         <>
             <BackstageSubheader>
-                {'Default update timer'}
+                {formatMessage({defaultMessage: 'Default update timer'})}
                 <BackstageSubheaderDescription>
-                    {'How often should an update be posted?'}
+                    {formatMessage({defaultMessage: 'How often should an update be posted?'})}
                 </BackstageSubheaderDescription>
             </BackstageSubheader>
             <StyledSelect
