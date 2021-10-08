@@ -5,7 +5,7 @@ import {Team} from 'mattermost-redux/types/teams';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {useSelector} from 'react-redux';
-import {useIntl, FormattedMessage} from 'react-intl';
+import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
