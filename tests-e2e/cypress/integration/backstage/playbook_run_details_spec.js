@@ -57,11 +57,7 @@ describe('backstage playbook run details', () => {
             }).then((playbookRun) => {
                 cy.apiUpdateStatus({
                     playbookRunId: playbookRun.id,
-                    userId: testUser.id,
-                    channelId: playbookRun.channel_id,
-                    teamId: testTeam.id,
                     message,
-                    description: 'This is a description',
                 });
 
                 // # Visit the playbook run
@@ -85,6 +81,7 @@ describe('backstage playbook run details', () => {
                 // # Click status post permalink
                 cy.get('[class^="UpdateTimeLink"]').click();
             });
+
             // * Verify post message
             cy.get('.post').contains(message);
         });

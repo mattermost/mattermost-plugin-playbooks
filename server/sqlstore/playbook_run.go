@@ -939,7 +939,8 @@ func (s *playbookRunStore) GetAssignedTasks(userID string) ([]app.AssignedRun, e
 		From("IR_Incident AS i").
 		Join("Teams AS t ON (i.TeamID = t.Id)").
 		Join("Channels AS c ON (i.ChannelID = c.Id)").
-		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress})
+		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
+		OrderBy("ChannelDisplayName")
 
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
 		query = query.Where(sq.Like{"i.ChecklistsJSON": fmt.Sprintf("%%\"%s\"%%", userID)})
@@ -1000,7 +1001,8 @@ func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, e
 		Join("Teams AS t ON (i.TeamID = t.Id)").
 		Join("Channels AS c ON (i.ChannelId = c.Id)").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
-		Where(membershipClause)
+		Where(membershipClause).
+		OrderBy("ChannelDisplayName")
 
 	var ret []app.RunLink
 	if err := s.store.selectBuilder(s.store.db, &ret, query); err != nil {
@@ -1020,7 +1022,8 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 		Join("Channels AS c ON (i.ChannelId = c.Id)").
 		Where(sq.Eq{"i.CommanderUserID": userID}).
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
-		Where(sq.NotEq{"i.PreviousReminder": 0})
+		Where(sq.NotEq{"i.PreviousReminder": 0}).
+		OrderBy("ChannelDisplayName")
 
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
 		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP(CURTIME(4)) * 1000)"))
