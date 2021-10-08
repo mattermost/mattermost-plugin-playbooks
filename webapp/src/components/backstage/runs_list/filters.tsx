@@ -42,6 +42,16 @@ const ControlComponentAnchor = styled.a`
     top: -4px;
 `;
 
+const PlaybookRunListFilters = styled.div`
+    display: flex;
+    align-items: center;
+    margin: 0 -4px 20px;
+
+    > div {
+        padding: 0 4px;
+    }
+`;
+
 const controlComponent = (ownProps: ControlProps<any>, filterName: string) => (
     <div>
         <components.Control {...ownProps}/>
@@ -120,7 +130,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
     }
 
     return (
-        <div className='PlaybookRunList__filters'>
+        <PlaybookRunListFilters>
             <SearchInput
                 testId={'search-filter'}
                 default={fetchParams.search_term}
@@ -170,7 +180,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                     onSelectedChange={setTeamId}
                 />
             }
-        </div>
+        </PlaybookRunListFilters>
     );
 };
 
