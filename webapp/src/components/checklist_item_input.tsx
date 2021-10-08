@@ -1,4 +1,5 @@
 import React, {useState, useRef, useEffect} from 'react';
+import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
@@ -20,6 +21,8 @@ const SlashCommandContainer = styled.div`
 `;
 
 export const ChecklistItemCommand = (props: ChecklistItemCommandProps) => {
+    const {formatMessage} = useIntl();
+
     const [commandOpen, setCommandOpen] = useState(props.command.length > 0);
     const [wasOpened, setWasOpened] = useState(false);
 
@@ -38,7 +41,7 @@ export const ChecklistItemCommand = (props: ChecklistItemCommandProps) => {
             }}
         >
             <i className='icon-plus'/>
-            {'Add a slash command'}
+            {formatMessage({defaultMessage: 'Add a slash command'})}
         </TertiaryButton>
     );
 
@@ -73,6 +76,8 @@ interface ChecklistItemDescriptionProps {
 }
 
 export const ChecklistItemDescription = (props: ChecklistItemDescriptionProps) => {
+    const {formatMessage} = useIntl();
+
     const [description, setDescription] = useState(props.description);
     const [descriptionOpen, setDescriptionOpen] = useState(props.description.length > 0);
     const [hover, setHover] = useState(false);
@@ -88,7 +93,7 @@ export const ChecklistItemDescription = (props: ChecklistItemDescriptionProps) =
             }}
         >
             <i className='icon-plus icon-12 icon--no-spacing mr-1'/>
-            {'Add optional description'}
+            {formatMessage({defaultMessage: 'Add optional description'})}
         </GrayTertiaryButton>
     );
     if (descriptionOpen) {
@@ -98,7 +103,7 @@ export const ChecklistItemDescription = (props: ChecklistItemDescriptionProps) =
                     autoFocus={!description}
                     value={description}
                     onBlur={save}
-                    placeholder={'Description'}
+                    placeholder={formatMessage({defaultMessage: 'Description'})}
                     onChange={(e) => {
                         setDescription(e.target.value);
                     }}
@@ -162,6 +167,8 @@ const StyledBaseInput = styled(BaseInput)`
 `;
 
 export const ChecklistItemTitle = (props: ChecklistItemTitleProps) => {
+    const {formatMessage} = useIntl();
+
     const [title, setTitle] = useState(props.title);
 
     const save = () => {
@@ -176,7 +183,7 @@ export const ChecklistItemTitle = (props: ChecklistItemTitleProps) => {
 
     return (
         <StyledBaseInput
-            placeholder={'Task name'}
+            placeholder={formatMessage({defaultMessage: 'Task name'})}
             type='text'
             value={title}
             onChange={(e) => setTitle(e.target.value)}
