@@ -102,7 +102,7 @@ const Row = (props: Props) => {
 
     return (
         <PlaybookRunItem
-            className='row playbook-run-item'
+            className='row'
             key={props.playbookRun.id}
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >

@@ -130,7 +130,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
     }
 
     return (
-        <PlaybookRunListFilters className='PlaybookRunList__filters'>
+        <PlaybookRunListFilters>
             <SearchInput
                 testId={'search-filter'}
                 default={fetchParams.search_term}
