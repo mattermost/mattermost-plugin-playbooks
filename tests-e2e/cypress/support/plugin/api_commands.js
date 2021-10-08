@@ -173,9 +173,9 @@ Cypress.Commands.add('apiChangeChecklistItemAssignee', (playbookRunId, checklist
  * @param {String} playbookRunId
  * @param {String} checklistId
  * @param {String} itemId
- * @param {String} state (optional: 'closed' = default, or 'in_progress')
+ * @param {String} state ('' or 'closed')
  */
-Cypress.Commands.add('apiCheckChecklistItem', (playbookRunId, checklistId, itemId, state = 'closed') => {
+Cypress.Commands.add('apiSetChecklistItemState', (playbookRunId, checklistId, itemId, state) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: playbookRunsEndpoint + `/${playbookRunId}/checklists/${checklistId}/item/${itemId}/state`,

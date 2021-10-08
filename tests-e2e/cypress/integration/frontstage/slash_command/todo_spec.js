@@ -6,7 +6,6 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import * as TIMEOUTS from '../../../fixtures/timeouts';
 import users from '../../../fixtures/users.json';
 
 describe('slash command > todo', () => {
@@ -147,23 +146,17 @@ describe('slash command > todo', () => {
             // # Switch to playbooks DM channel
             cy.visit(`/${team2.name}/messages/@playbooks`);
 
-            // * Should show titles
-            cy.verifyPostedMessage('You have 0 runs overdue.');
-            cy.verifyPostedMessage('You have 0 outstanding tasks.');
-            cy.verifyPostedMessage('You have 3 runs currently in progress:');
+            cy.getLastPost().within((post) => {
+                // * Should show titles
+                cy.wrap(post).contains('You have 0 runs overdue.');
+                cy.wrap(post).contains('You have 0 outstanding tasks.');
+                cy.wrap(post).contains('You have 3 runs currently in progress:');
 
-            // * Should show three active runs
-            cy.wait(TIMEOUTS.HALF_SEC).getLastPostId().then((postId) => {
-                cy.get(`#post_${postId}`).within(() => {
-                    cy.get(`#postMessageText_${postId}`).within(() => {
-                        cy.get('.markdown__list').then((items) => {
-                            cy.wrap(items[0]).get('li').then((liItems) => {
-                                expect(liItems[0]).to.contain.text(runName1);
-                                expect(liItems[1]).to.contain.text(runName2);
-                                expect(liItems[2]).to.contain.text(runName3);
-                            });
-                        });
-                    });
+                // * Should show three active runs
+                cy.get('li').then((liItems) => {
+                    expect(liItems[0]).to.contain.text(runName1);
+                    expect(liItems[1]).to.contain.text(runName2);
+                    expect(liItems[2]).to.contain.text(runName3);
                 });
             });
         });
@@ -181,81 +174,56 @@ describe('slash command > todo', () => {
             // # Run a slash command to show the to-do list.
             cy.executeSlashCommand('/playbook todo');
 
-            // * Should show titles
-            cy.verifyPostedMessage('You have 0 runs overdue.');
-            cy.verifyPostedMessage('You have 4 total outstanding tasks in 3 runs:');
+            cy.getLastPost().within((post) => {
+                // * Should show titles
+                cy.wrap(post).contains('You have 0 runs overdue.');
+                cy.wrap(post).contains('You have 4 total outstanding tasks in 3 runs:');
 
-            // * Should show 4 tasks
-            cy.wait(TIMEOUTS.HALF_SEC).getLastPostId().then((postId) => {
-                cy.get(`#post_${postId}`).within(() => {
-                    cy.get(`#postMessageText_${postId}`).within(() => {
-                        cy.get('a').then((links) => {
-                            expect(links[0]).to.contain.text(runName1);
-                            expect(links[1]).to.contain.text(runName2);
-                            expect(links[2]).to.contain.text(runName3);
-                        });
+                // * Should show 3 runs
+                cy.get('a').then((links) => {
+                    expect(links[1]).to.contain.text(runName1);
+                    expect(links[2]).to.contain.text(runName2);
+                    expect(links[3]).to.contain.text(runName3);
+                });
 
-                        cy.get('li').then((items) => {
-                            // # first run
-                            expect(items[0])
-                                .to
-                                .contain
-                                .text('Playbook One - Stage 1: Step 1');
-                            expect(items[1])
-                                .to
-                                .contain
-                                .text('Playbook One - Stage 2: Step 2');
+                cy.get('li').then((items) => {
+                    // * first run
+                    expect(items[0]).to.contain.text('Playbook One - Stage 1: Step 1');
+                    expect(items[1]).to.contain.text('Playbook One - Stage 2: Step 2');
 
-                            // # second run
-                            expect(items[2])
-                                .to
-                                .contain
-                                .text('Playbook One - Stage 1: Step 2');
+                    // * second run
+                    expect(items[2]).to.contain.text('Playbook One - Stage 1: Step 2');
 
-                            // # third run
-                            expect(items[3])
-                                .to
-                                .contain
-                                .text('Playbook Two - Stage 2: Step 1');
-                        });
-                    });
+                    // * third run
+                    expect(items[3]).to.contain.text('Playbook Two - Stage 2: Step 1');
                 });
             });
 
             // # check two of the items via API
-            cy.apiCheckChecklistItem(run1.id, 0, 0);
-            cy.apiCheckChecklistItem(run3.id, 1, 0);
+            cy.apiSetChecklistItemState(run1.id, 0, 0, 'closed');
+            cy.apiSetChecklistItemState(run3.id, 1, 0, 'closed');
 
             // # Show the to-do list.
             cy.executeSlashCommand('/playbook todo');
 
-            // * Should show titles
-            cy.verifyPostedMessage('You have 0 runs overdue.');
-            cy.verifyPostedMessage('You have 2 total outstanding tasks in 2 runs:');
+            // * Should show 2 tasks
+            cy.getLastPost().within((post) => {
+                // * Should show titles
+                cy.wrap(post).contains('You have 0 runs overdue.');
+                cy.wrap(post).contains('You have 2 total outstanding tasks in 2 runs:');
 
-            // * Should show 4 tasks
-            cy.wait(TIMEOUTS.HALF_SEC).getLastPostId().then((postId) => {
-                cy.get(`#post_${postId}`).within(() => {
-                    cy.get(`#postMessageText_${postId}`).within(() => {
-                        cy.get('a').then((links) => {
-                            expect(links[0]).to.contain.text(runName1);
-                            expect(links[1]).to.contain.text(runName2);
-                        });
+                // * Should show 2 runs
+                cy.get('a').then((links) => {
+                    expect(links[1]).to.contain.text(runName1);
+                    expect(links[2]).to.contain.text(runName2);
+                });
 
-                        cy.get('li').then((items) => {
-                            // # first run
-                            expect(items[0])
-                                .to
-                                .contain
-                                .text('Playbook One - Stage 2: Step 2');
+                cy.get('li').then((items) => {
+                    // * first run
+                    expect(items[0]).to.contain.text('Playbook One - Stage 2: Step 2');
 
-                            // # second run
-                            expect(items[1])
-                                .to
-                                .contain
-                                .text('Playbook One - Stage 1: Step 2');
-                        });
-                    });
+                    // * second run
+                    expect(items[1]).to.contain.text('Playbook One - Stage 1: Step 2');
                 });
             });
         });
@@ -282,16 +250,10 @@ describe('slash command > todo', () => {
             cy.executeSlashCommand('/playbook todo');
 
             // # Should show two runs overdue -- ignoring the rest
-            cy.wait(TIMEOUTS.HALF_SEC).getLastPostId().then((postId) => {
-                cy.get(`#post_${postId}`).within(() => {
-                    cy.get(`#postMessageText_${postId}`).within(() => {
-                        cy.get('.markdown__list').then((items) => {
-                            cy.wrap(items[0]).get('li').then((liItems) => {
-                                expect(liItems[0]).to.contain.text(runName1);
-                                expect(liItems[1]).to.contain.text(runName3);
-                            });
-                        });
-                    });
+            cy.getLastPost().within(() => {
+                cy.get('li').then((liItems) => {
+                    expect(liItems[0]).to.contain.text(runName1);
+                    expect(liItems[1]).to.contain.text(runName3);
                 });
             });
         });
