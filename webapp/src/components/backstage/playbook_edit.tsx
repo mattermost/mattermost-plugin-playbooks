@@ -163,7 +163,7 @@ export const tabInfo = [
     {id: 'checklists', name: 'Checklists'},
     {id: 'templates', name: <FormattedMessage defaultMessage='Templates'/>},
     {id: 'actions', name: 'Actions'},
-    {id: 'permissions', name: 'Permissions'},
+    {id: 'permissions', name: <FormattedMessage defaultMessage='Permissions'/>},
 ] as const;
 
 const retrospectiveReminderOptions = [
@@ -704,9 +704,9 @@ const PlaybookEdit = (props: Props) => {
                             <TabContainer>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Channel access'}
+                                        {formatMessage({defaultMessage: 'Channel access'})}
                                         <BackstageSubheaderDescription>
-                                            {'Determine the type of channel this playbook creates.'}
+                                            {formatMessage({defaultMessage: 'Determine the type of channel this playbook creates.'})}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <RadioContainer>
@@ -718,7 +718,7 @@ const PlaybookEdit = (props: Props) => {
                                                 checked={playbook.create_public_playbook_run}
                                                 onChange={handlePublicChange}
                                             />
-                                            {'Public'}
+                                            {formatMessage({defaultMessage: 'Public'})}
                                         </RadioLabel>
                                         <RadioLabel>
                                             <RadioInput
@@ -728,7 +728,7 @@ const PlaybookEdit = (props: Props) => {
                                                 checked={!playbook.create_public_playbook_run}
                                                 onChange={handlePublicChange}
                                             />
-                                            {'Private'}
+                                            {formatMessage({defaultMessage: 'Private'})}
                                         </RadioLabel>
                                     </RadioContainer>
                                 </SidebarBlock>

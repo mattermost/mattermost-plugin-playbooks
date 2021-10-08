@@ -1,4 +1,5 @@
 import React from 'react';
+import {useIntl} from 'react-intl';
 
 import {debounce} from 'debounce';
 import AsyncSelect from 'react-select/async';
@@ -76,6 +77,8 @@ interface Props {
 }
 
 const ProfileAutocomplete = (props: Props) => {
+    const {formatMessage} = useIntl();
+
     const onChange = (userAdded: UserProfile) => {
         props.onAddUser(userAdded.id);
     };
@@ -136,7 +139,7 @@ const ProfileAutocomplete = (props: Props) => {
             openMenuOnClick={true}
             isClearable={false}
             value={null}
-            placeholder={'Add People'}
+            placeholder={formatMessage({defaultMessage: 'Add People'})}
             components={{DropdownIndicator: () => null, IndicatorSeparator: () => null}}
             styles={customStyles}
             classNamePrefix='profile-autocomplete'
