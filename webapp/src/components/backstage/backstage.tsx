@@ -28,7 +28,7 @@ import {pluginErrorUrl} from 'src/browser_routing';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 
 import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
-import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
+import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 
 import ErrorPage from '../error_page';
@@ -106,8 +106,6 @@ const Backstage = () => {
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
 
     const match = useRouteMatch();
-
-    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     return (
         <BackstageContainer>
