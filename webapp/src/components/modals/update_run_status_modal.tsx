@@ -35,6 +35,7 @@ import {formatDuration} from '../formatted_duration';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {nearest} from 'src/utils';
 import Tooltip from 'src/components/widgets/tooltip';
+import WarningIcon from '../assets/icons/warning_icon';
 
 const ID = 'playbooks_update_run_status_dialog';
 
@@ -67,6 +68,8 @@ const UpdateRunStatusModal = ({
     }
 
     const {input: reminderInput, reminder} = useReminderTimerOption(run);
+
+    const isReminderValid = !reminder || reminder > 0;
 
     const onConfirm = () => {
         if (hasPermission && message?.trim() && currentUserId && channelId && run?.team_id) {
@@ -129,6 +132,11 @@ const UpdateRunStatusModal = ({
                 {'Timer for next update'}
             </Label>
             {reminderInput}
+            {!isReminderValid &&
+            <WarningLine>
+                <WarningIcon/> {formatMessage({defaultMessage: 'Date must be in the future.'})}
+            </WarningLine>
+            }
         </FormContainer>
     );
 
@@ -147,7 +155,7 @@ const UpdateRunStatusModal = ({
             confirmButtonText={hasPermission ? 'Post' : 'Ok'}
             handleCancel={() => true}
             handleConfirm={hasPermission ? onConfirm : null}
-            isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id)}
+            isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
             {...modalProps}
             id={ID}
         >
@@ -258,6 +266,11 @@ const WarningBlock = styled.div`
     span {
         padding: 1.5rem;
     }
+`;
+
+const WarningLine = styled.p`
+    color: var(--error-text);
+    margin-top: 0.6rem;
 `;
 
 export default UpdateRunStatusModal;

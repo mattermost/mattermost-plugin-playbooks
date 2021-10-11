@@ -64,6 +64,20 @@ const RunName = styled.div`
     line-height: 16px;
 `;
 
+const PlaybookRunItem = styled.div`
+    display: flex;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    align-items: center;
+    margin: 0;
+    border-bottom: 1px solid var(--center-channel-color-16);
+    cursor: pointer;
+
+    &:hover {
+        background: var(--center-channel-color-04);
+    }
+`;
+
 interface Props {
     playbookRun: PlaybookRun
     fixedTeam?: boolean
@@ -87,8 +101,8 @@ const Row = (props: Props) => {
     }
 
     return (
-        <div
-            className='row playbook-run-item'
+        <PlaybookRunItem
+            className='row'
             key={props.playbookRun.id}
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >
@@ -131,7 +145,7 @@ const Row = (props: Props) => {
                     total={totalTasks}
                 />
             </div>
-        </div>
+        </PlaybookRunItem>
     );
 };
 
