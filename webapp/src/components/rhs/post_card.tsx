@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import moment from 'moment';
 
 import {useDispatch, useSelector} from 'react-redux';
 import React from 'react';
