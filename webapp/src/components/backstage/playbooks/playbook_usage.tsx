@@ -56,44 +56,33 @@ const PlaybookUsage = (props: Props) => {
 
     return (
         <OuterContainer>
-            <BottomContainer>
-                <BottomInnerContainer>
-                    <StatsView
-                        stats={stats}
+            <InnerContainer>
+                <StatsView
+                    stats={stats}
+                    fetchParams={fetchParams}
+                    setFetchParams={setFetchParams}
+                    setFilterPill={setFilterPill}
+                />
+                <RunListContainer>
+                    <RunList
+                        playbookRuns={playbookRuns}
+                        totalCount={totalCount}
                         fetchParams={fetchParams}
                         setFetchParams={setFetchParams}
-                        setFilterPill={setFilterPill}
+                        filterPill={filterPill}
+                        fixedTeam={true}
                     />
-                    <RunListContainer>
-                        <RunList
-                            playbookRuns={playbookRuns}
-                            totalCount={totalCount}
-                            fetchParams={fetchParams}
-                            setFetchParams={setFetchParams}
-                            filterPill={filterPill}
-                            fixedTeam={true}
-                        />
-                    </RunListContainer>
-                </BottomInnerContainer>
-            </BottomContainer>
+                </RunListContainer>
+            </InnerContainer>
         </OuterContainer>
     );
 };
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
 `;
 
-const BottomContainer = styled.div`
-    flex-grow: 1;
-    background: var(--center-channel-bg);
-    width: 100%;
-`;
-
-const BottomInnerContainer = styled.div`
+const InnerContainer = styled.div`
     display: flex;
     flex-direction: column;
     padding: 20px;
