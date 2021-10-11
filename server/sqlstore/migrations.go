@@ -1323,4 +1323,49 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.34.0"),
+		toVersion:   semver.MustParse("0.35.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_Run_Participants (
+						IncidentID VARCHAR(26) NULL REFERENCES IR_Incident(ID),
+						UserID VARCHAR(26) NOT NULL,
+						IsFollower BOOLEAN NOT NULL,
+						INDEX IR_Run_Participants_UserID (UserID),
+						INDEX IR_Run_Participants_IncidentID (IncidentID)
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Run_Participants")
+				}
+				if err := addPrimaryKey(e, sqlStore, "IR_Run_Participants", "(IncidentID, UserID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_Run_Participants")
+				}
+			} else {
+				if _, err := e.Exec(`
+				CREATE TABLE IF NOT EXISTS IR_Run_Participants (
+					UserID TEXT NOT NULL,
+					IncidentID TEXT NULL REFERENCES IR_Incident(ID),
+					IsFollower BOOLEAN NOT NULL
+				);
+			`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Run_Participants")
+				}
+
+				if err := addPrimaryKey(e, sqlStore, "ir_run_participants", "(IncidentID, UserID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for ir_run_participants")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_Run_Participants_UserID", "IR_Run_Participants", "UserID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_StatusPosts_IncidentID")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_Run_Participants_IncidentID", "IR_Run_Participants", "IncidentID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_StatusPosts_PostID ")
+				}
+			}
+			return nil
+		},
+	},
 }

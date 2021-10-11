@@ -47,6 +47,7 @@ export interface Metadata {
     team_name: string;
     num_participants: number;
     total_posts: number;
+    followers: string[];
 }
 
 export interface FetchPlaybookRunsReturn {
@@ -103,7 +104,8 @@ export function isMetadata(arg: any): arg is Metadata {
         arg.channel_display_name && typeof arg.channel_display_name === 'string' &&
         arg.team_name && typeof arg.team_name === 'string' &&
         typeof arg.num_participants === 'number' &&
-        typeof arg.total_posts === 'number');
+        typeof arg.total_posts === 'number' &&
+        arg.followers && Array.isArray(arg.followers) && arg.followers.every(isString));
 }
 
 export function isTimelineEvent(arg: any): arg is TimelineEvent {

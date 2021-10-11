@@ -710,7 +710,7 @@ func (s *playbookRunStore) NukeDB() (err error) {
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember,  IR_StatusPosts, IR_Incident, IR_Playbook, IR_System, IR_TimelineEvent"); err != nil {
+	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember,  IR_StatusPosts, IR_Incident, IR_Playbook, IR_System, IR_TimelineEvent, IR_ViewedChannel, IR_Run_Participants"); err != nil {
 		return errors.Wrap(err, "could not delete all IR tables")
 	}
 
@@ -1037,6 +1037,66 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 	}
 
 	return ret, nil
+}
+
+func (s *playbookRunStore) Follow(playbookRunID, userID string) error {
+	return s.followHelper(playbookRunID, userID, true)
+}
+
+func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
+	return s.followHelper(playbookRunID, userID, false)
+}
+
+func (s *playbookRunStore) followHelper(playbookRunID, userID string, value bool) error {
+	if _, err := s.store.execBuilder(s.store.db, sq.
+		Insert("IR_Run_Participants").
+		SetMap(map[string]interface{}{
+			"UserID":     userID,
+			"IncidentID": playbookRunID,
+			"IsFollower": value,
+		})); err != nil {
+		
+		isDuplicate := false
+		if s.store.db.DriverName() == model.DatabaseDriverMysql {
+			me, ok := err.(*mysql.MySQLError)
+			if ok && me.Number == 1062 {
+				isDuplicate = true
+			}
+		} else {
+			pe, ok := err.(*pq.Error)
+			if ok && pe.Code == "23505" {
+				isDuplicate = true
+			}
+		}
+
+		if !isDuplicate {
+			return errors.Wrap(err, "failed to insert the follower")
+		}
+		if _, err := s.store.execBuilder(s.store.db, sq.
+			Update("IR_Run_Participants").
+			Set("IsFollower", value).
+			Where(sq.And{sq.Eq{"UserID": userID}, sq.Eq{"IncidentID": playbookRunID}})); err != nil {
+			return errors.Wrap(err, "failed to update the follower")
+		}
+	}
+	return nil
+}
+
+func (s *playbookRunStore) GetFollowers(playbookRunID string) ([]string, error) {
+	query := s.queryBuilder.
+		Select("UserID").
+		From("IR_Run_Participants").
+		Where(sq.And{sq.Eq{"IsFollower": true}, sq.Eq{"IncidentID": playbookRunID}})
+
+	var followers []string
+	err := s.store.selectBuilder(s.store.db, &followers, query)
+	if err == sql.ErrNoRows {
+		return []string{}, nil
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "failed to get followers for run '%s'", playbookRunID)
+	}
+
+	return followers, nil
 }
 
 func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {

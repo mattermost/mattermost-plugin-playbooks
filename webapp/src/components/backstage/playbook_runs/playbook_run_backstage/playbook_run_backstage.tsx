@@ -11,19 +11,26 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {Channel} from 'mattermost-redux/types/channels';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
 import {
     Badge,
+    SecondaryButtonLarger,
     SecondaryButtonLargerRight,
 } from 'src/components/backstage/playbook_runs/shared';
 
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
+import Followers from 'src/components/backstage/playbook_runs/playbook_run_backstage/followers';
+
 import {
     clientFetchPlaybook,
     clientRemoveTimelineEvent,
     fetchPlaybookRun,
     fetchPlaybookRunMetadata,
+    followPlaybookRun,
+    unfollowPlaybookRun,
 } from 'src/client';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -175,6 +182,8 @@ const PlaybookRunBackstage = () => {
     const channel = useSelector<GlobalState, Channel | null>((state) => (playbookRun ? getChannel(state, playbookRun.channel_id) : null));
     const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
+    const currentUserID = useSelector(getCurrentUserId);
+    const [followers, setFollowers] = useState<string[]>([]);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -189,6 +198,7 @@ const PlaybookRunBackstage = () => {
             setPlaybookRun(playbookRunResult);
             setPlaybookRunMetadata(playbookRunMetadataResult);
             setFetchingState(FetchingStateType.fetched);
+            setFollowers(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
         }).catch(() => {
             setFetchingState(FetchingStateType.notFound);
         });
@@ -228,6 +238,21 @@ const PlaybookRunBackstage = () => {
         navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
     };
 
+    const onFollow = () => {
+        followPlaybookRun(playbookRun.id);
+        if (followers.includes(currentUserID)) {
+            return;
+        }
+        const followersCopy = [...followers, currentUserID];
+        setFollowers(followersCopy);
+    };
+
+    const onUnfollow = () => {
+        unfollowPlaybookRun(playbookRun.id);
+        const followersCopy = followers.filter((item) => item !== currentUserID);
+        setFollowers(followersCopy);
+    };
+
     let channelIcon = 'icon-mattermost';
     if (channel) {
         channelIcon = channel.type === 'O' ? 'icon-globe' : 'icon-lock-outline';
@@ -236,6 +261,13 @@ const PlaybookRunBackstage = () => {
     const closePlaybookRunDetails = () => {
         navigateToPluginUrl('/runs');
     };
+
+    let followButton = (<SecondaryButtonLarger onClick={onFollow}>{'Follow'}</SecondaryButtonLarger>);
+    if (followers.includes(currentUserID)) {
+        followButton = (<SecondaryButtonLarger onClick={onUnfollow}>{'UnFollow'}</SecondaryButtonLarger>);
+    } else if (followers.length === 0) {
+        followButton = (<SecondaryButtonLargerRight onClick={onFollow}>{'Follow'}</SecondaryButtonLargerRight>);
+    }
 
     return (
         <OuterContainer>
@@ -255,10 +287,12 @@ const PlaybookRunBackstage = () => {
                         }
                     </VerticalBlock>
                     <Badge status={playbookRun.current_status}/>
-                    <SecondaryButtonLargerRight onClick={goToChannel}>
+                    <Followers userIds={followers}/>
+                    {followButton}
+                    <SecondaryButtonLarger onClick={goToChannel}>
                         <i className={'icon ' + channelIcon}/>
                         {formatMessage({defaultMessage: 'Go to channel'})}
-                    </SecondaryButtonLargerRight>
+                    </SecondaryButtonLarger>
                     <ExportLink playbookRun={playbookRun}/>
                 </FirstRow>
                 <SecondRow>

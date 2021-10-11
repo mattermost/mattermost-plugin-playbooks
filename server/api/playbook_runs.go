@@ -97,6 +97,11 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	retrospectiveRouter.HandleFunc("", handler.updateRetrospective).Methods(http.MethodPost)
 	retrospectiveRouter.HandleFunc("/publish", handler.publishRetrospective).Methods(http.MethodPost)
 
+	followersRouter := playbookRunRouterAuthorized.PathPrefix("/followers").Subrouter()
+	followersRouter.HandleFunc("", handler.follow).Methods(http.MethodPut)
+	followersRouter.HandleFunc("", handler.unfollow).Methods(http.MethodDelete)
+	followersRouter.HandleFunc("", handler.getFollowers).Methods(http.MethodGet)
+
 	return handler
 }
 
@@ -1326,6 +1331,54 @@ func (h *PlaybookRunHandler) publishRetrospective(w http.ResponseWriter, r *http
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) follow(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := app.UserCanViewPlaybookRun(userID, playbookRunID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook run.", err)
+		return
+	}
+
+	if err := h.playbookRunService.Follow(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) unfollow(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.Unfollow(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) getFollowers(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := app.UserCanViewPlaybookRun(userID, playbookRunID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook run.", err)
+		return
+	}
+
+	var followers []string
+	var err error
+	if followers, err = h.playbookRunService.GetFollowers(playbookRunID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	ReturnJSON(w, followers, http.StatusOK)
 }
 
 // parsePlaybookRunsFilterOptions is only for parsing. Put validation logic in app.validateOptions.
