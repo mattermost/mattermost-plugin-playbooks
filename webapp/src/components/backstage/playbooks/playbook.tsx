@@ -2,9 +2,9 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {ReactNode, useEffect, useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
-import {Switch, Route, Redirect, NavLink, useRouteMatch, useLocation} from 'react-router-dom';
+import React, {useEffect, useState} from 'react';
+import {useSelector} from 'react-redux';
+import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
 import Icon from '@mdi/react';
 import {mdiClipboardPlayOutline} from '@mdi/js';
@@ -39,9 +39,7 @@ const FetchingStateType = {
 };
 
 const Playbook = () => {
-    const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const location = useLocation();
     const match = useRouteMatch<MatchParams>();
     const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
