@@ -695,7 +695,9 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdateToFollowers(post *model.Po
 		if follower == authorID {
 			continue
 		}
-		s.poster.DM(follower, &model.Post{Message: fmt.Sprintf("@%s posted an update to %s run:\n%s", username, runName, post.Message)})
+		if err := s.poster.DM(follower, &model.Post{Message: fmt.Sprintf("@%s posted an update to %s run:\n%s", username, runName, post.Message)}); err != nil {
+			return errors.Wrapf(err, "failed to send a status update to the follower %s", follower)
+		}
 	}
 	return nil
 }
@@ -1085,7 +1087,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 
 	followers, err := s.GetFollowers(playbookRunID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get followers of playbook run", playbookRunID)
+		return nil, errors.Wrapf(err, "failed to get followers of playbook run %s", playbookRunID)
 	}
 
 	println(fmt.Sprintf("followers in api, followers - %v", followers))

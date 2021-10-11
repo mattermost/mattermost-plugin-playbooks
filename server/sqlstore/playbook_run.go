@@ -1055,7 +1055,7 @@ func (s *playbookRunStore) followHelper(playbookRunID, userID string, value bool
 			"IncidentID": playbookRunID,
 			"IsFollower": value,
 		})); err != nil {
-		
+
 		isDuplicate := false
 		if s.store.db.DriverName() == model.DatabaseDriverMysql {
 			me, ok := err.(*mysql.MySQLError)

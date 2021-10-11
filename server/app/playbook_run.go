@@ -531,7 +531,7 @@ type PlaybookRunService interface {
 
 	// GetOverdueUpdateRuns returns the list of userID's runs that have overdue updates
 	GetOverdueUpdateRuns(userID string) ([]RunLink, error)
-	
+
 	// Follow method lets user follow a specific playbook run
 	Follow(playbookRunID, userID string) error
 
