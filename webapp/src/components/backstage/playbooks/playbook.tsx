@@ -152,13 +152,13 @@ const Playbook = () => {
                             activeStyle={activeNavItemStyle}
                             to={`${match.url}/preview`}
                         >
-                            {'Preview'}
+                            {formatMessage({defaultMessage: 'Preview'})}
                         </NavItem>
                         <NavItem
                             activeStyle={activeNavItemStyle}
                             to={`${match.url}/usage`}
                         >
-                            {'Usage'}
+                            {formatMessage({defaultMessage: 'Usage'})}
                         </NavItem>
                     </Navbar>
                     <Switch>
