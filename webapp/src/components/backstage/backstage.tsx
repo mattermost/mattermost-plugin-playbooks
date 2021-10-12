@@ -85,6 +85,7 @@ const BackstageBody = styled.div`
 const Backstage = () => {
     //@ts-ignore plugins state is a thing
     const npsAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.nps']));
+    const currentTheme = useSelector<GlobalState, Theme>(getTheme);
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
@@ -98,11 +99,10 @@ const Backstage = () => {
         return function cleanUp() {
             document.body.classList.remove('app__body');
         };
-    }, []);
+    }, [currentTheme]);
 
     useForceDocumentTitle('Playbooks');
 
-    const currentTheme = useSelector<GlobalState, Theme>(getTheme);
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
 
     const match = useRouteMatch();
