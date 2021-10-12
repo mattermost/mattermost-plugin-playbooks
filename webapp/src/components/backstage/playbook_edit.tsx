@@ -250,8 +250,15 @@ const PlaybookEdit = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew, props.teamId]);
 
-    dispatch(selectTeam(props.teamId || playbook.team_id));
-    dispatch(fetchMyChannelsAndMembers(props.teamId || playbook.team_id));
+    useEffect(() => {
+        const teamId = props.teamId || playbook.team_id;
+        if (!teamId) {
+            return;
+        }
+
+        dispatch(selectTeam(teamId));
+        dispatch(fetchMyChannelsAndMembers(teamId));
+    }, [dispatch, props.teamId, playbook.team_id]);
 
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
