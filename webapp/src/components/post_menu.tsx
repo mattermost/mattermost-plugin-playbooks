@@ -27,11 +27,16 @@ interface Props {
 
 export const StartPlaybookRunPostMenu = (props: Props) => {
     const dispatch = useDispatch();
-    const post = useSelector<GlobalState, Post>((state) => getPost(state, props.postId));
-    if (!post || isSystemMessage(post)) {
+    const channel = useSelector<GlobalState, Channel | null>((state) => {
+        const post = getPost(state, props.postId);
+        if (!post || isSystemMessage(post)) {
+            return null;
+        }
+        return getChannel(state, post.channel_id);
+    });
+    if (!channel) {
         return null;
     }
-    const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, post.channel_id));
 
     const handleClick = () => {
         dispatch(startPlaybookRun(channel.team_id, props.postId));
