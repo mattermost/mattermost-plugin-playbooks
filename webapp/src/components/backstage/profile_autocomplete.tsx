@@ -2,6 +2,7 @@ import React from 'react';
 
 import {debounce} from 'debounce';
 import AsyncSelect from 'react-select/async';
+import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
@@ -76,6 +77,8 @@ interface Props {
 }
 
 const ProfileAutocomplete = (props: Props) => {
+    const {formatMessage} = useIntl();
+
     const onChange = (userAdded: UserProfile) => {
         props.onAddUser(userAdded.id);
     };
@@ -136,7 +139,7 @@ const ProfileAutocomplete = (props: Props) => {
             openMenuOnClick={true}
             isClearable={false}
             value={null}
-            placeholder={'Add People'}
+            placeholder={formatMessage({defaultMessage: 'Add People'})}
             components={{DropdownIndicator: () => null, IndicatorSeparator: () => null}}
             styles={customStyles}
             classNamePrefix='profile-autocomplete'
