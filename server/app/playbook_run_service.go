@@ -1553,23 +1553,33 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 	}
 	part1 := buildRunsOverdueMessage(runsOverdue, siteURL)
 
-	runs, err := s.GetAssignedTasks(userID)
+	runsAssigned, err := s.GetAssignedTasks(userID)
 	if err != nil {
 		return err
 	}
-	part2, total := buildAssignedTaskMessageAndTotal(runs, siteURL)
+	part2, totalAssignedTasks := buildAssignedTaskMessageAndTotal(runsAssigned, siteURL)
 
-	runsInProgress, err := s.GetParticipatingRuns(userID)
-	if err != nil {
-		return err
+	if force {
+		runsInProgress, err := s.GetParticipatingRuns(userID)
+		if err != nil {
+			return err
+		}
+		part3 := buildRunsInProgressMessage(runsInProgress, siteURL)
+
+		return s.poster.DM(userID, &model.Post{Message: part1 + part2 + part3})
 	}
-	part3 := buildRunsInProgressMessage(runsInProgress, siteURL)
 
-	if !force && total+len(runsOverdue)+len(runsInProgress) == 0 {
+	// !force, so only return sections that have information.
+	if totalAssignedTasks+len(runsOverdue) == 0 {
 		return nil
 	}
-
-	return s.poster.DM(userID, &model.Post{Message: part1 + part2 + part3})
+	if len(runsOverdue) == 0 {
+		part1 = ""
+	}
+	if len(runsAssigned) == 0 {
+		part2 = ""
+	}
+	return s.poster.DM(userID, &model.Post{Message: part1 + part2})
 }
 
 // GetAssignedTasks returns the list of tasks assigned to userID
