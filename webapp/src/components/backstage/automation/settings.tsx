@@ -11,7 +11,7 @@ import {PatternedInput} from 'src/components/backstage/automation/patterned_inpu
 import {InputKeywords} from 'src/components/backstage/automation/input_keywords';
 import {PatternedTextArea} from 'src/components/backstage/automation/patterned_text_area';
 
-import {InviteUsers} from 'src/components/backstage/automation/invite_users';
+import {UserChooser} from 'src/components/backstage/automation/user_chooser';
 import {AutoAssignOwner} from 'src/components/backstage/automation/auto_assign_owner';
 import {Broadcast} from 'src/components/backstage/automation/broadcast';
 import {ExportChannelOnArchive} from 'src/components/backstage/automation/export_channel_on_archive';
@@ -26,6 +26,11 @@ interface Props {
     onToggleInviteUsers: () => void;
     onAddUser: (userId: string) => void;
     onRemoveUser: (userId: string) => void;
+    followerIds: string[];
+    followersEnabled: boolean;
+    onToggleFollowers: () => void;
+    onAddFollower: (userId: string) => void;
+    onRemoveFollower: (userId: string) => void;
     defaultOwnerID: string;
     defaultOwnerEnabled: boolean;
     onToggleDefaultOwner: () => void;
@@ -81,7 +86,7 @@ export const AutomationSettings = (props: Props) => {
                     {'When a run starts'}
                 </SectionTitle>
                 <Setting id={'invite-users'}>
-                    <InviteUsers
+                    <UserChooser
                         enabled={props.inviteUsersEnabled}
                         onToggle={props.onToggleInviteUsers}
                         searchProfiles={props.searchProfiles}
@@ -89,6 +94,7 @@ export const AutomationSettings = (props: Props) => {
                         userIds={props.userIds}
                         onAddUser={props.onAddUser}
                         onRemoveUser={props.onRemoveUser}
+                        toggleTitle={'Invite members'}
                     />
                 </Setting>
                 <Setting id={'assign-owner'}>
@@ -99,6 +105,18 @@ export const AutomationSettings = (props: Props) => {
                         getProfiles={props.getProfiles}
                         ownerID={props.defaultOwnerID}
                         onAssignOwner={props.onAssignOwner}
+                    />
+                </Setting>
+                <Setting id={'add-as-a-follower'}>
+                    <UserChooser
+                        enabled={props.followersEnabled}
+                        onToggle={props.onToggleFollowers}
+                        searchProfiles={props.searchProfiles}
+                        getProfiles={props.getProfiles}
+                        userIds={props.followerIds}
+                        onAddUser={props.onAddFollower}
+                        onRemoveUser={props.onRemoveFollower}
+                        toggleTitle={'Add as a follower'}
                     />
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>

@@ -31,6 +31,8 @@ type Playbook struct {
 	InvitedUserIDs                       []string    `json:"invited_user_ids"`
 	InvitedGroupIDs                      []string    `json:"invited_group_ids"`
 	InviteUsersEnabled                   bool        `json:"invite_users_enabled"`
+	FollowerIDs                          []string    `json:"follower_ids"`
+	FollowersEnabled                     bool        `json:"followers_enabled"`
 	DefaultOwnerID                       string      `json:"default_owner_id"`
 	DefaultOwnerEnabled                  bool        `json:"default_owner_enabled"`
 	BroadcastChannelIDs                  []string    `json:"broadcast_channel_ids"`
@@ -63,6 +65,9 @@ func (p Playbook) Clone() Playbook {
 	}
 	if len(p.InvitedGroupIDs) != 0 {
 		newPlaybook.InvitedGroupIDs = append([]string(nil), p.InvitedGroupIDs...)
+	}
+	if len(p.FollowerIDs) != 0 {
+		newPlaybook.FollowerIDs = append([]string(nil), p.FollowerIDs...)
 	}
 	if len(p.SignalAnyKeywords) != 0 {
 		newPlaybook.SignalAnyKeywords = append([]string(nil), p.SignalAnyKeywords...)
@@ -100,6 +105,9 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	}
 	if old.InvitedGroupIDs == nil {
 		old.InvitedGroupIDs = []string{}
+	}
+	if old.FollowerIDs == nil {
+		old.FollowerIDs = []string{}
 	}
 	if old.SignalAnyKeywords == nil {
 		old.SignalAnyKeywords = []string{}

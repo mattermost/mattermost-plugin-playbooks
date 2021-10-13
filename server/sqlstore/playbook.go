@@ -19,6 +19,7 @@ type sqlPlaybook struct {
 	ChecklistsJSON                        json.RawMessage
 	ConcatenatedInvitedUserIDs            string
 	ConcatenatedInvitedGroupIDs           string
+	ConcatenatedFollowerIDs               string
 	ConcatenatedSignalAnyKeywords         string
 	ConcatenatedBroadcastChannelIDs       string
 	ConcatenatedWebhookOnCreationURLs     string
@@ -110,6 +111,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"NumSteps",
 			`(
 				CASE WHEN InviteUsersEnabled THEN 1 ELSE 0 END +
+				CASE WHEN FollowersEnabled THEN 1 ELSE 0 END +
 				CASE WHEN DefaultCommanderEnabled THEN 1 ELSE 0 END +
 				CASE WHEN BroadcastEnabled THEN 1 ELSE 0 END +
 				CASE WHEN WebhookOnCreationEnabled THEN 1 ELSE 0 END +
@@ -123,7 +125,9 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"ReminderTimerDefaultSeconds",
 			"ConcatenatedInvitedUserIDs",
 			"ConcatenatedInvitedGroupIDs",
+			"ConcatenatedFollowerIDs",
 			"InviteUsersEnabled",
+			"FollowersEnabled",
 			"DefaultCommanderID AS DefaultOwnerID",
 			"DefaultCommanderEnabled AS DefaultOwnerEnabled",
 			"ConcatenatedBroadcastChannelIDs",
@@ -196,7 +200,9 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"ReminderTimerDefaultSeconds":           rawPlaybook.ReminderTimerDefaultSeconds,
 			"ConcatenatedInvitedUserIDs":            rawPlaybook.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":           rawPlaybook.ConcatenatedInvitedGroupIDs,
+			"ConcatenatedFollowerIDs":               rawPlaybook.ConcatenatedFollowerIDs,
 			"InviteUsersEnabled":                    rawPlaybook.InviteUsersEnabled,
+			"FollowersEnabled":                      rawPlaybook.FollowersEnabled,
 			"DefaultCommanderID":                    rawPlaybook.DefaultOwnerID,
 			"DefaultCommanderEnabled":               rawPlaybook.DefaultOwnerEnabled,
 			"ConcatenatedBroadcastChannelIDs":       rawPlaybook.ConcatenatedBroadcastChannelIDs,
@@ -300,6 +306,7 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
 			`(
 				CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.FollowersEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.BroadcastEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
@@ -365,6 +372,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
 			`(
 				CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.FollowersEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.BroadcastEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
@@ -552,7 +560,9 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"ReminderTimerDefaultSeconds":           rawPlaybook.ReminderTimerDefaultSeconds,
 			"ConcatenatedInvitedUserIDs":            rawPlaybook.ConcatenatedInvitedUserIDs,
 			"ConcatenatedInvitedGroupIDs":           rawPlaybook.ConcatenatedInvitedGroupIDs,
+			"ConcatenatedFollowerIDs":               rawPlaybook.ConcatenatedFollowerIDs,
 			"InviteUsersEnabled":                    rawPlaybook.InviteUsersEnabled,
+			"FollowersEnabled":                      rawPlaybook.FollowersEnabled,
 			"DefaultCommanderID":                    rawPlaybook.DefaultOwnerID,
 			"DefaultCommanderEnabled":               rawPlaybook.DefaultOwnerEnabled,
 			"ConcatenatedBroadcastChannelIDs":       rawPlaybook.ConcatenatedBroadcastChannelIDs,
@@ -679,6 +689,7 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 		ChecklistsJSON:                        checklistsJSON,
 		ConcatenatedInvitedUserIDs:            strings.Join(playbook.InvitedUserIDs, ","),
 		ConcatenatedInvitedGroupIDs:           strings.Join(playbook.InvitedGroupIDs, ","),
+		ConcatenatedFollowerIDs:               strings.Join(playbook.FollowerIDs, ","),
 		ConcatenatedSignalAnyKeywords:         strings.Join(playbook.SignalAnyKeywords, ","),
 		ConcatenatedBroadcastChannelIDs:       strings.Join(playbook.BroadcastChannelIDs, ","),
 		ConcatenatedWebhookOnCreationURLs:     strings.Join(playbook.WebhookOnCreationURLs, ","),
@@ -702,6 +713,11 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 	p.InvitedGroupIDs = []string(nil)
 	if rawPlaybook.ConcatenatedInvitedGroupIDs != "" {
 		p.InvitedGroupIDs = strings.Split(rawPlaybook.ConcatenatedInvitedGroupIDs, ",")
+	}
+
+	p.FollowerIDs = []string(nil)
+	if rawPlaybook.ConcatenatedFollowerIDs != "" {
+		p.FollowerIDs = strings.Split(rawPlaybook.ConcatenatedFollowerIDs, ",")
 	}
 
 	p.SignalAnyKeywords = []string(nil)

@@ -25,6 +25,8 @@ export interface PlaybookWithChecklist extends Playbook {
     invited_user_ids: string[];
     invited_group_ids: string[];
     invite_users_enabled: boolean;
+    follower_ids: string[];
+    followers_enabled: boolean;
     default_owner_id: string;
     default_owner_enabled: boolean;
     broadcast_channel_ids: string[];
@@ -110,6 +112,8 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         invited_user_ids: [],
         invited_group_ids: [],
         invite_users_enabled: false,
+        follower_ids: [],
+        followers_enabled: false,
         default_owner_id: '',
         default_owner_enabled: false,
         broadcast_channel_ids: [],
@@ -188,6 +192,8 @@ export function isPlaybook(arg: any): arg is PlaybookWithChecklist {
         arg.invited_user_ids && Array.isArray(arg.invited_user_ids) && arg.invited_user_ids.every((id: any) => typeof id === 'string') &&
         arg.invited_group_ids && Array.isArray(arg.invited_group_ids) && arg.invited_group_ids.every((id: any) => typeof id === 'string') &&
         typeof arg.invite_users_enabled === 'boolean' &&
+        arg.follower_ids && Array.isArray(arg.follower_ids) && arg.follower_ids.every((id: any) => typeof id === 'string') &&
+        typeof arg.followers_enabled === 'boolean' &&
         typeof arg.default_owner_id === 'string' &&
         typeof arg.default_owner_enabled === 'boolean' &&
         typeof arg.announcement_channel_id === 'string' &&

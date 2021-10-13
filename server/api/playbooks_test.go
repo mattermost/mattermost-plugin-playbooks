@@ -51,6 +51,7 @@ func TestPlaybooks(t *testing.T) {
 		MemberIDs:           []string{},
 		InvitedUserIDs:      []string{},
 		InvitedGroupIDs:     []string{},
+		FollowerIDs:         []string{},
 		BroadcastChannelIDs: []string{},
 	}
 	withid := app.Playbook{
@@ -70,6 +71,7 @@ func TestPlaybooks(t *testing.T) {
 		MemberIDs:           []string{},
 		InvitedUserIDs:      []string{},
 		InvitedGroupIDs:     []string{},
+		FollowerIDs:         []string{},
 		BroadcastChannelIDs: []string{},
 	}
 
@@ -90,6 +92,7 @@ func TestPlaybooks(t *testing.T) {
 		MemberIDs:           []string{"testuserid"},
 		InvitedUserIDs:      []string{},
 		InvitedGroupIDs:     []string{},
+		FollowerIDs:         []string{},
 		BroadcastChannelIDs: []string{},
 	}
 	withBroadcastChannel := app.Playbook{
@@ -109,6 +112,7 @@ func TestPlaybooks(t *testing.T) {
 		MemberIDs:           []string{"testuserid"},
 		BroadcastChannelIDs: []string{"nonemptychannelid"},
 		InvitedUserIDs:      []string{},
+		FollowerIDs:         []string{},
 		InvitedGroupIDs:     []string{},
 	}
 
@@ -264,6 +268,7 @@ func TestPlaybooks(t *testing.T) {
 			MemberIDs:           playbooktest.MemberIDs,
 			InvitedUserIDs:      playbooktest.InvitedUserIDs,
 			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
+			FollowerIDs:         playbooktest.FollowerIDs,
 			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
 		})
 		require.NoError(t, err)
@@ -324,6 +329,7 @@ func TestPlaybooks(t *testing.T) {
 			MemberIDs:           playbooktest.MemberIDs,
 			InvitedUserIDs:      playbooktest.InvitedUserIDs,
 			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
+			FollowerIDs:         playbooktest.FollowerIDs,
 			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
 		})
 		require.NoError(t, err)
@@ -384,6 +390,7 @@ func TestPlaybooks(t *testing.T) {
 			MemberIDs:           playbooktest.MemberIDs,
 			InvitedUserIDs:      playbooktest.InvitedUserIDs,
 			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
+			FollowerIDs:         playbooktest.FollowerIDs,
 			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
 		})
 		require.NoError(t, err)
@@ -439,6 +446,7 @@ func TestPlaybooks(t *testing.T) {
 			MemberIDs:           playbooktest.MemberIDs,
 			InvitedUserIDs:      playbooktest.InvitedUserIDs,
 			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
+			FollowerIDs:         playbooktest.FollowerIDs,
 			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
 		})
 		require.NoError(t, err)
@@ -592,6 +600,7 @@ func TestPlaybooks(t *testing.T) {
 			MemberIDs:           playbooktest.MemberIDs,
 			InvitedUserIDs:      playbooktest.InvitedUserIDs,
 			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
+			FollowerIDs:         playbooktest.FollowerIDs,
 			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
 		})
 		require.NoError(t, err)
@@ -1085,6 +1094,7 @@ func TestPlaybooks(t *testing.T) {
 			InviteUsersEnabled:        true,
 			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
 			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			FollowerIDs:               []string{},
 			SignalAnyKeywords:         []string{},
 			WebhookOnCreationURLs:     []string{},
 			WebhookOnStatusUpdateURLs: []string{},
@@ -1145,6 +1155,7 @@ func TestPlaybooks(t *testing.T) {
 			InviteUsersEnabled:        false,
 			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
 			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			FollowerIDs:               []string{},
 			SignalAnyKeywords:         []string{},
 			WebhookOnCreationURLs:     []string{},
 			WebhookOnStatusUpdateURLs: []string{},
@@ -1207,6 +1218,7 @@ func TestPlaybooks(t *testing.T) {
 			InviteUsersEnabled:        false,
 			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
 			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			FollowerIDs:               []string{},
 			SignalAnyKeywords:         []string{},
 			WebhookOnCreationURLs:     []string{},
 			WebhookOnStatusUpdateURLs: []string{},

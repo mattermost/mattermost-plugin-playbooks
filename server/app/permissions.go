@@ -324,6 +324,17 @@ func CreatePlaybook(userID string, playbook Playbook, cfgService config.Service,
 		}
 	}
 
+	// Check if all followers have permissions to team.
+	for _, followerID := range playbook.FollowerIDs {
+		if !pluginAPI.User.HasPermissionToTeam(followerID, playbook.TeamID, model.PermissionViewTeam) {
+			return errors.Errorf(
+				"follower with ID %s does not have permission to playbook's team %s",
+				followerID,
+				playbook.TeamID,
+			)
+		}
+	}
+
 	return nil
 }
 

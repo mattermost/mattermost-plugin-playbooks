@@ -340,11 +340,30 @@ const PlaybookEdit = (props: Props) => {
         }
     };
 
+    const handleAddFollower = (userId: string) => {
+        if (!playbook.follower_ids.includes(userId)) {
+            setPlaybook({
+                ...playbook,
+                follower_ids: [...playbook.follower_ids, userId],
+            });
+            setChangesMade(true);
+        }
+    };
+
     const handleRemoveUserInvited = (userId: string) => {
         const idx = playbook.invited_user_ids.indexOf(userId);
         setPlaybook({
             ...playbook,
             invited_user_ids: [...playbook.invited_user_ids.slice(0, idx), ...playbook.invited_user_ids.slice(idx + 1)],
+        });
+        setChangesMade(true);
+    };
+
+    const handleRemoveFollower = (userId: string) => {
+        const idx = playbook.follower_ids.indexOf(userId);
+        setPlaybook({
+            ...playbook,
+            follower_ids: [...playbook.follower_ids.slice(0, idx), ...playbook.follower_ids.slice(idx + 1)],
         });
         setChangesMade(true);
     };
@@ -408,6 +427,14 @@ const PlaybookEdit = (props: Props) => {
         setPlaybook({
             ...playbook,
             invite_users_enabled: !playbook.invite_users_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleToggleFollowers = () => {
+        setPlaybook({
+            ...playbook,
+            followers_enabled: !playbook.followers_enabled,
         });
         setChangesMade(true);
     };
@@ -669,6 +696,11 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleInviteUsers={handleToggleInviteUsers}
                                     onAddUser={handleAddUserInvited}
                                     onRemoveUser={handleRemoveUserInvited}
+                                    followerIds={playbook.follower_ids}
+                                    followersEnabled={playbook.followers_enabled}
+                                    onToggleFollowers={handleToggleFollowers}
+                                    onAddFollower={handleAddFollower}
+                                    onRemoveFollower={handleRemoveFollower}
                                     defaultOwnerEnabled={playbook.default_owner_enabled}
                                     defaultOwnerID={playbook.default_owner_id}
                                     onToggleDefaultOwner={handleToggleDefaultOwner}

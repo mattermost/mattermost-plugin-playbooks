@@ -1657,6 +1657,7 @@ func NewPBBuilder() *PlaybookBuilder {
 			MemberIDs:               []string(nil),
 			InvitedUserIDs:          []string(nil),
 			InvitedGroupIDs:         []string(nil),
+			FollowerIDs:             []string(nil),
 		},
 	}
 }

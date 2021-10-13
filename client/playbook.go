@@ -18,6 +18,8 @@ type Playbook struct {
 	InvitedUserIDs                 []string    `json:"invited_user_ids"`
 	InvitedGroupIDs                []string    `json:"invited_group_ids"`
 	InvitedUsersEnabled            bool        `json:"invited_users_enabled"`
+	FollowersEnabled               bool        `json:"followers_enabled"`
+	FollowerIDs                    []string    `json:"follower_ids"`
 	DefaultOwnerID                 string      `json:"default_owner_id"`
 	DefaultOwnerEnabled            bool        `json:"default_owner_enabled"`
 	BroadcastChannelIDs            []string    `json:"broadcast_channel_ids"`
@@ -61,6 +63,8 @@ type PlaybookCreateOptions struct {
 	InvitedUserIDs              []string    `json:"invited_user_ids"`
 	InvitedGroupIDs             []string    `json:"invited_group_ids"`
 	InviteUsersEnabled          bool        `json:"invite_users_enabled"`
+	FollowersEnabled            bool        `json:"followers_enabled"`
+	FollowerIDs                 []string    `json:"follower_ids"`
 	DefaultOwnerID              string      `json:"default_owner_id"`
 	DefaultOwnerEnabled         bool        `json:"default_owner_enabled"`
 	BroadcastChannelIDs         []string    `json:"broadcast_channel_ids"`

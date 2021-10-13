@@ -140,7 +140,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
-		_, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
+		_, err := s.CreatePlaybookRun(playbookRun, &app.Playbook{}, "user_id", true)
 		require.NoError(t, err)
 	})
 
@@ -221,7 +221,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
-		_, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
+		_, err := s.CreatePlaybookRun(playbookRun, &app.Playbook{}, "user_id", true)
 		require.NoError(t, err)
 	})
 
@@ -272,7 +272,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
-		_, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
+		_, err := s.CreatePlaybookRun(playbookRun, &app.Playbook{}, "user_id", true)
 		pluginAPI.AssertExpectations(t)
 		require.NoError(t, err)
 	})
@@ -324,7 +324,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		store.EXPECT().UpdatePlaybookRun(gomock.Any()).Return(nil)
 
-		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(3)
 		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), "channel_id")
@@ -352,7 +352,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
-		createdPlaybookRun, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
+		createdPlaybookRun, err := s.CreatePlaybookRun(playbookRun, &app.Playbook{}, "user_id", true)
 		require.NoError(t, err)
 
 		select {
@@ -1002,7 +1002,7 @@ func TestMultipleWebhooks(t *testing.T) {
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		store.EXPECT().UpdatePlaybookRun(gomock.Any()).Return(nil)
 
-		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
+		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(3)
 		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), "channel_id")
@@ -1025,7 +1025,7 @@ func TestMultipleWebhooks(t *testing.T) {
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
 
-		createdPlaybookRun, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
+		createdPlaybookRun, err := s.CreatePlaybookRun(playbookRun, &app.Playbook{}, "user_id", true)
 		require.NoError(t, err)
 
 		for i := 0; i < 2; i++ {

@@ -1461,6 +1461,17 @@ paths:
                   description: Boolean that indicates whether the members declared in invited_user_ids will be automatically invited.
                   type: boolean
                   example: true
+                follower_ids:
+                  description: A list with the IDs of the users to be automatically followed to the playbook run's as soon as the playbook run is created.
+                  type: array
+                  items:
+                    type: string
+                    description: User ID of the member to be invited.
+                    example: 01kidjn9iozv7bist427w4gkjo
+                invite_users_enabled:
+                  description: Boolean that indicates whether the members declared in follower_ids will be automatically following runs.
+                  type: boolean
+                  example: true
                 default_owner_id:
                   description: User ID of the member that will be automatically assigned as owner as soon as the playbook run is created. If the member is not part of the playbook run's channel or is not included in the invited_user_ids list, they will be automatically invited to the channel.
                   type: string

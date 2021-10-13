@@ -1,13 +1,10 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
-
-import styled from 'styled-components';
+import React from 'react';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
-import Profile from 'src/components/profile/profile';
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
 import {Toggle} from 'src/components/backstage/automation/toggle';
 import InviteUsersSelector from 'src/components/backstage/automation/invite_users_selector';
@@ -20,9 +17,10 @@ interface Props {
     userIds: string[];
     onAddUser: (userId: string) => void;
     onRemoveUser: (userId: string) => void;
+    toggleTitle: string;
 }
 
-export const InviteUsers = (props: Props) => {
+export const UserChooser = (props: Props) => {
     return (
         <>
             <AutomationHeader>
@@ -31,7 +29,7 @@ export const InviteUsers = (props: Props) => {
                         isChecked={props.enabled}
                         onChange={props.onToggle}
                     />
-                    <div>{'Invite members'}</div>
+                    <div>{props.toggleTitle}</div>
                 </AutomationTitle>
                 <SelectorWrapper>
                     <InviteUsersSelector

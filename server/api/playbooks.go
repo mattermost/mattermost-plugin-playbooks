@@ -276,6 +276,16 @@ func doPlaybookModificationChecks(playbook *app.Playbook, userID string, pluginA
 	}
 	playbook.InvitedGroupIDs = filteredGroups
 
+	filteredFollowers := []string{}
+	for _, followerID := range playbook.FollowerIDs {
+		if !pluginAPI.User.HasPermissionToTeam(followerID, playbook.TeamID, model.PermissionViewTeam) {
+			pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from followers' list", "teamID", playbook.TeamID, "userID", followerID)
+			continue
+		}
+		filteredFollowers = append(filteredFollowers, followerID)
+	}
+	playbook.FollowerIDs = filteredFollowers
+
 	if playbook.DefaultOwnerID != "" && !app.IsMemberOfTeam(playbook.DefaultOwnerID, playbook.TeamID, pluginAPI) {
 		pluginAPI.Log.Warn("owner is not a member of the playbook's team, disabling default owner", "teamID", playbook.TeamID, "userID", playbook.DefaultOwnerID)
 		playbook.DefaultOwnerID = ""

@@ -364,6 +364,14 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 	}
 
+	if pb.FollowersEnabled {
+		for _, followerID := range pb.FollowerIDs {
+			if err := s.Follow(playbookRun.ID, followerID); err != nil {
+				s.pluginAPI.Log.Warn("user failed to follow the playbook run", "userID", followerID, "playbookRunID", playbookRun.ID, "error", err)
+			}
+		}
+	}
+
 	reporter, err := s.pluginAPI.User.Get(playbookRun.ReporterUserID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to resolve user %s", playbookRun.ReporterUserID)
