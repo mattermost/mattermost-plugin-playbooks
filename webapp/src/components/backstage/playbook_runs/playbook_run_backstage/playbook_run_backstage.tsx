@@ -265,8 +265,6 @@ const PlaybookRunBackstage = () => {
     let followButton = (<SecondaryButtonLarger onClick={onFollow}>{'Follow'}</SecondaryButtonLarger>);
     if (followers.includes(currentUserID)) {
         followButton = (<SecondaryButtonLarger onClick={onUnfollow}>{'UnFollow'}</SecondaryButtonLarger>);
-    } else if (followers.length === 0) {
-        followButton = (<SecondaryButtonLargerRight onClick={onFollow}>{'Follow'}</SecondaryButtonLargerRight>);
     }
 
     return (
