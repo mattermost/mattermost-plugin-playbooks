@@ -3,9 +3,15 @@
 
 package app
 
+// DigestNotificationSettings is a separate type because it is marshalled/unmarshalled into/from JSON
+type DigestNotificationSettings struct {
+	DailyDigestOff bool `json:"daily_digest_off"`
+}
+
 type UserInfo struct {
 	ID                string
 	LastDailyTodoDMAt int64
+	DigestNotificationSettings
 }
 
 type UserInfoStore interface {

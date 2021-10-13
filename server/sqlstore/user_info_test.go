@@ -105,6 +105,19 @@ func Test_userInfoStore_Upsert(t *testing.T) {
 
 			// update:
 			expected.LastDailyTodoDMAt = 48102939451
+			expected.DailyDigestOff = true
+			err = userInfoStore.Upsert(expected)
+			require.NoError(t, err)
+
+			actual, err = userInfoStore.Get(expected.ID)
+			require.NoError(t, err)
+
+			if !reflect.DeepEqual(actual, expected) {
+				t.Errorf("Get() actual = %#v, expected %#v", actual, expected)
+			}
+
+			// update dailyDigest one more time:
+			expected.DailyDigestOff = false
 			err = userInfoStore.Upsert(expected)
 			require.NoError(t, err)
 

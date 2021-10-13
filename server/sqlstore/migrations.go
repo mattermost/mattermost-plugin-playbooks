@@ -1323,4 +1323,20 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.34.0"),
+		toVersion:   semver.MustParse("0.35.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_UserInfo", "DigestNotificationSettingsJSON", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column DigestNotificationSettings to table IR_UserInfo")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_UserInfo", "DigestNotificationSettingsJSON", "JSON"); err != nil {
+					return errors.Wrapf(err, "failed adding column DigestNotificationSettings to table IR_UserInfo")
+				}
+			}
+			return nil
+		},
+	},
 }

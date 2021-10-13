@@ -38,6 +38,7 @@ type Plugin struct {
 	playbookService    app.PlaybookService
 	bot                *bot.Bot
 	pluginAPI          *pluginapi.Client
+	userInfoStore      app.UserInfoStore
 }
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
@@ -133,7 +134,7 @@ func (p *Plugin) OnActivate() error {
 	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, p.bot, sqlStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
-	userInfoStore := sqlstore.NewUserInfoStore(sqlStore)
+	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
 
@@ -178,7 +179,7 @@ func (p *Plugin) OnActivate() error {
 		p.config,
 	)
 	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService)
-	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config, p.playbookRunService, userInfoStore)
+	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config, p.playbookRunService, p.userInfoStore)
 	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, telemetryClient, p.playbookService, telemetryClient, telemetryClient)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
@@ -213,7 +214,7 @@ func (p *Plugin) OnConfigurationChange() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot, p.bot, p.playbookRunService, p.playbookService, p.config)
+	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot, p.bot, p.playbookRunService, p.playbookService, p.config, p.userInfoStore)
 
 	if err := runner.Execute(); err != nil {
 		return nil, model.NewAppError("Playbooks.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)

@@ -30,6 +30,7 @@ const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	"* `/playbook info` - Show a summary of the current playbook run. \n" +
 	"* `/playbook timeline` - Show the timeline for the current playbook run. \n" +
 	"* `/playbook todo` - Get a list of your assigned tasks. \n" +
+	"* `/playbook settings digest [on/off]` - turn daily digest on/off. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -51,7 +52,7 @@ func getCommand(addTestCommands bool) *model.Command {
 		DisplayName:      "Playbook",
 		Description:      "Playbooks",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: run, finish, update, check, list, owner, info, todo",
+		AutoCompleteDesc: "Available commands: run, finish, update, check, list, owner, info, todo, settings",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(addTestCommands),
 	}
@@ -59,7 +60,7 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	command := model.NewAutocompleteData("playbook", "[command]",
-		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline, todo")
+		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline, todo, settings")
 
 	run := model.NewAutocompleteData("run", "", "Starts a new playbook run")
 	command.AddCommand(run)
@@ -111,6 +112,22 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	todo := model.NewAutocompleteData("todo", "", "Get a list of your assigned tasks")
 	command.AddCommand(todo)
 
+	settings := model.NewAutocompleteData("settings", "digest [on/off]", "Change personal playbook settings")
+	display := model.NewAutocompleteData(" ", "Display current settings", "")
+	settings.AddCommand(display)
+
+	digest := model.NewAutocompleteData("digest", "[on/off]", "Turn digest on/off")
+	digestValue := []model.AutocompleteListItem{{
+		HelpText: "Turn daily digest on",
+		Item:     "on",
+	}, {
+		HelpText: "Turn daily digest off",
+		Item:     "off",
+	}}
+	digest.AddStaticListArgument("", true, digestValue)
+	settings.AddCommand(digest)
+	command.AddCommand(settings)
+
 	if addTestCommands {
 		test := model.NewAutocompleteData("test", "", "Commands for testing and debugging.")
 
@@ -150,11 +167,14 @@ type Runner struct {
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
 	configService      config.Service
+	userInfoStore      app.UserInfoStore
 }
 
 // NewCommandRunner creates a command runner.
 func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
-	logger bot.Logger, poster bot.Poster, playbookRunService app.PlaybookRunService, playbookService app.PlaybookService, configService config.Service) *Runner {
+	logger bot.Logger, poster bot.Poster, playbookRunService app.PlaybookRunService,
+	playbookService app.PlaybookService, configService config.Service,
+	userInfoStore app.UserInfoStore) *Runner {
 	return &Runner{
 		context:            ctx,
 		args:               args,
@@ -164,6 +184,7 @@ func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *plugina
 		playbookRunService: playbookRunService,
 		playbookService:    playbookService,
 		configService:      configService,
+		userInfoStore:      userInfoStore,
 	}
 }
 
@@ -817,10 +838,66 @@ func (r *Runner) timeSince(event app.TimelineEvent, reported time.Time) string {
 	return "-" + timeutils.DurationString(eventAt, reported)
 }
 
-func (r *Runner) actionTodo(args []string) {
+func (r *Runner) actionTodo() {
 	if err := r.playbookRunService.DMTodoDigestToUser(r.args.UserId, true); err != nil {
 		r.warnUserAndLogErrorf("Error getting tasks and runs digest: %v", err)
 	}
+}
+
+func (r *Runner) actionSettings(args []string) {
+	settingsHelpText := "###### Playbooks Personal Settings - Slash Command Help\n" +
+		"* `/playbook settings` - display current settings. \n" +
+		"* `/playbook settings digest on` - turn daily digest on. \n" +
+		"* `/playbook settings digest off` - turn daily digest off."
+
+	if len(args) == 0 {
+		r.displayCurrentSettings()
+		return
+	}
+
+	if len(args) != 2 || args[0] != "digest" || (args[1] != "on" && args[1] != "off") {
+		r.postCommandResponse(settingsHelpText)
+		return
+	}
+
+	info, err := r.userInfoStore.Get(r.args.UserId)
+	if errors.Is(err, app.ErrNotFound) {
+		info = app.UserInfo{
+			ID: r.args.UserId,
+		}
+	} else if err != nil {
+		r.warnUserAndLogErrorf("Error getting userInfo: %v", err)
+		return
+	}
+
+	if args[1] == "off" {
+		info.DailyDigestOff = true
+	} else {
+		info.DailyDigestOff = false
+	}
+
+	if err = r.userInfoStore.Upsert(info); err != nil {
+		r.warnUserAndLogErrorf("Error updating userInfo: %v", err)
+		return
+	}
+
+	r.displayCurrentSettings()
+}
+
+func (r *Runner) displayCurrentSettings() {
+	info, err := r.userInfoStore.Get(r.args.UserId)
+	if err != nil {
+		if !errors.Is(err, app.ErrNotFound) {
+			r.warnUserAndLogErrorf("Error getting userInfo: %v", err)
+			return
+		}
+	}
+
+	dailyDigestSetting := "Daily digest: on"
+	if info.DailyDigestOff {
+		dailyDigestSetting = "Daily digest: off"
+	}
+	r.postCommandResponse(fmt.Sprintf("###### Playbooks Personal Settings\n- %s", dailyDigestSetting))
 }
 
 func (r *Runner) actionTestSelf(args []string) {
@@ -1801,7 +1878,9 @@ func (r *Runner) Execute() error {
 	case "timeline":
 		r.actionTimeline()
 	case "todo":
-		r.actionTodo(parameters)
+		r.actionTodo()
+	case "settings":
+		r.actionSettings(parameters)
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "test":
