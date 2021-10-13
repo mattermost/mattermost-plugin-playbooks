@@ -160,7 +160,7 @@ const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
 });
 
 export const tabInfo = [
-    {id: 'checklists', name: 'Checklists'},
+    {id: 'checklists', name: <FormattedMessage defaultMessage='Checklists'/>},
     {id: 'templates', name: <FormattedMessage defaultMessage='Templates'/>},
     {id: 'actions', name: 'Actions'},
     {id: 'permissions', name: <FormattedMessage defaultMessage='Permissions'/>},
@@ -253,8 +253,15 @@ const PlaybookEdit = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew, props.teamId]);
 
-    dispatch(selectTeam(props.teamId || playbook.team_id));
-    dispatch(fetchMyChannelsAndMembers(props.teamId || playbook.team_id));
+    useEffect(() => {
+        const teamId = props.teamId || playbook.team_id;
+        if (!teamId) {
+            return;
+        }
+
+        dispatch(selectTeam(teamId));
+        dispatch(fetchMyChannelsAndMembers(teamId));
+    }, [dispatch, props.teamId, playbook.team_id]);
 
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
@@ -526,7 +533,7 @@ const PlaybookEdit = (props: Props) => {
                     onClick={() => onClose()}
                 >
                     <span>
-                        {'Cancel'}
+                        {formatMessage({defaultMessage: 'Cancel'})}
                     </span>
                 </SecondaryButtonLarger>
                 <PrimaryButton
@@ -535,7 +542,7 @@ const PlaybookEdit = (props: Props) => {
                     onClick={onSave}
                 >
                     <span>
-                        {'Save'}
+                        {formatMessage({defaultMessage: 'Save'})}
                     </span>
                 </PrimaryButton>
             </PlaybookNavbar>

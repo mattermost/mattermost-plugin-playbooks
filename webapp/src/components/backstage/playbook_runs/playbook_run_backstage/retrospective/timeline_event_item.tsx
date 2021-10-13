@@ -4,7 +4,6 @@
 import React, {useState} from 'react';
 import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
-import moment, {duration, Moment} from 'moment';
 import {Team} from 'mattermost-redux/types/teams';
 
 import {DateTime} from 'luxon';
@@ -92,7 +91,7 @@ const SummaryDetail = styled.div`
 
 interface Props {
     event: TimelineEvent;
-    reportedAt: Moment;
+    reportedAt: DateTime;
     channelNames: ChannelNamesMap;
     team: Team;
     deleteEvent: () => void;
@@ -128,10 +127,10 @@ const TimelineEventItem = (props: Props) => {
     let summaryTitle = '';
     let summary = '';
     let testid = '';
-    const diff = moment(props.event.event_at).diff(moment(props.reportedAt));
-    let stamp = formatDuration(duration(diff));
-    if (diff < 0) {
-        stamp = '-' + formatDuration(duration(diff).abs());
+    const diff = DateTime.fromMillis(props.event.event_at).diff(props.reportedAt);
+    let stamp = formatDuration(diff);
+    if (diff.toMillis() < 0) {
+        stamp = '-' + formatDuration(diff.negate());
     }
     let timeSince: JSX.Element | null = <TimeDay>{'Time: ' + stamp}</TimeDay>;
 
@@ -219,7 +218,7 @@ const TimelineEventItem = (props: Props) => {
             </HoverMenu>
             }
             <TimeContainer>
-                <TimeHours>{moment(props.event.event_at).format('MMM DD HH:mm')}</TimeHours>
+                <TimeHours>{DateTime.fromMillis(props.event.event_at).toFormat('LLL dd T')}</TimeHours>
                 {timeSince}
             </TimeContainer>
             <Circle>

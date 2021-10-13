@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import moment from 'moment';
+import {DateTime} from 'luxon';
 import styled from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -64,6 +64,20 @@ const RunName = styled.div`
     line-height: 16px;
 `;
 
+const PlaybookRunItem = styled.div`
+    display: flex;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    align-items: center;
+    margin: 0;
+    border-bottom: 1px solid var(--center-channel-color-16);
+    cursor: pointer;
+
+    &:hover {
+        background: var(--center-channel-color-04);
+    }
+`;
+
 interface Props {
     playbookRun: PlaybookRun
     fixedTeam?: boolean
@@ -87,8 +101,8 @@ const Row = (props: Props) => {
     }
 
     return (
-        <div
-            className='row playbook-run-item'
+        <PlaybookRunItem
+            className='row'
             key={props.playbookRun.id}
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >
@@ -131,7 +145,7 @@ const Row = (props: Props) => {
                     total={totalTasks}
                 />
             </div>
-        </div>
+        </PlaybookRunItem>
     );
 };
 
@@ -158,15 +172,15 @@ const tasksCompletedTotal = (checklists: Checklist[]) => {
 };
 
 const formatDate = (millis: number) => {
-    const mom = moment(millis);
-    if (mom.isAfter(moment().startOf('d').subtract(2, 'd'))) {
-        return mom.calendar();
+    const dt = DateTime.fromMillis(millis);
+    if (dt > DateTime.now().startOf('day').minus({days: 2})) {
+        return dt.toRelativeCalendar();
     }
 
-    if (mom.isSame(moment(), 'year')) {
-        return mom.format('MMM DD LT');
+    if (dt.hasSame(DateTime.now(), 'year')) {
+        return dt.toFormat('LLL dd t');
     }
-    return mom.format('MMM DD YYYY LT');
+    return dt.toFormat('LLL dd yyyy t');
 };
 
 export default Row;

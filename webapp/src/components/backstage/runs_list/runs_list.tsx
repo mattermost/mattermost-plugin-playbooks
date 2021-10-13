@@ -12,8 +12,6 @@ import Row from './row';
 import RunListHeader from './run_list_header';
 import Filters from './filters';
 
-import './runs_list.scss';
-
 interface Props {
     playbookRuns: PlaybookRun[]
     totalCount: number
@@ -23,7 +21,9 @@ interface Props {
     fixedTeam?: boolean
 }
 
-const PlaybookRunListContainer = styled.div`
+const PlaybookRunList = styled.div`
+    font-family: 'Open Sans', sans-serif;
+    color: var(--center-channel-color-90);
 `;
 
 const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterPill, fixedTeam}: Props) => {
@@ -39,7 +39,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
     };
 
     return (
-        <PlaybookRunListContainer className='PlaybookRunList'>
+        <PlaybookRunList className='PlaybookRunList'>
             <div
                 id='playbookRunList'
                 className='list'
@@ -78,7 +78,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
                     setPage={setPage}
                 />
             </div>
-        </PlaybookRunListContainer>
+        </PlaybookRunList>
     );
 };
 
