@@ -49,6 +49,28 @@ func Test_userInfoStore_Get(t *testing.T) {
 				t.Errorf("Get() actual = %#v, expected %#v", actual, expected)
 			}
 		})
+
+		t.Run("gets null DigestNotificationSettingsJSON correctly", func(t *testing.T) {
+			expected := app.UserInfo{
+				ID:                         model.NewId(),
+				LastDailyTodoDMAt:          12345678,
+				DigestNotificationSettings: app.DigestNotificationSettings{DailyDigestOff: false},
+			}
+
+			statement, args, err := sq.Insert("IR_UserInfo").
+				Columns("ID", "LastDailyTodoDMAt", "DigestNotificationSettingsJSON").
+				Values(expected.ID, expected.LastDailyTodoDMAt, nil).ToSql()
+			require.NoError(t, err)
+			_, err = db.Exec(db.Rebind(statement), args...)
+			require.NoError(t, err)
+
+			actual, err := userInfoStore.Get(expected.ID)
+			require.NoError(t, err)
+
+			if !reflect.DeepEqual(actual, expected) {
+				t.Errorf("Get() actual = %#v, expected %#v", actual, expected)
+			}
+		})
 	}
 }
 

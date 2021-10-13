@@ -92,21 +92,6 @@ func (mr *MockPlaybookRunStoreMockRecorder) FinishPlaybookRun(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishPlaybookRun", reflect.TypeOf((*MockPlaybookRunStore)(nil).FinishPlaybookRun), arg0, arg1)
 }
 
-// GetAssignedTasks mocks base method
-func (m *MockPlaybookRunStore) GetAssignedTasks(arg0 string) ([]app.AssignedRun, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAssignedTasks", arg0)
-	ret0, _ := ret[0].([]app.AssignedRun)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAssignedTasks indicates an expected call of GetAssignedTasks
-func (mr *MockPlaybookRunStoreMockRecorder) GetAssignedTasks(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignedTasks", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetAssignedTasks), arg0)
-}
-
 // GetBroadcastChannelIDsToRootIDs mocks base method
 func (m *MockPlaybookRunStore) GetBroadcastChannelIDsToRootIDs(arg0 string) (map[string]string, error) {
 	m.ctrl.T.Helper()
@@ -225,6 +210,21 @@ func (m *MockPlaybookRunStore) GetPlaybookRuns(arg0 app.RequesterInfo, arg1 app.
 func (mr *MockPlaybookRunStoreMockRecorder) GetPlaybookRuns(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybookRuns", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetPlaybookRuns), arg0, arg1)
+}
+
+// GetRunsWithAssignedTasks mocks base method
+func (m *MockPlaybookRunStore) GetRunsWithAssignedTasks(arg0 string) ([]app.AssignedRun, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRunsWithAssignedTasks", arg0)
+	ret0, _ := ret[0].([]app.AssignedRun)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRunsWithAssignedTasks indicates an expected call of GetRunsWithAssignedTasks
+func (mr *MockPlaybookRunStoreMockRecorder) GetRunsWithAssignedTasks(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunsWithAssignedTasks", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetRunsWithAssignedTasks), arg0)
 }
 
 // GetTimelineEvent mocks base method

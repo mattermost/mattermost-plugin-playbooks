@@ -1553,11 +1553,11 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 	}
 	part1 := buildRunsOverdueMessage(runsOverdue, siteURL)
 
-	runsAssigned, err := s.GetAssignedTasks(userID)
+	runsAssigned, err := s.GetRunsWithAssignedTasks(userID)
 	if err != nil {
 		return err
 	}
-	part2, totalAssignedTasks := buildAssignedTaskMessageAndTotal(runsAssigned, siteURL)
+	part2 := buildAssignedTaskMessageAndTotal(runsAssigned, siteURL)
 
 	if force {
 		runsInProgress, err := s.GetParticipatingRuns(userID)
@@ -1570,21 +1570,22 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 	}
 
 	// !force, so only return sections that have information.
-	if totalAssignedTasks+len(runsOverdue) == 0 {
+	var message string
+	if len(runsOverdue) != 0 {
+		message += part1
+	}
+	if len(runsAssigned) != 0 {
+		message += part2
+	}
+	if message == "" {
 		return nil
 	}
-	if len(runsOverdue) == 0 {
-		part1 = ""
-	}
-	if len(runsAssigned) == 0 {
-		part2 = ""
-	}
-	return s.poster.DM(userID, &model.Post{Message: part1 + part2})
+	return s.poster.DM(userID, &model.Post{Message: message})
 }
 
-// GetAssignedTasks returns the list of tasks assigned to userID
-func (s *PlaybookRunServiceImpl) GetAssignedTasks(userID string) ([]AssignedRun, error) {
-	return s.store.GetAssignedTasks(userID)
+// GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
+func (s *PlaybookRunServiceImpl) GetRunsWithAssignedTasks(userID string) ([]AssignedRun, error) {
+	return s.store.GetRunsWithAssignedTasks(userID)
 }
 
 // GetParticipatingRuns returns the list of active runs with userID as a participant
@@ -2442,14 +2443,14 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 }
 
-func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) (string, int) {
+func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) string {
 	total := 0
 	for _, run := range runs {
 		total += len(run.Tasks)
 	}
 
 	if total == 0 {
-		return "##### Your Outstanding Tasks\nYou have 0 outstanding tasks.\n", 0
+		return "##### Your Outstanding Tasks\nYou have 0 outstanding tasks.\n"
 	}
 
 	taskPlural := "1 outstanding task"
@@ -2472,7 +2473,7 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) (strin
 		}
 	}
 
-	return message, total
+	return message
 }
 
 func buildRunsInProgressMessage(runs []RunLink, siteURL string) string {

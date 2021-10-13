@@ -30,7 +30,7 @@ var _ app.UserInfoStore = (*userInfoStore)(nil)
 
 func NewUserInfoStore(sqlStore *SQLStore) app.UserInfoStore {
 	userInfoSelect := sqlStore.builder.
-		Select("ID", "LastDailyTodoDMAt", "DigestNotificationSettingsJSON").
+		Select("ID", "LastDailyTodoDMAt", "COALESCE(DigestNotificationSettingsJSON, '{}') DigestNotificationSettingsJSON").
 		From("IR_UserInfo")
 
 	newStore := &userInfoStore{
@@ -71,7 +71,6 @@ func (s *userInfoStore) Upsert(info app.UserInfo) error {
 				Values(raw.ID, raw.LastDailyTodoDMAt, raw.DigestNotificationSettingsJSON).
 				Suffix("ON DUPLICATE KEY UPDATE LastDailyTodoDMAt = ?, DigestNotificationSettingsJSON = ?",
 					raw.LastDailyTodoDMAt, raw.DigestNotificationSettingsJSON))
-
 	} else {
 		_, err = s.store.execBuilder(s.store.db,
 			sq.Insert("IR_UserInfo").
