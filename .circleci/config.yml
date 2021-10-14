@@ -103,7 +103,7 @@ commands:
             sudo apt-get install postgresql-client
             psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
             psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
-            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/mm534.sql
+            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/mm60.sql
       - run:
           name: Upload license
           command: |
