@@ -175,9 +175,6 @@ export default class Plugin {
         this.userActivityWatch();
 
         // Listen for channel changes and open the RHS when appropriate.
-        if (this.removeRHSListener) {
-            this.removeRHSListener();
-        }
         this.removeRHSListener = store.subscribe(makeRHSOpener(store));
     }
 
