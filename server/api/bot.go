@@ -177,7 +177,7 @@ func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if info.DailyDigestOff {
+	if info.DisableDailyDigest {
 		return
 	}
 

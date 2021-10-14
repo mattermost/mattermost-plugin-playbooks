@@ -54,7 +54,7 @@ func Test_userInfoStore_Get(t *testing.T) {
 			expected := app.UserInfo{
 				ID:                         model.NewId(),
 				LastDailyTodoDMAt:          12345678,
-				DigestNotificationSettings: app.DigestNotificationSettings{DailyDigestOff: false},
+				DigestNotificationSettings: app.DigestNotificationSettings{DisableDailyDigest: false},
 			}
 
 			statement, args, err := sq.Insert("IR_UserInfo").
@@ -127,7 +127,7 @@ func Test_userInfoStore_Upsert(t *testing.T) {
 
 			// update:
 			expected.LastDailyTodoDMAt = 48102939451
-			expected.DailyDigestOff = true
+			expected.DisableDailyDigest = true
 			err = userInfoStore.Upsert(expected)
 			require.NoError(t, err)
 
@@ -139,7 +139,7 @@ func Test_userInfoStore_Upsert(t *testing.T) {
 			}
 
 			// update dailyDigest one more time:
-			expected.DailyDigestOff = false
+			expected.DisableDailyDigest = false
 			err = userInfoStore.Upsert(expected)
 			require.NoError(t, err)
 

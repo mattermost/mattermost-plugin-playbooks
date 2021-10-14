@@ -871,9 +871,9 @@ func (r *Runner) actionSettings(args []string) {
 	}
 
 	if args[1] == "off" {
-		info.DailyDigestOff = true
+		info.DisableDailyDigest = true
 	} else {
-		info.DailyDigestOff = false
+		info.DisableDailyDigest = false
 	}
 
 	if err = r.userInfoStore.Upsert(info); err != nil {
@@ -894,7 +894,7 @@ func (r *Runner) displayCurrentSettings() {
 	}
 
 	dailyDigestSetting := "Daily digest: on"
-	if info.DailyDigestOff {
+	if info.DisableDailyDigest {
 		dailyDigestSetting = "Daily digest: off"
 	}
 	r.postCommandResponse(fmt.Sprintf("###### Playbooks Personal Settings\n- %s", dailyDigestSetting))
