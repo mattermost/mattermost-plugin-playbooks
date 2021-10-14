@@ -139,6 +139,7 @@ const selectStyles: StylesConfig = {
         borderRadius: '50%',
         margin: '4px',
         padding: 0,
+        cursor: 'pointer',
         width: '13px',
         height: '13px',
         ':hover': {
