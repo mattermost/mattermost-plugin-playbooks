@@ -8,11 +8,7 @@ import {StylesConfig} from 'react-select';
 
 import CreatableSelect from 'react-select/creatable';
 
-import {
-    AutomationHeader,
-    AutomationTitle,
-    SelectorWrapper,
-} from 'src/components/backstage/automation/styles';
+import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
 import {Toggle} from 'src/components/backstage/automation/toggle';
 
 interface Props {
@@ -39,7 +35,7 @@ export const InputKeywords = (props: Props) => {
     const [values, setValues] = useState(props.keywords.map(createOption));
 
     const handleChange = (value: any) => {
-        let newValues: { label: string; value: string }[] = value;
+        let newValues: {label: string, value: string}[] = value;
         if (!value) {
             newValues = [];
         }
