@@ -134,11 +134,11 @@ const selectStyles: StylesConfig = {
         padding: 0,
         paddingLeft: 0,
         lineHeight: '18px',
-        color: 'var(--center-channel-color-88)',
+        color: 'var(--center-channel-color)',
     }),
     multiValueRemove: (provided) => ({
         ...provided,
-        color: 'var(--center-channel-color-08)',
+        color: 'var(--center-channel-bg-80)',
         backgroundColor: 'rgba(var(--center-channel-color-rgb),0.32)',
         borderRadius: '50%',
         margin: '4px',

@@ -143,10 +143,10 @@ const commonSelectStyle = css`
 
         .channel-selector__multi-value__label {
             padding: 0;
-            color: var(--center-channel-color-88);
+            color: var(--center-channel-color);
         }
         .channel-selector__multi-value__remove {
-            color: var(--center-channel-color-08);
+            color: var(--center-channel-bg-80);
         }
     }
 `;
