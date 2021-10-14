@@ -1770,11 +1770,6 @@ func (r *Runner) Execute() error {
 		return nil
 	}
 
-	if !app.IsOnEnabledTeam(r.args.TeamId, r.configService) {
-		r.postCommandResponse("Not enabled on this team.")
-		return nil
-	}
-
 	switch cmd {
 	case "run":
 		r.actionRun(parameters)
