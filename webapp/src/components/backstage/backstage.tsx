@@ -14,6 +14,7 @@ import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {Theme} from 'mattermost-redux/types/preferences';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
+import {applyTheme} from 'mattermost-webapp/utils/utils';
 
 import {promptForFeedback} from 'src/client';
 
@@ -36,7 +37,6 @@ import ErrorPage from '../error_page';
 import SettingsView from './settings';
 import {BackstageNavbar} from './backstage_navbar';
 
-import {applyTheme} from './css_utils';
 import RunsPage from './runs_page';
 
 const BackstageContainer = styled.div`
