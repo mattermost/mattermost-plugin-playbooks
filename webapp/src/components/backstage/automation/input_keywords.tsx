@@ -8,7 +8,11 @@ import {StylesConfig} from 'react-select';
 
 import CreatableSelect from 'react-select/creatable';
 
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
+import {
+    AutomationHeader,
+    AutomationTitle,
+    SelectorWrapper,
+} from 'src/components/backstage/automation/styles';
 import {Toggle} from 'src/components/backstage/automation/toggle';
 
 interface Props {
@@ -35,7 +39,7 @@ export const InputKeywords = (props: Props) => {
     const [values, setValues] = useState(props.keywords.map(createOption));
 
     const handleChange = (value: any) => {
-        let newValues: {label: string, value: string}[] = value;
+        let newValues: { label: string; value: string }[] = value;
         if (!value) {
             newValues = [];
         }
@@ -120,7 +124,7 @@ const selectStyles: StylesConfig = {
     }),
     multiValue: (provided) => ({
         ...provided,
-        backgroundColor: 'rgb(230, 230, 230)',
+        backgroundColor: 'var(--center-channel-color-08)',
         borderRadius: '10px',
         paddingLeft: '8px',
         overflow: 'hidden',
@@ -130,11 +134,11 @@ const selectStyles: StylesConfig = {
         padding: 0,
         paddingLeft: 0,
         lineHeight: '18px',
-        color: 'rgb(51, 51, 51)',
+        color: 'var(--center-channel-color-88)',
     }),
     multiValueRemove: (provided) => ({
         ...provided,
-        color: 'rgb(230, 230, 230)',
+        color: 'var(--center-channel-color-08)',
         backgroundColor: 'rgba(var(--center-channel-color-rgb),0.32)',
         borderRadius: '50%',
         margin: '4px',
@@ -146,6 +150,10 @@ const selectStyles: StylesConfig = {
         },
         ':active': {
             backgroundColor: 'rgba(var(--center-channel-color-rgb),0.56)',
+        },
+        '> svg': {
+            height: '13px',
+            width: '13px',
         },
     }),
 };
