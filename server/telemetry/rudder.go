@@ -423,8 +423,8 @@ func digestSettingsProperties(userID string) map[string]interface{} {
 }
 
 // ChangeDigestSettings tracks when a user changes one of the digest settings
-func (t *RudderTelemetry) ChangeDigestSettings(userId string, old app.DigestNotificationSettings, new app.DigestNotificationSettings) {
-	properties := digestSettingsProperties(userId)
+func (t *RudderTelemetry) ChangeDigestSettings(userID string, old app.DigestNotificationSettings, new app.DigestNotificationSettings) {
+	properties := digestSettingsProperties(userID)
 	properties["Action"] = actionDigest
 	properties["OldDisableDailyDigest"] = old.DisableDailyDigest
 	properties["NewDisableDailyDigest"] = new.DisableDailyDigest

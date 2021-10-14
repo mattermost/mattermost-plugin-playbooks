@@ -110,5 +110,5 @@ func (t *NoopTelemetry) FrontendTelemetryForPlaybookTemplate(templateName string
 }
 
 // ChangeDigestSettings does nothing
-func (t *NoopTelemetry) ChangeDigestSettings(userId string, old app.DigestNotificationSettings, new app.DigestNotificationSettings) {
+func (t *NoopTelemetry) ChangeDigestSettings(userID string, old app.DigestNotificationSettings, new app.DigestNotificationSettings) {
 }
