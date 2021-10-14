@@ -55,6 +55,9 @@ const (
 
 	// telemetryKeyPlaybookRunID records the legacy name used to identify a playbook run via telemetry.
 	telemetryKeyPlaybookRunID = "IncidentID"
+
+	eventSettings = "settings"
+	actionDigest  = "digest"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -411,4 +414,19 @@ func (t *RudderTelemetry) Disable() error {
 
 	t.enabled = false
 	return nil
+}
+
+func digestSettingsProperties(userID string) map[string]interface{} {
+	return map[string]interface{}{
+		"UserActualID": userID,
+	}
+}
+
+// ChangeDigestSettings tracks when a user changes one of the digest settings
+func (t *RudderTelemetry) ChangeDigestSettings(userId string, old app.DigestNotificationSettings, new app.DigestNotificationSettings) {
+	properties := digestSettingsProperties(userId)
+	properties["Action"] = actionDigest
+	properties["OldDisableDailyDigest"] = old.DisableDailyDigest
+	properties["NewDisableDailyDigest"] = new.DisableDailyDigest
+	t.track(eventSettings, properties)
 }

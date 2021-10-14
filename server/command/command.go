@@ -168,13 +168,14 @@ type Runner struct {
 	playbookService    app.PlaybookService
 	configService      config.Service
 	userInfoStore      app.UserInfoStore
+	userInfoTelemetry  app.UserInfoTelemetry
 }
 
 // NewCommandRunner creates a command runner.
 func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
 	logger bot.Logger, poster bot.Poster, playbookRunService app.PlaybookRunService,
 	playbookService app.PlaybookService, configService config.Service,
-	userInfoStore app.UserInfoStore) *Runner {
+	userInfoStore app.UserInfoStore, userInfoTelemetry app.UserInfoTelemetry) *Runner {
 	return &Runner{
 		context:            ctx,
 		args:               args,
@@ -185,6 +186,7 @@ func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *plugina
 		playbookService:    playbookService,
 		configService:      configService,
 		userInfoStore:      userInfoStore,
+		userInfoTelemetry:  userInfoTelemetry,
 	}
 }
 
@@ -870,6 +872,8 @@ func (r *Runner) actionSettings(args []string) {
 		return
 	}
 
+	oldInfo := info
+
 	if args[1] == "off" {
 		info.DisableDailyDigest = true
 	} else {
@@ -880,6 +884,8 @@ func (r *Runner) actionSettings(args []string) {
 		r.warnUserAndLogErrorf("Error updating userInfo: %v", err)
 		return
 	}
+
+	r.userInfoTelemetry.ChangeDigestSettings(r.args.UserId, oldInfo.DigestNotificationSettings, info.DigestNotificationSettings)
 
 	r.displayCurrentSettings()
 }
