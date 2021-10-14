@@ -299,7 +299,7 @@ describe('backstage playbook details', () => {
                             });
 
                         // # Add a new user
-                        cy.addInvitedUser('alice.johnston');
+                        cy.addInvitedUser('anne.stone');
 
                         // * Verify that the badge in the selector shows the correct number of members
                         cy.get('.invite-users-selector__control')
@@ -311,7 +311,7 @@ describe('backstage playbook details', () => {
                             .parent()
                             .within(() => {
                                 cy.findByText('aaron.medina');
-                                cy.findByText('alice.johnston');
+                                cy.findByText('anne.stone');
                             });
                     });
                 });
@@ -338,7 +338,7 @@ describe('backstage playbook details', () => {
 
                         // # Add a couple of users
                         cy.addInvitedUser('aaron.medina');
-                        cy.addInvitedUser('alice.johnston');
+                        cy.addInvitedUser('anne.stone');
 
                         // * Verify that the badge in the selector shows the correct number of members
                         cy.get('.invite-users-selector__control')
@@ -362,7 +362,7 @@ describe('backstage playbook details', () => {
                             .within(() => {
                                 cy.get('.invite-users-selector__option')
                                     .should('have.length', 1)
-                                    .contains('alice.johnston');
+                                    .contains('anne.stone');
                             });
                     });
                 });
@@ -389,7 +389,7 @@ describe('backstage playbook details', () => {
 
                         // # Add a couple of users
                         cy.addInvitedUser('aaron.medina');
-                        cy.addInvitedUser('alice.johnston');
+                        cy.addInvitedUser('anne.stone');
 
                         // * Verify that the badge in the selector shows the correct number of members
                         cy.get('.invite-users-selector__control')
@@ -435,7 +435,7 @@ describe('backstage playbook details', () => {
                             .parent()
                             .within(() => {
                                 cy.findByText('aaron.medina');
-                                cy.findByText('alice.johnston');
+                                cy.findByText('anne.stone');
                             });
                     });
                 });
@@ -631,11 +631,11 @@ describe('backstage playbook details', () => {
                         });
 
                         // # Select a new owner
-                        cy.selectOwner('alice.johnston');
+                        cy.selectOwner('anne.stone');
 
                         // * Verify that the control shows the selected owner
                         cy.get('.assign-owner-selector__control').contains(
-                            'alice.johnston'
+                            'anne.stone'
                         );
                     });
                 });
