@@ -86,6 +86,7 @@ let config = {
     externals: {
         react: 'React',
         redux: 'Redux',
+        luxon: 'Luxon',
         'react-redux': 'ReactRedux',
         'prop-types': 'PropTypes',
         'react-bootstrap': 'ReactBootstrap',
