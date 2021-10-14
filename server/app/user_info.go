@@ -27,5 +27,5 @@ type UserInfoStore interface {
 // userID is the user initiating the event.
 type UserInfoTelemetry interface {
 	// ChangeDigestSettings tracks when a user changes one of the digest settings
-	ChangeDigestSettings(userId string, old DigestNotificationSettings, new DigestNotificationSettings)
+	ChangeDigestSettings(userID string, old DigestNotificationSettings, new DigestNotificationSettings)
 }
