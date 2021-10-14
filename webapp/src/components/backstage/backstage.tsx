@@ -4,7 +4,6 @@
 import React, {useEffect} from 'react';
 import {Switch, Route, NavLink, useRouteMatch, Redirect} from 'react-router-dom';
 import {useSelector} from 'react-redux';
-
 import styled from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
@@ -14,29 +13,25 @@ import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {Theme} from 'mattermost-redux/types/preferences';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
-import {applyTheme} from 'mattermost-webapp/utils/utils';
 
 import {promptForFeedback} from 'src/client';
-
 import PlaybookRunBackstage
     from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
-
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
 import {ErrorPageTypes} from 'src/constants';
 import {pluginErrorUrl} from 'src/browser_routing';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
-
 import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
 import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
+import {applyTheme} from 'src/components/backstage/css_utils';
 
 import ErrorPage from '../error_page';
 
 import SettingsView from './settings';
 import {BackstageNavbar} from './backstage_navbar';
-
 import RunsPage from './runs_page';
 
 const BackstageContainer = styled.div`
