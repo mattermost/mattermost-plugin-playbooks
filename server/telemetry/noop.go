@@ -108,3 +108,7 @@ func (t *NoopTelemetry) FrontendTelemetryForPlaybook(playbook app.Playbook, user
 // FrontendTelemetryForPlaybookTemplate does nothing.
 func (t *NoopTelemetry) FrontendTelemetryForPlaybookTemplate(templateName string, userID, action string) {
 }
+
+// ChangeDigestSettings does nothing
+func (t *NoopTelemetry) ChangeDigestSettings(userID string, old app.DigestNotificationSettings, new app.DigestNotificationSettings) {
+}
