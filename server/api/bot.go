@@ -177,6 +177,10 @@ func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if info.DisableDailyDigest {
+		return
+	}
+
 	var timezone *time.Location
 	offset, _ := strconv.Atoi(r.Header.Get("X-Timezone-Offset"))
 	timezone = time.FixedZone("local", -60*offset)

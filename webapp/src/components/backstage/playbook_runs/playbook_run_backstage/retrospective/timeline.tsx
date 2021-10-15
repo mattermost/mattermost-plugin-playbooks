@@ -4,7 +4,7 @@
 import React from 'react';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
-import moment from 'moment';
+import {DateTime} from 'luxon';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
@@ -72,7 +72,7 @@ const Timeline = (props: Props) => {
                 <TimelineEventItem
                     key={event.id}
                     event={event}
-                    reportedAt={moment(props.playbookRun.create_at)}
+                    reportedAt={DateTime.fromMillis(props.playbookRun.create_at)}
                     channelNames={channelNamesMap}
                     team={team}
                     deleteEvent={() => props.deleteTimelineEvent(event.id)}
