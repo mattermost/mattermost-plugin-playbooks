@@ -45,8 +45,12 @@ func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 
 	var req *model.PostActionIntegrationRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil || req == nil {
+	if err != nil {
 		h.returnError(publicErrorMessage, err, w)
+		return
+	}
+	if req == nil {
+		h.returnError(publicErrorMessage, errors.New("nil request"), w)
 		return
 	}
 
