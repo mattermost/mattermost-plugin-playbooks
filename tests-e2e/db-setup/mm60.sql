@@ -1835,7 +1835,6 @@ COPY public.emoji (id, createat, updateat, deleteat, creatorid, name) FROM stdin
 --
 
 COPY public.fileinfo (id, creatorid, postid, createat, updateat, deleteat, path, thumbnailpath, previewpath, name, extension, size, mimetype, width, height, haspreviewimage, minipreview, content, remoteid) FROM stdin;
-8bdjoxwo53yqpno4bxp9afehne	nouser		1634237540228	1634237540228	0	import/9bgys1qafjgf3k8nh6sz6ichga_mmctl-sampledata.zip			mmctl-sampledata.zip	zip	276194	application/zip	0	0	f	\N	import.jsonl
 \.
 
 
