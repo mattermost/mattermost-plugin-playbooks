@@ -31,6 +31,7 @@ docs-server:
 tests-e2e/db-setup/mattermost.sql:
 	docker exec mattermost-postgres pg_dump \
 		--username=mmuser \
+		--clean \
 		--exclude-table ir_incident \
 		--exclude-table ir_playbook \
 		--exclude-table ir_playbookmember \
