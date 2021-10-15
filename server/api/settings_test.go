@@ -85,7 +85,6 @@ func TestGetSettings(t *testing.T) {
 			Return(&config.Configuration{
 				PlaybookCreatorsUserIds:    expectedSettings.PlaybookCreatorsUserIds,
 				EnableExperimentalFeatures: expectedSettings.EnableExperimentalFeatures,
-				EnabledTeams:               []string{"not exposed"},
 			})
 
 		settings, err := c.Settings.Get(context.TODO())
@@ -109,7 +108,6 @@ func TestGetSettings(t *testing.T) {
 			Return(&config.Configuration{
 				PlaybookCreatorsUserIds:    expectedSettings.PlaybookCreatorsUserIds,
 				EnableExperimentalFeatures: expectedSettings.EnableExperimentalFeatures,
-				EnabledTeams:               []string{"not exposed"},
 			})
 
 		settings, err := c.Settings.Get(context.TODO())

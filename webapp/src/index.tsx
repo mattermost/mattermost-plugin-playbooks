@@ -52,7 +52,6 @@ import {
     WEBSOCKET_PLAYBOOK_DELETED,
 } from 'src/types/websocket_events';
 import RegistryWrapper from 'src/registry_wrapper';
-import SystemConsoleEnabledTeams from 'src/system_console_enabled_teams';
 import {makeUpdateMainMenu} from 'src/make_update_main_menu';
 import {fetchGlobalSettings, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
@@ -98,14 +97,12 @@ export default class Plugin {
             }
         });
 
-        const updateMainMenuAction = makeUpdateMainMenu(registry, store);
+        const updateMainMenuAction = makeUpdateMainMenu(registry);
         updateMainMenuAction();
 
         // Would rather use a saga and listen for ActionTypes.UPDATE_MOBILE_VIEW.
         window.addEventListener('resize', debounce(updateMainMenuAction, 300));
         this.removeMainMenuSub = store.subscribe(updateMainMenuAction);
-
-        registry.registerAdminConsoleCustomSetting('EnabledTeams', SystemConsoleEnabledTeams, {showTitle: true});
 
         // Grab global settings
         const getGlobalSettings = async () => {
