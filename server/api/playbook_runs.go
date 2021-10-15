@@ -202,8 +202,9 @@ func (h *PlaybookRunHandler) updatePlaybookRun(w http.ResponseWriter, r *http.Re
 func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	request := model.SubmitDialogRequestFromJson(r.Body)
-	if request == nil {
+	var request *model.SubmitDialogRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil || request == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
 	}
@@ -219,7 +220,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 	}
 
 	var state app.DialogState
-	err := json.Unmarshal([]byte(request.State), &state)
+	err = json.Unmarshal([]byte(request.State), &state)
 	if err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal dialog state", err)
 		return
@@ -263,7 +264,8 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 					app.DialogFieldNameKey: msg,
 				},
 			}
-			_, _ = w.Write(resp.ToJson())
+			respBytes, _ := json.Marshal(resp)
+			_, _ = w.Write(respBytes)
 			return
 		}
 
@@ -290,8 +292,9 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 func (h *PlaybookRunHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	request := model.SubmitDialogRequestFromJson(r.Body)
-	if request == nil {
+	var request *model.SubmitDialogRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil || request == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
 	}
@@ -320,7 +323,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(w http.ResponseWriter, r *http.
 	}
 
 	var state app.DialogStateAddToTimeline
-	err := json.Unmarshal([]byte(request.State), &state)
+	err = json.Unmarshal([]byte(request.State), &state)
 	if err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal dialog state", err)
 		return
@@ -741,8 +744,9 @@ func (h *PlaybookRunHandler) updateStatusDialog(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	request := model.SubmitDialogRequestFromJson(r.Body)
-	if request == nil {
+	var request *model.SubmitDialogRequest
+	err = json.NewDecoder(r.Body).Decode(&request)
+	if err != nil || request == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
 	}
@@ -775,8 +779,9 @@ func (h *PlaybookRunHandler) updateStatusDialog(w http.ResponseWriter, r *http.R
 // reminderButtonUpdate handles the POST /runs/{id}/reminder/button-update endpoint, called when a
 // user clicks on the reminder interactive button
 func (h *PlaybookRunHandler) reminderButtonUpdate(w http.ResponseWriter, r *http.Request) {
-	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
-	if requestData == nil {
+	var requestData *model.PostActionIntegrationRequest
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil || requestData == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
 		return
 	}
@@ -828,8 +833,9 @@ func (h *PlaybookRunHandler) reminderDelete(w http.ResponseWriter, r *http.Reque
 func (h *PlaybookRunHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
-	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
-	if requestData == nil {
+	var requestData *model.PostActionIntegrationRequest
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil || requestData == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
 		return
 	}
@@ -1147,8 +1153,9 @@ func (h *PlaybookRunHandler) addChecklistItemDialog(w http.ResponseWriter, r *ht
 		return
 	}
 
-	request := model.SubmitDialogRequestFromJson(r.Body)
-	if request == nil {
+	var request *model.SubmitDialogRequest
+	err = json.NewDecoder(r.Body).Decode(&request)
+	if err != nil || request == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
 		return
 	}
