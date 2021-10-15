@@ -9,6 +9,7 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
+import {useIntl, FormattedMessage} from 'react-intl';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
@@ -159,10 +160,10 @@ const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
 });
 
 export const tabInfo = [
-    {id: 'checklists', name: 'Checklists'},
-    {id: 'templates', name: 'Templates'},
+    {id: 'checklists', name: <FormattedMessage defaultMessage='Checklists'/>},
+    {id: 'templates', name: <FormattedMessage defaultMessage='Templates'/>},
     {id: 'actions', name: 'Actions'},
-    {id: 'permissions', name: 'Permissions'},
+    {id: 'permissions', name: <FormattedMessage defaultMessage='Permissions'/>},
 ] as const;
 
 const retrospectiveReminderOptions = [
@@ -182,6 +183,8 @@ const PlaybookNavbar = styled(BackstageNavbar)`
 
 const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
+
+    const {formatMessage} = useIntl();
 
     const currentUserId = useSelector(getCurrentUserId);
 
@@ -250,8 +253,15 @@ const PlaybookEdit = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew, props.teamId]);
 
-    dispatch(selectTeam(props.teamId || playbook.team_id));
-    dispatch(fetchMyChannelsAndMembers(props.teamId || playbook.team_id));
+    useEffect(() => {
+        const teamId = props.teamId || playbook.team_id;
+        if (!teamId) {
+            return;
+        }
+
+        dispatch(selectTeam(teamId));
+        dispatch(fetchMyChannelsAndMembers(teamId));
+    }, [dispatch, props.teamId, playbook.team_id]);
 
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
@@ -275,7 +285,12 @@ const PlaybookEdit = (props: Props) => {
     };
 
     const onSave = async () => {
-        const data = await savePlaybook(setPlaybookDefaults(playbook));
+        const pb = setPlaybookDefaults(playbook);
+
+        pb.webhook_on_creation_urls = pb.webhook_on_creation_urls.filter((url) => url.trim().length > 0);
+        pb.webhook_on_status_update_urls = pb.webhook_on_status_update_urls.filter((url) => url.trim().length > 0);
+
+        const data = await savePlaybook(pb);
         setChangesMade(false);
         onClose(data?.id);
     };
@@ -362,24 +377,20 @@ const PlaybookEdit = (props: Props) => {
         }
     };
 
-    const handleWebhookOnCreationChange = (url: string) => {
-        if (playbook.webhook_on_creation_url !== url) {
-            setPlaybook({
-                ...playbook,
-                webhook_on_creation_url: url,
-            });
-            setChangesMade(true);
-        }
+    const handleWebhookOnCreationChange = (urls: string) => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_creation_urls: urls.split('\n'),
+        });
+        setChangesMade(true);
     };
 
-    const handleWebhookOnStatusUpdateChange = (url: string) => {
-        if (playbook.webhook_on_status_update_url !== url) {
-            setPlaybook({
-                ...playbook,
-                webhook_on_status_update_url: url,
-            });
-            setChangesMade(true);
-        }
+    const handleWebhookOnStatusUpdateChange = (urls: string) => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_status_update_urls: urls.split('\n'),
+        });
+        setChangesMade(true);
     };
 
     const handleMessageOnJoinChange = (message: string) => {
@@ -522,7 +533,7 @@ const PlaybookEdit = (props: Props) => {
                     onClick={() => onClose()}
                 >
                     <span>
-                        {'Cancel'}
+                        {formatMessage({defaultMessage: 'Cancel'})}
                     </span>
                 </SecondaryButtonLarger>
                 <PrimaryButton
@@ -531,7 +542,7 @@ const PlaybookEdit = (props: Props) => {
                     onClick={onSave}
                 >
                     <span>
-                        {'Save'}
+                        {formatMessage({defaultMessage: 'Save'})}
                     </span>
                 </PrimaryButton>
             </PlaybookNavbar>
@@ -542,9 +553,7 @@ const PlaybookEdit = (props: Props) => {
                             currentTab={currentTab}
                             setCurrentTab={setCurrentTab}
                         >
-                            {tabInfo.map((item) => {
-                                return (item.name);
-                            })}
+                            {tabInfo.map(({id, name}) => <React.Fragment key={id}>{name}</React.Fragment>)}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>
@@ -571,15 +580,15 @@ const PlaybookEdit = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Description'}
+                                        {formatMessage({defaultMessage: 'Description'})}
                                         <BackstageSubheaderDescription>
-                                            {'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'}
+                                            {formatMessage({defaultMessage: 'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'})}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <StyledMarkdownTextbox
                                         className={'playbook_description'}
                                         id={'playbook_description_edit'}
-                                        placeholder={'Use Markdown to create a template.'}
+                                        placeholder={formatMessage({defaultMessage: 'Use Markdown to create a template.'})}
                                         value={playbook.description}
                                         setValue={(description: string) => {
                                             setPlaybook({
@@ -592,15 +601,15 @@ const PlaybookEdit = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Status updates'}
+                                        {formatMessage({defaultMessage: 'Status updates'})}
                                         <BackstageSubheaderDescription>
-                                            {'This template helps to standardize the format for recurring updates that take place throughout each run to keep.'}
+                                            {formatMessage({defaultMessage: 'This template helps to standardize the format for recurring updates that take place throughout each run to keep.'})}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <StyledMarkdownTextbox
                                         className={'playbook_reminder_message'}
                                         id={'playbook_reminder_message_edit'}
-                                        placeholder={'Use Markdown to create a template.'}
+                                        placeholder={formatMessage({defaultMessage: 'Use Markdown to create a template.'})}
                                         value={playbook.reminder_message_template}
                                         setValue={(value: string) => {
                                             setPlaybook({
@@ -615,9 +624,9 @@ const PlaybookEdit = (props: Props) => {
                                     <>
                                         <SidebarBlock>
                                             <BackstageSubheader>
-                                                {'Retrospective reminder interval'}
+                                                {formatMessage({defaultMessage: 'Retrospective reminder interval'})}
                                                 <BackstageSubheaderDescription>
-                                                    {'Reminds the channel at a specified interval to fill out the retrospective.'}
+                                                    {formatMessage({defaultMessage: 'Reminds the channel at a specified interval to fill out the retrospective.'})}
                                                 </BackstageSubheaderDescription>
                                             </BackstageSubheader>
                                             <StyledSelect
@@ -636,15 +645,15 @@ const PlaybookEdit = (props: Props) => {
                                         </SidebarBlock>
                                         <SidebarBlock>
                                             <BackstageSubheader>
-                                                {'Retrospective template'}
+                                                {formatMessage({defaultMessage: 'Retrospective template'})}
                                                 <BackstageSubheaderDescription>
-                                                    {'Default text for the retrospective.'}
+                                                    {formatMessage({defaultMessage: 'Default text for the retrospective.'})}
                                                 </BackstageSubheaderDescription>
                                             </BackstageSubheader>
                                             <StyledMarkdownTextbox
                                                 className={'playbook_retrospective_template'}
                                                 id={'playbook_retrospective_template_edit'}
-                                                placeholder={'Enter retrospective template'}
+                                                placeholder={formatMessage({defaultMessage: 'Enter retrospective template'})}
                                                 value={playbook.retrospective_template}
                                                 setValue={(value: string) => {
                                                     setPlaybook({
@@ -678,10 +687,10 @@ const PlaybookEdit = (props: Props) => {
                                     webhookOnCreationEnabled={playbook.webhook_on_creation_enabled}
                                     onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
                                     webhookOnCreationChange={handleWebhookOnCreationChange}
-                                    webhookOnCreationURL={playbook.webhook_on_creation_url}
+                                    webhookOnCreationURLs={playbook.webhook_on_creation_urls}
                                     webhookOnStatusUpdateEnabled={playbook.webhook_on_status_update_enabled}
                                     onToggleWebhookOnStatusUpdate={handleToggleWebhookOnStatusUpdate}
-                                    webhookOnStatusUpdateURL={playbook.webhook_on_status_update_url}
+                                    webhookOnStatusUpdateURLs={playbook.webhook_on_status_update_urls}
                                     webhookOnStatusUpdateChange={handleWebhookOnStatusUpdateChange}
                                     messageOnJoinEnabled={playbook.message_on_join_enabled}
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
@@ -702,9 +711,9 @@ const PlaybookEdit = (props: Props) => {
                             <TabContainer>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Channel access'}
+                                        {formatMessage({defaultMessage: 'Channel access'})}
                                         <BackstageSubheaderDescription>
-                                            {'Determine the type of channel this playbook creates.'}
+                                            {formatMessage({defaultMessage: 'Determine the type of channel this playbook creates.'})}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <RadioContainer>
@@ -716,7 +725,7 @@ const PlaybookEdit = (props: Props) => {
                                                 checked={playbook.create_public_playbook_run}
                                                 onChange={handlePublicChange}
                                             />
-                                            {'Public'}
+                                            {formatMessage({defaultMessage: 'Public'})}
                                         </RadioLabel>
                                         <RadioLabel>
                                             <RadioInput
@@ -726,7 +735,7 @@ const PlaybookEdit = (props: Props) => {
                                                 checked={!playbook.create_public_playbook_run}
                                                 onChange={handlePublicChange}
                                             />
-                                            {'Private'}
+                                            {formatMessage({defaultMessage: 'Private'})}
                                         </RadioLabel>
                                     </RadioContainer>
                                 </SidebarBlock>

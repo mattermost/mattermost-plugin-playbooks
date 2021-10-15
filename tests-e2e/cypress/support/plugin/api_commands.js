@@ -109,26 +109,16 @@ Cypress.Commands.add('apiFinishRun', (playbookRunId) => {
 Cypress.Commands.add('apiUpdateStatus', (
     {
         playbookRunId,
-        userId,
-        channelId,
-        teamId,
         message,
-        description,
-        reminder = '300',
+        reminder = 300,
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `${playbookRunsEndpoint}/${playbookRunId}/update-status-dialog`,
+        url: `${playbookRunsEndpoint}/${playbookRunId}/status`,
         method: 'POST',
         body: {
-            type: 'dialog_submission',
-            callback_id: '',
-            state: '',
-            user_id: userId,
-            channel_id: channelId,
-            team_id: teamId,
-            submission: {message, description, reminder},
-            cancelled: false,
+            message,
+            reminder,
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -149,6 +139,49 @@ Cypress.Commands.add('apiChangePlaybookRunOwner', (playbookRunId, userId) => {
         method: 'POST',
         body: {
             owner_id: userId,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
+/**
+ * Change the assignee of a checklist item directly via API
+ * @param {String} playbookRunId
+ * @param {String} checklistId
+ * @param {String} itemId
+ * @param {String} userId
+ * All parameters required
+ */
+Cypress.Commands.add('apiChangeChecklistItemAssignee', (playbookRunId, checklistId, itemId, userId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: playbookRunsEndpoint + `/${playbookRunId}/checklists/${checklistId}/item/${itemId}/assignee`,
+        method: 'PUT',
+        body: {
+            assignee_id: userId,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response);
+    });
+});
+
+/**
+ * Check a checklist item directly via API
+ * @param {String} playbookRunId
+ * @param {String} checklistId
+ * @param {String} itemId
+ * @param {String} state ('' or 'closed')
+ */
+Cypress.Commands.add('apiSetChecklistItemState', (playbookRunId, checklistId, itemId, state) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: playbookRunsEndpoint + `/${playbookRunId}/checklists/${checklistId}/item/${itemId}/state`,
+        method: 'PUT',
+        body: {
+            new_state: state,
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
@@ -203,9 +236,9 @@ Cypress.Commands.add('apiCreatePlaybook', (
         defaultOwnerEnabled,
         announcementChannelId,
         announcementChannelEnabled,
-        webhookOnCreationURL,
+        webhookOnCreationURLs,
         webhookOnCreationEnabled,
-        webhookOnStatusUpdateURL,
+        webhookOnStatusUpdateURLs,
         webhookOnStatusUpdateEnabled,
         messageOnJoin,
         messageOnJoinEnabled,
@@ -232,9 +265,9 @@ Cypress.Commands.add('apiCreatePlaybook', (
             default_owner_enabled: defaultOwnerEnabled,
             announcement_channel_id: announcementChannelId,
             announcement_channel_enabled: announcementChannelEnabled,
-            webhook_on_creation_url: webhookOnCreationURL,
+            webhook_on_creation_urls: webhookOnCreationURLs,
             webhook_on_creation_enabled: webhookOnCreationEnabled,
-            webhook_on_status_update_url: webhookOnStatusUpdateURL,
+            webhook_on_status_update_urls: webhookOnStatusUpdateURLs,
             webhook_on_status_update_enabled: webhookOnStatusUpdateEnabled,
             message_on_join: messageOnJoin,
             message_on_join_enabled: messageOnJoinEnabled,

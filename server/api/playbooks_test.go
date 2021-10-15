@@ -161,7 +161,6 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 	}
@@ -183,7 +182,6 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
@@ -233,7 +231,6 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
@@ -296,15 +293,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
@@ -356,15 +350,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
@@ -411,15 +402,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
@@ -471,15 +459,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(withMember.TeamID).Return(0, nil)
@@ -533,15 +518,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(withMember.TeamID).Return(0, nil)
@@ -1080,12 +1062,14 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:           []string{"testuserid"},
-			BroadcastChannelIDs: []string{},
-			InviteUsersEnabled:  true,
-			InvitedUserIDs:      []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:     []string{"testInvitedGroupID1", "testInvitedGroupID2"},
-			SignalAnyKeywords:   []string{},
+			MemberIDs:                 []string{"testuserid"},
+			BroadcastChannelIDs:       []string{},
+			InviteUsersEnabled:        true,
+			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:         []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
@@ -1138,12 +1122,14 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:           []string{"testuserid"},
-			BroadcastChannelIDs: []string{},
-			InviteUsersEnabled:  false,
-			InvitedUserIDs:      []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:     []string{"testInvitedGroupID1", "testInvitedGroupID2"},
-			SignalAnyKeywords:   []string{},
+			MemberIDs:                 []string{"testuserid"},
+			BroadcastChannelIDs:       []string{},
+			InviteUsersEnabled:        false,
+			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:         []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
@@ -1198,12 +1184,14 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:           []string{"testuserid"},
-			BroadcastChannelIDs: []string{},
-			InviteUsersEnabled:  false,
-			InvitedUserIDs:      []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:     []string{"testInvitedGroupID1", "testInvitedGroupID2"},
-			SignalAnyKeywords:   []string{},
+			MemberIDs:                 []string{"testuserid"},
+			BroadcastChannelIDs:       []string{},
+			InviteUsersEnabled:        false,
+			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:         []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()

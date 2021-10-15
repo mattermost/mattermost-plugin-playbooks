@@ -261,7 +261,7 @@ export const RHSHomeTemplate = ({
     const linkRef = useRef(null);
     return (
         <Item>
-            <div>
+            <div data-testid='template-details'>
                 <Title ref={linkRef}>
                     <Link
                         to={allowPlaybookCreation ? create(currentTeam, template.title) : ''}

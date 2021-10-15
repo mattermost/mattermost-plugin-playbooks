@@ -15,9 +15,16 @@ import WebsocketEvents from 'mattermost-redux/constants/websocket';
 
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
-import {RetrospectiveFirstReminder, RetrospectiveReminder} from 'src/components/retrospective_reminder_posts';
+import {
+    RetrospectiveFirstReminder,
+    RetrospectiveReminder,
+} from 'src/components/retrospective_reminder_posts';
 import {pluginId} from 'src/manifest';
-import {ChannelHeaderButton, ChannelHeaderText, ChannelHeaderTooltip} from 'src/components/channel_header';
+import {
+    ChannelHeaderButton,
+    ChannelHeaderText,
+    ChannelHeaderTooltip,
+} from 'src/components/channel_header';
 import RightHandSidebar from 'src/components/rhs/rhs_main';
 import RHSTitle from 'src/components/rhs/rhs_title';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
@@ -45,9 +52,8 @@ import {
     WEBSOCKET_PLAYBOOK_DELETED,
 } from 'src/types/websocket_events';
 import RegistryWrapper from 'src/registry_wrapper';
-import SystemConsoleEnabledTeams from 'src/system_console_enabled_teams';
 import {makeUpdateMainMenu} from 'src/make_update_main_menu';
-import {fetchGlobalSettings, setSiteUrl} from 'src/client';
+import {fetchGlobalSettings, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
@@ -71,6 +77,7 @@ const OldRoutesRedirect = () => {
 export default class Plugin {
     removeMainMenuSub?: Unsubscribe;
     removeRHSListener?: Unsubscribe;
+    activityFunc?: () => void;
 
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
         registry.registerReducer(reducer);
@@ -90,14 +97,12 @@ export default class Plugin {
             }
         });
 
-        const updateMainMenuAction = makeUpdateMainMenu(registry, store);
+        const updateMainMenuAction = makeUpdateMainMenu(registry);
         updateMainMenuAction();
 
         // Would rather use a saga and listen for ActionTypes.UPDATE_MOBILE_VIEW.
         window.addEventListener('resize', debounce(updateMainMenuAction, 300));
         this.removeMainMenuSub = store.subscribe(updateMainMenuAction);
-
-        registry.registerAdminConsoleCustomSetting('EnabledTeams', SystemConsoleEnabledTeams, {showTitle: true});
 
         // Grab global settings
         const getGlobalSettings = async () => {
@@ -115,6 +120,23 @@ export default class Plugin {
                 GlobalHeaderCenter,
             );
         }
+
+        // Listen for new activity to trigger a call to the server
+        // Hat tip to the Github plugin
+        let lastActivityTime = Number.MAX_SAFE_INTEGER;
+        const activityTimeout = 60 * 60 * 1000; // 1 hour
+
+        this.activityFunc = () => {
+            const now = new Date().getTime();
+            if (now - lastActivityTime > activityTimeout) {
+                notifyConnect();
+            }
+            lastActivityTime = now;
+        };
+        document.addEventListener('click', this.activityFunc);
+
+        // Do our first connect
+        notifyConnect();
 
         const doRegistrations = () => {
             const r = new RegistryWrapper(registry, store);
@@ -191,6 +213,10 @@ export default class Plugin {
         if (this.removeRHSListener) {
             this.removeRHSListener();
             delete this.removeRHSListener;
+        }
+        if (this.activityFunc) {
+            document.removeEventListener('click', this.activityFunc);
+            delete this.activityFunc;
         }
     }
 }

@@ -3,6 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
+import {useIntl} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -41,13 +42,14 @@ const SmallProfile = styled(Profile)`
 `;
 
 const About = (props: { playbookRun: PlaybookRun }) => {
+    const {formatMessage} = useIntl();
     return (
         <TabPageContainer>
-            <Title>{'About'}</Title>
+            <Title>{formatMessage({defaultMessage: 'About'})}</Title>
             <StyledContent>
                 <Grid>
-                    <ColTitle>{'Owner'}</ColTitle>
-                    <ColTitle>{'Duration'}</ColTitle>
+                    <ColTitle>{formatMessage({defaultMessage: 'Owner'})}</ColTitle>
+                    <ColTitle>{formatMessage({defaultMessage: 'Duration'})}</ColTitle>
                     <ColItem>
                         <SmallProfile userId={props.playbookRun.owner_user_id}/>
                     </ColItem>

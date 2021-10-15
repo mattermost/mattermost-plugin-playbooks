@@ -7,6 +7,7 @@ import {useSelector} from 'react-redux';
 import {Team} from 'mattermost-redux/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
+import {useIntl} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -30,10 +31,11 @@ interface Props {
 
 const Updates = (props: Props) => {
     const statusPosts = props.playbookRun.status_posts.sort((a, b) => b.create_at - a.create_at);
+    const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
     let updates: ReactNode =
-        <EmptyBody>{'There are no updates available.'}</EmptyBody>;
+        <EmptyBody>{formatMessage({defaultMessage: 'There are no updates available.'})}</EmptyBody>;
     if (statusPosts.length) {
         updates = statusPosts.reduce((result, sp) => {
             if (sp.delete_at === 0) {
@@ -55,7 +57,7 @@ const Updates = (props: Props) => {
 
     return (
         <TabPageContainer data-testid='updates'>
-            <Title>{'Updates'}</Title>
+            <Title>{formatMessage({defaultMessage: 'Updates'})}</Title>
             {updates}
         </TabPageContainer>
     );

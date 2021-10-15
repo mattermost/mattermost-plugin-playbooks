@@ -134,11 +134,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(w http.ResponseWriter, r 
 		return
 	}
 
-	if !app.IsOnEnabledTeam(playbookRunCreateOptions.TeamID, h.config) {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
-		return
-	}
-
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
 			OwnerUserID: playbookRunCreateOptions.OwnerUserID,
@@ -210,11 +205,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 
 	if userID != request.UserId {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
-		return
-	}
-
-	if !app.IsOnEnabledTeam(request.TeamId, h.config) {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
 		return
 	}
 
@@ -399,12 +389,14 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.BroadcastChannelIDs = pb.BroadcastChannelIDs
 		}
 
+		playbookRun.WebhookOnCreationURLs = []string{}
 		if pb.WebhookOnCreationEnabled {
-			playbookRun.WebhookOnCreationURL = pb.WebhookOnCreationURL
+			playbookRun.WebhookOnCreationURLs = pb.WebhookOnCreationURLs
 		}
 
+		playbookRun.WebhookOnStatusUpdateURLs = []string{}
 		if pb.WebhookOnStatusUpdateEnabled {
-			playbookRun.WebhookOnStatusUpdateURL = pb.WebhookOnStatusUpdateURL
+			playbookRun.WebhookOnStatusUpdateURLs = pb.WebhookOnStatusUpdateURLs
 		}
 
 		if pb.MessageOnJoinEnabled {

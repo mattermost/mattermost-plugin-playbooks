@@ -7,6 +7,7 @@ import {useSelector} from 'react-redux';
 import {Team} from 'mattermost-redux/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
+import {useIntl} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -26,9 +27,10 @@ const StyledContent = styled(Content)`
 `;
 
 const Description = (props: { playbookRun: PlaybookRun }) => {
+    const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
-    let description: JSX.Element = <EmptyBody>{'There is no description available.'}</EmptyBody>;
+    let description: JSX.Element = <EmptyBody>{formatMessage({defaultMessage: 'There is no description available.'})}</EmptyBody>;
     if (props.playbookRun.status_posts.length > 0 && props.playbookRun.description) {
         description = (
             <StyledContent>
@@ -42,7 +44,7 @@ const Description = (props: { playbookRun: PlaybookRun }) => {
 
     return (
         <TabPageContainer>
-            <Title>{'Description'}</Title>
+            <Title>{formatMessage({defaultMessage: 'Description'})}</Title>
             {description}
         </TabPageContainer>
     );

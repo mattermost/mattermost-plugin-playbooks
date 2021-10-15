@@ -3,8 +3,13 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -14,17 +19,22 @@ import (
 
 type BotHandler struct {
 	*ErrorHandler
-	pluginAPI *pluginapi.Client
-	poster    bot.Poster
-	config    config.Service
+	pluginAPI          *pluginapi.Client
+	poster             bot.Poster
+	config             config.Service
+	playbookRunService app.PlaybookRunService
+	userInfoStore      app.UserInfoStore
 }
 
-func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster, logger bot.Logger, config config.Service) *BotHandler {
+func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster, logger bot.Logger,
+	config config.Service, playbookRunService app.PlaybookRunService, userInfoStore app.UserInfoStore) *BotHandler {
 	handler := &BotHandler{
-		ErrorHandler: &ErrorHandler{log: logger},
-		pluginAPI:    api,
-		poster:       poster,
-		config:       config,
+		ErrorHandler:       &ErrorHandler{log: logger},
+		pluginAPI:          api,
+		poster:             poster,
+		config:             config,
+		playbookRunService: playbookRunService,
+		userInfoStore:      userInfoStore,
 	}
 
 	botRouter := router.PathPrefix("/bot").Subrouter()
@@ -34,6 +44,7 @@ func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster,
 	notifyAdminsRouter.HandleFunc("/button-start-trial", handler.startTrial).Methods(http.MethodPost)
 
 	botRouter.HandleFunc("/prompt-for-feedback", handler.promptForFeedback).Methods(http.MethodPost)
+	botRouter.HandleFunc("/connect", handler.connect).Methods(http.MethodGet)
 
 	return handler
 }
@@ -147,6 +158,51 @@ func (h *BotHandler) promptForFeedback(w http.ResponseWriter, r *http.Request) {
 	if err := h.poster.PromptForFeedback(userID); err != nil {
 		h.HandleError(w, err)
 		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// connect handles the GET /bot/connect endpoint (a notification sent when the client wakes up or reconnects)
+func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	info, err := h.userInfoStore.Get(userID)
+	if errors.Is(err, app.ErrNotFound) {
+		info = app.UserInfo{
+			ID: userID,
+		}
+	} else if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	if info.DisableDailyDigest {
+		return
+	}
+
+	var timezone *time.Location
+	offset, _ := strconv.Atoi(r.Header.Get("X-Timezone-Offset"))
+	timezone = time.FixedZone("local", -60*offset)
+
+	// DM message if it's the next day and been more than an hour since the last post
+	// Hat tip to Github plugin for the logic.
+	now := model.GetMillis()
+	nt := time.Unix(now/1000, 0).In(timezone)
+	lt := time.Unix(info.LastDailyTodoDMAt/1000, 0).In(timezone)
+	if nt.Sub(lt).Hours() >= 1 && (nt.Day() != lt.Day() || nt.Month() != lt.Month() || nt.Year() != lt.Year()) {
+		// record that we're sending a DM now (this will prevent us trying over and over on every
+		// response if there's a failure later)
+		info.LastDailyTodoDMAt = now
+		if err = h.userInfoStore.Upsert(info); err != nil {
+			h.HandleError(w, err)
+			return
+		}
+
+		if err = h.playbookRunService.DMTodoDigestToUser(userID, false); err != nil {
+			h.HandleError(w, errors.Wrapf(err, "failed to DMTodoDigest to userID '%s'", userID))
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)

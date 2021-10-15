@@ -11,7 +11,7 @@ import {fetchPlaybookRuns} from 'src/client';
 import {currentPlaybookRun, isPlaybookRunRHSOpen, inPlaybookRunChannel} from 'src/selectors';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
-import {toggleRHS, receivedTeamPlaybookRuns, receivedDisabledOnTeam} from 'src/actions';
+import {toggleRHS, receivedTeamPlaybookRuns} from 'src/actions';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
     let currentTeamId = '';
@@ -42,11 +42,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
                 team_id: currentTeam.id,
                 participant_id: currentUserId,
             });
-            if (fetched.disabled) {
-                store.dispatch(receivedDisabledOnTeam(currentTeam.id));
-            } else {
-                store.dispatch(receivedTeamPlaybookRuns(fetched.items));
-            }
+            store.dispatch(receivedTeamPlaybookRuns(fetched.items));
         }
 
         // Only consider opening the RHS if the channel has changed and wasn't already seen as

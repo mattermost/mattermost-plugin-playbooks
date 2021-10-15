@@ -18,13 +18,11 @@ export interface PlaybookStats {
     runs_finished_prev_30_days: number
     runs_finished_percentage_change: number
     runs_started_per_week: number[]
-    runs_started_per_week_labels: string[]
     runs_started_per_week_times: number[][]
     active_runs_per_day: number[]
-    active_runs_per_day_labels: string[]
     active_runs_per_day_times: number[][]
     active_participants_per_day: number[]
-    active_participants_per_day_labels: string[]
+    active_participants_per_day_times: number[][]
 }
 
 export const EmptyPlaybookStats = {
@@ -33,11 +31,9 @@ export const EmptyPlaybookStats = {
     runs_finished_prev_30_days: 0,
     runs_finished_percentage_change: 0,
     runs_started_per_week: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    runs_started_per_week_labels: ['', '', '', '', '', '', '', '', '', '', '', ''],
     runs_started_per_week_times: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
     active_runs_per_day: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    active_runs_per_day_labels: ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-    active_runs_per_day_times: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+    active_runs_per_day_times: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
     active_participants_per_day: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    active_participants_per_day_labels: ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+    active_participants_per_day_times: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
 };

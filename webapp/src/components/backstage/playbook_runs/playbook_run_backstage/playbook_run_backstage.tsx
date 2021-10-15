@@ -5,6 +5,7 @@ import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
+import {useIntl} from 'react-intl';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Channel} from 'mattermost-redux/types/channels';
@@ -172,6 +173,7 @@ const PlaybookRunBackstage = () => {
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const channel = useSelector<GlobalState, Channel | null>((state) => (playbookRun ? getChannel(state, playbookRun.channel_id) : null));
+    const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
@@ -255,7 +257,7 @@ const PlaybookRunBackstage = () => {
                     <Badge status={playbookRun.current_status}/>
                     <SecondaryButtonLargerRight onClick={goToChannel}>
                         <i className={'icon ' + channelIcon}/>
-                        {'Go to channel'}
+                        {formatMessage({defaultMessage: 'Go to channel'})}
                     </SecondaryButtonLargerRight>
                     <ExportLink playbookRun={playbookRun}/>
                 </FirstRow>
@@ -264,13 +266,13 @@ const PlaybookRunBackstage = () => {
                         to={`${match.url}/overview`}
                         activeClassName={'active'}
                     >
-                        {'Overview'}
+                        {formatMessage({defaultMessage: 'Overview'})}
                     </TabItem>
                     <TabItem
                         to={`${match.url}/retrospective`}
                         activeClassName={'active'}
                     >
-                        {'Retrospective'}
+                        {formatMessage({defaultMessage: 'Retrospective'})}
                         {!allowRetrospectiveAccess && <PositionedUpgradeBadge/>}
                     </TabItem>
                 </SecondRow>

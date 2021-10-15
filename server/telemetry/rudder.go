@@ -1,7 +1,6 @@
 package telemetry
 
 import (
-	"strings"
 	"sync"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -56,6 +55,9 @@ const (
 
 	// telemetryKeyPlaybookRunID records the legacy name used to identify a playbook run via telemetry.
 	telemetryKeyPlaybookRunID = "IncidentID"
+
+	eventSettings = "settings"
+	actionDigest  = "digest"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -309,7 +311,7 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 		"DefaultCommanderEnabled":     playbook.DefaultOwnerEnabled,
 		"BroadcastChannelIDs":         playbook.BroadcastChannelIDs,
 		"BroadcastEnabled":            playbook.BroadcastEnabled,
-		"NumWebhookOnCreationURLs":    len(strings.Split(playbook.WebhookOnCreationURL, "\n")),
+		"NumWebhookOnCreationURLs":    len(playbook.WebhookOnCreationURLs),
 		"WebhookOnCreationEnabled":    playbook.WebhookOnCreationEnabled,
 		"SignalAnyKeywordsEnabled":    playbook.SignalAnyKeywordsEnabled,
 		"NumSignalAnyKeywords":        len(playbook.SignalAnyKeywords),
@@ -412,4 +414,19 @@ func (t *RudderTelemetry) Disable() error {
 
 	t.enabled = false
 	return nil
+}
+
+func digestSettingsProperties(userID string) map[string]interface{} {
+	return map[string]interface{}{
+		"UserActualID": userID,
+	}
+}
+
+// ChangeDigestSettings tracks when a user changes one of the digest settings
+func (t *RudderTelemetry) ChangeDigestSettings(userID string, old app.DigestNotificationSettings, new app.DigestNotificationSettings) {
+	properties := digestSettingsProperties(userID)
+	properties["Action"] = actionDigest
+	properties["OldDisableDailyDigest"] = old.DisableDailyDigest
+	properties["NewDisableDailyDigest"] = new.DisableDailyDigest
+	t.track(eventSettings, properties)
 }

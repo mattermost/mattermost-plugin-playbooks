@@ -72,7 +72,7 @@ describe('playbook overview', () => {
             });
 
             // # Verify permissions text
-            cy.findByTestId('playbookPermissionsDescription').contains(`Everyone in ${testTeam.name} can access this playbook`);
+            cy.findByTestId('playbookPermissionsDescription').contains(`Everyone in ${testTeam.display_name} can access this playbook`);
         });
 
         it('should describe playbooks private only to the current user', () => {

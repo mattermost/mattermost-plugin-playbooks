@@ -6,6 +6,7 @@ import moment from 'moment';
 
 import {useDispatch, useSelector} from 'react-redux';
 import React from 'react';
+import {useIntl} from 'react-intl';
 
 import {Post} from 'mattermost-redux/types/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -16,7 +17,7 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {Client4} from 'mattermost-redux/client';
 
-import {browserHistory} from 'src/webapp_globals';
+import {browserHistory, Timestamp} from 'src/webapp_globals';
 
 import {isMobile} from 'src/mobile';
 import {ChannelNamesMap} from 'src/types/backstage';
@@ -85,7 +86,7 @@ function useAuthorInfo(userID: string) : [string, string] {
 }
 
 interface Props {
-    post: Post | null;
+    post: Post;
     team: Team;
     playbookRunId: string;
     playbookId: string
@@ -94,17 +95,8 @@ interface Props {
 
 const PostCard = (props: Props) => {
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
     const [authorProfileUrl, authorUserName] = useAuthorInfo(props.post?.user_id || '');
-
-    if (!props.post) {
-        return (
-            <NoRecentUpdates>
-                {'No recent updates. '}<a onClick={() => dispatch(promptUpdateStatus(props.team.id, props.playbookRunId, props.playbookId, props.channelId))}>{'Click here'}</a>{' to update status.'}
-            </NoRecentUpdates>
-        );
-    }
-
-    const updateTimestamp = moment(props.post.create_at).calendar(undefined, {sameDay: 'LT'}); //eslint-disable-line no-undefined
 
     return (
         <UpdateSection>
@@ -126,7 +118,17 @@ const PostCard = (props: Props) => {
                             }
                         }}
                     >
-                        {updateTimestamp}
+                        {formatMessage({
+                            defaultMessage: '{timestamp}',
+                        },
+                        {
+                            timestamp: (
+                                <Timestamp
+                                    value={props.post.create_at}
+                                />
+                            ),
+                        })
+                        }
                     </UpdateTimeLink>
                 </UpdateHeader>
                 <ShowMore
@@ -136,7 +138,7 @@ const PostCard = (props: Props) => {
                         text={props.post.message}
                         team={props.team}
                     >
-                        {props.post.edit_at !== 0 && <EditedIndicator>{'(edited)'}</EditedIndicator>}
+                        {props.post.edit_at !== 0 && <EditedIndicator>{formatMessage({defaultMessage: '(edited)'})}</EditedIndicator>}
                     </PostText>
                 </ShowMore>
             </UpdateContainer>

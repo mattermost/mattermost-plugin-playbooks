@@ -134,12 +134,11 @@ func (s *StatsStore) MovingWindowQueryActive(query sq.SelectBuilder, numDays int
 
 // RunsStartedPerWeekLastXWeeks returns the number of runs started each week for the last X weeks.
 // Returns data in order of oldest week to most recent week.
-func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) ([]int, []string, [][]int64) {
+func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) ([]int, [][]int64) {
 	day := int64(86400000)
 	week := day * 7
 	startOfWeek := beginningOfLastSundayMillis()
 	endOfWeek := startOfWeek + week - 1
-	var weeksAsStrings []string
 	var weeksStartAndEnd [][]int64
 
 	q := s.store.builder.Select()
@@ -165,9 +164,6 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
                  `, startOfWeek, endOfWeek)
 		}
 
-		// use the middle of the day to get the date, just in case
-		weekAsTime := time.Unix(0, (startOfWeek+day/2)*int64(time.Millisecond))
-		weeksAsStrings = append(weeksAsStrings, weekAsTime.Format("02 Jan"))
 		weeksStartAndEnd = append(weeksStartAndEnd, []int64{startOfWeek, endOfWeek})
 
 		endOfWeek -= week
@@ -180,23 +176,21 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
 		s.log.Warnf("failed to perform query: %v", err)
-		return []int{}, []string{}, [][]int64{}
+		return []int{}, [][]int64{}
 	}
 
 	reverseSlice(counts)
-	reverseSlice(weeksAsStrings)
 	reverseSlice(weeksStartAndEnd)
 
-	return counts, weeksAsStrings, weeksStartAndEnd
+	return counts, weeksStartAndEnd
 }
 
 // ActiveRunsPerDayLastXDays returns the number of active runs per day for the last X days.
 // Returns data in order of oldest day to most recent day.
-func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]int, []string, [][]int64) {
+func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]int, [][]int64) {
 	startOfDay := beginningOfTodayMillis()
 	endOfDay := endOfTodayMillis()
 	day := int64(86400000)
-	var daysAsStrings []string
 	var daysAsStartAndEnd [][]int64
 
 	q := s.store.builder.Select()
@@ -224,9 +218,6 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
                 `, startOfDay, endOfDay)
 		}
 
-		// use the middle of the day to get the date, just in case
-		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
-		daysAsStrings = append(daysAsStrings, dayAsTime.Format("02 Jan"))
 		daysAsStartAndEnd = append(daysAsStartAndEnd, []int64{startOfDay, endOfDay})
 
 		endOfDay -= day
@@ -239,23 +230,22 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
 		s.log.Warnf("failed to perform query: %v", err)
-		return []int{}, []string{}, [][]int64{}
+		return []int{}, [][]int64{}
 	}
 
 	reverseSlice(counts)
-	reverseSlice(daysAsStrings)
 	reverseSlice(daysAsStartAndEnd)
 
-	return counts, daysAsStrings, daysAsStartAndEnd
+	return counts, daysAsStartAndEnd
 }
 
 // ActiveParticipantsPerDayLastXDays returns the number of active participants per day for the last X days.
 // Returns data in order of oldest day to most recent day.
-func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilters) ([]int, []string) {
+func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilters) ([]int, [][]int64) {
 	startOfDay := beginningOfTodayMillis()
 	endOfDay := endOfTodayMillis()
 	day := int64(86400000)
-	var daysAsStrings []string
+	var daysAsTimes [][]int64
 
 	q := s.store.builder.Select()
 	for i := 0; i < x; i++ {
@@ -278,9 +268,7 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
                       END))
                 `, startOfDay, endOfDay, startOfDay, endOfDay)
 
-		// use the middle of the day to get the date, just in case
-		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
-		daysAsStrings = append(daysAsStrings, dayAsTime.Format("02 Jan"))
+		daysAsTimes = append(daysAsTimes, []int64{startOfDay, endOfDay})
 
 		endOfDay -= day
 		startOfDay -= day
@@ -295,13 +283,13 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
 		s.log.Warnf("failed to perform query: %v", err)
-		return []int{}, []string{}
+		return []int{}, [][]int64{}
 	}
 
 	reverseSlice(counts)
-	reverseSlice(daysAsStrings)
+	reverseSlice(daysAsTimes)
 
-	return counts, daysAsStrings
+	return counts, daysAsTimes
 }
 
 func (s *StatsStore) performQueryForXCols(q sq.SelectBuilder, x int) ([]int, error) {

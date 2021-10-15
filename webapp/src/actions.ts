@@ -34,8 +34,6 @@ import {
     SetRHSOpen,
     SetRHSState,
     SetTriggerId,
-    RECEIVED_TEAM_DISABLED,
-    ReceivedTeamDisabled,
     PLAYBOOK_CREATED,
     PlaybookCreated,
     PLAYBOOK_DELETED,
@@ -217,11 +215,6 @@ export const receivedTeamNumPlaybooks = (teamID: string, numPlaybooks: number): 
 export const receivedTeamPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedTeamPlaybookRuns => ({
     type: RECEIVED_TEAM_PLAYBOOK_RUNS,
     playbookRuns,
-});
-
-export const receivedDisabledOnTeam = (teamId: string): ReceivedTeamDisabled => ({
-    type: RECEIVED_TEAM_DISABLED,
-    teamId,
 });
 
 export const removedFromPlaybookRunChannel = (channelId: string): RemovedFromChannel => ({

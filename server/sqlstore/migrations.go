@@ -1254,4 +1254,89 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.32.0"),
+		toVersion:   semver.MustParse("0.33.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := renameColumnMySQL(e, "IR_Playbook", "WebhookOnCreationURL", "ConcatenatedWebhookOnCreationURLs", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnCreationURL to ConcatenatedWebhookOnCreationURLs in table IR_Playbook")
+				}
+
+				if err := renameColumnMySQL(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "ConcatenatedWebhookOnStatusUpdateURLs", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnStatusUpdateURL to ConcatenatedWebhookOnStatusUpdateURLs in table IR_Playbook")
+				}
+
+				if err := renameColumnMySQL(e, "IR_Incident", "WebhookOnCreationURL", "ConcatenatedWebhookOnCreationURLs", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnCreationURL to ConcatenatedWebhookOnCreationURLs in table IR_Incident")
+				}
+
+				if err := renameColumnMySQL(e, "IR_Incident", "WebhookOnStatusUpdateURL", "ConcatenatedWebhookOnStatusUpdateURLs", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnStatusUpdateURL to ConcatenatedWebhookOnStatusUpdateURLs in table IR_Incident")
+				}
+			} else {
+				if err := renameColumnPG(e, "IR_Playbook", "WebhookOnCreationURL", "ConcatenatedWebhookOnCreationURLs"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnCreationURL to ConcatenatedWebhookOnCreationURLs in table IR_Playbook")
+				}
+
+				if err := renameColumnPG(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "ConcatenatedWebhookOnStatusUpdateURLs"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnStatusUpdateURL to ConcatenatedWebhookOnStatusUpdateURLs in table IR_Playbook")
+				}
+
+				if err := renameColumnPG(e, "IR_Incident", "WebhookOnCreationURL", "ConcatenatedWebhookOnCreationURLs"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnCreationURL to ConcatenatedWebhookOnCreationURLs in table IR_Incident")
+				}
+
+				if err := renameColumnPG(e, "IR_Incident", "WebhookOnStatusUpdateURL", "ConcatenatedWebhookOnStatusUpdateURLs"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnStatusUpdateURL to ConcatenatedWebhookOnStatusUpdateURLs in table IR_Incident")
+				}
+
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.33.0"),
+		toVersion:   semver.MustParse("0.34.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_UserInfo
+					(
+						ID                VARCHAR(26) PRIMARY KEY,
+						LastDailyTodoDMAt BIGINT
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_UserInfo")
+				}
+			} else {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_UserInfo
+					(
+						ID                TEXT PRIMARY KEY,
+						LastDailyTodoDMAt BIGINT
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_UserInfo")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.34.0"),
+		toVersion:   semver.MustParse("0.35.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_UserInfo", "DigestNotificationSettingsJSON", "JSON"); err != nil {
+					return errors.Wrapf(err, "failed adding column DigestNotificationSettings to table IR_UserInfo")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_UserInfo", "DigestNotificationSettingsJSON", "JSON"); err != nil {
+					return errors.Wrapf(err, "failed adding column DigestNotificationSettings to table IR_UserInfo")
+				}
+			}
+			return nil
+		},
+	},
 }

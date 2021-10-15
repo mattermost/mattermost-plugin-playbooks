@@ -87,7 +87,7 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with a couple of invited users and the setting enabled, and a playbook run with it
-                cy.legacyApiGetUsers(['aaron.medina', 'alice.johnston']).then((res) => {
+                cy.legacyApiGetUsers(['aaron.medina', 'anne.stone']).then((res) => {
                     const userIds = res.body.map((user) => user.id);
 
                     return cy.apiCreatePlaybook({
@@ -121,7 +121,7 @@ describe('playbook run automation', () => {
                         });
 
                         cy.get(`#postMessageText_${id}`).contains('@aaron.medina');
-                        cy.get(`#postMessageText_${id}`).contains('@alice.johnston');
+                        cy.get(`#postMessageText_${id}`).contains('@anne.stone');
                         cy.get(`#postMessageText_${id}`).contains('added to the channel by @playbooks.');
                     });
                 });
@@ -131,7 +131,7 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with a couple of invited users and the setting enabled, and a playbook run with it
-                cy.legacyApiGetUsers(['aaron.medina', 'alice.johnston']).then((res) => {
+                cy.legacyApiGetUsers(['aaron.medina', 'anne.stone']).then((res) => {
                     const userIds = res.body.map((user) => user.id);
 
                     return cy.apiCreatePlaybook({
@@ -304,7 +304,7 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with the owner being part of the invited users
-                cy.legacyApiGetUsers(['alice.johnston']).then((res) => {
+                cy.legacyApiGetUsers(['anne.stone']).then((res) => {
                     const userIds = res.body.map((user) => user.id);
 
                     return cy.apiCreatePlaybook({
@@ -336,7 +336,7 @@ describe('playbook run automation', () => {
                     // * Verify that the RHS shows the owner being the invited user
                     cy.get('#rhsContainer').within(() => {
                         cy.findByText('Owner').parent().within(() => {
-                            cy.findByText('@alice.johnston');
+                            cy.findByText('@anne.stone');
                         });
                     });
                 });
@@ -346,7 +346,7 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with the owner being part of the invited users
-                cy.legacyApiGetUsers(['alice.johnston']).then((res) => {
+                cy.legacyApiGetUsers(['anne.stone']).then((res) => {
                     const userIds = res.body.map((user) => user.id);
 
                     return cy.apiCreatePlaybook({
@@ -378,7 +378,7 @@ describe('playbook run automation', () => {
                     // * Verify that the RHS shows the owner being the invited user
                     cy.get('#rhsContainer').within(() => {
                         cy.findByText('Owner').parent().within(() => {
-                            cy.findByText('@alice.johnston');
+                            cy.findByText('@anne.stone');
                         });
                     });
                 });
@@ -575,7 +575,7 @@ describe('playbook run automation', () => {
                     title: playbookName,
                     createPublicPlaybookRun: true,
                     memberIDs: [userId],
-                    webhookOnCreationURL: 'https://httpbin.org/post',
+                    webhookOnCreationURLs: ['https://httpbin.org/post'],
                     webhookOnCreationEnabled: true,
                 }).then((playbook) => {
                     // # Create a new playbook run with that playbook
@@ -599,38 +599,6 @@ describe('playbook run automation', () => {
                         cy.get(`#postMessageText_${lastPostId}`)
                             .should('not.contain', 'Playbook run creation announcement through the outgoing webhook failed. Contact your System Admin for more information.');
                     });
-                });
-            });
-            it('with webhook misconfigured and setting enabled', () => {
-                const playbookName = 'Playbook (' + Date.now() + ')';
-
-                // # Create a playbook with a wrong webhook and the setting enabled
-                cy.apiCreatePlaybook({
-                    teamId,
-                    title: playbookName,
-                    createPublicPlaybookRun: true,
-                    memberIDs: [userId],
-                    webhookOnCreationURL: 'http://example.com/not-an-actual-endpoint',
-                    webhookOnCreationEnabled: true,
-                }).then((playbook) => {
-                    // # Create a new playbook run with that playbook
-                    const now = Date.now();
-                    const playbookRunName = `Run (${now})`;
-                    const playbookRunChannelName = `run-${now}`;
-
-                    cy.apiRunPlaybook({
-                        teamId,
-                        playbookId: playbook.id,
-                        playbookRunName,
-                        ownerUserId: userId,
-                        description: 'Playbook run description.',
-                    });
-
-                    // # Navigate to the playbook run channel
-                    cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
-
-                    // * Verify that the bot has posted a message informing of the failure to send the webhook
-                    cy.findByText('Playbook run creation announcement through the outgoing webhook failed. Contact your System Admin for more information.');
                 });
             });
         });
