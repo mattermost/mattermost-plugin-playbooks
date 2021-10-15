@@ -109,8 +109,8 @@ describe('playbook run rhs checklist', () => {
                     cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
 
-                // # Add @frances.elliot
-                cy.apiGetUserByEmail('user-24@sample.mattermost.com').then(({user}) => {
+                // # Add @craig.reed
+                cy.apiGetUserByEmail('user-11@sample.mattermost.com').then(({user}) => {
                     cy.legacyApiAddUserToChannel(channel.id, user.id);
                 });
 
