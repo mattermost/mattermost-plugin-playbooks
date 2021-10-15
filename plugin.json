@@ -20,11 +20,7 @@
     "settings_schema": {
         "header": "",
         "footer": "",
-        "settings": [{
-            "key": "EnabledTeams",
-            "type": "custom",
-            "display_name": "Enabled Teams:"
-        },
+        "settings": [
         {
             "key": "EnableExperimentalFeatures",
             "type": "bool",

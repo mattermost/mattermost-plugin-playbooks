@@ -12,9 +12,6 @@ package config
 // If you add non-reference types to your configuration struct, be sure to rewrite Clone as a deep
 // copy appropriate for your types.
 type Configuration struct {
-	// EnabledTeams a list of team IDs the plugin is enabled for
-	EnabledTeams []string
-
 	// PlaybookCreatorsUserIds is a list of users that can edit playbooks
 	PlaybookCreatorsUserIds []string
 

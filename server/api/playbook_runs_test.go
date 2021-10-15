@@ -80,53 +80,8 @@ func TestPlaybookRuns(t *testing.T) {
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			})
+			Return(&config.Configuration{})
 	}
-
-	t.Run("create valid playbook run, but it's disabled on this team", func(t *testing.T) {
-		reset(t)
-
-		configService.EXPECT().
-			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{"notthisteam"},
-			})
-
-		setDefaultExpectations(t)
-		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
-
-		teamID := model.NewId()
-		withid := app.Playbook{
-			ID:                      "playbookid1",
-			Title:                   "My Playbook",
-			TeamID:                  teamID,
-			CreatePublicPlaybookRun: true,
-			MemberIDs:               []string{"testUserID"},
-		}
-
-		testPlaybookRun := app.PlaybookRun{
-			OwnerUserID: "testUserID",
-			TeamID:      teamID,
-			Name:        "playbookRunName",
-			PlaybookID:  withid.ID,
-			Checklists:  withid.Checklists,
-		}
-
-		playbookRunJSON, err := json.Marshal(testPlaybookRun)
-		require.NoError(t, err)
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/runs", bytes.NewBuffer(playbookRunJSON))
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	})
 
 	t.Run("create valid playbook run from dialog", func(t *testing.T) {
 		reset(t)
@@ -816,9 +771,7 @@ func TestPlaybookRuns(t *testing.T) {
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			})
+			Return(&config.Configuration{})
 
 		teamID := model.NewId()
 		testPlaybook := app.Playbook{
