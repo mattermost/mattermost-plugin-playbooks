@@ -16,6 +16,262 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+ALTER TABLE IF EXISTS ONLY public.retentionpoliciesteams DROP CONSTRAINT IF EXISTS fk_retentionpoliciesteams_retentionpolicies;
+ALTER TABLE IF EXISTS ONLY public.retentionpolicieschannels DROP CONSTRAINT IF EXISTS fk_retentionpolicieschannels_retentionpolicies;
+DROP INDEX IF EXISTS public.remote_clusters_site_url_unique;
+DROP INDEX IF EXISTS public.idx_users_username_lower_textpattern;
+DROP INDEX IF EXISTS public.idx_users_update_at;
+DROP INDEX IF EXISTS public.idx_users_nickname_lower_textpattern;
+DROP INDEX IF EXISTS public.idx_users_names_txt;
+DROP INDEX IF EXISTS public.idx_users_names_no_full_name_txt;
+DROP INDEX IF EXISTS public.idx_users_lastname_lower_textpattern;
+DROP INDEX IF EXISTS public.idx_users_firstname_lower_textpattern;
+DROP INDEX IF EXISTS public.idx_users_email_lower_textpattern;
+DROP INDEX IF EXISTS public.idx_users_delete_at;
+DROP INDEX IF EXISTS public.idx_users_create_at;
+DROP INDEX IF EXISTS public.idx_users_all_txt;
+DROP INDEX IF EXISTS public.idx_users_all_no_full_name_txt;
+DROP INDEX IF EXISTS public.idx_usergroups_remote_id;
+DROP INDEX IF EXISTS public.idx_usergroups_delete_at;
+DROP INDEX IF EXISTS public.idx_user_access_tokens_user_id;
+DROP INDEX IF EXISTS public.idx_uploadsessions_user_id;
+DROP INDEX IF EXISTS public.idx_uploadsessions_create_at;
+DROP INDEX IF EXISTS public.idx_threads_channel_id_last_reply_at;
+DROP INDEX IF EXISTS public.idx_thread_memberships_user_id;
+DROP INDEX IF EXISTS public.idx_thread_memberships_last_view_at;
+DROP INDEX IF EXISTS public.idx_thread_memberships_last_update_at;
+DROP INDEX IF EXISTS public.idx_teams_update_at;
+DROP INDEX IF EXISTS public.idx_teams_scheme_id;
+DROP INDEX IF EXISTS public.idx_teams_invite_id;
+DROP INDEX IF EXISTS public.idx_teams_delete_at;
+DROP INDEX IF EXISTS public.idx_teams_create_at;
+DROP INDEX IF EXISTS public.idx_teammembers_user_id;
+DROP INDEX IF EXISTS public.idx_teammembers_delete_at;
+DROP INDEX IF EXISTS public.idx_status_status_dndendtime;
+DROP INDEX IF EXISTS public.idx_sharedchannelusers_remote_id;
+DROP INDEX IF EXISTS public.idx_sessions_user_id;
+DROP INDEX IF EXISTS public.idx_sessions_token;
+DROP INDEX IF EXISTS public.idx_sessions_last_activity_at;
+DROP INDEX IF EXISTS public.idx_sessions_expires_at;
+DROP INDEX IF EXISTS public.idx_sessions_create_at;
+DROP INDEX IF EXISTS public.idx_schemes_channel_user_role;
+DROP INDEX IF EXISTS public.idx_schemes_channel_guest_role;
+DROP INDEX IF EXISTS public.idx_schemes_channel_admin_role;
+DROP INDEX IF EXISTS public.idx_retentionpoliciesteams_policyid;
+DROP INDEX IF EXISTS public.idx_retentionpolicieschannels_policyid;
+DROP INDEX IF EXISTS public.idx_retentionpolicies_displayname;
+DROP INDEX IF EXISTS public.idx_publicchannels_team_id;
+DROP INDEX IF EXISTS public.idx_publicchannels_search_txt;
+DROP INDEX IF EXISTS public.idx_publicchannels_name_lower;
+DROP INDEX IF EXISTS public.idx_publicchannels_displayname_lower;
+DROP INDEX IF EXISTS public.idx_publicchannels_delete_at;
+DROP INDEX IF EXISTS public.idx_preferences_name;
+DROP INDEX IF EXISTS public.idx_preferences_category;
+DROP INDEX IF EXISTS public.idx_posts_user_id;
+DROP INDEX IF EXISTS public.idx_posts_update_at;
+DROP INDEX IF EXISTS public.idx_posts_root_id_delete_at;
+DROP INDEX IF EXISTS public.idx_posts_message_txt;
+DROP INDEX IF EXISTS public.idx_posts_is_pinned;
+DROP INDEX IF EXISTS public.idx_posts_hashtags_txt;
+DROP INDEX IF EXISTS public.idx_posts_delete_at;
+DROP INDEX IF EXISTS public.idx_posts_create_at;
+DROP INDEX IF EXISTS public.idx_posts_channel_id_update_at;
+DROP INDEX IF EXISTS public.idx_posts_channel_id_delete_at_create_at;
+DROP INDEX IF EXISTS public.idx_outgoing_webhook_update_at;
+DROP INDEX IF EXISTS public.idx_outgoing_webhook_team_id;
+DROP INDEX IF EXISTS public.idx_outgoing_webhook_delete_at;
+DROP INDEX IF EXISTS public.idx_outgoing_webhook_create_at;
+DROP INDEX IF EXISTS public.idx_oauthapps_creator_id;
+DROP INDEX IF EXISTS public.idx_oauthaccessdata_user_id;
+DROP INDEX IF EXISTS public.idx_oauthaccessdata_refresh_token;
+DROP INDEX IF EXISTS public.idx_notice_views_timestamp;
+DROP INDEX IF EXISTS public.idx_notice_views_notice_id;
+DROP INDEX IF EXISTS public.idx_link_metadata_url_timestamp;
+DROP INDEX IF EXISTS public.idx_jobs_type;
+DROP INDEX IF EXISTS public.idx_jobs_status_type;
+DROP INDEX IF EXISTS public.idx_incoming_webhook_user_id;
+DROP INDEX IF EXISTS public.idx_incoming_webhook_update_at;
+DROP INDEX IF EXISTS public.idx_incoming_webhook_team_id;
+DROP INDEX IF EXISTS public.idx_incoming_webhook_delete_at;
+DROP INDEX IF EXISTS public.idx_incoming_webhook_create_at;
+DROP INDEX IF EXISTS public.idx_groupteams_teamid;
+DROP INDEX IF EXISTS public.idx_groupteams_schemeadmin;
+DROP INDEX IF EXISTS public.idx_groupmembers_create_at;
+DROP INDEX IF EXISTS public.idx_groupchannels_schemeadmin;
+DROP INDEX IF EXISTS public.idx_groupchannels_channelid;
+DROP INDEX IF EXISTS public.idx_fileinfo_update_at;
+DROP INDEX IF EXISTS public.idx_fileinfo_postid_at;
+DROP INDEX IF EXISTS public.idx_fileinfo_name_txt;
+DROP INDEX IF EXISTS public.idx_fileinfo_name_splitted;
+DROP INDEX IF EXISTS public.idx_fileinfo_extension_at;
+DROP INDEX IF EXISTS public.idx_fileinfo_delete_at;
+DROP INDEX IF EXISTS public.idx_fileinfo_create_at;
+DROP INDEX IF EXISTS public.idx_fileinfo_content_txt;
+DROP INDEX IF EXISTS public.idx_emoji_update_at;
+DROP INDEX IF EXISTS public.idx_emoji_delete_at;
+DROP INDEX IF EXISTS public.idx_emoji_create_at;
+DROP INDEX IF EXISTS public.idx_command_webhook_create_at;
+DROP INDEX IF EXISTS public.idx_command_update_at;
+DROP INDEX IF EXISTS public.idx_command_team_id;
+DROP INDEX IF EXISTS public.idx_command_delete_at;
+DROP INDEX IF EXISTS public.idx_command_create_at;
+DROP INDEX IF EXISTS public.idx_channels_update_at;
+DROP INDEX IF EXISTS public.idx_channels_team_id_type;
+DROP INDEX IF EXISTS public.idx_channels_team_id_display_name;
+DROP INDEX IF EXISTS public.idx_channels_scheme_id;
+DROP INDEX IF EXISTS public.idx_channels_name_lower;
+DROP INDEX IF EXISTS public.idx_channels_displayname_lower;
+DROP INDEX IF EXISTS public.idx_channels_delete_at;
+DROP INDEX IF EXISTS public.idx_channels_create_at;
+DROP INDEX IF EXISTS public.idx_channelmembers_user_id_channel_id_last_viewed_at;
+DROP INDEX IF EXISTS public.idx_channelmembers_channel_id_scheme_guest_user_id;
+DROP INDEX IF EXISTS public.idx_channel_search_txt;
+DROP INDEX IF EXISTS public.idx_audits_user_id;
+ALTER TABLE IF EXISTS ONLY public.usertermsofservice DROP CONSTRAINT IF EXISTS usertermsofservice_pkey;
+ALTER TABLE IF EXISTS ONLY public.users DROP CONSTRAINT IF EXISTS users_username_key;
+ALTER TABLE IF EXISTS ONLY public.users DROP CONSTRAINT IF EXISTS users_pkey;
+ALTER TABLE IF EXISTS ONLY public.users DROP CONSTRAINT IF EXISTS users_email_key;
+ALTER TABLE IF EXISTS ONLY public.users DROP CONSTRAINT IF EXISTS users_authdata_key;
+ALTER TABLE IF EXISTS ONLY public.usergroups DROP CONSTRAINT IF EXISTS usergroups_source_remoteid_key;
+ALTER TABLE IF EXISTS ONLY public.usergroups DROP CONSTRAINT IF EXISTS usergroups_pkey;
+ALTER TABLE IF EXISTS ONLY public.usergroups DROP CONSTRAINT IF EXISTS usergroups_name_key;
+ALTER TABLE IF EXISTS ONLY public.useraccesstokens DROP CONSTRAINT IF EXISTS useraccesstokens_token_key;
+ALTER TABLE IF EXISTS ONLY public.useraccesstokens DROP CONSTRAINT IF EXISTS useraccesstokens_pkey;
+ALTER TABLE IF EXISTS ONLY public.uploadsessions DROP CONSTRAINT IF EXISTS uploadsessions_pkey;
+ALTER TABLE IF EXISTS ONLY public.tokens DROP CONSTRAINT IF EXISTS tokens_pkey;
+ALTER TABLE IF EXISTS ONLY public.threads DROP CONSTRAINT IF EXISTS threads_pkey;
+ALTER TABLE IF EXISTS ONLY public.threadmemberships DROP CONSTRAINT IF EXISTS threadmemberships_pkey;
+ALTER TABLE IF EXISTS ONLY public.termsofservice DROP CONSTRAINT IF EXISTS termsofservice_pkey;
+ALTER TABLE IF EXISTS ONLY public.teams DROP CONSTRAINT IF EXISTS teams_pkey;
+ALTER TABLE IF EXISTS ONLY public.teams DROP CONSTRAINT IF EXISTS teams_name_key;
+ALTER TABLE IF EXISTS ONLY public.teammembers DROP CONSTRAINT IF EXISTS teammembers_pkey;
+ALTER TABLE IF EXISTS ONLY public.systems DROP CONSTRAINT IF EXISTS systems_pkey;
+ALTER TABLE IF EXISTS ONLY public.status DROP CONSTRAINT IF EXISTS status_pkey;
+ALTER TABLE IF EXISTS ONLY public.sidebarchannels DROP CONSTRAINT IF EXISTS sidebarchannels_pkey;
+ALTER TABLE IF EXISTS ONLY public.sidebarcategories DROP CONSTRAINT IF EXISTS sidebarcategories_pkey;
+ALTER TABLE IF EXISTS ONLY public.sharedchannelusers DROP CONSTRAINT IF EXISTS sharedchannelusers_userid_channelid_remoteid_key;
+ALTER TABLE IF EXISTS ONLY public.sharedchannelusers DROP CONSTRAINT IF EXISTS sharedchannelusers_pkey;
+ALTER TABLE IF EXISTS ONLY public.sharedchannels DROP CONSTRAINT IF EXISTS sharedchannels_sharename_teamid_key;
+ALTER TABLE IF EXISTS ONLY public.sharedchannels DROP CONSTRAINT IF EXISTS sharedchannels_pkey;
+ALTER TABLE IF EXISTS ONLY public.sharedchannelremotes DROP CONSTRAINT IF EXISTS sharedchannelremotes_pkey;
+ALTER TABLE IF EXISTS ONLY public.sharedchannelremotes DROP CONSTRAINT IF EXISTS sharedchannelremotes_channelid_remoteid_key;
+ALTER TABLE IF EXISTS ONLY public.sharedchannelattachments DROP CONSTRAINT IF EXISTS sharedchannelattachments_pkey;
+ALTER TABLE IF EXISTS ONLY public.sharedchannelattachments DROP CONSTRAINT IF EXISTS sharedchannelattachments_fileid_remoteid_key;
+ALTER TABLE IF EXISTS ONLY public.sessions DROP CONSTRAINT IF EXISTS sessions_pkey;
+ALTER TABLE IF EXISTS ONLY public.schemes DROP CONSTRAINT IF EXISTS schemes_pkey;
+ALTER TABLE IF EXISTS ONLY public.schemes DROP CONSTRAINT IF EXISTS schemes_name_key;
+ALTER TABLE IF EXISTS ONLY public.schema_migrations DROP CONSTRAINT IF EXISTS schema_migrations_pkey;
+ALTER TABLE IF EXISTS ONLY public.roles DROP CONSTRAINT IF EXISTS roles_pkey;
+ALTER TABLE IF EXISTS ONLY public.roles DROP CONSTRAINT IF EXISTS roles_name_key;
+ALTER TABLE IF EXISTS ONLY public.retentionpoliciesteams DROP CONSTRAINT IF EXISTS retentionpoliciesteams_pkey;
+ALTER TABLE IF EXISTS ONLY public.retentionpolicieschannels DROP CONSTRAINT IF EXISTS retentionpolicieschannels_pkey;
+ALTER TABLE IF EXISTS ONLY public.retentionpolicies DROP CONSTRAINT IF EXISTS retentionpolicies_pkey;
+ALTER TABLE IF EXISTS ONLY public.remoteclusters DROP CONSTRAINT IF EXISTS remoteclusters_pkey;
+ALTER TABLE IF EXISTS ONLY public.reactions DROP CONSTRAINT IF EXISTS reactions_pkey;
+ALTER TABLE IF EXISTS ONLY public.publicchannels DROP CONSTRAINT IF EXISTS publicchannels_pkey;
+ALTER TABLE IF EXISTS ONLY public.publicchannels DROP CONSTRAINT IF EXISTS publicchannels_name_teamid_key;
+ALTER TABLE IF EXISTS ONLY public.productnoticeviewstate DROP CONSTRAINT IF EXISTS productnoticeviewstate_pkey;
+ALTER TABLE IF EXISTS ONLY public.preferences DROP CONSTRAINT IF EXISTS preferences_pkey;
+ALTER TABLE IF EXISTS ONLY public.posts DROP CONSTRAINT IF EXISTS posts_pkey;
+ALTER TABLE IF EXISTS ONLY public.pluginkeyvaluestore DROP CONSTRAINT IF EXISTS pluginkeyvaluestore_pkey;
+ALTER TABLE IF EXISTS ONLY public.outgoingwebhooks DROP CONSTRAINT IF EXISTS outgoingwebhooks_pkey;
+ALTER TABLE IF EXISTS ONLY public.oauthauthdata DROP CONSTRAINT IF EXISTS oauthauthdata_pkey;
+ALTER TABLE IF EXISTS ONLY public.oauthapps DROP CONSTRAINT IF EXISTS oauthapps_pkey;
+ALTER TABLE IF EXISTS ONLY public.oauthaccessdata DROP CONSTRAINT IF EXISTS oauthaccessdata_pkey;
+ALTER TABLE IF EXISTS ONLY public.oauthaccessdata DROP CONSTRAINT IF EXISTS oauthaccessdata_clientid_userid_key;
+ALTER TABLE IF EXISTS ONLY public.linkmetadata DROP CONSTRAINT IF EXISTS linkmetadata_pkey;
+ALTER TABLE IF EXISTS ONLY public.licenses DROP CONSTRAINT IF EXISTS licenses_pkey;
+ALTER TABLE IF EXISTS ONLY public.jobs DROP CONSTRAINT IF EXISTS jobs_pkey;
+ALTER TABLE IF EXISTS ONLY public.incomingwebhooks DROP CONSTRAINT IF EXISTS incomingwebhooks_pkey;
+ALTER TABLE IF EXISTS ONLY public.groupteams DROP CONSTRAINT IF EXISTS groupteams_pkey;
+ALTER TABLE IF EXISTS ONLY public.groupmembers DROP CONSTRAINT IF EXISTS groupmembers_pkey;
+ALTER TABLE IF EXISTS ONLY public.groupchannels DROP CONSTRAINT IF EXISTS groupchannels_pkey;
+ALTER TABLE IF EXISTS ONLY public.fileinfo DROP CONSTRAINT IF EXISTS fileinfo_pkey;
+ALTER TABLE IF EXISTS ONLY public.emoji DROP CONSTRAINT IF EXISTS emoji_pkey;
+ALTER TABLE IF EXISTS ONLY public.emoji DROP CONSTRAINT IF EXISTS emoji_name_deleteat_key;
+ALTER TABLE IF EXISTS ONLY public.compliances DROP CONSTRAINT IF EXISTS compliances_pkey;
+ALTER TABLE IF EXISTS ONLY public.commandwebhooks DROP CONSTRAINT IF EXISTS commandwebhooks_pkey;
+ALTER TABLE IF EXISTS ONLY public.commands DROP CONSTRAINT IF EXISTS commands_pkey;
+ALTER TABLE IF EXISTS ONLY public.clusterdiscovery DROP CONSTRAINT IF EXISTS clusterdiscovery_pkey;
+ALTER TABLE IF EXISTS ONLY public.channels DROP CONSTRAINT IF EXISTS channels_pkey;
+ALTER TABLE IF EXISTS ONLY public.channels DROP CONSTRAINT IF EXISTS channels_name_teamid_key;
+ALTER TABLE IF EXISTS ONLY public.channelmembers DROP CONSTRAINT IF EXISTS channelmembers_pkey;
+ALTER TABLE IF EXISTS ONLY public.channelmemberhistory DROP CONSTRAINT IF EXISTS channelmemberhistory_pkey;
+ALTER TABLE IF EXISTS ONLY public.bots DROP CONSTRAINT IF EXISTS bots_pkey;
+ALTER TABLE IF EXISTS ONLY public.audits DROP CONSTRAINT IF EXISTS audits_pkey;
+DROP TABLE IF EXISTS public.usertermsofservice;
+DROP TABLE IF EXISTS public.users;
+DROP TABLE IF EXISTS public.usergroups;
+DROP TABLE IF EXISTS public.useraccesstokens;
+DROP TABLE IF EXISTS public.uploadsessions;
+DROP TABLE IF EXISTS public.tokens;
+DROP TABLE IF EXISTS public.threads;
+DROP TABLE IF EXISTS public.threadmemberships;
+DROP TABLE IF EXISTS public.termsofservice;
+DROP TABLE IF EXISTS public.teams;
+DROP TABLE IF EXISTS public.teammembers;
+DROP TABLE IF EXISTS public.systems;
+DROP TABLE IF EXISTS public.status;
+DROP TABLE IF EXISTS public.sidebarchannels;
+DROP TABLE IF EXISTS public.sidebarcategories;
+DROP TABLE IF EXISTS public.sharedchannelusers;
+DROP TABLE IF EXISTS public.sharedchannels;
+DROP TABLE IF EXISTS public.sharedchannelremotes;
+DROP TABLE IF EXISTS public.sharedchannelattachments;
+DROP TABLE IF EXISTS public.sessions;
+DROP TABLE IF EXISTS public.schemes;
+DROP TABLE IF EXISTS public.schema_migrations;
+DROP TABLE IF EXISTS public.roles;
+DROP TABLE IF EXISTS public.retentionpoliciesteams;
+DROP TABLE IF EXISTS public.retentionpolicieschannels;
+DROP TABLE IF EXISTS public.retentionpolicies;
+DROP TABLE IF EXISTS public.remoteclusters;
+DROP TABLE IF EXISTS public.reactions;
+DROP TABLE IF EXISTS public.publicchannels;
+DROP TABLE IF EXISTS public.productnoticeviewstate;
+DROP TABLE IF EXISTS public.preferences;
+DROP TABLE IF EXISTS public.posts;
+DROP TABLE IF EXISTS public.pluginkeyvaluestore;
+DROP TABLE IF EXISTS public.outgoingwebhooks;
+DROP TABLE IF EXISTS public.oauthauthdata;
+DROP TABLE IF EXISTS public.oauthapps;
+DROP TABLE IF EXISTS public.oauthaccessdata;
+DROP TABLE IF EXISTS public.linkmetadata;
+DROP TABLE IF EXISTS public.licenses;
+DROP TABLE IF EXISTS public.jobs;
+DROP TABLE IF EXISTS public.incomingwebhooks;
+DROP TABLE IF EXISTS public.groupteams;
+DROP TABLE IF EXISTS public.groupmembers;
+DROP TABLE IF EXISTS public.groupchannels;
+DROP TABLE IF EXISTS public.fileinfo;
+DROP TABLE IF EXISTS public.emoji;
+DROP TABLE IF EXISTS public.compliances;
+DROP TABLE IF EXISTS public.commandwebhooks;
+DROP TABLE IF EXISTS public.commands;
+DROP TABLE IF EXISTS public.clusterdiscovery;
+DROP TABLE IF EXISTS public.channels;
+DROP TABLE IF EXISTS public.channelmembers;
+DROP TABLE IF EXISTS public.channelmemberhistory;
+DROP TABLE IF EXISTS public.bots;
+DROP TABLE IF EXISTS public.audits;
+DROP EXTENSION IF EXISTS plpgsql;
+DROP SCHEMA IF EXISTS public;
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: mmuser
+--
+
+CREATE SCHEMA public;
+
+
+ALTER SCHEMA public OWNER TO mmuser;
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: mmuser
+--
+
+COMMENT ON SCHEMA public IS 'standard public schema';
+
+
 --
 -- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
 --
@@ -10794,6 +11050,13 @@ ALTER TABLE ONLY public.retentionpolicieschannels
 
 ALTER TABLE ONLY public.retentionpoliciesteams
     ADD CONSTRAINT fk_retentionpoliciesteams_retentionpolicies FOREIGN KEY (policyid) REFERENCES public.retentionpolicies(id) ON DELETE CASCADE;
+
+
+--
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: mmuser
+--
+
+GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
 --
