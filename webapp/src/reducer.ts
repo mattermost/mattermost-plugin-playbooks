@@ -27,8 +27,6 @@ import {
     REMOVED_FROM_CHANNEL,
     SetRHSEventsFilter,
     SET_RHS_EVENTS_FILTER,
-    ReceivedTeamDisabled,
-    RECEIVED_TEAM_DISABLED,
     PLAYBOOK_CREATED,
     PlaybookCreated,
     PLAYBOOK_DELETED,
@@ -95,11 +93,10 @@ type TStateMyPlaybookRunsByTeam = Record<Team['id'], null | Record<Channel['id']
  * @returns a map of teamId->{channelId->playbookRuns} for which the current user is a playbook run member
  * @remarks
  * It is lazy loaded on team change, but will also track incremental updates as provided by websocket events.
- * Additionally, it handles the plugin being disabled on the team.
  */
 const myPlaybookRunsByTeam = (
     state: TStateMyPlaybookRunsByTeam = {},
-    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel | ReceivedTeamDisabled,
+    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel
 ): TStateMyPlaybookRunsByTeam => {
     switch (action.type) {
     case PLAYBOOK_RUN_CREATED: {
@@ -166,13 +163,6 @@ const myPlaybookRunsByTeam = (
             delete runMap[channelId];
         }
         return newState;
-    }
-    case RECEIVED_TEAM_DISABLED: {
-        const teamDisabledAction = action as ReceivedTeamDisabled;
-        return {
-            ...state,
-            [teamDisabledAction.teamId]: null,
-        };
     }
     default:
         return state;

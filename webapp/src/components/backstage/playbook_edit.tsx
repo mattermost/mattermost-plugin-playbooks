@@ -163,7 +163,7 @@ export const tabInfo = [
     {id: 'checklists', name: <FormattedMessage defaultMessage='Checklists'/>},
     {id: 'templates', name: <FormattedMessage defaultMessage='Templates'/>},
     {id: 'actions', name: 'Actions'},
-    {id: 'permissions', name: 'Permissions'},
+    {id: 'permissions', name: <FormattedMessage defaultMessage='Permissions'/>},
 ] as const;
 
 const retrospectiveReminderOptions = [
@@ -253,8 +253,15 @@ const PlaybookEdit = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew, props.teamId]);
 
-    dispatch(selectTeam(props.teamId || playbook.team_id));
-    dispatch(fetchMyChannelsAndMembers(props.teamId || playbook.team_id));
+    useEffect(() => {
+        const teamId = props.teamId || playbook.team_id;
+        if (!teamId) {
+            return;
+        }
+
+        dispatch(selectTeam(teamId));
+        dispatch(fetchMyChannelsAndMembers(teamId));
+    }, [dispatch, props.teamId, playbook.team_id]);
 
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
@@ -704,9 +711,9 @@ const PlaybookEdit = (props: Props) => {
                             <TabContainer>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Channel access'}
+                                        {formatMessage({defaultMessage: 'Channel access'})}
                                         <BackstageSubheaderDescription>
-                                            {'Determine the type of channel this playbook creates.'}
+                                            {formatMessage({defaultMessage: 'Determine the type of channel this playbook creates.'})}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <RadioContainer>
@@ -718,7 +725,7 @@ const PlaybookEdit = (props: Props) => {
                                                 checked={playbook.create_public_playbook_run}
                                                 onChange={handlePublicChange}
                                             />
-                                            {'Public'}
+                                            {formatMessage({defaultMessage: 'Public'})}
                                         </RadioLabel>
                                         <RadioLabel>
                                             <RadioInput
@@ -728,7 +735,7 @@ const PlaybookEdit = (props: Props) => {
                                                 checked={!playbook.create_public_playbook_run}
                                                 onChange={handlePublicChange}
                                             />
-                                            {'Private'}
+                                            {formatMessage({defaultMessage: 'Private'})}
                                         </RadioLabel>
                                     </RadioContainer>
                                 </SidebarBlock>
