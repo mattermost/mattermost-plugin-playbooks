@@ -17,14 +17,14 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -38,7 +38,7 @@ SET default_with_oids = false;
 -- Name: audits; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.audits (
+CREATE TABLE IF NOT EXISTS public.audits (
     id character varying(26) NOT NULL,
     createat bigint,
     userid character varying(26),
@@ -55,7 +55,7 @@ ALTER TABLE public.audits OWNER TO mmuser;
 -- Name: bots; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.bots (
+CREATE TABLE IF NOT EXISTS public.bots (
     userid character varying(26) NOT NULL,
     description character varying(1024),
     ownerid character varying(190),
@@ -72,7 +72,7 @@ ALTER TABLE public.bots OWNER TO mmuser;
 -- Name: channelmemberhistory; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.channelmemberhistory (
+CREATE TABLE IF NOT EXISTS public.channelmemberhistory (
     channelid character varying(26) NOT NULL,
     userid character varying(26) NOT NULL,
     jointime bigint NOT NULL,
@@ -86,7 +86,7 @@ ALTER TABLE public.channelmemberhistory OWNER TO mmuser;
 -- Name: channelmembers; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.channelmembers (
+CREATE TABLE IF NOT EXISTS public.channelmembers (
     channelid character varying(26) NOT NULL,
     userid character varying(26) NOT NULL,
     roles character varying(256),
@@ -109,7 +109,7 @@ ALTER TABLE public.channelmembers OWNER TO mmuser;
 -- Name: channels; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.channels (
+CREATE TABLE IF NOT EXISTS public.channels (
     id character varying(26) NOT NULL,
     createat bigint,
     updateat bigint,
@@ -138,7 +138,7 @@ ALTER TABLE public.channels OWNER TO mmuser;
 -- Name: clusterdiscovery; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.clusterdiscovery (
+CREATE TABLE IF NOT EXISTS public.clusterdiscovery (
     id character varying(26) NOT NULL,
     type character varying(64),
     clustername character varying(64),
@@ -156,7 +156,7 @@ ALTER TABLE public.clusterdiscovery OWNER TO mmuser;
 -- Name: commands; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.commands (
+CREATE TABLE IF NOT EXISTS public.commands (
     id character varying(26) NOT NULL,
     token character varying(26),
     createat bigint,
@@ -184,7 +184,7 @@ ALTER TABLE public.commands OWNER TO mmuser;
 -- Name: commandwebhooks; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.commandwebhooks (
+CREATE TABLE IF NOT EXISTS public.commandwebhooks (
     id character varying(26) NOT NULL,
     createat bigint,
     commandid character varying(26),
@@ -201,7 +201,7 @@ ALTER TABLE public.commandwebhooks OWNER TO mmuser;
 -- Name: compliances; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.compliances (
+CREATE TABLE IF NOT EXISTS public.compliances (
     id character varying(26) NOT NULL,
     createat bigint,
     userid character varying(26),
@@ -222,7 +222,7 @@ ALTER TABLE public.compliances OWNER TO mmuser;
 -- Name: emoji; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.emoji (
+CREATE TABLE IF NOT EXISTS public.emoji (
     id character varying(26) NOT NULL,
     createat bigint,
     updateat bigint,
@@ -238,7 +238,7 @@ ALTER TABLE public.emoji OWNER TO mmuser;
 -- Name: fileinfo; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.fileinfo (
+CREATE TABLE IF NOT EXISTS public.fileinfo (
     id character varying(26) NOT NULL,
     creatorid character varying(26),
     postid character varying(26),
@@ -267,7 +267,7 @@ ALTER TABLE public.fileinfo OWNER TO mmuser;
 -- Name: groupchannels; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.groupchannels (
+CREATE TABLE IF NOT EXISTS public.groupchannels (
     groupid character varying(26) NOT NULL,
     autoadd boolean,
     schemeadmin boolean,
@@ -284,7 +284,7 @@ ALTER TABLE public.groupchannels OWNER TO mmuser;
 -- Name: groupmembers; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.groupmembers (
+CREATE TABLE IF NOT EXISTS public.groupmembers (
     groupid character varying(26) NOT NULL,
     userid character varying(26) NOT NULL,
     createat bigint,
@@ -298,7 +298,7 @@ ALTER TABLE public.groupmembers OWNER TO mmuser;
 -- Name: groupteams; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.groupteams (
+CREATE TABLE IF NOT EXISTS public.groupteams (
     groupid character varying(26) NOT NULL,
     autoadd boolean,
     schemeadmin boolean,
@@ -315,7 +315,7 @@ ALTER TABLE public.groupteams OWNER TO mmuser;
 -- Name: incomingwebhooks; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.incomingwebhooks (
+CREATE TABLE IF NOT EXISTS public.incomingwebhooks (
     id character varying(26) NOT NULL,
     createat bigint,
     updateat bigint,
@@ -337,7 +337,7 @@ ALTER TABLE public.incomingwebhooks OWNER TO mmuser;
 -- Name: jobs; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.jobs (
+CREATE TABLE IF NOT EXISTS public.jobs (
     id character varying(26) NOT NULL,
     type character varying(32),
     priority bigint,
@@ -356,7 +356,7 @@ ALTER TABLE public.jobs OWNER TO mmuser;
 -- Name: licenses; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.licenses (
+CREATE TABLE IF NOT EXISTS public.licenses (
     id character varying(26) NOT NULL,
     createat bigint,
     bytes character varying(10000)
@@ -369,7 +369,7 @@ ALTER TABLE public.licenses OWNER TO mmuser;
 -- Name: linkmetadata; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.linkmetadata (
+CREATE TABLE IF NOT EXISTS public.linkmetadata (
     hash bigint NOT NULL,
     url character varying(2048),
     "timestamp" bigint,
@@ -384,7 +384,7 @@ ALTER TABLE public.linkmetadata OWNER TO mmuser;
 -- Name: oauthaccessdata; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.oauthaccessdata (
+CREATE TABLE IF NOT EXISTS public.oauthaccessdata (
     clientid character varying(26),
     userid character varying(26),
     token character varying(26) NOT NULL,
@@ -401,7 +401,7 @@ ALTER TABLE public.oauthaccessdata OWNER TO mmuser;
 -- Name: oauthapps; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.oauthapps (
+CREATE TABLE IF NOT EXISTS public.oauthapps (
     id character varying(26) NOT NULL,
     creatorid character varying(26),
     createat bigint,
@@ -422,7 +422,7 @@ ALTER TABLE public.oauthapps OWNER TO mmuser;
 -- Name: oauthauthdata; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.oauthauthdata (
+CREATE TABLE IF NOT EXISTS public.oauthauthdata (
     clientid character varying(26),
     userid character varying(26),
     code character varying(128) NOT NULL,
@@ -440,7 +440,7 @@ ALTER TABLE public.oauthauthdata OWNER TO mmuser;
 -- Name: outgoingwebhooks; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.outgoingwebhooks (
+CREATE TABLE IF NOT EXISTS public.outgoingwebhooks (
     id character varying(26) NOT NULL,
     token character varying(26),
     createat bigint,
@@ -466,7 +466,7 @@ ALTER TABLE public.outgoingwebhooks OWNER TO mmuser;
 -- Name: pluginkeyvaluestore; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.pluginkeyvaluestore (
+CREATE TABLE IF NOT EXISTS public.pluginkeyvaluestore (
     pluginid character varying(190) NOT NULL,
     pkey character varying(50) NOT NULL,
     pvalue bytea,
@@ -480,7 +480,7 @@ ALTER TABLE public.pluginkeyvaluestore OWNER TO mmuser;
 -- Name: posts; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.posts (
+CREATE TABLE IF NOT EXISTS public.posts (
     id character varying(26) NOT NULL,
     createat bigint,
     updateat bigint,
@@ -508,7 +508,7 @@ ALTER TABLE public.posts OWNER TO mmuser;
 -- Name: preferences; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.preferences (
+CREATE TABLE IF NOT EXISTS public.preferences (
     userid character varying(26) NOT NULL,
     category character varying(32) NOT NULL,
     name character varying(32) NOT NULL,
@@ -522,7 +522,7 @@ ALTER TABLE public.preferences OWNER TO mmuser;
 -- Name: productnoticeviewstate; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.productnoticeviewstate (
+CREATE TABLE IF NOT EXISTS public.productnoticeviewstate (
     userid character varying(26) NOT NULL,
     noticeid character varying(26) NOT NULL,
     viewed integer,
@@ -536,7 +536,7 @@ ALTER TABLE public.productnoticeviewstate OWNER TO mmuser;
 -- Name: publicchannels; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.publicchannels (
+CREATE TABLE IF NOT EXISTS public.publicchannels (
     id character varying(26) NOT NULL,
     deleteat bigint,
     teamid character varying(26),
@@ -553,7 +553,7 @@ ALTER TABLE public.publicchannels OWNER TO mmuser;
 -- Name: reactions; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.reactions (
+CREATE TABLE IF NOT EXISTS public.reactions (
     userid character varying(26) NOT NULL,
     postid character varying(26) NOT NULL,
     emojiname character varying(64) NOT NULL,
@@ -570,7 +570,7 @@ ALTER TABLE public.reactions OWNER TO mmuser;
 -- Name: remoteclusters; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.remoteclusters (
+CREATE TABLE IF NOT EXISTS public.remoteclusters (
     remoteid character varying(26) NOT NULL,
     remoteteamid character varying(26),
     name character varying(64) NOT NULL,
@@ -591,7 +591,7 @@ ALTER TABLE public.remoteclusters OWNER TO mmuser;
 -- Name: retentionpolicies; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.retentionpolicies (
+CREATE TABLE IF NOT EXISTS public.retentionpolicies (
     id character varying(26) NOT NULL,
     displayname character varying(64),
     postduration bigint
@@ -604,7 +604,7 @@ ALTER TABLE public.retentionpolicies OWNER TO mmuser;
 -- Name: retentionpolicieschannels; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.retentionpolicieschannels (
+CREATE TABLE IF NOT EXISTS public.retentionpolicieschannels (
     policyid character varying(26),
     channelid character varying(26) NOT NULL
 );
@@ -616,7 +616,7 @@ ALTER TABLE public.retentionpolicieschannels OWNER TO mmuser;
 -- Name: retentionpoliciesteams; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.retentionpoliciesteams (
+CREATE TABLE IF NOT EXISTS public.retentionpoliciesteams (
     policyid character varying(26),
     teamid character varying(26) NOT NULL
 );
@@ -628,7 +628,7 @@ ALTER TABLE public.retentionpoliciesteams OWNER TO mmuser;
 -- Name: roles; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.roles (
+CREATE TABLE IF NOT EXISTS public.roles (
     id character varying(26) NOT NULL,
     name character varying(64),
     displayname character varying(128),
@@ -648,7 +648,7 @@ ALTER TABLE public.roles OWNER TO mmuser;
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.schema_migrations (
+CREATE TABLE IF NOT EXISTS public.schema_migrations (
     version bigint NOT NULL,
     dirty boolean NOT NULL
 );
@@ -660,7 +660,7 @@ ALTER TABLE public.schema_migrations OWNER TO mmuser;
 -- Name: schemes; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.schemes (
+CREATE TABLE IF NOT EXISTS public.schemes (
     id character varying(26) NOT NULL,
     name character varying(64),
     displayname character varying(128),
@@ -684,7 +684,7 @@ ALTER TABLE public.schemes OWNER TO mmuser;
 -- Name: sessions; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.sessions (
+CREATE TABLE IF NOT EXISTS public.sessions (
     id character varying(26) NOT NULL,
     token character varying(26),
     createat bigint,
@@ -705,7 +705,7 @@ ALTER TABLE public.sessions OWNER TO mmuser;
 -- Name: sharedchannelattachments; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.sharedchannelattachments (
+CREATE TABLE IF NOT EXISTS public.sharedchannelattachments (
     id character varying(26) NOT NULL,
     fileid character varying(26),
     remoteid character varying(26),
@@ -720,7 +720,7 @@ ALTER TABLE public.sharedchannelattachments OWNER TO mmuser;
 -- Name: sharedchannelremotes; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.sharedchannelremotes (
+CREATE TABLE IF NOT EXISTS public.sharedchannelremotes (
     id character varying(26) NOT NULL,
     channelid character varying(26) NOT NULL,
     creatorid character varying(26),
@@ -740,7 +740,7 @@ ALTER TABLE public.sharedchannelremotes OWNER TO mmuser;
 -- Name: sharedchannels; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.sharedchannels (
+CREATE TABLE IF NOT EXISTS public.sharedchannels (
     channelid character varying(26) NOT NULL,
     teamid character varying(26),
     home boolean,
@@ -762,7 +762,7 @@ ALTER TABLE public.sharedchannels OWNER TO mmuser;
 -- Name: sharedchannelusers; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.sharedchannelusers (
+CREATE TABLE IF NOT EXISTS public.sharedchannelusers (
     id character varying(26) NOT NULL,
     userid character varying(26),
     channelid character varying(26),
@@ -778,7 +778,7 @@ ALTER TABLE public.sharedchannelusers OWNER TO mmuser;
 -- Name: sidebarcategories; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.sidebarcategories (
+CREATE TABLE IF NOT EXISTS public.sidebarcategories (
     id character varying(128) NOT NULL,
     userid character varying(26),
     teamid character varying(26),
@@ -797,7 +797,7 @@ ALTER TABLE public.sidebarcategories OWNER TO mmuser;
 -- Name: sidebarchannels; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.sidebarchannels (
+CREATE TABLE IF NOT EXISTS public.sidebarchannels (
     channelid character varying(26) NOT NULL,
     userid character varying(26) NOT NULL,
     categoryid character varying(128) NOT NULL,
@@ -811,7 +811,7 @@ ALTER TABLE public.sidebarchannels OWNER TO mmuser;
 -- Name: status; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.status (
+CREATE TABLE IF NOT EXISTS public.status (
     userid character varying(26) NOT NULL,
     status character varying(32),
     manual boolean,
@@ -827,7 +827,7 @@ ALTER TABLE public.status OWNER TO mmuser;
 -- Name: systems; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.systems (
+CREATE TABLE IF NOT EXISTS public.systems (
     name character varying(64) NOT NULL,
     value character varying(1024)
 );
@@ -839,7 +839,7 @@ ALTER TABLE public.systems OWNER TO mmuser;
 -- Name: teammembers; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.teammembers (
+CREATE TABLE IF NOT EXISTS public.teammembers (
     teamid character varying(26) NOT NULL,
     userid character varying(26) NOT NULL,
     roles character varying(256),
@@ -856,7 +856,7 @@ ALTER TABLE public.teammembers OWNER TO mmuser;
 -- Name: teams; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.teams (
+CREATE TABLE IF NOT EXISTS public.teams (
     id character varying(26) NOT NULL,
     createat bigint,
     updateat bigint,
@@ -882,7 +882,7 @@ ALTER TABLE public.teams OWNER TO mmuser;
 -- Name: termsofservice; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.termsofservice (
+CREATE TABLE IF NOT EXISTS public.termsofservice (
     id character varying(26) NOT NULL,
     createat bigint,
     userid character varying(26),
@@ -896,7 +896,7 @@ ALTER TABLE public.termsofservice OWNER TO mmuser;
 -- Name: threadmemberships; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.threadmemberships (
+CREATE TABLE IF NOT EXISTS public.threadmemberships (
     postid character varying(26) NOT NULL,
     userid character varying(26) NOT NULL,
     following boolean,
@@ -912,7 +912,7 @@ ALTER TABLE public.threadmemberships OWNER TO mmuser;
 -- Name: threads; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.threads (
+CREATE TABLE IF NOT EXISTS public.threads (
     postid character varying(26) NOT NULL,
     channelid character varying(26),
     replycount bigint,
@@ -927,7 +927,7 @@ ALTER TABLE public.threads OWNER TO mmuser;
 -- Name: tokens; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.tokens (
+CREATE TABLE IF NOT EXISTS public.tokens (
     token character varying(64) NOT NULL,
     createat bigint,
     type character varying(64),
@@ -941,7 +941,7 @@ ALTER TABLE public.tokens OWNER TO mmuser;
 -- Name: uploadsessions; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.uploadsessions (
+CREATE TABLE IF NOT EXISTS public.uploadsessions (
     id character varying(26) NOT NULL,
     type character varying(32),
     createat bigint,
@@ -962,7 +962,7 @@ ALTER TABLE public.uploadsessions OWNER TO mmuser;
 -- Name: useraccesstokens; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.useraccesstokens (
+CREATE TABLE IF NOT EXISTS public.useraccesstokens (
     id character varying(26) NOT NULL,
     token character varying(26),
     userid character varying(26),
@@ -977,7 +977,7 @@ ALTER TABLE public.useraccesstokens OWNER TO mmuser;
 -- Name: usergroups; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.usergroups (
+CREATE TABLE IF NOT EXISTS public.usergroups (
     id character varying(26) NOT NULL,
     name character varying(64),
     displayname character varying(128),
@@ -997,7 +997,7 @@ ALTER TABLE public.usergroups OWNER TO mmuser;
 -- Name: users; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.users (
+CREATE TABLE IF NOT EXISTS public.users (
     id character varying(26) NOT NULL,
     createat bigint,
     updateat bigint,
@@ -1033,7 +1033,7 @@ ALTER TABLE public.users OWNER TO mmuser;
 -- Name: usertermsofservice; Type: TABLE; Schema: public; Owner: mmuser
 --
 
-CREATE TABLE public.usertermsofservice (
+CREATE TABLE IF NOT EXISTS public.usertermsofservice (
     userid character varying(26) NOT NULL,
     termsofserviceid character varying(26),
     createat bigint
@@ -1835,7 +1835,7 @@ COPY public.emoji (id, createat, updateat, deleteat, creatorid, name) FROM stdin
 --
 
 COPY public.fileinfo (id, creatorid, postid, createat, updateat, deleteat, path, thumbnailpath, previewpath, name, extension, size, mimetype, width, height, haspreviewimage, minipreview, content, remoteid) FROM stdin;
-8bdjoxwo53yqpno4bxp9afehne	nouser		1634237540228	1634237540228	0	import/9bgys1qafjgf3k8nh6sz6ichga_mmctl-sampledata.zip			mmctl-sampledata.zip	zip	276194	application/zip	0	0	f	\N	import.jsonl 	
+8bdjoxwo53yqpno4bxp9afehne	nouser		1634237540228	1634237540228	0	import/9bgys1qafjgf3k8nh6sz6ichga_mmctl-sampledata.zip			mmctl-sampledata.zip	zip	276194	application/zip	0	0	f	\N	import.jsonl
 \.
 
 
@@ -6644,10 +6644,10 @@ COPY public.productnoticeviewstate (userid, noticeid, viewed, "timestamp") FROM 
 --
 
 COPY public.publicchannels (id, deleteat, teamid, displayname, name, header, purpose) FROM stdin;
-aaqorfaz9fbkdkb9waypnwwbkr	0	niq6nf1117bu3f4kq95zcofucc	Town Square	town-square		
-cutmgkapyfb3fxqsuwr35qc7pe	0	mmoogohyztyn7mjqgsr69ke1kh	Town Square	town-square		
-fn6ipofkzt8oubtjctxf9fgrqr	0	mmoogohyztyn7mjqgsr69ke1kh	Off-Topic	off-topic		
-xpqs4u3jh3rf3nkgfx5bixa8tr	0	niq6nf1117bu3f4kq95zcofucc	Off-Topic	off-topic		
+aaqorfaz9fbkdkb9waypnwwbkr	0	niq6nf1117bu3f4kq95zcofucc	Town Square	town-square
+cutmgkapyfb3fxqsuwr35qc7pe	0	mmoogohyztyn7mjqgsr69ke1kh	Town Square	town-square
+fn6ipofkzt8oubtjctxf9fgrqr	0	mmoogohyztyn7mjqgsr69ke1kh	Off-Topic	off-topic
+xpqs4u3jh3rf3nkgfx5bixa8tr	0	niq6nf1117bu3f4kq95zcofucc	Off-Topic	off-topic
 z1jfza1qii8ijkxfcxdr5akk3h	0	mmoogohyztyn7mjqgsr69ke1kh	autem	aut-8	eos qui veritatis qui ut magni velit perspiciatis. vel laboriosam mollitia expedita exercitationem eum voluptatem quae modi atque eos rerum.	quisquam a rerum quae recusandae quod eaque quia. vitae officia voluptas eum suscipit ea! fuga asperiores sed ipsa cumque odio temporibus aut voluptas. quae vel optio commodi est possimus earum accusantium. est eos et aliquam optio. quia omnis volupt
 f6hqprr317bjxno6c6cf6yiwya	0	mmoogohyztyn7mjqgsr69ke1kh	nostrum	minus-6	quidem labore dolor hic aperiam. laboriosam cum quod maiores. itaque reprehenderit nostrum aut consequuntur. odit explicabo officiis!	dolores minus tempore quidem voluptatem quod quibusdam asperiores ducimus. qui id nostrum veritatis nobis. tenetur iure qui nulla. dignissimos amet voluptas soluta natus.
 qhnq71fop7retm36s5rfj74zky	0	mmoogohyztyn7mjqgsr69ke1kh	sint	suscipit-4	voluptate vel dolorum aperiam nam ut atque. modi iure est occaecati qui sed aliquid eveniet. id ducimus ut deleniti quisquam. ut maxime quibusdam ut voluptates dolore et sit.	et sed nisi eos fuga non fugit. qui voluptates autem sed. ipsum excepturi et accusamus!
@@ -6668,949 +6668,949 @@ qexac11x8bbnfgnz8itntpwp4e	0	niq6nf1117bu3f4kq95zcofucc	itaque	minus-8	non numqu
 --
 
 COPY public.reactions (userid, postid, emojiname, createat, updateat, deleteat, remoteid) FROM stdin;
-bz9xa1zkwbgmf8nfx4eku9a7rc	rsb9qfdbs7r4mkqahkguycu8xa	blush	1634156855756	1634237543459	0	
-a4emb3hsdjn7pk6s5crpdmokaw	9sn3zz3kbjrf3yyo54m6sod6do	blush	1634145071319	1634237543480	0	
-iet7jkwex3bjjbg38ewup9br7e	9sn3zz3kbjrf3yyo54m6sod6do	+1	1634145092099	1634237543497	0	
-1jcrg4b4upf67kbexsxyyiamqa	dsoateiusfnndycsducen3fgso	+1	1634158690370	1634237543536	0	
-a4emb3hsdjn7pk6s5crpdmokaw	7dguxdspsfr3jqc9pdeiji6hdr	blush	1634156176209	1634237543569	0	
-a4emb3hsdjn7pk6s5crpdmokaw	f5jszrir1bnb3phwfehsy78k1h	blush	1634125626696	1634237543600	0	
-poqpi8xhfjdszcmgmjboqzwcir	c1hqkpqrcpy7mmmdnzai5ey3xy	heart	1634130501864	1634237543601	0	
-x4kiax5uy3n3pjkk6xyic5i98a	r9at15o9r78q7r4honxz9ebmmy	+1	1634124693232	1634237543609	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	ywnh9xwdu7r8mgko9cgfugcrfh	heart	1634139285071	1634237543617	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	r9at15o9r78q7r4honxz9ebmmy	blush	1634124781149	1634237543626	0	
-x4kiax5uy3n3pjkk6xyic5i98a	moknszr477rumxcncf76jb56zy	heart	1634163199630	1634237543631	0	
-km1txe6kktdabdgyuhwru7r9ua	1qk68y4z5j8mbbj7ynx3yp3coo	+1	1634145642030	1634237543633	0	
-km1txe6kktdabdgyuhwru7r9ua	hwbbpbrnxigqzjzwgzoycun1ua	-1	1634139622873	1634237543638	0	
-iet7jkwex3bjjbg38ewup9br7e	ywnh9xwdu7r8mgko9cgfugcrfh	+1	1634139256293	1634237543642	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	moknszr477rumxcncf76jb56zy	heart	1634163172668	1634237543656	0	
-poqpi8xhfjdszcmgmjboqzwcir	r9at15o9r78q7r4honxz9ebmmy	heart	1634124770969	1634237543654	0	
-a9quakcmbjys3ego1myciaoi8h	t98kgp9z6bfufqmkywifxytjjo	+1	1634147150295	1634237543658	0	
-s1m5hgt3o7f8tftf41n94ofp9r	1qk68y4z5j8mbbj7ynx3yp3coo	+1	1634145646221	1634237543659	0	
-a9quakcmbjys3ego1myciaoi8h	um8tzob6qib55rdu8d6mp36qba	-1	1634167062708	1634237543660	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	1jcgk94d9irm8r36aynzn17nnc	blush	1634126751369	1634237543658	0	
-km1txe6kktdabdgyuhwru7r9ua	fjxhk6jqdib8jjasj1krd8nisw	+1	1634121471396	1634237543660	0	
-km1txe6kktdabdgyuhwru7r9ua	9nnbz7fcmif7f8modddzde9ozw	blush	1634149717992	1634237543668	0	
-1jcrg4b4upf67kbexsxyyiamqa	ooxajs5xkpy3myas8wnz9p855a	+1	1634124450951	1634237543671	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	t98kgp9z6bfufqmkywifxytjjo	+1	1634147205675	1634237543672	0	
-g5x9y1ewypr4tr93whdcfby3xy	r9at15o9r78q7r4honxz9ebmmy	-1	1634124745269	1634237543674	0	
-s1m5hgt3o7f8tftf41n94ofp9r	moknszr477rumxcncf76jb56zy	-1	1634163180416	1634237543673	0	
-zbdgeaijh3fh9e3foqdts6i5wh	1qk68y4z5j8mbbj7ynx3yp3coo	blush	1634145698641	1634237543677	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	um8tzob6qib55rdu8d6mp36qba	heart	1634167023940	1634237543677	0	
-a9quakcmbjys3ego1myciaoi8h	1jcgk94d9irm8r36aynzn17nnc	+1	1634126701889	1634237543683	0	
-4f4g78ewrfys8b68j456o5nxkr	fjxhk6jqdib8jjasj1krd8nisw	-1	1634121468361	1634237543684	0	
-1jcrg4b4upf67kbexsxyyiamqa	9nnbz7fcmif7f8modddzde9ozw	+1	1634149663928	1634237543689	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	ooxajs5xkpy3myas8wnz9p855a	-1	1634124465487	1634237543691	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	moknszr477rumxcncf76jb56zy	+1	1634163183429	1634237543692	0	
-iet7jkwex3bjjbg38ewup9br7e	t98kgp9z6bfufqmkywifxytjjo	blush	1634147162822	1634237543695	0	
-gd6p49n1x3g3ic13taequwidya	r9at15o9r78q7r4honxz9ebmmy	-1	1634124790261	1634237543695	0	
-1jcrg4b4upf67kbexsxyyiamqa	um8tzob6qib55rdu8d6mp36qba	+1	1634167026483	1634237543697	0	
-4f4g78ewrfys8b68j456o5nxkr	1qk68y4z5j8mbbj7ynx3yp3coo	-1	1634145631519	1634237543697	0	
-gd6p49n1x3g3ic13taequwidya	ooxajs5xkpy3myas8wnz9p855a	-1	1634124454115	1634237543707	0	
-zbdgeaijh3fh9e3foqdts6i5wh	axwg5wox3jdduqi5h95kr4qwye	+1	1634132560095	1634237543705	0	
-s1m5hgt3o7f8tftf41n94ofp9r	fjxhk6jqdib8jjasj1krd8nisw	+1	1634121503089	1634237543706	0	
-a9quakcmbjys3ego1myciaoi8h	moknszr477rumxcncf76jb56zy	heart	1634163150410	1634237543707	0	
-g5x9y1ewypr4tr93whdcfby3xy	9nnbz7fcmif7f8modddzde9ozw	blush	1634149719195	1634237543710	0	
-g5x9y1ewypr4tr93whdcfby3xy	t98kgp9z6bfufqmkywifxytjjo	blush	1634147232601	1634237543714	0	
-1jcrg4b4upf67kbexsxyyiamqa	1qk68y4z5j8mbbj7ynx3yp3coo	+1	1634145656249	1634237543715	0	
-gd6p49n1x3g3ic13taequwidya	r9at15o9r78q7r4honxz9ebmmy	heart	1634124769105	1634237543717	0	
-j78juejgzby8x8cj8f89mtq4bh	df79yfw5zfn83qsz6k9ca19qza	heart	1634139179563	1634237543719	0	
-a4emb3hsdjn7pk6s5crpdmokaw	jdquu7m9g7gqijzd3erhprt9mh	heart	1634137219941	1634237543722	0	
-a4emb3hsdjn7pk6s5crpdmokaw	7n57ix9gs7853ni85xyoo9emzo	+1	1634136230416	1634237543723	0	
-x4kiax5uy3n3pjkk6xyic5i98a	9nnbz7fcmif7f8modddzde9ozw	-1	1634149690763	1634237543726	0	
-j78juejgzby8x8cj8f89mtq4bh	1nyzoyqx4fyydxz8sainynnyca	blush	1634163402557	1634237543727	0	
-gd6p49n1x3g3ic13taequwidya	wjt4371enffedjtn85ggsu555r	blush	1634149844831	1634237543726	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	t98kgp9z6bfufqmkywifxytjjo	blush	1634147141709	1634237543731	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	r9at15o9r78q7r4honxz9ebmmy	heart	1634124698797	1634237543733	0	
-a4emb3hsdjn7pk6s5crpdmokaw	df79yfw5zfn83qsz6k9ca19qza	blush	1634139189938	1634237543740	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	1nyzoyqx4fyydxz8sainynnyca	heart	1634163466552	1634237543743	0	
-g5x9y1ewypr4tr93whdcfby3xy	7n57ix9gs7853ni85xyoo9emzo	+1	1634136179916	1634237543745	0	
-km1txe6kktdabdgyuhwru7r9ua	5gigp58xgjrc9rtbjadmkwk67a	blush	1634132970676	1634237543747	0	
-4f4g78ewrfys8b68j456o5nxkr	wjt4371enffedjtn85ggsu555r	+1	1634149814588	1634237543747	0	
-iet7jkwex3bjjbg38ewup9br7e	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137185229	1634237543754	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	df79yfw5zfn83qsz6k9ca19qza	-1	1634139149565	1634237543761	0	
-s1m5hgt3o7f8tftf41n94ofp9r	5gigp58xgjrc9rtbjadmkwk67a	heart	1634133036595	1634237543764	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	cown5p7y53y1bdpp3bxkum8o8y	heart	1634138558862	1634237543869	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	gof8chhf8fdttkpmhzqgc4zufh	-1	1634142820617	1634237543879	0	
-iet7jkwex3bjjbg38ewup9br7e	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137248211	1634237544049	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	7n57ix9gs7853ni85xyoo9emzo	blush	1634136185936	1634237543765	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	jdquu7m9g7gqijzd3erhprt9mh	+1	1634137212579	1634237543793	0	
-j78juejgzby8x8cj8f89mtq4bh	nbcgwc3y8tbzijyzyk5kc44gar	-1	1634167806096	1634237543807	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	crqacca467frxmhcb7canyghaw	+1	1634134833243	1634237543835	0	
-j78juejgzby8x8cj8f89mtq4bh	in9hpufj3by9uq4oqtsq3rgfky	blush	1634131758168	1634237543854	0	
-s1m5hgt3o7f8tftf41n94ofp9r	nbcgwc3y8tbzijyzyk5kc44gar	heart	1634167760261	1634237543864	0	
-j78juejgzby8x8cj8f89mtq4bh	cbze15n3jiy6pxxzmhy79ngt3c	heart	1634123399497	1634237543941	0	
-j78juejgzby8x8cj8f89mtq4bh	pmwpnxfoairmtg17qpp9wy35hc	heart	1634161530602	1634237544037	0	
-g5x9y1ewypr4tr93whdcfby3xy	ha6fihb7nifh7dbdnozzmbcbny	+1	1634158546014	1634237544060	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	uhc7w6qoctn8tpzsndemxyo8dh	heart	1634123523328	1634237544110	0	
-s1m5hgt3o7f8tftf41n94ofp9r	w4i3zxdu9b8h9kzwxp8bcs7tyc	blush	1634139183641	1634237544131	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	aohrnx3q6pyq7codr9anj8z79c	+1	1634138107383	1634237544199	0	
-1jcrg4b4upf67kbexsxyyiamqa	zy7mrub48j86unidcecibj4aja	heart	1634122560976	1634237544451	0	
-a4emb3hsdjn7pk6s5crpdmokaw	zjb6c5twhfysxc6cuzyqiteyow	blush	1634140570885	1634237544464	0	
-j78juejgzby8x8cj8f89mtq4bh	zy7mrub48j86unidcecibj4aja	-1	1634122475117	1634237544485	0	
-a4emb3hsdjn7pk6s5crpdmokaw	g9w8jpy6ajn9frq1xcn5wqonxh	heart	1634129583258	1634237544502	0	
-x4kiax5uy3n3pjkk6xyic5i98a	qghjz74xnfgrbdfz5jrpbe457e	heart	1634157526665	1634237544531	0	
-a4emb3hsdjn7pk6s5crpdmokaw	tubo8sqpb7dhddjz3c6x3hp67a	blush	1634146659704	1634237544579	0	
-iet7jkwex3bjjbg38ewup9br7e	qthsywnztjd7dmbirp81ewg4ce	+1	1634128932597	1634237544618	0	
-s1m5hgt3o7f8tftf41n94ofp9r	3x4zf5uxdt8cur64htaxgnbzay	-1	1634149115147	1634237544634	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	9g57ppmtkb84pcpyitsfue74ho	-1	1634148898254	1634237544652	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	wp3pbc8bwfge9ewdocpmazssua	heart	1634165093457	1634237544670	0	
-a4emb3hsdjn7pk6s5crpdmokaw	5ifbqsjd3tbw3xq75y7eincftw	blush	1634155145137	1634237544817	0	
-4f4g78ewrfys8b68j456o5nxkr	ma13xdrni7bz7f8aq3c1f3jf4w	-1	1634123099751	1634237544842	0	
-km1txe6kktdabdgyuhwru7r9ua	ahusnemg9t8gxruqp5qofwbd4e	+1	1634169573265	1634237544870	0	
-iet7jkwex3bjjbg38ewup9br7e	fmqk4dh3std4dy71hmfwjy8iro	+1	1634149432659	1634237544957	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	c4nrhchf3igdmnz813khbwr5no	+1	1634149157195	1634237545021	0	
-a9quakcmbjys3ego1myciaoi8h	tkxi5fb9apn8fe9oya6wkbpape	-1	1634161372380	1634237545067	0	
-4f4g78ewrfys8b68j456o5nxkr	c4nrhchf3igdmnz813khbwr5no	heart	1634149151174	1634237545106	0	
-s1m5hgt3o7f8tftf41n94ofp9r	tp3zmm7o8pfq5ji1tmnjrkq1kh	+1	1634158186896	1634237545129	0	
-km1txe6kktdabdgyuhwru7r9ua	89esbkz8ifdoxquhguapqbizbr	blush	1634125530199	1634237545151	0	
-poqpi8xhfjdszcmgmjboqzwcir	mum7z5sptpndtnwf9r8apsrcta	blush	1634146729540	1634237545164	0	
-x4kiax5uy3n3pjkk6xyic5i98a	qh6qh14amtb79yfwbojx6345ao	blush	1634127864359	1634237545200	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	c4nrhchf3igdmnz813khbwr5no	+1	1634149097291	1634237545211	0	
-km1txe6kktdabdgyuhwru7r9ua	eo5mdm8njbb7fqji9wy93j3n5h	blush	1634160252926	1634237545251	0	
-s1m5hgt3o7f8tftf41n94ofp9r	werqk6f3w7dg8rsnhbxbynb79w	blush	1634136598050	1634237545277	0	
-iet7jkwex3bjjbg38ewup9br7e	werqk6f3w7dg8rsnhbxbynb79w	heart	1634136638892	1634237545337	0	
-gd6p49n1x3g3ic13taequwidya	81efpznjk3dwie6pqtt4g9gmoc	+1	1634132138469	1634237545360	0	
-s1m5hgt3o7f8tftf41n94ofp9r	uqw3y9gtqpfg5no3geqatbktiy	blush	1634129589870	1634237545386	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	znkscgxugjycjb4t1ed544tste	+1	1634120921447	1634237545519	0	
-j78juejgzby8x8cj8f89mtq4bh	eoz3pdrudj817fyp7x5xutfh9h	-1	1634141662252	1634237545579	0	
-zbdgeaijh3fh9e3foqdts6i5wh	tzn441x4gtngmp8bemxz7bcrrh	heart	1634168816884	1634237545838	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	d13au8yjs7deprtxtn7i7grfde	+1	1634127796378	1634237545871	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	pmr5acesx3dktrrdhbqt9squhr	blush	1634137141300	1634237548906	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	kw1rna6t7ty6zxnbchh5qb7djc	heart	1634119830396	1634237550379	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	9ohco49tkt86ijkfhofh6y13kh	+1	1634120830232	1634237550546	0	
-j78juejgzby8x8cj8f89mtq4bh	ur6pr9awkiy93d9exgieen544w	-1	1634149202679	1634237550578	0	
-km1txe6kktdabdgyuhwru7r9ua	aci4af6ioircxbkcpz6w4wuinw	heart	1634160326650	1634237550765	0	
-g5x9y1ewypr4tr93whdcfby3xy	wjt4371enffedjtn85ggsu555r	-1	1634149878781	1634237543769	0	
-j78juejgzby8x8cj8f89mtq4bh	dxgy6p7gf7yyfykq7ftf9i6hyc	blush	1634145626235	1634237543785	0	
-4f4g78ewrfys8b68j456o5nxkr	nbcgwc3y8tbzijyzyk5kc44gar	+1	1634167820725	1634237543879	0	
-iet7jkwex3bjjbg38ewup9br7e	peqykb99m7yixgksk1funitwqo	-1	1634136449603	1634237543893	0	
-1jcrg4b4upf67kbexsxyyiamqa	hhpdpjfez7rg8kt5cu6ib6du6w	+1	1634148655068	1634237543917	0	
-iet7jkwex3bjjbg38ewup9br7e	5wtcewdkk3rbdqpyr1kuc41hrw	+1	1634159276835	1634237543975	0	
-gd6p49n1x3g3ic13taequwidya	9p86nrdn5iy6ikbyy3ya89ab9o	blush	1634141120686	1634237543987	0	
-zbdgeaijh3fh9e3foqdts6i5wh	9eiyk4b5apd5be98bike6myp6r	-1	1634141337600	1634237544075	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	9eiyk4b5apd5be98bike6myp6r	-1	1634141386965	1634237544113	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137204457	1634237544145	0	
-4f4g78ewrfys8b68j456o5nxkr	ojusrexwxbbuzennunq4mwksir	-1	1634143460799	1634237544278	0	
-zbdgeaijh3fh9e3foqdts6i5wh	twsxff5iibdzjcjxgi88umhzxr	heart	1634158959513	1634237544317	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	wtmzj9iu9tdc3rttrp8ouc4ypc	blush	1634162698835	1634237544375	0	
-4f4g78ewrfys8b68j456o5nxkr	twsxff5iibdzjcjxgi88umhzxr	heart	1634158994188	1634237544416	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	4ct5xmunsbb67dj8og3as5yd9w	+1	1634124718248	1634237544423	0	
-iet7jkwex3bjjbg38ewup9br7e	we4e1a8aq78ujery9zggh9sd5w	blush	1634139181002	1634237544455	0	
-gd6p49n1x3g3ic13taequwidya	a3o8krsmr78zurizx8g4b661no	-1	1634161684202	1634237544468	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	3i3eyckg6f8tbenuzh7y85645y	heart	1634134923361	1634237544501	0	
-x4kiax5uy3n3pjkk6xyic5i98a	rt7t9i8rx7b6xq5c931ygc7o1h	+1	1634162260213	1634237544513	0	
-poqpi8xhfjdszcmgmjboqzwcir	we4e1a8aq78ujery9zggh9sd5w	heart	1634139223519	1634237544531	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	4ct5xmunsbb67dj8og3as5yd9w	heart	1634124713860	1634237544563	0	
-km1txe6kktdabdgyuhwru7r9ua	3k6zwzrojjf69mjadhyd1wegjh	heart	1634151634248	1634237544594	0	
-x4kiax5uy3n3pjkk6xyic5i98a	wp3pbc8bwfge9ewdocpmazssua	blush	1634165023376	1634237544691	0	
-x4kiax5uy3n3pjkk6xyic5i98a	n7h11i678igkb8n9typc16q4nc	-1	1634137142535	1634237544693	0	
-j78juejgzby8x8cj8f89mtq4bh	r8ez44dch7gq9rmwfuehop3ujw	-1	1634141792379	1634237544705	0	
-a9quakcmbjys3ego1myciaoi8h	qi8q3igcniy5xnp5pwouh61wwy	blush	1634157064366	1634237544715	0	
-a4emb3hsdjn7pk6s5crpdmokaw	e84t61ojqtdz5f6wxk3zew8srw	heart	1634125060149	1634237544768	0	
-gd6p49n1x3g3ic13taequwidya	u7mjrjeakt868g5gfbrfgu9rkw	heart	1634164236046	1634237544852	0	
-j78juejgzby8x8cj8f89mtq4bh	hanpye6mgtrrpe3gpf7yqx9jgo	blush	1634157651699	1634237544906	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	4mtw36b45i8fbr1yh4bmxper8y	-1	1634162076026	1634237544976	0	
-1jcrg4b4upf67kbexsxyyiamqa	dyayxx4117bm7dinic9o4n5oxo	heart	1634137583981	1634237544993	0	
-a9quakcmbjys3ego1myciaoi8h	bsp4btb7mpnc8fhxt6th6f9qhc	+1	1634150170883	1634237545032	0	
-gd6p49n1x3g3ic13taequwidya	xr8b6e4wupyj7mme55r8qbrf4a	heart	1634161929205	1634237545050	0	
-poqpi8xhfjdszcmgmjboqzwcir	c4nrhchf3igdmnz813khbwr5no	heart	1634149083810	1634237545091	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	5dkcfr95bfy6bjusdje5dt1mhr	blush	1634140655353	1634237545109	0	
-4f4g78ewrfys8b68j456o5nxkr	9dzn7zz173nntrbkmorkhqzpew	blush	1634168753590	1634237545119	0	
-a4emb3hsdjn7pk6s5crpdmokaw	tkxi5fb9apn8fe9oya6wkbpape	blush	1634161344411	1634237545223	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	dxcoi6tgeffcbnz1sk8tcz6bwy	blush	1634133574157	1634237545355	0	
-x4kiax5uy3n3pjkk6xyic5i98a	bbaoqpicx3r8pkbuw6fyybjywa	-1	1634163318474	1634237545409	0	
-1jcrg4b4upf67kbexsxyyiamqa	iprjmsawx78t5npk33x7orajnw	-1	1634156024108	1634237545449	0	
-a9quakcmbjys3ego1myciaoi8h	c99g9xiu1tn6zraboemjrofogr	blush	1634128352550	1634237545475	0	
-a9quakcmbjys3ego1myciaoi8h	d13au8yjs7deprtxtn7i7grfde	+1	1634127839375	1634237545839	0	
-poqpi8xhfjdszcmgmjboqzwcir	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137229145	1634237543772	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	zb34npxgm7dtbd4tw1zryp1xqa	blush	1634147057765	1634237543801	0	
-poqpi8xhfjdszcmgmjboqzwcir	crqacca467frxmhcb7canyghaw	+1	1634134857063	1634237543815	0	
-km1txe6kktdabdgyuhwru7r9ua	r4bkym5nqfnw8efdj95pyqw5tr	+1	1634139835277	1634237543857	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	6e4d654e67y6pcftr1ic13mt8e	-1	1634125080174	1634237543882	0	
-a4emb3hsdjn7pk6s5crpdmokaw	nbcgwc3y8tbzijyzyk5kc44gar	blush	1634167836232	1634237543916	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	nbcgwc3y8tbzijyzyk5kc44gar	blush	1634167772102	1634237543973	0	
-gd6p49n1x3g3ic13taequwidya	f77k8reqd7r15e6ceuwxrx9icw	blush	1634144334975	1634237543985	0	
-s1m5hgt3o7f8tftf41n94ofp9r	f77k8reqd7r15e6ceuwxrx9icw	-1	1634144333679	1634237544000	0	
-s1m5hgt3o7f8tftf41n94ofp9r	t6uf8kyeyb898ghrn9cmj7h4ky	heart	1634163826112	1634237544066	0	
-g5x9y1ewypr4tr93whdcfby3xy	x89m7tkesty59b65rdzerhknky	-1	1634125819155	1634237544081	0	
-a4emb3hsdjn7pk6s5crpdmokaw	rh1px4spyfr5mjq6jhbpjezzyc	blush	1634157275827	1634237544138	0	
-4f4g78ewrfys8b68j456o5nxkr	w4i3zxdu9b8h9kzwxp8bcs7tyc	+1	1634139180371	1634237544175	0	
-a4emb3hsdjn7pk6s5crpdmokaw	yf7qa6xa6ir9zbigq4fywnwshw	heart	1634166832252	1634237544258	0	
-iet7jkwex3bjjbg38ewup9br7e	yo18zumwnj8kpmzrzac4ntbkko	blush	1634166544174	1634237544394	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	cg1h9wjybbfwubwaab6jnfc4mw	blush	1634131494267	1634237544409	0	
-a4emb3hsdjn7pk6s5crpdmokaw	wtmzj9iu9tdc3rttrp8ouc4ypc	blush	1634162653104	1634237544428	0	
-zbdgeaijh3fh9e3foqdts6i5wh	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124654158	1634237544438	0	
-gd6p49n1x3g3ic13taequwidya	stzdki9g43y97quko8d7kuq95w	+1	1634151658185	1634237544451	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	kbyosns5ktb5ube3rartwu9n8r	heart	1634152146424	1634237544467	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124700512	1634237544508	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	umu8qb3cntgcpe31m7anu661fy	heart	1634148514966	1634237544531	0	
-km1txe6kktdabdgyuhwru7r9ua	bcmhudgqmigq5j3j4m9pjpxnjr	+1	1634130305900	1634237544562	0	
-gd6p49n1x3g3ic13taequwidya	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124637532	1634237544585	0	
-4f4g78ewrfys8b68j456o5nxkr	n7h11i678igkb8n9typc16q4nc	+1	1634137157866	1634237544604	0	
-gd6p49n1x3g3ic13taequwidya	sggabe47z38wtm56c5fxic6z8e	blush	1634157626087	1634237544698	0	
-4f4g78ewrfys8b68j456o5nxkr	tt8kdigdabfudy1q5oa5d836mh	heart	1634161513533	1634237544724	0	
-j78juejgzby8x8cj8f89mtq4bh	qm8ddpoxctd1fffyeq5txhphjo	heart	1634164970288	1634237544786	0	
-gd6p49n1x3g3ic13taequwidya	4mtw36b45i8fbr1yh4bmxper8y	+1	1634162043624	1634237544808	0	
-4f4g78ewrfys8b68j456o5nxkr	b4ebn3gzqpgdtnbehcmnxtefyr	blush	1634136626120	1634237544832	0	
-zbdgeaijh3fh9e3foqdts6i5wh	qm8ddpoxctd1fffyeq5txhphjo	-1	1634164967465	1634237544865	0	
-4f4g78ewrfys8b68j456o5nxkr	uuf8n1rs13ffjqy3og5yarn3zo	+1	1634145362992	1634237544882	0	
-iet7jkwex3bjjbg38ewup9br7e	bc83ggiyn3nimj4mgk1nw4zpfe	-1	1634132226208	1634237544941	0	
-4f4g78ewrfys8b68j456o5nxkr	4mtw36b45i8fbr1yh4bmxper8y	blush	1634162096518	1634237544957	0	
-4f4g78ewrfys8b68j456o5nxkr	uuf8n1rs13ffjqy3og5yarn3zo	blush	1634145283940	1634237545016	0	
-1jcrg4b4upf67kbexsxyyiamqa	5dkcfr95bfy6bjusdje5dt1mhr	blush	1634140655106	1634237545073	0	
-g5x9y1ewypr4tr93whdcfby3xy	tp3zmm7o8pfq5ji1tmnjrkq1kh	blush	1634158285029	1634237545113	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	tkxi5fb9apn8fe9oya6wkbpape	heart	1634161349906	1634237545155	0	
-g5x9y1ewypr4tr93whdcfby3xy	eoyumk7r5pnspfag8mqhfjd47o	heart	1634149972502	1634237545236	0	
-a9quakcmbjys3ego1myciaoi8h	4kqmxdgm87rkxr5ii53y1se9ww	blush	1634155166667	1634237545303	0	
-s1m5hgt3o7f8tftf41n94ofp9r	c99g9xiu1tn6zraboemjrofogr	+1	1634128407267	1634237545379	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	w63jgagr6bfftgfz96w7mz6j1e	+1	1634135692083	1634237545402	0	
-j78juejgzby8x8cj8f89mtq4bh	xt973f5hq3ykf8h1ti8orpnn4h	blush	1634165830521	1634237545446	0	
-a4emb3hsdjn7pk6s5crpdmokaw	mk9untmkz7rr9mfau1tjmfktcy	-1	1634126690430	1634237545490	0	
-iet7jkwex3bjjbg38ewup9br7e	ybknrkbo7pg7xe619dkryz4ywr	-1	1634134811462	1634237545515	0	
-zbdgeaijh3fh9e3foqdts6i5wh	d13au8yjs7deprtxtn7i7grfde	heart	1634127761316	1634237545800	0	
-j78juejgzby8x8cj8f89mtq4bh	g7ophewc9pyafmoooopamotaih	+1	1634150046755	1634237545940	0	
-a9quakcmbjys3ego1myciaoi8h	f9mj68ft3bbz5byuggrwhxnicr	heart	1634144986391	1634237546061	0	
-iet7jkwex3bjjbg38ewup9br7e	4wkys9rkhpn1tka6yo1rahetgy	+1	1634167794275	1634237550321	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	efkiqnq1xtncirbxue8xgt8qtr	+1	1634132328368	1634237550433	0	
-a4emb3hsdjn7pk6s5crpdmokaw	6a5q1cj57pdo8fo31x37ztp9zh	blush	1634164313426	1634237550824	0	
-a4emb3hsdjn7pk6s5crpdmokaw	877esotrb78rxgekesee793aba	+1	1634146798656	1634237543779	0	
-a9quakcmbjys3ego1myciaoi8h	zb34npxgm7dtbd4tw1zryp1xqa	heart	1634146996126	1634237543822	0	
-1jcrg4b4upf67kbexsxyyiamqa	yqomjszazfng8xc838ree8mexh	-1	1634163342572	1634237543886	0	
-1jcrg4b4upf67kbexsxyyiamqa	nbcgwc3y8tbzijyzyk5kc44gar	-1	1634167784328	1634237543897	0	
-1jcrg4b4upf67kbexsxyyiamqa	r4bkym5nqfnw8efdj95pyqw5tr	+1	1634139791753	1634237543914	0	
-j78juejgzby8x8cj8f89mtq4bh	jdquu7m9g7gqijzd3erhprt9mh	+1	1634137272426	1634237543969	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	5qkb17jrcfr4mq3zmowksofuur	heart	1634126217039	1634237544016	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	jdquu7m9g7gqijzd3erhprt9mh	heart	1634137261808	1634237544031	0	
-a9quakcmbjys3ego1myciaoi8h	w4i3zxdu9b8h9kzwxp8bcs7tyc	heart	1634139165922	1634237544094	0	
-gd6p49n1x3g3ic13taequwidya	uhc7w6qoctn8tpzsndemxyo8dh	heart	1634123449704	1634237544127	0	
-j78juejgzby8x8cj8f89mtq4bh	koawm53o3jff8f16jot8jtutph	blush	1634126357664	1634237544242	0	
-a9quakcmbjys3ego1myciaoi8h	ojusrexwxbbuzennunq4mwksir	+1	1634143518218	1634237544299	0	
-zbdgeaijh3fh9e3foqdts6i5wh	ojusrexwxbbuzennunq4mwksir	+1	1634143464901	1634237544336	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	hwgyz4u64brg7rt9mwz6iqpawe	heart	1634162392045	1634237544416	0	
-a4emb3hsdjn7pk6s5crpdmokaw	we4e1a8aq78ujery9zggh9sd5w	heart	1634139153008	1634237544473	0	
-a9quakcmbjys3ego1myciaoi8h	tubo8sqpb7dhddjz3c6x3hp67a	-1	1634146693203	1634237544492	0	
-a9quakcmbjys3ego1myciaoi8h	rizrkbj69bbz8dcgt3jc7bxona	-1	1634136824559	1634237544515	0	
-x4kiax5uy3n3pjkk6xyic5i98a	tubo8sqpb7dhddjz3c6x3hp67a	heart	1634146695002	1634237544539	0	
-km1txe6kktdabdgyuhwru7r9ua	3x4zf5uxdt8cur64htaxgnbzay	+1	1634149135436	1634237544594	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	n7h11i678igkb8n9typc16q4nc	blush	1634137209746	1634237544624	0	
-km1txe6kktdabdgyuhwru7r9ua	zhnduqtwkj85fkgef4mtgbfwzh	-1	1634139412298	1634237544683	0	
-a4emb3hsdjn7pk6s5crpdmokaw	r8ez44dch7gq9rmwfuehop3ujw	-1	1634141809185	1634237544744	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	y3gdaobpdbrf3rbrdu3hgf1bfe	heart	1634133160432	1634237544783	0	
-s1m5hgt3o7f8tftf41n94ofp9r	uuf8n1rs13ffjqy3og5yarn3zo	-1	1634145302203	1634237544844	0	
-zbdgeaijh3fh9e3foqdts6i5wh	uuf8n1rs13ffjqy3og5yarn3zo	blush	1634145283179	1634237544861	0	
-j78juejgzby8x8cj8f89mtq4bh	4mtw36b45i8fbr1yh4bmxper8y	heart	1634162077499	1634237544895	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	4mtw36b45i8fbr1yh4bmxper8y	heart	1634162081013	1634237544922	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	mf5fqbifaffo9kzs9azq4idiiw	blush	1634148927710	1634237545004	0	
-km1txe6kktdabdgyuhwru7r9ua	5dkcfr95bfy6bjusdje5dt1mhr	blush	1634140724604	1634237545095	0	
-1jcrg4b4upf67kbexsxyyiamqa	tkxi5fb9apn8fe9oya6wkbpape	blush	1634161333395	1634237545123	0	
-a9quakcmbjys3ego1myciaoi8h	tkxi5fb9apn8fe9oya6wkbpape	blush	1634161325482	1634237545173	0	
-x4kiax5uy3n3pjkk6xyic5i98a	hhjdem8b9td6ufez634cisw6kw	+1	1634123263529	1634237545243	0	
-km1txe6kktdabdgyuhwru7r9ua	zf78fbgzg38sd84kxczd9byrzr	heart	1634154189212	1634237545423	0	
-poqpi8xhfjdszcmgmjboqzwcir	sopn9g5o67g6udoqgsso9xiahw	+1	1634135319914	1634237545717	0	
-4f4g78ewrfys8b68j456o5nxkr	jbwjwj5tp3fabeojha71w5nxky	blush	1634157107729	1634237545753	0	
-km1txe6kktdabdgyuhwru7r9ua	d13au8yjs7deprtxtn7i7grfde	blush	1634127747702	1634237545821	0	
-iet7jkwex3bjjbg38ewup9br7e	x8o6543sa7rbugch34ybnbzaar	+1	1634140649528	1634237545845	0	
-s1m5hgt3o7f8tftf41n94ofp9r	goymuyxzcif67ksayzmbw99s9a	heart	1634149416039	1634237545908	0	
-4f4g78ewrfys8b68j456o5nxkr	an5i8p74mfbpjytuftd8nb9ccy	+1	1634142593439	1634237545977	0	
-s1m5hgt3o7f8tftf41n94ofp9r	f9mj68ft3bbz5byuggrwhxnicr	+1	1634144903578	1634237546071	0	
-x4kiax5uy3n3pjkk6xyic5i98a	4uwaine9kibtpqeu7ze7a9uqgc	-1	1634144233321	1634237546106	0	
-j78juejgzby8x8cj8f89mtq4bh	gof8chhf8fdttkpmhzqgc4zufh	+1	1634142837570	1634237543825	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	in9hpufj3by9uq4oqtsq3rgfky	heart	1634131774958	1634237543836	0	
-1jcrg4b4upf67kbexsxyyiamqa	mejkmf3gnpgemmjo9f6b7ogigo	-1	1634140824149	1634237543861	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	in9hpufj3by9uq4oqtsq3rgfky	-1	1634131774851	1634237543867	0	
-x4kiax5uy3n3pjkk6xyic5i98a	ci9dskfgib8kim17qh85nk35zy	heart	1634157974508	1634237543907	0	
-s1m5hgt3o7f8tftf41n94ofp9r	8ei9p3p3i3yhme7zha7u9rmakc	heart	1634130549074	1634237544001	0	
-iet7jkwex3bjjbg38ewup9br7e	9p635k74digqpr1qaubfybcc1r	blush	1634152931358	1634237544078	0	
-s1m5hgt3o7f8tftf41n94ofp9r	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137187812	1634237544100	0	
-a9quakcmbjys3ego1myciaoi8h	d1qhoxtwxjfjfj5edwbssan83w	heart	1634131132100	1634237544145	0	
-iet7jkwex3bjjbg38ewup9br7e	bqpad1wkqjbgfyoe3k31ccfurh	blush	1634150717318	1634237544186	0	
-a9quakcmbjys3ego1myciaoi8h	koawm53o3jff8f16jot8jtutph	heart	1634126291398	1634237544226	0	
-a4emb3hsdjn7pk6s5crpdmokaw	yf7qa6xa6ir9zbigq4fywnwshw	blush	1634166891805	1634237544239	0	
-g5x9y1ewypr4tr93whdcfby3xy	mcc8j8h5qtye5e44wh6zec54go	blush	1634136546875	1634237544255	0	
-poqpi8xhfjdszcmgmjboqzwcir	yf7qa6xa6ir9zbigq4fywnwshw	-1	1634166828661	1634237544278	0	
-g5x9y1ewypr4tr93whdcfby3xy	4ct5xmunsbb67dj8og3as5yd9w	-1	1634124703536	1634237544307	0	
-poqpi8xhfjdszcmgmjboqzwcir	sdc84x8a63d3tcjmi695mu4kxr	heart	1634153472984	1634237544324	0	
-gd6p49n1x3g3ic13taequwidya	cmuu6c9i97ysxkjwt7dkqyhb4o	heart	1634157827303	1634237544392	0	
-gd6p49n1x3g3ic13taequwidya	3i3eyckg6f8tbenuzh7y85645y	-1	1634134986006	1634237544481	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	bcmhudgqmigq5j3j4m9pjpxnjr	+1	1634130294089	1634237544494	0	
-poqpi8xhfjdszcmgmjboqzwcir	qghjz74xnfgrbdfz5jrpbe457e	heart	1634157523181	1634237544553	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	tt8kdigdabfudy1q5oa5d836mh	heart	1634161517327	1634237544668	0	
-1jcrg4b4upf67kbexsxyyiamqa	tt8kdigdabfudy1q5oa5d836mh	-1	1634161516437	1634237544688	0	
-a4emb3hsdjn7pk6s5crpdmokaw	tt8kdigdabfudy1q5oa5d836mh	+1	1634161585904	1634237544707	0	
-km1txe6kktdabdgyuhwru7r9ua	5ifbqsjd3tbw3xq75y7eincftw	+1	1634155098827	1634237544738	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	4mtw36b45i8fbr1yh4bmxper8y	heart	1634162090275	1634237544751	0	
-iet7jkwex3bjjbg38ewup9br7e	xapkko9jtjr15ehq5zoc98cfqa	blush	1634150539526	1634237544870	0	
-km1txe6kktdabdgyuhwru7r9ua	bsp4btb7mpnc8fhxt6th6f9qhc	+1	1634150177597	1634237544992	0	
-4f4g78ewrfys8b68j456o5nxkr	c4nrhchf3igdmnz813khbwr5no	+1	1634149165793	1634237545074	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	89esbkz8ifdoxquhguapqbizbr	heart	1634125618954	1634237545100	0	
-a4emb3hsdjn7pk6s5crpdmokaw	za1nze98qbbe9fssm3kzuhg3ec	blush	1634134710611	1634237545193	0	
-1jcrg4b4upf67kbexsxyyiamqa	hbjukm3r5jb8zduecs7oa99n8c	-1	1634128351025	1634237545264	0	
-gd6p49n1x3g3ic13taequwidya	tkxi5fb9apn8fe9oya6wkbpape	blush	1634161339522	1634237545307	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	xeqg1dxcejdfbpy1byriiz3juc	+1	1634153243961	1634237545391	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	eoz3pdrudj817fyp7x5xutfh9h	blush	1634141718614	1634237545559	0	
-iet7jkwex3bjjbg38ewup9br7e	sopn9g5o67g6udoqgsso9xiahw	+1	1634135286992	1634237545737	0	
-a9quakcmbjys3ego1myciaoi8h	48h4a43mxiyouq18hyypzmxfky	-1	1634146399806	1634237545761	0	
-gd6p49n1x3g3ic13taequwidya	goymuyxzcif67ksayzmbw99s9a	-1	1634149387551	1634237545943	0	
-j78juejgzby8x8cj8f89mtq4bh	f9mj68ft3bbz5byuggrwhxnicr	+1	1634144984983	1634237546106	0	
-a4emb3hsdjn7pk6s5crpdmokaw	t9aq6ctrd7byigasg8u3wj1j5h	heart	1634137774156	1634237548140	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	g7s7dpg4yin5tx75hapjj9nioc	heart	1634159285849	1634237548176	0	
-km1txe6kktdabdgyuhwru7r9ua	bbo8yzc5f3dg7m19b53wd5zn3h	+1	1634162951978	1634237548462	0	
-zbdgeaijh3fh9e3foqdts6i5wh	fodny6pxopb7trfq8x19xcz6hy	heart	1634144957757	1634237548658	0	
-gd6p49n1x3g3ic13taequwidya	5gigp58xgjrc9rtbjadmkwk67a	blush	1634132965695	1634237543783	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137237770	1634237543918	0	
-km1txe6kktdabdgyuhwru7r9ua	cbze15n3jiy6pxxzmhy79ngt3c	-1	1634123432679	1634237543977	0	
-g5x9y1ewypr4tr93whdcfby3xy	tenhb49jw7g7fjnjjpd4xm94ih	heart	1634148772980	1634237543989	0	
-gd6p49n1x3g3ic13taequwidya	uhc7w6qoctn8tpzsndemxyo8dh	blush	1634123500463	1634237544085	0	
-poqpi8xhfjdszcmgmjboqzwcir	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137218842	1634237544165	0	
-4f4g78ewrfys8b68j456o5nxkr	mcc8j8h5qtye5e44wh6zec54go	blush	1634136611039	1634237544239	0	
-iet7jkwex3bjjbg38ewup9br7e	4ct5xmunsbb67dj8og3as5yd9w	heart	1634124689101	1634237544269	0	
-4f4g78ewrfys8b68j456o5nxkr	sdc84x8a63d3tcjmi695mu4kxr	-1	1634153456847	1634237544345	0	
-j78juejgzby8x8cj8f89mtq4bh	rizrkbj69bbz8dcgt3jc7bxona	+1	1634136873281	1634237544473	0	
-s1m5hgt3o7f8tftf41n94ofp9r	we4e1a8aq78ujery9zggh9sd5w	-1	1634139167204	1634237544546	0	
-s1m5hgt3o7f8tftf41n94ofp9r	3k6zwzrojjf69mjadhyd1wegjh	heart	1634151703546	1634237544561	0	
-zbdgeaijh3fh9e3foqdts6i5wh	9g57ppmtkb84pcpyitsfue74ho	heart	1634148962233	1634237544606	0	
-gd6p49n1x3g3ic13taequwidya	tt8kdigdabfudy1q5oa5d836mh	heart	1634161585851	1634237544623	0	
-s1m5hgt3o7f8tftf41n94ofp9r	3x4zf5uxdt8cur64htaxgnbzay	heart	1634149082534	1634237544663	0	
-a9quakcmbjys3ego1myciaoi8h	zhnduqtwkj85fkgef4mtgbfwzh	blush	1634139388454	1634237544703	0	
-g5x9y1ewypr4tr93whdcfby3xy	r8ez44dch7gq9rmwfuehop3ujw	+1	1634141792612	1634237544722	0	
-j78juejgzby8x8cj8f89mtq4bh	e97tjpksuifw9m9iy5kgem17wc	heart	1634140298739	1634237544796	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	qm8ddpoxctd1fffyeq5txhphjo	heart	1634165019683	1634237544808	0	
-a4emb3hsdjn7pk6s5crpdmokaw	b4ebn3gzqpgdtnbehcmnxtefyr	-1	1634136587412	1634237544850	0	
-x4kiax5uy3n3pjkk6xyic5i98a	c4nrhchf3igdmnz813khbwr5no	+1	1634149151952	1634237545001	0	
-s1m5hgt3o7f8tftf41n94ofp9r	bsp4btb7mpnc8fhxt6th6f9qhc	blush	1634150169692	1634237545014	0	
-a4emb3hsdjn7pk6s5crpdmokaw	mf5fqbifaffo9kzs9azq4idiiw	heart	1634148983127	1634237545037	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	c4nrhchf3igdmnz813khbwr5no	blush	1634149115806	1634237545055	0	
-a4emb3hsdjn7pk6s5crpdmokaw	1b3oej98htd5bggxahsbamr1ga	-1	1634144201299	1634237545109	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	c4nrhchf3igdmnz813khbwr5no	heart	1634149070654	1634237545136	0	
-a9quakcmbjys3ego1myciaoi8h	456xgu7nubfabjobmjas8pja1c	blush	1634131686982	1634237545194	0	
-x4kiax5uy3n3pjkk6xyic5i98a	za1nze98qbbe9fssm3kzuhg3ec	heart	1634134724581	1634237545210	0	
-1jcrg4b4upf67kbexsxyyiamqa	werqk6f3w7dg8rsnhbxbynb79w	heart	1634136561139	1634237545296	0	
-zbdgeaijh3fh9e3foqdts6i5wh	64ob548y4tfjikz6od5es4yofy	-1	1634123380122	1634237545317	0	
-iet7jkwex3bjjbg38ewup9br7e	xt973f5hq3ykf8h1ti8orpnn4h	+1	1634165825179	1634237545335	0	
-x4kiax5uy3n3pjkk6xyic5i98a	xt973f5hq3ykf8h1ti8orpnn4h	+1	1634165812250	1634237545427	0	
-a9quakcmbjys3ego1myciaoi8h	qctp7ct9j3rx7nhk7i8yo661oa	-1	1634147543173	1634237545453	0	
-g5x9y1ewypr4tr93whdcfby3xy	x8o6543sa7rbugch34ybnbzaar	-1	1634140575205	1634237545892	0	
-a4emb3hsdjn7pk6s5crpdmokaw	7udcrjfmtf8yfctw4hi54zdccc	+1	1634156489416	1634237545993	0	
-a9quakcmbjys3ego1myciaoi8h	f9mj68ft3bbz5byuggrwhxnicr	+1	1634144906094	1634237546027	0	
-g5x9y1ewypr4tr93whdcfby3xy	atti9diketdnif8m9963kjio4w	blush	1634152093336	1634237546124	0	
-g5x9y1ewypr4tr93whdcfby3xy	kbng7if5pigefphbiufojyxnnr	+1	1634124166996	1634237548396	0	
-gd6p49n1x3g3ic13taequwidya	gof8chhf8fdttkpmhzqgc4zufh	+1	1634142796945	1634237543784	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	877esotrb78rxgekesee793aba	+1	1634146803525	1634237543814	0	
-km1txe6kktdabdgyuhwru7r9ua	edbsrayjrtftxju3fso661u9xc	heart	1634156326788	1634237543837	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	peqykb99m7yixgksk1funitwqo	-1	1634136448195	1634237543865	0	
-gd6p49n1x3g3ic13taequwidya	yqomjszazfng8xc838ree8mexh	heart	1634163404263	1634237543922	0	
-a9quakcmbjys3ego1myciaoi8h	f77k8reqd7r15e6ceuwxrx9icw	+1	1634144406607	1634237543948	0	
-iet7jkwex3bjjbg38ewup9br7e	5qkb17jrcfr4mq3zmowksofuur	heart	1634126177909	1634237543999	0	
-g5x9y1ewypr4tr93whdcfby3xy	8gxgaw3ksbniifmpr93ugwdjte	+1	1634151340292	1634237544042	0	
-zbdgeaijh3fh9e3foqdts6i5wh	8jm1enmb978jmb94jjmeh3dunh	+1	1634134006197	1634237544054	0	
-a4emb3hsdjn7pk6s5crpdmokaw	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137252725	1634237544067	0	
-a4emb3hsdjn7pk6s5crpdmokaw	37r7h451tjfkd8ybtugjk5zh9y	heart	1634149207394	1634237544164	0	
-4f4g78ewrfys8b68j456o5nxkr	bp6z768cyib6xfarr5uo4fpwuc	-1	1634151857511	1634237544182	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	bqpad1wkqjbgfyoe3k31ccfurh	+1	1634150714552	1634237544210	0	
-j78juejgzby8x8cj8f89mtq4bh	hochpmbfjjytfno7inpb4xkx9e	-1	1634139828476	1634237544374	0	
-iet7jkwex3bjjbg38ewup9br7e	wtmzj9iu9tdc3rttrp8ouc4ypc	+1	1634162710909	1634237544403	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	sxizqu6tbjysfduh3hgyh6h73c	-1	1634130265558	1634237544432	0	
-a9quakcmbjys3ego1myciaoi8h	bcmhudgqmigq5j3j4m9pjpxnjr	heart	1634130262816	1634237544514	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124639502	1634237544545	0	
-iet7jkwex3bjjbg38ewup9br7e	qthsywnztjd7dmbirp81ewg4ce	-1	1634128946673	1634237544634	0	
-j78juejgzby8x8cj8f89mtq4bh	e84t61ojqtdz5f6wxk3zew8srw	+1	1634125125809	1634237544747	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	4mtw36b45i8fbr1yh4bmxper8y	+1	1634162068195	1634237544789	0	
-km1txe6kktdabdgyuhwru7r9ua	hanpye6mgtrrpe3gpf7yqx9jgo	blush	1634157588927	1634237544938	0	
-a4emb3hsdjn7pk6s5crpdmokaw	bc83ggiyn3nimj4mgk1nw4zpfe	+1	1634132209985	1634237544961	0	
-zbdgeaijh3fh9e3foqdts6i5wh	x3t5j111hjgb5cbyw6zc7e3m4c	+1	1634165327039	1634237544973	0	
-a4emb3hsdjn7pk6s5crpdmokaw	uuf8n1rs13ffjqy3og5yarn3zo	+1	1634145298372	1634237544990	0	
-x4kiax5uy3n3pjkk6xyic5i98a	bk5fbwenxpy3deo5swwd5sog3w	blush	1634146723629	1634237545035	0	
-a4emb3hsdjn7pk6s5crpdmokaw	eo5mdm8njbb7fqji9wy93j3n5h	blush	1634160286244	1634237545192	0	
-zbdgeaijh3fh9e3foqdts6i5wh	4kqmxdgm87rkxr5ii53y1se9ww	+1	1634155084918	1634237545280	0	
-km1txe6kktdabdgyuhwru7r9ua	zf78fbgzg38sd84kxczd9byrzr	-1	1634154206231	1634237545296	0	
-4f4g78ewrfys8b68j456o5nxkr	c99g9xiu1tn6zraboemjrofogr	+1	1634128425536	1634237545362	0	
-zbdgeaijh3fh9e3foqdts6i5wh	znkscgxugjycjb4t1ed544tste	-1	1634120949840	1634237545425	0	
-a4emb3hsdjn7pk6s5crpdmokaw	1oaiwaxtm7bexyhczj8jyoq5rr	+1	1634150471254	1634237545568	0	
-km1txe6kktdabdgyuhwru7r9ua	x8o6543sa7rbugch34ybnbzaar	-1	1634140607227	1634237545829	0	
-km1txe6kktdabdgyuhwru7r9ua	f9mj68ft3bbz5byuggrwhxnicr	blush	1634144904526	1634237546098	0	
-iet7jkwex3bjjbg38ewup9br7e	tr56n83nbprwbxuntmsferhjrc	+1	1634158378522	1634237548295	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	co4nsin7tprqicjeo3ogfwwohy	heart	1634164703935	1634237550407	0	
-s1m5hgt3o7f8tftf41n94ofp9r	ur6pr9awkiy93d9exgieen544w	+1	1634149193534	1634237550563	0	
-4f4g78ewrfys8b68j456o5nxkr	767sd3xc7jfbdx19f67ox99fjr	heart	1634129114174	1634237550581	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	epfzusjsxpni7ccqso96nmxswe	+1	1634134844254	1634237550665	0	
-x4kiax5uy3n3pjkk6xyic5i98a	pncwu7ko4f89fj5yubj1si66qo	heart	1634168433998	1634237550797	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	hayy3iys8bbcmcibuwfz15kjce	-1	1634147864587	1634237550820	0	
-a4emb3hsdjn7pk6s5crpdmokaw	udxqqa5jrfrzunerrmqeg4th8w	heart	1634120848987	1634237550955	0	
-j78juejgzby8x8cj8f89mtq4bh	nbcgwc3y8tbzijyzyk5kc44gar	heart	1634167791530	1634237543787	0	
-a4emb3hsdjn7pk6s5crpdmokaw	gof8chhf8fdttkpmhzqgc4zufh	heart	1634142838597	1634237543802	0	
-4f4g78ewrfys8b68j456o5nxkr	mp7naqrjpffkzgf3b59p7wnxzc	+1	1634132431803	1634237543827	0	
-g5x9y1ewypr4tr93whdcfby3xy	r4bkym5nqfnw8efdj95pyqw5tr	heart	1634139769071	1634237543839	0	
-a9quakcmbjys3ego1myciaoi8h	yqomjszazfng8xc838ree8mexh	-1	1634163365842	1634237543853	0	
-s1m5hgt3o7f8tftf41n94ofp9r	scojipstsbyq5qnxid8rqyt8wc	+1	1634149980235	1634237543891	0	
-a9quakcmbjys3ego1myciaoi8h	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137193541	1634237543934	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	9p86nrdn5iy6ikbyy3ya89ab9o	+1	1634141137680	1634237543947	0	
-s1m5hgt3o7f8tftf41n94ofp9r	pmwpnxfoairmtg17qpp9wy35hc	blush	1634161613799	1634237544021	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137218987	1634237544085	0	
-zbdgeaijh3fh9e3foqdts6i5wh	w4i3zxdu9b8h9kzwxp8bcs7tyc	blush	1634139215119	1634237544156	0	
-g5x9y1ewypr4tr93whdcfby3xy	37r7h451tjfkd8ybtugjk5zh9y	blush	1634149207452	1634237544202	0	
-x4kiax5uy3n3pjkk6xyic5i98a	twsxff5iibdzjcjxgi88umhzxr	+1	1634159004070	1634237544300	0	
-s1m5hgt3o7f8tftf41n94ofp9r	yo18zumwnj8kpmzrzac4ntbkko	blush	1634166585052	1634237544367	0	
-s1m5hgt3o7f8tftf41n94ofp9r	j3qj9m7kk3897jerjb6or1z94a	-1	1634134898802	1634237544430	0	
-s1m5hgt3o7f8tftf41n94ofp9r	hwgyz4u64brg7rt9mwz6iqpawe	+1	1634162325371	1634237544484	0	
-1jcrg4b4upf67kbexsxyyiamqa	we4e1a8aq78ujery9zggh9sd5w	+1	1634139193563	1634237544513	0	
-iet7jkwex3bjjbg38ewup9br7e	3i3eyckg6f8tbenuzh7y85645y	heart	1634134922290	1634237544557	0	
-x4kiax5uy3n3pjkk6xyic5i98a	3k6zwzrojjf69mjadhyd1wegjh	heart	1634151695901	1634237544575	0	
-iet7jkwex3bjjbg38ewup9br7e	tt8kdigdabfudy1q5oa5d836mh	-1	1634161570074	1634237544740	0	
-km1txe6kktdabdgyuhwru7r9ua	5ifbqsjd3tbw3xq75y7eincftw	blush	1634155138897	1634237544757	0	
-4f4g78ewrfys8b68j456o5nxkr	5ifbqsjd3tbw3xq75y7eincftw	heart	1634155154044	1634237544777	0	
-x4kiax5uy3n3pjkk6xyic5i98a	uuf8n1rs13ffjqy3og5yarn3zo	heart	1634145309786	1634237544950	0	
-poqpi8xhfjdszcmgmjboqzwcir	8zib9widubre5eqwynbrnmrq5c	heart	1634151133415	1634237545026	0	
-a4emb3hsdjn7pk6s5crpdmokaw	89esbkz8ifdoxquhguapqbizbr	blush	1634125590811	1634237545115	0	
-gd6p49n1x3g3ic13taequwidya	tkxi5fb9apn8fe9oya6wkbpape	heart	1634161298786	1634237545206	0	
-x4kiax5uy3n3pjkk6xyic5i98a	eo5mdm8njbb7fqji9wy93j3n5h	-1	1634160313207	1634237545227	0	
-a9quakcmbjys3ego1myciaoi8h	xt973f5hq3ykf8h1ti8orpnn4h	+1	1634165823019	1634237545289	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	werqk6f3w7dg8rsnhbxbynb79w	heart	1634136586949	1634237545317	0	
-a4emb3hsdjn7pk6s5crpdmokaw	zf78fbgzg38sd84kxczd9byrzr	heart	1634154165370	1634237545344	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	cmbfhdjdibfhpr7qyg49kru8dc	blush	1634166103656	1634237545370	0	
-s1m5hgt3o7f8tftf41n94ofp9r	zf78fbgzg38sd84kxczd9byrzr	heart	1634154158094	1634237545384	0	
-a4emb3hsdjn7pk6s5crpdmokaw	6zmn4mki4bbcdqrzpe7xiykpxw	-1	1634165964188	1634237545513	0	
-g5x9y1ewypr4tr93whdcfby3xy	1oaiwaxtm7bexyhczj8jyoq5rr	-1	1634150416740	1634237545546	0	
-j78juejgzby8x8cj8f89mtq4bh	9s44hxwmbpn6ufh5tghgyiotyc	heart	1634138501862	1634237545596	0	
-zbdgeaijh3fh9e3foqdts6i5wh	jbwjwj5tp3fabeojha71w5nxky	blush	1634157131952	1634237545775	0	
-iet7jkwex3bjjbg38ewup9br7e	tzn441x4gtngmp8bemxz7bcrrh	+1	1634168805415	1634237545820	0	
-4f4g78ewrfys8b68j456o5nxkr	goymuyxzcif67ksayzmbw99s9a	+1	1634149381350	1634237545925	0	
-zbdgeaijh3fh9e3foqdts6i5wh	an5i8p74mfbpjytuftd8nb9ccy	blush	1634142605351	1634237545961	0	
-gd6p49n1x3g3ic13taequwidya	f9mj68ft3bbz5byuggrwhxnicr	+1	1634144994430	1634237546115	0	
-g5x9y1ewypr4tr93whdcfby3xy	r8ur5gcxzpg1tq9er3kxw3f4hw	+1	1634143412119	1634237548142	0	
-x4kiax5uy3n3pjkk6xyic5i98a	ehogqgsxyifc3y8eacobnh4gtc	-1	1634149086359	1634237548275	0	
-iet7jkwex3bjjbg38ewup9br7e	tr56n83nbprwbxuntmsferhjrc	-1	1634158397323	1634237548314	0	
-poqpi8xhfjdszcmgmjboqzwcir	tr56n83nbprwbxuntmsferhjrc	heart	1634158371794	1634237548332	0	
-iet7jkwex3bjjbg38ewup9br7e	nnpqmb1eyfne7jnrot5aobhbch	blush	1634126575549	1634237548621	0	
-zbdgeaijh3fh9e3foqdts6i5wh	fodny6pxopb7trfq8x19xcz6hy	+1	1634144920573	1634237548691	0	
-4f4g78ewrfys8b68j456o5nxkr	zr5o4ekew3fy5kgmsrt3tm6wna	blush	1634163581901	1634237548805	0	
-x4kiax5uy3n3pjkk6xyic5i98a	nsdpxe79zbbb8eq6p9rj51h1ja	+1	1634121746176	1634237548915	0	
-a4emb3hsdjn7pk6s5crpdmokaw	in9hpufj3by9uq4oqtsq3rgfky	-1	1634131808639	1634237543801	0	
-g5x9y1ewypr4tr93whdcfby3xy	jdquu7m9g7gqijzd3erhprt9mh	+1	1634137239502	1634237543814	0	
-s1m5hgt3o7f8tftf41n94ofp9r	nbcgwc3y8tbzijyzyk5kc44gar	blush	1634167838465	1634237543827	0	
-a9quakcmbjys3ego1myciaoi8h	w1za4ojq1pd1zk41r1ae7twhma	blush	1634160986274	1634237543838	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	scojipstsbyq5qnxid8rqyt8wc	blush	1634149971655	1634237543864	0	
-x4kiax5uy3n3pjkk6xyic5i98a	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137260656	1634237543902	0	
-j78juejgzby8x8cj8f89mtq4bh	mejkmf3gnpgemmjo9f6b7ogigo	-1	1634140746615	1634237543918	0	
-j78juejgzby8x8cj8f89mtq4bh	nbcgwc3y8tbzijyzyk5kc44gar	blush	1634167814686	1634237543933	0	
-zbdgeaijh3fh9e3foqdts6i5wh	jdquu7m9g7gqijzd3erhprt9mh	heart	1634137196891	1634237543994	0	
-a4emb3hsdjn7pk6s5crpdmokaw	5wtcewdkk3rbdqpyr1kuc41hrw	blush	1634159269966	1634237544014	0	
-s1m5hgt3o7f8tftf41n94ofp9r	tenhb49jw7g7fjnjjpd4xm94ih	+1	1634148761250	1634237544075	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	8jm1enmb978jmb94jjmeh3dunh	blush	1634134004123	1634237544089	0	
-km1txe6kktdabdgyuhwru7r9ua	9eiyk4b5apd5be98bike6myp6r	blush	1634141381855	1634237544148	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	7n761cmdd7bfmngocrc87a7nga	+1	1634159639358	1634237544327	0	
-4f4g78ewrfys8b68j456o5nxkr	twsxff5iibdzjcjxgi88umhzxr	+1	1634158996323	1634237544380	0	
-4f4g78ewrfys8b68j456o5nxkr	33z7714offnm9nf3abth1m4sza	heart	1634150277438	1634237544394	0	
-a9quakcmbjys3ego1myciaoi8h	4ct5xmunsbb67dj8og3as5yd9w	-1	1634124704924	1634237544405	0	
-g5x9y1ewypr4tr93whdcfby3xy	rizrkbj69bbz8dcgt3jc7bxona	-1	1634136862896	1634237544439	0	
-s1m5hgt3o7f8tftf41n94ofp9r	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124723454	1634237544454	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	hwgyz4u64brg7rt9mwz6iqpawe	+1	1634162398387	1634237544465	0	
-a9quakcmbjys3ego1myciaoi8h	rt7t9i8rx7b6xq5c931ygc7o1h	+1	1634162320645	1634237544476	0	
-a4emb3hsdjn7pk6s5crpdmokaw	4ct5xmunsbb67dj8og3as5yd9w	+1	1634124630306	1634237544527	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	tubo8sqpb7dhddjz3c6x3hp67a	heart	1634146676686	1634237544594	0	
-4f4g78ewrfys8b68j456o5nxkr	gerkwe14ntrbdj5hptcj8uaasr	-1	1634138362329	1634237544607	0	
-s1m5hgt3o7f8tftf41n94ofp9r	is378kzboirm3d3p5jjr3y1hsh	-1	1634142771256	1634237544730	0	
-x4kiax5uy3n3pjkk6xyic5i98a	ahusnemg9t8gxruqp5qofwbd4e	-1	1634169482512	1634237544888	0	
-a4emb3hsdjn7pk6s5crpdmokaw	bc83ggiyn3nimj4mgk1nw4zpfe	heart	1634132302561	1634237544924	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	uuf8n1rs13ffjqy3og5yarn3zo	heart	1634145312545	1634237544935	0	
-j78juejgzby8x8cj8f89mtq4bh	tkxi5fb9apn8fe9oya6wkbpape	+1	1634161336583	1634237545140	0	
-s1m5hgt3o7f8tftf41n94ofp9r	c4nrhchf3igdmnz813khbwr5no	blush	1634149121595	1634237545153	0	
-j78juejgzby8x8cj8f89mtq4bh	c4nrhchf3igdmnz813khbwr5no	-1	1634149068685	1634237545176	0	
-x4kiax5uy3n3pjkk6xyic5i98a	w63jgagr6bfftgfz96w7mz6j1e	+1	1634135624838	1634237545333	0	
-g5x9y1ewypr4tr93whdcfby3xy	znkscgxugjycjb4t1ed544tste	blush	1634121013464	1634237545441	0	
-g5x9y1ewypr4tr93whdcfby3xy	d13au8yjs7deprtxtn7i7grfde	blush	1634127839456	1634237545854	0	
-s1m5hgt3o7f8tftf41n94ofp9r	mejkmf3gnpgemmjo9f6b7ogigo	+1	1634140776910	1634237543804	0	
-4f4g78ewrfys8b68j456o5nxkr	gof8chhf8fdttkpmhzqgc4zufh	-1	1634142767461	1634237543861	0	
-s1m5hgt3o7f8tftf41n94ofp9r	in9hpufj3by9uq4oqtsq3rgfky	heart	1634131746126	1634237543883	0	
-iet7jkwex3bjjbg38ewup9br7e	w4i3zxdu9b8h9kzwxp8bcs7tyc	-1	1634139202558	1634237544112	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	e7h666qr5pdqxrpwmq9timypsa	blush	1634122697753	1634237544138	0	
-s1m5hgt3o7f8tftf41n94ofp9r	uhc7w6qoctn8tpzsndemxyo8dh	heart	1634123452171	1634237544181	0	
-a4emb3hsdjn7pk6s5crpdmokaw	eoqgp5ki9ibotg7dpt5dsw7e7c	blush	1634159058980	1634237544218	0	
-zbdgeaijh3fh9e3foqdts6i5wh	mcc8j8h5qtye5e44wh6zec54go	-1	1634136535691	1634237544272	0	
-a9quakcmbjys3ego1myciaoi8h	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124688768	1634237544291	0	
-iet7jkwex3bjjbg38ewup9br7e	ojusrexwxbbuzennunq4mwksir	blush	1634143508757	1634237544374	0	
-a4emb3hsdjn7pk6s5crpdmokaw	rizrkbj69bbz8dcgt3jc7bxona	blush	1634136838935	1634237544459	0	
-s1m5hgt3o7f8tftf41n94ofp9r	sxizqu6tbjysfduh3hgyh6h73c	blush	1634130258230	1634237544478	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	we4e1a8aq78ujery9zggh9sd5w	blush	1634139154667	1634237544493	0	
-zbdgeaijh3fh9e3foqdts6i5wh	gerkwe14ntrbdj5hptcj8uaasr	+1	1634138435139	1634237544623	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	gerkwe14ntrbdj5hptcj8uaasr	+1	1634138448524	1634237544646	0	
-4f4g78ewrfys8b68j456o5nxkr	e84t61ojqtdz5f6wxk3zew8srw	+1	1634125055952	1634237544730	0	
-gd6p49n1x3g3ic13taequwidya	is378kzboirm3d3p5jjr3y1hsh	+1	1634142786161	1634237544749	0	
-x4kiax5uy3n3pjkk6xyic5i98a	4mtw36b45i8fbr1yh4bmxper8y	+1	1634162070585	1634237544770	0	
-j78juejgzby8x8cj8f89mtq4bh	4mtw36b45i8fbr1yh4bmxper8y	+1	1634162019384	1634237544860	0	
-a9quakcmbjys3ego1myciaoi8h	opm6nm5jkt8xtytdurs8et93sr	blush	1634159630442	1634237544869	0	
-poqpi8xhfjdszcmgmjboqzwcir	uuf8n1rs13ffjqy3og5yarn3zo	-1	1634145314666	1634237544973	0	
-g5x9y1ewypr4tr93whdcfby3xy	tp3zmm7o8pfq5ji1tmnjrkq1kh	-1	1634158237774	1634237545093	0	
-zbdgeaijh3fh9e3foqdts6i5wh	456xgu7nubfabjobmjas8pja1c	heart	1634131727879	1634237545168	0	
-4f4g78ewrfys8b68j456o5nxkr	owqdaoqappgn3r3mc77xmbtqxy	heart	1634138372318	1634237545251	0	
-4f4g78ewrfys8b68j456o5nxkr	64ob548y4tfjikz6od5es4yofy	-1	1634123380546	1634237545339	0	
-a9quakcmbjys3ego1myciaoi8h	zf78fbgzg38sd84kxczd9byrzr	-1	1634154188697	1634237545366	0	
-zbdgeaijh3fh9e3foqdts6i5wh	w63jgagr6bfftgfz96w7mz6j1e	blush	1634135708962	1634237545380	0	
-g5x9y1ewypr4tr93whdcfby3xy	33t8ktjnybfgiegzsiabnzu4ua	-1	1634167732044	1634237545439	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	xt973f5hq3ykf8h1ti8orpnn4h	heart	1634165753655	1634237545467	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	znkscgxugjycjb4t1ed544tste	blush	1634120955260	1634237545483	0	
-a4emb3hsdjn7pk6s5crpdmokaw	sopn9g5o67g6udoqgsso9xiahw	blush	1634135251486	1634237545776	0	
-zbdgeaijh3fh9e3foqdts6i5wh	x8o6543sa7rbugch34ybnbzaar	blush	1634140665110	1634237545861	0	
-poqpi8xhfjdszcmgmjboqzwcir	7udcrjfmtf8yfctw4hi54zdccc	-1	1634156553940	1634237545957	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	an5i8p74mfbpjytuftd8nb9ccy	blush	1634142561188	1634237545997	0	
-x4kiax5uy3n3pjkk6xyic5i98a	spsyzaibab867qgbhedy4oeoih	blush	1634123129905	1634237548652	0	
-x4kiax5uy3n3pjkk6xyic5i98a	nsdpxe79zbbb8eq6p9rj51h1ja	heart	1634121815289	1634237548903	0	
-iet7jkwex3bjjbg38ewup9br7e	mpm7dkg44py49bnhpagjbmgway	+1	1634122497194	1634237550171	0	
-zbdgeaijh3fh9e3foqdts6i5wh	mmhprpianjgj7839stg6zo3ype	blush	1634130038723	1634237550308	0	
-a4emb3hsdjn7pk6s5crpdmokaw	co4nsin7tprqicjeo3ogfwwohy	+1	1634164732443	1634237550393	0	
-poqpi8xhfjdszcmgmjboqzwcir	xjymds54ajgwixck8uw98wd6pc	+1	1634123228952	1634237550780	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	6a5q1cj57pdo8fo31x37ztp9zh	heart	1634164315175	1634237550841	0	
-a4emb3hsdjn7pk6s5crpdmokaw	udxqqa5jrfrzunerrmqeg4th8w	-1	1634120869170	1634237550968	0	
-a4emb3hsdjn7pk6s5crpdmokaw	dxgy6p7gf7yyfykq7ftf9i6hyc	blush	1634145649627	1634237543806	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	mejkmf3gnpgemmjo9f6b7ogigo	-1	1634140775098	1634237543821	0	
-4f4g78ewrfys8b68j456o5nxkr	877esotrb78rxgekesee793aba	-1	1634146799993	1634237543837	0	
-a4emb3hsdjn7pk6s5crpdmokaw	crqacca467frxmhcb7canyghaw	blush	1634134770515	1634237543871	0	
-gd6p49n1x3g3ic13taequwidya	mejkmf3gnpgemmjo9f6b7ogigo	heart	1634140774377	1634237543884	0	
-a4emb3hsdjn7pk6s5crpdmokaw	gof8chhf8fdttkpmhzqgc4zufh	blush	1634142785447	1634237543898	0	
-zbdgeaijh3fh9e3foqdts6i5wh	3b4ibf6sf3yhiq31nak791kt4w	heart	1634127439891	1634237543921	0	
-iet7jkwex3bjjbg38ewup9br7e	5wtcewdkk3rbdqpyr1kuc41hrw	blush	1634159216851	1634237543995	0	
-g5x9y1ewypr4tr93whdcfby3xy	8jm1enmb978jmb94jjmeh3dunh	+1	1634134008448	1634237544071	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	x89m7tkesty59b65rdzerhknky	blush	1634125830324	1634237544100	0	
-s1m5hgt3o7f8tftf41n94ofp9r	wrxnddiazp8ezr9ain1431a49w	-1	1634141593727	1634237544174	0	
-s1m5hgt3o7f8tftf41n94ofp9r	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137274197	1634237544202	0	
-j78juejgzby8x8cj8f89mtq4bh	twsxff5iibdzjcjxgi88umhzxr	blush	1634158948811	1634237544336	0	
-g5x9y1ewypr4tr93whdcfby3xy	ojusrexwxbbuzennunq4mwksir	blush	1634143486842	1634237544355	0	
-poqpi8xhfjdszcmgmjboqzwcir	we4e1a8aq78ujery9zggh9sd5w	+1	1634139155230	1634237544566	0	
-4f4g78ewrfys8b68j456o5nxkr	bcmhudgqmigq5j3j4m9pjpxnjr	heart	1634130332655	1634237544579	0	
-g5x9y1ewypr4tr93whdcfby3xy	bcmhudgqmigq5j3j4m9pjpxnjr	heart	1634130292411	1634237544595	0	
-1jcrg4b4upf67kbexsxyyiamqa	r8ez44dch7gq9rmwfuehop3ujw	-1	1634141809651	1634237544686	0	
-j78juejgzby8x8cj8f89mtq4bh	is378kzboirm3d3p5jjr3y1hsh	-1	1634142840998	1634237544713	0	
-4f4g78ewrfys8b68j456o5nxkr	puxhixta6fg78r6it756fibjqh	heart	1634119788064	1634237544778	0	
-a9quakcmbjys3ego1myciaoi8h	cpm9ekzb7pnijnxhwqk9uk6x1w	+1	1634168980154	1634237544817	0	
-a4emb3hsdjn7pk6s5crpdmokaw	qm8ddpoxctd1fffyeq5txhphjo	heart	1634165000220	1634237544847	0	
-j78juejgzby8x8cj8f89mtq4bh	j1pq35r67fgn5je4cg5y6uhd9a	heart	1634147138199	1634237544856	0	
-km1txe6kktdabdgyuhwru7r9ua	4mtw36b45i8fbr1yh4bmxper8y	blush	1634162070957	1634237544939	0	
-g5x9y1ewypr4tr93whdcfby3xy	x3t5j111hjgb5cbyw6zc7e3m4c	heart	1634165359704	1634237544952	0	
-1jcrg4b4upf67kbexsxyyiamqa	8g6176q1a3r57ga1re1rni9qor	blush	1634166357600	1634237544966	0	
-zbdgeaijh3fh9e3foqdts6i5wh	tkxi5fb9apn8fe9oya6wkbpape	+1	1634161314139	1634237545107	0	
-g5x9y1ewypr4tr93whdcfby3xy	c4nrhchf3igdmnz813khbwr5no	-1	1634149129209	1634237545120	0	
-gd6p49n1x3g3ic13taequwidya	456xgu7nubfabjobmjas8pja1c	-1	1634131722976	1634237545211	0	
-a4emb3hsdjn7pk6s5crpdmokaw	za1nze98qbbe9fssm3kzuhg3ec	+1	1634134758532	1634237545227	0	
-a4emb3hsdjn7pk6s5crpdmokaw	4kqmxdgm87rkxr5ii53y1se9ww	+1	1634155160001	1634237545261	0	
-iet7jkwex3bjjbg38ewup9br7e	tkxi5fb9apn8fe9oya6wkbpape	+1	1634161291834	1634237545267	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	64ob548y4tfjikz6od5es4yofy	+1	1634123300469	1634237545296	0	
-s1m5hgt3o7f8tftf41n94ofp9r	xt973f5hq3ykf8h1ti8orpnn4h	-1	1634165779072	1634237545311	0	
-a4emb3hsdjn7pk6s5crpdmokaw	dxcoi6tgeffcbnz1sk8tcz6bwy	heart	1634133512422	1634237545329	0	
-gd6p49n1x3g3ic13taequwidya	w63jgagr6bfftgfz96w7mz6j1e	+1	1634135635118	1634237545361	0	
-1jcrg4b4upf67kbexsxyyiamqa	c99g9xiu1tn6zraboemjrofogr	heart	1634128356257	1634237545415	0	
-poqpi8xhfjdszcmgmjboqzwcir	e8ij78nsc3ds9eh1q9x9tqke3a	heart	1634133633936	1634237545698	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	jbwjwj5tp3fabeojha71w5nxky	+1	1634157110428	1634237545730	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	sopn9g5o67g6udoqgsso9xiahw	-1	1634135259995	1634237545757	0	
-j78juejgzby8x8cj8f89mtq4bh	x8o6543sa7rbugch34ybnbzaar	+1	1634140612844	1634237545877	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	7udcrjfmtf8yfctw4hi54zdccc	heart	1634156504781	1634237545974	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	f9mj68ft3bbz5byuggrwhxnicr	-1	1634144959771	1634237546041	0	
-a9quakcmbjys3ego1myciaoi8h	edbsrayjrtftxju3fso661u9xc	+1	1634156359680	1634237543818	0	
-x4kiax5uy3n3pjkk6xyic5i98a	peqykb99m7yixgksk1funitwqo	-1	1634136469125	1634237543846	0	
-1jcrg4b4upf67kbexsxyyiamqa	r4bkym5nqfnw8efdj95pyqw5tr	heart	1634139802422	1634237543878	0	
-a4emb3hsdjn7pk6s5crpdmokaw	mejkmf3gnpgemmjo9f6b7ogigo	+1	1634140810708	1634237543901	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	ci9dskfgib8kim17qh85nk35zy	-1	1634158017837	1634237543924	0	
-a4emb3hsdjn7pk6s5crpdmokaw	5wtcewdkk3rbdqpyr1kuc41hrw	+1	1634159253440	1634237543957	0	
-gd6p49n1x3g3ic13taequwidya	5qkb17jrcfr4mq3zmowksofuur	heart	1634126241081	1634237543983	0	
-4f4g78ewrfys8b68j456o5nxkr	tenhb49jw7g7fjnjjpd4xm94ih	-1	1634148830995	1634237544042	0	
-a9quakcmbjys3ego1myciaoi8h	tenhb49jw7g7fjnjjpd4xm94ih	-1	1634148770537	1634237544057	0	
-4f4g78ewrfys8b68j456o5nxkr	9eiyk4b5apd5be98bike6myp6r	heart	1634141341555	1634237544131	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	bp6z768cyib6xfarr5uo4fpwuc	+1	1634151921947	1634237544163	0	
-x4kiax5uy3n3pjkk6xyic5i98a	rh1px4spyfr5mjq6jhbpjezzyc	heart	1634157318171	1634237544182	0	
-a9quakcmbjys3ego1myciaoi8h	rh1px4spyfr5mjq6jhbpjezzyc	-1	1634157304985	1634237544199	0	
-1jcrg4b4upf67kbexsxyyiamqa	dh16nsc6pi84jmcsojah7561te	-1	1634133754354	1634237544272	0	
-km1txe6kktdabdgyuhwru7r9ua	bcx8axyxat8qzqgnab87fyn6me	+1	1634141005484	1634237544326	0	
-1jcrg4b4upf67kbexsxyyiamqa	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124633052	1634237544349	0	
-x4kiax5uy3n3pjkk6xyic5i98a	cg1h9wjybbfwubwaab6jnfc4mw	heart	1634131510352	1634237544365	0	
-a4emb3hsdjn7pk6s5crpdmokaw	kbyosns5ktb5ube3rartwu9n8r	heart	1634152101495	1634237544426	0	
-a4emb3hsdjn7pk6s5crpdmokaw	twsxff5iibdzjcjxgi88umhzxr	-1	1634158933628	1634237544436	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	sxizqu6tbjysfduh3hgyh6h73c	heart	1634130214947	1634237544459	0	
-poqpi8xhfjdszcmgmjboqzwcir	yfrmqijxdi87udn915tsm3jkdy	heart	1634147574226	1634237544507	0	
-zbdgeaijh3fh9e3foqdts6i5wh	bcmhudgqmigq5j3j4m9pjpxnjr	blush	1634130330361	1634237544535	0	
-gd6p49n1x3g3ic13taequwidya	8f5adxz5kprgi894hew3mxik5e	blush	1634144046999	1634237544574	0	
-poqpi8xhfjdszcmgmjboqzwcir	tubo8sqpb7dhddjz3c6x3hp67a	blush	1634146628102	1634237544613	0	
-poqpi8xhfjdszcmgmjboqzwcir	c53en338t7dytxop9piaqzungo	heart	1634132810051	1634237544630	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	tt8kdigdabfudy1q5oa5d836mh	blush	1634161554134	1634237544760	0	
-a9quakcmbjys3ego1myciaoi8h	e97tjpksuifw9m9iy5kgem17wc	blush	1634140312064	1634237544817	0	
-1jcrg4b4upf67kbexsxyyiamqa	qm8ddpoxctd1fffyeq5txhphjo	heart	1634165021082	1634237544830	0	
-a4emb3hsdjn7pk6s5crpdmokaw	4j5bcjxubprp5ercj7syuzt7ya	blush	1634153087562	1634237544878	0	
-km1txe6kktdabdgyuhwru7r9ua	uuf8n1rs13ffjqy3og5yarn3zo	blush	1634145295359	1634237544912	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	bk5fbwenxpy3deo5swwd5sog3w	heart	1634146659235	1634237545017	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	8zib9widubre5eqwynbrnmrq5c	blush	1634151089149	1634237545045	0	
-x4kiax5uy3n3pjkk6xyic5i98a	r8tkqm7chtgct8uzk58qohnsro	-1	1634167489110	1634237545122	0	
-gd6p49n1x3g3ic13taequwidya	89esbkz8ifdoxquhguapqbizbr	-1	1634125563594	1634237545134	0	
-1jcrg4b4upf67kbexsxyyiamqa	tkxi5fb9apn8fe9oya6wkbpape	+1	1634161330260	1634237545190	0	
-gd6p49n1x3g3ic13taequwidya	eo5mdm8njbb7fqji9wy93j3n5h	blush	1634160292207	1634237545211	0	
-iet7jkwex3bjjbg38ewup9br7e	eoyumk7r5pnspfag8mqhfjd47o	heart	1634149936337	1634237545262	0	
-4f4g78ewrfys8b68j456o5nxkr	64ob548y4tfjikz6od5es4yofy	+1	1634123376638	1634237545277	0	
-a4emb3hsdjn7pk6s5crpdmokaw	w63jgagr6bfftgfz96w7mz6j1e	+1	1634135648356	1634237545423	0	
-1jcrg4b4upf67kbexsxyyiamqa	xt973f5hq3ykf8h1ti8orpnn4h	+1	1634165760769	1634237545486	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	jbwjwj5tp3fabeojha71w5nxky	heart	1634157143382	1634237545708	0	
-a9quakcmbjys3ego1myciaoi8h	sopn9g5o67g6udoqgsso9xiahw	+1	1634135282612	1634237545797	0	
-iet7jkwex3bjjbg38ewup9br7e	f9mj68ft3bbz5byuggrwhxnicr	-1	1634144943415	1634237546089	0	
-a4emb3hsdjn7pk6s5crpdmokaw	xjiduhitrpnu5jtaoo9by4k41e	+1	1634166606402	1634237548419	0	
-a4emb3hsdjn7pk6s5crpdmokaw	xjiduhitrpnu5jtaoo9by4k41e	-1	1634166593937	1634237548436	0	
-x4kiax5uy3n3pjkk6xyic5i98a	c5eigimk53dypfk5tjp67hnz3e	heart	1634163816284	1634237548498	0	
-j78juejgzby8x8cj8f89mtq4bh	48x38bmozpncjcpoozmjzmysco	blush	1634142308875	1634237548873	0	
-1jcrg4b4upf67kbexsxyyiamqa	in9hpufj3by9uq4oqtsq3rgfky	blush	1634131823770	1634237543819	0	
-km1txe6kktdabdgyuhwru7r9ua	gof8chhf8fdttkpmhzqgc4zufh	-1	1634142781024	1634237543841	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	yqomjszazfng8xc838ree8mexh	+1	1634163383563	1634237543869	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	crqacca467frxmhcb7canyghaw	blush	1634134827488	1634237543891	0	
-g5x9y1ewypr4tr93whdcfby3xy	yqomjszazfng8xc838ree8mexh	-1	1634163400718	1634237543905	0	
-gd6p49n1x3g3ic13taequwidya	peqykb99m7yixgksk1funitwqo	-1	1634136411407	1634237543917	0	
-j78juejgzby8x8cj8f89mtq4bh	f77k8reqd7r15e6ceuwxrx9icw	blush	1634144350040	1634237543934	0	
-a9quakcmbjys3ego1myciaoi8h	nbcgwc3y8tbzijyzyk5kc44gar	heart	1634167817419	1634237543949	0	
-gd6p49n1x3g3ic13taequwidya	9p86nrdn5iy6ikbyy3ya89ab9o	+1	1634141120240	1634237543964	0	
-x4kiax5uy3n3pjkk6xyic5i98a	e7h666qr5pdqxrpwmq9timypsa	blush	1634122671280	1634237544101	0	
-j78juejgzby8x8cj8f89mtq4bh	e7h666qr5pdqxrpwmq9timypsa	heart	1634122711159	1634237544119	0	
-a9quakcmbjys3ego1myciaoi8h	bp6z768cyib6xfarr5uo4fpwuc	-1	1634151871800	1634237544210	0	
-km1txe6kktdabdgyuhwru7r9ua	c4zzetxa6fgfjq89bccpi7e48c	blush	1634157897052	1634237544237	0	
-a4emb3hsdjn7pk6s5crpdmokaw	ojusrexwxbbuzennunq4mwksir	blush	1634143432326	1634237544318	0	
-a4emb3hsdjn7pk6s5crpdmokaw	sxizqu6tbjysfduh3hgyh6h73c	-1	1634130304437	1634237544417	0	
-gd6p49n1x3g3ic13taequwidya	rkik6jt46tyduqwp5wuba1y4ie	-1	1634167174685	1634237544460	0	
-km1txe6kktdabdgyuhwru7r9ua	4ct5xmunsbb67dj8og3as5yd9w	-1	1634124625907	1634237544469	0	
-j78juejgzby8x8cj8f89mtq4bh	tubo8sqpb7dhddjz3c6x3hp67a	-1	1634146680522	1634237544513	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	grdwnyu5538xtxrd4hb61z657c	blush	1634126796438	1634237544534	0	
-j78juejgzby8x8cj8f89mtq4bh	3x4zf5uxdt8cur64htaxgnbzay	heart	1634149164832	1634237544572	0	
-gd6p49n1x3g3ic13taequwidya	qthsywnztjd7dmbirp81ewg4ce	-1	1634128966443	1634237544658	0	
-s1m5hgt3o7f8tftf41n94ofp9r	qi8q3igcniy5xnp5pwouh61wwy	-1	1634157055800	1634237544672	0	
-j78juejgzby8x8cj8f89mtq4bh	cgmsaenexjyztkp4kamkptrq9a	heart	1634134002893	1634237544705	0	
-x4kiax5uy3n3pjkk6xyic5i98a	5ifbqsjd3tbw3xq75y7eincftw	blush	1634155144928	1634237544721	0	
-j78juejgzby8x8cj8f89mtq4bh	8w1irowoebddbgnkrqnihkf37r	blush	1634145175600	1634237544743	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	8w1irowoebddbgnkrqnihkf37r	-1	1634145151824	1634237544761	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	b4ebn3gzqpgdtnbehcmnxtefyr	blush	1634136627742	1634237544812	0	
-gd6p49n1x3g3ic13taequwidya	uuf8n1rs13ffjqy3og5yarn3zo	-1	1634145357357	1634237545033	0	
-g5x9y1ewypr4tr93whdcfby3xy	1iaqksisf3ftt89duxkbzwboto	+1	1634144365787	1634237545056	0	
-zbdgeaijh3fh9e3foqdts6i5wh	tkxi5fb9apn8fe9oya6wkbpape	heart	1634161369462	1634237545086	0	
-iet7jkwex3bjjbg38ewup9br7e	zf78fbgzg38sd84kxczd9byrzr	heart	1634154212972	1634237545324	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	64ob548y4tfjikz6od5es4yofy	blush	1634123389017	1634237545361	0	
-a9quakcmbjys3ego1myciaoi8h	xt973f5hq3ykf8h1ti8orpnn4h	-1	1634165772011	1634237545406	0	
-iet7jkwex3bjjbg38ewup9br7e	rnnto4opzbyd38rkcdd1nw3x1r	-1	1634126678270	1634237545676	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	iihjqo8n7jb89xr4hbb1ohm9de	heart	1634163200778	1634237548802	0	
-a9quakcmbjys3ego1myciaoi8h	nsdpxe79zbbb8eq6p9rj51h1ja	+1	1634121756400	1634237548889	0	
-s1m5hgt3o7f8tftf41n94ofp9r	8jesuncpqbnytddp4ride5591y	blush	1634135512719	1634237550298	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	767sd3xc7jfbdx19f67ox99fjr	heart	1634129095057	1634237550566	0	
-a9quakcmbjys3ego1myciaoi8h	r4bkym5nqfnw8efdj95pyqw5tr	blush	1634139814843	1634237543823	0	
-a9quakcmbjys3ego1myciaoi8h	mejkmf3gnpgemmjo9f6b7ogigo	-1	1634140817555	1634237543841	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	crqacca467frxmhcb7canyghaw	blush	1634134804625	1634237543855	0	
-s1m5hgt3o7f8tftf41n94ofp9r	r4bkym5nqfnw8efdj95pyqw5tr	+1	1634139789421	1634237543895	0	
-j78juejgzby8x8cj8f89mtq4bh	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137215586	1634237544010	0	
-gd6p49n1x3g3ic13taequwidya	tenhb49jw7g7fjnjjpd4xm94ih	blush	1634148843110	1634237544022	0	
-km1txe6kktdabdgyuhwru7r9ua	8jm1enmb978jmb94jjmeh3dunh	blush	1634133992873	1634237544036	0	
-4f4g78ewrfys8b68j456o5nxkr	9eiyk4b5apd5be98bike6myp6r	blush	1634141361850	1634237544095	0	
-km1txe6kktdabdgyuhwru7r9ua	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137187887	1634237544120	0	
-zbdgeaijh3fh9e3foqdts6i5wh	aohrnx3q6pyq7codr9anj8z79c	+1	1634138158347	1634237544218	0	
-j78juejgzby8x8cj8f89mtq4bh	4ct5xmunsbb67dj8og3as5yd9w	heart	1634124725432	1634237544254	0	
-x4kiax5uy3n3pjkk6xyic5i98a	mcc8j8h5qtye5e44wh6zec54go	-1	1634136547245	1634237544292	0	
-x4kiax5uy3n3pjkk6xyic5i98a	w4gf6iznhtb3ikf3yodqhsbpiw	-1	1634167872525	1634237544348	0	
-x4kiax5uy3n3pjkk6xyic5i98a	7n761cmdd7bfmngocrc87a7nga	heart	1634159682196	1634237544365	0	
-s1m5hgt3o7f8tftf41n94ofp9r	4ct5xmunsbb67dj8og3as5yd9w	-1	1634124698585	1634237544382	0	
-x4kiax5uy3n3pjkk6xyic5i98a	rizrkbj69bbz8dcgt3jc7bxona	heart	1634136814600	1634237544495	0	
-j78juejgzby8x8cj8f89mtq4bh	n7h11i678igkb8n9typc16q4nc	-1	1634137220624	1634237544589	0	
-g5x9y1ewypr4tr93whdcfby3xy	tt8kdigdabfudy1q5oa5d836mh	heart	1634161548696	1634237544644	0	
-zbdgeaijh3fh9e3foqdts6i5wh	n7h11i678igkb8n9typc16q4nc	-1	1634137220309	1634237544673	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	qi8q3igcniy5xnp5pwouh61wwy	blush	1634157066076	1634237544695	0	
-j78juejgzby8x8cj8f89mtq4bh	sggabe47z38wtm56c5fxic6z8e	-1	1634157580003	1634237544715	0	
-a9quakcmbjys3ego1myciaoi8h	qm8ddpoxctd1fffyeq5txhphjo	-1	1634164973185	1634237544734	0	
-a4emb3hsdjn7pk6s5crpdmokaw	pyz45jkybpyzdnmjzasug43foc	heart	1634140663140	1634237544762	0	
-gd6p49n1x3g3ic13taequwidya	yco857gizprdfrze89uc7skimo	-1	1634142838998	1634237544800	0	
-km1txe6kktdabdgyuhwru7r9ua	j5h518a557rafekmexdb3kg4hy	blush	1634144263461	1634237544861	0	
-s1m5hgt3o7f8tftf41n94ofp9r	4mtw36b45i8fbr1yh4bmxper8y	blush	1634162047494	1634237544873	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	8g6176q1a3r57ga1re1rni9qor	+1	1634166431922	1634237544943	0	
-poqpi8xhfjdszcmgmjboqzwcir	456xgu7nubfabjobmjas8pja1c	heart	1634131781803	1634237545229	0	
-poqpi8xhfjdszcmgmjboqzwcir	ahfnepx643f7p8h1jpm8ymxppo	-1	1634156310717	1634237545251	0	
-4f4g78ewrfys8b68j456o5nxkr	za1nze98qbbe9fssm3kzuhg3ec	heart	1634134729187	1634237545271	0	
-x4kiax5uy3n3pjkk6xyic5i98a	xt973f5hq3ykf8h1ti8orpnn4h	-1	1634165767101	1634237545360	0	
-a9quakcmbjys3ego1myciaoi8h	bbaoqpicx3r8pkbuw6fyybjywa	heart	1634163284852	1634237545390	0	
-km1txe6kktdabdgyuhwru7r9ua	qctp7ct9j3rx7nhk7i8yo661oa	-1	1634147523739	1634237545417	0	
-poqpi8xhfjdszcmgmjboqzwcir	eoz3pdrudj817fyp7x5xutfh9h	blush	1634141719843	1634237545539	0	
-4f4g78ewrfys8b68j456o5nxkr	i34z89nnqjy48qn6kwzqwtmqdr	-1	1634150137277	1634237545558	0	
-poqpi8xhfjdszcmgmjboqzwcir	f9mj68ft3bbz5byuggrwhxnicr	blush	1634144952106	1634237546052	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	g7s7dpg4yin5tx75hapjj9nioc	blush	1634159308922	1634237548156	0	
-a9quakcmbjys3ego1myciaoi8h	49ws3d873fgwfda6jpksqpbrxe	heart	1634143901131	1634237548267	0	
-4f4g78ewrfys8b68j456o5nxkr	8nizypxxf7bx7remdqs3uh6ame	-1	1634126522189	1634237548384	0	
-4f4g78ewrfys8b68j456o5nxkr	8nizypxxf7bx7remdqs3uh6ame	blush	1634126458058	1634237548405	0	
-x4kiax5uy3n3pjkk6xyic5i98a	cpaiw41dcinatpe6oaw93xitno	heart	1634166942012	1634237550198	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	mmhprpianjgj7839stg6zo3ype	blush	1634130064668	1634237550250	0	
-4f4g78ewrfys8b68j456o5nxkr	qy4kn76wb7fdtyiwb446tu1nhr	blush	1634159857209	1634237550698	0	
-4f4g78ewrfys8b68j456o5nxkr	g6hqfebwhpdjbcbwm4kuopkknw	+1	1634150928476	1634237550896	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137242452	1634237543878	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	8136radn1jbqzyimcq15jjhg6y	-1	1634162722958	1634237543952	0	
-s1m5hgt3o7f8tftf41n94ofp9r	mejkmf3gnpgemmjo9f6b7ogigo	-1	1634140770288	1634237543956	0	
-x4kiax5uy3n3pjkk6xyic5i98a	f77k8reqd7r15e6ceuwxrx9icw	-1	1634144401609	1634237543966	0	
-gd6p49n1x3g3ic13taequwidya	x89m7tkesty59b65rdzerhknky	heart	1634125788145	1634237544065	0	
-km1txe6kktdabdgyuhwru7r9ua	9p635k74digqpr1qaubfybcc1r	+1	1634152848901	1634237544101	0	
-g5x9y1ewypr4tr93whdcfby3xy	rh1px4spyfr5mjq6jhbpjezzyc	-1	1634157273295	1634237544159	0	
-4f4g78ewrfys8b68j456o5nxkr	37r7h451tjfkd8ybtugjk5zh9y	+1	1634149227880	1634237544183	0	
-poqpi8xhfjdszcmgmjboqzwcir	uhc7w6qoctn8tpzsndemxyo8dh	heart	1634123504741	1634237544201	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	4ct5xmunsbb67dj8og3as5yd9w	heart	1634124631713	1634237544329	0	
-a4emb3hsdjn7pk6s5crpdmokaw	i9dm3mf36byhugd1pcgys9kfwe	+1	1634150906489	1634237544351	0	
-x4kiax5uy3n3pjkk6xyic5i98a	cg1h9wjybbfwubwaab6jnfc4mw	+1	1634131532921	1634237544384	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	twsxff5iibdzjcjxgi88umhzxr	blush	1634158958583	1634237544400	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	j3qj9m7kk3897jerjb6or1z94a	-1	1634134872064	1634237544412	0	
-s1m5hgt3o7f8tftf41n94ofp9r	hwgyz4u64brg7rt9mwz6iqpawe	heart	1634162403716	1634237544437	0	
-poqpi8xhfjdszcmgmjboqzwcir	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124629620	1634237544487	0	
-s1m5hgt3o7f8tftf41n94ofp9r	yfrmqijxdi87udn915tsm3jkdy	heart	1634147527205	1634237544526	0	
-1jcrg4b4upf67kbexsxyyiamqa	3i3eyckg6f8tbenuzh7y85645y	heart	1634134988342	1634237544538	0	
-poqpi8xhfjdszcmgmjboqzwcir	mmme1ciu83dgfmq4gdaiuo9ona	-1	1634131279291	1634237544592	0	
-a4emb3hsdjn7pk6s5crpdmokaw	gerkwe14ntrbdj5hptcj8uaasr	blush	1634138426333	1634237544674	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	cgmsaenexjyztkp4kamkptrq9a	heart	1634134026067	1634237544728	0	
-iet7jkwex3bjjbg38ewup9br7e	y3gdaobpdbrf3rbrdu3hgf1bfe	-1	1634133186909	1634237544803	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	u7mjrjeakt868g5gfbrfgu9rkw	-1	1634164289862	1634237544829	0	
-1jcrg4b4upf67kbexsxyyiamqa	xapkko9jtjr15ehq5zoc98cfqa	+1	1634150537608	1634237544884	0	
-x4kiax5uy3n3pjkk6xyic5i98a	hanpye6mgtrrpe3gpf7yqx9jgo	heart	1634157555469	1634237544958	0	
-iet7jkwex3bjjbg38ewup9br7e	p1curstqq7ryj8sqrui9rcofpw	blush	1634164484533	1634237545034	0	
-iet7jkwex3bjjbg38ewup9br7e	xt973f5hq3ykf8h1ti8orpnn4h	heart	1634165774513	1634237545268	0	
-a9quakcmbjys3ego1myciaoi8h	eoyumk7r5pnspfag8mqhfjd47o	heart	1634149911880	1634237545284	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	dxcoi6tgeffcbnz1sk8tcz6bwy	-1	1634133564673	1634237545373	0	
-a4emb3hsdjn7pk6s5crpdmokaw	c99g9xiu1tn6zraboemjrofogr	heart	1634128383566	1634237545456	0	
-km1txe6kktdabdgyuhwru7r9ua	qctp7ct9j3rx7nhk7i8yo661oa	heart	1634147557207	1634237545473	0	
-poqpi8xhfjdszcmgmjboqzwcir	znkscgxugjycjb4t1ed544tste	+1	1634120978534	1634237545536	0	
-iet7jkwex3bjjbg38ewup9br7e	znkscgxugjycjb4t1ed544tste	-1	1634121003076	1634237545555	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	5w8j4ipnstyp9cibz9kdh4suew	-1	1634166747230	1634237545784	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	ch1ht3oo7tr79ejtb4wiwia33a	blush	1634152032944	1634237545987	0	
-a9quakcmbjys3ego1myciaoi8h	f9mj68ft3bbz5byuggrwhxnicr	blush	1634144949152	1634237546080	0	
-j78juejgzby8x8cj8f89mtq4bh	4uwaine9kibtpqeu7ze7a9uqgc	-1	1634144246646	1634237546115	0	
-gd6p49n1x3g3ic13taequwidya	h55zzbqy8bf17p95xsrnggumkr	blush	1634149814367	1634237548163	0	
-g5x9y1ewypr4tr93whdcfby3xy	r8ur5gcxzpg1tq9er3kxw3f4hw	blush	1634143370418	1634237548265	0	
-km1txe6kktdabdgyuhwru7r9ua	bbo8yzc5f3dg7m19b53wd5zn3h	heart	1634162997892	1634237548420	0	
-x4kiax5uy3n3pjkk6xyic5i98a	xfsbsw7g3bymijugpn69gczfmr	-1	1634153752293	1634237548489	0	
-j78juejgzby8x8cj8f89mtq4bh	uios3wqzqbnxzfeunroxdozq1e	heart	1634136994421	1634237548635	0	
-a4emb3hsdjn7pk6s5crpdmokaw	cown5p7y53y1bdpp3bxkum8o8y	+1	1634138579834	1634237543889	0	
-a4emb3hsdjn7pk6s5crpdmokaw	r4bkym5nqfnw8efdj95pyqw5tr	-1	1634139805437	1634237543931	0	
-poqpi8xhfjdszcmgmjboqzwcir	chbekbagyffpuredxa31ak9wqh	+1	1634126617982	1634237543972	0	
-1jcrg4b4upf67kbexsxyyiamqa	9eiyk4b5apd5be98bike6myp6r	blush	1634141400500	1634237544054	0	
-a4emb3hsdjn7pk6s5crpdmokaw	8jm1enmb978jmb94jjmeh3dunh	heart	1634134010033	1634237544108	0	
-x4kiax5uy3n3pjkk6xyic5i98a	mcc8j8h5qtye5e44wh6zec54go	blush	1634136552939	1634237544219	0	
-s1m5hgt3o7f8tftf41n94ofp9r	xpsj7q46rtnadfyq19beefu3sh	+1	1634142203122	1634237544308	0	
-a9quakcmbjys3ego1myciaoi8h	w4gf6iznhtb3ikf3yodqhsbpiw	heart	1634167900518	1634237544329	0	
-g5x9y1ewypr4tr93whdcfby3xy	7n761cmdd7bfmngocrc87a7nga	-1	1634159636985	1634237544347	0	
-1jcrg4b4upf67kbexsxyyiamqa	4ct5xmunsbb67dj8og3as5yd9w	-1	1634124649278	1634237544365	0	
-g5x9y1ewypr4tr93whdcfby3xy	kbyosns5ktb5ube3rartwu9n8r	blush	1634152134370	1634237544441	0	
-km1txe6kktdabdgyuhwru7r9ua	zy7mrub48j86unidcecibj4aja	heart	1634122556053	1634237544468	0	
-zbdgeaijh3fh9e3foqdts6i5wh	j84a9memw7grjjz6b41jx9tngw	heart	1634154708247	1634237544481	0	
-a4emb3hsdjn7pk6s5crpdmokaw	rt7t9i8rx7b6xq5c931ygc7o1h	blush	1634162284895	1634237544495	0	
-s1m5hgt3o7f8tftf41n94ofp9r	3x4zf5uxdt8cur64htaxgnbzay	blush	1634149079028	1634237544615	0	
-1jcrg4b4upf67kbexsxyyiamqa	qthsywnztjd7dmbirp81ewg4ce	heart	1634129020810	1634237544678	0	
-j78juejgzby8x8cj8f89mtq4bh	gerkwe14ntrbdj5hptcj8uaasr	-1	1634138432858	1634237544694	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	wp3pbc8bwfge9ewdocpmazssua	-1	1634165026338	1634237544707	0	
-s1m5hgt3o7f8tftf41n94ofp9r	qm8ddpoxctd1fffyeq5txhphjo	heart	1634164946143	1634237544769	0	
-1jcrg4b4upf67kbexsxyyiamqa	8w1irowoebddbgnkrqnihkf37r	+1	1634145198472	1634237544780	0	
-a4emb3hsdjn7pk6s5crpdmokaw	ma13xdrni7bz7f8aq3c1f3jf4w	-1	1634123123319	1634237544822	0	
-a4emb3hsdjn7pk6s5crpdmokaw	cpm9ekzb7pnijnxhwqk9uk6x1w	-1	1634168961953	1634237544836	0	
-1jcrg4b4upf67kbexsxyyiamqa	c4nrhchf3igdmnz813khbwr5no	heart	1634149124965	1634237545036	0	
-j78juejgzby8x8cj8f89mtq4bh	c4nrhchf3igdmnz813khbwr5no	heart	1634149097032	1634237545193	0	
-x4kiax5uy3n3pjkk6xyic5i98a	qh6qh14amtb79yfwbojx6345ao	heart	1634127866190	1634237545217	0	
-a4emb3hsdjn7pk6s5crpdmokaw	w63jgagr6bfftgfz96w7mz6j1e	heart	1634135723436	1634237545311	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	tkxi5fb9apn8fe9oya6wkbpape	blush	1634161308351	1634237545329	0	
-1jcrg4b4upf67kbexsxyyiamqa	werqk6f3w7dg8rsnhbxbynb79w	blush	1634136605685	1634237545363	0	
-j78juejgzby8x8cj8f89mtq4bh	zf78fbgzg38sd84kxczd9byrzr	blush	1634154218050	1634237545403	0	
-g5x9y1ewypr4tr93whdcfby3xy	33t8ktjnybfgiegzsiabnzu4ua	+1	1634167764551	1634237545423	0	
-s1m5hgt3o7f8tftf41n94ofp9r	qctp7ct9j3rx7nhk7i8yo661oa	+1	1634147512233	1634237545437	0	
-a9quakcmbjys3ego1myciaoi8h	7bcicm9zmira5gxxxz38apqr5c	blush	1634152450545	1634237545661	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	7bcicm9zmira5gxxxz38apqr5c	heart	1634152440939	1634237545681	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	jbwjwj5tp3fabeojha71w5nxky	heart	1634157073537	1634237545799	0	
-iet7jkwex3bjjbg38ewup9br7e	goymuyxzcif67ksayzmbw99s9a	blush	1634149449792	1634237545960	0	
-a9quakcmbjys3ego1myciaoi8h	xm73bt5jp3d5jrqguemnjcjshr	heart	1634135294630	1634237543927	0	
-4f4g78ewrfys8b68j456o5nxkr	cbze15n3jiy6pxxzmhy79ngt3c	heart	1634123424921	1634237543961	0	
-poqpi8xhfjdszcmgmjboqzwcir	uhc7w6qoctn8tpzsndemxyo8dh	-1	1634123513865	1634237544157	0	
-poqpi8xhfjdszcmgmjboqzwcir	7puaxsucs7g55ggowbg41dumsr	+1	1634145442859	1634237544283	0	
-4f4g78ewrfys8b68j456o5nxkr	pd696fry77ba5rs4r5eqyt1p4a	-1	1634163262027	1634237544305	0	
-a9quakcmbjys3ego1myciaoi8h	rt7t9i8rx7b6xq5c931ygc7o1h	-1	1634162305285	1634237544458	0	
-a4emb3hsdjn7pk6s5crpdmokaw	kbyosns5ktb5ube3rartwu9n8r	blush	1634152182520	1634237544488	0	
-a4emb3hsdjn7pk6s5crpdmokaw	3i3eyckg6f8tbenuzh7y85645y	blush	1634134998683	1634237544520	0	
-km1txe6kktdabdgyuhwru7r9ua	9g57ppmtkb84pcpyitsfue74ho	blush	1634148985849	1634237544572	0	
-km1txe6kktdabdgyuhwru7r9ua	9g57ppmtkb84pcpyitsfue74ho	heart	1634148911480	1634237544591	0	
-1jcrg4b4upf67kbexsxyyiamqa	9g57ppmtkb84pcpyitsfue74ho	blush	1634148924334	1634237544622	0	
-a9quakcmbjys3ego1myciaoi8h	n7h11i678igkb8n9typc16q4nc	+1	1634137236490	1634237544645	0	
-poqpi8xhfjdszcmgmjboqzwcir	gerkwe14ntrbdj5hptcj8uaasr	blush	1634138362890	1634237544712	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	5ifbqsjd3tbw3xq75y7eincftw	-1	1634155138504	1634237544796	0	
-j78juejgzby8x8cj8f89mtq4bh	e97tjpksuifw9m9iy5kgem17wc	-1	1634140322121	1634237544835	0	
-iet7jkwex3bjjbg38ewup9br7e	d5tud8hkppra5mcrpoba9uscoe	heart	1634167270711	1634237544885	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	mf5fqbifaffo9kzs9azq4idiiw	-1	1634148961046	1634237544987	0	
-s1m5hgt3o7f8tftf41n94ofp9r	mf5fqbifaffo9kzs9azq4idiiw	+1	1634148977474	1634237545020	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	ahfnepx643f7p8h1jpm8ymxppo	-1	1634156341688	1634237545230	0	
-gd6p49n1x3g3ic13taequwidya	za1nze98qbbe9fssm3kzuhg3ec	-1	1634134734076	1634237545247	0	
-zbdgeaijh3fh9e3foqdts6i5wh	tkxi5fb9apn8fe9oya6wkbpape	-1	1634161352811	1634237545286	0	
-zbdgeaijh3fh9e3foqdts6i5wh	xt973f5hq3ykf8h1ti8orpnn4h	-1	1634165759811	1634237545384	0	
-poqpi8xhfjdszcmgmjboqzwcir	c99g9xiu1tn6zraboemjrofogr	heart	1634128338729	1634237545398	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	c99g9xiu1tn6zraboemjrofogr	+1	1634128377710	1634237545438	0	
-x4kiax5uy3n3pjkk6xyic5i98a	6zmn4mki4bbcdqrzpe7xiykpxw	+1	1634166004499	1634237545488	0	
-1jcrg4b4upf67kbexsxyyiamqa	mk9untmkz7rr9mfau1tjmfktcy	-1	1634126637300	1634237545509	0	
-km1txe6kktdabdgyuhwru7r9ua	y8af6skmkt8y3f4zfgsrpt3n4c	+1	1634156963581	1634237545763	0	
-j78juejgzby8x8cj8f89mtq4bh	ch1ht3oo7tr79ejtb4wiwia33a	-1	1634152020213	1634237546004	0	
-a4emb3hsdjn7pk6s5crpdmokaw	4uwaine9kibtpqeu7ze7a9uqgc	+1	1634144260222	1634237546098	0	
-iet7jkwex3bjjbg38ewup9br7e	49qrzpruotbi5g573b8qnagg4a	blush	1634140756290	1634237548121	0	
-iet7jkwex3bjjbg38ewup9br7e	49qrzpruotbi5g573b8qnagg4a	+1	1634140745442	1634237548143	0	
-a4emb3hsdjn7pk6s5crpdmokaw	ipzo6bc6zbr9ixpcx3hg8bp6ja	blush	1634152013291	1634237548171	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	izryd3s6mfdg5nyxqjoie3uicc	blush	1634161893003	1634237548182	0	
-km1txe6kktdabdgyuhwru7r9ua	r8ur5gcxzpg1tq9er3kxw3f4hw	heart	1634143375418	1634237548179	0	
-poqpi8xhfjdszcmgmjboqzwcir	49qrzpruotbi5g573b8qnagg4a	blush	1634140759951	1634237548190	0	
-gd6p49n1x3g3ic13taequwidya	izryd3s6mfdg5nyxqjoie3uicc	-1	1634161875261	1634237548198	0	
-km1txe6kktdabdgyuhwru7r9ua	tfsd5d319tbc7xgsor4ywwn4ih	heart	1634158513126	1634237548207	0	
-g5x9y1ewypr4tr93whdcfby3xy	r8ur5gcxzpg1tq9er3kxw3f4hw	-1	1634143425244	1634237548204	0	
-gd6p49n1x3g3ic13taequwidya	izryd3s6mfdg5nyxqjoie3uicc	heart	1634161954278	1634237548222	0	
-km1txe6kktdabdgyuhwru7r9ua	tfsd5d319tbc7xgsor4ywwn4ih	+1	1634158553123	1634237548226	0	
-g5x9y1ewypr4tr93whdcfby3xy	o8wnkb6nujduxdgx3wzmtiaaky	-1	1634144490913	1634237548235	0	
-a4emb3hsdjn7pk6s5crpdmokaw	pk7w8e9k43b5bekhx6uo5fk16a	+1	1634122233968	1634237548242	0	
-g5x9y1ewypr4tr93whdcfby3xy	r8ur5gcxzpg1tq9er3kxw3f4hw	heart	1634143399553	1634237548246	0	
-1jcrg4b4upf67kbexsxyyiamqa	ehogqgsxyifc3y8eacobnh4gtc	blush	1634149123225	1634237548254	0	
-poqpi8xhfjdszcmgmjboqzwcir	tr56n83nbprwbxuntmsferhjrc	+1	1634158384482	1634237548277	0	
-a9quakcmbjys3ego1myciaoi8h	49ws3d873fgwfda6jpksqpbrxe	blush	1634143846009	1634237548288	0	
-g5x9y1ewypr4tr93whdcfby3xy	y4exmjogwf8i8gny4em4dezthy	heart	1634145095491	1634237548308	0	
-a4emb3hsdjn7pk6s5crpdmokaw	drg8uc8d4trnbftxp1spzppyrr	heart	1634132382937	1634237548332	0	
-a4emb3hsdjn7pk6s5crpdmokaw	drg8uc8d4trnbftxp1spzppyrr	+1	1634132344809	1634237548357	0	
-km1txe6kktdabdgyuhwru7r9ua	kbng7if5pigefphbiufojyxnnr	-1	1634124175658	1634237548376	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	bbo8yzc5f3dg7m19b53wd5zn3h	-1	1634162996875	1634237548380	0	
-a4emb3hsdjn7pk6s5crpdmokaw	drg8uc8d4trnbftxp1spzppyrr	blush	1634132346922	1634237548378	0	
-4f4g78ewrfys8b68j456o5nxkr	7mcjce11sbg47ykbq3c54iz6me	-1	1634159495441	1634237548396	0	
-km1txe6kktdabdgyuhwru7r9ua	bbo8yzc5f3dg7m19b53wd5zn3h	-1	1634162958999	1634237548401	0	
-4f4g78ewrfys8b68j456o5nxkr	7mcjce11sbg47ykbq3c54iz6me	blush	1634159529097	1634237548416	0	
-x4kiax5uy3n3pjkk6xyic5i98a	dhmrbpke878wpjqn6wsbqfas3y	heart	1634165702843	1634237548429	0	
-x4kiax5uy3n3pjkk6xyic5i98a	t3996cmqgpntmb5a81ksretwiy	+1	1634153341172	1634237548432	0	
-km1txe6kktdabdgyuhwru7r9ua	bbo8yzc5f3dg7m19b53wd5zn3h	blush	1634162953216	1634237548441	0	
-x4kiax5uy3n3pjkk6xyic5i98a	4j9ugk9y8tgx3rnx8so7s5sawa	heart	1634119875800	1634237548446	0	
-x4kiax5uy3n3pjkk6xyic5i98a	c5eigimk53dypfk5tjp67hnz3e	blush	1634163809670	1634237548459	0	
-a9quakcmbjys3ego1myciaoi8h	dhmrbpke878wpjqn6wsbqfas3y	blush	1634165742203	1634237548486	0	
-x4kiax5uy3n3pjkk6xyic5i98a	1ektmsrtp3d8dx6h9y1osu3hoo	-1	1634151469502	1634237548501	0	
-km1txe6kktdabdgyuhwru7r9ua	13u7wxsaqjfrtnxt8k3ub53m1e	-1	1634119716767	1634237548518	0	
-x4kiax5uy3n3pjkk6xyic5i98a	yq85p19g3p8n9m9zbpocrdi1ur	+1	1634129443694	1634237548525	0	
-a4emb3hsdjn7pk6s5crpdmokaw	4j9ugk9y8tgx3rnx8so7s5sawa	blush	1634119853522	1634237548466	0	
-iet7jkwex3bjjbg38ewup9br7e	fodny6pxopb7trfq8x19xcz6hy	blush	1634144931910	1634237548676	0	
-g5x9y1ewypr4tr93whdcfby3xy	ocz6wmkzqiramy5f9bgr49qwwe	-1	1634167474612	1634237548823	0	
-zbdgeaijh3fh9e3foqdts6i5wh	s786734ks7y6pc6tku8rep6rch	+1	1634124547420	1634237548827	0	
-j78juejgzby8x8cj8f89mtq4bh	nxa4azgemj8gipiqbxbgefdzbc	heart	1634159797704	1634237550364	0	
-iet7jkwex3bjjbg38ewup9br7e	1sspny49xtfr8n9uqf8xqwofzo	+1	1634154909967	1634237550390	0	
-1jcrg4b4upf67kbexsxyyiamqa	codcff38oiyemd9ereysu5i1ky	+1	1634164552629	1634237550474	0	
-a4emb3hsdjn7pk6s5crpdmokaw	6a5q1cj57pdo8fo31x37ztp9zh	heart	1634164317198	1634237550673	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	xjymds54ajgwixck8uw98wd6pc	blush	1634123219729	1634237550744	0	
-a4emb3hsdjn7pk6s5crpdmokaw	11nrn4xwejn17cz6k5ejiomkow	blush	1634150594509	1634237550773	0	
-a9quakcmbjys3ego1myciaoi8h	dhmrbpke878wpjqn6wsbqfas3y	-1	1634165711775	1634237548470	0	
-4f4g78ewrfys8b68j456o5nxkr	6owoaaysxibizjw5m49qn6534a	blush	1634152788679	1634237548759	0	
-1jcrg4b4upf67kbexsxyyiamqa	1r3q9gnomtfmxd5dri88nskw7h	blush	1634136331429	1634237548781	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	efkiqnq1xtncirbxue8xgt8qtr	-1	1634132268155	1634237550333	0	
-gd6p49n1x3g3ic13taequwidya	efkiqnq1xtncirbxue8xgt8qtr	+1	1634132340844	1634237550453	0	
-zbdgeaijh3fh9e3foqdts6i5wh	efkiqnq1xtncirbxue8xgt8qtr	blush	1634132295079	1634237550475	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	94y71rxbcfgdprtjwfpbmwiypc	blush	1634120165591	1634237550836	0	
-1jcrg4b4upf67kbexsxyyiamqa	igfnudi31pgmiyppb3w4gn69sh	-1	1634156611261	1634237548487	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	4jnaw17gsjfb3eh8qogqxeuf5y	-1	1634120528224	1634237548589	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	ikmjr7izmifqtd8f5yqpm9d3ba	blush	1634142995954	1634237548668	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	ikmjr7izmifqtd8f5yqpm9d3ba	-1	1634143012290	1634237548690	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	pmr5acesx3dktrrdhbqt9squhr	-1	1634137129911	1634237548894	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	is1s9nrwo7by7gabctxknockac	-1	1634145805679	1634237548570	0	
-a4emb3hsdjn7pk6s5crpdmokaw	udzyhwc5j38b9mb1stbn66kb6c	heart	1634138612334	1634237548599	0	
-x4kiax5uy3n3pjkk6xyic5i98a	81sqzee5fpd9tjo8z3t83uqgbc	-1	1634160549095	1634237550274	0	
-zbdgeaijh3fh9e3foqdts6i5wh	xuxdsp1be7fbdjbnxhhwz4suyr	+1	1634124191029	1634237550398	0	
-1jcrg4b4upf67kbexsxyyiamqa	epfzusjsxpni7ccqso96nmxswe	blush	1634134846979	1634237550579	0	
-4f4g78ewrfys8b68j456o5nxkr	7jujq7nodinwjckwphw978rmpo	+1	1634125543624	1634237551002	0	
-zbdgeaijh3fh9e3foqdts6i5wh	cp8jd38jzt8j9xzwsb7w9yq61r	+1	1634136764649	1634237548600	0	
-j78juejgzby8x8cj8f89mtq4bh	uios3wqzqbnxzfeunroxdozq1e	blush	1634136932042	1634237548617	0	
-a9quakcmbjys3ego1myciaoi8h	czr4gp3js7dgirb9cqimko9wnh	-1	1634132689037	1634237550309	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	friyqrbdhifgijhcnbagp935fa	blush	1634148869114	1634237550491	0	
-s1m5hgt3o7f8tftf41n94ofp9r	friyqrbdhifgijhcnbagp935fa	heart	1634148855644	1634237550514	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	4sq67nfrpjgz7b4dx3s4e7sagy	+1	1634154636854	1634237550618	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	qjbnf56dojf7irhhxjttoszh6c	+1	1634139050867	1634237550730	0	
-x4kiax5uy3n3pjkk6xyic5i98a	6a5q1cj57pdo8fo31x37ztp9zh	-1	1634164244312	1634237550785	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	5f1fc6t4dtf7xge6dqb3jjzh3e	-1	1634152727922	1634237550819	0	
-zbdgeaijh3fh9e3foqdts6i5wh	nnpqmb1eyfne7jnrot5aobhbch	heart	1634126510106	1634237548578	0	
-gd6p49n1x3g3ic13taequwidya	1r3q9gnomtfmxd5dri88nskw7h	+1	1634136352441	1634237548748	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	ur6pr9awkiy93d9exgieen544w	-1	1634149204905	1634237550608	0	
-x4kiax5uy3n3pjkk6xyic5i98a	m6bgmhcjytr1tnu71x1kxsmkoe	blush	1634139630298	1634237550631	0	
-1jcrg4b4upf67kbexsxyyiamqa	epfzusjsxpni7ccqso96nmxswe	-1	1634134800222	1634237550705	0	
-4f4g78ewrfys8b68j456o5nxkr	fjmtg5h3gibe7rr35cia6h9h9c	-1	1634162708552	1634237548587	0	
-4f4g78ewrfys8b68j456o5nxkr	d1zepwdpt7nr7miikmxwjojdir	-1	1634136205271	1634237548900	0	
-x4kiax5uy3n3pjkk6xyic5i98a	mpm7dkg44py49bnhpagjbmgway	+1	1634122424586	1634237550209	0	
-gd6p49n1x3g3ic13taequwidya	efkiqnq1xtncirbxue8xgt8qtr	blush	1634132268791	1634237550356	0	
-gd6p49n1x3g3ic13taequwidya	epfzusjsxpni7ccqso96nmxswe	heart	1634134832733	1634237550614	0	
-zbdgeaijh3fh9e3foqdts6i5wh	9eb3x6q67frudnkaad6z6unfmy	heart	1634137733197	1634237548588	0	
-a4emb3hsdjn7pk6s5crpdmokaw	spsyzaibab867qgbhedy4oeoih	blush	1634123059242	1634237548672	0	
-x4kiax5uy3n3pjkk6xyic5i98a	spsyzaibab867qgbhedy4oeoih	heart	1634123107534	1634237548701	0	
-zbdgeaijh3fh9e3foqdts6i5wh	nnpqmb1eyfne7jnrot5aobhbch	blush	1634126573597	1634237548600	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	ftcprhchatds8bubrgy8ed8b4h	heart	1634136493022	1634237548864	0	
-j78juejgzby8x8cj8f89mtq4bh	uios3wqzqbnxzfeunroxdozq1e	-1	1634136973659	1634237548656	0	
-iet7jkwex3bjjbg38ewup9br7e	g48dejpukjyetrnyktd9nrmmew	+1	1634130795833	1634237548657	0	
-4f4g78ewrfys8b68j456o5nxkr	zr5o4ekew3fy5kgmsrt3tm6wna	+1	1634163661553	1634237548785	0	
-iet7jkwex3bjjbg38ewup9br7e	cpaiw41dcinatpe6oaw93xitno	-1	1634166971919	1634237550157	0	
-zbdgeaijh3fh9e3foqdts6i5wh	jkm1amuzci8aijwneok1ww3exc	heart	1634158375321	1634237550571	0	
-zbdgeaijh3fh9e3foqdts6i5wh	fodny6pxopb7trfq8x19xcz6hy	-1	1634144955603	1634237548707	0	
-zbdgeaijh3fh9e3foqdts6i5wh	ftcprhchatds8bubrgy8ed8b4h	blush	1634136548009	1634237548829	0	
-iet7jkwex3bjjbg38ewup9br7e	xgwgbnatntdmjxigaeaqqbf8oo	heart	1634139275154	1634237550400	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	m6bgmhcjytr1tnu71x1kxsmkoe	blush	1634139711506	1634237550711	0	
-x4kiax5uy3n3pjkk6xyic5i98a	11nrn4xwejn17cz6k5ejiomkow	heart	1634150631959	1634237550730	0	
-g5x9y1ewypr4tr93whdcfby3xy	6owoaaysxibizjw5m49qn6534a	blush	1634152843914	1634237548728	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	eu79s97nrfrufcbrfiapdood3r	blush	1634160638777	1634237550355	0	
-x4kiax5uy3n3pjkk6xyic5i98a	eg3aitwu4bbfpmfffpzgpzfm3a	+1	1634134171445	1634237550594	0	
-x4kiax5uy3n3pjkk6xyic5i98a	6a5q1cj57pdo8fo31x37ztp9zh	heart	1634164291928	1634237550634	0	
-poqpi8xhfjdszcmgmjboqzwcir	xjymds54ajgwixck8uw98wd6pc	heart	1634123176485	1634237550670	0	
-zbdgeaijh3fh9e3foqdts6i5wh	94y71rxbcfgdprtjwfpbmwiypc	+1	1634120154906	1634237550871	0	
-iet7jkwex3bjjbg38ewup9br7e	fodny6pxopb7trfq8x19xcz6hy	+1	1634144979370	1634237548724	0	
-gd6p49n1x3g3ic13taequwidya	1r3q9gnomtfmxd5dri88nskw7h	blush	1634136320236	1634237548763	0	
-j78juejgzby8x8cj8f89mtq4bh	48x38bmozpncjcpoozmjzmysco	heart	1634142273746	1634237548837	0	
-zbdgeaijh3fh9e3foqdts6i5wh	efkiqnq1xtncirbxue8xgt8qtr	+1	1634132350286	1634237550499	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	codcff38oiyemd9ereysu5i1ky	heart	1634164557732	1634237550519	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	9ohco49tkt86ijkfhofh6y13kh	+1	1634120873131	1634237550612	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	ftcprhchatds8bubrgy8ed8b4h	blush	1634136537149	1634237548848	0	
-j78juejgzby8x8cj8f89mtq4bh	48x38bmozpncjcpoozmjzmysco	-1	1634142275324	1634237548858	0	
-iet7jkwex3bjjbg38ewup9br7e	mpm7dkg44py49bnhpagjbmgway	-1	1634122470771	1634237550141	0	
-iet7jkwex3bjjbg38ewup9br7e	cpaiw41dcinatpe6oaw93xitno	+1	1634166918802	1634237550242	0	
-zbdgeaijh3fh9e3foqdts6i5wh	czr4gp3js7dgirb9cqimko9wnh	heart	1634132753712	1634237550258	0	
-a9quakcmbjys3ego1myciaoi8h	mmhprpianjgj7839stg6zo3ype	-1	1634130091360	1634237550271	0	
-zbdgeaijh3fh9e3foqdts6i5wh	mmhprpianjgj7839stg6zo3ype	+1	1634130026141	1634237550288	0	
-x4kiax5uy3n3pjkk6xyic5i98a	81sqzee5fpd9tjo8z3t83uqgbc	blush	1634160499871	1634237550291	0	
-gd6p49n1x3g3ic13taequwidya	4wkys9rkhpn1tka6yo1rahetgy	heart	1634167728754	1634237550300	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	mmhprpianjgj7839stg6zo3ype	blush	1634130034932	1634237550329	0	
-j78juejgzby8x8cj8f89mtq4bh	nxa4azgemj8gipiqbxbgefdzbc	blush	1634159793068	1634237550412	0	
-a4emb3hsdjn7pk6s5crpdmokaw	rh4jgwpeafbkzke5nq4nkipkgh	-1	1634154468065	1634237550464	0	
-x4kiax5uy3n3pjkk6xyic5i98a	rh4jgwpeafbkzke5nq4nkipkgh	blush	1634154528786	1634237550484	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	1jqae19awjf5dgj1dryknykz8r	heart	1634141277798	1634237550489	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	9ohco49tkt86ijkfhofh6y13kh	heart	1634120881360	1634237550524	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	9ohco49tkt86ijkfhofh6y13kh	blush	1634120829332	1634237550590	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	epfzusjsxpni7ccqso96nmxswe	heart	1634134794768	1634237550630	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	m6bgmhcjytr1tnu71x1kxsmkoe	heart	1634139632849	1634237550677	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	xjymds54ajgwixck8uw98wd6pc	-1	1634123195245	1634237550723	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	11nrn4xwejn17cz6k5ejiomkow	heart	1634150613017	1634237550747	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	6a5q1cj57pdo8fo31x37ztp9zh	+1	1634164327745	1634237550750	0	
-x4kiax5uy3n3pjkk6xyic5i98a	m6bgmhcjytr1tnu71x1kxsmkoe	heart	1634139686173	1634237550756	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	11nrn4xwejn17cz6k5ejiomkow	blush	1634150637424	1634237550787	0	
-4f4g78ewrfys8b68j456o5nxkr	g6hqfebwhpdjbcbwm4kuopkknw	heart	1634150952685	1634237550881	0	
-a4emb3hsdjn7pk6s5crpdmokaw	q14fuzey57bqmndkntb8h8un6a	blush	1634140772784	1634237550893	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	udxqqa5jrfrzunerrmqeg4th8w	-1	1634120818522	1634237550906	0	
-a4emb3hsdjn7pk6s5crpdmokaw	udxqqa5jrfrzunerrmqeg4th8w	+1	1634120796825	1634237550924	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	8jesuncpqbnytddp4ride5591y	heart	1634135474900	1634237550275	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	czr4gp3js7dgirb9cqimko9wnh	-1	1634132758503	1634237550284	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	xgwiu7d1npfhurs8rdyxjj1x4h	+1	1634154638696	1634237550324	0	
-j78juejgzby8x8cj8f89mtq4bh	nxa4azgemj8gipiqbxbgefdzbc	+1	1634159783666	1634237550394	0	
-1jcrg4b4upf67kbexsxyyiamqa	efkiqnq1xtncirbxue8xgt8qtr	blush	1634132283053	1634237550408	0	
-iet7jkwex3bjjbg38ewup9br7e	xgwgbnatntdmjxigaeaqqbf8oo	+1	1634139268437	1634237550420	0	
-1jcrg4b4upf67kbexsxyyiamqa	codcff38oiyemd9ereysu5i1ky	heart	1634164595406	1634237550446	0	
-iet7jkwex3bjjbg38ewup9br7e	xgwgbnatntdmjxigaeaqqbf8oo	-1	1634139312891	1634237550456	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	codcff38oiyemd9ereysu5i1ky	+1	1634164578201	1634237550500	0	
-gd6p49n1x3g3ic13taequwidya	efkiqnq1xtncirbxue8xgt8qtr	heart	1634132304882	1634237550525	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	codcff38oiyemd9ereysu5i1ky	-1	1634164567480	1634237550539	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	767sd3xc7jfbdx19f67ox99fjr	blush	1634129051113	1634237550548	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	e4e1xb4otffruczb1wku4513jh	blush	1634128625676	1634237550568	0	
-iet7jkwex3bjjbg38ewup9br7e	9ohco49tkt86ijkfhofh6y13kh	heart	1634120850543	1634237550568	0	
-a4emb3hsdjn7pk6s5crpdmokaw	codcff38oiyemd9ereysu5i1ky	-1	1634164553911	1634237550568	0	
-a4emb3hsdjn7pk6s5crpdmokaw	767sd3xc7jfbdx19f67ox99fjr	heart	1634129124048	1634237550598	0	
-a4emb3hsdjn7pk6s5crpdmokaw	m6bgmhcjytr1tnu71x1kxsmkoe	blush	1634139632133	1634237550607	0	
-1jcrg4b4upf67kbexsxyyiamqa	epfzusjsxpni7ccqso96nmxswe	+1	1634134860108	1634237550649	0	
-a4emb3hsdjn7pk6s5crpdmokaw	m6bgmhcjytr1tnu71x1kxsmkoe	-1	1634139646392	1634237550652	0	
-9i9c7b6cijd4fmgnuq9o8e7m3y	epfzusjsxpni7ccqso96nmxswe	-1	1634134817008	1634237550685	0	
-a4emb3hsdjn7pk6s5crpdmokaw	m6bgmhcjytr1tnu71x1kxsmkoe	+1	1634139675931	1634237550693	0	
-zbdgeaijh3fh9e3foqdts6i5wh	xjymds54ajgwixck8uw98wd6pc	heart	1634123194677	1634237550707	0	
-7a4t7dp6e3y6mkbbo55j6wrc6c	m6bgmhcjytr1tnu71x1kxsmkoe	-1	1634139701737	1634237550726	0	
-4f4g78ewrfys8b68j456o5nxkr	aci4af6ioircxbkcpz6w4wuinw	+1	1634160372733	1634237550743	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	xjymds54ajgwixck8uw98wd6pc	+1	1634123173710	1634237550761	0	
-a4emb3hsdjn7pk6s5crpdmokaw	6a5q1cj57pdo8fo31x37ztp9zh	+1	1634164324859	1634237550768	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	aci4af6ioircxbkcpz6w4wuinw	-1	1634160377335	1634237550789	0	
-poqpi8xhfjdszcmgmjboqzwcir	hayy3iys8bbcmcibuwfz15kjce	heart	1634147890025	1634237550801	0	
-zbdgeaijh3fh9e3foqdts6i5wh	94y71rxbcfgdprtjwfpbmwiypc	-1	1634120192999	1634237550854	0	
-poqpi8xhfjdszcmgmjboqzwcir	hayy3iys8bbcmcibuwfz15kjce	blush	1634147834418	1634237550852	0	
-poqpi8xhfjdszcmgmjboqzwcir	8m9t43u6sjg4uckz9m6crbfc1a	-1	1634130642781	1634237550862	0	
-poqpi8xhfjdszcmgmjboqzwcir	8m9t43u6sjg4uckz9m6crbfc1a	blush	1634130614405	1634237550878	0	
-4f4g78ewrfys8b68j456o5nxkr	g6hqfebwhpdjbcbwm4kuopkknw	blush	1634150951616	1634237550918	0	
-4f4g78ewrfys8b68j456o5nxkr	udxqqa5jrfrzunerrmqeg4th8w	heart	1634120859912	1634237550939	0	
-km1txe6kktdabdgyuhwru7r9ua	7jujq7nodinwjckwphw978rmpo	-1	1634125593667	1634237550982	0	
-bz9xa1zkwbgmf8nfx4eku9a7rc	7jujq7nodinwjckwphw978rmpo	+1	1634125568080	1634237550991	0	
-4f4g78ewrfys8b68j456o5nxkr	7jujq7nodinwjckwphw978rmpo	-1	1634125570768	1634237551013	0	
+bz9xa1zkwbgmf8nfx4eku9a7rc	rsb9qfdbs7r4mkqahkguycu8xa	blush	1634156855756	1634237543459	0
+a4emb3hsdjn7pk6s5crpdmokaw	9sn3zz3kbjrf3yyo54m6sod6do	blush	1634145071319	1634237543480	0
+iet7jkwex3bjjbg38ewup9br7e	9sn3zz3kbjrf3yyo54m6sod6do	+1	1634145092099	1634237543497	0
+1jcrg4b4upf67kbexsxyyiamqa	dsoateiusfnndycsducen3fgso	+1	1634158690370	1634237543536	0
+a4emb3hsdjn7pk6s5crpdmokaw	7dguxdspsfr3jqc9pdeiji6hdr	blush	1634156176209	1634237543569	0
+a4emb3hsdjn7pk6s5crpdmokaw	f5jszrir1bnb3phwfehsy78k1h	blush	1634125626696	1634237543600	0
+poqpi8xhfjdszcmgmjboqzwcir	c1hqkpqrcpy7mmmdnzai5ey3xy	heart	1634130501864	1634237543601	0
+x4kiax5uy3n3pjkk6xyic5i98a	r9at15o9r78q7r4honxz9ebmmy	+1	1634124693232	1634237543609	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	ywnh9xwdu7r8mgko9cgfugcrfh	heart	1634139285071	1634237543617	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	r9at15o9r78q7r4honxz9ebmmy	blush	1634124781149	1634237543626	0
+x4kiax5uy3n3pjkk6xyic5i98a	moknszr477rumxcncf76jb56zy	heart	1634163199630	1634237543631	0
+km1txe6kktdabdgyuhwru7r9ua	1qk68y4z5j8mbbj7ynx3yp3coo	+1	1634145642030	1634237543633	0
+km1txe6kktdabdgyuhwru7r9ua	hwbbpbrnxigqzjzwgzoycun1ua	-1	1634139622873	1634237543638	0
+iet7jkwex3bjjbg38ewup9br7e	ywnh9xwdu7r8mgko9cgfugcrfh	+1	1634139256293	1634237543642	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	moknszr477rumxcncf76jb56zy	heart	1634163172668	1634237543656	0
+poqpi8xhfjdszcmgmjboqzwcir	r9at15o9r78q7r4honxz9ebmmy	heart	1634124770969	1634237543654	0
+a9quakcmbjys3ego1myciaoi8h	t98kgp9z6bfufqmkywifxytjjo	+1	1634147150295	1634237543658	0
+s1m5hgt3o7f8tftf41n94ofp9r	1qk68y4z5j8mbbj7ynx3yp3coo	+1	1634145646221	1634237543659	0
+a9quakcmbjys3ego1myciaoi8h	um8tzob6qib55rdu8d6mp36qba	-1	1634167062708	1634237543660	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	1jcgk94d9irm8r36aynzn17nnc	blush	1634126751369	1634237543658	0
+km1txe6kktdabdgyuhwru7r9ua	fjxhk6jqdib8jjasj1krd8nisw	+1	1634121471396	1634237543660	0
+km1txe6kktdabdgyuhwru7r9ua	9nnbz7fcmif7f8modddzde9ozw	blush	1634149717992	1634237543668	0
+1jcrg4b4upf67kbexsxyyiamqa	ooxajs5xkpy3myas8wnz9p855a	+1	1634124450951	1634237543671	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	t98kgp9z6bfufqmkywifxytjjo	+1	1634147205675	1634237543672	0
+g5x9y1ewypr4tr93whdcfby3xy	r9at15o9r78q7r4honxz9ebmmy	-1	1634124745269	1634237543674	0
+s1m5hgt3o7f8tftf41n94ofp9r	moknszr477rumxcncf76jb56zy	-1	1634163180416	1634237543673	0
+zbdgeaijh3fh9e3foqdts6i5wh	1qk68y4z5j8mbbj7ynx3yp3coo	blush	1634145698641	1634237543677	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	um8tzob6qib55rdu8d6mp36qba	heart	1634167023940	1634237543677	0
+a9quakcmbjys3ego1myciaoi8h	1jcgk94d9irm8r36aynzn17nnc	+1	1634126701889	1634237543683	0
+4f4g78ewrfys8b68j456o5nxkr	fjxhk6jqdib8jjasj1krd8nisw	-1	1634121468361	1634237543684	0
+1jcrg4b4upf67kbexsxyyiamqa	9nnbz7fcmif7f8modddzde9ozw	+1	1634149663928	1634237543689	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	ooxajs5xkpy3myas8wnz9p855a	-1	1634124465487	1634237543691	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	moknszr477rumxcncf76jb56zy	+1	1634163183429	1634237543692	0
+iet7jkwex3bjjbg38ewup9br7e	t98kgp9z6bfufqmkywifxytjjo	blush	1634147162822	1634237543695	0
+gd6p49n1x3g3ic13taequwidya	r9at15o9r78q7r4honxz9ebmmy	-1	1634124790261	1634237543695	0
+1jcrg4b4upf67kbexsxyyiamqa	um8tzob6qib55rdu8d6mp36qba	+1	1634167026483	1634237543697	0
+4f4g78ewrfys8b68j456o5nxkr	1qk68y4z5j8mbbj7ynx3yp3coo	-1	1634145631519	1634237543697	0
+gd6p49n1x3g3ic13taequwidya	ooxajs5xkpy3myas8wnz9p855a	-1	1634124454115	1634237543707	0
+zbdgeaijh3fh9e3foqdts6i5wh	axwg5wox3jdduqi5h95kr4qwye	+1	1634132560095	1634237543705	0
+s1m5hgt3o7f8tftf41n94ofp9r	fjxhk6jqdib8jjasj1krd8nisw	+1	1634121503089	1634237543706	0
+a9quakcmbjys3ego1myciaoi8h	moknszr477rumxcncf76jb56zy	heart	1634163150410	1634237543707	0
+g5x9y1ewypr4tr93whdcfby3xy	9nnbz7fcmif7f8modddzde9ozw	blush	1634149719195	1634237543710	0
+g5x9y1ewypr4tr93whdcfby3xy	t98kgp9z6bfufqmkywifxytjjo	blush	1634147232601	1634237543714	0
+1jcrg4b4upf67kbexsxyyiamqa	1qk68y4z5j8mbbj7ynx3yp3coo	+1	1634145656249	1634237543715	0
+gd6p49n1x3g3ic13taequwidya	r9at15o9r78q7r4honxz9ebmmy	heart	1634124769105	1634237543717	0
+j78juejgzby8x8cj8f89mtq4bh	df79yfw5zfn83qsz6k9ca19qza	heart	1634139179563	1634237543719	0
+a4emb3hsdjn7pk6s5crpdmokaw	jdquu7m9g7gqijzd3erhprt9mh	heart	1634137219941	1634237543722	0
+a4emb3hsdjn7pk6s5crpdmokaw	7n57ix9gs7853ni85xyoo9emzo	+1	1634136230416	1634237543723	0
+x4kiax5uy3n3pjkk6xyic5i98a	9nnbz7fcmif7f8modddzde9ozw	-1	1634149690763	1634237543726	0
+j78juejgzby8x8cj8f89mtq4bh	1nyzoyqx4fyydxz8sainynnyca	blush	1634163402557	1634237543727	0
+gd6p49n1x3g3ic13taequwidya	wjt4371enffedjtn85ggsu555r	blush	1634149844831	1634237543726	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	t98kgp9z6bfufqmkywifxytjjo	blush	1634147141709	1634237543731	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	r9at15o9r78q7r4honxz9ebmmy	heart	1634124698797	1634237543733	0
+a4emb3hsdjn7pk6s5crpdmokaw	df79yfw5zfn83qsz6k9ca19qza	blush	1634139189938	1634237543740	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	1nyzoyqx4fyydxz8sainynnyca	heart	1634163466552	1634237543743	0
+g5x9y1ewypr4tr93whdcfby3xy	7n57ix9gs7853ni85xyoo9emzo	+1	1634136179916	1634237543745	0
+km1txe6kktdabdgyuhwru7r9ua	5gigp58xgjrc9rtbjadmkwk67a	blush	1634132970676	1634237543747	0
+4f4g78ewrfys8b68j456o5nxkr	wjt4371enffedjtn85ggsu555r	+1	1634149814588	1634237543747	0
+iet7jkwex3bjjbg38ewup9br7e	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137185229	1634237543754	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	df79yfw5zfn83qsz6k9ca19qza	-1	1634139149565	1634237543761	0
+s1m5hgt3o7f8tftf41n94ofp9r	5gigp58xgjrc9rtbjadmkwk67a	heart	1634133036595	1634237543764	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	cown5p7y53y1bdpp3bxkum8o8y	heart	1634138558862	1634237543869	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	gof8chhf8fdttkpmhzqgc4zufh	-1	1634142820617	1634237543879	0
+iet7jkwex3bjjbg38ewup9br7e	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137248211	1634237544049	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	7n57ix9gs7853ni85xyoo9emzo	blush	1634136185936	1634237543765	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	jdquu7m9g7gqijzd3erhprt9mh	+1	1634137212579	1634237543793	0
+j78juejgzby8x8cj8f89mtq4bh	nbcgwc3y8tbzijyzyk5kc44gar	-1	1634167806096	1634237543807	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	crqacca467frxmhcb7canyghaw	+1	1634134833243	1634237543835	0
+j78juejgzby8x8cj8f89mtq4bh	in9hpufj3by9uq4oqtsq3rgfky	blush	1634131758168	1634237543854	0
+s1m5hgt3o7f8tftf41n94ofp9r	nbcgwc3y8tbzijyzyk5kc44gar	heart	1634167760261	1634237543864	0
+j78juejgzby8x8cj8f89mtq4bh	cbze15n3jiy6pxxzmhy79ngt3c	heart	1634123399497	1634237543941	0
+j78juejgzby8x8cj8f89mtq4bh	pmwpnxfoairmtg17qpp9wy35hc	heart	1634161530602	1634237544037	0
+g5x9y1ewypr4tr93whdcfby3xy	ha6fihb7nifh7dbdnozzmbcbny	+1	1634158546014	1634237544060	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	uhc7w6qoctn8tpzsndemxyo8dh	heart	1634123523328	1634237544110	0
+s1m5hgt3o7f8tftf41n94ofp9r	w4i3zxdu9b8h9kzwxp8bcs7tyc	blush	1634139183641	1634237544131	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	aohrnx3q6pyq7codr9anj8z79c	+1	1634138107383	1634237544199	0
+1jcrg4b4upf67kbexsxyyiamqa	zy7mrub48j86unidcecibj4aja	heart	1634122560976	1634237544451	0
+a4emb3hsdjn7pk6s5crpdmokaw	zjb6c5twhfysxc6cuzyqiteyow	blush	1634140570885	1634237544464	0
+j78juejgzby8x8cj8f89mtq4bh	zy7mrub48j86unidcecibj4aja	-1	1634122475117	1634237544485	0
+a4emb3hsdjn7pk6s5crpdmokaw	g9w8jpy6ajn9frq1xcn5wqonxh	heart	1634129583258	1634237544502	0
+x4kiax5uy3n3pjkk6xyic5i98a	qghjz74xnfgrbdfz5jrpbe457e	heart	1634157526665	1634237544531	0
+a4emb3hsdjn7pk6s5crpdmokaw	tubo8sqpb7dhddjz3c6x3hp67a	blush	1634146659704	1634237544579	0
+iet7jkwex3bjjbg38ewup9br7e	qthsywnztjd7dmbirp81ewg4ce	+1	1634128932597	1634237544618	0
+s1m5hgt3o7f8tftf41n94ofp9r	3x4zf5uxdt8cur64htaxgnbzay	-1	1634149115147	1634237544634	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	9g57ppmtkb84pcpyitsfue74ho	-1	1634148898254	1634237544652	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	wp3pbc8bwfge9ewdocpmazssua	heart	1634165093457	1634237544670	0
+a4emb3hsdjn7pk6s5crpdmokaw	5ifbqsjd3tbw3xq75y7eincftw	blush	1634155145137	1634237544817	0
+4f4g78ewrfys8b68j456o5nxkr	ma13xdrni7bz7f8aq3c1f3jf4w	-1	1634123099751	1634237544842	0
+km1txe6kktdabdgyuhwru7r9ua	ahusnemg9t8gxruqp5qofwbd4e	+1	1634169573265	1634237544870	0
+iet7jkwex3bjjbg38ewup9br7e	fmqk4dh3std4dy71hmfwjy8iro	+1	1634149432659	1634237544957	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	c4nrhchf3igdmnz813khbwr5no	+1	1634149157195	1634237545021	0
+a9quakcmbjys3ego1myciaoi8h	tkxi5fb9apn8fe9oya6wkbpape	-1	1634161372380	1634237545067	0
+4f4g78ewrfys8b68j456o5nxkr	c4nrhchf3igdmnz813khbwr5no	heart	1634149151174	1634237545106	0
+s1m5hgt3o7f8tftf41n94ofp9r	tp3zmm7o8pfq5ji1tmnjrkq1kh	+1	1634158186896	1634237545129	0
+km1txe6kktdabdgyuhwru7r9ua	89esbkz8ifdoxquhguapqbizbr	blush	1634125530199	1634237545151	0
+poqpi8xhfjdszcmgmjboqzwcir	mum7z5sptpndtnwf9r8apsrcta	blush	1634146729540	1634237545164	0
+x4kiax5uy3n3pjkk6xyic5i98a	qh6qh14amtb79yfwbojx6345ao	blush	1634127864359	1634237545200	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	c4nrhchf3igdmnz813khbwr5no	+1	1634149097291	1634237545211	0
+km1txe6kktdabdgyuhwru7r9ua	eo5mdm8njbb7fqji9wy93j3n5h	blush	1634160252926	1634237545251	0
+s1m5hgt3o7f8tftf41n94ofp9r	werqk6f3w7dg8rsnhbxbynb79w	blush	1634136598050	1634237545277	0
+iet7jkwex3bjjbg38ewup9br7e	werqk6f3w7dg8rsnhbxbynb79w	heart	1634136638892	1634237545337	0
+gd6p49n1x3g3ic13taequwidya	81efpznjk3dwie6pqtt4g9gmoc	+1	1634132138469	1634237545360	0
+s1m5hgt3o7f8tftf41n94ofp9r	uqw3y9gtqpfg5no3geqatbktiy	blush	1634129589870	1634237545386	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	znkscgxugjycjb4t1ed544tste	+1	1634120921447	1634237545519	0
+j78juejgzby8x8cj8f89mtq4bh	eoz3pdrudj817fyp7x5xutfh9h	-1	1634141662252	1634237545579	0
+zbdgeaijh3fh9e3foqdts6i5wh	tzn441x4gtngmp8bemxz7bcrrh	heart	1634168816884	1634237545838	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	d13au8yjs7deprtxtn7i7grfde	+1	1634127796378	1634237545871	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	pmr5acesx3dktrrdhbqt9squhr	blush	1634137141300	1634237548906	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	kw1rna6t7ty6zxnbchh5qb7djc	heart	1634119830396	1634237550379	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	9ohco49tkt86ijkfhofh6y13kh	+1	1634120830232	1634237550546	0
+j78juejgzby8x8cj8f89mtq4bh	ur6pr9awkiy93d9exgieen544w	-1	1634149202679	1634237550578	0
+km1txe6kktdabdgyuhwru7r9ua	aci4af6ioircxbkcpz6w4wuinw	heart	1634160326650	1634237550765	0
+g5x9y1ewypr4tr93whdcfby3xy	wjt4371enffedjtn85ggsu555r	-1	1634149878781	1634237543769	0
+j78juejgzby8x8cj8f89mtq4bh	dxgy6p7gf7yyfykq7ftf9i6hyc	blush	1634145626235	1634237543785	0
+4f4g78ewrfys8b68j456o5nxkr	nbcgwc3y8tbzijyzyk5kc44gar	+1	1634167820725	1634237543879	0
+iet7jkwex3bjjbg38ewup9br7e	peqykb99m7yixgksk1funitwqo	-1	1634136449603	1634237543893	0
+1jcrg4b4upf67kbexsxyyiamqa	hhpdpjfez7rg8kt5cu6ib6du6w	+1	1634148655068	1634237543917	0
+iet7jkwex3bjjbg38ewup9br7e	5wtcewdkk3rbdqpyr1kuc41hrw	+1	1634159276835	1634237543975	0
+gd6p49n1x3g3ic13taequwidya	9p86nrdn5iy6ikbyy3ya89ab9o	blush	1634141120686	1634237543987	0
+zbdgeaijh3fh9e3foqdts6i5wh	9eiyk4b5apd5be98bike6myp6r	-1	1634141337600	1634237544075	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	9eiyk4b5apd5be98bike6myp6r	-1	1634141386965	1634237544113	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137204457	1634237544145	0
+4f4g78ewrfys8b68j456o5nxkr	ojusrexwxbbuzennunq4mwksir	-1	1634143460799	1634237544278	0
+zbdgeaijh3fh9e3foqdts6i5wh	twsxff5iibdzjcjxgi88umhzxr	heart	1634158959513	1634237544317	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	wtmzj9iu9tdc3rttrp8ouc4ypc	blush	1634162698835	1634237544375	0
+4f4g78ewrfys8b68j456o5nxkr	twsxff5iibdzjcjxgi88umhzxr	heart	1634158994188	1634237544416	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	4ct5xmunsbb67dj8og3as5yd9w	+1	1634124718248	1634237544423	0
+iet7jkwex3bjjbg38ewup9br7e	we4e1a8aq78ujery9zggh9sd5w	blush	1634139181002	1634237544455	0
+gd6p49n1x3g3ic13taequwidya	a3o8krsmr78zurizx8g4b661no	-1	1634161684202	1634237544468	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	3i3eyckg6f8tbenuzh7y85645y	heart	1634134923361	1634237544501	0
+x4kiax5uy3n3pjkk6xyic5i98a	rt7t9i8rx7b6xq5c931ygc7o1h	+1	1634162260213	1634237544513	0
+poqpi8xhfjdszcmgmjboqzwcir	we4e1a8aq78ujery9zggh9sd5w	heart	1634139223519	1634237544531	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	4ct5xmunsbb67dj8og3as5yd9w	heart	1634124713860	1634237544563	0
+km1txe6kktdabdgyuhwru7r9ua	3k6zwzrojjf69mjadhyd1wegjh	heart	1634151634248	1634237544594	0
+x4kiax5uy3n3pjkk6xyic5i98a	wp3pbc8bwfge9ewdocpmazssua	blush	1634165023376	1634237544691	0
+x4kiax5uy3n3pjkk6xyic5i98a	n7h11i678igkb8n9typc16q4nc	-1	1634137142535	1634237544693	0
+j78juejgzby8x8cj8f89mtq4bh	r8ez44dch7gq9rmwfuehop3ujw	-1	1634141792379	1634237544705	0
+a9quakcmbjys3ego1myciaoi8h	qi8q3igcniy5xnp5pwouh61wwy	blush	1634157064366	1634237544715	0
+a4emb3hsdjn7pk6s5crpdmokaw	e84t61ojqtdz5f6wxk3zew8srw	heart	1634125060149	1634237544768	0
+gd6p49n1x3g3ic13taequwidya	u7mjrjeakt868g5gfbrfgu9rkw	heart	1634164236046	1634237544852	0
+j78juejgzby8x8cj8f89mtq4bh	hanpye6mgtrrpe3gpf7yqx9jgo	blush	1634157651699	1634237544906	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	4mtw36b45i8fbr1yh4bmxper8y	-1	1634162076026	1634237544976	0
+1jcrg4b4upf67kbexsxyyiamqa	dyayxx4117bm7dinic9o4n5oxo	heart	1634137583981	1634237544993	0
+a9quakcmbjys3ego1myciaoi8h	bsp4btb7mpnc8fhxt6th6f9qhc	+1	1634150170883	1634237545032	0
+gd6p49n1x3g3ic13taequwidya	xr8b6e4wupyj7mme55r8qbrf4a	heart	1634161929205	1634237545050	0
+poqpi8xhfjdszcmgmjboqzwcir	c4nrhchf3igdmnz813khbwr5no	heart	1634149083810	1634237545091	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	5dkcfr95bfy6bjusdje5dt1mhr	blush	1634140655353	1634237545109	0
+4f4g78ewrfys8b68j456o5nxkr	9dzn7zz173nntrbkmorkhqzpew	blush	1634168753590	1634237545119	0
+a4emb3hsdjn7pk6s5crpdmokaw	tkxi5fb9apn8fe9oya6wkbpape	blush	1634161344411	1634237545223	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	dxcoi6tgeffcbnz1sk8tcz6bwy	blush	1634133574157	1634237545355	0
+x4kiax5uy3n3pjkk6xyic5i98a	bbaoqpicx3r8pkbuw6fyybjywa	-1	1634163318474	1634237545409	0
+1jcrg4b4upf67kbexsxyyiamqa	iprjmsawx78t5npk33x7orajnw	-1	1634156024108	1634237545449	0
+a9quakcmbjys3ego1myciaoi8h	c99g9xiu1tn6zraboemjrofogr	blush	1634128352550	1634237545475	0
+a9quakcmbjys3ego1myciaoi8h	d13au8yjs7deprtxtn7i7grfde	+1	1634127839375	1634237545839	0
+poqpi8xhfjdszcmgmjboqzwcir	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137229145	1634237543772	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	zb34npxgm7dtbd4tw1zryp1xqa	blush	1634147057765	1634237543801	0
+poqpi8xhfjdszcmgmjboqzwcir	crqacca467frxmhcb7canyghaw	+1	1634134857063	1634237543815	0
+km1txe6kktdabdgyuhwru7r9ua	r4bkym5nqfnw8efdj95pyqw5tr	+1	1634139835277	1634237543857	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	6e4d654e67y6pcftr1ic13mt8e	-1	1634125080174	1634237543882	0
+a4emb3hsdjn7pk6s5crpdmokaw	nbcgwc3y8tbzijyzyk5kc44gar	blush	1634167836232	1634237543916	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	nbcgwc3y8tbzijyzyk5kc44gar	blush	1634167772102	1634237543973	0
+gd6p49n1x3g3ic13taequwidya	f77k8reqd7r15e6ceuwxrx9icw	blush	1634144334975	1634237543985	0
+s1m5hgt3o7f8tftf41n94ofp9r	f77k8reqd7r15e6ceuwxrx9icw	-1	1634144333679	1634237544000	0
+s1m5hgt3o7f8tftf41n94ofp9r	t6uf8kyeyb898ghrn9cmj7h4ky	heart	1634163826112	1634237544066	0
+g5x9y1ewypr4tr93whdcfby3xy	x89m7tkesty59b65rdzerhknky	-1	1634125819155	1634237544081	0
+a4emb3hsdjn7pk6s5crpdmokaw	rh1px4spyfr5mjq6jhbpjezzyc	blush	1634157275827	1634237544138	0
+4f4g78ewrfys8b68j456o5nxkr	w4i3zxdu9b8h9kzwxp8bcs7tyc	+1	1634139180371	1634237544175	0
+a4emb3hsdjn7pk6s5crpdmokaw	yf7qa6xa6ir9zbigq4fywnwshw	heart	1634166832252	1634237544258	0
+iet7jkwex3bjjbg38ewup9br7e	yo18zumwnj8kpmzrzac4ntbkko	blush	1634166544174	1634237544394	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	cg1h9wjybbfwubwaab6jnfc4mw	blush	1634131494267	1634237544409	0
+a4emb3hsdjn7pk6s5crpdmokaw	wtmzj9iu9tdc3rttrp8ouc4ypc	blush	1634162653104	1634237544428	0
+zbdgeaijh3fh9e3foqdts6i5wh	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124654158	1634237544438	0
+gd6p49n1x3g3ic13taequwidya	stzdki9g43y97quko8d7kuq95w	+1	1634151658185	1634237544451	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	kbyosns5ktb5ube3rartwu9n8r	heart	1634152146424	1634237544467	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124700512	1634237544508	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	umu8qb3cntgcpe31m7anu661fy	heart	1634148514966	1634237544531	0
+km1txe6kktdabdgyuhwru7r9ua	bcmhudgqmigq5j3j4m9pjpxnjr	+1	1634130305900	1634237544562	0
+gd6p49n1x3g3ic13taequwidya	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124637532	1634237544585	0
+4f4g78ewrfys8b68j456o5nxkr	n7h11i678igkb8n9typc16q4nc	+1	1634137157866	1634237544604	0
+gd6p49n1x3g3ic13taequwidya	sggabe47z38wtm56c5fxic6z8e	blush	1634157626087	1634237544698	0
+4f4g78ewrfys8b68j456o5nxkr	tt8kdigdabfudy1q5oa5d836mh	heart	1634161513533	1634237544724	0
+j78juejgzby8x8cj8f89mtq4bh	qm8ddpoxctd1fffyeq5txhphjo	heart	1634164970288	1634237544786	0
+gd6p49n1x3g3ic13taequwidya	4mtw36b45i8fbr1yh4bmxper8y	+1	1634162043624	1634237544808	0
+4f4g78ewrfys8b68j456o5nxkr	b4ebn3gzqpgdtnbehcmnxtefyr	blush	1634136626120	1634237544832	0
+zbdgeaijh3fh9e3foqdts6i5wh	qm8ddpoxctd1fffyeq5txhphjo	-1	1634164967465	1634237544865	0
+4f4g78ewrfys8b68j456o5nxkr	uuf8n1rs13ffjqy3og5yarn3zo	+1	1634145362992	1634237544882	0
+iet7jkwex3bjjbg38ewup9br7e	bc83ggiyn3nimj4mgk1nw4zpfe	-1	1634132226208	1634237544941	0
+4f4g78ewrfys8b68j456o5nxkr	4mtw36b45i8fbr1yh4bmxper8y	blush	1634162096518	1634237544957	0
+4f4g78ewrfys8b68j456o5nxkr	uuf8n1rs13ffjqy3og5yarn3zo	blush	1634145283940	1634237545016	0
+1jcrg4b4upf67kbexsxyyiamqa	5dkcfr95bfy6bjusdje5dt1mhr	blush	1634140655106	1634237545073	0
+g5x9y1ewypr4tr93whdcfby3xy	tp3zmm7o8pfq5ji1tmnjrkq1kh	blush	1634158285029	1634237545113	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	tkxi5fb9apn8fe9oya6wkbpape	heart	1634161349906	1634237545155	0
+g5x9y1ewypr4tr93whdcfby3xy	eoyumk7r5pnspfag8mqhfjd47o	heart	1634149972502	1634237545236	0
+a9quakcmbjys3ego1myciaoi8h	4kqmxdgm87rkxr5ii53y1se9ww	blush	1634155166667	1634237545303	0
+s1m5hgt3o7f8tftf41n94ofp9r	c99g9xiu1tn6zraboemjrofogr	+1	1634128407267	1634237545379	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	w63jgagr6bfftgfz96w7mz6j1e	+1	1634135692083	1634237545402	0
+j78juejgzby8x8cj8f89mtq4bh	xt973f5hq3ykf8h1ti8orpnn4h	blush	1634165830521	1634237545446	0
+a4emb3hsdjn7pk6s5crpdmokaw	mk9untmkz7rr9mfau1tjmfktcy	-1	1634126690430	1634237545490	0
+iet7jkwex3bjjbg38ewup9br7e	ybknrkbo7pg7xe619dkryz4ywr	-1	1634134811462	1634237545515	0
+zbdgeaijh3fh9e3foqdts6i5wh	d13au8yjs7deprtxtn7i7grfde	heart	1634127761316	1634237545800	0
+j78juejgzby8x8cj8f89mtq4bh	g7ophewc9pyafmoooopamotaih	+1	1634150046755	1634237545940	0
+a9quakcmbjys3ego1myciaoi8h	f9mj68ft3bbz5byuggrwhxnicr	heart	1634144986391	1634237546061	0
+iet7jkwex3bjjbg38ewup9br7e	4wkys9rkhpn1tka6yo1rahetgy	+1	1634167794275	1634237550321	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	efkiqnq1xtncirbxue8xgt8qtr	+1	1634132328368	1634237550433	0
+a4emb3hsdjn7pk6s5crpdmokaw	6a5q1cj57pdo8fo31x37ztp9zh	blush	1634164313426	1634237550824	0
+a4emb3hsdjn7pk6s5crpdmokaw	877esotrb78rxgekesee793aba	+1	1634146798656	1634237543779	0
+a9quakcmbjys3ego1myciaoi8h	zb34npxgm7dtbd4tw1zryp1xqa	heart	1634146996126	1634237543822	0
+1jcrg4b4upf67kbexsxyyiamqa	yqomjszazfng8xc838ree8mexh	-1	1634163342572	1634237543886	0
+1jcrg4b4upf67kbexsxyyiamqa	nbcgwc3y8tbzijyzyk5kc44gar	-1	1634167784328	1634237543897	0
+1jcrg4b4upf67kbexsxyyiamqa	r4bkym5nqfnw8efdj95pyqw5tr	+1	1634139791753	1634237543914	0
+j78juejgzby8x8cj8f89mtq4bh	jdquu7m9g7gqijzd3erhprt9mh	+1	1634137272426	1634237543969	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	5qkb17jrcfr4mq3zmowksofuur	heart	1634126217039	1634237544016	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	jdquu7m9g7gqijzd3erhprt9mh	heart	1634137261808	1634237544031	0
+a9quakcmbjys3ego1myciaoi8h	w4i3zxdu9b8h9kzwxp8bcs7tyc	heart	1634139165922	1634237544094	0
+gd6p49n1x3g3ic13taequwidya	uhc7w6qoctn8tpzsndemxyo8dh	heart	1634123449704	1634237544127	0
+j78juejgzby8x8cj8f89mtq4bh	koawm53o3jff8f16jot8jtutph	blush	1634126357664	1634237544242	0
+a9quakcmbjys3ego1myciaoi8h	ojusrexwxbbuzennunq4mwksir	+1	1634143518218	1634237544299	0
+zbdgeaijh3fh9e3foqdts6i5wh	ojusrexwxbbuzennunq4mwksir	+1	1634143464901	1634237544336	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	hwgyz4u64brg7rt9mwz6iqpawe	heart	1634162392045	1634237544416	0
+a4emb3hsdjn7pk6s5crpdmokaw	we4e1a8aq78ujery9zggh9sd5w	heart	1634139153008	1634237544473	0
+a9quakcmbjys3ego1myciaoi8h	tubo8sqpb7dhddjz3c6x3hp67a	-1	1634146693203	1634237544492	0
+a9quakcmbjys3ego1myciaoi8h	rizrkbj69bbz8dcgt3jc7bxona	-1	1634136824559	1634237544515	0
+x4kiax5uy3n3pjkk6xyic5i98a	tubo8sqpb7dhddjz3c6x3hp67a	heart	1634146695002	1634237544539	0
+km1txe6kktdabdgyuhwru7r9ua	3x4zf5uxdt8cur64htaxgnbzay	+1	1634149135436	1634237544594	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	n7h11i678igkb8n9typc16q4nc	blush	1634137209746	1634237544624	0
+km1txe6kktdabdgyuhwru7r9ua	zhnduqtwkj85fkgef4mtgbfwzh	-1	1634139412298	1634237544683	0
+a4emb3hsdjn7pk6s5crpdmokaw	r8ez44dch7gq9rmwfuehop3ujw	-1	1634141809185	1634237544744	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	y3gdaobpdbrf3rbrdu3hgf1bfe	heart	1634133160432	1634237544783	0
+s1m5hgt3o7f8tftf41n94ofp9r	uuf8n1rs13ffjqy3og5yarn3zo	-1	1634145302203	1634237544844	0
+zbdgeaijh3fh9e3foqdts6i5wh	uuf8n1rs13ffjqy3og5yarn3zo	blush	1634145283179	1634237544861	0
+j78juejgzby8x8cj8f89mtq4bh	4mtw36b45i8fbr1yh4bmxper8y	heart	1634162077499	1634237544895	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	4mtw36b45i8fbr1yh4bmxper8y	heart	1634162081013	1634237544922	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	mf5fqbifaffo9kzs9azq4idiiw	blush	1634148927710	1634237545004	0
+km1txe6kktdabdgyuhwru7r9ua	5dkcfr95bfy6bjusdje5dt1mhr	blush	1634140724604	1634237545095	0
+1jcrg4b4upf67kbexsxyyiamqa	tkxi5fb9apn8fe9oya6wkbpape	blush	1634161333395	1634237545123	0
+a9quakcmbjys3ego1myciaoi8h	tkxi5fb9apn8fe9oya6wkbpape	blush	1634161325482	1634237545173	0
+x4kiax5uy3n3pjkk6xyic5i98a	hhjdem8b9td6ufez634cisw6kw	+1	1634123263529	1634237545243	0
+km1txe6kktdabdgyuhwru7r9ua	zf78fbgzg38sd84kxczd9byrzr	heart	1634154189212	1634237545423	0
+poqpi8xhfjdszcmgmjboqzwcir	sopn9g5o67g6udoqgsso9xiahw	+1	1634135319914	1634237545717	0
+4f4g78ewrfys8b68j456o5nxkr	jbwjwj5tp3fabeojha71w5nxky	blush	1634157107729	1634237545753	0
+km1txe6kktdabdgyuhwru7r9ua	d13au8yjs7deprtxtn7i7grfde	blush	1634127747702	1634237545821	0
+iet7jkwex3bjjbg38ewup9br7e	x8o6543sa7rbugch34ybnbzaar	+1	1634140649528	1634237545845	0
+s1m5hgt3o7f8tftf41n94ofp9r	goymuyxzcif67ksayzmbw99s9a	heart	1634149416039	1634237545908	0
+4f4g78ewrfys8b68j456o5nxkr	an5i8p74mfbpjytuftd8nb9ccy	+1	1634142593439	1634237545977	0
+s1m5hgt3o7f8tftf41n94ofp9r	f9mj68ft3bbz5byuggrwhxnicr	+1	1634144903578	1634237546071	0
+x4kiax5uy3n3pjkk6xyic5i98a	4uwaine9kibtpqeu7ze7a9uqgc	-1	1634144233321	1634237546106	0
+j78juejgzby8x8cj8f89mtq4bh	gof8chhf8fdttkpmhzqgc4zufh	+1	1634142837570	1634237543825	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	in9hpufj3by9uq4oqtsq3rgfky	heart	1634131774958	1634237543836	0
+1jcrg4b4upf67kbexsxyyiamqa	mejkmf3gnpgemmjo9f6b7ogigo	-1	1634140824149	1634237543861	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	in9hpufj3by9uq4oqtsq3rgfky	-1	1634131774851	1634237543867	0
+x4kiax5uy3n3pjkk6xyic5i98a	ci9dskfgib8kim17qh85nk35zy	heart	1634157974508	1634237543907	0
+s1m5hgt3o7f8tftf41n94ofp9r	8ei9p3p3i3yhme7zha7u9rmakc	heart	1634130549074	1634237544001	0
+iet7jkwex3bjjbg38ewup9br7e	9p635k74digqpr1qaubfybcc1r	blush	1634152931358	1634237544078	0
+s1m5hgt3o7f8tftf41n94ofp9r	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137187812	1634237544100	0
+a9quakcmbjys3ego1myciaoi8h	d1qhoxtwxjfjfj5edwbssan83w	heart	1634131132100	1634237544145	0
+iet7jkwex3bjjbg38ewup9br7e	bqpad1wkqjbgfyoe3k31ccfurh	blush	1634150717318	1634237544186	0
+a9quakcmbjys3ego1myciaoi8h	koawm53o3jff8f16jot8jtutph	heart	1634126291398	1634237544226	0
+a4emb3hsdjn7pk6s5crpdmokaw	yf7qa6xa6ir9zbigq4fywnwshw	blush	1634166891805	1634237544239	0
+g5x9y1ewypr4tr93whdcfby3xy	mcc8j8h5qtye5e44wh6zec54go	blush	1634136546875	1634237544255	0
+poqpi8xhfjdszcmgmjboqzwcir	yf7qa6xa6ir9zbigq4fywnwshw	-1	1634166828661	1634237544278	0
+g5x9y1ewypr4tr93whdcfby3xy	4ct5xmunsbb67dj8og3as5yd9w	-1	1634124703536	1634237544307	0
+poqpi8xhfjdszcmgmjboqzwcir	sdc84x8a63d3tcjmi695mu4kxr	heart	1634153472984	1634237544324	0
+gd6p49n1x3g3ic13taequwidya	cmuu6c9i97ysxkjwt7dkqyhb4o	heart	1634157827303	1634237544392	0
+gd6p49n1x3g3ic13taequwidya	3i3eyckg6f8tbenuzh7y85645y	-1	1634134986006	1634237544481	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	bcmhudgqmigq5j3j4m9pjpxnjr	+1	1634130294089	1634237544494	0
+poqpi8xhfjdszcmgmjboqzwcir	qghjz74xnfgrbdfz5jrpbe457e	heart	1634157523181	1634237544553	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	tt8kdigdabfudy1q5oa5d836mh	heart	1634161517327	1634237544668	0
+1jcrg4b4upf67kbexsxyyiamqa	tt8kdigdabfudy1q5oa5d836mh	-1	1634161516437	1634237544688	0
+a4emb3hsdjn7pk6s5crpdmokaw	tt8kdigdabfudy1q5oa5d836mh	+1	1634161585904	1634237544707	0
+km1txe6kktdabdgyuhwru7r9ua	5ifbqsjd3tbw3xq75y7eincftw	+1	1634155098827	1634237544738	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	4mtw36b45i8fbr1yh4bmxper8y	heart	1634162090275	1634237544751	0
+iet7jkwex3bjjbg38ewup9br7e	xapkko9jtjr15ehq5zoc98cfqa	blush	1634150539526	1634237544870	0
+km1txe6kktdabdgyuhwru7r9ua	bsp4btb7mpnc8fhxt6th6f9qhc	+1	1634150177597	1634237544992	0
+4f4g78ewrfys8b68j456o5nxkr	c4nrhchf3igdmnz813khbwr5no	+1	1634149165793	1634237545074	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	89esbkz8ifdoxquhguapqbizbr	heart	1634125618954	1634237545100	0
+a4emb3hsdjn7pk6s5crpdmokaw	za1nze98qbbe9fssm3kzuhg3ec	blush	1634134710611	1634237545193	0
+1jcrg4b4upf67kbexsxyyiamqa	hbjukm3r5jb8zduecs7oa99n8c	-1	1634128351025	1634237545264	0
+gd6p49n1x3g3ic13taequwidya	tkxi5fb9apn8fe9oya6wkbpape	blush	1634161339522	1634237545307	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	xeqg1dxcejdfbpy1byriiz3juc	+1	1634153243961	1634237545391	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	eoz3pdrudj817fyp7x5xutfh9h	blush	1634141718614	1634237545559	0
+iet7jkwex3bjjbg38ewup9br7e	sopn9g5o67g6udoqgsso9xiahw	+1	1634135286992	1634237545737	0
+a9quakcmbjys3ego1myciaoi8h	48h4a43mxiyouq18hyypzmxfky	-1	1634146399806	1634237545761	0
+gd6p49n1x3g3ic13taequwidya	goymuyxzcif67ksayzmbw99s9a	-1	1634149387551	1634237545943	0
+j78juejgzby8x8cj8f89mtq4bh	f9mj68ft3bbz5byuggrwhxnicr	+1	1634144984983	1634237546106	0
+a4emb3hsdjn7pk6s5crpdmokaw	t9aq6ctrd7byigasg8u3wj1j5h	heart	1634137774156	1634237548140	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	g7s7dpg4yin5tx75hapjj9nioc	heart	1634159285849	1634237548176	0
+km1txe6kktdabdgyuhwru7r9ua	bbo8yzc5f3dg7m19b53wd5zn3h	+1	1634162951978	1634237548462	0
+zbdgeaijh3fh9e3foqdts6i5wh	fodny6pxopb7trfq8x19xcz6hy	heart	1634144957757	1634237548658	0
+gd6p49n1x3g3ic13taequwidya	5gigp58xgjrc9rtbjadmkwk67a	blush	1634132965695	1634237543783	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137237770	1634237543918	0
+km1txe6kktdabdgyuhwru7r9ua	cbze15n3jiy6pxxzmhy79ngt3c	-1	1634123432679	1634237543977	0
+g5x9y1ewypr4tr93whdcfby3xy	tenhb49jw7g7fjnjjpd4xm94ih	heart	1634148772980	1634237543989	0
+gd6p49n1x3g3ic13taequwidya	uhc7w6qoctn8tpzsndemxyo8dh	blush	1634123500463	1634237544085	0
+poqpi8xhfjdszcmgmjboqzwcir	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137218842	1634237544165	0
+4f4g78ewrfys8b68j456o5nxkr	mcc8j8h5qtye5e44wh6zec54go	blush	1634136611039	1634237544239	0
+iet7jkwex3bjjbg38ewup9br7e	4ct5xmunsbb67dj8og3as5yd9w	heart	1634124689101	1634237544269	0
+4f4g78ewrfys8b68j456o5nxkr	sdc84x8a63d3tcjmi695mu4kxr	-1	1634153456847	1634237544345	0
+j78juejgzby8x8cj8f89mtq4bh	rizrkbj69bbz8dcgt3jc7bxona	+1	1634136873281	1634237544473	0
+s1m5hgt3o7f8tftf41n94ofp9r	we4e1a8aq78ujery9zggh9sd5w	-1	1634139167204	1634237544546	0
+s1m5hgt3o7f8tftf41n94ofp9r	3k6zwzrojjf69mjadhyd1wegjh	heart	1634151703546	1634237544561	0
+zbdgeaijh3fh9e3foqdts6i5wh	9g57ppmtkb84pcpyitsfue74ho	heart	1634148962233	1634237544606	0
+gd6p49n1x3g3ic13taequwidya	tt8kdigdabfudy1q5oa5d836mh	heart	1634161585851	1634237544623	0
+s1m5hgt3o7f8tftf41n94ofp9r	3x4zf5uxdt8cur64htaxgnbzay	heart	1634149082534	1634237544663	0
+a9quakcmbjys3ego1myciaoi8h	zhnduqtwkj85fkgef4mtgbfwzh	blush	1634139388454	1634237544703	0
+g5x9y1ewypr4tr93whdcfby3xy	r8ez44dch7gq9rmwfuehop3ujw	+1	1634141792612	1634237544722	0
+j78juejgzby8x8cj8f89mtq4bh	e97tjpksuifw9m9iy5kgem17wc	heart	1634140298739	1634237544796	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	qm8ddpoxctd1fffyeq5txhphjo	heart	1634165019683	1634237544808	0
+a4emb3hsdjn7pk6s5crpdmokaw	b4ebn3gzqpgdtnbehcmnxtefyr	-1	1634136587412	1634237544850	0
+x4kiax5uy3n3pjkk6xyic5i98a	c4nrhchf3igdmnz813khbwr5no	+1	1634149151952	1634237545001	0
+s1m5hgt3o7f8tftf41n94ofp9r	bsp4btb7mpnc8fhxt6th6f9qhc	blush	1634150169692	1634237545014	0
+a4emb3hsdjn7pk6s5crpdmokaw	mf5fqbifaffo9kzs9azq4idiiw	heart	1634148983127	1634237545037	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	c4nrhchf3igdmnz813khbwr5no	blush	1634149115806	1634237545055	0
+a4emb3hsdjn7pk6s5crpdmokaw	1b3oej98htd5bggxahsbamr1ga	-1	1634144201299	1634237545109	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	c4nrhchf3igdmnz813khbwr5no	heart	1634149070654	1634237545136	0
+a9quakcmbjys3ego1myciaoi8h	456xgu7nubfabjobmjas8pja1c	blush	1634131686982	1634237545194	0
+x4kiax5uy3n3pjkk6xyic5i98a	za1nze98qbbe9fssm3kzuhg3ec	heart	1634134724581	1634237545210	0
+1jcrg4b4upf67kbexsxyyiamqa	werqk6f3w7dg8rsnhbxbynb79w	heart	1634136561139	1634237545296	0
+zbdgeaijh3fh9e3foqdts6i5wh	64ob548y4tfjikz6od5es4yofy	-1	1634123380122	1634237545317	0
+iet7jkwex3bjjbg38ewup9br7e	xt973f5hq3ykf8h1ti8orpnn4h	+1	1634165825179	1634237545335	0
+x4kiax5uy3n3pjkk6xyic5i98a	xt973f5hq3ykf8h1ti8orpnn4h	+1	1634165812250	1634237545427	0
+a9quakcmbjys3ego1myciaoi8h	qctp7ct9j3rx7nhk7i8yo661oa	-1	1634147543173	1634237545453	0
+g5x9y1ewypr4tr93whdcfby3xy	x8o6543sa7rbugch34ybnbzaar	-1	1634140575205	1634237545892	0
+a4emb3hsdjn7pk6s5crpdmokaw	7udcrjfmtf8yfctw4hi54zdccc	+1	1634156489416	1634237545993	0
+a9quakcmbjys3ego1myciaoi8h	f9mj68ft3bbz5byuggrwhxnicr	+1	1634144906094	1634237546027	0
+g5x9y1ewypr4tr93whdcfby3xy	atti9diketdnif8m9963kjio4w	blush	1634152093336	1634237546124	0
+g5x9y1ewypr4tr93whdcfby3xy	kbng7if5pigefphbiufojyxnnr	+1	1634124166996	1634237548396	0
+gd6p49n1x3g3ic13taequwidya	gof8chhf8fdttkpmhzqgc4zufh	+1	1634142796945	1634237543784	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	877esotrb78rxgekesee793aba	+1	1634146803525	1634237543814	0
+km1txe6kktdabdgyuhwru7r9ua	edbsrayjrtftxju3fso661u9xc	heart	1634156326788	1634237543837	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	peqykb99m7yixgksk1funitwqo	-1	1634136448195	1634237543865	0
+gd6p49n1x3g3ic13taequwidya	yqomjszazfng8xc838ree8mexh	heart	1634163404263	1634237543922	0
+a9quakcmbjys3ego1myciaoi8h	f77k8reqd7r15e6ceuwxrx9icw	+1	1634144406607	1634237543948	0
+iet7jkwex3bjjbg38ewup9br7e	5qkb17jrcfr4mq3zmowksofuur	heart	1634126177909	1634237543999	0
+g5x9y1ewypr4tr93whdcfby3xy	8gxgaw3ksbniifmpr93ugwdjte	+1	1634151340292	1634237544042	0
+zbdgeaijh3fh9e3foqdts6i5wh	8jm1enmb978jmb94jjmeh3dunh	+1	1634134006197	1634237544054	0
+a4emb3hsdjn7pk6s5crpdmokaw	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137252725	1634237544067	0
+a4emb3hsdjn7pk6s5crpdmokaw	37r7h451tjfkd8ybtugjk5zh9y	heart	1634149207394	1634237544164	0
+4f4g78ewrfys8b68j456o5nxkr	bp6z768cyib6xfarr5uo4fpwuc	-1	1634151857511	1634237544182	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	bqpad1wkqjbgfyoe3k31ccfurh	+1	1634150714552	1634237544210	0
+j78juejgzby8x8cj8f89mtq4bh	hochpmbfjjytfno7inpb4xkx9e	-1	1634139828476	1634237544374	0
+iet7jkwex3bjjbg38ewup9br7e	wtmzj9iu9tdc3rttrp8ouc4ypc	+1	1634162710909	1634237544403	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	sxizqu6tbjysfduh3hgyh6h73c	-1	1634130265558	1634237544432	0
+a9quakcmbjys3ego1myciaoi8h	bcmhudgqmigq5j3j4m9pjpxnjr	heart	1634130262816	1634237544514	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124639502	1634237544545	0
+iet7jkwex3bjjbg38ewup9br7e	qthsywnztjd7dmbirp81ewg4ce	-1	1634128946673	1634237544634	0
+j78juejgzby8x8cj8f89mtq4bh	e84t61ojqtdz5f6wxk3zew8srw	+1	1634125125809	1634237544747	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	4mtw36b45i8fbr1yh4bmxper8y	+1	1634162068195	1634237544789	0
+km1txe6kktdabdgyuhwru7r9ua	hanpye6mgtrrpe3gpf7yqx9jgo	blush	1634157588927	1634237544938	0
+a4emb3hsdjn7pk6s5crpdmokaw	bc83ggiyn3nimj4mgk1nw4zpfe	+1	1634132209985	1634237544961	0
+zbdgeaijh3fh9e3foqdts6i5wh	x3t5j111hjgb5cbyw6zc7e3m4c	+1	1634165327039	1634237544973	0
+a4emb3hsdjn7pk6s5crpdmokaw	uuf8n1rs13ffjqy3og5yarn3zo	+1	1634145298372	1634237544990	0
+x4kiax5uy3n3pjkk6xyic5i98a	bk5fbwenxpy3deo5swwd5sog3w	blush	1634146723629	1634237545035	0
+a4emb3hsdjn7pk6s5crpdmokaw	eo5mdm8njbb7fqji9wy93j3n5h	blush	1634160286244	1634237545192	0
+zbdgeaijh3fh9e3foqdts6i5wh	4kqmxdgm87rkxr5ii53y1se9ww	+1	1634155084918	1634237545280	0
+km1txe6kktdabdgyuhwru7r9ua	zf78fbgzg38sd84kxczd9byrzr	-1	1634154206231	1634237545296	0
+4f4g78ewrfys8b68j456o5nxkr	c99g9xiu1tn6zraboemjrofogr	+1	1634128425536	1634237545362	0
+zbdgeaijh3fh9e3foqdts6i5wh	znkscgxugjycjb4t1ed544tste	-1	1634120949840	1634237545425	0
+a4emb3hsdjn7pk6s5crpdmokaw	1oaiwaxtm7bexyhczj8jyoq5rr	+1	1634150471254	1634237545568	0
+km1txe6kktdabdgyuhwru7r9ua	x8o6543sa7rbugch34ybnbzaar	-1	1634140607227	1634237545829	0
+km1txe6kktdabdgyuhwru7r9ua	f9mj68ft3bbz5byuggrwhxnicr	blush	1634144904526	1634237546098	0
+iet7jkwex3bjjbg38ewup9br7e	tr56n83nbprwbxuntmsferhjrc	+1	1634158378522	1634237548295	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	co4nsin7tprqicjeo3ogfwwohy	heart	1634164703935	1634237550407	0
+s1m5hgt3o7f8tftf41n94ofp9r	ur6pr9awkiy93d9exgieen544w	+1	1634149193534	1634237550563	0
+4f4g78ewrfys8b68j456o5nxkr	767sd3xc7jfbdx19f67ox99fjr	heart	1634129114174	1634237550581	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	epfzusjsxpni7ccqso96nmxswe	+1	1634134844254	1634237550665	0
+x4kiax5uy3n3pjkk6xyic5i98a	pncwu7ko4f89fj5yubj1si66qo	heart	1634168433998	1634237550797	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	hayy3iys8bbcmcibuwfz15kjce	-1	1634147864587	1634237550820	0
+a4emb3hsdjn7pk6s5crpdmokaw	udxqqa5jrfrzunerrmqeg4th8w	heart	1634120848987	1634237550955	0
+j78juejgzby8x8cj8f89mtq4bh	nbcgwc3y8tbzijyzyk5kc44gar	heart	1634167791530	1634237543787	0
+a4emb3hsdjn7pk6s5crpdmokaw	gof8chhf8fdttkpmhzqgc4zufh	heart	1634142838597	1634237543802	0
+4f4g78ewrfys8b68j456o5nxkr	mp7naqrjpffkzgf3b59p7wnxzc	+1	1634132431803	1634237543827	0
+g5x9y1ewypr4tr93whdcfby3xy	r4bkym5nqfnw8efdj95pyqw5tr	heart	1634139769071	1634237543839	0
+a9quakcmbjys3ego1myciaoi8h	yqomjszazfng8xc838ree8mexh	-1	1634163365842	1634237543853	0
+s1m5hgt3o7f8tftf41n94ofp9r	scojipstsbyq5qnxid8rqyt8wc	+1	1634149980235	1634237543891	0
+a9quakcmbjys3ego1myciaoi8h	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137193541	1634237543934	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	9p86nrdn5iy6ikbyy3ya89ab9o	+1	1634141137680	1634237543947	0
+s1m5hgt3o7f8tftf41n94ofp9r	pmwpnxfoairmtg17qpp9wy35hc	blush	1634161613799	1634237544021	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137218987	1634237544085	0
+zbdgeaijh3fh9e3foqdts6i5wh	w4i3zxdu9b8h9kzwxp8bcs7tyc	blush	1634139215119	1634237544156	0
+g5x9y1ewypr4tr93whdcfby3xy	37r7h451tjfkd8ybtugjk5zh9y	blush	1634149207452	1634237544202	0
+x4kiax5uy3n3pjkk6xyic5i98a	twsxff5iibdzjcjxgi88umhzxr	+1	1634159004070	1634237544300	0
+s1m5hgt3o7f8tftf41n94ofp9r	yo18zumwnj8kpmzrzac4ntbkko	blush	1634166585052	1634237544367	0
+s1m5hgt3o7f8tftf41n94ofp9r	j3qj9m7kk3897jerjb6or1z94a	-1	1634134898802	1634237544430	0
+s1m5hgt3o7f8tftf41n94ofp9r	hwgyz4u64brg7rt9mwz6iqpawe	+1	1634162325371	1634237544484	0
+1jcrg4b4upf67kbexsxyyiamqa	we4e1a8aq78ujery9zggh9sd5w	+1	1634139193563	1634237544513	0
+iet7jkwex3bjjbg38ewup9br7e	3i3eyckg6f8tbenuzh7y85645y	heart	1634134922290	1634237544557	0
+x4kiax5uy3n3pjkk6xyic5i98a	3k6zwzrojjf69mjadhyd1wegjh	heart	1634151695901	1634237544575	0
+iet7jkwex3bjjbg38ewup9br7e	tt8kdigdabfudy1q5oa5d836mh	-1	1634161570074	1634237544740	0
+km1txe6kktdabdgyuhwru7r9ua	5ifbqsjd3tbw3xq75y7eincftw	blush	1634155138897	1634237544757	0
+4f4g78ewrfys8b68j456o5nxkr	5ifbqsjd3tbw3xq75y7eincftw	heart	1634155154044	1634237544777	0
+x4kiax5uy3n3pjkk6xyic5i98a	uuf8n1rs13ffjqy3og5yarn3zo	heart	1634145309786	1634237544950	0
+poqpi8xhfjdszcmgmjboqzwcir	8zib9widubre5eqwynbrnmrq5c	heart	1634151133415	1634237545026	0
+a4emb3hsdjn7pk6s5crpdmokaw	89esbkz8ifdoxquhguapqbizbr	blush	1634125590811	1634237545115	0
+gd6p49n1x3g3ic13taequwidya	tkxi5fb9apn8fe9oya6wkbpape	heart	1634161298786	1634237545206	0
+x4kiax5uy3n3pjkk6xyic5i98a	eo5mdm8njbb7fqji9wy93j3n5h	-1	1634160313207	1634237545227	0
+a9quakcmbjys3ego1myciaoi8h	xt973f5hq3ykf8h1ti8orpnn4h	+1	1634165823019	1634237545289	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	werqk6f3w7dg8rsnhbxbynb79w	heart	1634136586949	1634237545317	0
+a4emb3hsdjn7pk6s5crpdmokaw	zf78fbgzg38sd84kxczd9byrzr	heart	1634154165370	1634237545344	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	cmbfhdjdibfhpr7qyg49kru8dc	blush	1634166103656	1634237545370	0
+s1m5hgt3o7f8tftf41n94ofp9r	zf78fbgzg38sd84kxczd9byrzr	heart	1634154158094	1634237545384	0
+a4emb3hsdjn7pk6s5crpdmokaw	6zmn4mki4bbcdqrzpe7xiykpxw	-1	1634165964188	1634237545513	0
+g5x9y1ewypr4tr93whdcfby3xy	1oaiwaxtm7bexyhczj8jyoq5rr	-1	1634150416740	1634237545546	0
+j78juejgzby8x8cj8f89mtq4bh	9s44hxwmbpn6ufh5tghgyiotyc	heart	1634138501862	1634237545596	0
+zbdgeaijh3fh9e3foqdts6i5wh	jbwjwj5tp3fabeojha71w5nxky	blush	1634157131952	1634237545775	0
+iet7jkwex3bjjbg38ewup9br7e	tzn441x4gtngmp8bemxz7bcrrh	+1	1634168805415	1634237545820	0
+4f4g78ewrfys8b68j456o5nxkr	goymuyxzcif67ksayzmbw99s9a	+1	1634149381350	1634237545925	0
+zbdgeaijh3fh9e3foqdts6i5wh	an5i8p74mfbpjytuftd8nb9ccy	blush	1634142605351	1634237545961	0
+gd6p49n1x3g3ic13taequwidya	f9mj68ft3bbz5byuggrwhxnicr	+1	1634144994430	1634237546115	0
+g5x9y1ewypr4tr93whdcfby3xy	r8ur5gcxzpg1tq9er3kxw3f4hw	+1	1634143412119	1634237548142	0
+x4kiax5uy3n3pjkk6xyic5i98a	ehogqgsxyifc3y8eacobnh4gtc	-1	1634149086359	1634237548275	0
+iet7jkwex3bjjbg38ewup9br7e	tr56n83nbprwbxuntmsferhjrc	-1	1634158397323	1634237548314	0
+poqpi8xhfjdszcmgmjboqzwcir	tr56n83nbprwbxuntmsferhjrc	heart	1634158371794	1634237548332	0
+iet7jkwex3bjjbg38ewup9br7e	nnpqmb1eyfne7jnrot5aobhbch	blush	1634126575549	1634237548621	0
+zbdgeaijh3fh9e3foqdts6i5wh	fodny6pxopb7trfq8x19xcz6hy	+1	1634144920573	1634237548691	0
+4f4g78ewrfys8b68j456o5nxkr	zr5o4ekew3fy5kgmsrt3tm6wna	blush	1634163581901	1634237548805	0
+x4kiax5uy3n3pjkk6xyic5i98a	nsdpxe79zbbb8eq6p9rj51h1ja	+1	1634121746176	1634237548915	0
+a4emb3hsdjn7pk6s5crpdmokaw	in9hpufj3by9uq4oqtsq3rgfky	-1	1634131808639	1634237543801	0
+g5x9y1ewypr4tr93whdcfby3xy	jdquu7m9g7gqijzd3erhprt9mh	+1	1634137239502	1634237543814	0
+s1m5hgt3o7f8tftf41n94ofp9r	nbcgwc3y8tbzijyzyk5kc44gar	blush	1634167838465	1634237543827	0
+a9quakcmbjys3ego1myciaoi8h	w1za4ojq1pd1zk41r1ae7twhma	blush	1634160986274	1634237543838	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	scojipstsbyq5qnxid8rqyt8wc	blush	1634149971655	1634237543864	0
+x4kiax5uy3n3pjkk6xyic5i98a	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137260656	1634237543902	0
+j78juejgzby8x8cj8f89mtq4bh	mejkmf3gnpgemmjo9f6b7ogigo	-1	1634140746615	1634237543918	0
+j78juejgzby8x8cj8f89mtq4bh	nbcgwc3y8tbzijyzyk5kc44gar	blush	1634167814686	1634237543933	0
+zbdgeaijh3fh9e3foqdts6i5wh	jdquu7m9g7gqijzd3erhprt9mh	heart	1634137196891	1634237543994	0
+a4emb3hsdjn7pk6s5crpdmokaw	5wtcewdkk3rbdqpyr1kuc41hrw	blush	1634159269966	1634237544014	0
+s1m5hgt3o7f8tftf41n94ofp9r	tenhb49jw7g7fjnjjpd4xm94ih	+1	1634148761250	1634237544075	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	8jm1enmb978jmb94jjmeh3dunh	blush	1634134004123	1634237544089	0
+km1txe6kktdabdgyuhwru7r9ua	9eiyk4b5apd5be98bike6myp6r	blush	1634141381855	1634237544148	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	7n761cmdd7bfmngocrc87a7nga	+1	1634159639358	1634237544327	0
+4f4g78ewrfys8b68j456o5nxkr	twsxff5iibdzjcjxgi88umhzxr	+1	1634158996323	1634237544380	0
+4f4g78ewrfys8b68j456o5nxkr	33z7714offnm9nf3abth1m4sza	heart	1634150277438	1634237544394	0
+a9quakcmbjys3ego1myciaoi8h	4ct5xmunsbb67dj8og3as5yd9w	-1	1634124704924	1634237544405	0
+g5x9y1ewypr4tr93whdcfby3xy	rizrkbj69bbz8dcgt3jc7bxona	-1	1634136862896	1634237544439	0
+s1m5hgt3o7f8tftf41n94ofp9r	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124723454	1634237544454	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	hwgyz4u64brg7rt9mwz6iqpawe	+1	1634162398387	1634237544465	0
+a9quakcmbjys3ego1myciaoi8h	rt7t9i8rx7b6xq5c931ygc7o1h	+1	1634162320645	1634237544476	0
+a4emb3hsdjn7pk6s5crpdmokaw	4ct5xmunsbb67dj8og3as5yd9w	+1	1634124630306	1634237544527	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	tubo8sqpb7dhddjz3c6x3hp67a	heart	1634146676686	1634237544594	0
+4f4g78ewrfys8b68j456o5nxkr	gerkwe14ntrbdj5hptcj8uaasr	-1	1634138362329	1634237544607	0
+s1m5hgt3o7f8tftf41n94ofp9r	is378kzboirm3d3p5jjr3y1hsh	-1	1634142771256	1634237544730	0
+x4kiax5uy3n3pjkk6xyic5i98a	ahusnemg9t8gxruqp5qofwbd4e	-1	1634169482512	1634237544888	0
+a4emb3hsdjn7pk6s5crpdmokaw	bc83ggiyn3nimj4mgk1nw4zpfe	heart	1634132302561	1634237544924	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	uuf8n1rs13ffjqy3og5yarn3zo	heart	1634145312545	1634237544935	0
+j78juejgzby8x8cj8f89mtq4bh	tkxi5fb9apn8fe9oya6wkbpape	+1	1634161336583	1634237545140	0
+s1m5hgt3o7f8tftf41n94ofp9r	c4nrhchf3igdmnz813khbwr5no	blush	1634149121595	1634237545153	0
+j78juejgzby8x8cj8f89mtq4bh	c4nrhchf3igdmnz813khbwr5no	-1	1634149068685	1634237545176	0
+x4kiax5uy3n3pjkk6xyic5i98a	w63jgagr6bfftgfz96w7mz6j1e	+1	1634135624838	1634237545333	0
+g5x9y1ewypr4tr93whdcfby3xy	znkscgxugjycjb4t1ed544tste	blush	1634121013464	1634237545441	0
+g5x9y1ewypr4tr93whdcfby3xy	d13au8yjs7deprtxtn7i7grfde	blush	1634127839456	1634237545854	0
+s1m5hgt3o7f8tftf41n94ofp9r	mejkmf3gnpgemmjo9f6b7ogigo	+1	1634140776910	1634237543804	0
+4f4g78ewrfys8b68j456o5nxkr	gof8chhf8fdttkpmhzqgc4zufh	-1	1634142767461	1634237543861	0
+s1m5hgt3o7f8tftf41n94ofp9r	in9hpufj3by9uq4oqtsq3rgfky	heart	1634131746126	1634237543883	0
+iet7jkwex3bjjbg38ewup9br7e	w4i3zxdu9b8h9kzwxp8bcs7tyc	-1	1634139202558	1634237544112	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	e7h666qr5pdqxrpwmq9timypsa	blush	1634122697753	1634237544138	0
+s1m5hgt3o7f8tftf41n94ofp9r	uhc7w6qoctn8tpzsndemxyo8dh	heart	1634123452171	1634237544181	0
+a4emb3hsdjn7pk6s5crpdmokaw	eoqgp5ki9ibotg7dpt5dsw7e7c	blush	1634159058980	1634237544218	0
+zbdgeaijh3fh9e3foqdts6i5wh	mcc8j8h5qtye5e44wh6zec54go	-1	1634136535691	1634237544272	0
+a9quakcmbjys3ego1myciaoi8h	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124688768	1634237544291	0
+iet7jkwex3bjjbg38ewup9br7e	ojusrexwxbbuzennunq4mwksir	blush	1634143508757	1634237544374	0
+a4emb3hsdjn7pk6s5crpdmokaw	rizrkbj69bbz8dcgt3jc7bxona	blush	1634136838935	1634237544459	0
+s1m5hgt3o7f8tftf41n94ofp9r	sxizqu6tbjysfduh3hgyh6h73c	blush	1634130258230	1634237544478	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	we4e1a8aq78ujery9zggh9sd5w	blush	1634139154667	1634237544493	0
+zbdgeaijh3fh9e3foqdts6i5wh	gerkwe14ntrbdj5hptcj8uaasr	+1	1634138435139	1634237544623	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	gerkwe14ntrbdj5hptcj8uaasr	+1	1634138448524	1634237544646	0
+4f4g78ewrfys8b68j456o5nxkr	e84t61ojqtdz5f6wxk3zew8srw	+1	1634125055952	1634237544730	0
+gd6p49n1x3g3ic13taequwidya	is378kzboirm3d3p5jjr3y1hsh	+1	1634142786161	1634237544749	0
+x4kiax5uy3n3pjkk6xyic5i98a	4mtw36b45i8fbr1yh4bmxper8y	+1	1634162070585	1634237544770	0
+j78juejgzby8x8cj8f89mtq4bh	4mtw36b45i8fbr1yh4bmxper8y	+1	1634162019384	1634237544860	0
+a9quakcmbjys3ego1myciaoi8h	opm6nm5jkt8xtytdurs8et93sr	blush	1634159630442	1634237544869	0
+poqpi8xhfjdszcmgmjboqzwcir	uuf8n1rs13ffjqy3og5yarn3zo	-1	1634145314666	1634237544973	0
+g5x9y1ewypr4tr93whdcfby3xy	tp3zmm7o8pfq5ji1tmnjrkq1kh	-1	1634158237774	1634237545093	0
+zbdgeaijh3fh9e3foqdts6i5wh	456xgu7nubfabjobmjas8pja1c	heart	1634131727879	1634237545168	0
+4f4g78ewrfys8b68j456o5nxkr	owqdaoqappgn3r3mc77xmbtqxy	heart	1634138372318	1634237545251	0
+4f4g78ewrfys8b68j456o5nxkr	64ob548y4tfjikz6od5es4yofy	-1	1634123380546	1634237545339	0
+a9quakcmbjys3ego1myciaoi8h	zf78fbgzg38sd84kxczd9byrzr	-1	1634154188697	1634237545366	0
+zbdgeaijh3fh9e3foqdts6i5wh	w63jgagr6bfftgfz96w7mz6j1e	blush	1634135708962	1634237545380	0
+g5x9y1ewypr4tr93whdcfby3xy	33t8ktjnybfgiegzsiabnzu4ua	-1	1634167732044	1634237545439	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	xt973f5hq3ykf8h1ti8orpnn4h	heart	1634165753655	1634237545467	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	znkscgxugjycjb4t1ed544tste	blush	1634120955260	1634237545483	0
+a4emb3hsdjn7pk6s5crpdmokaw	sopn9g5o67g6udoqgsso9xiahw	blush	1634135251486	1634237545776	0
+zbdgeaijh3fh9e3foqdts6i5wh	x8o6543sa7rbugch34ybnbzaar	blush	1634140665110	1634237545861	0
+poqpi8xhfjdszcmgmjboqzwcir	7udcrjfmtf8yfctw4hi54zdccc	-1	1634156553940	1634237545957	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	an5i8p74mfbpjytuftd8nb9ccy	blush	1634142561188	1634237545997	0
+x4kiax5uy3n3pjkk6xyic5i98a	spsyzaibab867qgbhedy4oeoih	blush	1634123129905	1634237548652	0
+x4kiax5uy3n3pjkk6xyic5i98a	nsdpxe79zbbb8eq6p9rj51h1ja	heart	1634121815289	1634237548903	0
+iet7jkwex3bjjbg38ewup9br7e	mpm7dkg44py49bnhpagjbmgway	+1	1634122497194	1634237550171	0
+zbdgeaijh3fh9e3foqdts6i5wh	mmhprpianjgj7839stg6zo3ype	blush	1634130038723	1634237550308	0
+a4emb3hsdjn7pk6s5crpdmokaw	co4nsin7tprqicjeo3ogfwwohy	+1	1634164732443	1634237550393	0
+poqpi8xhfjdszcmgmjboqzwcir	xjymds54ajgwixck8uw98wd6pc	+1	1634123228952	1634237550780	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	6a5q1cj57pdo8fo31x37ztp9zh	heart	1634164315175	1634237550841	0
+a4emb3hsdjn7pk6s5crpdmokaw	udxqqa5jrfrzunerrmqeg4th8w	-1	1634120869170	1634237550968	0
+a4emb3hsdjn7pk6s5crpdmokaw	dxgy6p7gf7yyfykq7ftf9i6hyc	blush	1634145649627	1634237543806	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	mejkmf3gnpgemmjo9f6b7ogigo	-1	1634140775098	1634237543821	0
+4f4g78ewrfys8b68j456o5nxkr	877esotrb78rxgekesee793aba	-1	1634146799993	1634237543837	0
+a4emb3hsdjn7pk6s5crpdmokaw	crqacca467frxmhcb7canyghaw	blush	1634134770515	1634237543871	0
+gd6p49n1x3g3ic13taequwidya	mejkmf3gnpgemmjo9f6b7ogigo	heart	1634140774377	1634237543884	0
+a4emb3hsdjn7pk6s5crpdmokaw	gof8chhf8fdttkpmhzqgc4zufh	blush	1634142785447	1634237543898	0
+zbdgeaijh3fh9e3foqdts6i5wh	3b4ibf6sf3yhiq31nak791kt4w	heart	1634127439891	1634237543921	0
+iet7jkwex3bjjbg38ewup9br7e	5wtcewdkk3rbdqpyr1kuc41hrw	blush	1634159216851	1634237543995	0
+g5x9y1ewypr4tr93whdcfby3xy	8jm1enmb978jmb94jjmeh3dunh	+1	1634134008448	1634237544071	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	x89m7tkesty59b65rdzerhknky	blush	1634125830324	1634237544100	0
+s1m5hgt3o7f8tftf41n94ofp9r	wrxnddiazp8ezr9ain1431a49w	-1	1634141593727	1634237544174	0
+s1m5hgt3o7f8tftf41n94ofp9r	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137274197	1634237544202	0
+j78juejgzby8x8cj8f89mtq4bh	twsxff5iibdzjcjxgi88umhzxr	blush	1634158948811	1634237544336	0
+g5x9y1ewypr4tr93whdcfby3xy	ojusrexwxbbuzennunq4mwksir	blush	1634143486842	1634237544355	0
+poqpi8xhfjdszcmgmjboqzwcir	we4e1a8aq78ujery9zggh9sd5w	+1	1634139155230	1634237544566	0
+4f4g78ewrfys8b68j456o5nxkr	bcmhudgqmigq5j3j4m9pjpxnjr	heart	1634130332655	1634237544579	0
+g5x9y1ewypr4tr93whdcfby3xy	bcmhudgqmigq5j3j4m9pjpxnjr	heart	1634130292411	1634237544595	0
+1jcrg4b4upf67kbexsxyyiamqa	r8ez44dch7gq9rmwfuehop3ujw	-1	1634141809651	1634237544686	0
+j78juejgzby8x8cj8f89mtq4bh	is378kzboirm3d3p5jjr3y1hsh	-1	1634142840998	1634237544713	0
+4f4g78ewrfys8b68j456o5nxkr	puxhixta6fg78r6it756fibjqh	heart	1634119788064	1634237544778	0
+a9quakcmbjys3ego1myciaoi8h	cpm9ekzb7pnijnxhwqk9uk6x1w	+1	1634168980154	1634237544817	0
+a4emb3hsdjn7pk6s5crpdmokaw	qm8ddpoxctd1fffyeq5txhphjo	heart	1634165000220	1634237544847	0
+j78juejgzby8x8cj8f89mtq4bh	j1pq35r67fgn5je4cg5y6uhd9a	heart	1634147138199	1634237544856	0
+km1txe6kktdabdgyuhwru7r9ua	4mtw36b45i8fbr1yh4bmxper8y	blush	1634162070957	1634237544939	0
+g5x9y1ewypr4tr93whdcfby3xy	x3t5j111hjgb5cbyw6zc7e3m4c	heart	1634165359704	1634237544952	0
+1jcrg4b4upf67kbexsxyyiamqa	8g6176q1a3r57ga1re1rni9qor	blush	1634166357600	1634237544966	0
+zbdgeaijh3fh9e3foqdts6i5wh	tkxi5fb9apn8fe9oya6wkbpape	+1	1634161314139	1634237545107	0
+g5x9y1ewypr4tr93whdcfby3xy	c4nrhchf3igdmnz813khbwr5no	-1	1634149129209	1634237545120	0
+gd6p49n1x3g3ic13taequwidya	456xgu7nubfabjobmjas8pja1c	-1	1634131722976	1634237545211	0
+a4emb3hsdjn7pk6s5crpdmokaw	za1nze98qbbe9fssm3kzuhg3ec	+1	1634134758532	1634237545227	0
+a4emb3hsdjn7pk6s5crpdmokaw	4kqmxdgm87rkxr5ii53y1se9ww	+1	1634155160001	1634237545261	0
+iet7jkwex3bjjbg38ewup9br7e	tkxi5fb9apn8fe9oya6wkbpape	+1	1634161291834	1634237545267	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	64ob548y4tfjikz6od5es4yofy	+1	1634123300469	1634237545296	0
+s1m5hgt3o7f8tftf41n94ofp9r	xt973f5hq3ykf8h1ti8orpnn4h	-1	1634165779072	1634237545311	0
+a4emb3hsdjn7pk6s5crpdmokaw	dxcoi6tgeffcbnz1sk8tcz6bwy	heart	1634133512422	1634237545329	0
+gd6p49n1x3g3ic13taequwidya	w63jgagr6bfftgfz96w7mz6j1e	+1	1634135635118	1634237545361	0
+1jcrg4b4upf67kbexsxyyiamqa	c99g9xiu1tn6zraboemjrofogr	heart	1634128356257	1634237545415	0
+poqpi8xhfjdszcmgmjboqzwcir	e8ij78nsc3ds9eh1q9x9tqke3a	heart	1634133633936	1634237545698	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	jbwjwj5tp3fabeojha71w5nxky	+1	1634157110428	1634237545730	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	sopn9g5o67g6udoqgsso9xiahw	-1	1634135259995	1634237545757	0
+j78juejgzby8x8cj8f89mtq4bh	x8o6543sa7rbugch34ybnbzaar	+1	1634140612844	1634237545877	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	7udcrjfmtf8yfctw4hi54zdccc	heart	1634156504781	1634237545974	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	f9mj68ft3bbz5byuggrwhxnicr	-1	1634144959771	1634237546041	0
+a9quakcmbjys3ego1myciaoi8h	edbsrayjrtftxju3fso661u9xc	+1	1634156359680	1634237543818	0
+x4kiax5uy3n3pjkk6xyic5i98a	peqykb99m7yixgksk1funitwqo	-1	1634136469125	1634237543846	0
+1jcrg4b4upf67kbexsxyyiamqa	r4bkym5nqfnw8efdj95pyqw5tr	heart	1634139802422	1634237543878	0
+a4emb3hsdjn7pk6s5crpdmokaw	mejkmf3gnpgemmjo9f6b7ogigo	+1	1634140810708	1634237543901	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	ci9dskfgib8kim17qh85nk35zy	-1	1634158017837	1634237543924	0
+a4emb3hsdjn7pk6s5crpdmokaw	5wtcewdkk3rbdqpyr1kuc41hrw	+1	1634159253440	1634237543957	0
+gd6p49n1x3g3ic13taequwidya	5qkb17jrcfr4mq3zmowksofuur	heart	1634126241081	1634237543983	0
+4f4g78ewrfys8b68j456o5nxkr	tenhb49jw7g7fjnjjpd4xm94ih	-1	1634148830995	1634237544042	0
+a9quakcmbjys3ego1myciaoi8h	tenhb49jw7g7fjnjjpd4xm94ih	-1	1634148770537	1634237544057	0
+4f4g78ewrfys8b68j456o5nxkr	9eiyk4b5apd5be98bike6myp6r	heart	1634141341555	1634237544131	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	bp6z768cyib6xfarr5uo4fpwuc	+1	1634151921947	1634237544163	0
+x4kiax5uy3n3pjkk6xyic5i98a	rh1px4spyfr5mjq6jhbpjezzyc	heart	1634157318171	1634237544182	0
+a9quakcmbjys3ego1myciaoi8h	rh1px4spyfr5mjq6jhbpjezzyc	-1	1634157304985	1634237544199	0
+1jcrg4b4upf67kbexsxyyiamqa	dh16nsc6pi84jmcsojah7561te	-1	1634133754354	1634237544272	0
+km1txe6kktdabdgyuhwru7r9ua	bcx8axyxat8qzqgnab87fyn6me	+1	1634141005484	1634237544326	0
+1jcrg4b4upf67kbexsxyyiamqa	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124633052	1634237544349	0
+x4kiax5uy3n3pjkk6xyic5i98a	cg1h9wjybbfwubwaab6jnfc4mw	heart	1634131510352	1634237544365	0
+a4emb3hsdjn7pk6s5crpdmokaw	kbyosns5ktb5ube3rartwu9n8r	heart	1634152101495	1634237544426	0
+a4emb3hsdjn7pk6s5crpdmokaw	twsxff5iibdzjcjxgi88umhzxr	-1	1634158933628	1634237544436	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	sxizqu6tbjysfduh3hgyh6h73c	heart	1634130214947	1634237544459	0
+poqpi8xhfjdszcmgmjboqzwcir	yfrmqijxdi87udn915tsm3jkdy	heart	1634147574226	1634237544507	0
+zbdgeaijh3fh9e3foqdts6i5wh	bcmhudgqmigq5j3j4m9pjpxnjr	blush	1634130330361	1634237544535	0
+gd6p49n1x3g3ic13taequwidya	8f5adxz5kprgi894hew3mxik5e	blush	1634144046999	1634237544574	0
+poqpi8xhfjdszcmgmjboqzwcir	tubo8sqpb7dhddjz3c6x3hp67a	blush	1634146628102	1634237544613	0
+poqpi8xhfjdszcmgmjboqzwcir	c53en338t7dytxop9piaqzungo	heart	1634132810051	1634237544630	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	tt8kdigdabfudy1q5oa5d836mh	blush	1634161554134	1634237544760	0
+a9quakcmbjys3ego1myciaoi8h	e97tjpksuifw9m9iy5kgem17wc	blush	1634140312064	1634237544817	0
+1jcrg4b4upf67kbexsxyyiamqa	qm8ddpoxctd1fffyeq5txhphjo	heart	1634165021082	1634237544830	0
+a4emb3hsdjn7pk6s5crpdmokaw	4j5bcjxubprp5ercj7syuzt7ya	blush	1634153087562	1634237544878	0
+km1txe6kktdabdgyuhwru7r9ua	uuf8n1rs13ffjqy3og5yarn3zo	blush	1634145295359	1634237544912	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	bk5fbwenxpy3deo5swwd5sog3w	heart	1634146659235	1634237545017	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	8zib9widubre5eqwynbrnmrq5c	blush	1634151089149	1634237545045	0
+x4kiax5uy3n3pjkk6xyic5i98a	r8tkqm7chtgct8uzk58qohnsro	-1	1634167489110	1634237545122	0
+gd6p49n1x3g3ic13taequwidya	89esbkz8ifdoxquhguapqbizbr	-1	1634125563594	1634237545134	0
+1jcrg4b4upf67kbexsxyyiamqa	tkxi5fb9apn8fe9oya6wkbpape	+1	1634161330260	1634237545190	0
+gd6p49n1x3g3ic13taequwidya	eo5mdm8njbb7fqji9wy93j3n5h	blush	1634160292207	1634237545211	0
+iet7jkwex3bjjbg38ewup9br7e	eoyumk7r5pnspfag8mqhfjd47o	heart	1634149936337	1634237545262	0
+4f4g78ewrfys8b68j456o5nxkr	64ob548y4tfjikz6od5es4yofy	+1	1634123376638	1634237545277	0
+a4emb3hsdjn7pk6s5crpdmokaw	w63jgagr6bfftgfz96w7mz6j1e	+1	1634135648356	1634237545423	0
+1jcrg4b4upf67kbexsxyyiamqa	xt973f5hq3ykf8h1ti8orpnn4h	+1	1634165760769	1634237545486	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	jbwjwj5tp3fabeojha71w5nxky	heart	1634157143382	1634237545708	0
+a9quakcmbjys3ego1myciaoi8h	sopn9g5o67g6udoqgsso9xiahw	+1	1634135282612	1634237545797	0
+iet7jkwex3bjjbg38ewup9br7e	f9mj68ft3bbz5byuggrwhxnicr	-1	1634144943415	1634237546089	0
+a4emb3hsdjn7pk6s5crpdmokaw	xjiduhitrpnu5jtaoo9by4k41e	+1	1634166606402	1634237548419	0
+a4emb3hsdjn7pk6s5crpdmokaw	xjiduhitrpnu5jtaoo9by4k41e	-1	1634166593937	1634237548436	0
+x4kiax5uy3n3pjkk6xyic5i98a	c5eigimk53dypfk5tjp67hnz3e	heart	1634163816284	1634237548498	0
+j78juejgzby8x8cj8f89mtq4bh	48x38bmozpncjcpoozmjzmysco	blush	1634142308875	1634237548873	0
+1jcrg4b4upf67kbexsxyyiamqa	in9hpufj3by9uq4oqtsq3rgfky	blush	1634131823770	1634237543819	0
+km1txe6kktdabdgyuhwru7r9ua	gof8chhf8fdttkpmhzqgc4zufh	-1	1634142781024	1634237543841	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	yqomjszazfng8xc838ree8mexh	+1	1634163383563	1634237543869	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	crqacca467frxmhcb7canyghaw	blush	1634134827488	1634237543891	0
+g5x9y1ewypr4tr93whdcfby3xy	yqomjszazfng8xc838ree8mexh	-1	1634163400718	1634237543905	0
+gd6p49n1x3g3ic13taequwidya	peqykb99m7yixgksk1funitwqo	-1	1634136411407	1634237543917	0
+j78juejgzby8x8cj8f89mtq4bh	f77k8reqd7r15e6ceuwxrx9icw	blush	1634144350040	1634237543934	0
+a9quakcmbjys3ego1myciaoi8h	nbcgwc3y8tbzijyzyk5kc44gar	heart	1634167817419	1634237543949	0
+gd6p49n1x3g3ic13taequwidya	9p86nrdn5iy6ikbyy3ya89ab9o	+1	1634141120240	1634237543964	0
+x4kiax5uy3n3pjkk6xyic5i98a	e7h666qr5pdqxrpwmq9timypsa	blush	1634122671280	1634237544101	0
+j78juejgzby8x8cj8f89mtq4bh	e7h666qr5pdqxrpwmq9timypsa	heart	1634122711159	1634237544119	0
+a9quakcmbjys3ego1myciaoi8h	bp6z768cyib6xfarr5uo4fpwuc	-1	1634151871800	1634237544210	0
+km1txe6kktdabdgyuhwru7r9ua	c4zzetxa6fgfjq89bccpi7e48c	blush	1634157897052	1634237544237	0
+a4emb3hsdjn7pk6s5crpdmokaw	ojusrexwxbbuzennunq4mwksir	blush	1634143432326	1634237544318	0
+a4emb3hsdjn7pk6s5crpdmokaw	sxizqu6tbjysfduh3hgyh6h73c	-1	1634130304437	1634237544417	0
+gd6p49n1x3g3ic13taequwidya	rkik6jt46tyduqwp5wuba1y4ie	-1	1634167174685	1634237544460	0
+km1txe6kktdabdgyuhwru7r9ua	4ct5xmunsbb67dj8og3as5yd9w	-1	1634124625907	1634237544469	0
+j78juejgzby8x8cj8f89mtq4bh	tubo8sqpb7dhddjz3c6x3hp67a	-1	1634146680522	1634237544513	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	grdwnyu5538xtxrd4hb61z657c	blush	1634126796438	1634237544534	0
+j78juejgzby8x8cj8f89mtq4bh	3x4zf5uxdt8cur64htaxgnbzay	heart	1634149164832	1634237544572	0
+gd6p49n1x3g3ic13taequwidya	qthsywnztjd7dmbirp81ewg4ce	-1	1634128966443	1634237544658	0
+s1m5hgt3o7f8tftf41n94ofp9r	qi8q3igcniy5xnp5pwouh61wwy	-1	1634157055800	1634237544672	0
+j78juejgzby8x8cj8f89mtq4bh	cgmsaenexjyztkp4kamkptrq9a	heart	1634134002893	1634237544705	0
+x4kiax5uy3n3pjkk6xyic5i98a	5ifbqsjd3tbw3xq75y7eincftw	blush	1634155144928	1634237544721	0
+j78juejgzby8x8cj8f89mtq4bh	8w1irowoebddbgnkrqnihkf37r	blush	1634145175600	1634237544743	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	8w1irowoebddbgnkrqnihkf37r	-1	1634145151824	1634237544761	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	b4ebn3gzqpgdtnbehcmnxtefyr	blush	1634136627742	1634237544812	0
+gd6p49n1x3g3ic13taequwidya	uuf8n1rs13ffjqy3og5yarn3zo	-1	1634145357357	1634237545033	0
+g5x9y1ewypr4tr93whdcfby3xy	1iaqksisf3ftt89duxkbzwboto	+1	1634144365787	1634237545056	0
+zbdgeaijh3fh9e3foqdts6i5wh	tkxi5fb9apn8fe9oya6wkbpape	heart	1634161369462	1634237545086	0
+iet7jkwex3bjjbg38ewup9br7e	zf78fbgzg38sd84kxczd9byrzr	heart	1634154212972	1634237545324	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	64ob548y4tfjikz6od5es4yofy	blush	1634123389017	1634237545361	0
+a9quakcmbjys3ego1myciaoi8h	xt973f5hq3ykf8h1ti8orpnn4h	-1	1634165772011	1634237545406	0
+iet7jkwex3bjjbg38ewup9br7e	rnnto4opzbyd38rkcdd1nw3x1r	-1	1634126678270	1634237545676	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	iihjqo8n7jb89xr4hbb1ohm9de	heart	1634163200778	1634237548802	0
+a9quakcmbjys3ego1myciaoi8h	nsdpxe79zbbb8eq6p9rj51h1ja	+1	1634121756400	1634237548889	0
+s1m5hgt3o7f8tftf41n94ofp9r	8jesuncpqbnytddp4ride5591y	blush	1634135512719	1634237550298	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	767sd3xc7jfbdx19f67ox99fjr	heart	1634129095057	1634237550566	0
+a9quakcmbjys3ego1myciaoi8h	r4bkym5nqfnw8efdj95pyqw5tr	blush	1634139814843	1634237543823	0
+a9quakcmbjys3ego1myciaoi8h	mejkmf3gnpgemmjo9f6b7ogigo	-1	1634140817555	1634237543841	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	crqacca467frxmhcb7canyghaw	blush	1634134804625	1634237543855	0
+s1m5hgt3o7f8tftf41n94ofp9r	r4bkym5nqfnw8efdj95pyqw5tr	+1	1634139789421	1634237543895	0
+j78juejgzby8x8cj8f89mtq4bh	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137215586	1634237544010	0
+gd6p49n1x3g3ic13taequwidya	tenhb49jw7g7fjnjjpd4xm94ih	blush	1634148843110	1634237544022	0
+km1txe6kktdabdgyuhwru7r9ua	8jm1enmb978jmb94jjmeh3dunh	blush	1634133992873	1634237544036	0
+4f4g78ewrfys8b68j456o5nxkr	9eiyk4b5apd5be98bike6myp6r	blush	1634141361850	1634237544095	0
+km1txe6kktdabdgyuhwru7r9ua	jdquu7m9g7gqijzd3erhprt9mh	blush	1634137187887	1634237544120	0
+zbdgeaijh3fh9e3foqdts6i5wh	aohrnx3q6pyq7codr9anj8z79c	+1	1634138158347	1634237544218	0
+j78juejgzby8x8cj8f89mtq4bh	4ct5xmunsbb67dj8og3as5yd9w	heart	1634124725432	1634237544254	0
+x4kiax5uy3n3pjkk6xyic5i98a	mcc8j8h5qtye5e44wh6zec54go	-1	1634136547245	1634237544292	0
+x4kiax5uy3n3pjkk6xyic5i98a	w4gf6iznhtb3ikf3yodqhsbpiw	-1	1634167872525	1634237544348	0
+x4kiax5uy3n3pjkk6xyic5i98a	7n761cmdd7bfmngocrc87a7nga	heart	1634159682196	1634237544365	0
+s1m5hgt3o7f8tftf41n94ofp9r	4ct5xmunsbb67dj8og3as5yd9w	-1	1634124698585	1634237544382	0
+x4kiax5uy3n3pjkk6xyic5i98a	rizrkbj69bbz8dcgt3jc7bxona	heart	1634136814600	1634237544495	0
+j78juejgzby8x8cj8f89mtq4bh	n7h11i678igkb8n9typc16q4nc	-1	1634137220624	1634237544589	0
+g5x9y1ewypr4tr93whdcfby3xy	tt8kdigdabfudy1q5oa5d836mh	heart	1634161548696	1634237544644	0
+zbdgeaijh3fh9e3foqdts6i5wh	n7h11i678igkb8n9typc16q4nc	-1	1634137220309	1634237544673	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	qi8q3igcniy5xnp5pwouh61wwy	blush	1634157066076	1634237544695	0
+j78juejgzby8x8cj8f89mtq4bh	sggabe47z38wtm56c5fxic6z8e	-1	1634157580003	1634237544715	0
+a9quakcmbjys3ego1myciaoi8h	qm8ddpoxctd1fffyeq5txhphjo	-1	1634164973185	1634237544734	0
+a4emb3hsdjn7pk6s5crpdmokaw	pyz45jkybpyzdnmjzasug43foc	heart	1634140663140	1634237544762	0
+gd6p49n1x3g3ic13taequwidya	yco857gizprdfrze89uc7skimo	-1	1634142838998	1634237544800	0
+km1txe6kktdabdgyuhwru7r9ua	j5h518a557rafekmexdb3kg4hy	blush	1634144263461	1634237544861	0
+s1m5hgt3o7f8tftf41n94ofp9r	4mtw36b45i8fbr1yh4bmxper8y	blush	1634162047494	1634237544873	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	8g6176q1a3r57ga1re1rni9qor	+1	1634166431922	1634237544943	0
+poqpi8xhfjdszcmgmjboqzwcir	456xgu7nubfabjobmjas8pja1c	heart	1634131781803	1634237545229	0
+poqpi8xhfjdszcmgmjboqzwcir	ahfnepx643f7p8h1jpm8ymxppo	-1	1634156310717	1634237545251	0
+4f4g78ewrfys8b68j456o5nxkr	za1nze98qbbe9fssm3kzuhg3ec	heart	1634134729187	1634237545271	0
+x4kiax5uy3n3pjkk6xyic5i98a	xt973f5hq3ykf8h1ti8orpnn4h	-1	1634165767101	1634237545360	0
+a9quakcmbjys3ego1myciaoi8h	bbaoqpicx3r8pkbuw6fyybjywa	heart	1634163284852	1634237545390	0
+km1txe6kktdabdgyuhwru7r9ua	qctp7ct9j3rx7nhk7i8yo661oa	-1	1634147523739	1634237545417	0
+poqpi8xhfjdszcmgmjboqzwcir	eoz3pdrudj817fyp7x5xutfh9h	blush	1634141719843	1634237545539	0
+4f4g78ewrfys8b68j456o5nxkr	i34z89nnqjy48qn6kwzqwtmqdr	-1	1634150137277	1634237545558	0
+poqpi8xhfjdszcmgmjboqzwcir	f9mj68ft3bbz5byuggrwhxnicr	blush	1634144952106	1634237546052	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	g7s7dpg4yin5tx75hapjj9nioc	blush	1634159308922	1634237548156	0
+a9quakcmbjys3ego1myciaoi8h	49ws3d873fgwfda6jpksqpbrxe	heart	1634143901131	1634237548267	0
+4f4g78ewrfys8b68j456o5nxkr	8nizypxxf7bx7remdqs3uh6ame	-1	1634126522189	1634237548384	0
+4f4g78ewrfys8b68j456o5nxkr	8nizypxxf7bx7remdqs3uh6ame	blush	1634126458058	1634237548405	0
+x4kiax5uy3n3pjkk6xyic5i98a	cpaiw41dcinatpe6oaw93xitno	heart	1634166942012	1634237550198	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	mmhprpianjgj7839stg6zo3ype	blush	1634130064668	1634237550250	0
+4f4g78ewrfys8b68j456o5nxkr	qy4kn76wb7fdtyiwb446tu1nhr	blush	1634159857209	1634237550698	0
+4f4g78ewrfys8b68j456o5nxkr	g6hqfebwhpdjbcbwm4kuopkknw	+1	1634150928476	1634237550896	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	jdquu7m9g7gqijzd3erhprt9mh	-1	1634137242452	1634237543878	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	8136radn1jbqzyimcq15jjhg6y	-1	1634162722958	1634237543952	0
+s1m5hgt3o7f8tftf41n94ofp9r	mejkmf3gnpgemmjo9f6b7ogigo	-1	1634140770288	1634237543956	0
+x4kiax5uy3n3pjkk6xyic5i98a	f77k8reqd7r15e6ceuwxrx9icw	-1	1634144401609	1634237543966	0
+gd6p49n1x3g3ic13taequwidya	x89m7tkesty59b65rdzerhknky	heart	1634125788145	1634237544065	0
+km1txe6kktdabdgyuhwru7r9ua	9p635k74digqpr1qaubfybcc1r	+1	1634152848901	1634237544101	0
+g5x9y1ewypr4tr93whdcfby3xy	rh1px4spyfr5mjq6jhbpjezzyc	-1	1634157273295	1634237544159	0
+4f4g78ewrfys8b68j456o5nxkr	37r7h451tjfkd8ybtugjk5zh9y	+1	1634149227880	1634237544183	0
+poqpi8xhfjdszcmgmjboqzwcir	uhc7w6qoctn8tpzsndemxyo8dh	heart	1634123504741	1634237544201	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	4ct5xmunsbb67dj8og3as5yd9w	heart	1634124631713	1634237544329	0
+a4emb3hsdjn7pk6s5crpdmokaw	i9dm3mf36byhugd1pcgys9kfwe	+1	1634150906489	1634237544351	0
+x4kiax5uy3n3pjkk6xyic5i98a	cg1h9wjybbfwubwaab6jnfc4mw	+1	1634131532921	1634237544384	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	twsxff5iibdzjcjxgi88umhzxr	blush	1634158958583	1634237544400	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	j3qj9m7kk3897jerjb6or1z94a	-1	1634134872064	1634237544412	0
+s1m5hgt3o7f8tftf41n94ofp9r	hwgyz4u64brg7rt9mwz6iqpawe	heart	1634162403716	1634237544437	0
+poqpi8xhfjdszcmgmjboqzwcir	4ct5xmunsbb67dj8og3as5yd9w	blush	1634124629620	1634237544487	0
+s1m5hgt3o7f8tftf41n94ofp9r	yfrmqijxdi87udn915tsm3jkdy	heart	1634147527205	1634237544526	0
+1jcrg4b4upf67kbexsxyyiamqa	3i3eyckg6f8tbenuzh7y85645y	heart	1634134988342	1634237544538	0
+poqpi8xhfjdszcmgmjboqzwcir	mmme1ciu83dgfmq4gdaiuo9ona	-1	1634131279291	1634237544592	0
+a4emb3hsdjn7pk6s5crpdmokaw	gerkwe14ntrbdj5hptcj8uaasr	blush	1634138426333	1634237544674	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	cgmsaenexjyztkp4kamkptrq9a	heart	1634134026067	1634237544728	0
+iet7jkwex3bjjbg38ewup9br7e	y3gdaobpdbrf3rbrdu3hgf1bfe	-1	1634133186909	1634237544803	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	u7mjrjeakt868g5gfbrfgu9rkw	-1	1634164289862	1634237544829	0
+1jcrg4b4upf67kbexsxyyiamqa	xapkko9jtjr15ehq5zoc98cfqa	+1	1634150537608	1634237544884	0
+x4kiax5uy3n3pjkk6xyic5i98a	hanpye6mgtrrpe3gpf7yqx9jgo	heart	1634157555469	1634237544958	0
+iet7jkwex3bjjbg38ewup9br7e	p1curstqq7ryj8sqrui9rcofpw	blush	1634164484533	1634237545034	0
+iet7jkwex3bjjbg38ewup9br7e	xt973f5hq3ykf8h1ti8orpnn4h	heart	1634165774513	1634237545268	0
+a9quakcmbjys3ego1myciaoi8h	eoyumk7r5pnspfag8mqhfjd47o	heart	1634149911880	1634237545284	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	dxcoi6tgeffcbnz1sk8tcz6bwy	-1	1634133564673	1634237545373	0
+a4emb3hsdjn7pk6s5crpdmokaw	c99g9xiu1tn6zraboemjrofogr	heart	1634128383566	1634237545456	0
+km1txe6kktdabdgyuhwru7r9ua	qctp7ct9j3rx7nhk7i8yo661oa	heart	1634147557207	1634237545473	0
+poqpi8xhfjdszcmgmjboqzwcir	znkscgxugjycjb4t1ed544tste	+1	1634120978534	1634237545536	0
+iet7jkwex3bjjbg38ewup9br7e	znkscgxugjycjb4t1ed544tste	-1	1634121003076	1634237545555	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	5w8j4ipnstyp9cibz9kdh4suew	-1	1634166747230	1634237545784	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	ch1ht3oo7tr79ejtb4wiwia33a	blush	1634152032944	1634237545987	0
+a9quakcmbjys3ego1myciaoi8h	f9mj68ft3bbz5byuggrwhxnicr	blush	1634144949152	1634237546080	0
+j78juejgzby8x8cj8f89mtq4bh	4uwaine9kibtpqeu7ze7a9uqgc	-1	1634144246646	1634237546115	0
+gd6p49n1x3g3ic13taequwidya	h55zzbqy8bf17p95xsrnggumkr	blush	1634149814367	1634237548163	0
+g5x9y1ewypr4tr93whdcfby3xy	r8ur5gcxzpg1tq9er3kxw3f4hw	blush	1634143370418	1634237548265	0
+km1txe6kktdabdgyuhwru7r9ua	bbo8yzc5f3dg7m19b53wd5zn3h	heart	1634162997892	1634237548420	0
+x4kiax5uy3n3pjkk6xyic5i98a	xfsbsw7g3bymijugpn69gczfmr	-1	1634153752293	1634237548489	0
+j78juejgzby8x8cj8f89mtq4bh	uios3wqzqbnxzfeunroxdozq1e	heart	1634136994421	1634237548635	0
+a4emb3hsdjn7pk6s5crpdmokaw	cown5p7y53y1bdpp3bxkum8o8y	+1	1634138579834	1634237543889	0
+a4emb3hsdjn7pk6s5crpdmokaw	r4bkym5nqfnw8efdj95pyqw5tr	-1	1634139805437	1634237543931	0
+poqpi8xhfjdszcmgmjboqzwcir	chbekbagyffpuredxa31ak9wqh	+1	1634126617982	1634237543972	0
+1jcrg4b4upf67kbexsxyyiamqa	9eiyk4b5apd5be98bike6myp6r	blush	1634141400500	1634237544054	0
+a4emb3hsdjn7pk6s5crpdmokaw	8jm1enmb978jmb94jjmeh3dunh	heart	1634134010033	1634237544108	0
+x4kiax5uy3n3pjkk6xyic5i98a	mcc8j8h5qtye5e44wh6zec54go	blush	1634136552939	1634237544219	0
+s1m5hgt3o7f8tftf41n94ofp9r	xpsj7q46rtnadfyq19beefu3sh	+1	1634142203122	1634237544308	0
+a9quakcmbjys3ego1myciaoi8h	w4gf6iznhtb3ikf3yodqhsbpiw	heart	1634167900518	1634237544329	0
+g5x9y1ewypr4tr93whdcfby3xy	7n761cmdd7bfmngocrc87a7nga	-1	1634159636985	1634237544347	0
+1jcrg4b4upf67kbexsxyyiamqa	4ct5xmunsbb67dj8og3as5yd9w	-1	1634124649278	1634237544365	0
+g5x9y1ewypr4tr93whdcfby3xy	kbyosns5ktb5ube3rartwu9n8r	blush	1634152134370	1634237544441	0
+km1txe6kktdabdgyuhwru7r9ua	zy7mrub48j86unidcecibj4aja	heart	1634122556053	1634237544468	0
+zbdgeaijh3fh9e3foqdts6i5wh	j84a9memw7grjjz6b41jx9tngw	heart	1634154708247	1634237544481	0
+a4emb3hsdjn7pk6s5crpdmokaw	rt7t9i8rx7b6xq5c931ygc7o1h	blush	1634162284895	1634237544495	0
+s1m5hgt3o7f8tftf41n94ofp9r	3x4zf5uxdt8cur64htaxgnbzay	blush	1634149079028	1634237544615	0
+1jcrg4b4upf67kbexsxyyiamqa	qthsywnztjd7dmbirp81ewg4ce	heart	1634129020810	1634237544678	0
+j78juejgzby8x8cj8f89mtq4bh	gerkwe14ntrbdj5hptcj8uaasr	-1	1634138432858	1634237544694	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	wp3pbc8bwfge9ewdocpmazssua	-1	1634165026338	1634237544707	0
+s1m5hgt3o7f8tftf41n94ofp9r	qm8ddpoxctd1fffyeq5txhphjo	heart	1634164946143	1634237544769	0
+1jcrg4b4upf67kbexsxyyiamqa	8w1irowoebddbgnkrqnihkf37r	+1	1634145198472	1634237544780	0
+a4emb3hsdjn7pk6s5crpdmokaw	ma13xdrni7bz7f8aq3c1f3jf4w	-1	1634123123319	1634237544822	0
+a4emb3hsdjn7pk6s5crpdmokaw	cpm9ekzb7pnijnxhwqk9uk6x1w	-1	1634168961953	1634237544836	0
+1jcrg4b4upf67kbexsxyyiamqa	c4nrhchf3igdmnz813khbwr5no	heart	1634149124965	1634237545036	0
+j78juejgzby8x8cj8f89mtq4bh	c4nrhchf3igdmnz813khbwr5no	heart	1634149097032	1634237545193	0
+x4kiax5uy3n3pjkk6xyic5i98a	qh6qh14amtb79yfwbojx6345ao	heart	1634127866190	1634237545217	0
+a4emb3hsdjn7pk6s5crpdmokaw	w63jgagr6bfftgfz96w7mz6j1e	heart	1634135723436	1634237545311	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	tkxi5fb9apn8fe9oya6wkbpape	blush	1634161308351	1634237545329	0
+1jcrg4b4upf67kbexsxyyiamqa	werqk6f3w7dg8rsnhbxbynb79w	blush	1634136605685	1634237545363	0
+j78juejgzby8x8cj8f89mtq4bh	zf78fbgzg38sd84kxczd9byrzr	blush	1634154218050	1634237545403	0
+g5x9y1ewypr4tr93whdcfby3xy	33t8ktjnybfgiegzsiabnzu4ua	+1	1634167764551	1634237545423	0
+s1m5hgt3o7f8tftf41n94ofp9r	qctp7ct9j3rx7nhk7i8yo661oa	+1	1634147512233	1634237545437	0
+a9quakcmbjys3ego1myciaoi8h	7bcicm9zmira5gxxxz38apqr5c	blush	1634152450545	1634237545661	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	7bcicm9zmira5gxxxz38apqr5c	heart	1634152440939	1634237545681	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	jbwjwj5tp3fabeojha71w5nxky	heart	1634157073537	1634237545799	0
+iet7jkwex3bjjbg38ewup9br7e	goymuyxzcif67ksayzmbw99s9a	blush	1634149449792	1634237545960	0
+a9quakcmbjys3ego1myciaoi8h	xm73bt5jp3d5jrqguemnjcjshr	heart	1634135294630	1634237543927	0
+4f4g78ewrfys8b68j456o5nxkr	cbze15n3jiy6pxxzmhy79ngt3c	heart	1634123424921	1634237543961	0
+poqpi8xhfjdszcmgmjboqzwcir	uhc7w6qoctn8tpzsndemxyo8dh	-1	1634123513865	1634237544157	0
+poqpi8xhfjdszcmgmjboqzwcir	7puaxsucs7g55ggowbg41dumsr	+1	1634145442859	1634237544283	0
+4f4g78ewrfys8b68j456o5nxkr	pd696fry77ba5rs4r5eqyt1p4a	-1	1634163262027	1634237544305	0
+a9quakcmbjys3ego1myciaoi8h	rt7t9i8rx7b6xq5c931ygc7o1h	-1	1634162305285	1634237544458	0
+a4emb3hsdjn7pk6s5crpdmokaw	kbyosns5ktb5ube3rartwu9n8r	blush	1634152182520	1634237544488	0
+a4emb3hsdjn7pk6s5crpdmokaw	3i3eyckg6f8tbenuzh7y85645y	blush	1634134998683	1634237544520	0
+km1txe6kktdabdgyuhwru7r9ua	9g57ppmtkb84pcpyitsfue74ho	blush	1634148985849	1634237544572	0
+km1txe6kktdabdgyuhwru7r9ua	9g57ppmtkb84pcpyitsfue74ho	heart	1634148911480	1634237544591	0
+1jcrg4b4upf67kbexsxyyiamqa	9g57ppmtkb84pcpyitsfue74ho	blush	1634148924334	1634237544622	0
+a9quakcmbjys3ego1myciaoi8h	n7h11i678igkb8n9typc16q4nc	+1	1634137236490	1634237544645	0
+poqpi8xhfjdszcmgmjboqzwcir	gerkwe14ntrbdj5hptcj8uaasr	blush	1634138362890	1634237544712	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	5ifbqsjd3tbw3xq75y7eincftw	-1	1634155138504	1634237544796	0
+j78juejgzby8x8cj8f89mtq4bh	e97tjpksuifw9m9iy5kgem17wc	-1	1634140322121	1634237544835	0
+iet7jkwex3bjjbg38ewup9br7e	d5tud8hkppra5mcrpoba9uscoe	heart	1634167270711	1634237544885	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	mf5fqbifaffo9kzs9azq4idiiw	-1	1634148961046	1634237544987	0
+s1m5hgt3o7f8tftf41n94ofp9r	mf5fqbifaffo9kzs9azq4idiiw	+1	1634148977474	1634237545020	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	ahfnepx643f7p8h1jpm8ymxppo	-1	1634156341688	1634237545230	0
+gd6p49n1x3g3ic13taequwidya	za1nze98qbbe9fssm3kzuhg3ec	-1	1634134734076	1634237545247	0
+zbdgeaijh3fh9e3foqdts6i5wh	tkxi5fb9apn8fe9oya6wkbpape	-1	1634161352811	1634237545286	0
+zbdgeaijh3fh9e3foqdts6i5wh	xt973f5hq3ykf8h1ti8orpnn4h	-1	1634165759811	1634237545384	0
+poqpi8xhfjdszcmgmjboqzwcir	c99g9xiu1tn6zraboemjrofogr	heart	1634128338729	1634237545398	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	c99g9xiu1tn6zraboemjrofogr	+1	1634128377710	1634237545438	0
+x4kiax5uy3n3pjkk6xyic5i98a	6zmn4mki4bbcdqrzpe7xiykpxw	+1	1634166004499	1634237545488	0
+1jcrg4b4upf67kbexsxyyiamqa	mk9untmkz7rr9mfau1tjmfktcy	-1	1634126637300	1634237545509	0
+km1txe6kktdabdgyuhwru7r9ua	y8af6skmkt8y3f4zfgsrpt3n4c	+1	1634156963581	1634237545763	0
+j78juejgzby8x8cj8f89mtq4bh	ch1ht3oo7tr79ejtb4wiwia33a	-1	1634152020213	1634237546004	0
+a4emb3hsdjn7pk6s5crpdmokaw	4uwaine9kibtpqeu7ze7a9uqgc	+1	1634144260222	1634237546098	0
+iet7jkwex3bjjbg38ewup9br7e	49qrzpruotbi5g573b8qnagg4a	blush	1634140756290	1634237548121	0
+iet7jkwex3bjjbg38ewup9br7e	49qrzpruotbi5g573b8qnagg4a	+1	1634140745442	1634237548143	0
+a4emb3hsdjn7pk6s5crpdmokaw	ipzo6bc6zbr9ixpcx3hg8bp6ja	blush	1634152013291	1634237548171	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	izryd3s6mfdg5nyxqjoie3uicc	blush	1634161893003	1634237548182	0
+km1txe6kktdabdgyuhwru7r9ua	r8ur5gcxzpg1tq9er3kxw3f4hw	heart	1634143375418	1634237548179	0
+poqpi8xhfjdszcmgmjboqzwcir	49qrzpruotbi5g573b8qnagg4a	blush	1634140759951	1634237548190	0
+gd6p49n1x3g3ic13taequwidya	izryd3s6mfdg5nyxqjoie3uicc	-1	1634161875261	1634237548198	0
+km1txe6kktdabdgyuhwru7r9ua	tfsd5d319tbc7xgsor4ywwn4ih	heart	1634158513126	1634237548207	0
+g5x9y1ewypr4tr93whdcfby3xy	r8ur5gcxzpg1tq9er3kxw3f4hw	-1	1634143425244	1634237548204	0
+gd6p49n1x3g3ic13taequwidya	izryd3s6mfdg5nyxqjoie3uicc	heart	1634161954278	1634237548222	0
+km1txe6kktdabdgyuhwru7r9ua	tfsd5d319tbc7xgsor4ywwn4ih	+1	1634158553123	1634237548226	0
+g5x9y1ewypr4tr93whdcfby3xy	o8wnkb6nujduxdgx3wzmtiaaky	-1	1634144490913	1634237548235	0
+a4emb3hsdjn7pk6s5crpdmokaw	pk7w8e9k43b5bekhx6uo5fk16a	+1	1634122233968	1634237548242	0
+g5x9y1ewypr4tr93whdcfby3xy	r8ur5gcxzpg1tq9er3kxw3f4hw	heart	1634143399553	1634237548246	0
+1jcrg4b4upf67kbexsxyyiamqa	ehogqgsxyifc3y8eacobnh4gtc	blush	1634149123225	1634237548254	0
+poqpi8xhfjdszcmgmjboqzwcir	tr56n83nbprwbxuntmsferhjrc	+1	1634158384482	1634237548277	0
+a9quakcmbjys3ego1myciaoi8h	49ws3d873fgwfda6jpksqpbrxe	blush	1634143846009	1634237548288	0
+g5x9y1ewypr4tr93whdcfby3xy	y4exmjogwf8i8gny4em4dezthy	heart	1634145095491	1634237548308	0
+a4emb3hsdjn7pk6s5crpdmokaw	drg8uc8d4trnbftxp1spzppyrr	heart	1634132382937	1634237548332	0
+a4emb3hsdjn7pk6s5crpdmokaw	drg8uc8d4trnbftxp1spzppyrr	+1	1634132344809	1634237548357	0
+km1txe6kktdabdgyuhwru7r9ua	kbng7if5pigefphbiufojyxnnr	-1	1634124175658	1634237548376	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	bbo8yzc5f3dg7m19b53wd5zn3h	-1	1634162996875	1634237548380	0
+a4emb3hsdjn7pk6s5crpdmokaw	drg8uc8d4trnbftxp1spzppyrr	blush	1634132346922	1634237548378	0
+4f4g78ewrfys8b68j456o5nxkr	7mcjce11sbg47ykbq3c54iz6me	-1	1634159495441	1634237548396	0
+km1txe6kktdabdgyuhwru7r9ua	bbo8yzc5f3dg7m19b53wd5zn3h	-1	1634162958999	1634237548401	0
+4f4g78ewrfys8b68j456o5nxkr	7mcjce11sbg47ykbq3c54iz6me	blush	1634159529097	1634237548416	0
+x4kiax5uy3n3pjkk6xyic5i98a	dhmrbpke878wpjqn6wsbqfas3y	heart	1634165702843	1634237548429	0
+x4kiax5uy3n3pjkk6xyic5i98a	t3996cmqgpntmb5a81ksretwiy	+1	1634153341172	1634237548432	0
+km1txe6kktdabdgyuhwru7r9ua	bbo8yzc5f3dg7m19b53wd5zn3h	blush	1634162953216	1634237548441	0
+x4kiax5uy3n3pjkk6xyic5i98a	4j9ugk9y8tgx3rnx8so7s5sawa	heart	1634119875800	1634237548446	0
+x4kiax5uy3n3pjkk6xyic5i98a	c5eigimk53dypfk5tjp67hnz3e	blush	1634163809670	1634237548459	0
+a9quakcmbjys3ego1myciaoi8h	dhmrbpke878wpjqn6wsbqfas3y	blush	1634165742203	1634237548486	0
+x4kiax5uy3n3pjkk6xyic5i98a	1ektmsrtp3d8dx6h9y1osu3hoo	-1	1634151469502	1634237548501	0
+km1txe6kktdabdgyuhwru7r9ua	13u7wxsaqjfrtnxt8k3ub53m1e	-1	1634119716767	1634237548518	0
+x4kiax5uy3n3pjkk6xyic5i98a	yq85p19g3p8n9m9zbpocrdi1ur	+1	1634129443694	1634237548525	0
+a4emb3hsdjn7pk6s5crpdmokaw	4j9ugk9y8tgx3rnx8so7s5sawa	blush	1634119853522	1634237548466	0
+iet7jkwex3bjjbg38ewup9br7e	fodny6pxopb7trfq8x19xcz6hy	blush	1634144931910	1634237548676	0
+g5x9y1ewypr4tr93whdcfby3xy	ocz6wmkzqiramy5f9bgr49qwwe	-1	1634167474612	1634237548823	0
+zbdgeaijh3fh9e3foqdts6i5wh	s786734ks7y6pc6tku8rep6rch	+1	1634124547420	1634237548827	0
+j78juejgzby8x8cj8f89mtq4bh	nxa4azgemj8gipiqbxbgefdzbc	heart	1634159797704	1634237550364	0
+iet7jkwex3bjjbg38ewup9br7e	1sspny49xtfr8n9uqf8xqwofzo	+1	1634154909967	1634237550390	0
+1jcrg4b4upf67kbexsxyyiamqa	codcff38oiyemd9ereysu5i1ky	+1	1634164552629	1634237550474	0
+a4emb3hsdjn7pk6s5crpdmokaw	6a5q1cj57pdo8fo31x37ztp9zh	heart	1634164317198	1634237550673	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	xjymds54ajgwixck8uw98wd6pc	blush	1634123219729	1634237550744	0
+a4emb3hsdjn7pk6s5crpdmokaw	11nrn4xwejn17cz6k5ejiomkow	blush	1634150594509	1634237550773	0
+a9quakcmbjys3ego1myciaoi8h	dhmrbpke878wpjqn6wsbqfas3y	-1	1634165711775	1634237548470	0
+4f4g78ewrfys8b68j456o5nxkr	6owoaaysxibizjw5m49qn6534a	blush	1634152788679	1634237548759	0
+1jcrg4b4upf67kbexsxyyiamqa	1r3q9gnomtfmxd5dri88nskw7h	blush	1634136331429	1634237548781	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	efkiqnq1xtncirbxue8xgt8qtr	-1	1634132268155	1634237550333	0
+gd6p49n1x3g3ic13taequwidya	efkiqnq1xtncirbxue8xgt8qtr	+1	1634132340844	1634237550453	0
+zbdgeaijh3fh9e3foqdts6i5wh	efkiqnq1xtncirbxue8xgt8qtr	blush	1634132295079	1634237550475	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	94y71rxbcfgdprtjwfpbmwiypc	blush	1634120165591	1634237550836	0
+1jcrg4b4upf67kbexsxyyiamqa	igfnudi31pgmiyppb3w4gn69sh	-1	1634156611261	1634237548487	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	4jnaw17gsjfb3eh8qogqxeuf5y	-1	1634120528224	1634237548589	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	ikmjr7izmifqtd8f5yqpm9d3ba	blush	1634142995954	1634237548668	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	ikmjr7izmifqtd8f5yqpm9d3ba	-1	1634143012290	1634237548690	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	pmr5acesx3dktrrdhbqt9squhr	-1	1634137129911	1634237548894	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	is1s9nrwo7by7gabctxknockac	-1	1634145805679	1634237548570	0
+a4emb3hsdjn7pk6s5crpdmokaw	udzyhwc5j38b9mb1stbn66kb6c	heart	1634138612334	1634237548599	0
+x4kiax5uy3n3pjkk6xyic5i98a	81sqzee5fpd9tjo8z3t83uqgbc	-1	1634160549095	1634237550274	0
+zbdgeaijh3fh9e3foqdts6i5wh	xuxdsp1be7fbdjbnxhhwz4suyr	+1	1634124191029	1634237550398	0
+1jcrg4b4upf67kbexsxyyiamqa	epfzusjsxpni7ccqso96nmxswe	blush	1634134846979	1634237550579	0
+4f4g78ewrfys8b68j456o5nxkr	7jujq7nodinwjckwphw978rmpo	+1	1634125543624	1634237551002	0
+zbdgeaijh3fh9e3foqdts6i5wh	cp8jd38jzt8j9xzwsb7w9yq61r	+1	1634136764649	1634237548600	0
+j78juejgzby8x8cj8f89mtq4bh	uios3wqzqbnxzfeunroxdozq1e	blush	1634136932042	1634237548617	0
+a9quakcmbjys3ego1myciaoi8h	czr4gp3js7dgirb9cqimko9wnh	-1	1634132689037	1634237550309	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	friyqrbdhifgijhcnbagp935fa	blush	1634148869114	1634237550491	0
+s1m5hgt3o7f8tftf41n94ofp9r	friyqrbdhifgijhcnbagp935fa	heart	1634148855644	1634237550514	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	4sq67nfrpjgz7b4dx3s4e7sagy	+1	1634154636854	1634237550618	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	qjbnf56dojf7irhhxjttoszh6c	+1	1634139050867	1634237550730	0
+x4kiax5uy3n3pjkk6xyic5i98a	6a5q1cj57pdo8fo31x37ztp9zh	-1	1634164244312	1634237550785	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	5f1fc6t4dtf7xge6dqb3jjzh3e	-1	1634152727922	1634237550819	0
+zbdgeaijh3fh9e3foqdts6i5wh	nnpqmb1eyfne7jnrot5aobhbch	heart	1634126510106	1634237548578	0
+gd6p49n1x3g3ic13taequwidya	1r3q9gnomtfmxd5dri88nskw7h	+1	1634136352441	1634237548748	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	ur6pr9awkiy93d9exgieen544w	-1	1634149204905	1634237550608	0
+x4kiax5uy3n3pjkk6xyic5i98a	m6bgmhcjytr1tnu71x1kxsmkoe	blush	1634139630298	1634237550631	0
+1jcrg4b4upf67kbexsxyyiamqa	epfzusjsxpni7ccqso96nmxswe	-1	1634134800222	1634237550705	0
+4f4g78ewrfys8b68j456o5nxkr	fjmtg5h3gibe7rr35cia6h9h9c	-1	1634162708552	1634237548587	0
+4f4g78ewrfys8b68j456o5nxkr	d1zepwdpt7nr7miikmxwjojdir	-1	1634136205271	1634237548900	0
+x4kiax5uy3n3pjkk6xyic5i98a	mpm7dkg44py49bnhpagjbmgway	+1	1634122424586	1634237550209	0
+gd6p49n1x3g3ic13taequwidya	efkiqnq1xtncirbxue8xgt8qtr	blush	1634132268791	1634237550356	0
+gd6p49n1x3g3ic13taequwidya	epfzusjsxpni7ccqso96nmxswe	heart	1634134832733	1634237550614	0
+zbdgeaijh3fh9e3foqdts6i5wh	9eb3x6q67frudnkaad6z6unfmy	heart	1634137733197	1634237548588	0
+a4emb3hsdjn7pk6s5crpdmokaw	spsyzaibab867qgbhedy4oeoih	blush	1634123059242	1634237548672	0
+x4kiax5uy3n3pjkk6xyic5i98a	spsyzaibab867qgbhedy4oeoih	heart	1634123107534	1634237548701	0
+zbdgeaijh3fh9e3foqdts6i5wh	nnpqmb1eyfne7jnrot5aobhbch	blush	1634126573597	1634237548600	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	ftcprhchatds8bubrgy8ed8b4h	heart	1634136493022	1634237548864	0
+j78juejgzby8x8cj8f89mtq4bh	uios3wqzqbnxzfeunroxdozq1e	-1	1634136973659	1634237548656	0
+iet7jkwex3bjjbg38ewup9br7e	g48dejpukjyetrnyktd9nrmmew	+1	1634130795833	1634237548657	0
+4f4g78ewrfys8b68j456o5nxkr	zr5o4ekew3fy5kgmsrt3tm6wna	+1	1634163661553	1634237548785	0
+iet7jkwex3bjjbg38ewup9br7e	cpaiw41dcinatpe6oaw93xitno	-1	1634166971919	1634237550157	0
+zbdgeaijh3fh9e3foqdts6i5wh	jkm1amuzci8aijwneok1ww3exc	heart	1634158375321	1634237550571	0
+zbdgeaijh3fh9e3foqdts6i5wh	fodny6pxopb7trfq8x19xcz6hy	-1	1634144955603	1634237548707	0
+zbdgeaijh3fh9e3foqdts6i5wh	ftcprhchatds8bubrgy8ed8b4h	blush	1634136548009	1634237548829	0
+iet7jkwex3bjjbg38ewup9br7e	xgwgbnatntdmjxigaeaqqbf8oo	heart	1634139275154	1634237550400	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	m6bgmhcjytr1tnu71x1kxsmkoe	blush	1634139711506	1634237550711	0
+x4kiax5uy3n3pjkk6xyic5i98a	11nrn4xwejn17cz6k5ejiomkow	heart	1634150631959	1634237550730	0
+g5x9y1ewypr4tr93whdcfby3xy	6owoaaysxibizjw5m49qn6534a	blush	1634152843914	1634237548728	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	eu79s97nrfrufcbrfiapdood3r	blush	1634160638777	1634237550355	0
+x4kiax5uy3n3pjkk6xyic5i98a	eg3aitwu4bbfpmfffpzgpzfm3a	+1	1634134171445	1634237550594	0
+x4kiax5uy3n3pjkk6xyic5i98a	6a5q1cj57pdo8fo31x37ztp9zh	heart	1634164291928	1634237550634	0
+poqpi8xhfjdszcmgmjboqzwcir	xjymds54ajgwixck8uw98wd6pc	heart	1634123176485	1634237550670	0
+zbdgeaijh3fh9e3foqdts6i5wh	94y71rxbcfgdprtjwfpbmwiypc	+1	1634120154906	1634237550871	0
+iet7jkwex3bjjbg38ewup9br7e	fodny6pxopb7trfq8x19xcz6hy	+1	1634144979370	1634237548724	0
+gd6p49n1x3g3ic13taequwidya	1r3q9gnomtfmxd5dri88nskw7h	blush	1634136320236	1634237548763	0
+j78juejgzby8x8cj8f89mtq4bh	48x38bmozpncjcpoozmjzmysco	heart	1634142273746	1634237548837	0
+zbdgeaijh3fh9e3foqdts6i5wh	efkiqnq1xtncirbxue8xgt8qtr	+1	1634132350286	1634237550499	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	codcff38oiyemd9ereysu5i1ky	heart	1634164557732	1634237550519	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	9ohco49tkt86ijkfhofh6y13kh	+1	1634120873131	1634237550612	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	ftcprhchatds8bubrgy8ed8b4h	blush	1634136537149	1634237548848	0
+j78juejgzby8x8cj8f89mtq4bh	48x38bmozpncjcpoozmjzmysco	-1	1634142275324	1634237548858	0
+iet7jkwex3bjjbg38ewup9br7e	mpm7dkg44py49bnhpagjbmgway	-1	1634122470771	1634237550141	0
+iet7jkwex3bjjbg38ewup9br7e	cpaiw41dcinatpe6oaw93xitno	+1	1634166918802	1634237550242	0
+zbdgeaijh3fh9e3foqdts6i5wh	czr4gp3js7dgirb9cqimko9wnh	heart	1634132753712	1634237550258	0
+a9quakcmbjys3ego1myciaoi8h	mmhprpianjgj7839stg6zo3ype	-1	1634130091360	1634237550271	0
+zbdgeaijh3fh9e3foqdts6i5wh	mmhprpianjgj7839stg6zo3ype	+1	1634130026141	1634237550288	0
+x4kiax5uy3n3pjkk6xyic5i98a	81sqzee5fpd9tjo8z3t83uqgbc	blush	1634160499871	1634237550291	0
+gd6p49n1x3g3ic13taequwidya	4wkys9rkhpn1tka6yo1rahetgy	heart	1634167728754	1634237550300	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	mmhprpianjgj7839stg6zo3ype	blush	1634130034932	1634237550329	0
+j78juejgzby8x8cj8f89mtq4bh	nxa4azgemj8gipiqbxbgefdzbc	blush	1634159793068	1634237550412	0
+a4emb3hsdjn7pk6s5crpdmokaw	rh4jgwpeafbkzke5nq4nkipkgh	-1	1634154468065	1634237550464	0
+x4kiax5uy3n3pjkk6xyic5i98a	rh4jgwpeafbkzke5nq4nkipkgh	blush	1634154528786	1634237550484	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	1jqae19awjf5dgj1dryknykz8r	heart	1634141277798	1634237550489	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	9ohco49tkt86ijkfhofh6y13kh	heart	1634120881360	1634237550524	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	9ohco49tkt86ijkfhofh6y13kh	blush	1634120829332	1634237550590	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	epfzusjsxpni7ccqso96nmxswe	heart	1634134794768	1634237550630	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	m6bgmhcjytr1tnu71x1kxsmkoe	heart	1634139632849	1634237550677	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	xjymds54ajgwixck8uw98wd6pc	-1	1634123195245	1634237550723	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	11nrn4xwejn17cz6k5ejiomkow	heart	1634150613017	1634237550747	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	6a5q1cj57pdo8fo31x37ztp9zh	+1	1634164327745	1634237550750	0
+x4kiax5uy3n3pjkk6xyic5i98a	m6bgmhcjytr1tnu71x1kxsmkoe	heart	1634139686173	1634237550756	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	11nrn4xwejn17cz6k5ejiomkow	blush	1634150637424	1634237550787	0
+4f4g78ewrfys8b68j456o5nxkr	g6hqfebwhpdjbcbwm4kuopkknw	heart	1634150952685	1634237550881	0
+a4emb3hsdjn7pk6s5crpdmokaw	q14fuzey57bqmndkntb8h8un6a	blush	1634140772784	1634237550893	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	udxqqa5jrfrzunerrmqeg4th8w	-1	1634120818522	1634237550906	0
+a4emb3hsdjn7pk6s5crpdmokaw	udxqqa5jrfrzunerrmqeg4th8w	+1	1634120796825	1634237550924	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	8jesuncpqbnytddp4ride5591y	heart	1634135474900	1634237550275	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	czr4gp3js7dgirb9cqimko9wnh	-1	1634132758503	1634237550284	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	xgwiu7d1npfhurs8rdyxjj1x4h	+1	1634154638696	1634237550324	0
+j78juejgzby8x8cj8f89mtq4bh	nxa4azgemj8gipiqbxbgefdzbc	+1	1634159783666	1634237550394	0
+1jcrg4b4upf67kbexsxyyiamqa	efkiqnq1xtncirbxue8xgt8qtr	blush	1634132283053	1634237550408	0
+iet7jkwex3bjjbg38ewup9br7e	xgwgbnatntdmjxigaeaqqbf8oo	+1	1634139268437	1634237550420	0
+1jcrg4b4upf67kbexsxyyiamqa	codcff38oiyemd9ereysu5i1ky	heart	1634164595406	1634237550446	0
+iet7jkwex3bjjbg38ewup9br7e	xgwgbnatntdmjxigaeaqqbf8oo	-1	1634139312891	1634237550456	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	codcff38oiyemd9ereysu5i1ky	+1	1634164578201	1634237550500	0
+gd6p49n1x3g3ic13taequwidya	efkiqnq1xtncirbxue8xgt8qtr	heart	1634132304882	1634237550525	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	codcff38oiyemd9ereysu5i1ky	-1	1634164567480	1634237550539	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	767sd3xc7jfbdx19f67ox99fjr	blush	1634129051113	1634237550548	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	e4e1xb4otffruczb1wku4513jh	blush	1634128625676	1634237550568	0
+iet7jkwex3bjjbg38ewup9br7e	9ohco49tkt86ijkfhofh6y13kh	heart	1634120850543	1634237550568	0
+a4emb3hsdjn7pk6s5crpdmokaw	codcff38oiyemd9ereysu5i1ky	-1	1634164553911	1634237550568	0
+a4emb3hsdjn7pk6s5crpdmokaw	767sd3xc7jfbdx19f67ox99fjr	heart	1634129124048	1634237550598	0
+a4emb3hsdjn7pk6s5crpdmokaw	m6bgmhcjytr1tnu71x1kxsmkoe	blush	1634139632133	1634237550607	0
+1jcrg4b4upf67kbexsxyyiamqa	epfzusjsxpni7ccqso96nmxswe	+1	1634134860108	1634237550649	0
+a4emb3hsdjn7pk6s5crpdmokaw	m6bgmhcjytr1tnu71x1kxsmkoe	-1	1634139646392	1634237550652	0
+9i9c7b6cijd4fmgnuq9o8e7m3y	epfzusjsxpni7ccqso96nmxswe	-1	1634134817008	1634237550685	0
+a4emb3hsdjn7pk6s5crpdmokaw	m6bgmhcjytr1tnu71x1kxsmkoe	+1	1634139675931	1634237550693	0
+zbdgeaijh3fh9e3foqdts6i5wh	xjymds54ajgwixck8uw98wd6pc	heart	1634123194677	1634237550707	0
+7a4t7dp6e3y6mkbbo55j6wrc6c	m6bgmhcjytr1tnu71x1kxsmkoe	-1	1634139701737	1634237550726	0
+4f4g78ewrfys8b68j456o5nxkr	aci4af6ioircxbkcpz6w4wuinw	+1	1634160372733	1634237550743	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	xjymds54ajgwixck8uw98wd6pc	+1	1634123173710	1634237550761	0
+a4emb3hsdjn7pk6s5crpdmokaw	6a5q1cj57pdo8fo31x37ztp9zh	+1	1634164324859	1634237550768	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	aci4af6ioircxbkcpz6w4wuinw	-1	1634160377335	1634237550789	0
+poqpi8xhfjdszcmgmjboqzwcir	hayy3iys8bbcmcibuwfz15kjce	heart	1634147890025	1634237550801	0
+zbdgeaijh3fh9e3foqdts6i5wh	94y71rxbcfgdprtjwfpbmwiypc	-1	1634120192999	1634237550854	0
+poqpi8xhfjdszcmgmjboqzwcir	hayy3iys8bbcmcibuwfz15kjce	blush	1634147834418	1634237550852	0
+poqpi8xhfjdszcmgmjboqzwcir	8m9t43u6sjg4uckz9m6crbfc1a	-1	1634130642781	1634237550862	0
+poqpi8xhfjdszcmgmjboqzwcir	8m9t43u6sjg4uckz9m6crbfc1a	blush	1634130614405	1634237550878	0
+4f4g78ewrfys8b68j456o5nxkr	g6hqfebwhpdjbcbwm4kuopkknw	blush	1634150951616	1634237550918	0
+4f4g78ewrfys8b68j456o5nxkr	udxqqa5jrfrzunerrmqeg4th8w	heart	1634120859912	1634237550939	0
+km1txe6kktdabdgyuhwru7r9ua	7jujq7nodinwjckwphw978rmpo	-1	1634125593667	1634237550982	0
+bz9xa1zkwbgmf8nfx4eku9a7rc	7jujq7nodinwjckwphw978rmpo	+1	1634125568080	1634237550991	0
+4f4g78ewrfys8b68j456o5nxkr	7jujq7nodinwjckwphw978rmpo	-1	1634125570768	1634237551013	0
 \.
 
 
@@ -8836,756 +8836,756 @@ ALTER TABLE ONLY public.usertermsofservice
 -- Name: idx_audits_user_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_audits_user_id ON public.audits USING btree (userid);
+CREATE INDEX IF NOT EXISTS idx_audits_user_id ON public.audits USING btree (userid);
 
 
 --
 -- Name: idx_channel_search_txt; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_channel_search_txt ON public.channels USING gin (to_tsvector('english'::regconfig, (((((name)::text || ' '::text) || (displayname)::text) || ' '::text) || (purpose)::text)));
+CREATE INDEX IF NOT EXISTS idx_channel_search_txt ON public.channels USING gin (to_tsvector('english'::regconfig, (((((name)::text || ' '::text) || (displayname)::text) || ' '::text) || (purpose)::text)));
 
 
 --
 -- Name: idx_channelmembers_channel_id_scheme_guest_user_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_channelmembers_channel_id_scheme_guest_user_id ON public.channelmembers USING btree (channelid, schemeguest, userid);
+CREATE INDEX IF NOT EXISTS idx_channelmembers_channel_id_scheme_guest_user_id ON public.channelmembers USING btree (channelid, schemeguest, userid);
 
 
 --
 -- Name: idx_channelmembers_user_id_channel_id_last_viewed_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_channelmembers_user_id_channel_id_last_viewed_at ON public.channelmembers USING btree (userid, channelid, lastviewedat);
+CREATE INDEX IF NOT EXISTS idx_channelmembers_user_id_channel_id_last_viewed_at ON public.channelmembers USING btree (userid, channelid, lastviewedat);
 
 
 --
 -- Name: idx_channels_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_channels_create_at ON public.channels USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_channels_create_at ON public.channels USING btree (createat);
 
 
 --
 -- Name: idx_channels_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_channels_delete_at ON public.channels USING btree (deleteat);
+CREATE INDEX IF NOT EXISTS idx_channels_delete_at ON public.channels USING btree (deleteat);
 
 
 --
 -- Name: idx_channels_displayname_lower; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_channels_displayname_lower ON public.channels USING btree (lower((displayname)::text));
+CREATE INDEX IF NOT EXISTS idx_channels_displayname_lower ON public.channels USING btree (lower((displayname)::text));
 
 
 --
 -- Name: idx_channels_name_lower; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_channels_name_lower ON public.channels USING btree (lower((name)::text));
+CREATE INDEX IF NOT EXISTS idx_channels_name_lower ON public.channels USING btree (lower((name)::text));
 
 
 --
 -- Name: idx_channels_scheme_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_channels_scheme_id ON public.channels USING btree (schemeid);
+CREATE INDEX IF NOT EXISTS idx_channels_scheme_id ON public.channels USING btree (schemeid);
 
 
 --
 -- Name: idx_channels_team_id_display_name; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_channels_team_id_display_name ON public.channels USING btree (teamid, displayname);
+CREATE INDEX IF NOT EXISTS idx_channels_team_id_display_name ON public.channels USING btree (teamid, displayname);
 
 
 --
 -- Name: idx_channels_team_id_type; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_channels_team_id_type ON public.channels USING btree (teamid, type);
+CREATE INDEX IF NOT EXISTS idx_channels_team_id_type ON public.channels USING btree (teamid, type);
 
 
 --
 -- Name: idx_channels_update_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_channels_update_at ON public.channels USING btree (updateat);
+CREATE INDEX IF NOT EXISTS idx_channels_update_at ON public.channels USING btree (updateat);
 
 
 --
 -- Name: idx_command_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_command_create_at ON public.commands USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_command_create_at ON public.commands USING btree (createat);
 
 
 --
 -- Name: idx_command_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_command_delete_at ON public.commands USING btree (deleteat);
+CREATE INDEX IF NOT EXISTS idx_command_delete_at ON public.commands USING btree (deleteat);
 
 
 --
 -- Name: idx_command_team_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_command_team_id ON public.commands USING btree (teamid);
+CREATE INDEX IF NOT EXISTS idx_command_team_id ON public.commands USING btree (teamid);
 
 
 --
 -- Name: idx_command_update_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_command_update_at ON public.commands USING btree (updateat);
+CREATE INDEX IF NOT EXISTS idx_command_update_at ON public.commands USING btree (updateat);
 
 
 --
 -- Name: idx_command_webhook_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_command_webhook_create_at ON public.commandwebhooks USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_command_webhook_create_at ON public.commandwebhooks USING btree (createat);
 
 
 --
 -- Name: idx_emoji_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_emoji_create_at ON public.emoji USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_emoji_create_at ON public.emoji USING btree (createat);
 
 
 --
 -- Name: idx_emoji_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_emoji_delete_at ON public.emoji USING btree (deleteat);
+CREATE INDEX IF NOT EXISTS idx_emoji_delete_at ON public.emoji USING btree (deleteat);
 
 
 --
 -- Name: idx_emoji_update_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_emoji_update_at ON public.emoji USING btree (updateat);
+CREATE INDEX IF NOT EXISTS idx_emoji_update_at ON public.emoji USING btree (updateat);
 
 
 --
 -- Name: idx_fileinfo_content_txt; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_fileinfo_content_txt ON public.fileinfo USING gin (to_tsvector('english'::regconfig, content));
+CREATE INDEX IF NOT EXISTS idx_fileinfo_content_txt ON public.fileinfo USING gin (to_tsvector('english'::regconfig, content));
 
 
 --
 -- Name: idx_fileinfo_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_fileinfo_create_at ON public.fileinfo USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_fileinfo_create_at ON public.fileinfo USING btree (createat);
 
 
 --
 -- Name: idx_fileinfo_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_fileinfo_delete_at ON public.fileinfo USING btree (deleteat);
+CREATE INDEX IF NOT EXISTS idx_fileinfo_delete_at ON public.fileinfo USING btree (deleteat);
 
 
 --
 -- Name: idx_fileinfo_extension_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_fileinfo_extension_at ON public.fileinfo USING btree (extension);
+CREATE INDEX IF NOT EXISTS idx_fileinfo_extension_at ON public.fileinfo USING btree (extension);
 
 
 --
 -- Name: idx_fileinfo_name_splitted; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_fileinfo_name_splitted ON public.fileinfo USING gin (to_tsvector('english'::regconfig, translate((name)::text, '.,-'::text, '   '::text)));
+CREATE INDEX IF NOT EXISTS idx_fileinfo_name_splitted ON public.fileinfo USING gin (to_tsvector('english'::regconfig, translate((name)::text, '.,-'::text, '   '::text)));
 
 
 --
 -- Name: idx_fileinfo_name_txt; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_fileinfo_name_txt ON public.fileinfo USING gin (to_tsvector('english'::regconfig, (name)::text));
+CREATE INDEX IF NOT EXISTS idx_fileinfo_name_txt ON public.fileinfo USING gin (to_tsvector('english'::regconfig, (name)::text));
 
 
 --
 -- Name: idx_fileinfo_postid_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_fileinfo_postid_at ON public.fileinfo USING btree (postid);
+CREATE INDEX IF NOT EXISTS idx_fileinfo_postid_at ON public.fileinfo USING btree (postid);
 
 
 --
 -- Name: idx_fileinfo_update_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_fileinfo_update_at ON public.fileinfo USING btree (updateat);
+CREATE INDEX IF NOT EXISTS idx_fileinfo_update_at ON public.fileinfo USING btree (updateat);
 
 
 --
 -- Name: idx_groupchannels_channelid; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_groupchannels_channelid ON public.groupchannels USING btree (channelid);
+CREATE INDEX IF NOT EXISTS idx_groupchannels_channelid ON public.groupchannels USING btree (channelid);
 
 
 --
 -- Name: idx_groupchannels_schemeadmin; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_groupchannels_schemeadmin ON public.groupchannels USING btree (schemeadmin);
+CREATE INDEX IF NOT EXISTS idx_groupchannels_schemeadmin ON public.groupchannels USING btree (schemeadmin);
 
 
 --
 -- Name: idx_groupmembers_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_groupmembers_create_at ON public.groupmembers USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_groupmembers_create_at ON public.groupmembers USING btree (createat);
 
 
 --
 -- Name: idx_groupteams_schemeadmin; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_groupteams_schemeadmin ON public.groupteams USING btree (schemeadmin);
+CREATE INDEX IF NOT EXISTS idx_groupteams_schemeadmin ON public.groupteams USING btree (schemeadmin);
 
 
 --
 -- Name: idx_groupteams_teamid; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_groupteams_teamid ON public.groupteams USING btree (teamid);
+CREATE INDEX IF NOT EXISTS idx_groupteams_teamid ON public.groupteams USING btree (teamid);
 
 
 --
 -- Name: idx_incoming_webhook_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_incoming_webhook_create_at ON public.incomingwebhooks USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_incoming_webhook_create_at ON public.incomingwebhooks USING btree (createat);
 
 
 --
 -- Name: idx_incoming_webhook_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_incoming_webhook_delete_at ON public.incomingwebhooks USING btree (deleteat);
+CREATE INDEX IF NOT EXISTS idx_incoming_webhook_delete_at ON public.incomingwebhooks USING btree (deleteat);
 
 
 --
 -- Name: idx_incoming_webhook_team_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_incoming_webhook_team_id ON public.incomingwebhooks USING btree (teamid);
+CREATE INDEX IF NOT EXISTS idx_incoming_webhook_team_id ON public.incomingwebhooks USING btree (teamid);
 
 
 --
 -- Name: idx_incoming_webhook_update_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_incoming_webhook_update_at ON public.incomingwebhooks USING btree (updateat);
+CREATE INDEX IF NOT EXISTS idx_incoming_webhook_update_at ON public.incomingwebhooks USING btree (updateat);
 
 
 --
 -- Name: idx_incoming_webhook_user_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_incoming_webhook_user_id ON public.incomingwebhooks USING btree (userid);
+CREATE INDEX IF NOT EXISTS idx_incoming_webhook_user_id ON public.incomingwebhooks USING btree (userid);
 
 
 --
 -- Name: idx_jobs_status_type; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_jobs_status_type ON public.jobs USING btree (status, type);
+CREATE INDEX IF NOT EXISTS idx_jobs_status_type ON public.jobs USING btree (status, type);
 
 
 --
 -- Name: idx_jobs_type; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_jobs_type ON public.jobs USING btree (type);
+CREATE INDEX IF NOT EXISTS idx_jobs_type ON public.jobs USING btree (type);
 
 
 --
 -- Name: idx_link_metadata_url_timestamp; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_link_metadata_url_timestamp ON public.linkmetadata USING btree (url, "timestamp");
+CREATE INDEX IF NOT EXISTS idx_link_metadata_url_timestamp ON public.linkmetadata USING btree (url, "timestamp");
 
 
 --
 -- Name: idx_notice_views_notice_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_notice_views_notice_id ON public.productnoticeviewstate USING btree (noticeid);
+CREATE INDEX IF NOT EXISTS idx_notice_views_notice_id ON public.productnoticeviewstate USING btree (noticeid);
 
 
 --
 -- Name: idx_notice_views_timestamp; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_notice_views_timestamp ON public.productnoticeviewstate USING btree ("timestamp");
+CREATE INDEX IF NOT EXISTS idx_notice_views_timestamp ON public.productnoticeviewstate USING btree ("timestamp");
 
 
 --
 -- Name: idx_oauthaccessdata_refresh_token; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_oauthaccessdata_refresh_token ON public.oauthaccessdata USING btree (refreshtoken);
+CREATE INDEX IF NOT EXISTS idx_oauthaccessdata_refresh_token ON public.oauthaccessdata USING btree (refreshtoken);
 
 
 --
 -- Name: idx_oauthaccessdata_user_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_oauthaccessdata_user_id ON public.oauthaccessdata USING btree (userid);
+CREATE INDEX IF NOT EXISTS idx_oauthaccessdata_user_id ON public.oauthaccessdata USING btree (userid);
 
 
 --
 -- Name: idx_oauthapps_creator_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_oauthapps_creator_id ON public.oauthapps USING btree (creatorid);
+CREATE INDEX IF NOT EXISTS idx_oauthapps_creator_id ON public.oauthapps USING btree (creatorid);
 
 
 --
 -- Name: idx_outgoing_webhook_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_outgoing_webhook_create_at ON public.outgoingwebhooks USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_outgoing_webhook_create_at ON public.outgoingwebhooks USING btree (createat);
 
 
 --
 -- Name: idx_outgoing_webhook_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_outgoing_webhook_delete_at ON public.outgoingwebhooks USING btree (deleteat);
+CREATE INDEX IF NOT EXISTS idx_outgoing_webhook_delete_at ON public.outgoingwebhooks USING btree (deleteat);
 
 
 --
 -- Name: idx_outgoing_webhook_team_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_outgoing_webhook_team_id ON public.outgoingwebhooks USING btree (teamid);
+CREATE INDEX IF NOT EXISTS idx_outgoing_webhook_team_id ON public.outgoingwebhooks USING btree (teamid);
 
 
 --
 -- Name: idx_outgoing_webhook_update_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_outgoing_webhook_update_at ON public.outgoingwebhooks USING btree (updateat);
+CREATE INDEX IF NOT EXISTS idx_outgoing_webhook_update_at ON public.outgoingwebhooks USING btree (updateat);
 
 
 --
 -- Name: idx_posts_channel_id_delete_at_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_posts_channel_id_delete_at_create_at ON public.posts USING btree (channelid, deleteat, createat);
+CREATE INDEX IF NOT EXISTS idx_posts_channel_id_delete_at_create_at ON public.posts USING btree (channelid, deleteat, createat);
 
 
 --
 -- Name: idx_posts_channel_id_update_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_posts_channel_id_update_at ON public.posts USING btree (channelid, updateat);
+CREATE INDEX IF NOT EXISTS idx_posts_channel_id_update_at ON public.posts USING btree (channelid, updateat);
 
 
 --
 -- Name: idx_posts_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_posts_create_at ON public.posts USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_posts_create_at ON public.posts USING btree (createat);
 
 
 --
 -- Name: idx_posts_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_posts_delete_at ON public.posts USING btree (deleteat);
+CREATE INDEX IF NOT EXISTS idx_posts_delete_at ON public.posts USING btree (deleteat);
 
 
 --
 -- Name: idx_posts_hashtags_txt; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_posts_hashtags_txt ON public.posts USING gin (to_tsvector('english'::regconfig, (hashtags)::text));
+CREATE INDEX IF NOT EXISTS idx_posts_hashtags_txt ON public.posts USING gin (to_tsvector('english'::regconfig, (hashtags)::text));
 
 
 --
 -- Name: idx_posts_is_pinned; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_posts_is_pinned ON public.posts USING btree (ispinned);
+CREATE INDEX IF NOT EXISTS idx_posts_is_pinned ON public.posts USING btree (ispinned);
 
 
 --
 -- Name: idx_posts_message_txt; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_posts_message_txt ON public.posts USING gin (to_tsvector('english'::regconfig, (message)::text));
+CREATE INDEX IF NOT EXISTS idx_posts_message_txt ON public.posts USING gin (to_tsvector('english'::regconfig, (message)::text));
 
 
 --
 -- Name: idx_posts_root_id_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_posts_root_id_delete_at ON public.posts USING btree (rootid, deleteat);
+CREATE INDEX IF NOT EXISTS idx_posts_root_id_delete_at ON public.posts USING btree (rootid, deleteat);
 
 
 --
 -- Name: idx_posts_update_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_posts_update_at ON public.posts USING btree (updateat);
+CREATE INDEX IF NOT EXISTS idx_posts_update_at ON public.posts USING btree (updateat);
 
 
 --
 -- Name: idx_posts_user_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_posts_user_id ON public.posts USING btree (userid);
+CREATE INDEX IF NOT EXISTS idx_posts_user_id ON public.posts USING btree (userid);
 
 
 --
 -- Name: idx_preferences_category; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_preferences_category ON public.preferences USING btree (category);
+CREATE INDEX IF NOT EXISTS idx_preferences_category ON public.preferences USING btree (category);
 
 
 --
 -- Name: idx_preferences_name; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_preferences_name ON public.preferences USING btree (name);
+CREATE INDEX IF NOT EXISTS idx_preferences_name ON public.preferences USING btree (name);
 
 
 --
 -- Name: idx_publicchannels_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_publicchannels_delete_at ON public.publicchannels USING btree (deleteat);
+CREATE INDEX IF NOT EXISTS idx_publicchannels_delete_at ON public.publicchannels USING btree (deleteat);
 
 
 --
 -- Name: idx_publicchannels_displayname_lower; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_publicchannels_displayname_lower ON public.publicchannels USING btree (lower((displayname)::text));
+CREATE INDEX IF NOT EXISTS idx_publicchannels_displayname_lower ON public.publicchannels USING btree (lower((displayname)::text));
 
 
 --
 -- Name: idx_publicchannels_name_lower; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_publicchannels_name_lower ON public.publicchannels USING btree (lower((name)::text));
+CREATE INDEX IF NOT EXISTS idx_publicchannels_name_lower ON public.publicchannels USING btree (lower((name)::text));
 
 
 --
 -- Name: idx_publicchannels_search_txt; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_publicchannels_search_txt ON public.publicchannels USING gin (to_tsvector('english'::regconfig, (((((name)::text || ' '::text) || (displayname)::text) || ' '::text) || (purpose)::text)));
+CREATE INDEX IF NOT EXISTS idx_publicchannels_search_txt ON public.publicchannels USING gin (to_tsvector('english'::regconfig, (((((name)::text || ' '::text) || (displayname)::text) || ' '::text) || (purpose)::text)));
 
 
 --
 -- Name: idx_publicchannels_team_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_publicchannels_team_id ON public.publicchannels USING btree (teamid);
+CREATE INDEX IF NOT EXISTS idx_publicchannels_team_id ON public.publicchannels USING btree (teamid);
 
 
 --
 -- Name: idx_retentionpolicies_displayname; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_retentionpolicies_displayname ON public.retentionpolicies USING btree (displayname);
+CREATE INDEX IF NOT EXISTS idx_retentionpolicies_displayname ON public.retentionpolicies USING btree (displayname);
 
 
 --
 -- Name: idx_retentionpolicieschannels_policyid; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_retentionpolicieschannels_policyid ON public.retentionpolicieschannels USING btree (policyid);
+CREATE INDEX IF NOT EXISTS idx_retentionpolicieschannels_policyid ON public.retentionpolicieschannels USING btree (policyid);
 
 
 --
 -- Name: idx_retentionpoliciesteams_policyid; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_retentionpoliciesteams_policyid ON public.retentionpoliciesteams USING btree (policyid);
+CREATE INDEX IF NOT EXISTS idx_retentionpoliciesteams_policyid ON public.retentionpoliciesteams USING btree (policyid);
 
 
 --
 -- Name: idx_schemes_channel_admin_role; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_schemes_channel_admin_role ON public.schemes USING btree (defaultchanneladminrole);
+CREATE INDEX IF NOT EXISTS idx_schemes_channel_admin_role ON public.schemes USING btree (defaultchanneladminrole);
 
 
 --
 -- Name: idx_schemes_channel_guest_role; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_schemes_channel_guest_role ON public.schemes USING btree (defaultchannelguestrole);
+CREATE INDEX IF NOT EXISTS idx_schemes_channel_guest_role ON public.schemes USING btree (defaultchannelguestrole);
 
 
 --
 -- Name: idx_schemes_channel_user_role; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_schemes_channel_user_role ON public.schemes USING btree (defaultchanneluserrole);
+CREATE INDEX IF NOT EXISTS idx_schemes_channel_user_role ON public.schemes USING btree (defaultchanneluserrole);
 
 
 --
 -- Name: idx_sessions_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_sessions_create_at ON public.sessions USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_sessions_create_at ON public.sessions USING btree (createat);
 
 
 --
 -- Name: idx_sessions_expires_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_sessions_expires_at ON public.sessions USING btree (expiresat);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON public.sessions USING btree (expiresat);
 
 
 --
 -- Name: idx_sessions_last_activity_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_sessions_last_activity_at ON public.sessions USING btree (lastactivityat);
+CREATE INDEX IF NOT EXISTS idx_sessions_last_activity_at ON public.sessions USING btree (lastactivityat);
 
 
 --
 -- Name: idx_sessions_token; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_sessions_token ON public.sessions USING btree (token);
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON public.sessions USING btree (token);
 
 
 --
 -- Name: idx_sessions_user_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_sessions_user_id ON public.sessions USING btree (userid);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON public.sessions USING btree (userid);
 
 
 --
 -- Name: idx_sharedchannelusers_remote_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_sharedchannelusers_remote_id ON public.sharedchannelusers USING btree (remoteid);
+CREATE INDEX IF NOT EXISTS idx_sharedchannelusers_remote_id ON public.sharedchannelusers USING btree (remoteid);
 
 
 --
 -- Name: idx_status_status_dndendtime; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_status_status_dndendtime ON public.status USING btree (status, dndendtime);
+CREATE INDEX IF NOT EXISTS idx_status_status_dndendtime ON public.status USING btree (status, dndendtime);
 
 
 --
 -- Name: idx_teammembers_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_teammembers_delete_at ON public.teammembers USING btree (deleteat);
+CREATE INDEX IF NOT EXISTS idx_teammembers_delete_at ON public.teammembers USING btree (deleteat);
 
 
 --
 -- Name: idx_teammembers_user_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_teammembers_user_id ON public.teammembers USING btree (userid);
+CREATE INDEX IF NOT EXISTS idx_teammembers_user_id ON public.teammembers USING btree (userid);
 
 
 --
 -- Name: idx_teams_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_teams_create_at ON public.teams USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_teams_create_at ON public.teams USING btree (createat);
 
 
 --
 -- Name: idx_teams_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_teams_delete_at ON public.teams USING btree (deleteat);
+CREATE INDEX IF NOT EXISTS idx_teams_delete_at ON public.teams USING btree (deleteat);
 
 
 --
 -- Name: idx_teams_invite_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_teams_invite_id ON public.teams USING btree (inviteid);
+CREATE INDEX IF NOT EXISTS idx_teams_invite_id ON public.teams USING btree (inviteid);
 
 
 --
 -- Name: idx_teams_scheme_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_teams_scheme_id ON public.teams USING btree (schemeid);
+CREATE INDEX IF NOT EXISTS idx_teams_scheme_id ON public.teams USING btree (schemeid);
 
 
 --
 -- Name: idx_teams_update_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_teams_update_at ON public.teams USING btree (updateat);
+CREATE INDEX IF NOT EXISTS idx_teams_update_at ON public.teams USING btree (updateat);
 
 
 --
 -- Name: idx_thread_memberships_last_update_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_thread_memberships_last_update_at ON public.threadmemberships USING btree (lastupdated);
+CREATE INDEX IF NOT EXISTS idx_thread_memberships_last_update_at ON public.threadmemberships USING btree (lastupdated);
 
 
 --
 -- Name: idx_thread_memberships_last_view_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_thread_memberships_last_view_at ON public.threadmemberships USING btree (lastviewed);
+CREATE INDEX IF NOT EXISTS idx_thread_memberships_last_view_at ON public.threadmemberships USING btree (lastviewed);
 
 
 --
 -- Name: idx_thread_memberships_user_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_thread_memberships_user_id ON public.threadmemberships USING btree (userid);
+CREATE INDEX IF NOT EXISTS idx_thread_memberships_user_id ON public.threadmemberships USING btree (userid);
 
 
 --
 -- Name: idx_threads_channel_id_last_reply_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_threads_channel_id_last_reply_at ON public.threads USING btree (channelid, lastreplyat);
+CREATE INDEX IF NOT EXISTS idx_threads_channel_id_last_reply_at ON public.threads USING btree (channelid, lastreplyat);
 
 
 --
 -- Name: idx_uploadsessions_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_uploadsessions_create_at ON public.uploadsessions USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_uploadsessions_create_at ON public.uploadsessions USING btree (createat);
 
 
 --
 -- Name: idx_uploadsessions_user_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_uploadsessions_user_id ON public.uploadsessions USING btree (type);
+CREATE INDEX IF NOT EXISTS idx_uploadsessions_user_id ON public.uploadsessions USING btree (type);
 
 
 --
 -- Name: idx_user_access_tokens_user_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_user_access_tokens_user_id ON public.useraccesstokens USING btree (userid);
+CREATE INDEX IF NOT EXISTS idx_user_access_tokens_user_id ON public.useraccesstokens USING btree (userid);
 
 
 --
 -- Name: idx_usergroups_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_usergroups_delete_at ON public.usergroups USING btree (deleteat);
+CREATE INDEX IF NOT EXISTS idx_usergroups_delete_at ON public.usergroups USING btree (deleteat);
 
 
 --
 -- Name: idx_usergroups_remote_id; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_usergroups_remote_id ON public.usergroups USING btree (remoteid);
+CREATE INDEX IF NOT EXISTS idx_usergroups_remote_id ON public.usergroups USING btree (remoteid);
 
 
 --
 -- Name: idx_users_all_no_full_name_txt; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_users_all_no_full_name_txt ON public.users USING gin (to_tsvector('english'::regconfig, (((((username)::text || ' '::text) || (nickname)::text) || ' '::text) || (email)::text)));
+CREATE INDEX IF NOT EXISTS idx_users_all_no_full_name_txt ON public.users USING gin (to_tsvector('english'::regconfig, (((((username)::text || ' '::text) || (nickname)::text) || ' '::text) || (email)::text)));
 
 
 --
 -- Name: idx_users_all_txt; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_users_all_txt ON public.users USING gin (to_tsvector('english'::regconfig, (((((((((username)::text || ' '::text) || (firstname)::text) || ' '::text) || (lastname)::text) || ' '::text) || (nickname)::text) || ' '::text) || (email)::text)));
+CREATE INDEX IF NOT EXISTS idx_users_all_txt ON public.users USING gin (to_tsvector('english'::regconfig, (((((((((username)::text || ' '::text) || (firstname)::text) || ' '::text) || (lastname)::text) || ' '::text) || (nickname)::text) || ' '::text) || (email)::text)));
 
 
 --
 -- Name: idx_users_create_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_users_create_at ON public.users USING btree (createat);
+CREATE INDEX IF NOT EXISTS idx_users_create_at ON public.users USING btree (createat);
 
 
 --
 -- Name: idx_users_delete_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_users_delete_at ON public.users USING btree (deleteat);
+CREATE INDEX IF NOT EXISTS idx_users_delete_at ON public.users USING btree (deleteat);
 
 
 --
 -- Name: idx_users_email_lower_textpattern; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_users_email_lower_textpattern ON public.users USING btree (lower((email)::text) text_pattern_ops);
+CREATE INDEX IF NOT EXISTS idx_users_email_lower_textpattern ON public.users USING btree (lower((email)::text) text_pattern_ops);
 
 
 --
 -- Name: idx_users_firstname_lower_textpattern; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_users_firstname_lower_textpattern ON public.users USING btree (lower((firstname)::text) text_pattern_ops);
+CREATE INDEX IF NOT EXISTS idx_users_firstname_lower_textpattern ON public.users USING btree (lower((firstname)::text) text_pattern_ops);
 
 
 --
 -- Name: idx_users_lastname_lower_textpattern; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_users_lastname_lower_textpattern ON public.users USING btree (lower((lastname)::text) text_pattern_ops);
+CREATE INDEX IF NOT EXISTS idx_users_lastname_lower_textpattern ON public.users USING btree (lower((lastname)::text) text_pattern_ops);
 
 
 --
 -- Name: idx_users_names_no_full_name_txt; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_users_names_no_full_name_txt ON public.users USING gin (to_tsvector('english'::regconfig, (((username)::text || ' '::text) || (nickname)::text)));
+CREATE INDEX IF NOT EXISTS idx_users_names_no_full_name_txt ON public.users USING gin (to_tsvector('english'::regconfig, (((username)::text || ' '::text) || (nickname)::text)));
 
 
 --
 -- Name: idx_users_names_txt; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_users_names_txt ON public.users USING gin (to_tsvector('english'::regconfig, (((((((username)::text || ' '::text) || (firstname)::text) || ' '::text) || (lastname)::text) || ' '::text) || (nickname)::text)));
+CREATE INDEX IF NOT EXISTS idx_users_names_txt ON public.users USING gin (to_tsvector('english'::regconfig, (((((((username)::text || ' '::text) || (firstname)::text) || ' '::text) || (lastname)::text) || ' '::text) || (nickname)::text)));
 
 
 --
 -- Name: idx_users_nickname_lower_textpattern; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_users_nickname_lower_textpattern ON public.users USING btree (lower((nickname)::text) text_pattern_ops);
+CREATE INDEX IF NOT EXISTS idx_users_nickname_lower_textpattern ON public.users USING btree (lower((nickname)::text) text_pattern_ops);
 
 
 --
 -- Name: idx_users_update_at; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_users_update_at ON public.users USING btree (updateat);
+CREATE INDEX IF NOT EXISTS idx_users_update_at ON public.users USING btree (updateat);
 
 
 --
 -- Name: idx_users_username_lower_textpattern; Type: INDEX; Schema: public; Owner: mmuser
 --
 
-CREATE INDEX idx_users_username_lower_textpattern ON public.users USING btree (lower((username)::text) text_pattern_ops);
+CREATE INDEX IF NOT EXISTS idx_users_username_lower_textpattern ON public.users USING btree (lower((username)::text) text_pattern_ops);
 
 
 --
