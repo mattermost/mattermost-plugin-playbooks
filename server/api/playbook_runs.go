@@ -134,11 +134,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(w http.ResponseWriter, r 
 		return
 	}
 
-	if !app.IsOnEnabledTeam(playbookRunCreateOptions.TeamID, h.config) {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
-		return
-	}
-
 	playbookRun, err := h.createPlaybookRun(
 		app.PlaybookRun{
 			OwnerUserID: playbookRunCreateOptions.OwnerUserID,
@@ -211,11 +206,6 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 
 	if userID != request.UserId {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "interactive dialog's userID must be the same as the requester's userID", nil)
-		return
-	}
-
-	if !app.IsOnEnabledTeam(request.TeamId, h.config) {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "not enabled on this team", nil)
 		return
 	}
 
