@@ -150,6 +150,20 @@ func (mr *MockPlaybookServiceMockRecorder) MessageHasBeenPosted(arg0, arg1 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MessageHasBeenPosted", reflect.TypeOf((*MockPlaybookService)(nil).MessageHasBeenPosted), arg0, arg1)
 }
 
+// Restore mocks base method
+func (m *MockPlaybookService) Restore(arg0 app.Playbook, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Restore", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Restore indicates an expected call of Restore
+func (mr *MockPlaybookServiceMockRecorder) Restore(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Restore", reflect.TypeOf((*MockPlaybookService)(nil).Restore), arg0, arg1)
+}
+
 // Update mocks base method
 func (m *MockPlaybookService) Update(arg0 app.Playbook, arg1 string) error {
 	m.ctrl.T.Helper()
