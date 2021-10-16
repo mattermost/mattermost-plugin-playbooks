@@ -130,14 +130,12 @@ const PostCard = (props: Props) => {
                         }
                     </UpdateTimeLink>
                 </UpdateHeader>
-
-                    <PostText
-                        text={props.post.message}
-                        team={props.team}
-                    >
-                        {props.post.edit_at !== 0 && <EditedIndicator>{formatMessage({defaultMessage: '(edited)'})}</EditedIndicator>}
-                    </PostText>
-                
+                <PostText
+                    text={props.post.message}
+                    team={props.team}
+                >
+                    {props.post.edit_at !== 0 && <EditedIndicator>{formatMessage({defaultMessage: '(edited)'})}</EditedIndicator>}
+                </PostText>
             </UpdateContainer>
         </UpdateSection>
     );
