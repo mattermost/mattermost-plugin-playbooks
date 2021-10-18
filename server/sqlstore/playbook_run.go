@@ -926,8 +926,8 @@ func (s *playbookRunStore) toPlaybookRun(rawPlaybookRun sqlPlaybookRun) (*app.Pl
 	return &playbookRun, nil
 }
 
-// GetAssignedTasks returns the list of tasks assigned to userID
-func (s *playbookRunStore) GetAssignedTasks(userID string) ([]app.AssignedRun, error) {
+// GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
+func (s *playbookRunStore) GetRunsWithAssignedTasks(userID string) ([]app.AssignedRun, error) {
 	var raw []struct {
 		app.AssignedRun
 		ChecklistsJSON json.RawMessage

@@ -1,4 +1,5 @@
 import React from 'react';
+import {useIntl} from 'react-intl';
 
 import {debounce} from 'debounce';
 import AsyncSelect from 'react-select/async';
