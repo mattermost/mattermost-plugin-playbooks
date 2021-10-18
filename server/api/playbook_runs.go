@@ -200,7 +200,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 	var request *model.SubmitDialogRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil || request == nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", err)
 		return
 	}
 
@@ -285,7 +285,7 @@ func (h *PlaybookRunHandler) addToTimelineDialog(w http.ResponseWriter, r *http.
 	var request *model.SubmitDialogRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil || request == nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", err)
 		return
 	}
 
@@ -737,7 +737,7 @@ func (h *PlaybookRunHandler) updateStatusDialog(w http.ResponseWriter, r *http.R
 	var request *model.SubmitDialogRequest
 	err = json.NewDecoder(r.Body).Decode(&request)
 	if err != nil || request == nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", err)
 		return
 	}
 
@@ -1146,7 +1146,7 @@ func (h *PlaybookRunHandler) addChecklistItemDialog(w http.ResponseWriter, r *ht
 	var request *model.SubmitDialogRequest
 	err = json.NewDecoder(r.Body).Decode(&request)
 	if err != nil || request == nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", nil)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode SubmitDialogRequest", err)
 		return
 	}
 
