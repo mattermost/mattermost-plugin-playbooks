@@ -63,7 +63,7 @@ commands:
     description: "Run tests with database"
     steps:
       - run:
-          name: Waiting for Postgres and MySQL to be ready
+          name: Waiting for databases to be ready
           command: |
             for i in `seq 1 20`;
             do
@@ -71,7 +71,7 @@ commands:
               echo -n .
               sleep 1
             done
-            echo Failed waiting for Postgres and MySQL && exit 1
+            echo Failed waiting for databases && exit 1
       - checkout
       - npm-dependencies
       - *restore_go_cache
@@ -266,6 +266,24 @@ jobs:
           MYSQL_DATABASE: mattermost_test
           MYSQL_USER: mmuser
           MYSQL_PASSWORD: mostest
+    executor:
+      name: default
+    steps:
+      - test-with-db
+
+  test-MariaDB-Postgres12:
+    docker:
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: circleci/postgres:12-alpine
+        environment:
+          POSTGRES_USER: mmuser
+          POSTGRES_DB: mattermost_test
+      - image: circleci/mariadb:latest
+        environment:
+          MARIADB_ROOT_PASSWORD: mostest
+          MARIADB_DATABASE: mattermost_test
+          MARIADB_USER: mmuser
+          MARIADB_PASSWORD: mostest
     executor:
       name: default
     steps:
@@ -514,6 +532,7 @@ workflows:
       - lint
       - test-MySQL5717-Postgres10
       - test-MySQL8-Postgres11
+      - test-MariaDB-Postgres12
       - test-MySQL-Postgres-latest
       - e2e-cypress-tests-cloud
       - e2e-cypress-tests-master
@@ -532,6 +551,7 @@ workflows:
             - lint
             - test-MySQL5717-Postgres10
             - test-MySQL8-Postgres11
+            - test-MariaDB-Postgres12
             - test-MySQL-Postgres-latest
             #- e2e-cypress-tests-cloud
             - build
@@ -546,6 +566,7 @@ workflows:
             - lint
             - test-MySQL5717-Postgres10
             - test-MySQL8-Postgres11
+            - test-MariaDB-Postgres12
             - test-MySQL-Postgres-latest
             # - e2e-cypress-tests-cloud
             - build
@@ -560,6 +581,7 @@ workflows:
             - lint
             - test-MySQL5717-Postgres10
             - test-MySQL8-Postgres11
+            - test-MariaDB-Postgres12
             - test-MySQL-Postgres-latest
             # - e2e-cypress-tests-cloud
             - build
