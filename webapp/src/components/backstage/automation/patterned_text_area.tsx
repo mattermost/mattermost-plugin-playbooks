@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {FC, useState} from 'react';
+import React, {useState} from 'react';
 
 import styled, {css} from 'styled-components';
 
@@ -24,7 +24,7 @@ interface Props {
     maxErrorText?: string;
 }
 
-export const PatternedTextArea: FC<Props> = (props: Props) => {
+export const PatternedTextArea = (props: Props) => {
     const [invalid, setInvalid] = useState<boolean>(false);
     const [errorText, setErrorText] = useState<string>(props.errorText);
     const handleOnBlur = (urls: string) => {
