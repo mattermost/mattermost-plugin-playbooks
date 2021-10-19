@@ -54,7 +54,6 @@ let config = {
         modules: [
             'src',
             'node_modules',
-            'node_modules/mattermost-webapp',
         ],
         extensions: ['*', '.js', '.jsx', '.ts', '.tsx'],
     },
