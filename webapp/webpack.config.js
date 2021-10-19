@@ -47,12 +47,14 @@ let config = {
     ],
     resolve: {
         alias: {
-            'mattermost-redux': path.resolve(__dirname, './node_modules/mattermost-webapp/packages/mattermost-redux/src'),
             src: path.resolve(__dirname, './src/'),
+            'mattermost-redux': path.resolve(__dirname, './node_modules/mattermost-webapp/packages/mattermost-redux/src/'),
+            reselect: path.resolve(__dirname, './node_modules/mattermost-webapp/packages/reselect/src/'),
         },
         modules: [
             'src',
             'node_modules',
+            'node_modules/mattermost-webapp',
         ],
         extensions: ['*', '.js', '.jsx', '.ts', '.tsx'],
     },
@@ -79,6 +81,32 @@ let config = {
                     },
                     {
                         loader: 'sass-loader',
+                    },
+                ],
+            },
+            {
+                test: /\.(png|eot|tiff|svg|woff2|woff|ttf|gif|mp3|jpg)$/,
+                use: [
+                    {
+                        loader: 'file-loader',
+                        options: {
+                            name: 'files/[contenthash].[ext]',
+                        },
+                    },
+                    {
+                        loader: 'image-webpack-loader',
+                        options: {},
+                    },
+                ],
+            },
+            {
+                test: /\.apng$/,
+                use: [
+                    {
+                        loader: 'file-loader',
+                        options: {
+                            name: 'files/[contenthash].[ext]',
+                        },
                     },
                 ],
             },

@@ -15,7 +15,10 @@ import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {$ID, IDMappedObjects, Dictionary} from 'mattermost-redux/types/utilities';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {haveIChannelPermission, haveISystemPermission} from 'mattermost-redux/selectors/entities/roles';
+import {
+    haveIChannelPermission,
+    haveISystemPermission,
+} from 'mattermost-redux/selectors/entities/roles';
 
 import Permissions from 'mattermost-redux/constants/permissions';
 
@@ -50,11 +53,7 @@ export const globalSettings = (state: GlobalState): GlobalSettings | null => plu
 export const myPlaybookRunsByTeam = (state: GlobalState) => pluginState(state).myPlaybookRunsByTeam;
 
 export const canIPostUpdateForRun = (state: GlobalState, channelId: string, teamId: string) => {
-    const canPost = haveIChannelPermission(state, {
-        channel: channelId,
-        team: teamId,
-        permission: Permissions.READ_CHANNEL,
-    });
+    const canPost = haveIChannelPermission(state, teamId, channelId, Permissions.READ_CHANNEL);
 
     const canManageSystem = haveISystemPermission(state, {
         channel: channelId,
@@ -66,6 +65,7 @@ export const canIPostUpdateForRun = (state: GlobalState, channelId: string, team
 };
 
 export const inPlaybookRunChannel = createSelector(
+    'inPlaybookRunChannel',
     getCurrentTeamId,
     getCurrentChannelId,
     myPlaybookRunsByTeam,
@@ -75,6 +75,7 @@ export const inPlaybookRunChannel = createSelector(
 );
 
 export const currentPlaybookRun = createSelector(
+    'currentPlaybookRun',
     getCurrentTeamId,
     getCurrentChannelId,
     myPlaybookRunsByTeam,
@@ -86,6 +87,7 @@ export const currentPlaybookRun = createSelector(
 const emptyChecklistState = {} as Record<number, boolean>;
 
 export const currentChecklistCollapsedState = createSelector(
+    'currentChecklistCollapsedState',
     getCurrentChannelId,
     pluginState,
     (channelId, plugin) => {
@@ -94,6 +96,7 @@ export const currentChecklistCollapsedState = createSelector(
 );
 
 export const currentChecklistAllCollapsed = createSelector(
+    'currentChecklistAllCollapsed',
     currentPlaybookRun,
     currentChecklistCollapsedState,
     (playbookRun, checklistsState) => {
@@ -115,6 +118,7 @@ export const currentChecklistItemsFilter = (state: GlobalState): ChecklistItemsF
 };
 
 export const myActivePlaybookRunsList = createSelector(
+    'myActivePlaybookRunsList',
     getCurrentTeamId,
     myPlaybookRunsByTeam,
     (teamId, playbookRunMapByTeam) => {
@@ -147,6 +151,7 @@ export const rhsEventsFilterForChannel = (state: GlobalState, channelId: string)
 };
 
 export const lastUpdatedByPlaybookRunId = createSelector(
+    'lastUpdatedByPlaybookRunId',
     getCurrentTeamId,
     myPlaybookRunsByTeam,
     (teamId, playbookRunsMapByTeam) => {
@@ -193,6 +198,7 @@ export const numPlaybooksByTeam = (state: GlobalState): Record<string, number> =
     pluginState(state).numPlaybooksByTeam;
 
 export const currentTeamNumPlaybooks = createSelector(
+    'currentTeamNumPlaybooks',
     getCurrentTeamId,
     numPlaybooksByTeam,
     (teamId, playbooksPerTeamMap) => {
@@ -204,6 +210,7 @@ export const isPostMenuModalVisible = (state: GlobalState): boolean =>
     pluginState(state).postMenuModalVisibility;
 
 export const isCurrentUserAdmin = createSelector(
+    'isCurrentUserAdmin',
     getCurrentUser,
     (user) => {
         const rolesArray = user.roles.split(' ');
@@ -214,6 +221,7 @@ export const isCurrentUserAdmin = createSelector(
 export const hasViewedByChannelID = (state: GlobalState) => pluginState(state).hasViewedByChannel;
 
 export const isTeamEdition = createSelector(
+    'isTeamEdition',
     getConfig,
     (config) => config.BuildEnterpriseReady !== 'true',
 );
@@ -221,6 +229,7 @@ export const isTeamEdition = createSelector(
 const rhsAboutCollapsedState = (state: GlobalState): Record<string, boolean> => pluginState(state).rhsAboutCollapsedByChannel;
 
 export const currentRHSAboutCollapsedState = createSelector(
+    'currentRHSAboutCollapsedState',
     getCurrentChannelId,
     rhsAboutCollapsedState,
     (channelId, stateByChannel) => {

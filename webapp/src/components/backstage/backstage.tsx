@@ -11,7 +11,7 @@ import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
-import {Theme} from 'mattermost-redux/types/preferences';
+import {Theme} from 'mattermost-redux/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import {promptForFeedback} from 'src/client';
