@@ -15,7 +15,6 @@ import {Theme} from 'mattermost-redux/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
 import Playbook from 'src/components/backstage/playbooks/playbook';
-
 import {promptForFeedback} from 'src/client';
 import PlaybookRunBackstage
     from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
@@ -25,17 +24,13 @@ import {NewPlaybook} from 'src/components/backstage/new_playbook';
 import {ErrorPageTypes} from 'src/constants';
 import {pluginErrorUrl} from 'src/browser_routing';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
-
-import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
-import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
+import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
+import ErrorPage from 'src/components/error_page';
+import SettingsView from 'src/components/backstage/settings';
+import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
+import RunsPage from 'src/components/backstage/runs_page';
 import {applyTheme} from 'src/components/backstage/css_utils';
-
-import ErrorPage from '../error_page';
-
-import SettingsView from './settings';
-import {BackstageNavbar} from './backstage_navbar';
-import RunsPage from './runs_page';
 
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
@@ -104,8 +99,6 @@ const Backstage = () => {
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
 
     const match = useRouteMatch();
-
-    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
 
     return (
         <BackstageContainer>
