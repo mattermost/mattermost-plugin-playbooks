@@ -1903,7 +1903,7 @@ func TestCheckAndSendMessageOnJoin(t *testing.T) {
 	}
 }
 
-func TestTasksAndRunsDiges(t *testing.T) {
+func TestTasksAndRunsDigest(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		_, store := setupSQLStore(t, db)

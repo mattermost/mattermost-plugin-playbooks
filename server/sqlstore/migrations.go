@@ -1192,10 +1192,16 @@ var migrations = []Migration{
 				if err := addPrimaryKey(e, sqlStore, "IR_PlaybookMember", "(MemberID, PlaybookID)"); err != nil {
 					return err
 				}
+				if err := dropIndexIfExists(e, sqlStore, "IR_StatusPosts", "posts_unique"); err != nil {
+					return err
+				}
 				if err := addPrimaryKey(e, sqlStore, "IR_StatusPosts", "(IncidentID, PostID)"); err != nil {
 					return err
 				}
 				if err := addPrimaryKey(e, sqlStore, "IR_TimelineEvent", "(ID)"); err != nil {
+					return err
+				}
+				if err := dropIndexIfExists(e, sqlStore, "IR_ViewedChannel", "IR_ViewedChannel_ChannelID_UserID"); err != nil {
 					return err
 				}
 				if err := addPrimaryKey(e, sqlStore, "IR_ViewedChannel", "(ChannelID, UserID)"); err != nil {
@@ -1334,6 +1340,28 @@ var migrations = []Migration{
 			} else {
 				if err := addColumnToPGTable(e, "IR_UserInfo", "DigestNotificationSettingsJSON", "JSON"); err != nil {
 					return errors.Wrapf(err, "failed adding column DigestNotificationSettings to table IR_UserInfo")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.35.0"),
+		toVersion:   semver.MustParse("0.36.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := dropIndexIfExists(e, sqlStore, "IR_StatusPosts", "posts_unique"); err != nil {
+					return err
+				}
+				if err := dropIndexIfExists(e, sqlStore, "IR_ViewedChannel", "IR_ViewedChannel_ChannelID_UserID"); err != nil {
+					return err
+				}
+			} else {
+				if err := dropIndexIfExists(e, sqlStore, "IR_StatusPosts", "posts_unique"); err != nil {
+					return err
+				}
+				if err := dropIndexIfExists(e, sqlStore, "IR_ViewedChannel", "IR_ViewedChannel_ChannelID_UserID"); err != nil {
+					return err
 				}
 			}
 			return nil
