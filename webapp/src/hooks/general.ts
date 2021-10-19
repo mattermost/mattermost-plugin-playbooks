@@ -9,14 +9,15 @@ import {
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getCurrentTeam, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeam, getMyTeams, getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
+import {Team} from 'mattermost-redux/types/teams';
 import {
     getProfilesInCurrentChannel,
     getCurrentUserId,
     getUser,
 } from 'mattermost-redux/selectors/entities/users';
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentChannelId, getChannelsNameMapInTeam} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {
     getProfilesByIds,
@@ -528,3 +529,21 @@ export const usePlaybookName = (playbookId: string) => {
 
     return playbookName;
 };
+
+export const useDefaultMarkdownOptions = (team: Team) => {
+    const channelNamesMap = useSelector((state: GlobalState) => getChannelsNameMapInTeam(state, team.id));
+
+    return {
+        atMentions: true,
+        mentionHighlight: true,
+        team,
+        channelNamesMap,
+    };
+};
+
+export const useDefaultMarkdownOptionsByTeamId = (teamId: string) => {
+    const team = useSelector((state: GlobalState) => getTeam(state, teamId));
+
+    return useDefaultMarkdownOptions(team);
+};
+
