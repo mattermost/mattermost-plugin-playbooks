@@ -137,14 +137,16 @@ const commonSelectStyle = css`
     .channel-selector__multi-value {
         height: 20px;
         line-height: 19px;
-
+        background-color: var(--center-channel-color-08);
         border-radius: 10px;
         padding-left: 8px;
 
         .channel-selector__multi-value__label {
             padding: 0;
+            color: var(--center-channel-color);
         }
         .channel-selector__multi-value__remove {
+            color: var(--center-channel-bg-80);
         }
     }
 `;

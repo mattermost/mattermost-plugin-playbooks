@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import moment from 'moment';
 
 import {useDispatch, useSelector} from 'react-redux';
 import React from 'react';
@@ -131,16 +130,12 @@ const PostCard = (props: Props) => {
                         }
                     </UpdateTimeLink>
                 </UpdateHeader>
-                <ShowMore
+                <PostText
                     text={props.post.message}
+                    team={props.team}
                 >
-                    <PostText
-                        text={props.post.message}
-                        team={props.team}
-                    >
-                        {props.post.edit_at !== 0 && <EditedIndicator>{formatMessage({defaultMessage: '(edited)'})}</EditedIndicator>}
-                    </PostText>
-                </ShowMore>
+                    {props.post.edit_at !== 0 && <EditedIndicator>{formatMessage({defaultMessage: '(edited)'})}</EditedIndicator>}
+                </PostText>
             </UpdateContainer>
         </UpdateSection>
     );

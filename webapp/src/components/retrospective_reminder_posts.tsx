@@ -3,13 +3,13 @@ import {useSelector} from 'react-redux';
 
 import styled from 'styled-components';
 
-import moment from 'moment';
-
 import {Post} from 'mattermost-redux/types/posts';
 
 import {getPostIdsInCurrentChannel, getPostsInCurrentChannel} from 'mattermost-redux/selectors/entities/posts';
 
 import {GlobalState} from 'mattermost-redux/types/store';
+
+import {Duration} from 'luxon';
 
 import {currentPlaybookRun} from 'src/selectors';
 
@@ -62,7 +62,7 @@ const ReminderCommon = (props: ReminderCommonProps) => {
         reminderText = (
             <>
                 {'A reminder will be sent in '}
-                <b>{formatDuration(moment.duration(reminderDuration, 'seconds'))}</b>
+                <b>{formatDuration(Duration.fromObject({seconds: reminderDuration}))}</b>
             </>
         );
     }

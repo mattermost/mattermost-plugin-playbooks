@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import moment from 'moment';
+import {DateTime} from 'luxon';
 import styled from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -172,15 +172,15 @@ const tasksCompletedTotal = (checklists: Checklist[]) => {
 };
 
 const formatDate = (millis: number) => {
-    const mom = moment(millis);
-    if (mom.isAfter(moment().startOf('d').subtract(2, 'd'))) {
-        return mom.calendar();
+    const dt = DateTime.fromMillis(millis);
+    if (dt > DateTime.now().startOf('day').minus({days: 2})) {
+        return dt.toRelativeCalendar();
     }
 
-    if (mom.isSame(moment(), 'year')) {
-        return mom.format('MMM DD LT');
+    if (dt.hasSame(DateTime.now(), 'year')) {
+        return dt.toFormat('LLL dd t');
     }
-    return mom.format('MMM DD YYYY LT');
+    return dt.toFormat('LLL dd yyyy t');
 };
 
 export default Row;

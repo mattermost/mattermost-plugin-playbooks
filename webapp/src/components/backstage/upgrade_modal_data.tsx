@@ -1,6 +1,6 @@
 import React from 'react';
 
-import moment from 'moment';
+import {DateTime} from 'luxon';
 
 import ConvertEnterpriseNotice from 'src/components/backstage/convert_enterprise_notice';
 
@@ -113,7 +113,7 @@ export const getUpgradeModalCopy = (
     switch (state) {
     case ModalActionState.Success:
         if (isAdmin) {
-            const expiryDate = moment().add('days', 30).format('MMMM D, YYYY');
+            const expiryDate = DateTime.now().plus({days: 30}).toLocaleString(DateTime.DATE_FULL);
             return {
                 titleText: 'Your 30-day trial has started',
                 helpText: (

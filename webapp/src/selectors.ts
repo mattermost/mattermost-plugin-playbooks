@@ -43,8 +43,6 @@ export const getAdminAnalytics = (state: GlobalState): Dictionary<number> => sta
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
-export const isDisabledOnCurrentTeam = (state: GlobalState): boolean => pluginState(state).myPlaybookRunsByTeam[getCurrentTeamId(state)] === null;
-
 export const globalSettings = (state: GlobalState): GlobalSettings | null => pluginState(state).globalSettings;
 
 /**
