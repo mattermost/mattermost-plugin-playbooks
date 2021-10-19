@@ -47,6 +47,7 @@ let config = {
     ],
     resolve: {
         alias: {
+            'mattermost-redux': path.resolve(__dirname, './node_modules/mattermost-webapp/packages/mattermost-redux/src'),
             src: path.resolve(__dirname, './src/'),
         },
         modules: [
