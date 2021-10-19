@@ -4,7 +4,7 @@
 import React from 'react';
 import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
-import moment from 'moment';
+import {DateTime} from 'luxon';
 import Icon from '@mdi/react';
 import {mdiFlagCheckered} from '@mdi/js';
 
@@ -35,7 +35,7 @@ const RHSPostUpdate = (props: Props) => {
 
     const isNextUpdateScheduled = props.playbookRun.previous_reminder !== 0;
     const timestamp = getTimestamp(props.playbookRun, isNextUpdateScheduled);
-    const isDue = isNextUpdateScheduled && timestamp.isBefore(now);
+    const isDue = isNextUpdateScheduled && timestamp < now;
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
 
     let pretext = 'Last update';
@@ -78,7 +78,7 @@ const RHSPostUpdate = (props: Props) => {
                         </UpdateNoticePretext>
                         <UpdateNoticeTime collapsed={props.collapsed}>
                             <Timestamp
-                                value={timestamp.toDate()}
+                                value={timestamp.toJSDate()}
                                 units={timespec}
                                 useTime={false}
                             />
@@ -117,7 +117,7 @@ const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) 
         timestampValue = playbookRun.last_status_update_at + previousReminderMillis;
     }
 
-    return moment(timestampValue);
+    return DateTime.fromMillis(timestampValue);
 };
 
 const PastTimeSpec = [

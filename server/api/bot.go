@@ -72,7 +72,11 @@ func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BotHandler) startTrial(w http.ResponseWriter, r *http.Request) {
-	requestData := model.PostActionIntegrationRequestFromJson(r.Body)
+	var requestData *model.PostActionIntegrationRequest
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to parse json", err)
+	}
 	if requestData == nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
 		return
@@ -174,6 +178,10 @@ func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if err != nil {
 		h.HandleError(w, err)
+		return
+	}
+
+	if info.DisableDailyDigest {
 		return
 	}
 

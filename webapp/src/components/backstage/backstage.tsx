@@ -15,6 +15,8 @@ import {Team} from 'mattermost-redux/types/teams';
 import {Theme} from 'mattermost-redux/types/preferences';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
+import Playbook from 'src/components/backstage/playbooks/playbook';
+
 import {promptForFeedback} from 'src/client';
 
 import PlaybookRunBackstage
@@ -27,7 +29,6 @@ import {ErrorPageTypes} from 'src/constants';
 import {pluginErrorUrl} from 'src/browser_routing';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 
-import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
 import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 
@@ -175,7 +176,7 @@ const Backstage = () => {
                         />
                     </Route>
                     <Route path={`${match.url}/playbooks/:playbookId`}>
-                        <PlaybookBackstage/>
+                        <Playbook/>
                     </Route>
                     <Route path={`${match.url}/playbooks`}>
                         <PlaybookList/>

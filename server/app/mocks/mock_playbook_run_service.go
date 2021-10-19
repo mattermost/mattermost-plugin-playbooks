@@ -190,21 +190,6 @@ func (mr *MockPlaybookRunServiceMockRecorder) Follow(arg0, arg1 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Follow", reflect.TypeOf((*MockPlaybookRunService)(nil).Follow), arg0, arg1)
 }
 
-// GetAssignedTasks mocks base method
-func (m *MockPlaybookRunService) GetAssignedTasks(arg0 string) ([]app.AssignedRun, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAssignedTasks", arg0)
-	ret0, _ := ret[0].([]app.AssignedRun)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAssignedTasks indicates an expected call of GetAssignedTasks
-func (mr *MockPlaybookRunServiceMockRecorder) GetAssignedTasks(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignedTasks", reflect.TypeOf((*MockPlaybookRunService)(nil).GetAssignedTasks), arg0)
-}
-
 // GetChecklistAutocomplete mocks base method
 func (m *MockPlaybookRunService) GetChecklistAutocomplete(arg0 string) ([]model.AutocompleteListItem, error) {
 	m.ctrl.T.Helper()
@@ -353,6 +338,21 @@ func (m *MockPlaybookRunService) GetPlaybookRuns(arg0 app.RequesterInfo, arg1 ap
 func (mr *MockPlaybookRunServiceMockRecorder) GetPlaybookRuns(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybookRuns", reflect.TypeOf((*MockPlaybookRunService)(nil).GetPlaybookRuns), arg0, arg1)
+}
+
+// GetRunsWithAssignedTasks mocks base method
+func (m *MockPlaybookRunService) GetRunsWithAssignedTasks(arg0 string) ([]app.AssignedRun, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRunsWithAssignedTasks", arg0)
+	ret0, _ := ret[0].([]app.AssignedRun)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRunsWithAssignedTasks indicates an expected call of GetRunsWithAssignedTasks
+func (mr *MockPlaybookRunServiceMockRecorder) GetRunsWithAssignedTasks(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunsWithAssignedTasks", reflect.TypeOf((*MockPlaybookRunService)(nil).GetRunsWithAssignedTasks), arg0)
 }
 
 // HandleReminder mocks base method

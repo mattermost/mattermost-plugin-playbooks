@@ -26,7 +26,7 @@ interface Props {
 
 export const UpdatePost = (props: Props) => {
     const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel.team_id));
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel?.team_id));
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const currentRun = useSelector(currentPlaybookRun);
 

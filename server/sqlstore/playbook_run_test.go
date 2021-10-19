@@ -2005,7 +2005,7 @@ func TestTasksAndRunsDiges(t *testing.T) {
 		createChannels(t, store, channels)
 
 		t.Run("gets assigned tasks only", func(t *testing.T) {
-			runs, err := playbookRunStore.GetAssignedTasks(userID)
+			runs, err := playbookRunStore.GetRunsWithAssignedTasks(userID)
 			require.NoError(t, err)
 
 			total := 0

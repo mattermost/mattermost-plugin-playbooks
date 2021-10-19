@@ -5,6 +5,7 @@ import {Team} from 'mattermost-redux/types/teams';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
@@ -37,6 +38,9 @@ const UserSelectorWrapper = styled.div`
 
 const SharePlaybook = (props: SharePlaybookProps) => {
     const allowPlaybookGranularAccess = useAllowPlaybookGranularAccess();
+
+    const {formatMessage} = useIntl();
+
     const [showModal, setShowModal] = useState(false);
 
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.teamId));
@@ -62,7 +66,7 @@ const SharePlaybook = (props: SharePlaybookProps) => {
     return (
         <>
             <BackstageSubheader>
-                {'Playbook access'}
+                {formatMessage({defaultMessage: 'Playbook access'})}
             </BackstageSubheader>
             <RadioContainer>
                 <RadioLabel>
@@ -73,9 +77,10 @@ const SharePlaybook = (props: SharePlaybookProps) => {
                         checked={!enabled}
                         onChange={handleDisable}
                     />
-                    {'Everyone on team ('}
-                    <b>{team.display_name}</b>
-                    {') can access.'}
+                    {formatMessage({defaultMessage: 'Everyone on team(<b>{team}</b>) can access.'}, {
+                        b: (chunks) => <b>{chunks}</b>,
+                        team: team.display_name,
+                    })}
                 </RadioLabel>
                 <RadioLabel>
                     <RadioInput
@@ -85,14 +90,14 @@ const SharePlaybook = (props: SharePlaybookProps) => {
                         checked={enabled}
                         onChange={handleEnable}
                     />
-                    {'Only selected users can access.'}
+                    {formatMessage({defaultMessage: 'Only selected users can access.'})}
                     {!allowPlaybookGranularAccess && <PositionedUpgradeBadge/>}
                 </RadioLabel>
             </RadioContainer>
             {enabled &&
                 <UserSelectorWrapper>
                     <BackstageSubheaderDescription>
-                        {'Only users who you select will be able to edit or run this playbook.'}
+                        {formatMessage({defaultMessage: 'Only users who you select will be able to edit or run this playbook.'})}
                     </BackstageSubheaderDescription>
                     <SelectUsersBelow
                         userIds={props.memberIds}

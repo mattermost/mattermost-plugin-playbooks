@@ -7,7 +7,7 @@ import {
     useMemo,
 } from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-import moment from 'moment';
+import {DateTime} from 'luxon';
 
 import {getCurrentTeam, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -464,11 +464,11 @@ export function useFormattedUsernameByID(userId: string) {
 }
 
 export function useNow(refreshIntervalMillis = 1000) {
-    const [now, setNow] = useState(moment());
+    const [now, setNow] = useState(DateTime.now());
 
     useEffect(() => {
         const tick = () => {
-            setNow(moment());
+            setNow(DateTime.now());
         };
         const timerId = setInterval(tick, refreshIntervalMillis);
 
