@@ -3,7 +3,6 @@ import {useIntl} from 'react-intl';
 
 import {debounce} from 'debounce';
 import AsyncSelect from 'react-select/async';
-import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
