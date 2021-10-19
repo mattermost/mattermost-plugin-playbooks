@@ -25,6 +25,8 @@ const RHSParticipants = (props: Props) => {
         );
     }
 
+    const height = 28;
+
     return (
         <UserRow
             tabIndex={0}
@@ -41,10 +43,11 @@ const RHSParticipants = (props: Props) => {
                 <RHSParticipant
                     key={userId}
                     userId={userId}
+                    sizeInPx={height}
                 />
             ))}
             {props.userIds.length > 6 &&
-            <Rest>{'+' + (props.userIds.length - 6)}</Rest>
+            <Rest sizeInPx={height}>{'+' + (props.userIds.length - 6)}</Rest>
             }
         </UserRow>
     );
