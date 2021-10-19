@@ -60,7 +60,7 @@ let config = {
         rules: [
             {
                 test: /\.(js|jsx|ts|tsx)$/,
-                exclude: /node_modules/,
+                exclude: /node_modules\/(?!(mattermost-webapp)\/).*/,
                 use: {
                     loader: 'babel-loader',
                     options: {

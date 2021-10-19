@@ -87,7 +87,6 @@
     "core-js": "3.15.2",
     "debounce": "1.2.1",
     "luxon": "2.0.2",
-    "mattermost-redux": "github:mattermost/mattermost-redux#3d1028034d7677adfda58e91b9a5dcaf1bc0ff99",
     "mattermost-webapp": "github:mattermost/mattermost-webapp#34861f3da00bc5fd7e777885783840c1353131a7",
     "moment": "2.29.1",
     "parse-duration": "1.0.0",
