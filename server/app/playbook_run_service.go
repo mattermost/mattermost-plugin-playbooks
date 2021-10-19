@@ -1090,8 +1090,6 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 		return nil, errors.Wrapf(err, "failed to get followers of playbook run %s", playbookRunID)
 	}
 
-	println(fmt.Sprintf("followers in api, followers - %v", followers))
-
 	return &Metadata{
 		ChannelName:        channel.Name,
 		ChannelDisplayName: channel.DisplayName,

@@ -1048,37 +1048,25 @@ func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
 }
 
 func (s *playbookRunStore) followHelper(playbookRunID, userID string, value bool) error {
-	if _, err := s.store.execBuilder(s.store.db, sq.
-		Insert("IR_Run_Participants").
-		SetMap(map[string]interface{}{
-			"UserID":     userID,
-			"IncidentID": playbookRunID,
-			"IsFollower": value,
-		})); err != nil {
-
-		isDuplicate := false
-		if s.store.db.DriverName() == model.DatabaseDriverMysql {
-			me, ok := err.(*mysql.MySQLError)
-			if ok && me.Number == 1062 {
-				isDuplicate = true
-			}
-		} else {
-			pe, ok := err.(*pq.Error)
-			if ok && pe.Code == "23505" {
-				isDuplicate = true
-			}
-		}
-
-		if !isDuplicate {
-			return errors.Wrap(err, "failed to insert the follower")
-		}
-		if _, err := s.store.execBuilder(s.store.db, sq.
-			Update("IR_Run_Participants").
-			Set("IsFollower", value).
-			Where(sq.And{sq.Eq{"UserID": userID}, sq.Eq{"IncidentID": playbookRunID}})); err != nil {
-			return errors.Wrap(err, "failed to update the follower")
-		}
+	var err error
+	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+		_, err = s.store.execBuilder(s.store.db, sq.
+			Insert("IR_Run_Participants").
+			Columns("IncidentID", "UserID", "IsFollower").
+			Values(playbookRunID, userID, value).
+			Suffix("ON DUPLICATE KEY UPDATE IsFollower = ?", value))
+	} else {
+		_, err = s.store.execBuilder(s.store.db, sq.
+			Insert("IR_Run_Participants").
+			Columns("IncidentID", "UserID", "IsFollower").
+			Values(playbookRunID, userID, value).
+			Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", value))
 	}
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to upsert follower '%s' for run '%s'", userID, playbookRunID)
+	}
+
 	return nil
 }
 
