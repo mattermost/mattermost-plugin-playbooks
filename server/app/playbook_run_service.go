@@ -2027,10 +2027,6 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 
 	reminderOptions := []*model.PostActionOptions{
 		{
-			Text:  "None",
-			Value: "0",
-		},
-		{
 			Text:  "15min",
 			Value: "900",
 		},
@@ -2049,6 +2045,10 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 		{
 			Text:  "24hr",
 			Value: "86400",
+		},
+		{
+			Text:  "1Week",
+			Value: "604800",
 		},
 	}
 

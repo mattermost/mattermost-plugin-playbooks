@@ -752,9 +752,13 @@ func (h *PlaybookRunHandler) updateStatusDialog(w http.ResponseWriter, r *http.R
 	}
 
 	if reminderI, ok := request.Submission[app.DialogFieldReminderInSecondsKey]; ok {
-		if reminder, err2 := strconv.Atoi(reminderI.(string)); err2 == nil {
-			options.Reminder = time.Duration(reminder) * time.Second
+		var reminder int
+		reminder, err = strconv.Atoi(reminderI.(string))
+		if reminder == 0 {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "The reminder must be set and not 0.", err)
+			return
 		}
+		options.Reminder = time.Duration(reminder) * time.Second
 	}
 
 	err = h.playbookRunService.UpdateStatus(playbookRunID, userID, options)
