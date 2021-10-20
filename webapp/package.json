@@ -90,7 +90,7 @@
     "core-js": "3.15.2",
     "debounce": "1.2.1",
     "luxon": "2.0.2",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#34861f3da00bc5fd7e777885783840c1353131a7",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#0621a51815150aa4158bce383cc3b745cd6d8d51",
     "moment": "2.29.1",
     "parse-duration": "1.0.0",
     "qs": "6.10.1",
@@ -101,7 +101,6 @@
     "react-redux": "7.2.4",
     "react-select": "3.1.1",
     "redux": "4.1.0",
-    "reselect": "4.0.0",
     "styled-components": "5.3.0",
     "typescript": "4.3.5"
   },
@@ -122,7 +121,8 @@
       "^.+\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "identity-obj-proxy",
       "^.+\\.(css|less|scss)$": "identity-obj-proxy",
       "^.*i18n.*\\.(json)$": "<rootDir>/tests/i18n_mock.json",
-      "^bundle-loader\\?lazy\\!(.*)$": "$1"
+      "^bundle-loader\\?lazy\\!(.*)$": "$1",
+      "^reselect": "<rootDir>/node_modules/mattermost-webapp/packages/reselect/src"
     },
     "moduleDirectories": [
       "",

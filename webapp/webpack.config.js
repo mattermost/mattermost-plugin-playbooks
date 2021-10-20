@@ -49,7 +49,7 @@ let config = {
         alias: {
             src: path.resolve(__dirname, './src/'),
             'mattermost-redux': path.resolve(__dirname, './node_modules/mattermost-webapp/packages/mattermost-redux/src/'),
-            reselect: path.resolve(__dirname, './node_modules/mattermost-webapp/packages/reselect/src/'),
+            reselect: path.resolve(__dirname, './node_modules/mattermost-webapp/packages/reselect/src/index'),
         },
         modules: [
             'src',
