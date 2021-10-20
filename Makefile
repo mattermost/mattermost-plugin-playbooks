@@ -192,7 +192,7 @@ detach: setup-attach
 
 ## Ensure go-junit-report is installed and available as a tool for testing.
 go-junit-report:
-	$(GO) get -modfile=go.tools.mod github.com/jstemmer/go-junit-report
+	$(GO) get -modfile=go.tools.mod github.com/lieut-data/go-junit-report
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
