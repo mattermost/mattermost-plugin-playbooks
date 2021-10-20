@@ -48,6 +48,9 @@ type Poster interface {
 	// PostCustomMessageWithAttachments posts a custom message with the specified type. Falling back to attachments for mobile.
 	PostCustomMessageWithAttachments(channelID, customType string, attachments []*model.SlackAttachment, format string, args ...interface{}) (*model.Post, error)
 
+	// Returns Bot's DM channel
+	GetDirect(userID string) (*model.Channel, error)
+
 	// DM posts a DM from the plugin bot to the specified user
 	DM(userID string, post *model.Post) error
 

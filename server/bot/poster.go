@@ -86,6 +86,15 @@ func (b *Bot) PostCustomMessageWithAttachments(channelID, customType string, att
 	return post, nil
 }
 
+func (b *Bot) GetDirect(userID string) (*model.Channel, error) {
+	channel, err := b.pluginAPI.Channel.GetDirect(userID, b.botUserID)
+	if err != nil {
+		b.pluginAPI.Log.Info("Couldn't get bot's DM channel", "user_id", userID)
+		return nil, err
+	}
+	return channel, nil
+}
+
 // DM sends a DM from the plugin bot to the specified user
 func (b *Bot) DM(userID string, post *model.Post) error {
 	channel, err := b.pluginAPI.Channel.GetDirect(userID, b.botUserID)

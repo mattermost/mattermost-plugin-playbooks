@@ -76,6 +76,21 @@ func (mr *MockPosterMockRecorder) EphemeralPostWithAttachments(arg0, arg1, arg2,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EphemeralPostWithAttachments", reflect.TypeOf((*MockPoster)(nil).EphemeralPostWithAttachments), varargs...)
 }
 
+// GetDirect mocks base method
+func (m *MockPoster) GetDirect(arg0 string) (*model.Channel, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDirect", arg0)
+	ret0, _ := ret[0].(*model.Channel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDirect indicates an expected call of GetDirect
+func (mr *MockPosterMockRecorder) GetDirect(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDirect", reflect.TypeOf((*MockPoster)(nil).GetDirect), arg0)
+}
+
 // NotifyAdmins mocks base method
 func (m *MockPoster) NotifyAdmins(arg0, arg1 string, arg2 bool) error {
 	m.ctrl.T.Helper()

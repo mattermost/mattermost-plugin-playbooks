@@ -675,13 +675,22 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdateToFollowers(post *model.Po
 		return errors.Wrapf(err, "failed to get followers for the playbook run `%s`", playbookRunID)
 	}
 
+	post.Id = "" // Reset the ID so we avoid cloning the whole object
+
 	for _, follower := range followers {
 		// Do not send update to the author
 		if follower == authorID {
 			continue
 		}
-		if err := s.poster.DM(follower, post); err != nil {
-			return errors.Wrapf(err, "failed to send a status update to the follower %s", follower)
+		channel, err := s.poster.GetDirect(follower)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get bot's dm channel")
+		}
+
+		post.ChannelId = channel.Id
+		if err := s.postMessageToThreadAndSaveRootID(playbookRunID, channel.Id, post); err != nil {
+			s.pluginAPI.Log.Warn("failed to broadcast the status update to follower",
+				"follower", follower, "error", err.Error())
 		}
 	}
 	return nil
