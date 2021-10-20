@@ -194,23 +194,22 @@ detach: setup-attach
 .PHONY: test
 test: apply webapp/node_modules
 ifneq ($(HAS_SERVER),)
-	$(GO) test -v ./...
+	gotestsum -- -v ./...
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
 endif
 
-## Ensure go-junit-report is installed and available as a tool for testing.
-go-junit-report:
-	$(GO) get -modfile=go.tools.mod github.com/lieut-data/go-junit-report
-
+## Ensure gotestsum is installed and available as a tool for testing.
+gotestsum:
+	$(GO) get -modfile=go.tools.mod gotest.tools/gotestsum
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist, optimized
 ## for a CI environment.
 .PHONY: test-ci
-test-ci: apply webapp/node_modules go-junit-report
+test-ci: apply webapp/node_modules gotestsum
 ifneq ($(HAS_SERVER),)
-	./build/test.sh "$(GO)" "-json" "$(GOBIN)" "45m"
+	gotestsum --format standard-verbose -- ./... --junitfile report.xml
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
