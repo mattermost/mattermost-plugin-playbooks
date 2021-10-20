@@ -190,15 +190,27 @@ detach: setup-attach
 		kill -9 $$DELVE_PID ; \
 	fi
 
+## Runs any lints and unit tests defined for the server and webapp, if they exist.
+.PHONY: test
+test: apply webapp/node_modules
+ifneq ($(HAS_SERVER),)
+	$(GO) test -v ./...
+endif
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && $(NPM) run test;
+endif
+
 ## Ensure go-junit-report is installed and available as a tool for testing.
 go-junit-report:
 	$(GO) get -modfile=go.tools.mod github.com/lieut-data/go-junit-report
 
-## Runs any lints and unit tests defined for the server and webapp, if they exist.
-.PHONY: test
-test: apply webapp/node_modules go-junit-report
+
+## Runs any lints and unit tests defined for the server and webapp, if they exist, optimized
+## for a CI environment.
+.PHONY: test-ci
+test-ci: apply webapp/node_modules go-junit-report
 ifneq ($(HAS_SERVER),)
-	./build/test.sh "$(GO)" "$(GOBIN)" "45m"
+	./build/test.sh "$(GO)" "-json" "$(GOBIN)" "45m"
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;

@@ -78,7 +78,7 @@ commands:
       - run:
           name: Testing
           command: |
-            make test
+            make test-ci
       - *save_go_cache
       - run:
           when: always
