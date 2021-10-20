@@ -28,6 +28,16 @@ interface Props {
 
 const ActionCol = styled.div`
     margin-left: -8px;
+    position: relative;
+    width: 100%;
+    min-height: 1px;
+    padding-right: 15px;
+    padding-left: 15px;
+    @media (min-width: 576){
+        -webkit-box-flex: 0;
+        flex: 0 0 16.666667%;
+        max-width: 16.666667%;
+    }
 `;
 
 const PlaybookItem = styled.div`
@@ -38,7 +48,9 @@ const PlaybookItem = styled.div`
     align-items: center;
     margin: 0;
     border-bottom: 1px solid var(--center-channel-color-16);
-
+    flex-wrap: wrap;
+    margin-right: -15px;
+    margin-left: -15px;
     &:hover {
         background: var(--center-channel-color-04);
     }
@@ -47,12 +59,21 @@ const PlaybookItem = styled.div`
 const PlaybookItemTitle = styled.div`
     display: flex;
     flex-direction: column;
-
+    position: relative;
+    width: 100%;
+    min-height: 1px;
+    padding-right: 15px;
+    padding-left: 15px;
     > span {
         font-weight: 600;
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
+    }
+    @media (min-width: 576){
+        -webkit-box-flex: 0;
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
     }
 `;
 
