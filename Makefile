@@ -198,7 +198,7 @@ gotestsum:
 .PHONY: test
 test: apply webapp/node_modules gotestsum
 ifneq ($(HAS_SERVER),)
-	gotestsum -- -v ./...
+	$(GOBIN)/gotestsum -- -v ./...
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
@@ -209,7 +209,7 @@ endif
 .PHONY: test-ci
 test-ci: apply webapp/node_modules gotestsum
 ifneq ($(HAS_SERVER),)
-	gotestsum --format standard-verbose -- ./... --junitfile report.xml
+	$(GOBIN)/gotestsum --format standard-verbose -- ./... --junitfile report.xml
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
