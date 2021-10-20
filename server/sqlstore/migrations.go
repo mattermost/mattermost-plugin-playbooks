@@ -1328,6 +1328,22 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.35.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_UserInfo", "DigestNotificationSettingsJSON", "JSON"); err != nil {
+					return errors.Wrapf(err, "failed adding column DigestNotificationSettings to table IR_UserInfo")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_UserInfo", "DigestNotificationSettingsJSON", "JSON"); err != nil {
+					return errors.Wrapf(err, "failed adding column DigestNotificationSettings to table IR_UserInfo")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.35.0"),
+		toVersion:   semver.MustParse("0.36.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Run_Participants (
 						IncidentID VARCHAR(26) NULL REFERENCES IR_Incident(ID),

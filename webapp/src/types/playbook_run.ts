@@ -55,7 +55,6 @@ export interface FetchPlaybookRunsReturn {
     page_count: number;
     has_more: boolean;
     items: PlaybookRun[];
-    disabled?: boolean;
 }
 
 export enum PlaybookRunStatus {
@@ -141,7 +140,6 @@ export interface FetchPlaybookRunsParams {
     owner_user_id?: string;
     participant_id?: string;
     search_term?: string;
-    disabled?: boolean;
     playbook_id?: string;
     active_gte?: number;
     active_lt?: number;

@@ -49,6 +49,28 @@ func Test_userInfoStore_Get(t *testing.T) {
 				t.Errorf("Get() actual = %#v, expected %#v", actual, expected)
 			}
 		})
+
+		t.Run("gets null DigestNotificationSettingsJSON correctly", func(t *testing.T) {
+			expected := app.UserInfo{
+				ID:                         model.NewId(),
+				LastDailyTodoDMAt:          12345678,
+				DigestNotificationSettings: app.DigestNotificationSettings{DisableDailyDigest: false},
+			}
+
+			statement, args, err := sq.Insert("IR_UserInfo").
+				Columns("ID", "LastDailyTodoDMAt", "DigestNotificationSettingsJSON").
+				Values(expected.ID, expected.LastDailyTodoDMAt, nil).ToSql()
+			require.NoError(t, err)
+			_, err = db.Exec(db.Rebind(statement), args...)
+			require.NoError(t, err)
+
+			actual, err := userInfoStore.Get(expected.ID)
+			require.NoError(t, err)
+
+			if !reflect.DeepEqual(actual, expected) {
+				t.Errorf("Get() actual = %#v, expected %#v", actual, expected)
+			}
+		})
 	}
 }
 
@@ -105,6 +127,19 @@ func Test_userInfoStore_Upsert(t *testing.T) {
 
 			// update:
 			expected.LastDailyTodoDMAt = 48102939451
+			expected.DisableDailyDigest = true
+			err = userInfoStore.Upsert(expected)
+			require.NoError(t, err)
+
+			actual, err = userInfoStore.Get(expected.ID)
+			require.NoError(t, err)
+
+			if !reflect.DeepEqual(actual, expected) {
+				t.Errorf("Get() actual = %#v, expected %#v", actual, expected)
+			}
+
+			// update dailyDigest one more time:
+			expected.DisableDailyDigest = false
 			err = userInfoStore.Upsert(expected)
 			require.NoError(t, err)
 

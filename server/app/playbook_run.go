@@ -523,8 +523,8 @@ type PlaybookRunService interface {
 	// and DMs the message to userID. Use force = true to DM even if there are no items.
 	DMTodoDigestToUser(userID string, force bool) error
 
-	// GetAssignedTasks returns the list of tasks assigned to userID
-	GetAssignedTasks(userID string) ([]AssignedRun, error)
+	// GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
+	GetRunsWithAssignedTasks(userID string) ([]AssignedRun, error)
 
 	// GetParticipatingRuns returns the list of active runs with userID as participant
 	GetParticipatingRuns(userID string) ([]RunLink, error)
@@ -603,8 +603,8 @@ type PlaybookRunStore interface {
 	// SetBroadcastChannelIDsToRootID sets the broadcastChannelID->rootID mappings for playbookRunID
 	SetBroadcastChannelIDsToRootID(playbookRunID string, channelIDsToRootIDs map[string]string) error
 
-	// GetAssignedTasks returns the list of tasks assigned to userID
-	GetAssignedTasks(userID string) ([]AssignedRun, error)
+	// GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
+	GetRunsWithAssignedTasks(userID string) ([]AssignedRun, error)
 
 	// GetParticipatingRuns returns the list of active runs with userID as a participant
 	GetParticipatingRuns(userID string) ([]RunLink, error)

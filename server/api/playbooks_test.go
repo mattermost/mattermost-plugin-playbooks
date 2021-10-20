@@ -165,7 +165,6 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 	}
@@ -187,7 +186,6 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
@@ -237,7 +235,6 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
@@ -301,15 +298,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
@@ -362,15 +356,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
@@ -418,15 +409,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
@@ -479,15 +467,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(withMember.TeamID).Return(0, nil)
@@ -541,15 +526,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(withMember.TeamID).Return(0, nil)

@@ -59,7 +59,7 @@ export default function SearchInput(props: Props) {
 
     return (
         <RunListSearch
-            data-testId={props.testId}
+            data-testid={props.testId}
         >
             <input
                 type='text'

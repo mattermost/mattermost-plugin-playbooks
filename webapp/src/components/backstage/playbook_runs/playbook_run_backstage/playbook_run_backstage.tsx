@@ -239,10 +239,10 @@ const PlaybookRunBackstage = () => {
     };
 
     const onFollow = () => {
-        followPlaybookRun(playbookRun.id);
         if (followers.includes(currentUserID)) {
             return;
         }
+        followPlaybookRun(playbookRun.id);
         const followersCopy = [...followers, currentUserID];
         setFollowers(followersCopy);
     };

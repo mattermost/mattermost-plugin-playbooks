@@ -99,33 +99,12 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get playbook runs from the store")
 	}
-	enabledTeams := s.configService.GetConfiguration().EnabledTeams
-
-	if len(enabledTeams) == 0 { // no filter required
-		return results, nil
-	}
-
-	enabledTeamsMap := fromSliceToMap(enabledTeams)
-	filteredItems := []PlaybookRun{}
-	for _, item := range results.Items {
-		if ok := enabledTeamsMap[item.TeamID]; ok {
-			filteredItems = append(filteredItems, item)
-		}
-	}
 	return &GetPlaybookRunsResults{
 		TotalCount: results.TotalCount,
 		PageCount:  results.PageCount,
 		HasMore:    results.HasMore,
-		Items:      filteredItems,
+		Items:      results.Items,
 	}, nil
-}
-
-func fromSliceToMap(slice []string) map[string]bool {
-	result := make(map[string]bool, len(slice))
-	for _, item := range slice {
-		result[item] = true
-	}
-	return result
 }
 
 func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbookTitle, playbookID, broadcastChannelID string, playbookRun *PlaybookRun, owner *model.User) error {
@@ -696,14 +675,12 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdateToFollowers(post *model.Po
 		return errors.Wrapf(err, "failed to get followers for the playbook run `%s`", playbookRunID)
 	}
 
-	username := post.GetProps()["authorUsername"]
-	runName := post.GetProps()["runName"]
 	for _, follower := range followers {
 		// Do not send update to the author
 		if follower == authorID {
 			continue
 		}
-		if err := s.poster.DM(follower, &model.Post{Message: fmt.Sprintf("@%s posted an update to %s run:\n%s", username, runName, post.Message)}); err != nil {
+		if err := s.poster.DM(follower, post); err != nil {
 			return errors.Wrapf(err, "failed to send a status update to the follower %s", follower)
 		}
 	}
@@ -1098,8 +1075,6 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 		return nil, errors.Wrapf(err, "failed to get followers of playbook run %s", playbookRunID)
 	}
 
-	println(fmt.Sprintf("followers in api, followers - %v", followers))
-
 	return &Metadata{
 		ChannelName:        channel.Name,
 		ChannelDisplayName: channel.DisplayName,
@@ -1126,33 +1101,7 @@ func (s *PlaybookRunServiceImpl) GetOwners(requesterInfo RequesterInfo, options 
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get owners from the store")
 	}
-	enabledTeams := s.configService.GetConfiguration().EnabledTeams
-	if len(enabledTeams) == 0 {
-		return owners, nil
-	}
-
-	enabledTeamsMap := fromSliceToMap(enabledTeams)
-
-	filteredOwners := []OwnerInfo{}
-	for _, owner := range owners {
-		teams, err := s.pluginAPI.Team.List(pluginapi.FilterTeamsByUser(owner.UserID))
-		if err != nil {
-			return nil, errors.Wrap(err, "can't get teams for user")
-		}
-		if containsTeam(teams, enabledTeamsMap) {
-			filteredOwners = append(filteredOwners, owner)
-		}
-	}
-	return filteredOwners, nil
-}
-
-func containsTeam(teams []*model.Team, enabledTeamsMap map[string]bool) bool {
-	for _, team := range teams {
-		if ok := enabledTeamsMap[team.Id]; ok {
-			return true
-		}
-	}
-	return false
+	return owners, nil
 }
 
 // IsOwner returns true if the userID is the owner for playbookRunID.
@@ -1593,28 +1542,39 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 	}
 	part1 := buildRunsOverdueMessage(runsOverdue, siteURL)
 
-	runs, err := s.GetAssignedTasks(userID)
+	runsAssigned, err := s.GetRunsWithAssignedTasks(userID)
 	if err != nil {
 		return err
 	}
-	part2, total := buildAssignedTaskMessageAndTotal(runs, siteURL)
+	part2 := buildAssignedTaskMessageAndTotal(runsAssigned, siteURL)
 
-	runsInProgress, err := s.GetParticipatingRuns(userID)
-	if err != nil {
-		return err
+	if force {
+		runsInProgress, err := s.GetParticipatingRuns(userID)
+		if err != nil {
+			return err
+		}
+		part3 := buildRunsInProgressMessage(runsInProgress, siteURL)
+
+		return s.poster.DM(userID, &model.Post{Message: part1 + part2 + part3})
 	}
-	part3 := buildRunsInProgressMessage(runsInProgress, siteURL)
 
-	if !force && total+len(runsOverdue)+len(runsInProgress) == 0 {
+	// !force, so only return sections that have information.
+	var message string
+	if len(runsOverdue) != 0 {
+		message += part1
+	}
+	if len(runsAssigned) != 0 {
+		message += part2
+	}
+	if message == "" {
 		return nil
 	}
-
-	return s.poster.DM(userID, &model.Post{Message: part1 + part2 + part3})
+	return s.poster.DM(userID, &model.Post{Message: message})
 }
 
-// GetAssignedTasks returns the list of tasks assigned to userID
-func (s *PlaybookRunServiceImpl) GetAssignedTasks(userID string) ([]AssignedRun, error) {
-	return s.store.GetAssignedTasks(userID)
+// GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
+func (s *PlaybookRunServiceImpl) GetRunsWithAssignedTasks(userID string) ([]AssignedRun, error) {
+	return s.store.GetRunsWithAssignedTasks(userID)
 }
 
 // GetParticipatingRuns returns the list of active runs with userID as a participant
@@ -2501,14 +2461,14 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 }
 
-func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) (string, int) {
+func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) string {
 	total := 0
 	for _, run := range runs {
 		total += len(run.Tasks)
 	}
 
 	if total == 0 {
-		return "##### Your Outstanding Tasks\nYou have 0 outstanding tasks.\n", 0
+		return "##### Your Outstanding Tasks\nYou have 0 outstanding tasks.\n"
 	}
 
 	taskPlural := "1 outstanding task"
@@ -2531,7 +2491,7 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) (strin
 		}
 	}
 
-	return message, total
+	return message
 }
 
 func buildRunsInProgressMessage(runs []RunLink, siteURL string) string {
