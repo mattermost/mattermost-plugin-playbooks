@@ -80,6 +80,15 @@ commands:
           command: |
             make test
       - *save_go_cache
+      - run:
+          when: always
+          command: |
+            mkdir -p server/test-results
+            cp report.xml server/test-results
+      - store_test_results:
+          path: server/test-results/
+      - store_artifacts:
+          path: server/test-results/
 
   run-e2e-tests:
     description: "Run the e2e tests with a server"
