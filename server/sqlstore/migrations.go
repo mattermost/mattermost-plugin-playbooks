@@ -1352,10 +1352,8 @@ var migrations = []Migration{
 			if err := dropIndexIfExists(e, sqlStore, "IR_StatusPosts", "posts_unique"); err != nil {
 				return err
 			}
-			if err := dropIndexIfExists(e, sqlStore, "IR_ViewedChannel", "IR_ViewedChannel_ChannelID_UserID"); err != nil {
-				return err
-			}
-			return nil
+
+			return dropIndexIfExists(e, sqlStore, "IR_ViewedChannel", "IR_ViewedChannel_ChannelID_UserID")
 		},
 	},
 }
