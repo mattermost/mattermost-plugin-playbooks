@@ -1349,20 +1349,11 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.35.0"),
 		toVersion:   semver.MustParse("0.36.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DatabaseDriverMysql {
-				if err := dropIndexIfExists(e, sqlStore, "IR_StatusPosts", "posts_unique"); err != nil {
-					return err
-				}
-				if err := dropIndexIfExists(e, sqlStore, "IR_ViewedChannel", "IR_ViewedChannel_ChannelID_UserID"); err != nil {
-					return err
-				}
-			} else {
-				if err := dropIndexIfExists(e, sqlStore, "IR_StatusPosts", "posts_unique"); err != nil {
-					return err
-				}
-				if err := dropIndexIfExists(e, sqlStore, "IR_ViewedChannel", "IR_ViewedChannel_ChannelID_UserID"); err != nil {
-					return err
-				}
+			if err := dropIndexIfExists(e, sqlStore, "IR_StatusPosts", "posts_unique"); err != nil {
+				return err
+			}
+			if err := dropIndexIfExists(e, sqlStore, "IR_ViewedChannel", "IR_ViewedChannel_ChannelID_UserID"); err != nil {
+				return err
 			}
 			return nil
 		},
