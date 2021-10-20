@@ -4,6 +4,7 @@
 import React, {useEffect} from 'react';
 import {Switch, Route, NavLink, useRouteMatch, Redirect} from 'react-router-dom';
 import {useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
@@ -76,6 +77,8 @@ const BackstageBody = styled.div`
 `;
 
 const Backstage = () => {
+    const {formatMessage} = useIntl();
+
     //@ts-ignore plugins state is a thing
     const npsAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.nps']));
     const currentTheme = useSelector<GlobalState, Theme>(getTheme);
@@ -133,7 +136,7 @@ const Backstage = () => {
                                 data-testid='settingsLHSButton'
                             >
                                 <div className={'fa fa-gear'}/>
-                                {'Settings'}
+                                {formatMessage({defaultMessage: 'Settings'})}
                             </BackstageTitlebarItem>
                         </div>
                         <div className='d-flex items-center'>
