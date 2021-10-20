@@ -190,19 +190,19 @@ detach: setup-attach
 		kill -9 $$DELVE_PID ; \
 	fi
 
+## Ensure gotestsum is installed and available as a tool for testing.
+gotestsum:
+	$(GO) install gotest.tools/gotestsum@v1.7.0
+
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
-test: apply webapp/node_modules
+test: apply webapp/node_modules gotestsum
 ifneq ($(HAS_SERVER),)
 	gotestsum -- -v ./...
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
 endif
-
-## Ensure gotestsum is installed and available as a tool for testing.
-gotestsum:
-	$(GO) get -modfile=go.tools.mod gotest.tools/gotestsum
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist, optimized
 ## for a CI environment.
