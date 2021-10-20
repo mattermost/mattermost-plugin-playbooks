@@ -6,6 +6,7 @@ import {getProfiles, searchProfiles} from 'mattermost-redux/actions/users';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {useDispatch, useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
@@ -72,6 +73,8 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
     const hasPermissions = useCanRestrictPlaybookCreation();
     const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
     const isAdmin = useSelector(isCurrentUserAdmin);
+
+    const {formatMessage} = useIntl();
 
     const userMaybeAdded = (userid: string) => {
         // Need to ignore double adds
@@ -155,7 +158,7 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
     return (
         <>
             <BackstageSubheader>
-                {'Playbook creation'}
+                {formatMessage({defaultMessage: 'Playbook creation'})}
             </BackstageSubheader>
             <RadioContainer>
                 <RadioLabel>
@@ -166,7 +169,7 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
                         checked={!enabled}
                         onChange={handleDisabled}
                     />
-                    {'Everyone in this workspace can create playbooks.'}
+                    {formatMessage({defaultMessage: 'Everyone in this workspace can create playbooks.'})}
                 </RadioLabel>
                 <RadioLabel>
                     <RadioInput
@@ -176,7 +179,7 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
                         checked={enabled}
                         onChange={handleEnabled}
                     />
-                    {'Only selected users can create playbooks.'}
+                    {formatMessage({defaultMessage: 'Only selected users can create playbooks.'})}
                     {!allowPlaybookCreationRestriction && <PositionedUpgradeBadge/>}
                 </RadioLabel>
             </RadioContainer>
@@ -221,6 +224,8 @@ const SettingsView = () => {
     const dispatch = useDispatch();
     const settings = useSelector(globalSettings);
 
+    const {formatMessage} = useIntl();
+
     const updateSettings = (newsettings: GlobalSettings) => {
         dispatch(actionSetGlobalSettings(newsettings));
         setGlobalSettings(newsettings);
@@ -240,7 +245,7 @@ const SettingsView = () => {
     return (
         <SettingsContainer>
             <BackstageHeader data-testid='titleStats'>
-                {'Settings'}
+                {formatMessage({defaultMessage: 'Settings'})}
             </BackstageHeader>
             <PlaybookCreators
                 settings={settings}
