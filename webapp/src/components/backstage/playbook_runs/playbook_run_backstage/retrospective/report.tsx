@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import styled from 'styled-components';
 
 import {useSelector} from 'react-redux';
@@ -74,6 +74,7 @@ const Report = (props: ReportProps) => {
     const [editing, setEditing] = useState(false);
     const [publishedThisSession, setPublishedThisSession] = useState(false);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
+    const reportTextareaRef = useRef<HTMLTextAreaElement>(null);
 
     const savePressed = () => {
         updateRetrospective(props.playbookRun.id, report);
@@ -85,6 +86,12 @@ const Report = (props: ReportProps) => {
         setEditing(false);
         setPublishedThisSession(true);
     };
+
+    useEffect(() => {
+        if (editing && reportTextareaRef.current) {
+            reportTextareaRef.current.focus();
+        }
+    }, [editing, reportTextareaRef]);
 
     let publishButtonText: React.ReactNode = 'Publish';
     if (publishedThisSession) {
@@ -117,6 +124,7 @@ const Report = (props: ReportProps) => {
             </Header>
             {editing &&
                 <ReportTextarea
+                    ref={reportTextareaRef}
                     value={report}
                     onChange={(e) => {
                         setReport(e.target.value);
