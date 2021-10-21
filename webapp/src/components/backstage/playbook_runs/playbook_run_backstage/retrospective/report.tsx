@@ -11,14 +11,11 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
-import {
-    Title,
-    SecondaryButtonSmaller,
-} from 'src/components/backstage/playbook_runs/shared';
+import {Title} from 'src/components/backstage/playbook_runs/shared';
 
 import {StyledTextarea} from 'src/components/backstage/styles';
 import {publishRetrospective, updateRetrospective} from 'src/client';
-import {PrimaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import PostText from 'src/components/post_text';
 
 const Header = styled.div`
@@ -31,11 +28,6 @@ const ReportTextarea = styled(StyledTextarea)`
     min-height: 200px;
     font-size: 12px;
     flex-grow: 1;
-`;
-
-const CustomPrimaryButton = styled(PrimaryButton)`
-    height: 26px;
-    font-size: 12px;
 `;
 
 const HeaderButtonsRight = styled.div`
@@ -63,6 +55,14 @@ const ReportContainer = styled.div`
     height: 100%;
     display: flex;
     flex-direction: column;
+`;
+
+const PrimaryButtonSmaller = styled(PrimaryButton)`
+    height: 32px;
+`;
+
+const SecondaryButtonSmaller = styled(SecondaryButton)`
+    height: 32px;
 `;
 
 interface ReportProps {
@@ -103,11 +103,11 @@ const Report = (props: ReportProps) => {
             <Header>
                 <Title>{'Report'}</Title>
                 <HeaderButtonsRight>
-                    <CustomPrimaryButton
+                    <PrimaryButtonSmaller
                         onClick={publishPressed}
                     >
                         <TextContainer>{publishButtonText}</TextContainer>
-                    </CustomPrimaryButton>
+                    </PrimaryButtonSmaller>
                     <EditButton
                         editing={editing}
                         onSave={savePressed}
