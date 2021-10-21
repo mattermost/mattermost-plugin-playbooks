@@ -17,12 +17,9 @@ import {
     getCurrentUserId,
     getUser,
 } from 'mattermost-redux/selectors/entities/users';
-import {getCurrentChannelId, getChannelsNameMapInTeam} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentChannelId, getChannelsNameMapInTeam, getChannel as getChannelFromState} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
-import {
-    getProfilesByIds,
-    getProfilesInChannel,
-} from 'mattermost-redux/actions/users';
+import {getProfilesByIds, getProfilesInChannel} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -274,6 +271,10 @@ export function useRun(runId: string, teamId?: string, channelId?: string) {
         }
         return Object.values(runsByTeam).flatMap((x) => x && Object.values(x)).find((run) => run?.id === runId);
     });
+}
+
+export function useChannel(channelId: string) {
+    return useThing(channelId, Client4.getChannel, getChannelFromState);
 }
 
 export function useNumPlaybooksInCurrentTeam() {
