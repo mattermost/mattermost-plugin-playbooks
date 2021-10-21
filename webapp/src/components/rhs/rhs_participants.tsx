@@ -39,17 +39,28 @@ const RHSParticipants = (props: Props) => {
                 }
             }}
         >
-            {props.userIds.slice(0, 6).map((userId: string) => (
+            <UserList
+                userIds={props.userIds}
+                sizeInPx={height}
+            />
+        </UserRow>
+    );
+};
+
+export const UserList = ({userIds, sizeInPx}: {userIds: string[], sizeInPx: number}) => {
+    return (
+        <>
+            {userIds.slice(0, 6).map((userId: string) => (
                 <RHSParticipant
                     key={userId}
                     userId={userId}
-                    sizeInPx={height}
+                    sizeInPx={sizeInPx}
                 />
             ))}
-            {props.userIds.length > 6 &&
-            <Rest sizeInPx={height}>{'+' + (props.userIds.length - 6)}</Rest>
+            {userIds.length > 6 &&
+            <Rest sizeInPx={sizeInPx}>{'+' + (userIds.length - 6)}</Rest>
             }
-        </UserRow>
+        </>
     );
 };
 
