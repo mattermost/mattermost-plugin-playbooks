@@ -44,5 +44,8 @@
     "/HtNUp": "Välj eller ange {mode, select, DurationValue {tidsspann (\"4 timmar\", \"7 dagar\"...)} DateTimeValue {tid (\"inom 4 immar\", \"1 maj\", \"13:00 imorgon\"...)} other {tid eller tidsspann}}",
     "/1FEJW": "AKTIVA DELTAGARE per dag de senaste 14 dagarna",
     "+ZIXOR": "Kanalåtkomst",
-    "+8G9qr": "Standardtext för retrospektiv."
+    "+8G9qr": "Standardtext för retrospektiv.",
+    "TyrY2b": "Skapa spelbok",
+    "D3idYv": "Inställningar",
+    "AT2QBo": "Endast utpekade användare kan skapa spelböcker."
 }
