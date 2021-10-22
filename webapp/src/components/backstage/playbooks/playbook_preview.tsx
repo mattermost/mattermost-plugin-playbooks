@@ -7,6 +7,7 @@ import React from 'react';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import PlaybookPreviewActions from 'src/components/backstage/playbooks/playbook_preview_actions';
+import PlaybookPreviewChecklists from 'src/components/backstage/playbooks/playbook_preview_checklists';
 import PlaybookPreviewRetrospective from 'src/components/backstage/playbooks/playbook_preview_retrospective';
 import PlaybookPreviewStatusUpdates from 'src/components/backstage/playbooks/playbook_preview_status_updates';
 
@@ -18,6 +19,7 @@ const PlaybookPreview = (props: Props) => {
     return (
         <Container>
             <Content>
+                <PlaybookPreviewChecklists playbook={props.playbook}/>
                 <PlaybookPreviewActions playbook={props.playbook}/>
                 <PlaybookPreviewStatusUpdates playbook={props.playbook}/>
                 <PlaybookPreviewRetrospective playbook={props.playbook}/>
