@@ -46,6 +46,7 @@
     "@types/react-select": "3.0.13",
     "@types/react-test-renderer": "16.9.3",
     "@types/redux-mock-store": "1.0.3",
+    "@types/shallow-equals": "1.0.0",
     "@types/styled-components": "5.1.11",
     "@typescript-eslint/eslint-plugin": "4.28.4",
     "@typescript-eslint/parser": "4.28.4",
@@ -64,6 +65,8 @@
     "eslint-plugin-import": "2.23.4",
     "eslint-plugin-react": "7.24.0",
     "eslint-plugin-react-hooks": "4.2.0",
+    "file-loader": "^6.2.0",
+    "image-webpack-loader": "^8.0.1",
     "jest": "26.6.3",
     "jest-canvas-mock": "2.3.1",
     "jest-junit": "12.2.0",
@@ -87,8 +90,7 @@
     "core-js": "3.15.2",
     "debounce": "1.2.1",
     "luxon": "2.0.2",
-    "mattermost-redux": "github:mattermost/mattermost-redux#3d1028034d7677adfda58e91b9a5dcaf1bc0ff99",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#54a54c3b8da77af256b4ac8182cf4b81afe47561",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#0621a51815150aa4158bce383cc3b745cd6d8d51",
     "moment": "2.29.1",
     "parse-duration": "1.0.0",
     "qs": "6.10.1",
@@ -99,7 +101,6 @@
     "react-redux": "7.2.4",
     "react-select": "3.1.1",
     "redux": "4.1.0",
-    "reselect": "4.0.0",
     "styled-components": "5.3.0",
     "typescript": "4.3.5"
   },
@@ -120,7 +121,9 @@
       "^.+\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "identity-obj-proxy",
       "^.+\\.(css|less|scss)$": "identity-obj-proxy",
       "^.*i18n.*\\.(json)$": "<rootDir>/tests/i18n_mock.json",
-      "^bundle-loader\\?lazy\\!(.*)$": "$1"
+      "^bundle-loader\\?lazy\\!(.*)$": "$1",
+      "^reselect": "<rootDir>/node_modules/mattermost-webapp/packages/reselect/src",
+      "^mattermost-redux(.*)$": "<rootDir>/node_modules/mattermost-webapp/packages/mattermost-redux/src$1"
     },
     "moduleDirectories": [
       "",

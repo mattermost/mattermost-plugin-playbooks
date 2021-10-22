@@ -34,7 +34,6 @@ const MarkdownTextbox = ({
     const [showPreview, setShowPreview] = useState(false);
     const config = useSelector(getConfig);
 
-    // @ts-expect-error
     const charLimit = parseInt(config.MaxPostSize || '', 10) || DEFAULT_CHAR_LIMIT;
 
     return (
