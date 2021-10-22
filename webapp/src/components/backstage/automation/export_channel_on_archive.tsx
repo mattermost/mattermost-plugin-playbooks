@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {FormattedMessage} from 'react-intl';
 
 import {AutomationHeader, AutomationTitle} from 'src/components/backstage/automation/styles';
 import {Toggle} from 'src/components/backstage/automation/toggle';
@@ -18,7 +19,7 @@ export const ExportChannelOnArchive = (props: Props) => (
                 isChecked={props.enabled}
                 onChange={props.onToggle}
             />
-            <div>{'Export channel'}</div>
+            <div><FormattedMessage defaultMessage='Export channel'/></div>
         </AutomationTitle>
     </AutomationHeader>
 );
