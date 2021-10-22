@@ -62,13 +62,13 @@
     "CL5OZP": "Tylko wybrani przez Ciebie użytkownicy będą mogli edytować lub uruchamiać ten playbook.",
     "BD66u6": "Pobierz plik CSV zawierający wszystkie wiadomości z kanału",
     "AS5kar": "Uczestnicy ({participants})",
-    "AF9wda": "Ta aktualizacja zostanie zapisana na stronie <OverviewLink>Przeglądu</OverviewLink>{hasBroadcast, select, true {i zostanie rozesłana do <ChannelsTooltip>{broadcastChannelCount, plural, =1 {jednego kanału} innych {{broadcastChannelCount, number} kanałów}}</ChannelsTooltip>} innych {}}.",
+    "AF9wda": "Ta aktualizacja zostanie zapisana na stronie <OverviewLink>Przeglądu</OverviewLink>{hasBroadcast, select, true {i zostanie rozesłana do <ChannelsTooltip>{broadcastChannelCount, plural, =1 {jednego kanału} other {{broadcastChannelCount, number} kanałów}}</ChannelsTooltip>} innych {}}.",
     "A3ptul": "Szablony",
     "9uOFF3": "Przegląd",
     "6Lwe7T": "Każdy w {team} może mieć dostęp do tego playbooka",
     "5Ot7cd": "Określ typ kanału, jaki utworzy ten playbook.",
     "5FRgqE": "Pobieranie logu kanału",
-    "1MQ3XZ": "{numActiveRuns, plural, =0 {brak aktywnych działań} =1 {# aktywne działanie} inne {# aktywne działania}}",
+    "1MQ3XZ": "{numActiveRuns, plural, =0 {brak aktywnych działań} =1 {# aktywne działanie} other {# aktywne działania}}",
     "/jUtaM": "AKTYWNE DZIAŁANIA dziennie w ciągu ostatnich 14 dni",
     "/HtNUp": "Wybierz lub określ {mode, select, DurationValue {przedział czasu (\"4 godziny\", \"7 dni\"...)} DateTimeValue {czas (\"za 4 godziny\", \"1 maja\", \"jutro o 13:00\"...)} inny {czas lub zakres czasu}}",
     "z5RMPO": "Tylko Ty możesz uzyskać dostęp do tego playbooka",
@@ -83,5 +83,9 @@
     "zINlao": "Właściciel",
     "/1FEJW": "AKTYWNI UCZESTNICY dziennie w ciągu ostatnich 14 dni",
     "+ZIXOR": "Dostęp do kanału",
-    "+8G9qr": "Domyślny tekst dla retrospektywy."
+    "+8G9qr": "Domyślny tekst dla retrospektywy.",
+    "X3DLGJ": "Każdy w tym obszarze roboczym może tworzyć playbooki.",
+    "TyrY2b": "Tworzenie playbooka",
+    "D3idYv": "Ustawienia",
+    "AT2QBo": "Tylko wybrani użytkownicy mogą tworzyć playbooki."
 }
