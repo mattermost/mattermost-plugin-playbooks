@@ -46,7 +46,7 @@ interface ChecklistItemDetailsProps {
     playbookRunId: string;
     onChange?: (item: ChecklistItemState) => void;
     onRedirect?: () => void;
-    draggableProvided: DraggableProvided;
+    draggableProvided?: DraggableProvided;
     dragging: boolean;
     disabled: boolean;
 }
@@ -379,8 +379,8 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const content = (
         <>
             <ItemContainer
-                ref={props.draggableProvided.innerRef}
-                {...props.draggableProvided.draggableProps}
+                ref={props.draggableProvided?.innerRef}
+                {...props.draggableProvided?.draggableProps}
                 onMouseEnter={() => setShowMenu(true)}
                 onMouseLeave={() => setShowMenu(false)}
                 data-testid='checkbox-item-container'
@@ -392,7 +392,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             <HoverMenuButton
                                 title={'Drag me to reorder'}
                                 className={'icon icon-menu'}
-                                {...props.draggableProvided.dragHandleProps}
+                                {...props.draggableProvided?.dragHandleProps}
                             />
                         }
                         {props.checklistItem.description !== '' &&
