@@ -415,7 +415,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 data-testid='checkbox-item-container'
             >
                 <CheckboxContainer>
-                    {showMenu && (!props.disabled || props.checklistItem.description !== '') &&
+                    {showMenu && (!props.disabled || props.checklistItem.description !== '') && !props.inlineDescription &&
                     <HoverMenu>
                         {!props.disabled &&
                             <HoverMenuButton
