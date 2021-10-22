@@ -49,6 +49,7 @@ interface ChecklistItemDetailsProps {
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     disabled: boolean;
+    inlineDescription: boolean;
 }
 
 const RunningTimeout = 1000;
@@ -199,6 +200,34 @@ export const CheckboxContainer = styled.div`
         margin: 0;
         margin-right: 8px;
         flex-grow: 1;
+    }
+`;
+
+const ChecklistItemLabel = styled.div`
+    display: flex;
+    flex-direction: column;
+`;
+
+const ChecklistItemDescription = styled.div`
+    font-size: 12px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    max-width: 630px;
+    margin: 4px 0 0 2px;
+
+    // Fix default markdown styling in the paragraphs
+    .markdown__paragraph-inline {
+        :last-child {
+            margin-bottom: 0;
+        }
+
+        + .markdown__paragraph-inline {
+            margin-left: 0;
+        }
     }
 `;
 
@@ -452,13 +481,20 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             }
                         }}
                     />
-                    <label title={title}>
-                        <div
-                            onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
-                        >
-                            {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
-                        </div>
-                    </label>
+                    <ChecklistItemLabel>
+                        <label title={title}>
+                            <div
+                                onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
+                            >
+                                {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                            </div>
+                        </label>
+                        {props.inlineDescription && (
+                            <ChecklistItemDescription>
+                                {messageHtmlToComponent(formatText(props.checklistItem.description, markdownOptions), true, {})}
+                            </ChecklistItemDescription>
+                        )}
+                    </ChecklistItemLabel>
                 </CheckboxContainer>
                 <ExtrasRow>
                     {props.checklistItem.assignee_id &&
