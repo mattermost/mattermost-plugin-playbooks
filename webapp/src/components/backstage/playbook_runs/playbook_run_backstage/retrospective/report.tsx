@@ -144,9 +144,6 @@ interface SaveButtonProps {
 
 const TextContainer = styled.span`
     display: flex;
-    justify-content: center;
-    width: 65px;
-    flex-grow: 1;
 `;
 
 const EditButton = (props: SaveButtonProps) => {

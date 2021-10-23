@@ -60,9 +60,6 @@ const FakeButton = styled.div`
 
 const TextContainer = styled.span`
     display: flex;
-    justify-content: center;
-    width: 65px;
-    flex-grow: 1;
 `;
 
 type IdToUserFn = (userId: string) => UserProfile;
