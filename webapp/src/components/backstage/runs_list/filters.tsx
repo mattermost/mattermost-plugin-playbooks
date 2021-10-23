@@ -144,7 +144,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
             />
             <CheckboxInput
                 testId={'finished-runs'}
-                text={'Finished runs'}
+                text={'Include finished'}
                 checked={(fetchParams.statuses?.length ?? 0) > 1}
                 onChange={setFinishedRuns}
             />
