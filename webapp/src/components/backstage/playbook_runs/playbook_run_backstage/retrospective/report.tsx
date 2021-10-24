@@ -3,6 +3,7 @@
 
 import React, {useState} from 'react';
 import styled from 'styled-components';
+import {useIntl} from 'react-intl';
 
 import {useSelector} from 'react-redux';
 import {Team} from 'mattermost-redux/types/teams';
@@ -74,6 +75,7 @@ const Report = (props: ReportProps) => {
     const [editing, setEditing] = useState(false);
     const [publishedThisSession, setPublishedThisSession] = useState(false);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
+    const {formatMessage} = useIntl();
 
     const savePressed = () => {
         updateRetrospective(props.playbookRun.id, report);
@@ -86,22 +88,22 @@ const Report = (props: ReportProps) => {
         setPublishedThisSession(true);
     };
 
-    let publishButtonText: React.ReactNode = 'Publish';
+    let publishButtonText: React.ReactNode = formatMessage({defaultMessage: 'Publish'});
     if (publishedThisSession) {
         publishButtonText = (
             <>
                 <i className={'icon icon-check'}/>
-                {'Published'}
+                {formatMessage({defaultMessage: 'Published'})}
             </>
         );
     } else if (props.playbookRun.retrospective_published_at && !props.playbookRun.retrospective_was_canceled) {
-        publishButtonText = 'Republish';
+        publishButtonText = formatMessage({defaultMessage: 'Republish'});
     }
 
     return (
         <ReportContainer>
             <Header>
-                <Title>{'Report'}</Title>
+                <Title>{formatMessage({defaultMessage: 'Report'})}</Title>
                 <HeaderButtonsRight>
                     <CustomPrimaryButton
                         onClick={publishPressed}
@@ -150,6 +152,7 @@ const TextContainer = styled.span`
 `;
 
 const EditButton = (props: SaveButtonProps) => {
+    const {formatMessage} = useIntl();
     if (props.editing) {
         return (
             <SecondaryButtonSmaller
@@ -157,7 +160,7 @@ const EditButton = (props: SaveButtonProps) => {
             >
                 <TextContainer>
                     <i className={'fa fa-floppy-o'}/>
-                    {'Save'}
+                    {formatMessage({defaultMessage: 'Save'})}
                 </TextContainer>
             </SecondaryButtonSmaller>
         );
@@ -169,7 +172,7 @@ const EditButton = (props: SaveButtonProps) => {
         >
             <TextContainer>
                 <i className={'icon icon-pencil-outline'}/>
-                {'Edit'}
+                {formatMessage({defaultMessage: 'Edit'})}
             </TextContainer>
         </SecondaryButtonSmaller>
     );
