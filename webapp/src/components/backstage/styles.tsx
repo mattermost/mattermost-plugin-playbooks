@@ -4,6 +4,7 @@
 import styled, {css} from 'styled-components';
 import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
+import Creatable from 'react-select/creatable';
 
 import {RegularHeading} from 'src/styles/headings';
 import MarkdownTextbox from 'src/components/markdown_textbox';
@@ -156,6 +157,10 @@ export const StyledAsyncSelect = styled(AsyncSelect)`
 `;
 
 export const StyledSelect = styled(Select)`
+    ${commonSelectStyle}
+`;
+
+export const StyledCreatable = styled(Creatable)`
     ${commonSelectStyle}
 `;
 
