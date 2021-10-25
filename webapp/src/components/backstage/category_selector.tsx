@@ -28,8 +28,8 @@ const CategorySelector = (props: Props & { className?: string }) => {
 
     const options = React.useMemo(() => {
         return selectableCategories
-                .filter((category) => category.type !== 'direct_messages')
-                .map((category) => ({value: category.display_name, label: category.display_name}));
+            .filter((category) => category.type !== 'direct_messages')
+            .map((category) => ({value: category.display_name, label: category.display_name}));
     }, [selectableCategories]);
 
     const onChange = (option: {label: string; value: string}, {action}: {action: string}) => {

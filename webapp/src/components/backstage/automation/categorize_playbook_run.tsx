@@ -37,7 +37,7 @@ export const CategorizePlaybookRun = (props: Props) => (
                 onCategorySelected={props.onCategorySelected}
                 categoryName={props.categoryName}
                 isClearable={true}
-                selectComponents={{ ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList }}
+                selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
                 isDisabled={!props.enabled}
                 captureMenuScroll={false}
                 shouldRenderValue={props.enabled}
