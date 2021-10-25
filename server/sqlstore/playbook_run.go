@@ -710,7 +710,7 @@ func (s *playbookRunStore) NukeDB() (err error) {
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember,  IR_StatusPosts, IR_Incident, IR_Playbook, IR_System, IR_TimelineEvent, IR_ViewedChannel, IR_Run_Participants"); err != nil {
+	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember,  IR_StatusPosts, IR_TimelineEvent, IR_Incident, IR_Playbook, IR_System, IR_ViewedChannel, IR_Run_Participants"); err != nil {
 		return errors.Wrap(err, "could not delete all IR tables")
 	}
 
@@ -1026,7 +1026,7 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 		OrderBy("ChannelDisplayName")
 
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
-		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP(CURTIME(4)) * 1000)"))
+		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
 	} else {
 		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
 	}

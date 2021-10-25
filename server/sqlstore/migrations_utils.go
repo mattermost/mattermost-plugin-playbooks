@@ -159,9 +159,36 @@ func addPrimaryKey(e sqlx.Ext, sqlStore *SQLStore, tableName, primaryKey string)
 
 	if hasPK == 0 {
 		if _, err := e.Exec(fmt.Sprintf(`
-			ALTER TABLE %s ADD PRIMARY KEY %s 
+			ALTER TABLE %s ADD PRIMARY KEY %s
 		`, tableName, primaryKey)); err != nil {
 			return errors.Wrap(err, "unable to add a primary key")
+		}
+	}
+
+	return nil
+}
+
+func dropIndexIfExists(e sqlx.Ext, sqlStore *SQLStore, tableName, indexName string) error {
+	hasIndex := 0
+
+	if e.DriverName() == model.DatabaseDriverMysql {
+		if err := sqlStore.db.Get(&hasIndex, fmt.Sprintf(`
+			SELECT 1 FROM information_schema.statistics s
+			WHERE s.table_name = '%s'
+			AND s.index_schema = (SELECT DATABASE())
+			AND index_name = '%s'
+		`, tableName, indexName)); err != nil && err != sql.ErrNoRows {
+			return errors.Wrapf(err, "unable to determine if index %s on table %s exists", indexName, tableName)
+		}
+
+		if hasIndex == 1 {
+			if _, err := e.Exec(fmt.Sprintf("DROP INDEX %s ON %s", indexName, tableName)); err != nil {
+				return errors.Wrapf(err, "failed to drop index %s on table %s", indexName, tableName)
+			}
+		}
+	} else if e.DriverName() == model.DatabaseDriverPostgres {
+		if _, err := e.Exec(fmt.Sprintf("DROP INDEX IF EXISTS %s", indexName)); err != nil {
+			return errors.Wrapf(err, "failed to drop index %s on table %s", indexName, tableName)
 		}
 	}
 
