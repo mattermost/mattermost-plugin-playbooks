@@ -40,6 +40,7 @@ import {
     handleWebsocketPlaybookRunCreated,
     handleWebsocketPlaybookCreated,
     handleWebsocketPlaybookDeleted,
+    handleWebsocketPlaybookRestored,
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
     handleWebsocketPostEditedOrDeleted,
@@ -50,6 +51,7 @@ import {
     WEBSOCKET_PLAYBOOK_RUN_CREATED,
     WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_DELETED,
+    WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
 import RegistryWrapper from 'src/registry_wrapper';
 import {makeUpdateMainMenu} from 'src/make_update_main_menu';
@@ -158,6 +160,7 @@ export default class Plugin {
             r.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RUN_CREATED, handleWebsocketPlaybookRunCreated(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CREATED, handleWebsocketPlaybookCreated(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_DELETED, handleWebsocketPlaybookDeleted(store.getState, store.dispatch));
+            r.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RESTORED, handleWebsocketPlaybookRestored(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
             r.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));
