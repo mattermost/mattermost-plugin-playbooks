@@ -132,9 +132,11 @@ func TestMigrationIdempotency(t *testing.T) {
 
 			now := time.Now()
 			// Insert runs to test
-			expired, err := insertRunWithExpiredReminder(sqlStore)
+			expired, err := insertRunWithExpiredReminder(sqlStore, 1*time.Minute)
 			require.NoError(t, err)
 			noReminder, err := insertRunWithNoReminder(sqlStore)
+			require.NoError(t, err)
+			oldExpired, err := insertRunWithExpiredReminder(sqlStore, 4*24*time.Hour)
 			require.NoError(t, err)
 			activeReminder, err := insertRunWithActiveReminder(sqlStore, 24*time.Hour)
 			require.NoError(t, err)
@@ -145,12 +147,12 @@ func TestMigrationIdempotency(t *testing.T) {
 
 			// set expected calls we will get below when we run migration
 			newReminder := 24 * 7 * time.Hour
-			shouldHaveReminderBefore := now.Add(newReminder + 1*time.Second)
-			shouldHaveReminderAfter := now.Add(newReminder - 1*time.Second)
 			scheduler.EXPECT().ScheduleOnce(expired, gomock.Any()).
 				Return(nil, nil).
 				Times(1).
 				Do(func(id string, at time.Time) {
+					shouldHaveReminderBefore := now.Add(newReminder + 1*time.Second)
+					shouldHaveReminderAfter := now.Add(newReminder - 1*time.Second)
 					if at.Before(shouldHaveReminderAfter) || at.After(shouldHaveReminderBefore) {
 						t.Errorf("expected call to ScheduleOnce: %d to be after: %d and before: %d",
 							model.GetMillisForTime(at), model.GetMillisForTime(shouldHaveReminderAfter),
@@ -161,6 +163,20 @@ func TestMigrationIdempotency(t *testing.T) {
 				Return(nil, nil).
 				Times(1).
 				Do(func(id string, at time.Time) {
+					shouldHaveReminderBefore := now.Add(newReminder + 1*time.Second)
+					shouldHaveReminderAfter := now.Add(newReminder - 1*time.Second)
+					if at.Before(shouldHaveReminderAfter) || at.After(shouldHaveReminderBefore) {
+						t.Errorf("expected call to ScheduleOnce: %d to be after: %d and before: %d",
+							model.GetMillisForTime(at), model.GetMillisForTime(shouldHaveReminderAfter),
+							model.GetMillisForTime(shouldHaveReminderBefore))
+					}
+				})
+			scheduler.EXPECT().ScheduleOnce(oldExpired, gomock.Any()).
+				Return(nil, nil).
+				Times(1).
+				Do(func(id string, at time.Time) {
+					shouldHaveReminderBefore := now.Add(newReminder + 1*time.Second)
+					shouldHaveReminderAfter := now.Add(newReminder - 1*time.Second)
 					if at.Before(shouldHaveReminderAfter) || at.After(shouldHaveReminderBefore) {
 						t.Errorf("expected call to ScheduleOnce: %d to be after: %d and before: %d",
 							model.GetMillisForTime(at), model.GetMillisForTime(shouldHaveReminderAfter),
@@ -189,6 +205,13 @@ func TestMigrationIdempotency(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, noReminderRun.PreviousReminder, newReminder)
 
+			// Test that runs with old expired times get their timers set correctly
+			oldExpiredRun, err := getRun(oldExpired, sqlStore)
+			require.NoError(t, err)
+			require.Equal(t, noReminderRun.PreviousReminder, newReminder)
+			updateDueAt := oldExpiredRun.LastStatusUpdateAt + oldExpiredRun.PreviousReminder.Milliseconds()
+			require.Greater(t, updateDueAt, time.Now().Add(7*24*time.Hour-1*time.Second).UnixNano()/int64(time.Millisecond))
+
 			// Test that the runs that should not have been changed do /not/ have new reminders
 			activeReminderRun, err := getRun(activeReminder, sqlStore)
 			require.NoError(t, err)
@@ -203,7 +226,7 @@ func TestMigrationIdempotency(t *testing.T) {
 	}
 }
 
-func insertRunWithExpiredReminder(sqlStore *SQLStore) (string, error) {
+func insertRunWithExpiredReminder(sqlStore *SQLStore, reminderExpiredAgo time.Duration) (string, error) {
 	id := model.NewId()
 	_, err := sqlStore.execBuilder(sqlStore.db, sq.
 		Insert("IR_Incident").
@@ -212,7 +235,7 @@ func insertRunWithExpiredReminder(sqlStore *SQLStore) (string, error) {
 			"CreateAt":           model.GetMillis(),
 			"PreviousReminder":   24 * time.Hour,
 			"CurrentStatus":      app.StatusInProgress,
-			"LastStatusUpdateAt": model.GetMillisForTime(time.Now().Add(-25 * time.Hour)),
+			"LastStatusUpdateAt": model.GetMillisForTime(time.Now().Add(-24*time.Hour - reminderExpiredAgo)),
 			// have to be set:
 			"Name":            "test",
 			"Description":     "test",
