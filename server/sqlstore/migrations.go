@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"encoding/json"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
@@ -1354,6 +1355,79 @@ var migrations = []Migration{
 			}
 
 			return dropIndexIfExists(e, sqlStore, "IR_ViewedChannel", "IR_ViewedChannel_ChannelID_UserID")
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.36.0"),
+		toVersion:   semver.MustParse("0.37.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Existing runs without a reminder need to have a reminder set; use 1 week from now.
+			oneWeek := 7 * 24 * time.Hour
+			inOneWeek := time.Now().Add(oneWeek)
+
+			// Get overdue runs
+			overdueQuery := sqlStore.builder.
+				Select("ID").
+				From("IR_Incident").
+				Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+				Where(sq.NotEq{"PreviousReminder": 0})
+			if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
+				overdueQuery = overdueQuery.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
+			} else {
+				overdueQuery = overdueQuery.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
+			}
+
+			var runIDs []string
+			if err := sqlStore.selectBuilder(sqlStore.db, &runIDs, overdueQuery); err != nil {
+				return errors.Wrap(err, "failed to query for overdue runs")
+			}
+
+			// First set the previous reminder for overdue runs
+			overdueUpdate := sqlStore.builder.
+				Update("IR_Incident").
+				Set("PreviousReminder", oneWeek).
+				Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+				Where(sq.NotEq{"PreviousReminder": 0})
+			if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
+				overdueUpdate = overdueUpdate.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
+			} else {
+				overdueUpdate = overdueUpdate.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
+			}
+			if _, err := sqlStore.execBuilder(sqlStore.db, overdueUpdate); err != nil {
+				return errors.Wrap(err, "failed to update overdue runs with new PreviousReminder")
+			}
+
+			// Get runs that never had a status update set
+			otherQuery := sqlStore.builder.
+				Select("ID").
+				From("IR_Incident").
+				Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+				Where(sq.Eq{"PreviousReminder": 0})
+
+			var otherRunIDs []string
+			if err := sqlStore.selectBuilder(sqlStore.db, &otherRunIDs, otherQuery); err != nil {
+				return errors.Wrap(err, "failed to query for overdue runs")
+			}
+
+			// Now set the previous reminder for runs that never had a status update set
+			otherUpdate := sqlStore.builder.
+				Update("IR_Incident").
+				Set("PreviousReminder", oneWeek).
+				Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+				Where(sq.Eq{"PreviousReminder": 0})
+			if _, err := sqlStore.execBuilder(sqlStore.db, otherUpdate); err != nil {
+				return errors.Wrap(err, "failed to update overdue runs with new PreviousReminder")
+			}
+
+			// Then set the new reminders
+			runIDs = append(runIDs, otherRunIDs...)
+			for _, ID := range runIDs {
+				if _, err := sqlStore.scheduler.ScheduleOnce(ID, inOneWeek); err != nil {
+					return errors.Wrapf(err, "failed to set new schedule for run id: %s", ID)
+				}
+			}
+
+			return nil
 		},
 	},
 }

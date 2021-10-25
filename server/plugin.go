@@ -114,9 +114,10 @@ func (p *Plugin) OnActivate() error {
 	toggleTelemetry()
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
+	scheduler := cluster.GetJobOnceScheduler(p.API)
 	apiClient := sqlstore.NewClient(pluginAPIClient)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
-	sqlStore, err := sqlstore.New(apiClient, p.bot)
+	sqlStore, err := sqlstore.New(apiClient, p.bot, scheduler)
 	if err != nil {
 		return errors.Wrapf(err, "failed creating the SQL store")
 	}
@@ -139,8 +140,6 @@ func (p *Plugin) OnActivate() error {
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
-
-	scheduler := cluster.GetJobOnceScheduler(p.API)
 
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,

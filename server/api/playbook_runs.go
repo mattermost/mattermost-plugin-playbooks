@@ -668,6 +668,10 @@ func (h *PlaybookRunHandler) status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if options.Reminder == 0 {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "the reminder must be set and not 0", errors.New("reminder was 0"))
+		return
+	}
 	options.Reminder = options.Reminder * time.Second
 
 	err = h.playbookRunService.UpdateStatus(playbookRunID, userID, options)
