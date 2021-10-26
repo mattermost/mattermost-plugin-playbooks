@@ -7,48 +7,45 @@
 // ***************************************************************
 
 describe('backstage', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
+    let testTeam;
+    let testUser;
 
     before(() => {
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Create and run a playbook.
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            cy.legacyApiGetCurrentUser().then((user) => {
-                cy.apiCreateTestPlaybook({
+            // # Turn off growth onboarding screens
+            cy.apiUpdateConfig({
+                ServiceSettings: {EnableOnboardingFlow: false},
+            });
+
+            // # Login as user-1
+            cy.apiLogin(testUser);
+
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                memberIDs: [],
+            }).then((playbook) => {
+                cy.apiRunPlaybook({
                     teamId: team.id,
-                    title: playbookName,
-                    userId: user.id,
-                }).then((playbook) => {
-                    const now = Date.now();
-                    const playbookRunName = 'Playbook Run (' + now + ')';
-                    cy.apiRunPlaybook({
-                        teamId: team.id,
-                        playbookId: playbook.id,
-                        playbookRunName,
-                        ownerUserId: user.id,
-                    });
+                    playbookId: playbook.id,
+                    playbookRunName: 'Playbook Run',
+                    ownerUserId: user.id,
                 });
             });
         });
     });
 
     beforeEach(() => {
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+        // # Login as testUser
+        cy.apiLogin(testUser);
 
         // # Navigate to the application
-        cy.visit('/ad-1/');
+        cy.visit(`/${testTeam.name}/`);
     });
-
-    // it('opens statistics view by default', () => {
-    //     // # Open the backstage
-    //     cy.visit('/ad-1/playbooks/stats');
-
-    //     // * Verify that when backstage loads, the heading is visible and contains "Statistics"
-    //     cy.findByTestId('titleStats').should('exist').contains('Statistics');
-    // });
 
     it('switches to playbooks list view via header button', () => {
         // # Open backstage
