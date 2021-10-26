@@ -2,16 +2,17 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 
 interface Props {
+    id: string;
     title: string;
     children?: React.ReactNode;
 }
 
-const Section = ({title, children}: Props) => {
+const Section = ({id, title, children}: Props) => {
     return (
-        <Wrapper>
+        <Wrapper id={id}>
             <Title>{title}</Title>
             {children}
         </Wrapper>

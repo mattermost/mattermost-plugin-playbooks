@@ -19,10 +19,22 @@ const PlaybookPreview = (props: Props) => {
     return (
         <Container>
             <Content>
-                <PlaybookPreviewChecklists playbook={props.playbook}/>
-                <PlaybookPreviewActions playbook={props.playbook}/>
-                <PlaybookPreviewStatusUpdates playbook={props.playbook}/>
-                <PlaybookPreviewRetrospective playbook={props.playbook}/>
+                <PlaybookPreviewChecklists
+                    id={'checklists'}
+                    playbook={props.playbook}
+                />
+                <PlaybookPreviewActions
+                    id={'actions'}
+                    playbook={props.playbook}
+                />
+                <PlaybookPreviewStatusUpdates
+                    id={'statusUpdates'}
+                    playbook={props.playbook}
+                />
+                <PlaybookPreviewRetrospective
+                    id={'retrospective'}
+                    playbook={props.playbook}
+                />
             </Content>
             <Navbar/>
         </Container>
