@@ -7,27 +7,37 @@
 // ***************************************************************
 
 describe('playbook creation button', () => {
-    before(() => {
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+    let testTeam;
+    let testUser;
 
-        // # Create a playbook
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            cy.legacyApiGetCurrentUser().then((user) => {
-                cy.apiCreateTestPlaybook({
-                    teamId: team.id,
-                    userId: user.id,
-                });
+    before(() => {
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
+
+            // # Turn off growth onboarding screens
+            cy.apiUpdateConfig({
+                ServiceSettings: {EnableOnboardingFlow: false},
+            });
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                memberIDs: [],
             });
         });
     });
 
     beforeEach(() => {
+        // # Login as user-1
+        cy.apiLogin(testUser);
+
         // # Size the viewport to show playbooks without weird scrolling issues
         cy.viewport('macbook-13');
-
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
     });
 
     it('opens playbook creation page with New Playbook button', () => {
@@ -42,9 +52,6 @@ describe('playbook creation button', () => {
 
         // # Click 'New Playbook' button
         cy.findByText('Create playbook').click();
-
-        // #  Select team
-        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
 
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
@@ -62,9 +69,6 @@ describe('playbook creation button', () => {
 
         // # Click 'Blank'
         cy.findByText('Blank').click();
-
-        // #  Select team
-        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
 
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
@@ -84,9 +88,6 @@ describe('playbook creation button', () => {
         // # Click 'Service Reliability Incident'
         cy.findByText('Service Reliability Incident').click();
 
-        // #  Select team
-        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
-
         // * Verify a new 'Service Outage Incident' creation page is opened
         verifyPlaybookCreationPageOpened(url1, playbookName);
         verifyPlaybookCreationPageOpened(url2, playbookName);
@@ -101,9 +102,6 @@ describe('playbook creation button', () => {
 
         // # Click 'Create playbook' button
         cy.findByText('Create playbook').click();
-
-        // #  Select team
-        cy.get('[data-testid="teamIconInitial"]').first().parent().click({force: true});
 
         // # Click 'Permissions' tab
         cy.findByText('Permissions').click();
