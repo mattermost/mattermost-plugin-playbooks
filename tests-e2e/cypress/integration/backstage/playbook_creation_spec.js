@@ -9,15 +9,16 @@
 describe('playbook creation button', () => {
     let testTeam;
     let testUser;
+    let testUser2;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
 
-            // # Turn off growth onboarding screens
-            cy.apiUpdateConfig({
-                ServiceSettings: {EnableOnboardingFlow: false},
+            cy.apiCreateUser().then(({user: user2}) => {
+                testUser2 = user2;
+                cy.apiAddUserToTeam(testTeam.id, testUser2.id);
             });
 
             // # Login as testUser
@@ -117,7 +118,7 @@ describe('playbook creation button', () => {
 
         // # Add a new user
         cy.get('.profile-autocomplete__input > input')
-            .type('anne stone', {force: true, delay: 100}).wait(100)
+            .type(`${testUser2.username}`, {force: true, delay: 100}).wait(100)
             .type('{enter}');
 
         // * Verify that there is a Remove link when there is more than one member

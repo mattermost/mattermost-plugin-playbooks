@@ -19,123 +19,104 @@
  * - Direct message
  * - Direct message with self
  */
-import users from '../../fixtures/users.json';
 
 describe('playbook runs can be started', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
-    let teamId;
+    let testTeam;
+    let testUser;
+    let testPrivateChannel;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+            // # Turn off growth onboarding screens
+            cy.apiUpdateConfig({
+                ServiceSettings: {EnableOnboardingFlow: false},
+            });
 
-        // # Create a playbook
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
+            // # Login as testUser
+            cy.apiLogin(testUser);
 
-            cy.legacyApiGetCurrentUser().then((user) => {
-                cy.apiCreateTestPlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    userId: user.id,
-                });
+            // # Create a playbook
+            cy.apiCreatePlaybook({
+                teamId: team.id,
+                title: 'Playbook',
+                memberIDs: [user.id],
+            });
 
-                cy.verifyPlaybookCreated(team.id, playbookName);
+            // # Create a private channel
+            cy.apiCreateChannel(
+                testTeam.id,
+                'private-channel',
+                'Private Channel',
+                'P'
+            ).then(({channel}) => {
+                testPrivateChannel = channel;
             });
         });
     });
 
     beforeEach(() => {
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
         // # Size the viewport to show plugin icons even when RHS is open
         cy.viewport('macbook-13');
-
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
-
-        // # Verify the playbook is there
-        cy.verifyPlaybookCreated(teamId, playbookName);
     });
 
     describe('via slash command', () => {
         it('while viewing a public channel', () => {
-            // # Visit a public channel: off-topic
-            cy.visit('/ad-1/channels/off-topic');
+            // # Visit a public channel
+            cy.visit(`/${testTeam.name}/channels/off-topic`);
 
             // * Verify that playbook run can be started with slash command
             const playbookRunName = 'Public ' + Date.now();
-            cy.startPlaybookRunWithSlashCommand(playbookName, playbookRunName);
-            cy.verifyPlaybookRunActive(teamId, playbookRunName);
+            cy.startPlaybookRunWithSlashCommand('Playbook', playbookRunName);
+            cy.verifyPlaybookRunActive(testTeam.id, playbookRunName);
         });
 
         it('while viewing a private channel', () => {
-            // # Visit a private channel: autem-2
-            cy.visit('/ad-1/channels/autem-2');
+            // # Visit a private channel
+            cy.visit(`/${testTeam.name}/channels/${testPrivateChannel.name}`);
 
             // * Verify that playbook run can be started with slash command
             const playbookRunName = 'Private ' + Date.now();
-            cy.startPlaybookRunWithSlashCommand(playbookName, playbookRunName);
-            cy.verifyPlaybookRunActive(teamId, playbookRunName);
+            cy.startPlaybookRunWithSlashCommand('Playbook', playbookRunName);
+            cy.verifyPlaybookRunActive(testTeam.id, playbookRunName);
         });
     });
 
-    /* describe('via RHS', () => {
-        it('while viewing a public channel', () => {
-            // # Visit a public channel: off-topic
-            cy.visit('/ad-1/channels/off-topic');
-
-            // * Verify that playbook run can be started from playbook run RHS
-            const playbookRunName = 'Public - ' + Date.now();
-            cy.startPlaybookRunFromRHS(playbookName, playbookRunName);
-            cy.verifyPlaybookRunActive(teamId, playbookRunName);
-        });
-
-        it('while viewing a private channel', () => {
-            // # Visit a private channel: autem-2
-            cy.visit('/ad-1/channels/autem-2');
-
-            // * Verify that playbook run can be started from playbook run RHS
-            const playbookRunName = 'Private - ' + Date.now();
-            cy.startPlaybookRunFromRHS(playbookName, playbookRunName);
-            cy.verifyPlaybookRunActive(teamId, playbookRunName);
-        });
-    }); */
-
     describe('via post menu', () => {
         it('while viewing a public channel', () => {
-            // # Visit a public channel: off-topic
-            cy.visit('/ad-1/channels/off-topic');
+            // # Visit a public channel
+            cy.visit(`/${testTeam.name}/channels/off-topic`);
 
             // * Verify that playbook run can be started from post menu
             const playbookRunName = 'Public - ' + Date.now();
-            cy.startPlaybookRunFromPostMenu(playbookName, playbookRunName);
-            cy.verifyPlaybookRunActive(teamId, playbookRunName);
+            cy.startPlaybookRunFromPostMenu('Playbook', playbookRunName);
+            cy.verifyPlaybookRunActive(testTeam.id, playbookRunName);
         });
 
         it('while viewing a private channel', () => {
-            // # Visit a private channel: autem-2
-            cy.visit('/ad-1/channels/autem-2');
+            // # Visit a private channel
+            cy.visit(`/${testTeam.name}/channels/${testPrivateChannel.name}`);
 
             // * Verify that playbook run can be started from post menu
             const playbookRunName = 'Private - ' + Date.now();
-            cy.startPlaybookRunFromPostMenu(playbookName, playbookRunName);
-            cy.verifyPlaybookRunActive(teamId, playbookRunName);
+            cy.startPlaybookRunFromPostMenu('Playbook', playbookRunName);
+            cy.verifyPlaybookRunActive(testTeam.id, playbookRunName);
         });
     });
 
     it('always as channel admin', () => {
-        // # Visit a public channel: off-topic
-        cy.visit('/ad-1/channels/off-topic');
+        // # Visit a public channel
+        cy.visit(`/${testTeam.name}/channels/off-topic`);
 
         // # Start a playbook run with a slash command
         const playbookRunName = 'Public ' + Date.now();
-        cy.startPlaybookRunWithSlashCommand(playbookName, playbookRunName);
-        cy.verifyPlaybookRunActive(teamId, playbookRunName);
+        cy.startPlaybookRunWithSlashCommand('Playbook', playbookRunName);
+        cy.verifyPlaybookRunActive(testTeam.id, playbookRunName);
 
         // # Open the channel header
         cy.get('#channelHeaderTitle').click();
