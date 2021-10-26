@@ -189,7 +189,10 @@ const Playbook = () => {
                             <Redirect to={`${match.url}/usage`}/>
                         </Route>
                         <Route path={`${match.path}/preview`}>
-                            <PlaybookPreview playbook={playbook}/>
+                            <PlaybookPreview
+                                playbook={playbook}
+                                runsInProgress={stats.runs_in_progress}
+                            />
                         </Route>
                         <Route path={`${match.path}/usage`}>
                             <PlaybookUsage
