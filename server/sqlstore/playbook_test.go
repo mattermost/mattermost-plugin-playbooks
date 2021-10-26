@@ -950,7 +950,6 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		})
 
 		_, store := setupSQLStore(t, db)
-		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 		addUsers(t, store, users)
 		addUsersToTeam(t, store, users, team1id)
@@ -1529,7 +1528,6 @@ func TestGetPlaybookIDsForUser(t *testing.T) {
 		})
 
 		_, store := setupSQLStore(t, db)
-		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 		addUsers(t, store, users)
 

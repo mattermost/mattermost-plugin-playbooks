@@ -2466,8 +2466,8 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string) string {
 	message := fmt.Sprintf("\n##### Overdue Status Updates\nYou have %d %s overdue for a status update:\n", total, runPlural)
 
 	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked)\n",
-			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked) (Owner: @%s)\n",
+			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName, run.OwnerUserName)
 	}
 
 	return message

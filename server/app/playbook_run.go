@@ -366,6 +366,7 @@ type RunLink struct {
 	TeamName           string
 	ChannelName        string
 	ChannelDisplayName string
+	OwnerUserName      string
 }
 
 // AssignedRun represents all the info needed to display a Run & ChecklistItem to a user
@@ -599,7 +600,7 @@ type PlaybookRunStore interface {
 	// GetParticipatingRuns returns the list of active runs with userID as a participant
 	GetParticipatingRuns(userID string) ([]RunLink, error)
 
-	// GetOverdueUpdateRuns returns the list of userID's runs that have overdue updates
+	// GetOverdueUpdateRuns returns the list of runs that userID is participating in that have overdue updates
 	GetOverdueUpdateRuns(userID string) ([]RunLink, error)
 }
 
