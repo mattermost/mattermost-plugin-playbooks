@@ -1396,6 +1396,9 @@ var migrations = []Migration{
 			// Set the new reminders
 			runIDs = append(runIDs, otherRunIDs...)
 			for _, ID := range runIDs {
+				// Just in case (so we don't crash out during the migration) remove any old reminders
+				sqlStore.scheduler.Cancel(ID)
+
 				if _, err := sqlStore.scheduler.ScheduleOnce(ID, time.Now().Add(oneWeek)); err != nil {
 					return errors.Wrapf(err, "failed to set new schedule for run id: %s", ID)
 				}
