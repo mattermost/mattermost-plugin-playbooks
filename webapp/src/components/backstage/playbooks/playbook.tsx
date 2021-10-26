@@ -21,9 +21,10 @@ import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
 
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
-import {clientFetchPlaybook, telemetryEventForPlaybook} from 'src/client';
+import {clientFetchPlaybook, telemetryEventForPlaybook, fetchPlaybookStats} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
+import {EmptyPlaybookStats} from 'src/types/stats';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import {RegularHeading} from 'src/styles/headings';
@@ -45,6 +46,7 @@ const Playbook = () => {
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
+    const [stats, setStats] = useState(EmptyPlaybookStats);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -83,6 +85,20 @@ const Playbook = () => {
         };
 
         fetchData();
+    }, [match.params.playbookId]);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const ret = await fetchPlaybookStats(match.params.playbookId);
+                setStats(ret);
+            } catch {
+                // Ignore any errors here. If it fails, it's most likely also failed to fetch
+                // the playbook above.
+            }
+        };
+
+        fetchStats();
     }, [match.params.playbookId]);
 
     if (fetchingState === FetchingStateType.loading) {
@@ -143,7 +159,13 @@ const Playbook = () => {
                     </PrimaryButtonLarger>
                 </TitleRow>
             </TopContainer>
-            {(!experimentalFeaturesEnabled && <PlaybookUsage playbook={playbook}/>) ||
+            {!experimentalFeaturesEnabled &&
+                <PlaybookUsage
+                    playbook={playbook}
+                    stats={stats}
+                />
+            }
+            {experimentalFeaturesEnabled &&
                 <>
                     <Navbar>
                         <NavItem
@@ -170,7 +192,10 @@ const Playbook = () => {
                             <PlaybookPreview playbook={playbook}/>
                         </Route>
                         <Route path={`${match.path}/usage`}>
-                            <PlaybookUsage playbook={playbook}/>
+                            <PlaybookUsage
+                                playbook={playbook}
+                                stats={stats}
+                            />
                         </Route>
                     </Switch>
                 </>
