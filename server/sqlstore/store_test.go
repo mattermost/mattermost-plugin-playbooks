@@ -147,6 +147,7 @@ func TestMigrationIdempotency(t *testing.T) {
 
 			// set expected calls we will get below when we run migration
 			newReminder := 24 * 7 * time.Hour
+			scheduler.EXPECT().Cancel(expired)
 			scheduler.EXPECT().ScheduleOnce(expired, gomock.Any()).
 				Return(nil, nil).
 				Times(1).
@@ -159,6 +160,7 @@ func TestMigrationIdempotency(t *testing.T) {
 							model.GetMillisForTime(shouldHaveReminderBefore))
 					}
 				})
+			scheduler.EXPECT().Cancel(noReminder)
 			scheduler.EXPECT().ScheduleOnce(noReminder, gomock.Any()).
 				Return(nil, nil).
 				Times(1).
@@ -171,6 +173,7 @@ func TestMigrationIdempotency(t *testing.T) {
 							model.GetMillisForTime(shouldHaveReminderBefore))
 					}
 				})
+			scheduler.EXPECT().Cancel(oldExpired)
 			scheduler.EXPECT().ScheduleOnce(oldExpired, gomock.Any()).
 				Return(nil, nil).
 				Times(1).
