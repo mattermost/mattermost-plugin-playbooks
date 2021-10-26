@@ -7,27 +7,34 @@
 // ***************************************************************
 
 describe('backstage playbook list', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
+    let testTeam;
+    let testUser;
 
     before(() => {
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Create a playbook
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            cy.legacyApiGetCurrentUser().then((user) => {
-                cy.apiCreateTestPlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    userId: user.id,
-                });
+            // # Turn off growth onboarding screens
+            cy.apiUpdateConfig({
+                ServiceSettings: {EnableOnboardingFlow: false},
+            });
+
+            // # Login as user-1
+            cy.apiLogin(testUser);
+
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                memberIDs: [],
             });
         });
     });
 
     beforeEach(() => {
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+        // # Login as testUser
+        cy.apiLogin(testUser);
 
         // # Navigate to the application
         cy.visit('/ad-1/');
