@@ -106,5 +106,6 @@
     "Hzwzgs": "Broadcast-Updates in {oneChannel, plural, one {Kanal} other {Kanäle}}",
     "CjNrqO": "Vorlage für einen retrospektiven Bericht",
     "8hDbW6": "Ausgehenden Webhook senden",
-    "+QgvjN": "Weisen Sie die Eigentümerrolle zu"
+    "+QgvjN": "Weisen Sie die Eigentümerrolle zu",
+    "MFpAtm": "{numTasks, number} {numTasks, plural, one {Aufgabe} other {Aufgaben}}"
 }
