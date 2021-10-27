@@ -1402,8 +1402,8 @@ var migrations = []Migration{
 		},
 	},
 	{
-		fromVersion: semver.MustParse("0.36.0"),
-		toVersion:   semver.MustParse("0.37.0"),
+		fromVersion: semver.MustParse("0.37.0"),
+		toVersion:   semver.MustParse("0.38.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "ConcatenatedFollowerIDs", "TEXT"); err != nil {

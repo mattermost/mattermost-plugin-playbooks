@@ -1654,7 +1654,6 @@ func (s *PlaybookRunServiceImpl) ChangeCreationDate(playbookRunID string, creati
 // was invited by actorID.
 func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	playbookRunID, err := s.store.GetPlaybookRunIDForChannel(channelID)
-
 	if err != nil {
 		// This is not a playbook run channel
 		return
@@ -1705,6 +1704,14 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return
+	}
+
+	if user.IsBot {
+		return
+	}
+
+	if err := s.Follow(playbookRun.ID, userID); err != nil {
+		s.logger.Errorf("user `%s` was not able to follow the run `%s`; error: %s", userID, playbookRun.ID, err.Error())
 	}
 
 	if playbookRun.CategoryName != "" {
