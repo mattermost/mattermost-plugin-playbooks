@@ -14,10 +14,10 @@ import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs
 import {BackstageID} from 'src/components/backstage/backstage';
 
 export enum SectionID {
-    Checklists = 'checklists',
-    Actions = 'actions',
-    StatusUpdates = 'statusUpdates',
-    Retrospective = 'retrospective',
+    Checklists = 'playbooks-playbookPreview-checklists',
+    Actions = 'playbooks-playbookPreview-actions',
+    StatusUpdates = 'playbooks-playbookPreview-statusUpdates',
+    Retrospective = 'playbooks-playbookPreview-retrospective',
 }
 
 interface Props {
