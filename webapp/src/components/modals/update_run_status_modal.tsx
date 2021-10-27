@@ -72,7 +72,7 @@ const UpdateRunStatusModal = ({
     const isReminderValid = reminder && reminder > 0;
     let warningMessage = formatMessage({defaultMessage: 'Date must be in the future.'});
     if (!reminder || reminder === 0) {
-        warningMessage = formatMessage({defaultMessage: 'A date must be set.'});
+        warningMessage = formatMessage({defaultMessage: 'Please specify a future date/time for the update reminder.'});
     }
 
     const onConfirm = () => {
