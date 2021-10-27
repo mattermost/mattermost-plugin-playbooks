@@ -16,7 +16,6 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {
     Badge,
     SecondaryButtonLarger,
-    SecondaryButtonLargerRight,
 } from 'src/components/backstage/playbook_runs/shared';
 
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
@@ -175,6 +174,16 @@ const PositionedUpgradeBadge = styled(UpgradeBadge)`
     vertical-align: sub;
 `;
 
+const Line = styled.hr`
+    border: 1px solid;
+    margin: 0px 0px 0px 12px;
+    height: 32px;
+`;
+
+const Button = styled(SecondaryButtonLarger)`
+    margin-left: 12px;
+`;
+
 const PlaybookRunBackstage = () => {
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
@@ -262,9 +271,9 @@ const PlaybookRunBackstage = () => {
         navigateToPluginUrl('/runs');
     };
 
-    let followButton = (<SecondaryButtonLarger onClick={onFollow}>{'Follow'}</SecondaryButtonLarger>);
+    let followButton = (<Button onClick={onFollow}>{'Follow'}</Button>);
     if (followers.includes(currentUserID)) {
-        followButton = (<SecondaryButtonLarger onClick={onUnfollow}>{'UnFollow'}</SecondaryButtonLarger>);
+        followButton = (<Button onClick={onUnfollow}>{'Unfollow'}</Button>);
     }
 
     return (
@@ -278,19 +287,20 @@ const PlaybookRunBackstage = () => {
                     <VerticalBlock>
                         <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
                         {playbook &&
-                        <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
-                            <SmallPlaybookIcon/>
-                            <SubTitle>{playbook?.title}</SubTitle>
-                        </PlaybookDiv>
+                            <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
+                                <SmallPlaybookIcon/>
+                                <SubTitle>{playbook?.title}</SubTitle>
+                            </PlaybookDiv>
                         }
                     </VerticalBlock>
                     <Badge status={playbookRun.current_status}/>
                     <Followers userIds={followers}/>
                     {followButton}
-                    <SecondaryButtonLarger onClick={goToChannel}>
+                    <Line/>
+                    <Button onClick={goToChannel}>
                         <i className={'icon ' + channelIcon}/>
                         {formatMessage({defaultMessage: 'Go to channel'})}
-                    </SecondaryButtonLarger>
+                    </Button>
                     <ExportLink playbookRun={playbookRun}/>
                 </FirstRow>
                 <SecondRow>
