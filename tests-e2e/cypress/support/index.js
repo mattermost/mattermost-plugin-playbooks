@@ -35,7 +35,6 @@ import './task_commands';
 import './ui';
 import './ui_commands'; // soon to deprecate
 
-import './legacy_api_commands'; // soon to deprecate
 import './plugin/api_commands';
 import './plugin/ui_commands';
 import './plugin/cleanup';
