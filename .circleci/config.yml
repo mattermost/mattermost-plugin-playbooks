@@ -87,8 +87,6 @@ commands:
             cp report.xml server/test-results
       - store_test_results:
           path: server/test-results/
-      - store_artifacts:
-          path: server/test-results/
 
   run-e2e-tests:
     description: "Run the e2e tests with a server"
@@ -143,8 +141,6 @@ commands:
             cd tests-e2e && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
       - *save_cypress_cache
       - store_test_results:
-          path: tests-e2e/cypress/results
-      - store_artifacts:
           path: tests-e2e/cypress/results
       - store_artifacts:
           path: tests-e2e/cypress/videos
