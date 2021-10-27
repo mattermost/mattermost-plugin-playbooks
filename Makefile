@@ -1,4 +1,5 @@
 GO ?= $(shell command -v go 2> /dev/null)
+GOFLAGS ?= $(GOFLAGS:)
 NPM ?= $(shell command -v npm 2> /dev/null)
 CURL ?= $(shell command -v curl 2> /dev/null)
 MM_DEBUG ?=
@@ -9,6 +10,10 @@ MM_UTILITIES_DIR ?= ../mattermost-utilities
 DLV_DEBUG_PORT := 2346
 
 export GO111MODULE=on
+
+# We need to export GOBIN to allow it to be set
+# for processes spawned from the Makefile
+export GOBIN ?= $(PWD)/bin
 
 # You can include assets this directory into the bundle. This can be e.g. used to include profile pictures.
 ASSETS_DIR ?= assets
@@ -185,11 +190,26 @@ detach: setup-attach
 		kill -9 $$DELVE_PID ; \
 	fi
 
+## Ensure gotestsum is installed and available as a tool for testing.
+gotestsum:
+	$(GO) install gotest.tools/gotestsum@v1.7.0
+
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
-test: apply webapp/node_modules
+test: apply webapp/node_modules gotestsum
 ifneq ($(HAS_SERVER),)
-	$(GO) test -v $(GO_TEST_FLAGS) ./server/...
+	$(GOBIN)/gotestsum -- -v ./...
+endif
+ifneq ($(HAS_WEBAPP),)
+	cd webapp && $(NPM) run test;
+endif
+
+## Runs any lints and unit tests defined for the server and webapp, if they exist, optimized
+## for a CI environment.
+.PHONY: test-ci
+test-ci: apply webapp/node_modules gotestsum
+ifneq ($(HAS_SERVER),)
+	$(GOBIN)/gotestsum --format standard-verbose --junitfile report.xml -- ./...
 endif
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
