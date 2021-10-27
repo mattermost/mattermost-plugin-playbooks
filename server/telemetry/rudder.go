@@ -46,6 +46,7 @@ const (
 	eventPlaybook = "playbook"
 	actionUpdate  = "update"
 	actionDelete  = "delete"
+	actionRestore = "restore"
 
 	eventFrontend = "frontend"
 
@@ -343,6 +344,13 @@ func (t *RudderTelemetry) UpdatePlaybook(playbook app.Playbook, userID string) {
 func (t *RudderTelemetry) DeletePlaybook(playbook app.Playbook, userID string) {
 	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionDelete
+	t.track(eventPlaybook, properties)
+}
+
+// RestorePlaybook tracks the deletion of a playbook.
+func (t *RudderTelemetry) RestorePlaybook(playbook app.Playbook, userID string) {
+	properties := playbookProperties(playbook, userID)
+	properties["Action"] = actionRestore
 	t.track(eventPlaybook, properties)
 }
 

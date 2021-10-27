@@ -79,6 +79,10 @@ func (t *NoopTelemetry) UpdatePlaybook(app.Playbook, string) {
 func (t *NoopTelemetry) DeletePlaybook(app.Playbook, string) {
 }
 
+// RestorePlaybook does nothing either.
+func (t *NoopTelemetry) RestorePlaybook(app.Playbook, string) {
+}
+
 // ChangeOwner does nothing
 func (t *NoopTelemetry) ChangeOwner(*app.PlaybookRun, string) {
 }

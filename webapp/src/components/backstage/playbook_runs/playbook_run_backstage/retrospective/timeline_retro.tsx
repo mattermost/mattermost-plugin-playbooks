@@ -34,15 +34,15 @@ const FakeButton = styled.div`
     background: var(--button-color-rgb);
     border: 1px solid var(--button-bg);
     border-radius: 4px;
-    padding: 0 14px;
-    height: 26px;
+    padding: 0 20px;
+    height: 32px;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 14px;
     transition: all 0.15s ease-out;
     margin-left: auto;
 
     &:hover {
-        background: rgba(var(--button-bg-rgb), 0.08);
+        background: rgba(var(--button-bg-rgb), 0.12);
     }
 
     &:active  {
@@ -57,6 +57,10 @@ const FakeButton = styled.div`
             margin: 0 7px 0 0;
         }
     }
+`;
+
+const TextContainer = styled.span`
+    display: flex;
 `;
 
 type IdToUserFn = (userId: string) => UserProfile;
@@ -176,13 +180,17 @@ const TimelineRetro = (props: Props) => {
         <TabPageContainer>
             <Header>
                 <Title>{formatMessage({defaultMessage: 'Timeline'})}</Title>
-                <FakeButton>
-                    <MultiCheckbox
-                        options={filterOptions}
-                        onselect={selectOption}
-                    />
-                    {formatMessage({defaultMessage: 'Filter'})}
-                </FakeButton>
+                <MultiCheckbox
+                    dotMenuButton={FakeButton}
+                    options={filterOptions}
+                    onselect={selectOption}
+                    icon={
+                        <TextContainer>
+                            <i className='icon icon-filter-variant'/>
+                            {formatMessage({defaultMessage: 'Filter'})}
+                        </TextContainer>
+                    }
+                />
                 {/*
                     <PrimaryButtonNotRight>
                     <i className='icon-download-outline'/>
