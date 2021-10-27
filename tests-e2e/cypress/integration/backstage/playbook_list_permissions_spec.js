@@ -41,11 +41,6 @@ describe('backstage playbook list permissions', () => {
             testTeam = team;
             testUser = user;
 
-            // # Turn off growth onboarding screens
-            cy.apiUpdateConfig({
-                ServiceSettings: {EnableOnboardingFlow: false},
-            });
-
             // # Create another user
             cy.apiCreateUser().then(({user: anotherUser}) => {
                 testUser2 = anotherUser;

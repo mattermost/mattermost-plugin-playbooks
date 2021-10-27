@@ -20,12 +20,6 @@ describe('slash command > todo', () => {
     let run3;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
-
         cy.apiInitSetup().then(({team, user}) => {
             team1 = team;
             testUser = user;

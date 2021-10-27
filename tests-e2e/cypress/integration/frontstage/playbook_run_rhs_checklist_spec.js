@@ -19,11 +19,6 @@ describe('playbook run rhs checklist', () => {
             testTeam = team;
             testUser = user;
 
-            // # Turn off growth onboarding screens
-            cy.apiUpdateConfig({
-                ServiceSettings: {EnableOnboardingFlow: false},
-            });
-
             // # Create extra test users in this team
             cy.apiCreateUser().then((payload) => {
                 cy.apiAddUserToTeam(testTeam.id, payload.user.id);

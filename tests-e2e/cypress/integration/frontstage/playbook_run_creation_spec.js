@@ -30,11 +30,6 @@ describe('playbook runs can be started', () => {
             testTeam = team;
             testUser = user;
 
-            // # Turn off growth onboarding screens
-            cy.apiUpdateConfig({
-                ServiceSettings: {EnableOnboardingFlow: false},
-            });
-
             // # Login as testUser
             cy.apiLogin(testUser);
 
