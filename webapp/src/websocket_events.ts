@@ -17,7 +17,9 @@ import {
     removedFromPlaybookRunChannel,
     receivedTeamPlaybookRuns,
     playbookCreated,
-    playbookDeleted, setHasViewedChannel,
+    playbookDeleted,
+    playbookRestored,
+    setHasViewedChannel,
 } from 'src/actions';
 import {
     fetchCheckAndSendMessageOnJoin,
@@ -122,6 +124,18 @@ export function handleWebsocketPlaybookDeleted(getState: GetStateFunc, dispatch:
         const payload = JSON.parse(msg.data.payload);
 
         dispatch(playbookDeleted(payload.teamID));
+    };
+}
+
+export function handleWebsocketPlaybookRestored(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const payload = JSON.parse(msg.data.payload);
+
+        dispatch(playbookRestored(payload.teamID));
     };
 }
 

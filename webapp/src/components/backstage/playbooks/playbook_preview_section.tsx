@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import React, {useState, useEffect, useRef} from 'react';
+import React from 'react';
 
 interface Props {
     id: string;
