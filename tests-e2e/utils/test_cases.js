@@ -74,6 +74,7 @@ function saveToEndpoint(url, data) {
         url,
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
+            // eslint-disable-next-line no-process-env
             Authorization: process.env.TM4J_API_KEY,
         },
         data,
@@ -90,7 +91,7 @@ async function createTestCycle(startDate, endDate) {
         JIRA_PROJECT_KEY,
         TM4J_CYCLE_NAME,
         TM4J_FOLDER_ID,
-    } = process.env;
+    } = process.env; // eslint-disable-line no-process-env
 
     const testCycle = {
         projectKey: JIRA_PROJECT_KEY,
@@ -111,7 +112,7 @@ async function createTestExecutions(report, testCycle) {
         BROWSER,
         JIRA_PROJECT_KEY,
         TM4J_ENVIRONMENT_NAME,
-    } = process.env;
+    } = process.env; // eslint-disable-line no-process-env
 
     const testCases = getTM4JTestCases(report);
     const startDate = new Date(report.stats.start);
@@ -172,6 +173,7 @@ async function saveTestExecution(testExecution, index) {
         url: 'https://api.zephyrscale.smartbear.com/v2/testexecutions',
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
+            // eslint-disable-next-line no-process-env
             Authorization: process.env.TM4J_API_KEY,
         },
         data: testExecution,

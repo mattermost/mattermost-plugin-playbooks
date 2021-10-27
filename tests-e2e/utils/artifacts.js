@@ -23,7 +23,7 @@ const {
     BUILD_ID,
     BRANCH,
     BUILD_TAG,
-} = process.env;
+} = process.env; // eslint-disable-line no-process-env
 
 const s3 = new AWS.S3({
     signatureVersion: 'v4',

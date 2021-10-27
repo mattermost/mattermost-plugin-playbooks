@@ -108,7 +108,7 @@ function generateTestReport(summary, isUploadedToS3, reportLink, environment, te
     const {
         FULL_REPORT,
         TEST_CYCLE_LINK_PREFIX,
-    } = process.env;
+    } = process.env; // eslint-disable-line no-process-env
     const {statsFieldValue, stats} = summary;
     const {
         cypress_version,
@@ -209,7 +209,7 @@ function generateTitle() {
         PULL_REQUEST,
         RELEASE_DATE,
         TYPE,
-    } = process.env;
+    } = process.env; // eslint-disable-line no-process-env
 
     let dockerImageLink = '';
     if (MM_DOCKER_IMAGE && MM_DOCKER_TAG) {
@@ -250,6 +250,7 @@ function generateTitle() {
 }
 
 function generateDiagnosticReport(summary, serverInfo) {
+    // eslint-disable-next-line no-process-env
     const {BRANCH, BUILD_ID} = process.env;
 
     return {

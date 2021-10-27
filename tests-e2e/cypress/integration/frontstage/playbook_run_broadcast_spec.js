@@ -232,8 +232,8 @@ describe('playbook run broadcast', () => {
 
         // * Verify the posts
         const initialMessage = `New run started: ${playbookRunName}`;
-        verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel1.name, playbookRunName, initialMessage, updateMessage, testUser.username);
-        verifyInitialAndStatusPostInBroadcast(testTeam, testPrivateChannel1.name, playbookRunName, initialMessage, updateMessage, testUser.username);
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel1.name, playbookRunName, initialMessage, updateMessage);
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPrivateChannel1.name, playbookRunName, initialMessage, updateMessage);
 
         // # need to be admin to delete the bot's posts
         cy.apiLogin(testAdmin);
@@ -256,12 +256,12 @@ describe('playbook run broadcast', () => {
         cy.updateStatus(updateMessage3, 0);
 
         // * Verify the posts
-        verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel1.name, playbookRunName, updateMessage2, updateMessage3, testUser.username);
-        verifyInitialAndStatusPostInBroadcast(testTeam, testPrivateChannel1.name, playbookRunName, updateMessage2, updateMessage3, testUser.username);
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel1.name, playbookRunName, updateMessage2, updateMessage3);
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPrivateChannel1.name, playbookRunName, updateMessage2, updateMessage3);
     });
 });
 
-const verifyInitialAndStatusPostInBroadcast = (testTeam, channelName, runName, initialMessage, updateMessage, byUser = '@user-1') => {
+const verifyInitialAndStatusPostInBroadcast = (testTeam, channelName, runName, initialMessage, updateMessage) => {
     cy.log(`Verifying initial and status post in broadcast (channel ${channelName}, run ${runName})`);
 
     // # Navigate to the broadcast channel
