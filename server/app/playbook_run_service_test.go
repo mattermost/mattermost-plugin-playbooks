@@ -792,7 +792,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 
-		playbookRun := &app.PlaybookRun{CategoryName: "Playbook Runs"}
+		playbookRun := &app.PlaybookRun{ID: "playbook_run_id", CategoryName: "Playbook Runs"}
 		existingSidebarCategory := &model.SidebarCategoryWithChannels{
 			SidebarCategory: model.SidebarCategory{Id: "sidebar_category_id", DisplayName: "Test Category Sidebar"},
 			Channels:        []string{},
@@ -814,6 +814,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{})).Return(nil, nil)
 		store.EXPECT().GetPlaybookRunIDForChannel(gomock.Any()).Return("playbook_run_id", nil)
 		store.EXPECT().GetPlaybookRun("playbook_run_id").Return(playbookRun, nil).Times(2)
+		store.EXPECT().Follow("playbook_run_id", "user_id").Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel(gomock.Any(), gomock.Any(), gomock.Any())
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 		pluginAPI.On("GetChannel", "channel_id").Return(&model.Channel{TeamId: "team_id"}, nil)
@@ -901,7 +902,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 
-		playbookRun := &app.PlaybookRun{CategoryName: "Playbook Runs 2"}
+		playbookRun := &app.PlaybookRun{ID: "playbook_run_id", CategoryName: "Playbook Runs 2"}
 		existingSidebarCategory := &model.SidebarCategoryWithChannels{
 			SidebarCategory: model.SidebarCategory{Id: "sidebar_category_id", DisplayName: "Test Category Sidebar"},
 			Channels:        []string{},
@@ -923,6 +924,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{})).Return(nil, nil)
 		store.EXPECT().GetPlaybookRunIDForChannel(gomock.Any()).Return("playbook_run_id", nil)
 		store.EXPECT().GetPlaybookRun("playbook_run_id").Return(playbookRun, nil).Times(2)
+		store.EXPECT().Follow("playbook_run_id", "user_id").Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel(gomock.Any(), gomock.Any(), gomock.Any())
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 		pluginAPI.On("GetChannel", "channel_id").Return(&model.Channel{TeamId: "team_id"}, nil)
