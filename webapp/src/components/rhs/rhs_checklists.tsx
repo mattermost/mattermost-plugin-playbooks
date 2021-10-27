@@ -41,7 +41,7 @@ import {
 } from 'src/client';
 import {ChecklistItemDetails} from 'src/components/checklist_item';
 import {isMobile} from 'src/mobile';
-import CollapsibleChecklist from 'src/components/rhs/collapsible_checklist';
+import CollapsibleChecklist from 'src/components/collapsible_checklist';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {
     currentChecklistAllCollapsed,
@@ -202,6 +202,7 @@ const RHSChecklists = (props: Props) => {
                                                                 draggableProvided={draggableProvided}
                                                                 dragging={snapshot.isDragging}
                                                                 disabled={finished}
+                                                                inlineDescription={false}
                                                             />
                                                         )}
                                                     </Draggable>

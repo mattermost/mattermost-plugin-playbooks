@@ -470,7 +470,12 @@ export const updatePlaybookRunDescription = async (playbookRunId: string, newDes
 };
 
 export const notifyConnect = async () => {
-    await doFetchWithoutResponse(`${apiUrl}/bot/connect`, {method: 'GET'});
+    await doFetchWithoutResponse(`${apiUrl}/bot/connect`, {
+        method: 'GET',
+        headers: {
+            'X-Timezone-Offset': -new Date().getTimezoneOffset() / 60,
+        },
+    });
 };
 
 export const doGet = async <TData = any>(url: string) => {
