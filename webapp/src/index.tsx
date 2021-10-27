@@ -39,6 +39,7 @@ import {
     handleWebsocketPlaybookRunCreated,
     handleWebsocketPlaybookCreated,
     handleWebsocketPlaybookDeleted,
+    handleWebsocketPlaybookRestored,
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
     handleWebsocketPostEditedOrDeleted,
@@ -49,6 +50,7 @@ import {
     WEBSOCKET_PLAYBOOK_RUN_CREATED,
     WEBSOCKET_PLAYBOOK_CREATED,
     WEBSOCKET_PLAYBOOK_DELETED,
+    WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
 import {fetchGlobalSettings, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
@@ -115,6 +117,7 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RUN_CREATED, handleWebsocketPlaybookRunCreated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CREATED, handleWebsocketPlaybookCreated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_DELETED, handleWebsocketPlaybookDeleted(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RESTORED, handleWebsocketPlaybookRestored(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.POST_DELETED, handleWebsocketPostEditedOrDeleted(store.getState, store.dispatch));

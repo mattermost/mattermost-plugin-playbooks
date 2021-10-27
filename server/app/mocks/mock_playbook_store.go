@@ -167,6 +167,20 @@ func (mr *MockPlaybookStoreMockRecorder) GetTimeLastUpdated(arg0 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeLastUpdated", reflect.TypeOf((*MockPlaybookStore)(nil).GetTimeLastUpdated), arg0)
 }
 
+// Restore mocks base method
+func (m *MockPlaybookStore) Restore(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Restore", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Restore indicates an expected call of Restore
+func (mr *MockPlaybookStoreMockRecorder) Restore(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Restore", reflect.TypeOf((*MockPlaybookStore)(nil).Restore), arg0)
+}
+
 // Update mocks base method
 func (m *MockPlaybookStore) Update(arg0 app.Playbook) error {
 	m.ctrl.T.Helper()

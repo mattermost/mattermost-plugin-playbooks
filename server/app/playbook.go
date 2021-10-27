@@ -231,6 +231,9 @@ type PlaybookService interface {
 
 	// MessageHasBeenPosted suggests playbooks to the user if triggered
 	MessageHasBeenPosted(sessionID string, post *model.Post)
+
+	// Restores a deleted playbook
+	Restore(playbook Playbook, userID string) error
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -265,6 +268,9 @@ type PlaybookStore interface {
 
 	// Delete deletes a playbook
 	Delete(id string) error
+
+	// Restore restores a deleted playbook
+	Restore(id string) error
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.
@@ -278,6 +284,9 @@ type PlaybookTelemetry interface {
 
 	// DeletePlaybook tracks the deletion of a playbook.
 	DeletePlaybook(playbook Playbook, userID string)
+
+	// RestorePlaybook tracks the restoration of a playbook.
+	RestorePlaybook(playbook Playbook, userID string)
 
 	// FrontendTelemetryForPlaybook tracks an event originating from the frontend
 	FrontendTelemetryForPlaybook(playbook Playbook, userID, action string)
