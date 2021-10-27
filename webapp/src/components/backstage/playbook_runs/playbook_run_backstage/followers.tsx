@@ -46,7 +46,6 @@ const FollowersWrapper = styled.div`
     font-size: 11px;
     line-height: 16px;
 
-    margin-top: 12px;
     margin-left: auto;
 `;
 
@@ -57,18 +56,12 @@ const UserRow = styled.div`
     flex-direction: row;
 
     border-radius: 44px;
-
-    margin-top: 6px;
-    margin-left: 20px;
+    margin-left: 12px;
 
     :hover {
-        border: 6px solid rgba(var(--center-channel-color-rgb), 0.08);
+        border-color: rgba(var(--center-channel-color-rgb), 0.08);
         background-color: rgba(var(--center-channel-color-rgb), 0.08);
         background-clip: padding-box;
-
-        margin-top: 0;
-        margin-bottom: -6px;
-        margin-left: 14px;
     }
 `;
 
