@@ -97,7 +97,7 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	retrospectiveRouter.HandleFunc("", handler.updateRetrospective).Methods(http.MethodPost)
 	retrospectiveRouter.HandleFunc("/publish", handler.publishRetrospective).Methods(http.MethodPost)
 
-	followersRouter := playbookRunRouterAuthorized.PathPrefix("/followers").Subrouter()
+	followersRouter := playbookRunRouter.PathPrefix("/followers").Subrouter()
 	followersRouter.HandleFunc("", handler.follow).Methods(http.MethodPut)
 	followersRouter.HandleFunc("", handler.unfollow).Methods(http.MethodDelete)
 	followersRouter.HandleFunc("", handler.getFollowers).Methods(http.MethodGet)
