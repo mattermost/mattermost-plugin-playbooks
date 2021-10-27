@@ -112,8 +112,6 @@ Cypress.on('uncaught:exception', () => {
     return false;
 });
 
-import fixtureUsers from '../fixtures/users';
-
 require('cypress-terminal-report/src/installLogsCollector')();
 
 before(() => {
@@ -145,16 +143,6 @@ before(() => {
         // Log license status and server details before test
         printLicenseStatus();
         printServerDetails();
-
-        // TODO: Remove this one all users are dynamic.
-        // Disable the tutorial, cloud onboarding, and whats new modal for specific users.
-        const userNames = Object.values(fixtureUsers).map((user) => user.username);
-
-        cy.apiGetUsersByUsernames(userNames).then(({users}) => users.forEach((user) => {
-            cy.apiSaveTutorialStep(user.id, '999');
-            cy.apiSaveOnboardingPreference(user.id, 'hide', 'true');
-            cy.apiHideSidebarWhatsNewModalPreference(user.id, 'true');
-        }));
     });
 });
 

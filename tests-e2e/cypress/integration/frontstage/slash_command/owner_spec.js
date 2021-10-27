@@ -6,8 +6,6 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import users from '../../../fixtures/users.json';
-
 describe('slash command > owner', () => {
     let testTeam;
     let testUser;

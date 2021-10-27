@@ -6,8 +6,6 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import users from '../../../fixtures/users.json';
-
 describe('playbook run rhs > latest update', () => {
     const defaultReminderMessage = '# Default reminder message';
     let testTeam;
@@ -89,7 +87,7 @@ describe('playbook run rhs > latest update', () => {
             const updateMessage = 'status update ' + Date.now();
 
             // # Login as sysadmin and create a private playbook and a run
-            cy.apiLogin(users.sysadmin).then(({user: sysadmin}) => {
+            cy.apiAdminLogin().then(({user: sysadmin}) => {
                 // # Create a private playbook
                 cy.apiCreatePlaybook({
                     teamId: testTeam.id,

@@ -7,7 +7,6 @@
 // ***************************************************************
 
 import * as TIMEOUTS from '../../../fixtures/timeouts';
-import users from '../../../fixtures/users.json';
 
 describe('playbook run rhs', () => {
     let testTeam;
@@ -75,8 +74,8 @@ describe('playbook run rhs', () => {
             });
 
             // # Open the flagged posts RHS
-            cy.get("body").then($body => {
-                if ($body.find("#channelHeaderFlagButton").length > 0) {
+            cy.get('body').then(($body) => {
+                if ($body.find('#channelHeaderFlagButton').length > 0) {
                     cy.get('#channelHeaderFlagButton').click({force: true});
                 } else {
                     cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'}).click({force: true});
@@ -278,7 +277,7 @@ describe('playbook run rhs', () => {
             const now = Date.now();
             const playbookRunName = 'Playbook Run (' + now + ')';
 
-            cy.startPlaybookRunWithSlashCommand("Playbook", playbookRunName);
+            cy.startPlaybookRunWithSlashCommand('Playbook', playbookRunName);
 
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
