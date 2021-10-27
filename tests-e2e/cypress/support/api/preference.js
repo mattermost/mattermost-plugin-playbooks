@@ -251,3 +251,19 @@ Cypress.Commands.add('apiGetUserPreference', (userId) => {
         return cy.wrap(response.body);
     });
 });
+
+/**
+ * Saves Join/Leave messages preference of a user directly via API
+ * This API assume that the user is logged in and has cookie to access
+ * @param {Boolean} enable - Either true (default) or false
+ */
+Cypress.Commands.add('apiSaveJoinLeaveMessagesPreference', (userId, enable = true) => {
+    const preference = {
+        user_id: userId,
+        category: 'advanced_settings',
+        name: 'join_leave',
+        value: enable.toString(),
+    };
+
+    return cy.apiSaveUserPreference([preference], userId);
+});
