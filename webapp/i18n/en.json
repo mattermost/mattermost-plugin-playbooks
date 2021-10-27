@@ -34,6 +34,7 @@
   "KUr+sG": "Update run summary",
   "KiXNvz": "Run",
   "LRFvqz": "Announce in the {oneChannel, plural, one {channel} other {channels}}",
+  "MFpAtm": "{numTasks, number} {numTasks, plural, one {task} other {tasks}}",
   "NE1OeI": "Everyone on team(<b>{team}</b>) can access.",
   "OINwWS": "Create a {isPublic, select, true {public} other {private}} channel",
   "ObmjTB": "Slash Command",

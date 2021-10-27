@@ -17,6 +17,7 @@ export interface Props {
     items: ChecklistItem[];
     children: React.ReactNode;
     disabled: boolean;
+    titleHelpText?: React.ReactNode;
 }
 
 const CollapsibleChecklist = ({
@@ -27,6 +28,7 @@ const CollapsibleChecklist = ({
     items,
     children,
     disabled,
+    titleHelpText,
 }: Props) => {
     const dispatch = useDispatch();
     const titleRef = useRef(null);
@@ -52,7 +54,7 @@ const CollapsibleChecklist = ({
                         parentRef={titleRef}
                     />
                 </Title>
-                <TasksCompleted>{`${completed} / ${total} done`}</TasksCompleted>
+                {titleHelpText || <TitleHelpTextWrapper>{`${completed} / ${total} done`}</TitleHelpTextWrapper>}
                 {
                     showMenu && !disabled &&
                     <AddNewTask
@@ -141,7 +143,7 @@ const Title = styled.div`
     }
 `;
 
-const TasksCompleted = styled.div`
+export const TitleHelpTextWrapper = styled.div`
     margin-right: 16px;
 
     font-weight: 600;
