@@ -200,7 +200,6 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
 
             // # click clear button
             cy.get('#reminder_timer_datetime').within(() => {
-
                 cy.get('[class$=indicatorContainer]').eq(0).click();
             });
         }

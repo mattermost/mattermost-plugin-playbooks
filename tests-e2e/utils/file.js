@@ -20,9 +20,9 @@ const grepCommand = (word = '') => {
 };
 
 const grepFiles = (command) => {
-    return shell.exec(command, {silent: true}).stdout.
-        split('\n').
-        filter((f) => f.includes('spec.js'));
+    return shell.exec(command, {silent: true}).stdout
+        .split('\n')
+        .filter((f) => f.includes('spec.js'));
 };
 
 function getTestFiles() {
@@ -163,8 +163,8 @@ function getSortedTestFiles(platform, browser, headless) {
         });
     }
 
-    const sortedFiles = Object.values(testFilesObject).
-        sort((a, b) => {
+    const sortedFiles = Object.values(testFilesObject)
+        .sort((a, b) => {
             if (a.sortWeight > b.sortWeight) {
                 return 1;
             } else if (a.sortWeight < b.sortWeight) {
@@ -172,8 +172,8 @@ function getSortedTestFiles(platform, browser, headless) {
             }
 
             return a.file.localeCompare(b.file);
-        }).
-        map((sortedObj) => sortedObj.file);
+        })
+        .map((sortedObj) => sortedObj.file);
 
     return {sortedFiles, skippedFiles, weightedTestFiles: Object.values(testFilesObject)};
 }

@@ -41,9 +41,9 @@ function getStepStateSummary(steps = []) {
 }
 
 function getTM4JTestCases(report) {
-    return getAllTests(report.results).
-        filter((item) => /^(MM-T)\w+/g.test(item.title)). // eslint-disable-line wrap-regex
-        map((item) => {
+    return getAllTests(report.results)
+        .filter((item) => /^(MM-T)\w+/g.test(item.title)) // eslint-disable-line wrap-regex
+        .map((item) => {
             return {
                 title: item.title,
                 duration: item.duration,
@@ -53,8 +53,8 @@ function getTM4JTestCases(report) {
                 fail: item.fail,
                 pending: item.pending,
             };
-        }).
-        reduce((acc, item) => {
+        })
+        .reduce((acc, item) => {
             // Extract the key to exactly match with "MM-T[0-9]+"
             const key = item.title.match(/(MM-T\d+)/)[0];
 
@@ -119,9 +119,9 @@ async function createTestExecutions(report, testCycle) {
 
     const promises = [];
     Object.entries(testCases).forEach(([key, steps], index) => {
-        const testScriptResults = steps.
-            sort((a, b) => a.title.localeCompare(b.title)).
-            map((item) => {
+        const testScriptResults = steps
+            .sort((a, b) => a.title.localeCompare(b.title))
+            .map((item) => {
                 return {
                     statusName: status[item.state],
                     actualEndDate: new Date(startTime + item.incrementalDuration).toISOString(),

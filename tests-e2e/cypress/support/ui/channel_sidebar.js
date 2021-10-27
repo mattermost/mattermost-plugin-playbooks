@@ -24,9 +24,9 @@ Cypress.Commands.add('uiCreateSidebarCategory', (categoryName = `category-${getR
 Cypress.Commands.add('uiMoveChannelToCategory', (channelName, categoryName = `category-${getRandomId()}`, newCategory = false) => {
     // Open the channel menu, select Move to, and click either New Category or on the category
     cy.get(`#sidebarItem_${channelName}`).find('.SidebarMenu_menuButton').click({force: true});
-    cy.get('.SidebarMenu').contains('.SubMenuItem', 'Move to').
-        contains(newCategory ? 'New Category' : categoryName, {matchCase: false}).
-        click({force: true});
+    cy.get('.SidebarMenu').contains('.SubMenuItem', 'Move to')
+        .contains(newCategory ? 'New Category' : categoryName, {matchCase: false})
+        .click({force: true});
 
     if (newCategory) {
         // # Fill in the category name and click Create
@@ -35,8 +35,8 @@ Cypress.Commands.add('uiMoveChannelToCategory', (channelName, categoryName = `ca
     }
 
     // * Wait for the channel to appear in the category
-    cy.contains('.SidebarChannelGroup', categoryName, {matchCase: false}).
-        find(`#sidebarItem_${channelName}`).should('exist');
+    cy.contains('.SidebarChannelGroup', categoryName, {matchCase: false})
+        .find(`#sidebarItem_${channelName}`).should('exist');
 
     return cy.contains('.SidebarChannelGroup', categoryName, {matchCase: false});
 });

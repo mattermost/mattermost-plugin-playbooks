@@ -84,9 +84,9 @@ function removeOldGeneratedReports() {
 }
 
 function writeJsonToFile(jsonObject, filename, dir) {
-    fse.writeJson(`${dir}/${filename}`, jsonObject).
-        then(() => console.log('Successfully written:', filename)).
-        catch((err) => console.error(err));
+    fse.writeJson(`${dir}/${filename}`, jsonObject)
+        .then(() => console.log('Successfully written:', filename))
+        .catch((err) => console.error(err));
 }
 
 function readJsonFromFile(file) {
