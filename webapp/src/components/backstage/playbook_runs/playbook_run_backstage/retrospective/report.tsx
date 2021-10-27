@@ -117,6 +117,7 @@ const Report = (props: ReportProps) => {
             </Header>
             {editing &&
                 <ReportTextarea
+                    autoFocus={true}
                     value={report}
                     onChange={(e) => {
                         setReport(e.target.value);

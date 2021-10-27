@@ -29,6 +29,19 @@ const RHSAboutButtons = (props: Props) => {
 
     return (
         <>
+            <ExpandCollapseButton
+                title={props.collapsed ? 'Expand' : 'Collapse'}
+                className={(props.collapsed ? 'icon-chevron-down' : 'icon-chevron-up') + ' icon-16 btn-icon'}
+                tabIndex={0}
+                role={'button'}
+                onClick={props.toggleCollapsed}
+                onKeyDown={(e) => {
+                    // Handle Enter and Space as clicking on the button
+                    if (e.keyCode === 13 || e.keyCode === 32) {
+                        props.toggleCollapsed();
+                    }
+                }}
+            />
             <DotMenu
                 icon={<ThreeDotsIcon/>}
                 left={true}
@@ -52,19 +65,6 @@ const RHSAboutButtons = (props: Props) => {
                     </PlaybookInfo>
                 </StyledDropdownMenuItem>
             </DotMenu>
-            <ExpandCollapseButton
-                title={props.collapsed ? 'Expand' : 'Collapse'}
-                className={(props.collapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
-                tabIndex={0}
-                role={'button'}
-                onClick={props.toggleCollapsed}
-                onKeyDown={(e) => {
-                    // Handle Enter and Space as clicking on the button
-                    if (e.keyCode === 13 || e.keyCode === 32) {
-                        props.toggleCollapsed();
-                    }
-                }}
-            />
         </>
     );
 };
