@@ -447,78 +447,6 @@ jobs:
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
-    environment:
-      MM_DOCKER_IMAGE_TAG: master
-      TYPE: NONE
-      PULL_REQUEST:
-      BROWSER: chrome
-      HEADLESS: true
-      DASHBOARD_ENABLE: false
-      FULL_REPORT: false
-      MM_SERVICESETTINGS_SITEURL: http://localhost:8065
-      MM_ADMIN_USERNAME: sysadmin
-      MM_ADMIN_PASSWORD: Sys@dmin-sample1
-    steps:
-      - run-e2e-tests
-
-  e2e-cypress-tests-master-with-global-header:
-    resource_class: xlarge
-    docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
-        environment:
-          TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
-      - image: circleci/postgres:10-alpine-ram
-        environment:
-          POSTGRES_USER: mmuser
-          POSTGRES_PASSWORD: mostest
-          POSTGRES_DB: mattermost_test
-      - image: mattermost/inbucket:release-1.2.0
-      - image: minio/minio:RELEASE.2019-10-11T00-38-09Z
-        command: "server /data"
-        environment:
-          MINIO_ACCESS_KEY: minioaccesskey
-          MINIO_SECRET_KEY: miniosecretkey
-          MINIO_SSE_MASTER_KEY: "my-minio-key:6368616e676520746869732070617373776f726420746f206120736563726574"
-      - image: mattermost/mattermost-elasticsearch-docker:7.0.0
-        auth:
-          username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
-        environment:
-          http.host: "0.0.0.0"
-          http.port: 9200
-          http.cors.enabled: "true"
-          http.cors.allow-origin: "http://localhost:1358,http://127.0.0.1:1358"
-          http.cors.allow-headers: "X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization"
-          http.cors.allow-credentials: "true"
-          transport.host: "127.0.0.1"
-          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-      - image: mattermost/mattermost-enterprise-edition:$MM_DOCKER_IMAGE_TAG
-        auth:
-          username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
-        environment:
-          DB_HOST: localhost
-          DB_PORT_NUMBER: 5432
-          MM_DBNAME: mattermost_test
-          MM_USERNAME: mmuser
-          MM_PASSWORD: mostest
-          CI_INBUCKET_HOST: localhost
-          CI_INBUCKET_PORT: 10080
-          CI_MINIO_HOST: minio
-          IS_CI: true
-          MM_CLUSTERSETTINGS_READONLYCONFIG: false
-          MM_EMAILSETTINGS_SMTPSERVER: localhost
-          MM_EMAILSETTINGS_SMTPPORT: 10025
-          MM_ELASTICSEARCHSETTINGS_CONNECTIONURL: http://localhost:9200
-          MM_EXPERIMENTALSETTINGS_USENEWSAMLLIBRARY: true
-          MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@localhost:5432/mattermost_test?sslmode=disable&connect_timeout=10"
-          MM_SQLSETTINGS_DRIVERNAME: postgres
-          MM_PLUGINSETTINGS_ENABLEUPLOADS: true
-          MM_SERVICESETTINGS_SITEURL: http://localhost:8065
-          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
-          MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
-          MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
-          MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
           MM_FEATUREFLAGS_GLOBALHEADER: true
     environment:
       MM_DOCKER_IMAGE_TAG: master
@@ -545,7 +473,6 @@ workflows:
       - test-MySQL-Postgres-latest
       - e2e-cypress-tests-cloud
       - e2e-cypress-tests-master
-      - e2e-cypress-tests-master-with-global-header
       - build:
           context: mattermost-plugin-incident-response-production
           filters:
