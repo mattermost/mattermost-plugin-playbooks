@@ -115,11 +115,7 @@ const hasPermissionsToChangeChannelName = (state: GlobalState) => {
 
     const permission = channel.type === General.OPEN_CHANNEL ? Permissions.MANAGE_PUBLIC_CHANNEL_PROPERTIES : Permissions.MANAGE_PRIVATE_CHANNEL_PROPERTIES;
 
-    return haveIChannelPermission(state, {
-        channel: channel.id,
-        team: channel.team_id,
-        permission,
-    });
+    return haveIChannelPermission(state, channel.team_id, channel.id, permission);
 };
 
 const TitleInput = styled.input`

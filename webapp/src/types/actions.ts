@@ -16,6 +16,7 @@ export const PLAYBOOK_RUN_CREATED = pluginId + '_playbook_run_created';
 export const PLAYBOOK_RUN_UPDATED = pluginId + '_playbook_run_updated';
 export const PLAYBOOK_CREATED = pluginId + '_playbook_created';
 export const PLAYBOOK_DELETED = pluginId + '_playbook_deleted';
+export const PLAYBOOK_RESTORED = pluginId + '_playbook_restored';
 export const RECEIVED_TEAM_NUM_PLAYBOOKS = pluginId + '_received_team_num_playbooks';
 export const RECEIVED_TEAM_PLAYBOOK_RUNS = pluginId + '_received_team_playbook_run_channels';
 export const REMOVED_FROM_CHANNEL = pluginId + '_removed_from_playbook_run_channel';
@@ -67,6 +68,11 @@ export interface PlaybookCreated {
 
 export interface PlaybookDeleted {
     type: typeof PLAYBOOK_DELETED;
+    teamID: string;
+}
+
+export interface PlaybookRestored {
+    type: typeof PLAYBOOK_RESTORED;
     teamID: string;
 }
 
