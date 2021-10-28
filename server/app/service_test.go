@@ -474,7 +474,7 @@ func TestMessageHasBeenPosted(t *testing.T) {
 		pluginAPI.On("GetConfig").Return(&model.Config{ServiceSettings: model.ServiceSettings{SiteURL: &siteURL}})
 
 		message := fmt.Sprintf("`some` is a trigger for the [%s](%s) playbook, would you like to run it?", playbooks[2].Title, fmt.Sprintf("site/playbooks/playbooks/%s", playbooks[2].ID))
-		poster.EXPECT().EphemeralPostWithAttachments(userID, channelID, post.Id, gomock.Any(), message)
+		poster.EXPECT().EphemeralPostWithAttachments(userID, channelID, gomock.Any(), message)
 		s.MessageHasBeenPosted(sessionID, post)
 	})
 }
