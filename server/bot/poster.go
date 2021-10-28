@@ -108,11 +108,12 @@ func (b *Bot) EphemeralPost(userID, channelID string, post *model.Post) {
 }
 
 // EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
-func (b *Bot) EphemeralPostWithAttachments(userID, channelID string, attachments []*model.SlackAttachment, format string, args ...interface{}) {
+func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, attachments []*model.SlackAttachment, format string, args ...interface{}) {
 	post := &model.Post{
 		Message:   fmt.Sprintf(format, args...),
 		UserId:    b.botUserID,
 		ChannelId: channelID,
+		RootId:    postID,
 	}
 
 	model.ParseSlackAttachment(post, attachments)

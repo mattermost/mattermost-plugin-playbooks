@@ -161,7 +161,7 @@ func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Pos
 	message := s.getPlaybookSuggestionsMessage(suggestedPlaybooks, triggers, playbooksURL)
 	attachment := s.getPlaybookSuggestionsSlackAttachment(suggestedPlaybooks, post.Id, playbooksURL, session.IsMobileApp())
 
-	s.poster.EphemeralPostWithAttachments(post.UserId, post.ChannelId, []*model.SlackAttachment{attachment}, message)
+	s.poster.EphemeralPostWithAttachments(post.UserId, post.ChannelId, "", []*model.SlackAttachment{attachment}, message)
 }
 
 func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []*CachedPlaybook, triggers []string, playbooksURL string) string {

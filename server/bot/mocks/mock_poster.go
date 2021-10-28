@@ -60,19 +60,19 @@ func (mr *MockPosterMockRecorder) EphemeralPost(arg0, arg1, arg2 interface{}) *g
 }
 
 // EphemeralPostWithAttachments mocks base method
-func (m *MockPoster) EphemeralPostWithAttachments(arg0, arg1 string, arg2 []*model.SlackAttachment, arg3 string, arg4 ...interface{}) {
+func (m *MockPoster) EphemeralPostWithAttachments(arg0, arg1, arg2 string, arg3 []*model.SlackAttachment, arg4 string, arg5 ...interface{}) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1, arg2, arg3}
-	for _, a := range arg4 {
+	varargs := []interface{}{arg0, arg1, arg2, arg3, arg4}
+	for _, a := range arg5 {
 		varargs = append(varargs, a)
 	}
 	m.ctrl.Call(m, "EphemeralPostWithAttachments", varargs...)
 }
 
 // EphemeralPostWithAttachments indicates an expected call of EphemeralPostWithAttachments
-func (mr *MockPosterMockRecorder) EphemeralPostWithAttachments(arg0, arg1, arg2, arg3 interface{}, arg4 ...interface{}) *gomock.Call {
+func (mr *MockPosterMockRecorder) EphemeralPostWithAttachments(arg0, arg1, arg2, arg3, arg4 interface{}, arg5 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)
+	varargs := append([]interface{}{arg0, arg1, arg2, arg3, arg4}, arg5...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EphemeralPostWithAttachments", reflect.TypeOf((*MockPoster)(nil).EphemeralPostWithAttachments), varargs...)
 }
 
