@@ -478,6 +478,16 @@ export const notifyConnect = async () => {
     });
 };
 
+export const resetReminder = async (playbookRunId: string, channelId: string, newReminderSeconds: number) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/reminder`, {
+        method: 'POST',
+        body: JSON.stringify({
+            channel_id: channelId,
+            new_reminder_seconds: newReminderSeconds,
+        }),
+    });
+};
+
 export const doGet = async <TData = any>(url: string) => {
     const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 

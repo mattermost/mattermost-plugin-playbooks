@@ -180,7 +180,7 @@ const useDefaultMessage = (run: PlaybookRun | null | undefined) => {
     return null;
 };
 
-const optionFromSeconds = (seconds: number) => {
+export const optionFromSeconds = (seconds: number) => {
     const duration = Duration.fromObject({seconds});
 
     return {

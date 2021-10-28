@@ -575,6 +575,20 @@ func (mr *MockPlaybookRunServiceMockRecorder) SetAssignee(arg0, arg1, arg2, arg3
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAssignee", reflect.TypeOf((*MockPlaybookRunService)(nil).SetAssignee), arg0, arg1, arg2, arg3, arg4)
 }
 
+// SetNewReminder mocks base method
+func (m *MockPlaybookRunService) SetNewReminder(arg0 string, arg1 time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetNewReminder", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetNewReminder indicates an expected call of SetNewReminder
+func (mr *MockPlaybookRunServiceMockRecorder) SetNewReminder(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNewReminder", reflect.TypeOf((*MockPlaybookRunService)(nil).SetNewReminder), arg0, arg1)
+}
+
 // SetReminder mocks base method
 func (m *MockPlaybookRunService) SetReminder(arg0 string, arg1 time.Duration) error {
 	m.ctrl.T.Helper()

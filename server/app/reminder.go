@@ -136,26 +136,12 @@ func (s *PlaybookRunServiceImpl) RemoveReminderPost(playbookRunID string) error 
 		return errors.Wrapf(err, "failed to retrieve playbook run")
 	}
 
-	return s.removeReminderPost(playbookRunToModify)
-}
-
-// removeReminderPost removes the reminder post in the channel for the given playbook run, if any.
-func (s *PlaybookRunServiceImpl) removeReminderPost(playbookRunToModify *PlaybookRun) error {
 	if playbookRunToModify.ReminderPostID == "" {
 		return nil
 	}
 
-	post, err := s.pluginAPI.Post.GetPost(playbookRunToModify.ReminderPostID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve reminder post")
-	}
-
-	if post.DeleteAt != 0 {
-		return nil
-	}
-
-	if err = s.pluginAPI.Post.DeletePost(playbookRunToModify.ReminderPostID); err != nil {
-		return errors.Wrapf(err, "failed to delete reminder post")
+	if err = s.removePost(playbookRunToModify.ReminderPostID); err != nil {
+		return err
 	}
 
 	playbookRunToModify.ReminderPostID = ""
@@ -179,6 +165,60 @@ func (s *PlaybookRunServiceImpl) ResetReminderTimer(playbookRunID string) error 
 	}
 
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+
+	return nil
+}
+
+// SetNewReminder sets a new reminder for playbookRunID, removes any pending reminder, removes the
+// reminder post in the playbookRun's channel, and resets the PreviousReminder and
+// LastStatusUpdateAt (so the countdown timer to "update due" shows the correct time)
+func (s *PlaybookRunServiceImpl) SetNewReminder(playbookRunID string, newReminder time.Duration) error {
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve playbook run")
+	}
+
+	// Remove pending reminder (if any)
+	s.RemoveReminder(playbookRunID)
+
+	// Remove reminder post (if any)
+	if playbookRunToModify.ReminderPostID != "" {
+		if err = s.removePost(playbookRunToModify.ReminderPostID); err != nil {
+			return err
+		}
+		playbookRunToModify.ReminderPostID = ""
+	}
+
+	playbookRunToModify.PreviousReminder = newReminder
+	playbookRunToModify.LastStatusUpdateAt = model.GetMillis()
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run after resetting reminder timer")
+	}
+
+	if newReminder != 0 {
+		if err = s.SetReminder(playbookRunID, newReminder); err != nil {
+			return errors.Wrap(err, "failed to set the reminder for playbook run")
+		}
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+
+	return nil
+}
+
+func (s *PlaybookRunServiceImpl) removePost(postID string) error {
+	post, err := s.pluginAPI.Post.GetPost(postID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve reminder post")
+	}
+
+	if post.DeleteAt != 0 {
+		return nil
+	}
+
+	if err = s.pluginAPI.Post.DeletePost(postID); err != nil {
+		return errors.Wrapf(err, "failed to delete reminder post")
+	}
 
 	return nil
 }
