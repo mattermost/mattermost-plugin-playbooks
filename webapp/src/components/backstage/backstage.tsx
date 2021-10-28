@@ -112,7 +112,7 @@ const Backstage = () => {
     const match = useRouteMatch();
 
     return (
-        <BackstageContainer>
+        <BackstageContainer id={BackstageID}>
             <Switch>
                 <Route path={`${match.url}/error`}/>
                 <Route>
@@ -217,5 +217,7 @@ const Backstage = () => {
         </BackstageContainer>
     );
 };
+
+export const BackstageID = 'playbooks-backstageRoot';
 
 export default Backstage;

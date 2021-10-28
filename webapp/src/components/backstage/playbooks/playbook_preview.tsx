@@ -6,25 +6,39 @@ import React from 'react';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
 
-import PlaybookPreviewActions from 'src/components/backstage/playbooks/playbook_preview_actions';
-import PlaybookPreviewChecklists from 'src/components/backstage/playbooks/playbook_preview_checklists';
-import PlaybookPreviewRetrospective from 'src/components/backstage/playbooks/playbook_preview_retrospective';
-import PlaybookPreviewStatusUpdates from 'src/components/backstage/playbooks/playbook_preview_status_updates';
+import Actions from 'src/components/backstage/playbooks/playbook_preview_actions';
+import Checklists from 'src/components/backstage/playbooks/playbook_preview_checklists';
+import Navbar, {SectionID} from 'src/components/backstage/playbooks/playbook_preview_navbar';
+import Retrospective from 'src/components/backstage/playbooks/playbook_preview_retrospective';
+import StatusUpdates from 'src/components/backstage/playbooks/playbook_preview_status_updates';
 
 interface Props {
     playbook: PlaybookWithChecklist;
+    runsInProgress: number;
 }
 
 const PlaybookPreview = (props: Props) => {
     return (
         <Container>
             <Content>
-                <PlaybookPreviewChecklists playbook={props.playbook}/>
-                <PlaybookPreviewActions playbook={props.playbook}/>
-                <PlaybookPreviewStatusUpdates playbook={props.playbook}/>
-                <PlaybookPreviewRetrospective playbook={props.playbook}/>
+                <Checklists
+                    id={SectionID.Checklists}
+                    playbook={props.playbook}
+                />
+                <Actions
+                    id={SectionID.Actions}
+                    playbook={props.playbook}
+                />
+                <StatusUpdates
+                    id={SectionID.StatusUpdates}
+                    playbook={props.playbook}
+                />
+                <Retrospective
+                    id={SectionID.Retrospective}
+                    playbook={props.playbook}
+                />
             </Content>
-            <Navbar/>
+            <Navbar runsInProgress={props.runsInProgress}/>
         </Container>
     );
 };
@@ -49,11 +63,6 @@ const Content = styled.div`
     margin-bottom: 40px;
 
     flex-grow: 1;
-`;
-
-const Navbar = styled.nav`
-    width: 172px;
-    height: 340px;
 `;
 
 export default PlaybookPreview;
