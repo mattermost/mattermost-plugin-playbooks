@@ -8,5 +8,17 @@
     "/1FEJW": "AKTÍV RÉSZTVEVŐK naponta az elmúlt 14 napban",
     "+ZIXOR": "Csatorna hozzáférés",
     "+QgvjN": "A tulajdonosi jogkör hozzárendelése ehhez",
-    "+8G9qr": "Alapértelmezett szöveg a visszatekintőre."
+    "+8G9qr": "Alapértelmezett szöveg a visszatekintőre.",
+    "5Ot7cd": "Csatorna típusának kiderítése amit ez a forgatókönyv létrehoz.",
+    "CL5OZP": "Csak az Ön által megadott felhasználók fogják tudni szerkeszteni és futtatni ezt a forgatókönyvet.",
+    "AT2QBo": "Csak a kiválasztott felhasználók tudnak létrehozni forgatókönyveket.",
+    "X3DLGJ": "Mindenki ebben a munkaterületben létrehozhat forgatókönyveket.",
+    "ebkl6I": "Mindenki ebben a csapatban eléri ezt a forgatókönyvet",
+    "v3+TmO": "{members, plural, =0 {Senki sem} =1 {Egy személy} other {# személy}} éri el ezt a forgatókönyvet",
+    "z5RMPO": "Csak Ön éri el ezt a forgatókönyvet",
+    "jq4eWU": "Forgatókönyv hozzáférés",
+    "jnmORb": "Ebben a forgatókönyvben",
+    "TyrY2b": "Forgatókönyv létrehozás",
+    "6Lwe7T": "Mindenki a {team} csapatban hozzáfér ehhez a forgatókönyvhöz",
+    "5FRgqE": "Csatorna naplózásának letöltése"
 }
