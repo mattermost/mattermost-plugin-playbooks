@@ -5,6 +5,7 @@ import React from 'react';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {DateTime} from 'luxon';
+import {useIntl} from 'react-intl';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
@@ -49,11 +50,12 @@ interface Props {
 const Timeline = (props: Props) => {
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
+    const {formatMessage} = useIntl();
 
     if (props.playbookRun.timeline_events.length === 0) {
         return (
             <NoEventsNotice>
-                {'Timeline events are displayed here as they occur. Hover over an event to remove it.'}
+                {formatMessage({defaultMessage: 'Timeline events are displayed here as they occur. Hover over an event to remove it.'})}
             </NoEventsNotice>
         );
     }
@@ -61,7 +63,7 @@ const Timeline = (props: Props) => {
     if (props.filteredEvents.length === 0) {
         return (
             <NoEventsNotice>
-                {'There are no Timeline events matching those filters.'}
+                {formatMessage({defaultMessage: 'There are no Timeline events matching those filters.'})}
             </NoEventsNotice>
         );
     }
