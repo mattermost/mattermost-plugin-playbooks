@@ -834,7 +834,7 @@ func (h *PlaybookRunHandler) reminderReset(w http.ResponseWriter, r *http.Reques
 	}
 
 	if payload.NewReminderSeconds <= 0 {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "new_reminder_seconds must be > 0", errors.New("new_reminder was <= 0"))
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "new_reminder_seconds must be > 0", errors.New("new_reminder_seconds was <= 0"))
 		return
 	}
 
