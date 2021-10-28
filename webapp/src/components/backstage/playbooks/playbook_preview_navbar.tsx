@@ -69,56 +69,58 @@ const PlaybookPreviewNavbar = ({runsInProgress}: Props) => {
     }, [updateActiveSection]);
 
     const scrollToSection = (id: SectionID) => {
-        return () => {
-            if (isSectionActive(id)) {
-                return;
-            }
 
-            const root = document.getElementById(BackstageID);
-            const section = document.getElementById(id);
+        if (isSectionActive(id)) {
+            return;
+        }
 
-            if (!section || !root) {
-                return;
-            }
+        const root = document.getElementById(BackstageID);
+        const section = document.getElementById(id);
 
-            const amount = section.getBoundingClientRect().top - headersOffset;
+        if (!section || !root) {
+            return;
+        }
 
-            // If there is no need to scroll, simply set the section item as active
-            const reachedTop = root.scrollTop === 0;
-            const reachedBottom = root.scrollHeight - Math.abs(root.scrollTop) === root.clientHeight;
-            if ((amount > 0 && reachedBottom) || (amount < 0 && reachedTop) || amount === 0) {
+        const amount = section.getBoundingClientRect().top - headersOffset;
+
+        // If there is no need to scroll, simply set the section item as active
+        const reachedTop = root.scrollTop === 0;
+        const reachedBottom = root.scrollHeight - Math.abs(root.scrollTop) === root.clientHeight;
+        if ((amount > 0 && reachedBottom) || (amount < 0 && reachedTop) || amount === 0) {
+            setActiveId(id);
+            return;
+        }
+
+        root.scrollBy({
+            top: amount,
+            behavior: 'smooth',
+        });
+
+        // At this point, we know we are certain scrollBy will generate an actual scroll,
+        // so we can listen to the 'scroll' event that was fired because of scrollBy
+        // and set the active ID only when it's finished.
+        // This is needed because short sections at the bottom may be positioned below
+        // the middle of the window, so we need to wait for the scroll event to finish
+        // and manually mark the section as active, instead of relying on the automatic
+        // updateActiveSection.
+        let timer : NodeJS.Timeout;
+        const callback = () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
                 setActiveId(id);
-                return;
-            }
-
-            root.scrollBy({
-                top: amount,
-                behavior: 'smooth',
-            });
-
-            // At this point, we know we are certain scrollBy will generate an actual scroll,
-            // so we can listen to the 'scroll' event that was fired because of scrollBy
-            // and set the active ID only when it's finished.
-            // This is needed because short sections at the bottom may be positioned below
-            // the middle of the window, so we need to wait for the scroll event to finish
-            // and manually mark the section as active, instead of relying on the automatic
-            // updateActiveSection.
-            let timer : NodeJS.Timeout;
-            const callback = () => {
-                clearTimeout(timer);
-                timer = setTimeout(() => {
-                    setActiveId(id);
-                    root.removeEventListener('scroll', callback);
-                }, 150);
-            };
-
-            root.addEventListener('scroll', callback, {passive: true});
+                root.removeEventListener('scroll', callback);
+            }, 150);
         };
+
+        root.addEventListener('scroll', callback, {passive: true});
     };
 
     const isSectionActive = (id: SectionID) => {
         return activeId === id;
     };
+
+
+    const Item = generateItemComponent(isSectionActive, scrollToSection);
 
     return (
         <Wrapper>
@@ -131,33 +133,25 @@ const PlaybookPreviewNavbar = ({runsInProgress}: Props) => {
             </Header>
             <Items>
                 <Item
-                    active={isSectionActive(SectionID.Checklists)}
-                    onClick={scrollToSection(SectionID.Checklists)}
-                >
-                    <i className={'icon-check-all icon-16'}/>
-                    {formatMessage({defaultMessage: 'Checklists'})}
-                </Item>
+                    id={SectionID.Checklists}
+                    iconName={'check-all'}
+                    title={formatMessage({defaultMessage: 'Checklists'})}
+                />
                 <Item
-                    active={isSectionActive(SectionID.Actions)}
-                    onClick={scrollToSection(SectionID.Actions)}
-                >
-                    <i className={'icon-sync icon-16'}/>
-                    {formatMessage({defaultMessage: 'Actions'})}
-                </Item>
+                    id={SectionID.Actions}
+                    iconName={'sync'}
+                    title={formatMessage({defaultMessage: 'Actions'})}
+                />
                 <Item
-                    active={isSectionActive(SectionID.StatusUpdates)}
-                    onClick={scrollToSection(SectionID.StatusUpdates)}
-                >
-                    <i className={'icon-update icon-16'}/>
-                    {formatMessage({defaultMessage: 'Status updates'})}
-                </Item>
+                    id={SectionID.StatusUpdates}
+                    iconName={'update'}
+                    title={formatMessage({defaultMessage: 'Status updates'})}
+                />
                 <Item
-                    active={isSectionActive(SectionID.Retrospective)}
-                    onClick={scrollToSection(SectionID.Retrospective)}
-                >
-                    <i className={'icon-lightbulb-outline icon-16'}/>
-                    {formatMessage({defaultMessage: 'Retrospective'})}
-                </Item>
+                    id={SectionID.Retrospective}
+                    iconName={'lightbulb-outline'}
+                    title={formatMessage({defaultMessage: 'Retrospective'})}
+                />
             </Items>
             <UsageButton activeRuns={runsInProgress}/>
         </Wrapper>
@@ -202,13 +196,14 @@ const Items = styled.div`
     margin-bottom: 16px;
 `;
 
-const Item = (props: {active: boolean, onClick: () => void, children: React.ReactNode}) => {
-    return (
+const generateItemComponent = (isSectionActive: (id: SectionID) => boolean, scrollToSection: (id: SectionID) => void) => {
+    return (props: {id: SectionID, iconName: string, title: string}) => (
         <ItemWrapper
-            active={props.active}
-            onClick={props.onClick}
+            active={isSectionActive(props.id)}
+            onClick={() => scrollToSection(props.id)}
         >
-            {props.children}
+            <i className={`icon-${props.iconName} icon-16`}/>
+            {props.title}
         </ItemWrapper>
     );
 };
