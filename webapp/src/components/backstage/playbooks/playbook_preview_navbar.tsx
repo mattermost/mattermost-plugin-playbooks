@@ -125,7 +125,6 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress}: Props) => {
         return activeId === id;
     };
 
-
     const Item = generateItemComponent(isSectionActive, scrollToSection);
 
     return (
@@ -159,7 +158,10 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress}: Props) => {
                     title={formatMessage({defaultMessage: 'Retrospective'})}
                 />
             </Items>
-            <UsageButton activeRuns={runsInProgress}/>
+            <UsageButton
+                playbookId={playbookId}
+                activeRuns={runsInProgress}
+            />
         </Wrapper>
     );
 };
@@ -251,12 +253,17 @@ const ItemWrapper = styled.div<{active: boolean}>`
     }
 `;
 
-const UsageButton = ({activeRuns}: {activeRuns: number}) => {
+const UsageButton = ({playbookId, activeRuns}: {playbookId: string, activeRuns: number}) => {
     const match = useRouteMatch();
     const {formatMessage} = useIntl();
 
+    const onClick = () => {
+        telemetryEventForPlaybook(playbookId, 'playbook_preview_navbar_runs_in_progress_button_clicked');
+        navigateToUrl(match.url.replace('/preview', '/usage'));
+    };
+
     return (
-        <UsageButtonWrapper onClick={() => navigateToUrl(match.url.replace('/preview', '/usage'))}>
+        <UsageButtonWrapper onClick={onClick}>
             <Icon
                 path={mdiClipboardPlayMultipleOutline}
                 size={1.2}
