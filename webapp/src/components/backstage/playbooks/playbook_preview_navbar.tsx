@@ -10,8 +10,11 @@ import Icon from '@mdi/react';
 import {mdiClipboardPlayMultipleOutline} from '@mdi/js';
 
 import {navigateToUrl} from 'src/browser_routing';
+import {telemetryEventForPlaybook} from 'src/client';
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
 import {BackstageID} from 'src/components/backstage/backstage';
+
+const prefix = 'playbooks-playbookPreview-';
 
 export enum SectionID {
     Checklists = 'playbooks-playbookPreview-checklists',
@@ -21,13 +24,14 @@ export enum SectionID {
 }
 
 interface Props {
+    playbookId: string;
     runsInProgress: number;
 }
 
 // Height of the headers in pixels
 const headersOffset = 140;
 
-const PlaybookPreviewNavbar = ({runsInProgress}: Props) => {
+const PlaybookPreviewNavbar = ({playbookId, runsInProgress}: Props) => {
     const {formatMessage} = useIntl();
     const match = useRouteMatch();
     const [activeId, setActiveId] = useState(SectionID.Checklists);
@@ -69,6 +73,8 @@ const PlaybookPreviewNavbar = ({runsInProgress}: Props) => {
     }, [updateActiveSection]);
 
     const scrollToSection = (id: SectionID) => {
+        const idWithoutPrefix = String(id).replace(prefix, '');
+        telemetryEventForPlaybook(playbookId, `playbook_preview_navbar_section_${idWithoutPrefix}_clicked`);
 
         if (isSectionActive(id)) {
             return;
