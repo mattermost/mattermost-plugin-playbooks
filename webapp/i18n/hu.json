@@ -1,5 +1,12 @@
 {
     "5A46pW": "Perjeles parancs hozzáadása",
     "47FYwb": "Mégsem",
-    "3rCdDw": "Állapot frissítések"
+    "3rCdDw": "Állapot frissítések",
+    "1MQ3XZ": "{numActiveRuns, plural, =0 {nincs aktív futás} other {# aktív futás}}",
+    "1I48bs": "Visszatekintő sablon",
+    "/jUtaM": "AKTÍV FUTÁSOK naponta az elmúlt 14 napban",
+    "/1FEJW": "AKTÍV RÉSZTVEVŐK naponta az elmúlt 14 napban",
+    "+ZIXOR": "Csatorna hozzáférés",
+    "+QgvjN": "A tulajdonosi jogkör hozzárendelése ehhez",
+    "+8G9qr": "Alapértelmezett szöveg a visszatekintőre."
 }
