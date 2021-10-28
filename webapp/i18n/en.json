@@ -17,6 +17,7 @@
   "6Lwe7T": "Everyone in {team} can access this playbook",
   "8hDbW6": "Send an outgoing webhook",
   "9Obw6C": "Filter",
+  "9qc7BX": "Snooze",
   "9uOFF3": "Overview",
   "A3ptul": "Templates",
   "AF9wda": "This update will be saved to the <OverviewLink>overview page</OverviewLink>{hasBroadcast, select, true { and broadcast to <ChannelsTooltip>{broadcastChannelCount, plural, =1 {one channel} other {{broadcastChannelCount, number} channels}}</ChannelsTooltip>} other {}}.",
