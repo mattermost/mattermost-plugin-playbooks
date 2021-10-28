@@ -93,6 +93,10 @@ commands:
     steps:
       - setup_remote_docker
       - run:
+          name: Disable ALSA
+          command: |
+            printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
+      - run:
           name: Wait for Inbucket
           command: |
             until curl --max-time 5 --output - localhost:10080; do echo waiting for Inbucket; sleep 5; done;
