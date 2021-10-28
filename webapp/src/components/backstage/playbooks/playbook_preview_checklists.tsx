@@ -12,6 +12,7 @@ import {ChecklistItemDetails} from 'src/components/checklist_item';
 import CollapsibleChecklist, {TitleHelpTextWrapper} from 'src/components/collapsible_checklist';
 
 interface Props {
+    id: string;
     playbook: PlaybookWithChecklist;
 }
 
@@ -23,6 +24,7 @@ const PlaybookPreviewChecklists = (props: Props) => {
 
     return (
         <Section
+            id={props.id}
             title={formatMessage({defaultMessage: 'Checklists'})}
         >
             {props.playbook.checklists.map((checklist: Checklist, checklistIndex: number) => (

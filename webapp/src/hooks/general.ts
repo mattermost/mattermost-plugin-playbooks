@@ -27,10 +27,11 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
+import {EmptyPlaybookStats} from 'src/types/stats';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';
-import {clientFetchPlaybooksCount, fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun} from 'src/client';
+import {clientFetchPlaybooksCount, fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookStats} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
 import {
@@ -548,3 +549,21 @@ export const useDefaultMarkdownOptionsByTeamId = (teamId: string) => {
     return useDefaultMarkdownOptions(team);
 };
 
+export const useStats = (playbookId: string) => {
+    const [stats, setStats] = useState(EmptyPlaybookStats);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const ret = await fetchPlaybookStats(playbookId);
+                setStats(ret);
+            } catch {
+                setStats(EmptyPlaybookStats);
+            }
+        };
+
+        fetchStats();
+    }, [playbookId]);
+
+    return stats;
+};

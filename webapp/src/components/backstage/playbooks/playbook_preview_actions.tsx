@@ -16,6 +16,7 @@ import ProfileSelector from 'src/components/profile/profile_selector';
 import {UserList} from 'src/components/rhs/rhs_participants';
 
 interface Props {
+    id: string;
     playbook: PlaybookWithChecklist;
 }
 
@@ -56,7 +57,10 @@ const PlaybookPreviewActions = (props: Props) => {
     }
 
     return (
-        <Section title={formatMessage({defaultMessage: 'Actions'})}>
+        <Section
+            id={props.id}
+            title={formatMessage({defaultMessage: 'Actions'})}
+        >
             <Card>
                 <CardEntry
                     title={formatMessage({

@@ -16,6 +16,7 @@ import Section from 'src/components/backstage/playbooks/playbook_preview_section
 import {formatDuration} from 'src/components/formatted_duration';
 
 interface Props {
+    id: string;
     playbook: PlaybookWithChecklist;
 }
 
@@ -46,6 +47,7 @@ const PlaybookPreviewStatusUpdates = (props: Props) => {
 
     return (
         <Section
+            id={props.id}
             title={formatMessage({defaultMessage: 'Status updates'})}
         >
             <Card>
