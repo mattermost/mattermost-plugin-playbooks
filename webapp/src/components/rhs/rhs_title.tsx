@@ -8,6 +8,8 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
+import {FormattedMessage} from 'react-intl';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import LeftChevron from 'src/components/assets/icons/left_chevron';
@@ -28,7 +30,7 @@ const RHSTitle = () => {
     if (rhsState === RHSState.ViewingPlaybookRun) {
         const tooltip = (
             <Tooltip id={'view-run-overview'}>
-                {'View run overview'}
+                <FormattedMessage defaultMessage='View run overview'/>
             </Tooltip>
         );
 
@@ -59,7 +61,7 @@ const RHSTitle = () => {
                             }
                         }}
                     >
-                        {'Run details'}
+                        <FormattedMessage defaultMessage='Run details'/>
                         <StyledButtonIcon>
                             <ExternalLink/>
                         </StyledButtonIcon>
@@ -71,6 +73,7 @@ const RHSTitle = () => {
 
     return (
         <RHSTitleText>
+            {/* product name; don't translate */}
             {'Playbooks'}
         </RHSTitleText>
     );

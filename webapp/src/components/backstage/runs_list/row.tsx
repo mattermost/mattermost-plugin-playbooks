@@ -141,7 +141,7 @@ const Row = (props: Props) => {
                 <SmallText>
                     <FormattedMessage
                         defaultMessage='{numParticipants, plural, =0 {no participants} =1 {# participant} other {# participants}}'
-                        values={{numParticipants: props.playbookRun.participant_ids}}
+                        values={{numParticipants: props.playbookRun.participant_ids.length}}
                     />
                 </SmallText>
             </div>
