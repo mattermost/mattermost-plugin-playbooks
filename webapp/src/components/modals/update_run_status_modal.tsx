@@ -69,7 +69,11 @@ const UpdateRunStatusModal = ({
 
     const {input: reminderInput, reminder} = useReminderTimerOption(run);
 
-    const isReminderValid = !reminder || reminder > 0;
+    const isReminderValid = reminder && reminder > 0;
+    let warningMessage = formatMessage({defaultMessage: 'Date must be in the future.'});
+    if (!reminder || reminder === 0) {
+        warningMessage = formatMessage({defaultMessage: 'Please specify a future date/time for the update reminder.'});
+    }
 
     const onConfirm = () => {
         if (hasPermission && message?.trim() && currentUserId && channelId && run?.team_id) {
@@ -134,7 +138,7 @@ const UpdateRunStatusModal = ({
             {reminderInput}
             {!isReminderValid &&
             <WarningLine>
-                <WarningIcon/> {formatMessage({defaultMessage: 'Date must be in the future.'})}
+                <WarningIcon/> {warningMessage}
             </WarningLine>
             }
         </FormContainer>
@@ -251,6 +255,7 @@ const FormContainer = styled.div`
     display: flex;
     flex-direction: column;
     color: var(--center-channel-color);
+
     ${Description} {
         span {
             text-decoration: underline;
@@ -263,6 +268,7 @@ const WarningBlock = styled.div`
     padding: 2rem;
     display: flex;
     place-content: center;
+
     span {
         padding: 1.5rem;
     }

@@ -28,7 +28,6 @@ export const PresetTemplates: PresetTemplate[] = [
         icon: <FileIcon/>,
         template: {
             ...emptyPlaybook(),
-            reminder_timer_default_seconds: 86400,
         },
     },
     {
