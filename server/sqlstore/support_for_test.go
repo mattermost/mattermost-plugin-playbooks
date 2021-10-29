@@ -68,6 +68,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	setupBotsTable(t, db)
 	setupChannelMembersTable(t, db)
 	setupKVStoreTable(t, db)
+	setupUsersTable(t, db)
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		err = sqlStore.Migrate(currentSchemaVersion)
@@ -111,7 +112,8 @@ func setupUsersTable(t *testing.T, db *sqlx.DB) {
 				locale character varying(5),
 				timezone character varying(256),
 				mfaactive boolean,
-				mfasecret character varying(128)
+				mfasecret character varying(128),
+				PRIMARY KEY (Id)
 			);
 		`)
 		require.NoError(t, err)
