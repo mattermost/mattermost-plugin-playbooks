@@ -106,7 +106,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         checklists: [emptyChecklist()],
         member_ids: [],
         reminder_message_template: '',
-        reminder_timer_default_seconds: 0,
+        reminder_timer_default_seconds: 7 * 24 * 60 * 60, // 7 days
         invited_user_ids: [],
         invited_group_ids: [],
         invite_users_enabled: false,

@@ -59,9 +59,6 @@ const DialogFieldMessageKey = "message"
 // DialogFieldReminderInSecondsKey is the key for the reminder select field used in UpdatePlaybookRunDialog
 const DialogFieldReminderInSecondsKey = "reminder"
 
-// DialogFieldStatusKey is the key for the status select field used in UpdatePlaybookRunDialog
-const DialogFieldStatusKey = "status"
-
 // DialogFieldPlaybookRunKey is the key for the playbook run chosen in AddToTimelineDialog
 const DialogFieldPlaybookRunKey = "playbook_run"
 
@@ -2027,10 +2024,6 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 
 	reminderOptions := []*model.PostActionOptions{
 		{
-			Text:  "None",
-			Value: "0",
-		},
-		{
 			Text:  "15min",
 			Value: "900",
 		},
@@ -2049,6 +2042,10 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 		{
 			Text:  "24hr",
 			Value: "86400",
+		},
+		{
+			Text:  "1Week",
+			Value: "604800",
 		},
 	}
 

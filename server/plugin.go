@@ -116,22 +116,12 @@ func (p *Plugin) OnActivate() error {
 
 	apiClient := sqlstore.NewClient(pluginAPIClient)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
-	sqlStore, err := sqlstore.New(apiClient, p.bot)
+	scheduler := cluster.GetJobOnceScheduler(p.API)
+
+	sqlStore, err := sqlstore.New(apiClient, p.bot, scheduler)
 	if err != nil {
 		return errors.Wrapf(err, "failed creating the SQL store")
 	}
-
-	mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
-	if err != nil {
-		return errors.Wrapf(err, "failed creating cluster mutex")
-	}
-
-	mutex.Lock()
-	if err = sqlStore.RunMigrations(); err != nil {
-		mutex.Unlock()
-		return errors.Wrapf(err, "failed to run migrations")
-	}
-	mutex.Unlock()
 
 	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, p.bot, sqlStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
@@ -139,8 +129,6 @@ func (p *Plugin) OnActivate() error {
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
-
-	scheduler := cluster.GetJobOnceScheduler(p.API)
 
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,
@@ -159,6 +147,18 @@ func (p *Plugin) OnActivate() error {
 	if err = scheduler.Start(); err != nil {
 		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
 	}
+
+	// Migrations use the scheduler, so they have to be run after playbookRunService and scheduler have started
+	mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
+	if err != nil {
+		return errors.Wrapf(err, "failed creating cluster mutex")
+	}
+	mutex.Lock()
+	if err = sqlStore.RunMigrations(); err != nil {
+		mutex.Unlock()
+		return errors.Wrapf(err, "failed to run migrations")
+	}
+	mutex.Unlock()
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
 
