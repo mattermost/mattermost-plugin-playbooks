@@ -185,7 +185,11 @@ jobs:
       name: default
     steps:
       - checkout
-      - npm-dependencies
+      - run:
+          name: Getting JavaScript dependencies
+          command: |
+            cd webapp
+            NODE_ENV=development npm install --ignore-scripts --no-save
       - run:
           name: Building Plugin Bundle
           command: |

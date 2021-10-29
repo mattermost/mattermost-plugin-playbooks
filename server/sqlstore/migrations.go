@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"encoding/json"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
@@ -1360,6 +1361,69 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.36.0"),
 		toVersion:   semver.MustParse("0.37.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Existing runs without a reminder need to have a reminder set; use 1 week from now.
+			oneWeek := 7 * 24 * time.Hour
+
+			// Get overdue runs
+			overdueQuery := sqlStore.builder.
+				Select("ID").
+				From("IR_Incident").
+				Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+				Where(sq.NotEq{"PreviousReminder": 0})
+			if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
+				overdueQuery = overdueQuery.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
+			} else {
+				overdueQuery = overdueQuery.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
+			}
+
+			var runIDs []string
+			if err := sqlStore.selectBuilder(sqlStore.db, &runIDs, overdueQuery); err != nil {
+				return errors.Wrap(err, "failed to query for overdue runs")
+			}
+
+			// Get runs that never had a status update set
+			otherQuery := sqlStore.builder.
+				Select("ID").
+				From("IR_Incident").
+				Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+				Where(sq.Eq{"PreviousReminder": 0})
+
+			var otherRunIDs []string
+			if err := sqlStore.selectBuilder(sqlStore.db, &otherRunIDs, otherQuery); err != nil {
+				return errors.Wrap(err, "failed to query for overdue runs")
+			}
+
+			// Set the new reminders
+			runIDs = append(runIDs, otherRunIDs...)
+			for _, ID := range runIDs {
+				// Just in case (so we don't crash out during the migration) remove any old reminders
+				sqlStore.scheduler.Cancel(ID)
+
+				if _, err := sqlStore.scheduler.ScheduleOnce(ID, time.Now().Add(oneWeek)); err != nil {
+					return errors.Wrapf(err, "failed to set new schedule for run id: %s", ID)
+				}
+
+				// Set the PreviousReminder, and pretend that this was a LastStatusUpdateAt so that
+				// the reminder timers will show the correct time for when a status update is due.
+				updatePrevReminderAndLastUpdateAt := sqlStore.builder.
+					Update("IR_Incident").
+					SetMap(map[string]interface{}{
+						"PreviousReminder":   oneWeek,
+						"LastStatusUpdateAt": model.GetMillis(),
+					}).
+					Where(sq.Eq{"ID": ID})
+				if _, err := sqlStore.execBuilder(sqlStore.db, updatePrevReminderAndLastUpdateAt); err != nil {
+					return errors.Wrap(err, "failed to update new PreviousReminder and LastStatusUpdateAt")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.37.0"),
+		toVersion:   semver.MustParse("0.38.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_Run_Participants (
@@ -1402,8 +1466,8 @@ var migrations = []Migration{
 		},
 	},
 	{
-		fromVersion: semver.MustParse("0.37.0"),
-		toVersion:   semver.MustParse("0.38.0"),
+		fromVersion: semver.MustParse("0.38.0"),
+		toVersion:   semver.MustParse("0.39.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "ConcatenatedFollowerIDs", "TEXT"); err != nil {

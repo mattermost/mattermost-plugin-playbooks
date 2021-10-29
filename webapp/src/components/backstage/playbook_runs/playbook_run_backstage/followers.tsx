@@ -31,10 +31,11 @@ const Followers = (props: Props) => {
                     <RHSParticipant
                         key={userId}
                         userId={userId}
+                        sizeInPx={20}
                     />
                 ))}
                 {props.userIds.length > 5 &&
-                    <Rest>{'+' + (props.userIds.length - 5)}</Rest>
+                    <Rest sizeInPx={20}>{'+' + (props.userIds.length - 5)}</Rest>
                 }
             </UserRow>
         </>

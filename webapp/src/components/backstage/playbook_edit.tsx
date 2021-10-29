@@ -14,7 +14,12 @@ import {useIntl, FormattedMessage} from 'react-intl';
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 import {navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
-import {DraftPlaybookWithChecklist, PlaybookWithChecklist, Checklist, emptyPlaybook} from 'src/types/playbook';
+import {
+    DraftPlaybookWithChecklist,
+    PlaybookWithChecklist,
+    Checklist,
+    emptyPlaybook,
+} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
@@ -596,7 +601,8 @@ const PlaybookEdit = (props: Props) => {
                                     <DefaultUpdateTimer
                                         seconds={playbook.reminder_timer_default_seconds}
                                         setSeconds={(seconds: number) => {
-                                            if (seconds !== playbook.reminder_timer_default_seconds) {
+                                            if (seconds !== playbook.reminder_timer_default_seconds &&
+                                                seconds > 0) {
                                                 setPlaybook({
                                                     ...playbook,
                                                     reminder_timer_default_seconds: seconds,
@@ -648,50 +654,50 @@ const PlaybookEdit = (props: Props) => {
                                     />
                                 </SidebarBlock>
                                 {retrospectiveAccess &&
-                                    <>
-                                        <SidebarBlock>
-                                            <BackstageSubheader>
-                                                {formatMessage({defaultMessage: 'Retrospective reminder interval'})}
-                                                <BackstageSubheaderDescription>
-                                                    {formatMessage({defaultMessage: 'Reminds the channel at a specified interval to fill out the retrospective.'})}
-                                                </BackstageSubheaderDescription>
-                                            </BackstageSubheader>
-                                            <StyledSelect
-                                                value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
-                                                onChange={(option: {label: string, value: number}) => {
-                                                    setPlaybook({
-                                                        ...playbook,
-                                                        retrospective_reminder_interval_seconds: option ? option.value : option,
-                                                    });
-                                                    setChangesMade(true);
-                                                }}
-                                                classNamePrefix='channel-selector'
-                                                options={retrospectiveReminderOptions}
-                                                isClearable={false}
-                                            />
-                                        </SidebarBlock>
-                                        <SidebarBlock>
-                                            <BackstageSubheader>
-                                                {formatMessage({defaultMessage: 'Retrospective template'})}
-                                                <BackstageSubheaderDescription>
-                                                    {formatMessage({defaultMessage: 'Default text for the retrospective.'})}
-                                                </BackstageSubheaderDescription>
-                                            </BackstageSubheader>
-                                            <StyledMarkdownTextbox
-                                                className={'playbook_retrospective_template'}
-                                                id={'playbook_retrospective_template_edit'}
-                                                placeholder={formatMessage({defaultMessage: 'Enter retrospective template'})}
-                                                value={playbook.retrospective_template}
-                                                setValue={(value: string) => {
-                                                    setPlaybook({
-                                                        ...playbook,
-                                                        retrospective_template: value,
-                                                    });
-                                                    setChangesMade(true);
-                                                }}
-                                            />
-                                        </SidebarBlock>
-                                    </>
+                                <>
+                                    <SidebarBlock>
+                                        <BackstageSubheader>
+                                            {formatMessage({defaultMessage: 'Retrospective reminder interval'})}
+                                            <BackstageSubheaderDescription>
+                                                {formatMessage({defaultMessage: 'Reminds the channel at a specified interval to fill out the retrospective.'})}
+                                            </BackstageSubheaderDescription>
+                                        </BackstageSubheader>
+                                        <StyledSelect
+                                            value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
+                                            onChange={(option: { label: string, value: number }) => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    retrospective_reminder_interval_seconds: option ? option.value : option,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                            classNamePrefix='channel-selector'
+                                            options={retrospectiveReminderOptions}
+                                            isClearable={false}
+                                        />
+                                    </SidebarBlock>
+                                    <SidebarBlock>
+                                        <BackstageSubheader>
+                                            {formatMessage({defaultMessage: 'Retrospective template'})}
+                                            <BackstageSubheaderDescription>
+                                                {formatMessage({defaultMessage: 'Default text for the retrospective.'})}
+                                            </BackstageSubheaderDescription>
+                                        </BackstageSubheader>
+                                        <StyledMarkdownTextbox
+                                            className={'playbook_retrospective_template'}
+                                            id={'playbook_retrospective_template_edit'}
+                                            placeholder={formatMessage({defaultMessage: 'Enter retrospective template'})}
+                                            value={playbook.retrospective_template}
+                                            setValue={(value: string) => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    retrospective_template: value,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                        />
+                                    </SidebarBlock>
+                                </>
                                 }
                             </TabContainer>
                             <TabContainer>

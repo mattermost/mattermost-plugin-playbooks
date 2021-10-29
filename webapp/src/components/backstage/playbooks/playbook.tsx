@@ -16,14 +16,14 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {useIntl} from 'react-intl';
 
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
-import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
+import {useExperimentalFeaturesEnabled, useForceDocumentTitle, useStats} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
+import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
 
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
 import {clientFetchPlaybook, telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {startPlaybookRunById} from 'src/actions';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import {RegularHeading} from 'src/styles/headings';
@@ -45,6 +45,7 @@ const Playbook = () => {
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
+    const stats = useStats(match.params.playbookId);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -143,7 +144,13 @@ const Playbook = () => {
                     </PrimaryButtonLarger>
                 </TitleRow>
             </TopContainer>
-            {(!experimentalFeaturesEnabled && <PlaybookUsage playbook={playbook}/>) ||
+            {!experimentalFeaturesEnabled &&
+                <PlaybookUsage
+                    playbook={playbook}
+                    stats={stats}
+                />
+            }
+            {experimentalFeaturesEnabled &&
                 <>
                     <Navbar>
                         <NavItem
@@ -167,10 +174,16 @@ const Playbook = () => {
                             <Redirect to={`${match.url}/usage`}/>
                         </Route>
                         <Route path={`${match.path}/preview`}>
-                            <h4>{'Site under construction'}</h4>
+                            <PlaybookPreview
+                                playbook={playbook}
+                                runsInProgress={stats.runs_in_progress}
+                            />
                         </Route>
                         <Route path={`${match.path}/usage`}>
-                            <PlaybookUsage playbook={playbook}/>
+                            <PlaybookUsage
+                                playbook={playbook}
+                                stats={stats}
+                            />
                         </Route>
                     </Switch>
                 </>

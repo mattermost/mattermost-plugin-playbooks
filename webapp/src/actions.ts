@@ -38,6 +38,8 @@ import {
     PlaybookCreated,
     PLAYBOOK_DELETED,
     PlaybookDeleted,
+    PLAYBOOK_RESTORED,
+    PlaybookRestored,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedTeamNumPlaybooks,
     RECEIVED_GLOBAL_SETTINGS,
@@ -203,6 +205,11 @@ export const playbookCreated = (teamID: string): PlaybookCreated => ({
 
 export const playbookDeleted = (teamID: string): PlaybookDeleted => ({
     type: PLAYBOOK_DELETED,
+    teamID,
+});
+
+export const playbookRestored = (teamID: string): PlaybookRestored => ({
+    type: PLAYBOOK_RESTORED,
     teamID,
 });
 

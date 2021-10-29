@@ -616,6 +616,24 @@ func (p *playbookStore) Delete(id string) error {
 	return nil
 }
 
+// Restore restores a deleted playbook.
+func (p *playbookStore) Restore(id string) error {
+	if id == "" {
+		return errors.New("ID cannot be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		Set("DeleteAt", 0).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to restore playbook with id '%s'", id)
+	}
+
+	return nil
+}
+
 // replacePlaybookMembers replaces the members of a playbook
 func (p *playbookStore) replacePlaybookMembers(q queryExecer, playbook app.Playbook) error {
 	// Delete existing members who are not in the new playbook.MemberIDs list

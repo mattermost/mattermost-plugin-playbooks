@@ -191,17 +191,9 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
         // # remove what's there if applicable, and type the new update in the textbox.
         cy.findByTestId('update_run_status_textbox').clear().type(message);
 
-        if (reminderQuery && reminderQuery !== 'none') {
+        if (reminderQuery) {
             cy.get('#reminder_timer_datetime').within(() => {
                 cy.get('input').type(reminderQuery, {delay: 200, force: true}).type('{enter}', {force: true});
-            });
-        } else if (reminderQuery === 'none') {
-            // there MUST be a pre-selected option or this will fail
-
-            // # click clear button
-            cy.get('#reminder_timer_datetime').within(() => {
-
-                cy.get('[class$=indicatorContainer]').eq(0).click();
             });
         }
 

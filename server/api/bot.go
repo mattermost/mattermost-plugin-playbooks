@@ -187,7 +187,7 @@ func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request) {
 
 	var timezone *time.Location
 	offset, _ := strconv.Atoi(r.Header.Get("X-Timezone-Offset"))
-	timezone = time.FixedZone("local", -60*offset)
+	timezone = time.FixedZone("local", offset*60*60)
 
 	// DM message if it's the next day and been more than an hour since the last post
 	// Hat tip to Github plugin for the logic.
