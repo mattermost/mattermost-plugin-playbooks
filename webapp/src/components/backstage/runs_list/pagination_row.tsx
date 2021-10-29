@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
 const PaginationRowDiv = styled.div`
@@ -34,14 +35,6 @@ export default function PaginationRow(props: Props) {
         props.setPage(props.page + 1);
     }
 
-    function countInfo() {
-        const startCount = props.page * props.perPage;
-        const endCount = Math.min(startCount + props.perPage, props.totalCount);
-        const firstNumber = props.totalCount === 0 ? 0 : startCount + 1;
-
-        return firstNumber + ' - ' + endCount + ' of ' + props.totalCount + ' total';
-    }
-
     const showNextPage = ((props.page + 1) * props.perPage) < props.totalCount;
 
     return (
@@ -54,11 +47,16 @@ export default function PaginationRow(props: Props) {
                             className='btn btn-link'
                             onClick={onPrevPage}
                         >
-                            {'Previous'}
+                            <FormattedMessage defaultMessage='Previous'/>
                         </Button>
                     }
                 </div>
-                <CountDiv className='text-center col-sm-8'>{countInfo()}</CountDiv>
+                <CountDiv className='text-center col-sm-8'>
+                    <FormattedMessage
+                        defaultMessage='{from, number}–{to, number} of {total, number} total'
+                        values={countInfo(props)}
+                    />
+                </CountDiv>
                 <div className='text-center col-sm-2'>
                     {
                         showNextPage &&
@@ -66,10 +64,18 @@ export default function PaginationRow(props: Props) {
                             className='btn btn-link'
                             onClick={onNextPage}
                         >
-                            {'Next'}
+                            <FormattedMessage defaultMessage='Next'/>
                         </Button>}
                 </div>
             </div>
         </PaginationRowDiv>
     );
+}
+
+function countInfo(props: Props) {
+    const start = props.page * props.perPage;
+    const to = Math.min(start + props.perPage, props.totalCount);
+    const from = props.totalCount === 0 ? 0 : start + 1;
+
+    return {from, to, total: props.totalCount};
 }

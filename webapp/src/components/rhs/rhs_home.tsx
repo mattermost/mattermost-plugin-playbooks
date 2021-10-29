@@ -11,6 +11,8 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import Icon from '@mdi/react';
 import {mdiArrowDown, mdiArrowRight, mdiPlus} from '@mdi/js';
 
+import {FormattedMessage} from 'react-intl';
+
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
 import {SemiBoldHeading} from 'src/styles/headings';
 
@@ -244,11 +246,10 @@ const RHSHome = () => {
             <WelcomeBlock>
                 <PageRunCollaborationSvg/>
                 <Heading>
-                    {'Welcome to Playbooks!'}
+                    <FormattedMessage defaultMessage='Welcome to Playbooks!'/>
                 </Heading>
                 <WelcomeDesc>
-                    {'A playbook prescribes the checklists, automations, and templates for any repeatable procedures.'}
-                    {'It helps teams reduce errors, earn trust with stakeholders, and become more effective with every iteration.'}
+                    <FormattedMessage defaultMessage='A playbook prescribes the checklists, automations, and templates for any repeatable procedures. {br} It helps teams reduce errors, earn trust with stakeholders, and become more effective with every iteration.' values={{br: <br/>}}/>
                 </WelcomeDesc>
                 {canCreatePlaybooks ? (
                     <div>

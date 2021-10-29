@@ -7,6 +7,8 @@ import styled from 'styled-components';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
+import {useIntl} from 'react-intl';
+
 import {PatternedInput} from 'src/components/backstage/automation/patterned_input';
 import {InputKeywords} from 'src/components/backstage/automation/input_keywords';
 import {PatternedTextArea} from 'src/components/backstage/automation/patterned_text_area';
@@ -59,18 +61,19 @@ interface Props {
 }
 
 export const AutomationSettings = (props: Props) => {
+    const {formatMessage} = useIntl();
     return (
         <>
             <Section>
                 <SectionTitle>
-                    {'Prompt to run the playbook when a user posts a message'}
+                    {formatMessage({defaultMessage: 'Prompt to run the playbook when a user posts a message'})}
                 </SectionTitle>
                 <Setting id={'signal-any-keywords'}>
                     <InputKeywords
                         enabled={props.signalAnyKeywordsEnabled}
                         onToggle={props.onToggleSignalAnyKeywords}
-                        textOnToggle={'Containing any of these keywords'}
-                        placeholderText={'Add keywords'}
+                        textOnToggle={formatMessage({defaultMessage: 'Containing any of these keywords'})}
+                        placeholderText={formatMessage({defaultMessage: 'Add keywords'})}
                         keywords={props.signalAnyKeywords}
                         onKeywordsChange={props.signalAnyKeywordsChange}
                     />
@@ -78,7 +81,7 @@ export const AutomationSettings = (props: Props) => {
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When a run starts'}
+                    {formatMessage({defaultMessage: 'When a run starts'})}
                 </SectionTitle>
                 <Setting id={'invite-users'}>
                     <InviteUsers
@@ -111,17 +114,17 @@ export const AutomationSettings = (props: Props) => {
                         delimiter={'\n'}
                         maxLength={1000}
                         rows={3}
-                        placeholderText={'Enter webhook'}
-                        textOnToggle={'Send outgoing webhook (One per line)'}
-                        errorText={'Invalid webhook URLs'}
+                        placeholderText={formatMessage({defaultMessage: 'Enter webhook'})}
+                        textOnToggle={formatMessage({defaultMessage: 'Send outgoing webhook (One per line)'})}
+                        errorText={formatMessage({defaultMessage: 'Invalid webhook URLs'})}
                         maxRows={64}
-                        maxErrorText={'Invalid entry: the maximum number of webhooks allowed is 64'}
+                        maxErrorText={formatMessage({defaultMessage: 'Invalid entry: the maximum number of webhooks allowed is 64'})}
                     />
                 </Setting>
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When an update is posted'}
+                    {formatMessage({defaultMessage: 'When an update is posted'})}
                 </SectionTitle>
                 <Setting id={'broadcast-channels'}>
                     <Broadcast
@@ -141,17 +144,17 @@ export const AutomationSettings = (props: Props) => {
                         delimiter={'\n'}
                         maxLength={1000}
                         rows={3}
-                        placeholderText={'Enter webhook'}
-                        textOnToggle={'Send outgoing webhook (One per line)'}
-                        errorText={'Invalid webhook URLs'}
+                        placeholderText={formatMessage({defaultMessage: 'Enter webhook'})}
+                        textOnToggle={formatMessage({defaultMessage: 'Send outgoing webhook (One per line)'})}
+                        errorText={formatMessage({defaultMessage: 'Invalid webhook URLs'})}
                         maxRows={64}
-                        maxErrorText={'Invalid entry: the maximum number of webhooks allowed is 64'}
+                        maxErrorText={formatMessage({defaultMessage: 'Invalid entry: the maximum number of webhooks allowed is 64'})}
                     />
                 </Setting>
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When a new member joins the channel'}
+                    {formatMessage({defaultMessage: 'When a new member joins the channel'})}
                 </SectionTitle>
                 <Setting id={'user-joins-message'}>
                     <MessageOnJoin
@@ -169,16 +172,16 @@ export const AutomationSettings = (props: Props) => {
                         onChange={props.categoryNameChange}
                         pattern={'[\\s\\S]*'}
                         placeholderText={'Enter category name'}
-                        textOnToggle={'Add the channel to a sidebar category'}
+                        textOnToggle={formatMessage({defaultMessage: 'Add the channel to a sidebar category'})}
                         type={'text'}
-                        errorText={'Invalid category name.'} // this should not happen
+                        errorText={formatMessage({defaultMessage: 'Invalid category name.'})} // this should not happen
                         maxLength={22}
                     />
                 </Setting>
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When a run is finished'}
+                    {formatMessage({defaultMessage: 'When a run is finished'})}
                 </SectionTitle>
                 <Setting id={'export-channel-on-finished'}>
                     <ExportChannelOnArchive

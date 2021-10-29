@@ -12,6 +12,8 @@ import {Team} from 'mattermost-redux/types/teams';
 
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 
+import {FormattedMessage} from 'react-intl';
+
 import NoContentPlaybookRunSvg from 'src/components/assets/no_content_playbook_runs_svg';
 import {startPlaybookRun} from 'src/actions';
 import {navigateToUrl} from 'src/browser_routing';
@@ -98,14 +100,14 @@ const NoContentPage = () => {
     return (
         <NoContentContainer>
             <NoContentTextContainer>
-                <NoContentTitle>{'What are playbook runs?'}</NoContentTitle>
-                <NoContentDescription>{'Running a playbook orchestrates workflows for your team and tools.'}</NoContentDescription>
+                <NoContentTitle><FormattedMessage defaultMessage='What are playbook runs?'/></NoContentTitle>
+                <NoContentDescription><FormattedMessage defaultMessage='Running a playbook orchestrates workflows for your team and tools.'/></NoContentDescription>
                 <NoContentButton
                     className='mt-6'
                     onClick={newPlaybookRun}
                 >
                     <i className='icon-plus mr-2'/>
-                    {'Run playbook'}
+                    <FormattedMessage defaultMessage='Run playbook'/>
                 </NoContentButton>
             </NoContentTextContainer>
             <NoContentPlaybookRunSvgContainer>

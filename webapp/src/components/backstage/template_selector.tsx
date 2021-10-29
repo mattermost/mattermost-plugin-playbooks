@@ -8,6 +8,8 @@ import {mdiRocketLaunchOutline, mdiHandshakeOutline, mdiCodeBraces} from '@mdi/j
 
 import {Team} from 'mattermost-redux/types/teams';
 
+import {FormattedMessage} from 'react-intl';
+
 import {DraftPlaybookWithChecklist, emptyPlaybook, newChecklistItem} from 'src/types/playbook';
 import FileIcon from 'src/components/assets/icons/file_icon';
 import AlertIcon from 'src/components/assets/icons/alert_icon';
@@ -489,7 +491,7 @@ const TemplateSelector = ({templates = PresetTemplates, onSelect, teams, allowPl
             <RootContainer>
                 <InnerContainer>
                     <Title>
-                        {'Create a playbook'}
+                        <FormattedMessage defaultMessage='Create a playbook'/>
                         {!allowPlaybookCreation && <NotAllowedIcon className='icon icon-key-variant-circle'/>}
                     </Title>
                     <TemplateItemDiv>
