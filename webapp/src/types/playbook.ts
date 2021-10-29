@@ -165,7 +165,7 @@ export interface ChecklistItemsFilter extends Record<string, boolean> {
 
 export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
     all: false,
-    checked: false,
+    checked: true,
     me: true,
     unassigned: true,
     others: true,
