@@ -477,6 +477,21 @@ func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) 
 	return nil
 }
 
+func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt int64) error {
+	if _, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		SetMap(map[string]interface{}{
+			"CurrentStatus":      app.StatusInProgress,
+			"EndAt":              0,
+			"LastStatusUpdateAt": restoredAt,
+		}).
+		Where(sq.Eq{"ID": playbookRunID})); err != nil {
+		return errors.Wrapf(err, "failed to restore run for id '%s'", playbookRunID)
+	}
+
+	return nil
+}
+
 // CreateTimelineEvent creates the timeline event
 func (s *playbookRunStore) CreateTimelineEvent(event *app.TimelineEvent) (*app.TimelineEvent, error) {
 	if event.PlaybookRunID == "" {

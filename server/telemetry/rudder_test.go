@@ -191,7 +191,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 		require.Contains(t, properties, "Public")
 	}
 
-	if expectedEvent == eventPlaybookRun && (expectedAction == actionCreate || expectedAction == actionEnd) {
+	if expectedEvent == eventPlaybookRun && (expectedAction == actionCreate || expectedAction == actionEnd || expectedAction == actionRestore) {
 		require.Equal(t, dummyPlaybookRun, playbookRunFromProperties(properties))
 	} else {
 		require.Contains(t, properties, telemetryKeyPlaybookRunID)
@@ -216,6 +216,9 @@ func TestRudderTelemetry(t *testing.T) {
 		}},
 		"end playbook run": {eventPlaybookRun, actionEnd, func() {
 			rudderClient.FinishPlaybookRun(dummyPlaybookRun, dummyUserID)
+		}},
+		"restore playbook run": {eventPlaybookRun, actionRestore, func() {
+			rudderClient.RestorePlaybookRun(dummyPlaybookRun, dummyUserID)
 		}},
 		"add checklist item": {eventTasks, actionAddTask, func() {
 			rudderClient.AddTask(dummyPlaybookRunID, dummyUserID, dummyTask)

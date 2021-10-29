@@ -546,6 +546,20 @@ func (mr *MockPlaybookRunServiceMockRecorder) ResetReminderTimer(arg0 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetReminderTimer", reflect.TypeOf((*MockPlaybookRunService)(nil).ResetReminderTimer), arg0)
 }
 
+// RestorePlaybookRun mocks base method
+func (m *MockPlaybookRunService) RestorePlaybookRun(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RestorePlaybookRun", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RestorePlaybookRun indicates an expected call of RestorePlaybookRun
+func (mr *MockPlaybookRunServiceMockRecorder) RestorePlaybookRun(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestorePlaybookRun", reflect.TypeOf((*MockPlaybookRunService)(nil).RestorePlaybookRun), arg0, arg1)
+}
+
 // RunChecklistItemSlashCommand mocks base method
 func (m *MockPlaybookRunService) RunChecklistItemSlashCommand(arg0, arg1 string, arg2, arg3 int) (string, error) {
 	m.ctrl.T.Helper()

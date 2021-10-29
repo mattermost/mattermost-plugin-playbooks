@@ -1277,6 +1277,72 @@ func TestUpdatePlaybookRun(t *testing.T) {
 	}
 }
 
+func TestRestorePlaybookRun(t *testing.T) {
+	post1 := &model.Post{
+		Id:       model.NewId(),
+		CreateAt: 10000000,
+		DeleteAt: 0,
+	}
+	post2 := &model.Post{
+		Id:       model.NewId(),
+		CreateAt: 20000000,
+		DeleteAt: 0,
+	}
+	post3 := &model.Post{
+		Id:       model.NewId(),
+		CreateAt: 30000000,
+		DeleteAt: 0,
+	}
+	post4 := &model.Post{
+		Id:       model.NewId(),
+		CreateAt: 40000000,
+		DeleteAt: 40300000,
+	}
+	post5 := &model.Post{
+		Id:       model.NewId(),
+		CreateAt: 40000001,
+		DeleteAt: 0,
+	}
+	post6 := &model.Post{
+		Id:       model.NewId(),
+		CreateAt: 40000002,
+		DeleteAt: 0,
+	}
+	allPosts := []*model.Post{post1, post2, post3, post4, post5, post6}
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		_, store := setupSQLStore(t, db)
+
+		setupChannelsTable(t, db)
+		setupPostsTable(t, db)
+		savePosts(t, store, allPosts)
+
+		now := model.GetMillis()
+		initialPlaybookRun := NewBuilder(t).
+			WithCreateAt(now - 1000).
+			WithCurrentStatus(app.StatusFinished).
+			ToPlaybookRun()
+
+		returned, err := playbookRunStore.CreatePlaybookRun(initialPlaybookRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, returned)
+
+		err = playbookRunStore.RestorePlaybookRun(returned.ID, now)
+		require.NoError(t, err)
+
+		finalPlaybookRun := *returned
+		finalPlaybookRun.CurrentStatus = app.StatusInProgress
+		finalPlaybookRun.EndAt = 0
+		finalPlaybookRun.LastStatusUpdateAt = now
+
+		actual, err := playbookRunStore.GetPlaybookRun(returned.ID)
+		require.NoError(t, err)
+		require.Equal(t, &finalPlaybookRun, actual)
+	}
+}
+
 // intended to catch problems with the code assembling StatusPosts
 func TestStressTestGetPlaybookRuns(t *testing.T) {
 	rand.Seed(time.Now().UTC().UnixNano())
