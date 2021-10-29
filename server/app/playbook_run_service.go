@@ -59,9 +59,6 @@ const DialogFieldMessageKey = "message"
 // DialogFieldReminderInSecondsKey is the key for the reminder select field used in UpdatePlaybookRunDialog
 const DialogFieldReminderInSecondsKey = "reminder"
 
-// DialogFieldStatusKey is the key for the status select field used in UpdatePlaybookRunDialog
-const DialogFieldStatusKey = "status"
-
 // DialogFieldPlaybookRunKey is the key for the playbook run chosen in AddToTimelineDialog
 const DialogFieldPlaybookRunKey = "playbook_run"
 
@@ -2055,10 +2052,6 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 
 	reminderOptions := []*model.PostActionOptions{
 		{
-			Text:  "None",
-			Value: "0",
-		},
-		{
 			Text:  "15min",
 			Value: "900",
 		},
@@ -2077,6 +2070,10 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 		{
 			Text:  "24hr",
 			Value: "86400",
+		},
+		{
+			Text:  "1Week",
+			Value: "604800",
 		},
 	}
 
@@ -2523,8 +2520,8 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string) string {
 	message := fmt.Sprintf("\n##### Overdue Status Updates\nYou have %d %s overdue for a status update:\n", total, runPlural)
 
 	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked)\n",
-			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked) (Owner: @%s)\n",
+			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName, run.OwnerUserName)
 	}
 
 	return message

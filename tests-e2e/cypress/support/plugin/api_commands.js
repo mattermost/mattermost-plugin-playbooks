@@ -229,7 +229,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
         broadcastEnabled,
         broadcastChannelIds,
         reminderMessageTemplate,
-        reminderTimerDefaultSeconds,
+        reminderTimerDefaultSeconds = 24 * 60 * 60, // 24 hours
         invitedUserIds,
         inviteUsersEnabled,
         defaultOwnerId,
@@ -289,7 +289,7 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         broadcastEnabled,
         broadcastChannelIds,
         reminderMessageTemplate,
-        reminderTimerDefaultSeconds,
+        reminderTimerDefaultSeconds = 24 * 60 * 60, // 24 hours
         otherMembers = [],
         invitedUserIds = [],
     }) => (

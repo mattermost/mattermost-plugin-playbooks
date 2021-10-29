@@ -31,6 +31,8 @@ import {
     PlaybookCreated,
     PLAYBOOK_DELETED,
     PlaybookDeleted,
+    PLAYBOOK_RESTORED,
+    PlaybookRestored,
     ReceivedTeamNumPlaybooks,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedGlobalSettings,
@@ -181,10 +183,20 @@ const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {},
     }
 };
 
-const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookDeleted | ReceivedTeamNumPlaybooks) => {
+const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookDeleted | PlaybookRestored | ReceivedTeamNumPlaybooks) => {
     switch (action.type) {
     case PLAYBOOK_CREATED: {
         const playbookCreatedAction = action as PlaybookCreated;
+        const teamID = playbookCreatedAction.teamID;
+        const prevCount = state[teamID] || 0;
+
+        return {
+            ...state,
+            [teamID]: prevCount + 1,
+        };
+    }
+    case PLAYBOOK_RESTORED: {
+        const playbookCreatedAction = action as PlaybookRestored;
         const teamID = playbookCreatedAction.teamID;
         const prevCount = state[teamID] || 0;
 

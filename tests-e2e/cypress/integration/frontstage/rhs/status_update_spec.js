@@ -192,25 +192,6 @@ describe('playbook run rhs > latest update', () => {
             });
         });
 
-        it('shows the last reminder we typed in: none', () => {
-            const now = Date.now();
-            const firstMessage = 'Update - ' + now;
-
-            // # Create a first status update
-            cy.updateStatus(firstMessage, 'none');
-
-            // # Run the `/playbook update` slash command.
-            cy.executeSlashCommand('/playbook update');
-
-            // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
-                // * Verify the default is as expected
-                cy.get('#reminder_timer_datetime').within(() => {
-                    cy.get('[class$=placeholder]');
-                });
-            });
-        });
-
         it('shows the last reminder we typed in: 15 minutes', () => {
             const now = Date.now();
             const firstMessage = 'Update - ' + now;

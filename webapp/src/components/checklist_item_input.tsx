@@ -142,7 +142,7 @@ export const ChecklistItemButton = (props: ChecklistItemButtonProps) => {
     const isChecked = props.item.state === ChecklistItemState.Closed;
 
     return (
-        <input
+        <ChecklistItemInput
             className='checkbox'
             type='checkbox'
             checked={isChecked}
@@ -156,6 +156,12 @@ export const ChecklistItemButton = (props: ChecklistItemButtonProps) => {
             }}
         />);
 };
+
+const ChecklistItemInput = styled.input`
+    :disabled:hover {
+        cursor: default;
+    }
+`;
 
 interface ChecklistItemTitleProps {
     title: string;
