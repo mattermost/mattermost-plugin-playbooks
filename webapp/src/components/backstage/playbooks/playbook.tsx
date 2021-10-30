@@ -245,7 +245,7 @@ const ClipboardsPlaySmall = styled(ClipboardsPlay)`
 const PrimaryButtonLarger = styled(PrimaryButton)`
     padding: 0 16px;
     height: 36px;
-    margin-left: 12px;
+    margin-left: auto;
 `;
 const Navbar = styled.nav`
     background: var(--center-channel-bg);
