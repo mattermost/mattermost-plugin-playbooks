@@ -8,6 +8,7 @@ import {PlaybookWithChecklist} from 'src/types/playbook';
 
 import Actions from 'src/components/backstage/playbooks/playbook_preview_actions';
 import Checklists from 'src/components/backstage/playbooks/playbook_preview_checklists';
+import Description from 'src/components/backstage/playbooks/playbook_preview_description';
 import Navbar, {SectionID} from 'src/components/backstage/playbooks/playbook_preview_navbar';
 import Retrospective from 'src/components/backstage/playbooks/playbook_preview_retrospective';
 import StatusUpdates from 'src/components/backstage/playbooks/playbook_preview_status_updates';
@@ -21,6 +22,10 @@ const PlaybookPreview = (props: Props) => {
     return (
         <Container>
             <Content>
+                <Description
+                    id={SectionID.Description}
+                    playbook={props.playbook}
+                />
                 <Checklists
                     id={SectionID.Checklists}
                     playbook={props.playbook}
