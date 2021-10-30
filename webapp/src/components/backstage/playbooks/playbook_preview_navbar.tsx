@@ -17,6 +17,7 @@ import {BackstageID} from 'src/components/backstage/backstage';
 const prefix = 'playbooks-playbookPreview-';
 
 export enum SectionID {
+    Description = 'playbooks-playbookPreview-description',
     Checklists = 'playbooks-playbookPreview-checklists',
     Actions = 'playbooks-playbookPreview-actions',
     StatusUpdates = 'playbooks-playbookPreview-statusUpdates',
@@ -34,7 +35,7 @@ const headersOffset = 140;
 const PlaybookPreviewNavbar = ({playbookId, runsInProgress}: Props) => {
     const {formatMessage} = useIntl();
     const match = useRouteMatch();
-    const [activeId, setActiveId] = useState(SectionID.Checklists);
+    const [activeId, setActiveId] = useState(SectionID.Description);
 
     const updateActiveSection = () => {
         const threshold = (window.innerHeight / 2) - headersOffset;
@@ -137,6 +138,11 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress}: Props) => {
                 {formatMessage({defaultMessage: 'In this playbook'})}
             </Header>
             <Items>
+                <Item
+                    id={SectionID.Description}
+                    iconName={'information-outline'}
+                    title={formatMessage({defaultMessage: 'Description'})}
+                />
                 <Item
                     id={SectionID.Checklists}
                     iconName={'check-all'}
