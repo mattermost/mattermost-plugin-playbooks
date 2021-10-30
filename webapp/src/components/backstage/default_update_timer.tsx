@@ -8,7 +8,11 @@ import {Duration} from 'luxon';
 
 import {formatDuration} from '../formatted_duration';
 
-import {BackstageSubheader, BackstageSubheaderDescription} from 'src/components/backstage/styles';
+import {
+    BackstageSubheader,
+    BackstageSubheaderDescription,
+    InfoLine,
+} from 'src/components/backstage/styles';
 
 import {
     useDateTimeInput,
@@ -33,10 +37,10 @@ const optionFromSeconds = (seconds: number) => {
 };
 
 const DefaultUpdateTimer = (props: Props) => {
+    const {formatMessage} = useIntl();
+
     const defaults = useMemo(() => {
-        const neverOption = {label: 'Never', value: Duration.fromMillis(0)};
         const options = [
-            neverOption,
             makeOption('60 minutes', Mode.DurationValue),
             makeOption('24 hours', Mode.DurationValue),
             makeOption('7 days', Mode.DurationValue),
@@ -53,8 +57,6 @@ const DefaultUpdateTimer = (props: Props) => {
                 options.push(value);
             }
             options.sort((a, b) => ms(a.value) - ms(b.value));
-        } else if (props.seconds === 0) {
-            value = neverOption;
         }
 
         return {options, value};
@@ -65,14 +67,14 @@ const DefaultUpdateTimer = (props: Props) => {
         parsingOptions: {defaultUnit: 'minutes'},
         defaultOptions: defaults.options,
         defaultValue: defaults.value,
+        isClearable: false,
+        placeholder: formatMessage({defaultMessage: 'Select an option or specify a custom duration'}),
         id: 'update_timer_duration',
     });
 
     if (value?.value) {
         props.setSeconds(Math.floor(ms(value.value) / 1000));
     }
-
-    const {formatMessage} = useIntl();
 
     return (
         <>
@@ -83,6 +85,9 @@ const DefaultUpdateTimer = (props: Props) => {
                 </BackstageSubheaderDescription>
             </BackstageSubheader>
             {input}
+            <InfoLine>
+                {formatMessage({defaultMessage: 'You can select an option or specify a custom duration ("2 weeks", "3 days 12 hours", "45 minutes", ...)'})}
+            </InfoLine>
         </>
     );
 };
