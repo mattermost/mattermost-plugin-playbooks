@@ -224,6 +224,7 @@ const ChecklistItemDescription = styled.div`
             margin-bottom: 0;
         }
 
+        white-space: pre-wrap;
     }
 `;
 
