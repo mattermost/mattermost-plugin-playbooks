@@ -214,7 +214,6 @@ const ChecklistItemDescription = styled.div`
 
     display: flex;
     flex-direction: column;
-    align-items: center;
 
     max-width: 630px;
     margin: 4px 0 0 2px;
