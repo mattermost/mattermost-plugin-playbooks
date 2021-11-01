@@ -2,18 +2,14 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Channel} from 'mattermost-redux/types/channels';
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-
 import {
     Badge,
-    SecondaryButtonLargerRight,
+    ExpandRight,
+    PrimaryButtonLarger,
 } from 'src/components/backstage/playbook_runs/shared';
 
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
@@ -172,7 +168,6 @@ const PlaybookRunBackstage = () => {
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
-    const channel = useSelector<GlobalState, Channel | null>((state) => (playbookRun ? getChannel(state, playbookRun.channel_id) : null));
     const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
 
@@ -228,11 +223,6 @@ const PlaybookRunBackstage = () => {
         navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
     };
 
-    let channelIcon = 'icon-mattermost';
-    if (channel) {
-        channelIcon = channel.type === 'O' ? 'icon-globe' : 'icon-lock-outline';
-    }
-
     const closePlaybookRunDetails = () => {
         navigateToPluginUrl('/runs');
     };
@@ -255,11 +245,12 @@ const PlaybookRunBackstage = () => {
                         }
                     </VerticalBlock>
                     <Badge status={playbookRun.current_status}/>
-                    <SecondaryButtonLargerRight onClick={goToChannel}>
-                        <i className={'icon ' + channelIcon}/>
-                        {formatMessage({defaultMessage: 'Go to channel'})}
-                    </SecondaryButtonLargerRight>
+                    <ExpandRight/>
                     <ExportLink playbookRun={playbookRun}/>
+                    <PrimaryButtonLarger onClick={goToChannel}>
+                        <i className={'icon icon-message-text-outline mr-1'}/>
+                        {formatMessage({defaultMessage: 'Go to channel'})}
+                    </PrimaryButtonLarger>
                 </FirstRow>
                 <SecondRow>
                     <TabItem

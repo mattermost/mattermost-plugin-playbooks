@@ -5,7 +5,7 @@ import styled, {css} from 'styled-components';
 
 import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
 
-import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';
 
 export const Container = styled.div`
@@ -70,10 +70,20 @@ export const SecondaryButtonLargerRight = styled(SecondaryButtonLarger)`
     margin-left: auto;
 `;
 
+export const ExpandRight = styled.div`
+    margin-left: auto;
+`;
+
 export const PrimaryButtonRight = styled(PrimaryButton)`
     height: 26px;
     padding: 0 14px;
     margin-left: auto;
+    font-size: 12px;
+`;
+
+export const PrimaryButtonLarger = styled(PrimaryButton)`
+    padding: 0 16px;
+    height: 36px;
     font-size: 12px;
 `;
 
