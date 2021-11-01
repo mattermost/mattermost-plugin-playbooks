@@ -249,7 +249,10 @@ const RHSHome = () => {
                     <FormattedMessage defaultMessage='Welcome to Playbooks!'/>
                 </Heading>
                 <WelcomeDesc>
-                    <FormattedMessage defaultMessage='A playbook prescribes the checklists, automations, and templates for any repeatable procedures. {br} It helps teams reduce errors, earn trust with stakeholders, and become more effective with every iteration.' values={{br: <br/>}}/>
+                    <FormattedMessage
+                        defaultMessage='A playbook prescribes the checklists, automations, and templates for any repeatable procedures. {br} It helps teams reduce errors, earn trust with stakeholders, and become more effective with every iteration.'
+                        values={{br: <br/>}}
+                    />
                 </WelcomeDesc>
                 {canCreatePlaybooks ? (
                     <div>
