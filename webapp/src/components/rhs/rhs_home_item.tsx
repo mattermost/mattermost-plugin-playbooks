@@ -297,7 +297,6 @@ export const RHSHomeTemplate = ({
                             size={1}
                         />
                         {formatMessage({
-
                             defaultMessage: '{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}',
                         }, {num_checklists: template.num_stages})}
                     </MetaItem>
@@ -318,7 +317,7 @@ export const RHSHomeTemplate = ({
                     path={mdiOpenInNew}
                     size={1.5}
                 />
-                {'Use'}
+                {formatMessage({defaultMessage: 'Use'})}
             </RunButton>
         </Item>
     );

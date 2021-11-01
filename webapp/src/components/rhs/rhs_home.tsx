@@ -264,10 +264,10 @@ const RHSHome = () => {
                                 path={mdiPlus}
                                 size={1}
                             />
-                            {'Create playbook'}
+                            <FormattedMessage defaultMessage='Create playbook'/>
                         </WelcomeButtonCreate>
                         <WelcomeCreateAlt>
-                            {'...or start with a template'}
+                            <FormattedMessage defaultMessage='…or start with a template'/>
                             <Icon
                                 path={mdiArrowDown}
                                 size={1}
@@ -275,7 +275,9 @@ const RHSHome = () => {
                         </WelcomeCreateAlt>
                     </div>
                 ) : (
-                    <WelcomeWarn>{"There are no playbooks to view. You don't have permission to create playbooks in this workspace."}</WelcomeWarn>
+                    <WelcomeWarn>
+                        <FormattedMessage defaultMessage="There are no playbooks to view. You don't have permission to create playbooks in this workspace."/>
+                    </WelcomeWarn>
                 )}
             </WelcomeBlock>
         );
@@ -288,13 +290,17 @@ const RHSHome = () => {
                         {
                             hasCurrentRun ? (
                                 <>
-                                    <span>{'Currently running the '}</span>
-                                    <strong>{currentPlaybook?.title}</strong>
-                                    <span>{' playbook'}</span>
+                                    <FormattedMessage
+                                        defaultMessage='Currently running the <strong>{playbookTitle}</strong> playbook'
+                                        values={{
+                                            strong: (x: React.ReactNode) => <strong>{x}</strong>,
+                                            playbookTitle: currentPlaybook?.title,
+                                        }}
+                                    />
                                 </>
                             ) : (
                                 <span>
-                                    {'This channel is not running any playbook.'}
+                                    <FormattedMessage defaultMessage='This channel is not running any playbook.'/>
                                 </span>
                             )
                         }
@@ -302,7 +308,8 @@ const RHSHome = () => {
                     {hasCurrentRun && (
                         <RunDetailButton onClick={viewCurrentPlaybookRun}>
                             <span>
-                                {'View run details '}
+                                <FormattedMessage defaultMessage='View run details'/>
+                                {' '}
                             </span>
                             <Icon
                                 path={mdiArrowRight}

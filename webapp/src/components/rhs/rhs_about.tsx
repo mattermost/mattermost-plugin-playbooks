@@ -99,7 +99,7 @@ const RHSAbout = (props: Props) => {
                         />
                     </OwnerSection>
                     <ParticipantsSection>
-                        <MemberSectionTitle>{'Participants'}</MemberSectionTitle>
+                        <MemberSectionTitle>{formatMessage({defaultMessage: 'Participants'})}</MemberSectionTitle>
                         <RHSParticipants userIds={participantsIds}/>
                     </ParticipantsSection>
                 </Row>
