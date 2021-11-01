@@ -249,6 +249,7 @@ const PlaybookList = () => {
 type CreatePlaybookButtonProps = UpgradeButtonProps & {teams: Team[], allowPlaybookCreationInTeams:Map<string, boolean>, showUpgradeModal?: () => void};
 
 const TeamSelectorButton = (props: CreatePlaybookButtonProps) => {
+    const {formatMessage} = useIntl();
     const {teams, allowPlaybookCreationInTeams, showUpgradeModal, ...rest} = props;
     if (isPlaybookCreationAllowed(allowPlaybookCreationInTeams)) {
         return (
@@ -263,7 +264,7 @@ const TeamSelectorButton = (props: CreatePlaybookButtonProps) => {
             >
                 <CreatePlaybookButton>
                     <i className='icon-plus mr-2'/>
-                    <FormattedMessage defaultMessage='Create playbook'/>
+                    {formatMessage({defaultMessage: 'Create playbook'})}
                 </CreatePlaybookButton>
             </CreatePlaybookTeamSelector>
         );
@@ -273,7 +274,7 @@ const TeamSelectorButton = (props: CreatePlaybookButtonProps) => {
             onClick={showUpgradeModal}
         >
             <i className='icon-plus mr-2'/>
-            <FormattedMessage defaultMessage='Create playbook'/>
+            {formatMessage({defaultMessage: 'Create playbook'})}
             <NotAllowedIcon className='icon icon-key-variant-circle'/>
         </CreatePlaybookButton>
     );
