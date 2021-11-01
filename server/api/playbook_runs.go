@@ -406,10 +406,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.MessageOnJoin = pb.MessageOnJoin
 		}
 
-		if pb.ExportChannelOnFinishedEnabled {
-			playbookRun.ExportChannelOnFinishedEnabled = pb.ExportChannelOnFinishedEnabled
-		}
-
 		if pb.CategorizeChannelEnabled {
 			playbookRun.CategoryName = pb.CategoryName
 		}

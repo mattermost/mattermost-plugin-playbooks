@@ -45,8 +45,6 @@ interface Props {
     onToggleMessageOnJoin: () => void;
     messageOnJoin: string;
     messageOnJoinChange: (message: string) => void;
-    exportChannelOnFinishedEnabled: boolean;
-    onToggleExportChannelOnFinishedEnabled: () => void;
     signalAnyKeywordsEnabled: boolean;
     onToggleSignalAnyKeywords: () => void;
     signalAnyKeywordsChange: (keywords: string[]) => void;

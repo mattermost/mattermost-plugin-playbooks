@@ -144,7 +144,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"ConcatenatedBroadcastChannelIDs", "ConcatenatedWebhookOnCreationURLs", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "ExportChannelOnFinishedEnabled",
+			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs",
 			"COALESCE(CategoryName, '') CategoryName").
 		Column(participantsCol).
 		From("IR_Incident AS i").
@@ -377,7 +377,6 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"RetrospectiveReminderIntervalSeconds":  rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":              rawPlaybookRun.RetrospectiveWasCanceled,
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
-			"ExportChannelOnFinishedEnabled":        rawPlaybookRun.ExportChannelOnFinishedEnabled,
 			"CategoryName":                          rawPlaybookRun.CategoryName,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
@@ -429,7 +428,6 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 			"RetrospectiveReminderIntervalSeconds":  rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":              rawPlaybookRun.RetrospectiveWasCanceled,
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
-			"ExportChannelOnFinishedEnabled":        rawPlaybookRun.ExportChannelOnFinishedEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 
