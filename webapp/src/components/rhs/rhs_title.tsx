@@ -8,7 +8,7 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
-import {FormattedMessage} from 'react-intl';
+import {useIntl} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -24,13 +24,15 @@ import {OVERLAY_DELAY} from 'src/constants';
 
 const RHSTitle = () => {
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
+
     const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>(currentPlaybookRun);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
 
     if (rhsState === RHSState.ViewingPlaybookRun) {
         const tooltip = (
             <Tooltip id={'view-run-overview'}>
-                <FormattedMessage defaultMessage='View run overview'/>
+                {formatMessage({defaultMessage: 'View run overview'})}
             </Tooltip>
         );
 
@@ -61,7 +63,7 @@ const RHSTitle = () => {
                             }
                         }}
                     >
-                        <FormattedMessage defaultMessage='Run details'/>
+                        {formatMessage({defaultMessage: 'Run details'})}
                         <StyledButtonIcon>
                             <ExternalLink/>
                         </StyledButtonIcon>
