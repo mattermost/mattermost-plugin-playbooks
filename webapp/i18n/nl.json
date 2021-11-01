@@ -87,5 +87,19 @@
     "X3DLGJ": "Iedereen in deze werkruimte kan playbooks maken.",
     "TyrY2b": "Playbook maken",
     "D3idYv": "Instellingen",
-    "AT2QBo": "Alleen geselecteerde gebruikers kunnen playbooks maken."
+    "AT2QBo": "Alleen geselecteerde gebruikers kunnen playbooks maken.",
+    "KUr+sG": "Werk overzicht van uitvoeringen bij",
+    "I2zEie": "Vier succes en leer van fouten met terugblikrapporten. Filter tijdlijngebeurtenissen voor procesbeoordeling, betrokkenheid van belanghebbenden en controledoeleinden.",
+    "JeqL8w": "Terugblik geannuleerd door {name}",
+    "Hzwzgs": "Broadcast updates in de {oneChannel, plural, one {kanaal} andere {kanalen}}",
+    "FEGywG": "Gelieve een datum/tijd in de toekomst op te geven voor de updateherinnering.",
+    "DXACD6": "Publiceren van terugblikverslag en toegang tot de tijdlijn",
+    "CjNrqO": "Sjabloon voor terugblik",
+    "ArpdYl": "Tijdlijngebeurtenissen worden hier weergegeven wanneer ze zich voordoen. Beweeg met de muis over een gebeurtenis om deze te verwijderen.",
+    "AML4RW": "Toegewezen taken",
+    "9Obw6C": "Filter",
+    "8hDbW6": "Een uitgaande webhook verzenden",
+    "4Hrh5B": "{name} wijzigde de status van {summary}",
+    "3/wF0G": "Slash-opdrachten",
+    "+QgvjN": "Wijs de rol van eigenaar toe aan"
 }
