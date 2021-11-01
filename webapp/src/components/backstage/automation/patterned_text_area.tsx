@@ -33,7 +33,7 @@ export const PatternedTextArea = (props: Props) => {
             return;
         }
 
-        if (props.maxRows && urls.split(props.delimiter || '\n').filter((v) => v.trim().length).length > props.maxRows) {
+        if (props.maxRows && urls.split(props.delimiter || '\n').filter((v) => v.trim().length > 0).length > props.maxRows) {
             setInvalid(true);
             if (props.maxErrorText) {
                 setErrorText(props.maxErrorText);
