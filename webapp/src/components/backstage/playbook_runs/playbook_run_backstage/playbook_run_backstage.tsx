@@ -271,9 +271,9 @@ const PlaybookRunBackstage = () => {
         navigateToPluginUrl('/runs');
     };
 
-    let followButton = (<Button onClick={onFollow}>{'Follow'}</Button>);
+    let followButton = (<Button onClick={onFollow}>{formatMessage({defaultMessage: 'Follow'})}</Button>);
     if (followers.includes(currentUserID)) {
-        followButton = (<Button onClick={onUnfollow}>{'Unfollow'}</Button>);
+        followButton = (<Button onClick={onUnfollow}>{formatMessage({defaultMessage: 'Unfollow'})}</Button>);
     }
 
     return (
