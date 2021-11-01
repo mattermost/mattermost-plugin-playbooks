@@ -124,6 +124,7 @@ const PostCard = (props: Props) => {
                             timestamp: (
                                 <Timestamp
                                     value={props.post.create_at}
+                                    useRelative
                                 />
                             ),
                         })
