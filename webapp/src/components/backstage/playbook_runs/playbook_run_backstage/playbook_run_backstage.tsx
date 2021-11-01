@@ -255,11 +255,11 @@ const PlaybookRunBackstage = () => {
                         }
                     </VerticalBlock>
                     <Badge status={playbookRun.current_status}/>
-                    <ExportLink playbookRun={playbookRun}/>
                     <SecondaryButtonLargerRight onClick={goToChannel}>
                         <i className={'icon ' + channelIcon}/>
                         {formatMessage({defaultMessage: 'Go to channel'})}
                     </SecondaryButtonLargerRight>
+                    <ExportLink playbookRun={playbookRun}/>
                 </FirstRow>
                 <SecondRow>
                     <TabItem
