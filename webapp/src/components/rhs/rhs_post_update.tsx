@@ -122,7 +122,7 @@ const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) 
     return DateTime.fromMillis(timestampValue);
 };
 
-const PastTimeSpec = [
+export const PastTimeSpec = [
     {within: ['second', -45], display: <FormattedMessage defaultMessage='just now'/>},
     ['minute', -59],
     ['hour', -48],
@@ -131,7 +131,7 @@ const PastTimeSpec = [
     'year',
 ];
 
-const FutureTimeSpec = [
+export const FutureTimeSpec = [
     ['minute', 59],
     ['hour', 48],
     ['day', 30],

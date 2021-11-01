@@ -37,6 +37,10 @@ export default function PaginationRow(props: Props) {
 
     const showNextPage = ((props.page + 1) * props.perPage) < props.totalCount;
 
+    const start = props.page * props.perPage;
+    const to = Math.min(start + props.perPage, props.totalCount);
+    const from = props.totalCount === 0 ? 0 : start + 1;
+
     return (
         <PaginationRowDiv>
             <div className='row'>
@@ -54,7 +58,7 @@ export default function PaginationRow(props: Props) {
                 <CountDiv className='text-center col-sm-8'>
                     <FormattedMessage
                         defaultMessage='{from, number}–{to, number} of {total, number} total'
-                        values={countInfo(props)}
+                        values={{from, to, total: props.totalCount}}
                     />
                 </CountDiv>
                 <div className='text-center col-sm-2'>
@@ -70,12 +74,4 @@ export default function PaginationRow(props: Props) {
             </div>
         </PaginationRowDiv>
     );
-}
-
-function countInfo(props: Props) {
-    const start = props.page * props.perPage;
-    const to = Math.min(start + props.perPage, props.totalCount);
-    const from = props.totalCount === 0 ? 0 : start + 1;
-
-    return {from, to, total: props.totalCount};
 }
