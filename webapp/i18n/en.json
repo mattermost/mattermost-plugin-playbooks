@@ -109,7 +109,6 @@
   "lZwZi+": "Day: {date}",
   "lbhO3D": "italic",
   "lxfpbh": "The owner will {reminderEnabled, select, true {be prompted to provide a status update every} other {not be prompted to provide a status update}}",
-  "nvy0pS": "When a run is finished, export the channel",
   "o2eHmz": "Run finished by {name}",
   "oS0w4E": "Default update timer",
   "pKLw8O": "Are you sure you want to delete this event? Deleted events will be permanently removed from the timeline.",
