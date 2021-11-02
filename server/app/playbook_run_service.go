@@ -31,15 +31,16 @@ const (
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
 type PlaybookRunServiceImpl struct {
-	pluginAPI     *pluginapi.Client
-	httpClient    *http.Client
-	configService config.Service
-	store         PlaybookRunStore
-	poster        bot.Poster
-	logger        bot.Logger
-	scheduler     JobOnceScheduler
-	telemetry     PlaybookRunTelemetry
-	api           plugin.API
+	pluginAPI       *pluginapi.Client
+	httpClient      *http.Client
+	configService   config.Service
+	store           PlaybookRunStore
+	poster          bot.Poster
+	logger          bot.Logger
+	scheduler       JobOnceScheduler
+	telemetry       PlaybookRunTelemetry
+	api             plugin.API
+	playbookService PlaybookService
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -76,17 +77,18 @@ const DialogFieldItemCommandKey = "command"
 
 // NewPlaybookRunService creates a new PlaybookRunServiceImpl.
 func NewPlaybookRunService(pluginAPI *pluginapi.Client, store PlaybookRunStore, poster bot.Poster, logger bot.Logger,
-	configService config.Service, scheduler JobOnceScheduler, telemetry PlaybookRunTelemetry, api plugin.API) *PlaybookRunServiceImpl {
+	configService config.Service, scheduler JobOnceScheduler, telemetry PlaybookRunTelemetry, api plugin.API, playbookService PlaybookService) *PlaybookRunServiceImpl {
 	return &PlaybookRunServiceImpl{
-		pluginAPI:     pluginAPI,
-		store:         store,
-		poster:        poster,
-		logger:        logger,
-		configService: configService,
-		scheduler:     scheduler,
-		telemetry:     telemetry,
-		httpClient:    httptools.MakeClient(pluginAPI),
-		api:           api,
+		pluginAPI:       pluginAPI,
+		store:           store,
+		poster:          poster,
+		logger:          logger,
+		configService:   configService,
+		scheduler:       scheduler,
+		telemetry:       telemetry,
+		httpClient:      httptools.MakeClient(pluginAPI),
+		api:             api,
+		playbookService: playbookService,
 	}
 }
 
@@ -679,6 +681,11 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdateToFollowers(post *model.Po
 		if follower == authorID {
 			continue
 		}
+		// Check for access permissions
+		if err := UserCanViewPlaybookRun(follower, playbookRunID, s.playbookService, s, s.pluginAPI); err != nil {
+			continue
+		}
+
 		channel, err := s.poster.GetDirect(follower)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get bot's dm channel")
