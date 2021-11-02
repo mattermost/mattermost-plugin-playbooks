@@ -138,12 +138,14 @@ const Playbook = () => {
                 <NavItem
                     activeStyle={activeNavItemStyle}
                     to={`${match.url}/preview`}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_preview_tab_clicked')}
                 >
                     {formatMessage({defaultMessage: 'Preview'})}
                 </NavItem>
                 <NavItem
                     activeStyle={activeNavItemStyle}
                     to={`${match.url}/usage`}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_usage_tab_clicked')}
                 >
                     {formatMessage({defaultMessage: 'Usage'})}
                 </NavItem>
@@ -233,13 +235,6 @@ const Title = styled.div`
 const SubTitle = styled.div`
     font-size: 11px;
     line-height: 16px;
-`;
-
-const ClipboardsPlaySmall = styled(ClipboardsPlay)`
-    height: 18px;
-    width: auto;
-    margin-right: 7px;
-    color: var(--button-color);
 `;
 
 const PrimaryButtonLarger = styled(PrimaryButton)`
