@@ -269,10 +269,9 @@ const UsageButton = ({playbookId, activeRuns}: {playbookId: string, activeRuns: 
                 size={1.2}
             />
             {formatMessage(
-                {defaultMessage: '{activeRuns, number} active {activeRuns, plural, one {run} other {runs}}'},
+                {defaultMessage: '{activeRuns, number} {activeRuns, plural, one {run} other {runs}} in progress'},
                 {activeRuns},
             )}
-            <i className='icon-arrow-right icon-16'/>
         </UsageButtonWrapper>
     );
 };
@@ -281,7 +280,7 @@ const UsageButtonWrapper = styled.div`
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 8px 12px;
+    padding: 8px 10px;
     cursor: pointer;
 
     background: rgba(var(--center-channel-color-rgb), 0.04);
