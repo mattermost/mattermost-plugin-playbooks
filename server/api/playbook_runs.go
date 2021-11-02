@@ -377,7 +377,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.Checklists = pb.Checklists
 		public = pb.CreatePublicPlaybookRun
 
-		playbookRun.Description = pb.Description
+		playbookRun.Description = pb.RunSummaryTemplate
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
 		playbookRun.ReminderTimerDefaultSeconds = pb.ReminderTimerDefaultSeconds

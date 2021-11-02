@@ -586,7 +586,7 @@ const PlaybookEdit = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {formatMessage({defaultMessage: 'Description'})}
+                                        {formatMessage({defaultMessage: 'Run summary template'})}
                                         <BackstageSubheaderDescription>
                                             {formatMessage({defaultMessage: 'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'})}
                                         </BackstageSubheaderDescription>
@@ -595,11 +595,11 @@ const PlaybookEdit = (props: Props) => {
                                         className={'playbook_description'}
                                         id={'playbook_description_edit'}
                                         placeholder={formatMessage({defaultMessage: 'Use Markdown to create a template.'})}
-                                        value={playbook.description}
-                                        setValue={(description: string) => {
+                                        value={playbook.run_summary_template}
+                                        setValue={(run_summary_template: string) => {
                                             setPlaybook({
                                                 ...playbook,
-                                                description,
+                                                run_summary_template,
                                             });
                                             setChangesMade(true);
                                         }}

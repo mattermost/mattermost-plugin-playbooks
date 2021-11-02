@@ -89,7 +89,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 'Hello and welcome!\n\n' +
                 'This channel was created as part of the **Product Release** playbook and is where conversations related to this release are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.',
             categorize_channel_enabled: true,
-            description:
+            run_summary_template:
                 '**About**\n' +
                 '- Version number: TBD\n' +
                 '- Target-date: TBD\n' +
@@ -182,7 +182,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 'Hello and welcome!\n\n' +
                 'This channel was created as part of the **Customer Onboarding** playbook and is where conversations related to this customer are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.',
             categorize_channel_enabled: true,
-            description:
+            run_summary_template:
                 '**About**\n' +
                 '- Account name: [TBD](#)\n' +
                 '- Salesforce opportunity: [TBD](#)\n' +
@@ -252,7 +252,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 'Hello and welcome!\n\n' +
                 'This channel was created as part of the **Service Reliability Incident** playbook and is where conversations related to this release are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.',
             categorize_channel_enabled: true,
-            description:
+            run_summary_template:
                 '**Summary**\n' +
                 '\n' +
                 '**Customer impact**\n' +
@@ -378,7 +378,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 'Hello and welcome!\n\n' +
                 'This channel was created as part of the **Feature Lifecycle** playbook and is where conversations related to developing this feature are held. You can customize this message using Markdown so that every new channel member can be welcomed with helpful context and resources.',
             categorize_channel_enabled: true,
-            description:
+            run_summary_template:
                 '**One-liner**\n' +
                 '<ie. Enable users to prescribe a description template so it\'s consistent for every run and therefore easier to read.>\n' +
                 '\n' +

@@ -42,6 +42,7 @@ export interface PlaybookWithChecklist extends Playbook {
     signal_any_keywords: string[];
     category_name: string;
     categorize_channel_enabled: boolean;
+    run_summary_template: string;
 }
 
 export interface FetchPlaybooksParams {
@@ -127,6 +128,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         signal_any_keywords_enabled: false,
         category_name: '',
         categorize_channel_enabled: false,
+        run_summary_template: '',
     };
 }
 
