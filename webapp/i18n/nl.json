@@ -132,5 +132,6 @@
     "MvEydR": "{name} heeft een status update geplaatst",
     "MFpAtm": "{numTasks, number} {numTasks, plural, one {taak} other {taken}}",
     "LmhSmU": "Bevestig wissen invoer",
-    "LRFvqz": "Kondig aan in het {oneChannel, plural, one {kanaal} other {kanalen}}"
+    "LRFvqz": "Kondig aan in het {oneChannel, plural, one {kanaal} other {kanalen}}",
+    "vOFN0m": "Status bericht verwijderd:"
 }
