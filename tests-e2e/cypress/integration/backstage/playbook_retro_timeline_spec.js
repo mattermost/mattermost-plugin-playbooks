@@ -13,11 +13,6 @@ describe('timeline', () => {
             testTeam = team;
             testUser = user;
 
-            // # Turn off growth onboarding screens
-            cy.apiUpdateConfig({
-                ServiceSettings: {EnableOnboardingFlow: false},
-            });
-
             // # Create a public playbook
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
