@@ -268,9 +268,16 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 		return
 	}
 
+	channel, err := h.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to get new channel", err)
+		return
+	}
+
 	h.poster.PublishWebsocketEventToUser(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
 		"client_id":    state.ClientID,
 		"playbook_run": playbookRun,
+		"channel_name": channel.Name,
 	}, request.UserId)
 
 	if err := h.postPlaybookRunCreatedMessage(playbookRun, request.ChannelId); err != nil {

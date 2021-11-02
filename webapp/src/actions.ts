@@ -3,17 +3,13 @@
 import {AnyAction, Dispatch} from 'redux';
 
 import {generateId} from 'mattermost-redux/utils/helpers';
-
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-
-import {GetStateFunc} from 'mattermost-redux/types/actions';
+import {batchActions, GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
-
 import {
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
@@ -56,14 +52,15 @@ import {
     SetChecklistCollapsedState,
     SetAllChecklistsCollapsedState,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
-    SET_CHECKLIST_ITEMS_FILTER, SetChecklistItemsFilter,
+    SET_CHECKLIST_ITEMS_FILTER,
+    SetChecklistItemsFilter,
+    MM_UPDATE_RHS_STATE,
+    MM_SELECT_POST,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
-
 import {modals} from 'src/webapp_globals';
-
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
@@ -171,6 +168,23 @@ export function setToggleRHSAction(toggleRHSPluginAction: () => void): ReceivedT
 export function toggleRHS() {
     return (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         selectToggleRHS(getState())();
+    };
+}
+
+export function closeMMRHS() {
+    return (dispatch: Dispatch) => {
+        dispatch(batchActions([
+            {
+                type: MM_UPDATE_RHS_STATE,
+                state: null,
+            },
+            {
+                type: MM_SELECT_POST,
+                postId: '',
+                channelId: '',
+                timestamp: 0,
+            },
+        ]));
     };
 }
 

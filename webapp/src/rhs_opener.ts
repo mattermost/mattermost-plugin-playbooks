@@ -11,7 +11,8 @@ import {fetchPlaybookRuns} from 'src/client';
 import {currentPlaybookRun, isPlaybookRunRHSOpen, inPlaybookRunChannel} from 'src/selectors';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
-import {toggleRHS, receivedTeamPlaybookRuns} from 'src/actions';
+import {toggleRHS, receivedTeamPlaybookRuns, closeMMRHS} from 'src/actions';
+import {browserHistory} from 'src/webapp_globals';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
     let currentTeamId = '';
@@ -58,18 +59,41 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
             return;
         }
 
-        // Don't navigate away from an alternate sidebar that is open.
-        if (mmRhsOpen) {
-            return;
-        }
-
         // Don't do anything unless we're in a playbook run channel.
         if (!currentChannelIsPlaybookRun) {
             return;
         }
 
+        // Should we force open the RHS?
+        const url = new URL(window.location.href);
+        const searchParams = new URLSearchParams(url.searchParams);
+        if (searchParams.has('forceRHSOpen')) {
+            const forceOpen = searchParams.get('forceRHSOpen');
+
+            // Regardless, remove the param because it's only intended to be used here.
+            searchParams.delete('forceRHSOpen');
+            url.search = searchParams.toString();
+            browserHistory.replace({pathname: url.pathname, search: url.search});
+
+            if (forceOpen === 'true') {
+                if (mmRhsOpen) {
+                    //@ts-ignore thunk
+                    store.dispatch(closeMMRHS());
+                }
+
+                //@ts-ignore thunk
+                store.dispatch(toggleRHS());
+                return;
+            }
+        }
+
         // Don't do anything if the playbook run is finished.
         if (playbookRun && playbookRun.current_status === PlaybookRunStatus.Finished) {
+            return;
+        }
+
+        // Don't navigate away from an alternate sidebar that is open.
+        if (mmRhsOpen) {
             return;
         }
 

@@ -98,8 +98,9 @@ export function handleWebsocketPlaybookRunCreated(getState: GetStateFunc, dispat
         const currentTeam = getCurrentTeam(getState());
 
         // Navigate to the newly created channel
-        const url = `/${currentTeam.name}/channels/${playbookRun.channel_id}`;
-        navigateToUrl(url);
+        const pathname = `/${currentTeam.name}/channels/${payload.channel_name}`;
+        const search = '?forceRHSOpen=true';
+        navigateToUrl({pathname, search});
     };
 }
 
