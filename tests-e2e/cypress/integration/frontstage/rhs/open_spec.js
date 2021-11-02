@@ -284,6 +284,36 @@ describe('playbook run rhs', () => {
                 cy.findByText(playbookRunName).should('exist');
             });
         });
+
+        it.only('when starting a playbook run when rhs is already open', () => {
+            // # Navigate to the application and a channel without a playbook run
+            cy.visit(`/${testTeam.name}/channels/off-topic`);
+
+            // # Wait until the channel loads enough to show the post textbox.
+            cy.get('#post-create').should('exist');
+
+            // # Open the flagged posts RHS
+            cy.get('body').then(($body) => {
+                if ($body.find('#channelHeaderFlagButton').length > 0) {
+                    cy.get('#channelHeaderFlagButton').click({force: true});
+                } else {
+                    cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'}).click({force: true});
+                }
+            });
+
+            // * Verify Saved Posts is open
+            cy.get('.sidebar--right__title').should('contain.text', 'Saved Posts');
+
+            // # Start a playbook run with a slash command
+            const now = Date.now();
+            const playbookRunName = 'Playbook Run (' + now + ')';
+            cy.startPlaybookRunWithSlashCommand('Playbook', playbookRunName);
+
+            // * Verify the playbook run RHS is open.
+            cy.get('#rhsContainer').should('exist').within(() => {
+                cy.findByText(playbookRunName).should('exist');
+            });
+        });
     });
 
     describe('is toggled', () => {
