@@ -216,3 +216,16 @@ export const Label = styled.label`
     margin-bottom: 8px;
 `;
 
+export const InlineLabel = styled.label`
+    z-index: 1;
+
+    width: max-content;
+    margin: 0 0 -8px 12px;
+    padding: 0 3px;
+    background: var(--center-channel-bg);
+
+    font-weight: normal;
+    font-size: 10px;
+    line-height: 14px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+`;
