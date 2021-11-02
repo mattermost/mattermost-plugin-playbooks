@@ -68,23 +68,18 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         const url = new URL(window.location.href);
         const searchParams = new URLSearchParams(url.searchParams);
         if (searchParams.has('forceRHSOpen')) {
-            const forceOpen = searchParams.get('forceRHSOpen');
-
-            // Regardless, remove the param because it's only intended to be used here.
             searchParams.delete('forceRHSOpen');
             url.search = searchParams.toString();
             browserHistory.replace({pathname: url.pathname, search: url.search});
 
-            if (forceOpen === 'true') {
-                if (mmRhsOpen) {
-                    //@ts-ignore thunk
-                    store.dispatch(closeMMRHS());
-                }
-
+            if (mmRhsOpen) {
                 //@ts-ignore thunk
-                store.dispatch(toggleRHS());
-                return;
+                store.dispatch(closeMMRHS());
             }
+
+            //@ts-ignore thunk
+            store.dispatch(toggleRHS());
+            return;
         }
 
         // Don't do anything if the playbook run is finished.

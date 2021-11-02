@@ -103,7 +103,7 @@ export function handleWebsocketPlaybookRunCreated(getState: GetStateFunc, dispat
 
         // Navigate to the newly created channel
         const pathname = `/${currentTeam.name}/channels/${payload.channel_name}`;
-        const search = '?forceRHSOpen=true';
+        const search = '?forceRHSOpen';
         navigateToUrl({pathname, search});
     };
 }
