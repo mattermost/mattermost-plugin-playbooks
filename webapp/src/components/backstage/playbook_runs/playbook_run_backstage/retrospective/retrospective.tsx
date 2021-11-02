@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {useIntl} from 'react-intl';
 
 import UpgradeRetrospectiveSvg from 'src/components/assets/upgrade_retrospective_svg';
 import {Container, Left, Right} from 'src/components/backstage/playbook_runs/shared';
@@ -21,13 +22,14 @@ interface Props {
 
 export const Retrospective = (props: Props) => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
+    const {formatMessage} = useIntl();
 
     if (!allowRetrospectiveAccess) {
         return (
             <UpgradeBanner
                 background={<UpgradeRetrospectiveSvg/>}
-                titleText={'Publish retrospective report and access the timeline'}
-                helpText={'Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes.'}
+                titleText={formatMessage({defaultMessage: 'Publish retrospective report and access the timeline'})}
+                helpText={formatMessage({defaultMessage: 'Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes.'})}
                 notificationType={AdminNotificationType.RETROSPECTIVE}
                 verticalAdjustment={650}
             />

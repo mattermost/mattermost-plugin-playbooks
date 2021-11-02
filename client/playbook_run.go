@@ -44,11 +44,12 @@ type StatusPost struct {
 
 // PlaybookRunMetadata tracks ancillary metadata about a playbook run.
 type PlaybookRunMetadata struct {
-	ChannelName        string `json:"channel_name"`
-	ChannelDisplayName string `json:"channel_display_name"`
-	TeamName           string `json:"team_name"`
-	NumParticipants    int64  `json:"num_participants"`
-	TotalPosts         int64  `json:"total_posts"`
+	ChannelName        string   `json:"channel_name"`
+	ChannelDisplayName string   `json:"channel_display_name"`
+	TeamName           string   `json:"team_name"`
+	NumParticipants    int64    `json:"num_participants"`
+	TotalPosts         int64    `json:"total_posts"`
+	Followers          []string `json:"followers"`
 }
 
 // TimelineEventType describes a type of timeline event.

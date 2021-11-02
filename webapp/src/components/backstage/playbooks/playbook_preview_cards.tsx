@@ -177,6 +177,8 @@ const CardSubEntryContent = styled.div`
         :not(:last-child) {
             margin-bottom: 6px;
         }
+
+        white-space: pre-wrap;
     }
 
     margin-left: 32px;
@@ -186,5 +188,5 @@ const CardSubEntryContent = styled.div`
     padding: 4px 8px;
     padding-right: 16px;
 
-    border-left: 1px solid rgba(var(--center-channel-color-rgb),0.24);
+    border-left: 2px solid rgba(var(--center-channel-color-rgb),0.24);
 `;

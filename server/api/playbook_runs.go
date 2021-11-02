@@ -97,6 +97,11 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	retrospectiveRouter.HandleFunc("", handler.updateRetrospective).Methods(http.MethodPost)
 	retrospectiveRouter.HandleFunc("/publish", handler.publishRetrospective).Methods(http.MethodPost)
 
+	followersRouter := playbookRunRouter.PathPrefix("/followers").Subrouter()
+	followersRouter.HandleFunc("", handler.follow).Methods(http.MethodPut)
+	followersRouter.HandleFunc("", handler.unfollow).Methods(http.MethodDelete)
+	followersRouter.HandleFunc("", handler.getFollowers).Methods(http.MethodGet)
+
 	return handler
 }
 
@@ -668,6 +673,10 @@ func (h *PlaybookRunHandler) status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if options.Reminder == 0 {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "the reminder must be set and not 0", errors.New("reminder was 0"))
+		return
+	}
 	options.Reminder = options.Reminder * time.Second
 
 	err = h.playbookRunService.UpdateStatus(playbookRunID, userID, options)
@@ -752,9 +761,13 @@ func (h *PlaybookRunHandler) updateStatusDialog(w http.ResponseWriter, r *http.R
 	}
 
 	if reminderI, ok := request.Submission[app.DialogFieldReminderInSecondsKey]; ok {
-		if reminder, err2 := strconv.Atoi(reminderI.(string)); err2 == nil {
-			options.Reminder = time.Duration(reminder) * time.Second
+		var reminder int
+		reminder, err = strconv.Atoi(reminderI.(string))
+		if reminder <= 0 {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "The reminder must be set and greater than 0.", err)
+			return
 		}
+		options.Reminder = time.Duration(reminder) * time.Second
 	}
 
 	err = h.playbookRunService.UpdateStatus(playbookRunID, userID, options)
@@ -1323,6 +1336,54 @@ func (h *PlaybookRunHandler) publishRetrospective(w http.ResponseWriter, r *http
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) follow(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := app.UserCanViewPlaybookRun(userID, playbookRunID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook run.", err)
+		return
+	}
+
+	if err := h.playbookRunService.Follow(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) unfollow(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.Unfollow(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) getFollowers(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := app.UserCanViewPlaybookRun(userID, playbookRunID, h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook run.", err)
+		return
+	}
+
+	var followers []string
+	var err error
+	if followers, err = h.playbookRunService.GetFollowers(playbookRunID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	ReturnJSON(w, followers, http.StatusOK)
 }
 
 // parsePlaybookRunsFilterOptions is only for parsing. Put validation logic in app.validateOptions.

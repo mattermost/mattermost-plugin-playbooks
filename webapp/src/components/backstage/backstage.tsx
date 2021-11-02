@@ -79,9 +79,6 @@ const BackstageTitlebarItem = styled(NavLink)`
 const BackstageBody = styled.div`
     z-index: 1;
     flex-grow: 1;
-
-    display: flex;
-    flex-direction: column;
 `;
 
 const Backstage = () => {
@@ -206,7 +203,7 @@ const Backstage = () => {
                         exact={true}
                         path={`${match.url}/`}
                     >
-                        <Redirect to={`${match.url}/runs`}/>
+                        <RunsPage/>
                     </Route>
                     <Route>
                         <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>

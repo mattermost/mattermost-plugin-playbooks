@@ -91,7 +91,6 @@
     "debounce": "1.2.1",
     "luxon": "2.0.2",
     "mattermost-webapp": "github:mattermost/mattermost-webapp#0621a51815150aa4158bce383cc3b745cd6d8d51",
-    "moment": "2.29.1",
     "parse-duration": "1.0.0",
     "qs": "6.10.1",
     "react": "16.13.1",

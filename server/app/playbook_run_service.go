@@ -59,9 +59,6 @@ const DialogFieldMessageKey = "message"
 // DialogFieldReminderInSecondsKey is the key for the reminder select field used in UpdatePlaybookRunDialog
 const DialogFieldReminderInSecondsKey = "reminder"
 
-// DialogFieldStatusKey is the key for the status select field used in UpdatePlaybookRunDialog
-const DialogFieldStatusKey = "status"
-
 // DialogFieldPlaybookRunKey is the key for the playbook run chosen in AddToTimelineDialog
 const DialogFieldPlaybookRunKey = "playbook_run"
 
@@ -661,6 +658,24 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdate(post *model.Post, playboo
 	return nil
 }
 
+func (s *PlaybookRunServiceImpl) broadcastStatusUpdateToFollowers(post *model.Post, playbookRunID, authorID string) error {
+	followers, err := s.GetFollowers(playbookRunID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get followers for the playbook run `%s`", playbookRunID)
+	}
+
+	for _, follower := range followers {
+		// Do not send update to the author
+		if follower == authorID {
+			continue
+		}
+		if err := s.poster.DM(follower, post); err != nil {
+			return errors.Wrapf(err, "failed to send a status update to the follower %s", follower)
+		}
+	}
+	return nil
+}
+
 func (s *PlaybookRunServiceImpl) broadcastPlaybookRunFinish(message, broadcastChannelID string, playbookRun *PlaybookRun, author *model.User) error {
 	if err := IsChannelActiveInTeam(broadcastChannelID, playbookRun.TeamID, s.pluginAPI); err != nil {
 		return errors.Wrap(err, "announcement channel is not active")
@@ -772,6 +787,10 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	broadcastPost := originalPost.Clone()
 	if err = s.broadcastStatusUpdate(broadcastPost, playbookRunID, playbookRunToModify.BroadcastChannelIDs, userID); err != nil {
 		s.pluginAPI.Log.Warn("failed to broadcast the status update", "error", err)
+	}
+
+	if err := s.broadcastStatusUpdateToFollowers(broadcastPost.Clone(), playbookRunID, userID); err != nil {
+		return errors.Wrap(err, "failed to broadcast message to followers")
 	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
@@ -1040,12 +1059,18 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRunMetadata(playbookRunID string) (*
 		return nil, errors.Wrapf(err, "failed to get the count of playbook run members for channel id '%s'", playbookRun.ChannelID)
 	}
 
+	followers, err := s.GetFollowers(playbookRunID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get followers of playbook run %s", playbookRunID)
+	}
+
 	return &Metadata{
 		ChannelName:        channel.Name,
 		ChannelDisplayName: channel.DisplayName,
 		TeamName:           team.Name,
 		TotalPosts:         channel.TotalMsgCount,
 		NumParticipants:    numParticipants,
+		Followers:          followers,
 	}, nil
 }
 
@@ -2027,10 +2052,6 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 
 	reminderOptions := []*model.PostActionOptions{
 		{
-			Text:  "None",
-			Value: "0",
-		},
-		{
 			Text:  "15min",
 			Value: "900",
 		},
@@ -2049,6 +2070,10 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 		{
 			Text:  "24hr",
 			Value: "86400",
+		},
+		{
+			Text:  "1Week",
+			Value: "604800",
 		},
 	}
 
@@ -2294,6 +2319,35 @@ func (s *PlaybookRunServiceImpl) postMessageToThreadAndSaveRootID(playbookRunID,
 	return nil
 }
 
+// Follow method lets user follow a specific playbook run
+func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
+	if err := s.store.Follow(playbookRunID, userID); err != nil {
+		return errors.Wrapf(err, "user `%s` failed to follow the run `%s`", userID, playbookRunID)
+	}
+
+	return nil
+}
+
+// UnFollow method lets user unfollow a specific playbook run
+func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
+	if err := s.store.Unfollow(playbookRunID, userID); err != nil {
+		return errors.Wrapf(err, "user `%s` failed to unfollow the run `%s`", userID, playbookRunID)
+	}
+
+	return nil
+}
+
+// GetFollowers returns list of followers for a specific playbook run
+func (s *PlaybookRunServiceImpl) GetFollowers(playbookRunID string) ([]string, error) {
+	var followers []string
+	var err error
+	if followers, err = s.store.GetFollowers(playbookRunID); err != nil {
+		return nil, errors.Wrapf(err, "failed to get followers for the run `%s`", playbookRunID)
+	}
+
+	return followers, nil
+}
+
 func getUserDisplayName(user *model.User) string {
 	if user == nil {
 		return ""
@@ -2466,8 +2520,8 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string) string {
 	message := fmt.Sprintf("\n##### Overdue Status Updates\nYou have %d %s overdue for a status update:\n", total, runPlural)
 
 	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked)\n",
-			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked) (Owner: @%s)\n",
+			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName, run.OwnerUserName)
 	}
 
 	return message
