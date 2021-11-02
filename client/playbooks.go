@@ -68,6 +68,11 @@ func (s *PlaybooksService) List(ctx context.Context, teamId string, page, perPag
 
 // Create a playbook.
 func (s *PlaybooksService) Create(ctx context.Context, opts PlaybookCreateOptions) (*Playbook, error) {
+	// For ease of use set the default if not specificed so it doesn't just error
+	if opts.ReminderTimerDefaultSeconds == 0 {
+		opts.ReminderTimerDefaultSeconds = 86400
+	}
+
 	playbookURL := "playbooks"
 	req, err := s.client.newRequest(http.MethodPost, playbookURL, opts)
 	if err != nil {
