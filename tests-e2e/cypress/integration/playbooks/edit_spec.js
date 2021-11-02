@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('backstage playbook details', () => {
+describe('playooks > edit', () => {
     let testTeam;
     let testUser;
     let testUser2;
@@ -37,14 +37,6 @@ describe('backstage playbook details', () => {
     beforeEach(() => {
         // # Login as testUser
         cy.apiLogin(testUser);
-    });
-
-    it('redirects to not found error if the playbook is unknown', () => {
-        // # Visit the URL of a non-existing playbook
-        cy.visit('/playbooks/playbooks/an_unknown_id');
-
-        // * Verify that the user has been redirected to the playbooks not found error page
-        cy.url().should('include', '/playbooks/error?type=playbooks');
     });
 
     describe('checklists', () => {

@@ -8,7 +8,7 @@
 
 import * as TIMEOUTS from '../../../fixtures/timeouts';
 
-describe('playbook run rhs', () => {
+describe('channels > rhs', () => {
     let testTeam;
     let testUser;
     let testPlaybook;

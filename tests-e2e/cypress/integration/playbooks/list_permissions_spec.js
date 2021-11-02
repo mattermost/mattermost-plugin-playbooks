@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('backstage playbook list permissions', () => {
+describe('playbooks > list permissions', () => {
     let testTeam;
     let testTeam2;
     let testUser;
@@ -240,7 +240,7 @@ describe('backstage playbook list permissions', () => {
         cy.viewport('macbook-13');
     });
 
-    it('all runs are visible to testUser', () => {
+    it('shows all runs to testUser', () => {
         // # Login as testUser
         cy.apiLogin(testUser);
 
@@ -255,7 +255,7 @@ describe('backstage playbook list permissions', () => {
         verifyRunIsVisible(runCond9);
     });
 
-    it('only runs testUser2 has permissions to are visible to testUser2', () => {
+    it('restricts some runs frm testUser2', () => {
         // # Login as testUser2
         cy.apiLogin(testUser2);
 
@@ -270,8 +270,8 @@ describe('backstage playbook list permissions', () => {
         verifyRunIsNotVisible(runCond9);
     });
 
-    it('sysadmin has permissions to see all runs', () => {
-        // # Login as testUser2
+    it('shows all runs to sysadmin', () => {
+        // # Login as sysadmin
         cy.apiAdminLogin();
 
         verifyRunIsVisible(runCond1);

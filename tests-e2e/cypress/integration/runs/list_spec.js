@@ -8,7 +8,7 @@
 
 const BACKSTAGE_LIST_PER_PAGE = 15;
 
-describe('backstage playbook run list', () => {
+describe('runs > list', () => {
     let testTeam;
     let testUser;
     let testAnotherUser;
