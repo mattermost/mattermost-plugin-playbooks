@@ -42,7 +42,7 @@ describe('playooks > edit', () => {
     describe('checklists', () => {
         describe('slash command', () => {
             it('autocompletes after clicking Add a slash command', () => {
-                // # Visit the playbook backstage
+                // # Open Playbooks
                 cy.visit('/playbooks/playbooks');
 
                 // # Start a blank playbook
@@ -66,7 +66,7 @@ describe('playooks > edit', () => {
             });
 
             it('removes the input prompt when blurring with an empty slash command', () => {
-                // # Visit the playbook backstage
+                // # Open playbook
                 cy.visit('/playbooks/playbooks');
 
                 // # Start a blank playbook
@@ -95,7 +95,7 @@ describe('playooks > edit', () => {
             });
 
             it('removes the input prompt when blurring with an invalid slash command', () => {
-                // # Visit the playbook backstage
+                // # Open Playbooks
                 cy.visit('/playbooks/playbooks');
 
                 // # Start a blank playbook

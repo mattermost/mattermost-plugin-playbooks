@@ -43,10 +43,10 @@ describe('navigation', () => {
     });
 
     it('switches to playbooks list view via header button', () => {
-        // # Open backstage
+        // # Open the product
         cy.visit('/playbooks');
 
-        // # Switch to playbooks backstage
+        // # Switch to playbooks
         cy.findByTestId('playbooksLHSButton').click();
 
         // * Verify that playbooks are shown
@@ -54,13 +54,13 @@ describe('navigation', () => {
     });
 
     it('switches to playbook runs list view via header button', () => {
-        // # Open backstage
+        // # Open the product
         cy.visit('/playbooks');
 
-        // # Switch to playbooks backstage
+        // # Switch to playbooks
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Switch to playbook runs backstage
+        // # Switch to playbook runs
         cy.findByTestId('playbookRunsLHSButton').click();
 
         // * Verify that playbook runs are shown

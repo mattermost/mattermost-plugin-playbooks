@@ -236,7 +236,7 @@ describe('playbooks > list permissions', () => {
     });
 
     beforeEach(() => {
-        // # Size the viewport to show all of the backstage.
+        // # Size the viewport to show all
         cy.viewport('macbook-13');
     });
 
@@ -287,7 +287,7 @@ describe('playbooks > list permissions', () => {
 });
 
 const verifyRunIsVisible = (run) => {
-    // # Open the Runs backstage
+    // # Open Runs
     cy.visit('/playbooks/runs');
 
     // # Find the playbook run and click to open details view
@@ -300,7 +300,7 @@ const verifyRunIsVisible = (run) => {
 };
 
 const verifyRunIsNotVisible = (run) => {
-    // # Open the Runs backstage
+    // # Open Runs
     cy.visit('/playbooks/runs');
 
     // * Verify the playbook run is not visible

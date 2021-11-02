@@ -33,10 +33,10 @@ describe('playbooks > list', () => {
     });
 
     it('has "Playbooks" in heading', () => {
-        // # Open backstage
+        // # Open the product
         cy.visit('/playbooks');
 
-        // # Switch to Playbooks backstage
+        // # Switch to Playbooks
         cy.findByTestId('playbooksLHSButton').click();
 
         // * Assert contents of heading.

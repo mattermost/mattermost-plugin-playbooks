@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-const BACKSTAGE_LIST_PER_PAGE = 15;
+const LIST_PER_PAGE = 15;
 
 describe('runs > list', () => {
     let testTeam;
@@ -42,7 +42,7 @@ describe('runs > list', () => {
     });
 
     beforeEach(() => {
-        // # Size the viewport to show all of the backstage.
+        // # Size the viewport to show all
         cy.viewport('macbook-13');
 
         // # Login as testUser
@@ -60,10 +60,10 @@ describe('runs > list', () => {
             ownerUserId: testUser.id,
         });
 
-        // # Open backstage
+        // # Open the product
         cy.visit('/playbooks');
 
-        // # Switch to playbook runs backstage
+        // # Switch to playbook runs
         cy.findByTestId('playbookRunsLHSButton').click();
 
         // * Assert contents of heading.
@@ -81,10 +81,10 @@ describe('runs > list', () => {
             ownerUserId: testUser.id,
         });
 
-        // # Open backstage
+        // # Open the product
         cy.visit('/playbooks');
 
-        // # Switch to playbook runs backstage
+        // # Switch to runs
         cy.findByTestId('playbookRunsLHSButton').click();
 
         // # Find the playbook run and click to open details view
@@ -127,7 +127,7 @@ describe('runs > list', () => {
             // # Login as testUser
             cy.apiLogin(testUser);
 
-            // # Open backstage
+            // # Open the product
             cy.visit('/playbooks');
 
             // # Make sure both runs are visible by default
@@ -148,7 +148,7 @@ describe('runs > list', () => {
             // # Login as testAnotherUser
             cy.apiLogin(testAnotherUser);
 
-            // # Open backstage
+            // # Open the product
             cy.visit('/playbooks');
 
             // Make sure both runs are visible by default
@@ -186,7 +186,7 @@ describe('runs > list', () => {
             // # Login as testUser
             cy.apiLogin(testUser);
 
-            // # Open backstage
+            // # Open the product
             cy.visit('/playbooks');
 
             // # Make sure runs are visible by default, and finished is not
@@ -214,7 +214,7 @@ describe('runs > list', () => {
             cy.apiLogin(testUser);
 
             // # Start sufficient playbook runs to ensure pagination is possible.
-            for (let i = 0; i < BACKSTAGE_LIST_PER_PAGE + 1; i++) {
+            for (let i = 0; i < LIST_PER_PAGE + 1; i++) {
                 const now = Date.now();
                 cy.apiRunPlaybook({
                     teamId: testTeam.id,
@@ -230,10 +230,10 @@ describe('runs > list', () => {
             // # Login as testUser
             cy.apiLogin(testUser);
 
-            // # Open backstage
+            // # Open the product
             cy.visit('/playbooks');
 
-            // # Switch to playbook runs backstage
+            // # Switch to runs
             cy.findByTestId('playbookRunsLHSButton').click();
 
             // # Switch to page 2
