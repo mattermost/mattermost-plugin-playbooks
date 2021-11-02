@@ -18,7 +18,7 @@ interface DescriptionProps {
 }
 
 const RHSAboutDescription = (props: DescriptionProps) => {
-    const placeholder = 'Add a description...';
+    const placeholder = 'Add a run summary...';
 
     const [editing, setEditing] = useState(false);
     const [editedValue, setEditedValue] = useState(props.value);

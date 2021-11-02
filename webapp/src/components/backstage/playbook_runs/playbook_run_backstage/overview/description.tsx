@@ -30,9 +30,9 @@ const Description = (props: { playbookRun: PlaybookRun }) => {
     const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
-    let description: JSX.Element = <EmptyBody>{formatMessage({defaultMessage: 'There is no description available.'})}</EmptyBody>;
+    let summary: JSX.Element = <EmptyBody>{formatMessage({defaultMessage: 'There is no run summary available.'})}</EmptyBody>;
     if (props.playbookRun.status_posts.length > 0 && props.playbookRun.description) {
-        description = (
+        summary = (
             <StyledContent>
                 <PostText
                     text={props.playbookRun.description}
@@ -44,8 +44,8 @@ const Description = (props: { playbookRun: PlaybookRun }) => {
 
     return (
         <TabPageContainer>
-            <Title>{formatMessage({defaultMessage: 'Description'})}</Title>
-            {description}
+            <Title>{formatMessage({defaultMessage: 'Run Summary'})}</Title>
+            {summary}
         </TabPageContainer>
     );
 };

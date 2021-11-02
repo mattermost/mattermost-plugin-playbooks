@@ -630,7 +630,7 @@ const PlaybookEdit = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {formatMessage({defaultMessage: 'Run summary template'})}
+                                        {formatMessage({defaultMessage: 'Run Summary'})}
                                         <BackstageSubheaderDescription>
                                             {formatMessage({defaultMessage: 'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'})}
                                         </BackstageSubheaderDescription>
