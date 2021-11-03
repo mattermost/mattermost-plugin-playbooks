@@ -6,64 +6,78 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import users from '../../../fixtures/users.json';
-
 describe('slash command > test', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
-    let playbookId;
+    let testTeam;
+    let testUser;
+    let testUser2;
+    let testPlaybook;
+    let testPlaybookRun;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Login as user-1.
-        cy.legacyApiLogin('user-1');
+            cy.apiCreateUser().then(({user: user2}) => {
+                testUser2 = user2;
+                cy.apiAddUserToTeam(testTeam.id, testUser2.id);
+            });
 
-        // # Switch to clean display mode.
-        cy.apiSaveMessageDisplayPreference('clean');
+            cy.apiLogin(testUser);
 
-        // # Create a playbook.
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            cy.legacyApiGetCurrentUser().then((user) => {
-                cy.apiGetUserByEmail('sysadmin@sample.mattermost.com').then(({user: admin}) => {
-                    cy.apiCreatePlaybook({
-                        teamId: team.id,
-                        title: playbookName,
-                        checklists: [
-                            {
-                                title: 'Stage 1',
-                                items: [
-                                    {title: 'Step 1'},
-                                    {title: 'Step 2'},
-                                ],
-                            },
-                            {
-                                title: 'Stage 2',
-                                items: [
-                                    {title: 'Step 1'},
-                                    {title: 'Step 2'},
-                                ],
-                            },
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                checklists: [
+                    {
+                        title: 'Stage 1',
+                        items: [
+                            {title: 'Step 1'},
+                            {title: 'Step 2'},
                         ],
-                        memberIDs: [user.id, admin.id],
-                    }).then((playbook) => {
-                        playbookId = playbook.id;
-                    });
+                    },
+                    {
+                        title: 'Stage 2',
+                        items: [
+                            {title: 'Step 1'},
+                            {title: 'Step 2'},
+                        ],
+                    },
+                ],
+                memberIDs: [testUser.id],
+            }).then((playbook) => {
+                testPlaybook = playbook;
+
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'Playbook Run',
+                    ownerUserId: testUser.id,
+                }).then((playbookRun) => {
+                    testPlaybookRun = playbookRun;
                 });
             });
         });
     });
 
+    beforeEach(() => {
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
+        // # Size the viewport to show the RHS without covering posts.
+        cy.viewport('macbook-13');
+
+        // # Reset the owner back to testUser as necessary.
+        cy.apiChangePlaybookRunOwner(testPlaybookRun.id, testUser.id);
+    });
+
     describe('as a regular user', () => {
         before(() => {
             // # Login as sysadmin.
-            cy.legacyApiLogin('sysadmin');
+            cy.apiAdminLogin();
 
             // # Set EnableTesting to true.
-            cy.legacyApiUpdateConfig({
+            cy.apiUpdateConfig({
                 ServiceSettings: {
                     EnableTesting: true
                 },
@@ -72,10 +86,10 @@ describe('slash command > test', () => {
 
         beforeEach(() => {
             // # Login as user-1
-            cy.legacyApiLogin('user-1');
+            cy.apiLogin(testUser);
 
             // # Navigate to a channel.
-            cy.visit('/ad-1/channels/town-square');
+            cy.visit(`/${testTeam.name}/channels/town-square`);
         });
 
         it('fails to run subcommand bulk-data', () => {
@@ -107,10 +121,10 @@ describe('slash command > test', () => {
         describe('with EnableTesting set to false', () => {
             before(() => {
                 // # Login as sysadmin.
-                cy.legacyApiLogin('sysadmin');
+                cy.apiAdminLogin();
 
                 // # Set EnableTesting to false.
-                cy.legacyApiUpdateConfig({
+                cy.apiUpdateConfig({
                     ServiceSettings: {
                         EnableTesting: false
                     },
@@ -119,10 +133,10 @@ describe('slash command > test', () => {
 
             beforeEach(() => {
                 // # Login as sysadmin.
-                cy.legacyApiLogin('sysadmin');
+                cy.apiAdminLogin();
 
                 // # Navigate to a channel.
-                cy.visit('/ad-1/channels/town-square');
+                cy.visit(`/${testTeam.name}/channels/town-square`);
             });
 
             it('fails to run subcommand bulk-data', () => {
@@ -153,10 +167,10 @@ describe('slash command > test', () => {
         describe('with EnableTesting set to true', () => {
             before(() => {
                 // # Login as sysadmin.
-                cy.legacyApiLogin('sysadmin');
+                cy.apiAdminLogin();
 
-                // # Set EnableTesting to true.
-                cy.legacyApiUpdateConfig({
+                // # Set EnableTesting to false.
+                cy.apiUpdateConfig({
                     ServiceSettings: {
                         EnableTesting: true
                     },
@@ -165,13 +179,13 @@ describe('slash command > test', () => {
 
             beforeEach(() => {
                 // # Login as sysadmin.
-                cy.legacyApiLogin('sysadmin');
+                cy.apiAdminLogin();
 
                 // # Size the viewport to show the RHS without covering posts.
                 cy.viewport('macbook-13');
 
                 // # Navigate to a channel.
-                cy.visit('/ad-1/channels/town-square');
+                cy.visit(`/${testTeam.name}/channels/town-square`);
             });
 
             describe('with subcommand self', () => {
@@ -195,7 +209,7 @@ describe('slash command > test', () => {
 
                 it('fails to run with one argument', () => {
                     // # Execute the create-playbook-run command with one argument.
-                    cy.executeSlashCommand('/playbook test create-playbook-run ' + playbookId);
+                    cy.executeSlashCommand(`/playbook test create-playbook-run ${testPlaybook.id}`);
 
                     // * Verify the ephemeral message warns about the parameters.
                     cy.verifyEphemeralMessage('The command expects three parameters: <playbook_id> <timestamp> <name>');
@@ -203,7 +217,7 @@ describe('slash command > test', () => {
 
                 it('fails to run with two arguments', () => {
                     // # Execute the create-playbook-run command with two arguments.
-                    cy.executeSlashCommand('/playbook test create-playbook-run ' + playbookId + '2020-01-01');
+                    cy.executeSlashCommand(`/playbook test create-playbook-run ${testPlaybook.id} 2020-01-01`);
 
                     // * Verify the ephemeral message warns about the parameters.
                     cy.verifyEphemeralMessage('The command expects three parameters: <playbook_id> <timestamp> <name>');
@@ -227,7 +241,7 @@ describe('slash command > test', () => {
 
                 it('fails to run with a malformed date', () => {
                     // # Execute the create-playbook-run command with all arguments, but a malformed creation timestamp.
-                    cy.executeSlashCommand('/playbook test create-playbook-run ' + playbookId + ' 2020-1-1 The playbook run name');
+                    cy.executeSlashCommand(`/playbook test create-playbook-run ${testPlaybook.id} 2020-1-1 The playbook run name`);
 
                     // * Verify the ephemeral message warns about the parameter.
                     cy.verifyEphemeralMessage('Timestamp \'2020-1-1\' could not be parsed as a date. If you want the playbook run to start on January 2, 2006, the timestamp should be \'2006-01-02\'.');

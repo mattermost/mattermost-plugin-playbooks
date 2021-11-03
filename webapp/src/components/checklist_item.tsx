@@ -216,20 +216,17 @@ const ChecklistItemDescription = styled.div`
 
     display: flex;
     flex-direction: column;
-    align-items: center;
 
     max-width: 630px;
     margin: 4px 0 0 2px;
 
     // Fix default markdown styling in the paragraphs
-    .markdown__paragraph-inline {
+    p {
         :last-child {
             margin-bottom: 0;
         }
 
-        + .markdown__paragraph-inline {
-            margin-left: 0;
-        }
+        white-space: pre-wrap;
     }
 `;
 
@@ -500,7 +497,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                         </label>
                         {props.inlineDescription && (
                             <ChecklistItemDescription>
-                                {messageHtmlToComponent(formatText(props.checklistItem.description, markdownOptions), true, {})}
+                                {messageHtmlToComponent(formatText(props.checklistItem.description, {...markdownOptions, singleline: false}), true, {})}
                             </ChecklistItemDescription>
                         )}
                     </ChecklistItemLabel>
