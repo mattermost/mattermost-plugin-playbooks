@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {CSSProperties} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
@@ -117,6 +117,12 @@ export const UpdateRequestPost = (props: Props) => {
                     options={options}
                     onChange={snoozeFor}
                     menuPortalTarget={document.body}
+                    styles={{
+                        control: (base: CSSProperties) => ({
+                            ...base,
+                            height: '40px',
+                        }),
+                    }}
                 />
             </Container>
         </>
