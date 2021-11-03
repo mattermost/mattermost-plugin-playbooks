@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/api4"
 	sapp "github.com/mattermost/mattermost-server/v6/app"
 	"github.com/mattermost/mattermost-server/v6/app/request"
@@ -124,10 +123,11 @@ func RunTest(t *testing.T, test func(t *testing.T, e *TestEnvironment)) {
 
 			// Copy the manifest without webapp to the correct directory
 			modifiedManifest := model.Manifest{}
-			json.NewDecoder(strings.NewReader(manifestStr)).Decode(&modifiedManifest)
+			_ = json.NewDecoder(strings.NewReader(manifestStr)).Decode(&modifiedManifest)
 			modifiedManifest.Webapp = nil
-			manifestJsonBytes, _ := json.Marshal(modifiedManifest)
-			os.WriteFile(pluginManifest, manifestJsonBytes, 0700)
+			manifestJSONBytes, _ := json.Marshal(modifiedManifest)
+			err = os.WriteFile(pluginManifest, manifestJSONBytes, 0700)
+			require.NoError(t, err)
 
 			// Create a logger to override
 			testLogger, err := mlog.NewLogger()
@@ -194,7 +194,8 @@ func (e *TestEnvironment) CreateClients() {
 	siteURL := "http://localhost:9056"
 
 	serverAdminClient := model.NewAPIv4Client(siteURL)
-	serverAdminClient.Login(admin.Email, userPassword)
+	_, _, err := serverAdminClient.Login(admin.Email, userPassword)
+	require.NoError(e.T, err)
 
 	playbooksAdminClient, err := client.New(serverAdminClient)
 	require.NoError(e.T, err)
@@ -203,13 +204,15 @@ func (e *TestEnvironment) CreateClients() {
 	e.PlaybooksAdminClient = playbooksAdminClient
 
 	serverClient := model.NewAPIv4Client(siteURL)
-	serverClient.Login(user.Email, userPassword)
+	_, _, err = serverClient.Login(user.Email, userPassword)
+	require.NoError(e.T, err)
 
 	playbooksClient, err := client.New(serverClient)
 	require.NoError(e.T, err)
 
 	unauthServerClient := model.NewAPIv4Client(siteURL)
 	unauthClient, err := client.New(unauthServerClient)
+	require.NoError(e.T, err)
 
 	e.ServerClient = serverClient
 	e.PlaybooksClient = playbooksClient
@@ -315,86 +318,4 @@ func requireErrorWithStatusCode(t *testing.T, err error, statusCode int) {
 	var errResponse *client.ErrorResponse
 	require.Truef(t, errors.As(err, &errResponse), "err is not an instance of errResponse: %s", err.Error())
 	require.Equal(t, statusCode, errResponse.StatusCode)
-}
-
-func toAPIPlaybookRun(internalPlaybookRun app.PlaybookRun) client.PlaybookRun {
-	var apiPlaybookRun client.PlaybookRun
-
-	playbookRunBytes, _ := json.Marshal(internalPlaybookRun)
-	err := json.Unmarshal(playbookRunBytes, &apiPlaybookRun)
-	if err != nil {
-		panic(err)
-	}
-
-	return apiPlaybookRun
-}
-
-func toInternalPlaybookRun(apiPlaybookRun client.PlaybookRun) app.PlaybookRun {
-	var internalPlaybookRun app.PlaybookRun
-
-	playbookRunBytes, _ := json.Marshal(apiPlaybookRun)
-	err := json.Unmarshal(playbookRunBytes, &internalPlaybookRun)
-	if err != nil {
-		panic(err)
-	}
-
-	return internalPlaybookRun
-}
-
-func toInternalPlaybookRunMetadata(apiPlaybookRunMetadata client.PlaybookRunMetadata) app.Metadata {
-	var internalPlaybookRunMetadata app.Metadata
-
-	playbookRunBytes, _ := json.Marshal(apiPlaybookRunMetadata)
-	err := json.Unmarshal(playbookRunBytes, &internalPlaybookRunMetadata)
-	if err != nil {
-		panic(err)
-	}
-
-	return internalPlaybookRunMetadata
-}
-
-func toAPIPlaybook(internalPlaybook app.Playbook) client.Playbook {
-	var apiPlaybook client.Playbook
-
-	playbookBytes, _ := json.Marshal(internalPlaybook)
-	err := json.Unmarshal(playbookBytes, &apiPlaybook)
-	if err != nil {
-		panic(err)
-	}
-
-	return apiPlaybook
-}
-
-func toAPIPlaybooks(internalPlaybooks []app.Playbook) []client.Playbook {
-	apiPlaybooks := []client.Playbook{}
-
-	for _, internalPlaybook := range internalPlaybooks {
-		apiPlaybooks = append(apiPlaybooks, toAPIPlaybook(internalPlaybook))
-	}
-
-	return apiPlaybooks
-}
-
-func toInternalPlaybook(apiPlaybook client.Playbook) app.Playbook {
-	var internalPlaybook app.Playbook
-
-	playbookBytes, _ := json.Marshal(apiPlaybook)
-	err := json.Unmarshal(playbookBytes, &internalPlaybook)
-	if err != nil {
-		panic(err)
-	}
-
-	return internalPlaybook
-}
-
-func toAPIChecklists(internalChecklists []app.Checklist) []client.Checklist {
-	var apiChecklists []client.Checklist
-
-	checklistBytes, _ := json.Marshal(internalChecklists)
-	err := json.Unmarshal(checklistBytes, &apiChecklists)
-	if err != nil {
-		panic(err)
-	}
-
-	return apiChecklists
 }
