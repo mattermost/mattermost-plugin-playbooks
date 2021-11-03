@@ -686,14 +686,8 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdateToFollowers(post *model.Po
 			continue
 		}
 
-		channel, err := s.poster.GetDirect(follower)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get bot's dm channel")
-		}
-
-		post.ChannelId = channel.Id
-		if err := s.postMessageToThreadAndSaveRootID(playbookRunID, channel.Id, post); err != nil {
-			s.pluginAPI.Log.Warn("failed to broadcast the status update to follower",
+		if err := s.poster.DM(follower, post); err != nil {
+			s.pluginAPI.Log.Warn("failed to broadcast the status update to the follower",
 				"follower", follower, "error", err.Error())
 		}
 	}
