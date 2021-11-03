@@ -124,7 +124,7 @@ const UpdateRunStatusModal = ({
                 })}
             </Description>
             <Label>
-                {'Change since last update'}
+                {formatMessage({defaultMessage: 'Change since last update'})}
             </Label>
             <MarkdownTextbox
                 id='update_run_status_textbox'
@@ -133,7 +133,7 @@ const UpdateRunStatusModal = ({
                 channelId={channelId}
             />
             <Label>
-                {'Timer for next update'}
+                {formatMessage({defaultMessage: 'Timer for next update'})}
             </Label>
             {reminderInput}
             {!isReminderValid &&
@@ -147,16 +147,16 @@ const UpdateRunStatusModal = ({
     const warning = (
         <WarningBlock>
             <span>
-                {'You do not have permission to post an update.'}
+                {formatMessage({defaultMessage: 'You do not have permission to post an update.'})}
             </span>
         </WarningBlock>
     );
 
     return (
         <GenericModal
-            modalHeaderText={'Post update'}
-            cancelButtonText={hasPermission ? 'Cancel' : 'Close'}
-            confirmButtonText={hasPermission ? 'Post' : 'Ok'}
+            modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
+            cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
+            confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post'}) : formatMessage({defaultMessage: 'Ok'})}
             handleCancel={() => true}
             handleConfirm={hasPermission ? onConfirm : null}
             isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}

@@ -134,14 +134,16 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
     if (!hasPermissions) {
         if (props.settings.playbook_creators_user_ids.length === 0) {
             return (
-                <>
-                    <NoPermissionsTitle>{'Everyone in this workspace can create playbooks. System administrators may change this setting.'}</NoPermissionsTitle>
-                </>
+                <NoPermissionsTitle>
+                    {formatMessage({defaultMessage: 'Everyone in this workspace can create playbooks. System administrators may change this setting.'})}
+                </NoPermissionsTitle>
             );
         }
         return (
             <>
-                <NoPermissionsTitle>{'Only the users below can create playbooks. These users, as well as system administrators, may change this setting.'}</NoPermissionsTitle>
+                <NoPermissionsTitle>
+                    {formatMessage({defaultMessage: 'Only the users below can create playbooks. These users, as well as system administrators, may change this setting.'})}
+                </NoPermissionsTitle>
                 <NoPermissionsUsers>
                     {props.settings.playbook_creators_user_ids.map((userId) => (
                         <NoPermissionsUserEntry
@@ -202,9 +204,9 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
             </UserSelectorWrapper>
             <ConfirmModal
                 show={confirmRemoveSelfOpen !== ''}
-                title={'Remove from playbook'}
-                message={'After you remove your own access to this playbook, you won\'t be able to add yourself back. Are you sure you\'d like to perform this action?'}
-                confirmButtonText={'Remove'}
+                title={formatMessage({defaultMessage: 'Remove from playbook'})}
+                message={formatMessage({defaultMessage: 'After you remove your own access to this playbook, you won\'t be able to add yourself back. Are you sure you\'d like to perform this action?'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Remove'})}
                 onConfirm={() => {
                     removeUser(confirmRemoveSelfOpen);
                     setConfirmRemoveSelfOpen('');

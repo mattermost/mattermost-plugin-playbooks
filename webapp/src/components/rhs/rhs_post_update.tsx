@@ -8,6 +8,8 @@ import {DateTime} from 'luxon';
 import Icon from '@mdi/react';
 import {mdiFlagCheckered} from '@mdi/js';
 
+import {FormattedMessage} from 'react-intl';
+
 import {promptUpdateStatus} from 'src/actions';
 import RHSPostUpdateButton from 'src/components/rhs/rhs_post_update_button';
 import Exclamation from 'src/components/assets/icons/exclamation';
@@ -38,11 +40,11 @@ const RHSPostUpdate = (props: Props) => {
     const isDue = isNextUpdateScheduled && timestamp < now;
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
 
-    let pretext = 'Last update';
+    let pretext = <FormattedMessage defaultMessage='Last update'/>;
     if (isFinished) {
-        pretext = 'Run finished';
+        pretext = <FormattedMessage defaultMessage='Run finished'/>;
     } else if (isNextUpdateScheduled) {
-        pretext = (isDue ? 'Update overdue' : 'Update due');
+        pretext = (isDue ? <FormattedMessage defaultMessage='Update overdue'/> : <FormattedMessage defaultMessage='Update due'/>);
     }
 
     const timespec = (isDue || !isNextUpdateScheduled) ? PastTimeSpec : FutureTimeSpec;
@@ -120,8 +122,8 @@ const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) 
     return DateTime.fromMillis(timestampValue);
 };
 
-const PastTimeSpec = [
-    {within: ['second', -45], display: 'just now'},
+export const PastTimeSpec = [
+    {within: ['second', -45], display: <FormattedMessage defaultMessage='just now'/>},
     ['minute', -59],
     ['hour', -48],
     ['day', -30],
@@ -129,7 +131,7 @@ const PastTimeSpec = [
     'year',
 ];
 
-const FutureTimeSpec = [
+export const FutureTimeSpec = [
     ['minute', 59],
     ['hour', 48],
     ['day', 30],
