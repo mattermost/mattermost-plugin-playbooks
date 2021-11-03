@@ -140,10 +140,6 @@ type PlaybookRun struct {
 	// the playbook run.
 	MessageOnJoin string `json:"message_on_join"`
 
-	// ExportChannelOnArchiveEnabled is true if the channel is exported when the status is updated
-	// to "Archived", false otherwise.
-	ExportChannelOnFinishedEnabled bool `json:"export_channel_on_finished_enabled"`
-
 	// ParticipantIDs is an array of the identifiers of all the participants in the playbook run.
 	// A participant is any member of the playbook run channel that isn't a bot.
 	ParticipantIDs []string `json:"participant_ids"`

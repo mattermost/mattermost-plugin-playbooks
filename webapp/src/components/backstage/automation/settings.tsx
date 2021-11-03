@@ -14,7 +14,6 @@ import {PatternedTextArea} from 'src/components/backstage/automation/patterned_t
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/automation/auto_assign_owner';
 import {Broadcast} from 'src/components/backstage/automation/broadcast';
-import {ExportChannelOnArchive} from 'src/components/backstage/automation/export_channel_on_archive';
 
 import {MessageOnJoin} from 'src/components/backstage/automation/message_on_join';
 
@@ -46,8 +45,6 @@ interface Props {
     onToggleMessageOnJoin: () => void;
     messageOnJoin: string;
     messageOnJoinChange: (message: string) => void;
-    exportChannelOnFinishedEnabled: boolean;
-    onToggleExportChannelOnFinishedEnabled: () => void;
     signalAnyKeywordsEnabled: boolean;
     onToggleSignalAnyKeywords: () => void;
     signalAnyKeywordsChange: (keywords: string[]) => void;
@@ -173,17 +170,6 @@ export const AutomationSettings = (props: Props) => {
                         type={'text'}
                         errorText={'Invalid category name.'} // this should not happen
                         maxLength={22}
-                    />
-                </Setting>
-            </Section>
-            <Section>
-                <SectionTitle>
-                    {'When a run is finished'}
-                </SectionTitle>
-                <Setting id={'export-channel-on-finished'}>
-                    <ExportChannelOnArchive
-                        enabled={props.exportChannelOnFinishedEnabled}
-                        onToggle={props.onToggleExportChannelOnFinishedEnabled}
                     />
                 </Setting>
             </Section>
