@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
+import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import classNames from 'classnames';
 import styled from 'styled-components';
@@ -42,6 +43,7 @@ interface Props {
 const dropdownYShift = 27;
 
 export default function TeamSelector(props: Props) {
+    const {formatMessage} = useIntl();
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         if (!isOpen) {
@@ -225,7 +227,7 @@ export default function TeamSelector(props: Props) {
                 isClearable={props.isClearable}
                 menuIsOpen={true}
                 options={teamOptions}
-                placeholder={'Search'}
+                placeholder={formatMessage({defaultMessage: 'Search'})}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}

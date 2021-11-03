@@ -11,6 +11,8 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 
+import {FormattedMessage} from 'react-intl';
+
 import UpgradeIllustrationSvg from 'src/components/assets/upgrade_illustration_svg';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import PostText from 'src/components/post_text';
@@ -52,12 +54,12 @@ export const CloudUpgradePost = (props: Props) => {
                     </TextBody>
                     <CustomPostButtonRow>
                         <PrimaryButton onClick={openCloudModal} >
-                            {'Upgrade now'}
+                            <FormattedMessage defaultMessage='Upgrade now'/>
                         </PrimaryButton>
                         <StyledTertiaryButton
                             onClick={() => window.open('https://mattermost.com/pricing-cloud')}
                         >
-                            {'Learn more'}
+                            <FormattedMessage defaultMessage='Learn more'/>
                         </StyledTertiaryButton>
                     </CustomPostButtonRow>
                 </CustomPostContent>

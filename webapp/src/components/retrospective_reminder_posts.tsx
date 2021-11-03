@@ -1,6 +1,7 @@
 import React from 'react';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
-
+import {DateTime} from 'luxon';
 import styled from 'styled-components';
 
 import {Post} from 'mattermost-redux/types/posts';
@@ -8,8 +9,6 @@ import {Post} from 'mattermost-redux/types/posts';
 import {getPostIdsInCurrentChannel, getPostsInCurrentChannel} from 'mattermost-redux/selectors/entities/posts';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-
-import {Duration} from 'luxon';
 
 import {currentPlaybookRun} from 'src/selectors';
 
@@ -19,8 +18,10 @@ import {noRetrospective} from 'src/client';
 
 import {CustomPostContainer, CustomPostContent, CustomPostHeader, CustomPostButtonRow} from 'src/components/custom_post_styles';
 
+import {Timestamp} from 'src/webapp_globals';
+
 import {PrimaryButton, TertiaryButton} from './assets/buttons';
-import {formatDuration} from './formatted_duration';
+import {FutureTimeSpec} from './rhs/rhs_post_update';
 
 const Divider = styled.div`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
@@ -56,14 +57,23 @@ const ReminderCommon = (props: ReminderCommonProps) => {
     const disableButtons = wasPublishedOrCanceled || latestReminderPost?.id !== props.post.id;
 
     let reminderText = (
-        <>{'You will not be reminded again.'}</>
+        <FormattedMessage defaultMessage='You will not be reminded again.'/>
     );
     if (reminderDuration !== 0) {
         reminderText = (
-            <>
-                {'A reminder will be sent in '}
-                <b>{formatDuration(Duration.fromObject({seconds: reminderDuration}))}</b>
-            </>
+            <FormattedMessage
+                defaultMessage='A reminder will be sent <b>{timestamp}</b>'
+                values={{
+                    b: (x: React.ReactNode) => <b>{x}</b>,
+                    timestamp: (
+                        <Timestamp
+                            value={DateTime.now().plus({seconds: reminderDuration}).toJSDate()}
+                            units={FutureTimeSpec}
+                            useTime={false}
+                        />
+                    ),
+                }}
+            />
         );
     }
 
@@ -98,23 +108,25 @@ const ReminderCommon = (props: ReminderCommonProps) => {
 };
 
 export const RetrospectiveFirstReminder = (props: {post: Post}) => {
+    const {formatMessage} = useIntl();
     return (
         <ReminderCommon
             post={props.post}
-            header={'Would you like to fill out the retrospective report?'}
-            primary={'Yes, start retrospective'}
-            secondary={'No, skip retrospective'}
+            header={formatMessage({defaultMessage: 'Would you like to fill out the retrospective report?'})}
+            primary={formatMessage({defaultMessage: 'Yes, start retrospective'})}
+            secondary={formatMessage({defaultMessage: 'No, skip retrospective'})}
         />
     );
 };
 
 export const RetrospectiveReminder = (props: {post: Post}) => {
+    const {formatMessage} = useIntl();
     return (
         <ReminderCommon
             post={props.post}
-            header={'Reminder to fill out the retrospective'}
-            primary={'Start retrospective'}
-            secondary={'Skip retrospective'}
+            header={formatMessage({defaultMessage: 'Reminder to fill out the retrospective'})}
+            primary={formatMessage({defaultMessage: 'Start retrospective'})}
+            secondary={formatMessage({defaultMessage: 'Skip retrospective'})}
         />
     );
 };

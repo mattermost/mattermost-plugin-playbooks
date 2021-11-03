@@ -11,6 +11,8 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
+import {useIntl} from 'react-intl';
+
 import Profile from 'src/components/profile/profile';
 import ClearIcon from 'src/components/assets/icons/clear_icon';
 
@@ -23,6 +25,7 @@ interface Props {
 }
 
 const AssignOwnerSelector = (props: Props) => {
+    const {formatMessage} = useIntl();
     const [options, setOptions] = useState<UserProfile[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const ownerUser = useSelector<GlobalState, UserProfile>((state: GlobalState) => getUser(state, props.ownerID));
@@ -75,7 +78,7 @@ const AssignOwnerSelector = (props: Props) => {
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
             isClearable={true}
-            placeholder={'Search for member'}
+            placeholder={formatMessage({defaultMessage: 'Search for member'})}
             components={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
             styles={{
                 control: (provided: ControlProps<UserProfile, boolean>) => ({
@@ -215,9 +218,10 @@ const ThumbVertical = styled.div`
 `;
 
 const MenuList = (props: MenuListComponentProps<UserProfile, boolean>) => {
+    const {formatMessage} = useIntl();
     return (
         <MenuListWrapper>
-            <MenuHeader>{'Assign Owner'}</MenuHeader>
+            <MenuHeader>{formatMessage({defaultMessage: 'Assign Owner'})}</MenuHeader>
             <StyledScrollbars
                 autoHeight={true}
                 renderThumbVertical={({style, ...thumbProps}) => <ThumbVertical {...thumbProps}/>}

@@ -7,6 +7,8 @@ import classNames from 'classnames';
 import styled from 'styled-components';
 import {Team} from 'mattermost-redux/types/teams';
 
+import {useIntl} from 'react-intl';
+
 import {useDropdownPosition} from 'src/hooks';
 
 import TeamWithIcon from './team_with_icon';
@@ -33,6 +35,7 @@ interface DropdownPosition {
 }
 
 export default function CreatePlaybookTeamSelector(props: Props) {
+    const {formatMessage} = useIntl();
     const teamOptions = props.teams.map((team: Team) => {
         return ({
             value: team,
@@ -94,7 +97,7 @@ export default function CreatePlaybookTeamSelector(props: Props) {
                 hideSelectedOptions={false}
                 menuIsOpen={true}
                 options={teamOptions}
-                placeholder={'Select a team'}
+                placeholder={formatMessage({defaultMessage: 'Select a team'})}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 onChange={onSelectedChange}

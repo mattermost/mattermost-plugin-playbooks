@@ -7,6 +7,8 @@ import General from 'mattermost-redux/constants/general';
 import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
 
+import {useIntl} from 'react-intl';
+
 import {StyledSelect} from './styles';
 
 export interface Props {
@@ -28,6 +30,7 @@ const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(stat
 type GetChannelType = (channelID: string) => Channel
 
 const ChannelSelector = (props: Props & { className?: string }) => {
+    const {formatMessage} = useIntl();
     const selectableChannels = useSelector(getMyPublicAndPrivateChannels);
 
     const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID) || {display_name: 'Unknown Channel', id: channelID});
@@ -83,7 +86,7 @@ const ChannelSelector = (props: Props & { className?: string }) => {
             openMenuOnClick={true}
             isClearable={props.isClearable}
             value={values}
-            placeholder={props.placeholder || 'Select a channel'}
+            placeholder={props.placeholder || formatMessage({defaultMessage: 'Select a channel'})}
             classNamePrefix='channel-selector'
             components={components}
             isDisabled={props.isDisabled}

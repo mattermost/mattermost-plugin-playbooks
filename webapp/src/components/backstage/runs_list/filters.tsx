@@ -10,6 +10,8 @@ import {useSelector} from 'react-redux';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {UserProfile} from 'mattermost-redux/types/users';
 
+import {useIntl} from 'react-intl';
+
 import {FetchPlaybookRunsParams, PlaybookRunStatus} from 'src/types/playbook_run';
 import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
 import TeamSelector, {Option as TeamOption} from 'src/components/team/team_selector';
@@ -65,6 +67,7 @@ const TeamControlComponent = (ownProps: ControlProps<TeamOption, boolean>) => {
 };
 
 const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
+    const {formatMessage} = useIntl();
     const teams = useSelector(getMyTeams);
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
     const [teamSelectorToggle, setTeamSelectorToggle] = useState(false);
@@ -128,20 +131,20 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
             />
             <CheckboxInput
                 testId={'my-runs-only'}
-                text={'My runs only'}
+                text={formatMessage({defaultMessage: 'My runs only'})}
                 checked={myRunsOnly}
                 onChange={setMyRunsOnly}
             />
             <CheckboxInput
                 testId={'finished-runs'}
-                text={'Include finished'}
+                text={formatMessage({defaultMessage: 'Include finished'})}
                 checked={(fetchParams.statuses?.length ?? 0) > 1}
                 onChange={setFinishedRuns}
             />
             <ProfileSelector
                 testId={'owner-filter'}
                 selectedUserId={fetchParams.owner_user_id}
-                placeholder={'Owner'}
+                placeholder={formatMessage({defaultMessage: 'Owner'})}
                 enableEdit={true}
                 isClearable={true}
                 customControl={OwnerControlComponent}
@@ -157,7 +160,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                 <TeamSelector
                     testId={'team-filter'}
                     selectedTeamId={fetchParams.team_id}
-                    placeholder={'Team'}
+                    placeholder={formatMessage({defaultMessage: 'Team'})}
                     enableEdit={true}
                     isClearable={true}
                     customControl={TeamControlComponent}

@@ -1,17 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React from 'react';
 
 import styled from 'styled-components';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
+import {FormattedMessage, useIntl} from 'react-intl';
+
 import Profile from 'src/components/profile/profile';
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
 import AssignOwnerSelector from 'src/components/backstage/automation/assign_owner_selector';
 import {Toggle} from 'src/components/backstage/automation/toggle';
-import {fetchUsersInTeam} from 'src/client';
 
 interface Props {
     enabled: boolean;
@@ -31,7 +32,7 @@ export const AutoAssignOwner = (props: Props) => {
                         isChecked={props.enabled}
                         onChange={props.onToggle}
                     />
-                    <div>{'Assign the owner role'}</div>
+                    <div><FormattedMessage defaultMessage='Assign the owner role'/></div>
                 </AutomationTitle>
                 <SelectorWrapper>
                     <AssignOwnerSelector

@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {ComponentProps} from 'react';
+import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
@@ -84,7 +85,7 @@ export const UpdateRequestPost = (props: Props) => {
     return (
         <>
             <StyledPostText
-                text={`@${targetUsername}, please provide a status update.`}
+                text={formatMessage({defaultMessage: '@{targetUsername}, please provide a status update.'}, {targetUsername})}
                 team={team}
             />
             <Container>
@@ -98,11 +99,11 @@ export const UpdateRequestPost = (props: Props) => {
                         ));
                     }}
                 >
-                    {'Post update'}
+                    {formatMessage({defaultMessage: 'Post update'})}
                 </PostUpdatePrimaryButton>
                 <Spacer/>
                 <PostUpdateTertiaryButton onClick={() => doDelete(dismissUrl, dismissBody)}>
-                    {'Dismiss'}
+                    {formatMessage({defaultMessage: 'Dismiss'})}
                 </PostUpdateTertiaryButton>
                 <Spacer/>
                 <StyledSelect
