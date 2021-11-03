@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path"
 	"runtime"
 	"strings"
@@ -32,7 +33,13 @@ func TestMain(m *testing.M) {
 		return
 	}
 
-	os.Setenv("MM_SERVER_PATH", "../mattermost-server")
+	serverpathBytes, err := exec.Command("go", "list", "-f", "'{{.Dir}}'", "-m", "github.com/mattermost/mattermost-server/v6").Output()
+	if err != nil {
+		panic(err)
+	}
+	serverpath := string(serverpathBytes)
+	serverpath = strings.Trim(strings.TrimSpace(serverpath), "'")
+	os.Setenv("MM_SERVER_PATH", serverpath)
 
 	// This actually runs the tests
 	status := m.Run()
