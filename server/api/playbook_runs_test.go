@@ -120,7 +120,7 @@ func TestPlaybookRuns(t *testing.T) {
 			TeamID:                    dialogRequest.TeamId,
 			Name:                      "playbookRunName",
 			PlaybookID:                "playbookid1",
-			Description:               "description",
+			Summary:                   "description",
 			InvitedUserIDs:            []string{},
 			InvitedGroupIDs:           []string{},
 			WebhookOnCreationURLs:     []string{},
@@ -183,7 +183,7 @@ func TestPlaybookRuns(t *testing.T) {
 			OwnerUserID:               dialogRequest.UserId,
 			TeamID:                    dialogRequest.TeamId,
 			Name:                      "playbookRunName",
-			Description:               "description",
+			Summary:                   "description",
 			PlaybookID:                withid.ID,
 			Checklists:                withid.Checklists,
 			InvitedUserIDs:            []string{},
@@ -567,7 +567,7 @@ func TestPlaybookRuns(t *testing.T) {
 			OwnerUserID:               "testUserID",
 			TeamID:                    teamID,
 			Name:                      "playbookRunName",
-			Description:               "description",
+			Summary:                   "description",
 			PlaybookID:                testPlaybook.ID,
 			Checklists:                testPlaybook.Checklists,
 			InvitedUserIDs:            []string{},
@@ -597,7 +597,7 @@ func TestPlaybookRuns(t *testing.T) {
 			Name:        testPlaybookRun.Name,
 			OwnerUserID: testPlaybookRun.OwnerUserID,
 			TeamID:      testPlaybookRun.TeamID,
-			Description: testPlaybookRun.Description,
+			Description: testPlaybookRun.Summary,
 			PlaybookID:  testPlaybookRun.PlaybookID,
 		})
 		require.NoError(t, err)
@@ -625,7 +625,7 @@ func TestPlaybookRuns(t *testing.T) {
 			OwnerUserID:               "testUserID",
 			TeamID:                    teamID,
 			Name:                      "playbookRunName",
-			Description:               "description",
+			Summary:                   "description",
 			PlaybookID:                testPlaybook.ID,
 			Checklists:                testPlaybook.Checklists,
 			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
@@ -655,7 +655,7 @@ func TestPlaybookRuns(t *testing.T) {
 			Name:        testPlaybookRun.Name,
 			OwnerUserID: testPlaybookRun.OwnerUserID,
 			TeamID:      testPlaybookRun.TeamID,
-			Description: testPlaybookRun.Description,
+			Description: testPlaybookRun.Summary,
 			PlaybookID:  testPlaybookRun.PlaybookID,
 		})
 		require.NoError(t, err)
@@ -798,7 +798,7 @@ func TestPlaybookRuns(t *testing.T) {
 			OwnerUserID:               "testUserID",
 			TeamID:                    teamID,
 			Name:                      "playbookRunName",
-			Description:               "description",
+			Summary:                   "description",
 			PlaybookID:                testPlaybook.ID,
 			Checklists:                testPlaybook.Checklists,
 			InvitedUserIDs:            []string{},
@@ -828,7 +828,7 @@ func TestPlaybookRuns(t *testing.T) {
 			Name:        testPlaybookRun.Name,
 			OwnerUserID: testPlaybookRun.OwnerUserID,
 			TeamID:      testPlaybookRun.TeamID,
-			Description: testPlaybookRun.Description,
+			Description: testPlaybookRun.Summary,
 			PlaybookID:  testPlaybookRun.PlaybookID,
 		})
 		require.NoError(t, err)

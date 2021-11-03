@@ -79,7 +79,7 @@ const RHSAbout = (props: Props) => {
             {!collapsed &&
             <>
                 <RHSAboutDescription
-                    value={props.playbookRun.description}
+                    value={props.playbookRun.summary}
                     onEdit={onDescriptionEdit}
                 />
                 <Row>

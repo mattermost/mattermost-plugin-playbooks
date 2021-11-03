@@ -27,8 +27,8 @@ type PlaybookRun struct {
 	// Name is the name of the playbook run's channel.
 	Name string `json:"name"`
 
-	// Description is a short string, in Markdown, describing what the run is.
-	Description string `json:"description"`
+	// Summary is a short string, in Markdown, describing what the run is.
+	Summary string `json:"summary"`
 
 	// OwnerUserID is the user identifier of the playbook run's owner.
 	OwnerUserID string `json:"owner_user_id"`

@@ -350,7 +350,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		SetMap(map[string]interface{}{
 			"ID":                                    rawPlaybookRun.ID,
 			"Name":                                  rawPlaybookRun.Name,
-			"Description":                           rawPlaybookRun.Description,
+			"Description":                           rawPlaybookRun.Summary,
 			"CommanderUserID":                       rawPlaybookRun.OwnerUserID,
 			"ReporterUserID":                        rawPlaybookRun.ReporterUserID,
 			"TeamID":                                rawPlaybookRun.TeamID,
@@ -412,7 +412,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
 			"Name":                                  "",
-			"Description":                           rawPlaybookRun.Description,
+			"Description":                           rawPlaybookRun.Summary,
 			"CommanderUserID":                       rawPlaybookRun.OwnerUserID,
 			"LastStatusUpdateAt":                    rawPlaybookRun.LastStatusUpdateAt,
 			"ChecklistsJSON":                        rawPlaybookRun.ChecklistsJSON,

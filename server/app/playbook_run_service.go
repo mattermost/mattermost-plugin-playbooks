@@ -452,7 +452,7 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, triggerID
 		message = currentPlaybookRun.ReminderMessageTemplate
 	}
 
-	dialog, err := s.newUpdatePlaybookRunDialog(currentPlaybookRun.Description, message, currentPlaybookRun.BroadcastChannelIDs, currentPlaybookRun.PreviousReminder)
+	dialog, err := s.newUpdatePlaybookRunDialog(currentPlaybookRun.Summary, message, currentPlaybookRun.BroadcastChannelIDs, currentPlaybookRun.PreviousReminder)
 	if err != nil {
 		return errors.Wrap(err, "failed to create update status dialog")
 	}
@@ -1819,7 +1819,7 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 		return errors.Wrap(err, "unable to get playbook run")
 	}
 
-	playbookRun.Description = description
+	playbookRun.Summary = description
 	if err = s.store.UpdatePlaybookRun(playbookRun); err != nil {
 		return errors.Wrap(err, "failed to update playbook run")
 	}
