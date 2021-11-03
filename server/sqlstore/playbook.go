@@ -139,7 +139,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"SignalAnyKeywordsEnabled",
 			"CategorizeChannelEnabled",
 			"COALESCE(CategoryName, '') CategoryName",
-			"RunSummaryTemplate",
+			"COALESCE(RunSummaryTemplate, '') RunSummaryTemplate",
 		).
 		From("IR_Playbook")
 
