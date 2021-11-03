@@ -64,7 +64,7 @@ export const UpdateRequestPost = (props: Props) => {
     options.sort((a, b) => ms(a.value) - ms(b.value));
 
     const snoozeFor = (option: Option) => {
-        resetReminder(currentRun.id, channel.id, ms(option.value) / 1000);
+        resetReminder(currentRun.id, ms(option.value) / 1000);
     };
 
     const customStyles: ComponentProps<typeof Select>['styles'] = {

@@ -473,7 +473,7 @@ type PlaybookRunService interface {
 	// NukeDB removes all playbook run related data.
 	NukeDB() error
 
-	// SetReminder sets a reminder. After fromNow (time.Now().Add(fromNow)) in the future,
+	// SetReminder sets a reminder. After time.Now().Add(fromNow) in the future,
 	// the owner will be reminded to update the playbook run's status.
 	SetReminder(playbookRunID string, fromNow time.Duration) error
 

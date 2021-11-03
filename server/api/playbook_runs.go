@@ -834,8 +834,7 @@ func (h *PlaybookRunHandler) reminderReset(w http.ResponseWriter, r *http.Reques
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 	var payload struct {
-		ChannelID          string `json:"channel_id"`
-		NewReminderSeconds int    `json:"new_reminder_seconds"`
+		NewReminderSeconds int `json:"new_reminder_seconds"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		h.HandleError(w, err)
@@ -847,19 +846,14 @@ func (h *PlaybookRunHandler) reminderReset(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	storedPlaybookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(payload.ChannelID)
+	storedPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
 	if err != nil {
-		err = errors.Wrapf(err, "reminderReset: no playbook run for payload's channelID: %s", payload.ChannelID)
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "no playbook run for payloads's channelID", err)
-		return
-	}
-	if storedPlaybookRunID != playbookRunID {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "error resetting reminder",
-			fmt.Errorf("storedPlaybookRunID: %s for channelID: %s did not match playbookID in url path: %s", storedPlaybookRunID, payload.ChannelID, playbookRunID))
+		err = errors.Wrapf(err, "reminderReset: no playbook run for path's playbookRunID: %s", playbookRunID)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "no playbook run for path's playbookRunID", err)
 		return
 	}
 
-	if err = app.EditPlaybookRun(userID, payload.ChannelID, h.pluginAPI); err != nil {
+	if err = app.EditPlaybookRun(userID, storedPlaybookRun.ChannelID, h.pluginAPI); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
 			ReturnJSON(w, nil, http.StatusForbidden)
 			return
