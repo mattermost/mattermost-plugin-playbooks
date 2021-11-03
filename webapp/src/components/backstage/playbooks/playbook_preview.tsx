@@ -38,7 +38,10 @@ const PlaybookPreview = (props: Props) => {
                     playbook={props.playbook}
                 />
             </Content>
-            <Navbar runsInProgress={props.runsInProgress}/>
+            <Navbar
+                playbookId={props.playbook.id}
+                runsInProgress={props.runsInProgress}
+            />
         </Container>
     );
 };

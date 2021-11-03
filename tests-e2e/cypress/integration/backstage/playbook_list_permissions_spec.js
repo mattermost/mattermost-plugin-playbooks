@@ -1,8 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import users from '../../fixtures/users.json';
-
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
@@ -40,11 +38,6 @@ describe('backstage playbook list permissions', () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            // # Turn off growth onboarding screens
-            cy.apiUpdateConfig({
-                ServiceSettings: {EnableOnboardingFlow: false},
-            });
 
             // # Create another user
             cy.apiCreateUser().then(({user: anotherUser}) => {
@@ -279,7 +272,7 @@ describe('backstage playbook list permissions', () => {
 
     it('sysadmin has permissions to see all runs', () => {
         // # Login as testUser2
-        cy.apiLogin(users.sysadmin);
+        cy.apiAdminLogin();
 
         verifyRunIsVisible(runCond1);
         verifyRunIsVisible(runCond2);

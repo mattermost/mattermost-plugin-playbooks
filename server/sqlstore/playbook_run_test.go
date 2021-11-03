@@ -970,7 +970,6 @@ func TestGetPlaybookRuns(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 
 		_, store := setupSQLStore(t, db)
-		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
 		setupChannelsTable(t, db)
@@ -1705,7 +1704,6 @@ func TestGetOwners(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 
 		_, store := setupSQLStore(t, db)
-		setupUsersTable(t, db)
 		setupChannelMemberHistoryTable(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
@@ -1775,7 +1773,6 @@ func TestNukeDB(t *testing.T) {
 		_, store := setupSQLStore(t, db)
 
 		setupChannelsTable(t, db)
-		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 
 		playbookRunStore := setupPlaybookRunStore(t, db)
@@ -1911,7 +1908,10 @@ func TestTasksAndRunsDigest(t *testing.T) {
 		setupTeamsTable(t, db)
 
 		userID := "testUserID"
-		testUser := userInfo{ID: userID}
+		testUser := userInfo{ID: userID, Name: "test.user"}
+		otherCommanderUserID := model.NewId()
+		otherCommander := userInfo{ID: otherCommanderUserID, Name: "other.commander"}
+		addUsers(t, store, []userInfo{testUser, otherCommander})
 
 		team1 := model.Team{
 			Id:   model.NewId(),
@@ -1928,8 +1928,9 @@ func TestTasksAndRunsDigest(t *testing.T) {
 		channel03 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-03"}
 		channel04 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-04"}
 		channel05 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-05"}
-		channels := []model.Channel{channel01, channel02, channel03, channel04, channel05}
-		addUsersToChannels(t, store, []userInfo{testUser}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id})
+		channel06 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-06"}
+		channels := []model.Channel{channel01, channel02, channel03, channel04, channel05, channel06}
+		addUsersToChannels(t, store, []userInfo{testUser}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel06.Id})
 
 		// three assigned tasks for inc01, and an overdue update
 		inc01 := *NewBuilder(nil).
@@ -1991,11 +1992,23 @@ func TestTasksAndRunsDigest(t *testing.T) {
 			WithName("inc05 - this is the playbook name for channel 05").
 			WithChannel(&channel05).
 			WithTeamID(team1.Id).
+			WithOwnerUserID(otherCommanderUserID).
 			WithChecklists([]int{1, 2, 3, 4}).
 			ToPlaybookRun()
 		inc05.Checklists[3].Items[2].AssigneeID = "someotheruserid"
 
-		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05}
+		// no assigned task for inc06, with overdue update, not commander but participating
+		inc06 := *NewBuilder(nil).
+			WithName("inc06 - this is the playbook name for channel 06").
+			WithChannel(&channel06).
+			WithTeamID(team1.Id).
+			WithOwnerUserID(otherCommanderUserID).
+			WithUpdateOverdueBy(2 * time.Minute).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc03.Checklists[2].Items[2].AssigneeID = "someotheruserid"
+
+		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05, inc06}
 
 		for i := range playbookRuns {
 			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
@@ -2034,13 +2047,14 @@ func TestTasksAndRunsDigest(t *testing.T) {
 
 			total := len(runs)
 
-			require.Equal(t, 3, total)
+			require.Equal(t, 4, total)
 
 			// don't make assumptions about ordering until we figure that out PM-side
 			expected := map[string]int{
 				channel01.Name: 1,
 				channel02.Name: 1,
 				channel03.Name: 1,
+				channel06.Name: 1,
 			}
 
 			actual := make(map[string]int)
@@ -2058,12 +2072,13 @@ func TestTasksAndRunsDigest(t *testing.T) {
 
 			total := len(runs)
 
-			require.Equal(t, 2, total)
+			require.Equal(t, 3, total)
 
 			// don't make assumptions about ordering until we figure that out PM-side
 			expected := map[string]int{
 				channel01.Name: 1,
 				channel02.Name: 1,
+				channel06.Name: 1,
 			}
 
 			actual := make(map[string]int)

@@ -478,6 +478,18 @@ export const notifyConnect = async () => {
     });
 };
 
+export const followPlaybookRun = async (playbookRunId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/followers`, {
+        method: 'PUT',
+    });
+};
+
+export const unfollowPlaybookRun = async (playbookRunId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/followers`, {
+        method: 'DELETE',
+    });
+};
+
 export const resetReminder = async (playbookRunId: string, channelId: string, newReminderSeconds: number) => {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/reminder`, {
         method: 'POST',

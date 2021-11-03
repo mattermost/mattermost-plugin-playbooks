@@ -66,7 +66,6 @@ const DefaultUpdateTimer = (props: Props) => {
 type OptionType = {label: string, value: number};
 
 const defaultTimerOptions = [
-    {label: 'Never', value: 0},
     {label: '60 minutes', value: 3600},
     {label: '24 hours', value: 86400},
     {label: '7 days', value: 604800},

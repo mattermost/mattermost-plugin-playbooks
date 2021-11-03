@@ -6,137 +6,134 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import users from '../../fixtures/users.json';
-
 describe('playbook run broadcast', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
-    let teamId;
-    let userId;
-    let sysadminId;
-
-    let publicBroadcastChannelName1;
-    let publicBroadcastChannelId1;
-    let publicBroadcastChannelName2;
-    let publicBroadcastChannelId2;
-
-    let privateBroadcastChannelName1;
-    let privateBroadcastChannelId1;
-    let privateBroadcastChannelName2;
-    let privateBroadcastChannelId2;
-
-    let publicBroadcastPlaybookId;
-    let privateBroadcastPlaybookId;
-    let allBroadcastPlaybookId;
-    let rootDeletePlaybookId;
+    let testTeam;
+    let testUser;
+    let testAdmin;
+    let testPublicChannel1;
+    let testPublicChannel2;
+    let testPrivateChannel1;
+    let testPrivateChannel2;
+    let publicBroadcastPlaybook;
+    let privateBroadcastPlaybook;
+    let allBroadcastPlaybook;
+    let rootDeletePlaybook;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.legacyApiGetCurrentUser().then((user) => {
-            sysadminId = user.id;
-        });
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
+            cy.apiCreateCustomAdmin().then(({sysadmin: adminUser}) => {
+                testAdmin = adminUser;
+                cy.apiAddUserToTeam(testTeam.id, adminUser.id);
+                cy.apiSaveJoinLeaveMessagesPreference(adminUser.id, false);
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+                // # Login as testUser
+                cy.apiLogin(testUser);
 
-        // # Get the current team and user
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
-        }).then(() => {
-            cy.legacyApiGetCurrentUser().then((user) => {
-                userId = user.id;
-            });
-        }).then(() => {
-            // # Create public channel #1
-            cy.legacyApiCreateChannel(teamId, 'public-channel', 'Public Channel 1', 'O')
-                .then(({channel: publicChannel1}) => {
-                    // # Create public channel #2
-                    cy.legacyApiCreateChannel(teamId, 'public-channel-2', 'Public Channel 2', 'O')
-                        .then(({channel: publicChannel2}) => {
-                            // # Create private channel #1
-                            cy.legacyApiCreateChannel(teamId, 'private-channel', 'Private Channel 1', 'P')
-                                .then(({channel: privateChannel1}) => {
-                                    // # Create private channel #2
-                                    cy.legacyApiCreateChannel(teamId, 'private-channel-2', 'Private Channel 2', 'P')
-                                        .then(({channel: privateChannel2}) => {
-                                            publicBroadcastChannelName1 = publicChannel1.name;
-                                            publicBroadcastChannelId1 = publicChannel1.id;
-                                            publicBroadcastChannelName2 = publicChannel2.name;
-                                            publicBroadcastChannelId2 = publicChannel2.id;
-                                            privateBroadcastChannelName1 = privateChannel1.name;
-                                            privateBroadcastChannelId1 = privateChannel1.id;
-                                            privateBroadcastChannelName2 = privateChannel2.name;
-                                            privateBroadcastChannelId2 = privateChannel2.id;
+                // # Create a public channel
+                cy.apiCreateChannel(
+                    testTeam.id,
+                    'public-channel',
+                    'Public Channel 1',
+                    'O'
+                ).then(({channel: publicChannel1}) => {
+                    testPublicChannel1 = publicChannel1;
 
-                                            // # Create a playbook that will broadcast to public channel1
-                                            cy.apiCreateTestPlaybook({
-                                                teamId,
-                                                title: playbookName + ' - public broadcast',
-                                                userId,
-                                                broadcastChannelIds: [publicBroadcastChannelId1],
-                                                broadcastEnabled: true,
-                                            }).then((playbook) => {
-                                                publicBroadcastPlaybookId = playbook.id;
-                                            });
+                    // # Create a public channel
+                    cy.apiCreateChannel(
+                        testTeam.id,
+                        'public-channel',
+                        'Public Channel 2',
+                        'O'
+                    ).then(({channel: publicChannel2}) => {
+                        testPublicChannel2 = publicChannel2;
 
-                                            // # Create a playbook that will broadcast to private channel1
-                                            cy.apiCreateTestPlaybook({
-                                                teamId,
-                                                title: playbookName + ' - private broadcast',
-                                                userId,
-                                                broadcastChannelIds: [privateBroadcastChannelId1],
-                                                broadcastEnabled: true,
-                                            }).then((playbook) => {
-                                                privateBroadcastPlaybookId = playbook.id;
-                                            });
+                        // # Create a private channel
+                        cy.apiCreateChannel(
+                            testTeam.id,
+                            'private-channel',
+                            'Private Channel 1',
+                            'P'
+                        ).then(({channel: privateChannel1}) => {
+                            testPrivateChannel1 = privateChannel1;
 
-                                            // # Create a playbook that will broadcast to all 4 channels
-                                            cy.apiCreateTestPlaybook({
-                                                teamId,
-                                                title: playbookName + ' - public and private broadcast',
-                                                userId,
-                                                broadcastChannelIds: [publicBroadcastChannelId1, publicBroadcastChannelId2, privateBroadcastChannelId1, privateBroadcastChannelId2],
-                                                broadcastEnabled: true,
-                                            }).then((playbook) => {
-                                                allBroadcastPlaybookId = playbook.id;
-                                            });
+                            // # Create a private channel
+                            cy.apiCreateChannel(
+                                testTeam.id,
+                                'private-channel',
+                                'Private Channel 2',
+                                'P'
+                            ).then(({channel: privateChannel2}) => {
+                                testPrivateChannel2 = privateChannel2;
 
-                                            // # Create a playbook for testing deleting root posts
-                                            cy.apiCreateTestPlaybook({
-                                                teamId,
-                                                title: playbookName + ' - test deleting root posts',
-                                                userId,
-                                                broadcastChannelIds: [publicBroadcastChannelId1, privateBroadcastChannelId1],
-                                                broadcastEnabled: true,
-                                                otherMembers: [sysadminId],
-                                                invitedUserIds: [sysadminId],
-                                            }).then((playbook) => {
-                                                rootDeletePlaybookId = playbook.id;
-                                            });
-
-                                            // # invite sysadmin to the channel they will need to be in to delete the post
-                                            cy.apiAddUserToChannel(publicBroadcastChannelId1, sysadminId);
-                                            cy.apiAddUserToChannel(privateBroadcastChannelId1, sysadminId);
-                                        });
+                                // # Create a playbook that will broadcast to public channel1
+                                cy.apiCreateTestPlaybook({
+                                    teamId: testTeam.id,
+                                    title: 'Playbook - public broadcast',
+                                    userId: testUser.id,
+                                    broadcastChannelIds: [testPublicChannel1.id],
+                                    broadcastEnabled: true,
+                                }).then((playbook) => {
+                                    publicBroadcastPlaybook = playbook;
                                 });
+
+                                // # Create a playbook that will broadcast to private channel1
+                                cy.apiCreateTestPlaybook({
+                                    teamId: testTeam.id,
+                                    title: 'Playbook - private broadcast',
+                                    userId: testUser.id,
+                                    broadcastChannelIds: [testPrivateChannel1.id],
+                                    broadcastEnabled: true,
+                                }).then((playbook) => {
+                                    privateBroadcastPlaybook = playbook;
+                                });
+
+                                // # Create a playbook that will broadcast to all 4 channels
+                                cy.apiCreateTestPlaybook({
+                                    teamId: testTeam.id,
+                                    title: 'Playbook - public and private broadcast',
+                                    userId: testUser.id,
+                                    broadcastChannelIds: [testPublicChannel1.id, testPublicChannel2.id, testPrivateChannel1.id, testPrivateChannel2.id],
+                                    broadcastEnabled: true,
+                                }).then((playbook) => {
+                                    allBroadcastPlaybook = playbook;
+                                });
+
+                                // # Create a playbook for testing deleting root posts
+                                cy.apiCreateTestPlaybook({
+                                    teamId: testTeam.id,
+                                    title: 'Playbook - test deleting root posts',
+                                    userId: testUser.id,
+                                    broadcastChannelIds: [testPublicChannel1.id, testPrivateChannel1.id],
+                                    broadcastEnabled: true,
+                                    otherMembers: [testAdmin.id],
+                                    invitedUserIds: [testAdmin.id],
+                                }).then((playbook) => {
+                                    rootDeletePlaybook = playbook;
+                                });
+
+                                // # invite testAdmin to the channel they will need to be in to delete the post
+                                cy.apiAddUserToChannel(testPublicChannel1.id, testAdmin.id);
+                                cy.apiAddUserToChannel(testPrivateChannel1.id, testAdmin.id);
+                            });
                         });
+                    });
                 });
+            });
         });
     });
 
     beforeEach(() => {
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
-
         // # Go to Town Square
-        cy.visit('/ad-1/channels/town-square');
+        cy.visit(`/${testTeam.name}/channels/town-square`);
     });
 
     it('to public channels', () => {
@@ -145,14 +142,14 @@ describe('playbook run broadcast', () => {
         const playbookRunName = `Playbook Run (${now})`;
         const playbookRunChannelName = `playbook-run-${now}`;
         cy.apiRunPlaybook({
-            teamId,
-            playbookId: publicBroadcastPlaybookId,
+            teamId: testTeam.id,
+            playbookId: publicBroadcastPlaybook.id,
             playbookRunName,
-            ownerUserId: userId,
+            ownerUserId: testUser.id,
         });
 
         // # Navigate directly to the application and the playbook run channel
-        cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+        cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
@@ -160,7 +157,7 @@ describe('playbook run broadcast', () => {
 
         // * Verify the posts
         const initialMessage = `New run started: ${playbookRunName}`;
-        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName1, playbookRunName, initialMessage, updateMessage);
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel1.name, playbookRunName, initialMessage, updateMessage);
     });
 
     it('to private channels', () => {
@@ -169,14 +166,14 @@ describe('playbook run broadcast', () => {
         const playbookRunName = 'Playbook Run (' + now + ')';
         const playbookRunChannelName = 'playbook-run-' + now;
         cy.apiRunPlaybook({
-            teamId,
-            playbookId: privateBroadcastPlaybookId,
+            teamId: testTeam.id,
+            playbookId: privateBroadcastPlaybook.id,
             playbookRunName,
-            ownerUserId: userId,
+            ownerUserId: testUser.id,
         });
 
         // # Navigate directly to the application and the playbook run channel
-        cy.visit('/ad-1/channels/' + playbookRunChannelName);
+        cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
@@ -184,7 +181,7 @@ describe('playbook run broadcast', () => {
 
         // * Verify the posts
         const initialMessage = `New run started: ${playbookRunName}`;
-        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName1, playbookRunName, initialMessage, updateMessage);
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPrivateChannel1.name, playbookRunName, initialMessage, updateMessage);
     });
 
     it('to 4 public and private channels', () => {
@@ -193,14 +190,14 @@ describe('playbook run broadcast', () => {
         const playbookRunName = 'Playbook Run (' + now + ')';
         const playbookRunChannelName = 'playbook-run-' + now;
         cy.apiRunPlaybook({
-            teamId,
-            playbookId: allBroadcastPlaybookId,
+            teamId: testTeam.id,
+            playbookId: allBroadcastPlaybook.id,
             playbookRunName,
-            ownerUserId: userId,
+            ownerUserId: testUser.id,
         });
 
         // # Navigate directly to the application and the playbook run channel
-        cy.visit('/ad-1/channels/' + playbookRunChannelName);
+        cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
@@ -208,29 +205,26 @@ describe('playbook run broadcast', () => {
 
         // * Verify the posts
         const initialMessage = `New run started: ${playbookRunName}`;
-        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName1, playbookRunName, initialMessage, updateMessage);
-        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName1, playbookRunName, initialMessage, updateMessage);
-        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName2, playbookRunName, initialMessage, updateMessage);
-        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName2, playbookRunName, initialMessage, updateMessage);
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel1.name, playbookRunName, initialMessage, updateMessage);
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPrivateChannel1.name, playbookRunName, initialMessage, updateMessage);
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel2.name, playbookRunName, initialMessage, updateMessage);
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPrivateChannel2.name, playbookRunName, initialMessage, updateMessage);
     });
 
     it('to 2 channels, delete the root post, update again', () => {
-        // # need to be sysadmin to delete the bot's posts
-        cy.apiLogin(users.sysadmin);
-
         // # Create a new playbook run
         const now = Date.now();
         const playbookRunName = 'Playbook Run (' + now + ')';
         const playbookRunChannelName = 'playbook-run-' + now;
         cy.apiRunPlaybook({
-            teamId,
-            playbookId: rootDeletePlaybookId,
+            teamId: testTeam.id,
+            playbookId: rootDeletePlaybook.id,
             playbookRunName,
-            ownerUserId: userId,
+            ownerUserId: testUser.id,
         });
 
         // # Navigate directly to the application and the playbook run channel
-        cy.visit('/ad-1/channels/' + playbookRunChannelName);
+        cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
         // # Update the playbook run's status
         const updateMessage = 'Update - ' + now;
@@ -238,16 +232,22 @@ describe('playbook run broadcast', () => {
 
         // * Verify the posts
         const initialMessage = `New run started: ${playbookRunName}`;
-        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName1, playbookRunName, initialMessage, updateMessage, '@sysadmin');
-        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName1, playbookRunName, initialMessage, updateMessage, '@sysadmin');
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel1.name, playbookRunName, initialMessage, updateMessage);
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPrivateChannel1.name, playbookRunName, initialMessage, updateMessage);
+
+        // # need to be admin to delete the bot's posts
+        cy.apiLogin(testAdmin);
 
         // # Delete both root posts
-        deleteLatestPostRoot(publicBroadcastChannelName1);
-        deleteLatestPostRoot(privateBroadcastChannelName1);
+        deleteLatestPostRoot(testTeam, testPublicChannel1.name);
+        deleteLatestPostRoot(testTeam, testPrivateChannel1.name);
+
+        // # Log back in as testUser
+        cy.apiLogin(testUser);
 
         // # Make two more updates
         // # Navigate directly to the application and the playbook run channel
-        cy.visit('/ad-1/channels/' + playbookRunChannelName);
+        cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
         // # Update the playbook run's status twice
         const updateMessage2 = updateMessage + ' - 2';
@@ -256,14 +256,16 @@ describe('playbook run broadcast', () => {
         cy.updateStatus(updateMessage3, 0);
 
         // * Verify the posts
-        verifyInitialAndStatusPostInBroadcast(publicBroadcastChannelName1, playbookRunName, updateMessage2, updateMessage3, '@sysadmin');
-        verifyInitialAndStatusPostInBroadcast(privateBroadcastChannelName1, playbookRunName, updateMessage2, updateMessage3, '@sysadmin');
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel1.name, playbookRunName, updateMessage2, updateMessage3);
+        verifyInitialAndStatusPostInBroadcast(testTeam, testPrivateChannel1.name, playbookRunName, updateMessage2, updateMessage3);
     });
 });
 
-const verifyInitialAndStatusPostInBroadcast = (channelName, runName, initialMessage, updateMessage, byUser = '@user-1') => {
+const verifyInitialAndStatusPostInBroadcast = (testTeam, channelName, runName, initialMessage, updateMessage) => {
+    cy.log(`Verifying initial and status post in broadcast (channel ${channelName}, run ${runName})`);
+
     // # Navigate to the broadcast channel
-    cy.visit('/ad-1/channels/' + channelName);
+    cy.visit(`/${testTeam.name}/channels/${channelName}`);
 
     // * Verify that the last post contains the expected header and the update message verbatim
     cy.getLastPostId().then((lastPostId) => {
@@ -290,9 +292,11 @@ const verifyInitialAndStatusPostInBroadcast = (channelName, runName, initialMess
     });
 };
 
-const deleteLatestPostRoot = (channelName) => {
+const deleteLatestPostRoot = (testTeam, channelName) => {
+    cy.log(`Deleting latest root post (channel ${channelName})`);
+
     // # Navigate to the channel
-    cy.visit('/ad-1/channels/' + channelName);
+    cy.visit(`/${testTeam.name}/channels/${channelName}`);
 
     cy.getLastPostId().then((lastPostId) => {
         // # Open RHS comment menu

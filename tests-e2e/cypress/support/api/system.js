@@ -116,6 +116,7 @@ export const getDefaultConfig = () => {
         ServiceSettings: {
             AllowedUntrustedInternalConnections: cypressEnv.allowedUntrustedInternalConnections,
             SiteURL: Cypress.config('baseUrl'),
+            EnableOnboardingFlow: Cypress.config('enableOnboardingFlow'),
         },
     };
 

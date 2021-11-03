@@ -6,8 +6,6 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import users from '../../../fixtures/users.json';
-
 describe('playbook run rhs > latest update', () => {
     const defaultReminderMessage = '# Default reminder message';
     let testTeam;
@@ -20,11 +18,6 @@ describe('playbook run rhs > latest update', () => {
             testTeam = team;
             testChannel = channel;
             testUser = user;
-
-            // # Turn off growth onboarding screens
-            cy.apiUpdateConfig({
-                ServiceSettings: {EnableOnboardingFlow: false},
-            });
 
             // # Login as testUser
             cy.apiLogin(testUser);
@@ -94,7 +87,7 @@ describe('playbook run rhs > latest update', () => {
             const updateMessage = 'status update ' + Date.now();
 
             // # Login as sysadmin and create a private playbook and a run
-            cy.apiLogin(users.sysadmin).then(({user: sysadmin}) => {
+            cy.apiAdminLogin().then(({user: sysadmin}) => {
                 // # Create a private playbook
                 cy.apiCreatePlaybook({
                     teamId: testTeam.id,
@@ -188,25 +181,6 @@ describe('playbook run rhs > latest update', () => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
                     cy.get('[class$=singleValue]').should('have.text', 'in 60 minutes');
-                });
-            });
-        });
-
-        it('shows the last reminder we typed in: none', () => {
-            const now = Date.now();
-            const firstMessage = 'Update - ' + now;
-
-            // # Create a first status update
-            cy.updateStatus(firstMessage, 'none');
-
-            // # Run the `/playbook update` slash command.
-            cy.executeSlashCommand('/playbook update');
-
-            // # Get the dialog modal.
-            cy.get('.GenericModal').within(() => {
-                // * Verify the default is as expected
-                cy.get('#reminder_timer_datetime').within(() => {
-                    cy.get('[class$=placeholder]');
                 });
             });
         });

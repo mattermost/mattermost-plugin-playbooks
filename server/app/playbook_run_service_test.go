@@ -432,6 +432,7 @@ func TestUpdateStatus(t *testing.T) {
 		store.EXPECT().UpdatePlaybookRun(gomock.AssignableToTypeOf(&app.PlaybookRun{})).Return(nil)
 		store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&app.SQLStatusPost{})).Return(nil)
 		store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(5)
+		store.EXPECT().GetFollowers(gomock.Any()).Return([]string{}, nil)
 
 		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
 
@@ -541,6 +542,7 @@ func TestUpdateStatusWebhookFailure(t *testing.T) {
 	store.EXPECT().UpdatePlaybookRun(gomock.AssignableToTypeOf(&app.PlaybookRun{})).Return(nil)
 	store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&app.SQLStatusPost{})).Return(nil)
 	store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(5)
+	store.EXPECT().GetFollowers(gomock.Any()).Return([]string{}, nil)
 
 	configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
 
@@ -1114,6 +1116,7 @@ func TestMultipleWebhooks(t *testing.T) {
 		store.EXPECT().UpdatePlaybookRun(gomock.AssignableToTypeOf(&app.PlaybookRun{})).Return(nil)
 		store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&app.SQLStatusPost{})).Return(nil)
 		store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(5)
+		store.EXPECT().GetFollowers(gomock.Any()).Return([]string{}, nil)
 
 		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
 
