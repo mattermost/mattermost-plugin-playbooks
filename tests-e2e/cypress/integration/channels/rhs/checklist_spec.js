@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import {HALF_SEC} from '../../fixtures/timeouts';
+import {HALF_SEC} from '../../../fixtures/timeouts';
 
 describe('channels > rhs > checklist', () => {
     let testTeam;
