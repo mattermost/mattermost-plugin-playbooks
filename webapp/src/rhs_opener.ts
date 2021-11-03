@@ -54,29 +54,29 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         currentChannelId = currentChannel.id;
         currentChannelIsPlaybookRun = inPlaybookRunChannel(state);
 
-        // Don't do anything if the playbook run RHS is already open.
-        if (isPlaybookRunRHSOpen(state)) {
-            return;
-        }
-
         // Don't do anything unless we're in a playbook run channel.
         if (!currentChannelIsPlaybookRun) {
             return;
         }
 
-        // Should we force open the RHS?
+        // Record whether we were asked to force the RHS open, and remove
+        let forceRHSOpen = false;
         const url = new URL(window.location.href);
         const searchParams = new URLSearchParams(url.searchParams);
         if (searchParams.has('forceRHSOpen')) {
+            forceRHSOpen = true;
             searchParams.delete('forceRHSOpen');
             url.search = searchParams.toString();
             browserHistory.replace({pathname: url.pathname, search: url.search});
+        }
 
-            if (mmRhsOpen) {
-                //@ts-ignore thunk
-                store.dispatch(closeMMRHS());
-            }
+        // Don't do anything if the playbook run RHS is already open.
+        if (isPlaybookRunRHSOpen(state)) {
+            return;
+        }
 
+        // Should we force open the RHS?
+        if (forceRHSOpen) {
             //@ts-ignore thunk
             store.dispatch(toggleRHS());
             return;
