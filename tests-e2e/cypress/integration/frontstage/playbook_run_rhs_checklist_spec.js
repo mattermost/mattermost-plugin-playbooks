@@ -174,20 +174,6 @@ describe('playbook run rhs checklist', () => {
             });
         });
 
-        it('delete task', () => {
-            // Hover over the checklist item
-            cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
-
-            // Click the trash
-            cy.get('.icon-trash-can-outline').click();
-
-            // Press the delete button
-            cy.findByText('Delete').click();
-
-            // Verify the first task is gone
-            cy.findByText('Step 1').should('not.exist');
-        });
-
         it('add new task', () => {
             const newTasktext = 'This is my new task' + Date.now();
 

@@ -462,14 +462,13 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                     }}
                                 />
                                 <HoverMenuButton
-                                    title={(props.checklistItem.state == ChecklistItemState.Skip)?'Re-Assign':'Skip'}
-                                    className={(props.checklistItem.state == ChecklistItemState.Skip)?'icon-account-plus-outline icon-16 btn-icon':'icon-trash-can-outline icon-16 btn-icon'}
+                                    title={(props.checklistItem.state === ChecklistItemState.Skip) ? 'Restore' : 'Skip'}
+                                    className={(props.checklistItem.state === ChecklistItemState.Skip) ? 'icon-account-plus-outline icon-16 btn-icon' : 'icon-trash-can-outline icon-16 btn-icon'}
                                     onClick={() => {
-                                        if(props.checklistItem.state != ChecklistItemState.Skip){
-                                            setShowSkipConfirm(true);
-                                        }
-                                        else{
+                                        if (props.checklistItem.state === ChecklistItemState.Skip) {
                                             setShowRestoreConfirm(true);
+                                        } else {
+                                            setShowSkipConfirm(true);
                                         }
                                     }}
                                 />
@@ -491,8 +490,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             <div
                                 onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
                             >
-                                {(props.checklistItem.state == ChecklistItemState.Skip)?<strike>{messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions), true, {})}</strike>:
-                                                                messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions))}
+                                {(props.checklistItem.state === ChecklistItemState.Skip) ? <StrikeThrough>{messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions), true, {})}</StrikeThrough> : messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions))}
                             </div>
                         </label>
                         {props.inlineDescription && (
@@ -542,9 +540,9 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 title={'Skip task'}
                 message={'Are you sure you want to skip this task? This will be crossed from this run but will not affect the playbook.'}
                 confirmButtonText={'Skip'}
-                onConfirm={() =>{
-                    clientSkipChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum)
-                    setShowSkipConfirm(false)
+                onConfirm={() => {
+                    clientSkipChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
+                    setShowSkipConfirm(false);
                 }
                 }
                 onCancel={() => setShowSkipConfirm(false)}
@@ -554,9 +552,9 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 title={'Restore task'}
                 message={'Are you sure you want to Restore this task? This Task will be added to this run'}
                 confirmButtonText={'Restore'}
-                onConfirm={() =>{
-                    clientRestoreChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum)
-                    setShowRestoreConfirm(false)
+                onConfirm={() => {
+                    clientRestoreChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
+                    setShowRestoreConfirm(false);
                 }
                 }
                 onCancel={() => setShowRestoreConfirm(false)}
@@ -606,6 +604,10 @@ const FormContainer = styled.div`
     > * {
         margin-bottom: 10px;
     }
+`;
+
+const StrikeThrough = styled.text`
+    text-decoration: line-through;
 `;
 
 const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {
