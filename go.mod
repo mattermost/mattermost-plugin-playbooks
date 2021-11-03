@@ -18,6 +18,9 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/writeas/go-strip-markdown v2.0.1+incompatible
+	gotest.tools v2.2.0+incompatible
 )
 
 replace github.com/mattermost/mattermost-plugin-playbooks/client => ./client
+
+replace github.com/golang/mock v1.6.0 => github.com/golang/mock v1.4.4
