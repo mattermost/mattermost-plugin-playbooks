@@ -4,7 +4,7 @@
 import React, {useState} from 'react';
 import styled from 'styled-components';
 
-import {StylesConfig} from 'react-select';
+import {OptionTypeBase, StylesConfig} from 'react-select';
 
 import CreatableSelect from 'react-select/creatable';
 
@@ -103,7 +103,7 @@ export const InputKeywords = (props: Props) => {
 };
 
 // styles for the select component
-const selectStyles: StylesConfig = {
+const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
     control: (provided, {isDisabled}) => ({
         ...provided,
         backgroundColor: isDisabled ? 'rgba(var(--center-channel-bg-rgb),0.16)' : 'var(--center-channel-bg)',

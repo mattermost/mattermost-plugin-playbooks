@@ -5,7 +5,8 @@ import React, {ComponentProps} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
-import Select from 'react-select';
+import {components, ContainerProps} from 'react-select';
+import {MenuPortal} from 'react-select/src/components/Menu';
 
 import {Post} from 'mattermost-redux/types/posts';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -67,8 +68,17 @@ export const UpdateRequestPost = (props: Props) => {
         resetReminder(currentRun.id, ms(option.value) / 1000);
     };
 
-    const customStyles: ComponentProps<typeof Select>['styles'] = {
-        menu: (provided) => ({...provided, zIndex: 7}),
+    const SelectContainer = ({children, ...ownProps}: ContainerProps<Option, boolean>) => {
+        return (
+            <components.SelectContainer
+                {...ownProps}
+
+                // @ts-ignore
+                innerProps={{...ownProps.innerProps, role: 'button'}}
+            >
+                {children}
+            </components.SelectContainer>
+        );
     };
 
     return (
@@ -100,11 +110,14 @@ export const UpdateRequestPost = (props: Props) => {
                     filterOption={null}
                     isMulti={false}
                     menuPlacement={'top'}
-                    components={{IndicatorSeparator: () => null}}
+                    components={{
+                        IndicatorSeparator: () => null,
+                        SelectContainer,
+                    }}
                     placeholder={formatMessage({defaultMessage: 'Snooze'})}
                     options={options}
                     onChange={snoozeFor}
-                    styles={customStyles}
+                    menuPortalTarget={document.body}
                 />
             </Container>
         </>

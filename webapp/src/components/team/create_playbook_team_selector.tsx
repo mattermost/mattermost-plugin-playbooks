@@ -106,7 +106,7 @@ export default function CreatePlaybookTeamSelector(props: Props) {
 }
 
 // styles for the select component
-const selectStyles: StylesConfig = {
+const selectStyles: StylesConfig<Option, boolean> = {
     control: (provided) => ({...provided, minWidth: 240, margin: 8}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {

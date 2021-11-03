@@ -13,7 +13,7 @@ import {PlaybookRunFilterButton} from '../backstage/styles';
 
 import TeamWithIcon from './team_with_icon';
 
-interface Option {
+export interface Option {
     value: string;
     label: JSX.Element | string;
     teamId: string;
@@ -31,7 +31,7 @@ interface Props {
     onlyPlaceholder?: boolean;
     enableEdit: boolean;
     isClearable?: boolean;
-    customControl?: (props: ControlProps<any>) => React.ReactElement;
+    customControl?: (props: ControlProps<Option, boolean>) => React.ReactElement;
     controlledOpenToggle?: boolean;
     teams: Team[];
     onSelectedChange?: (teamId?: string) => void;
@@ -239,7 +239,7 @@ export default function TeamSelector(props: Props) {
 }
 
 // styles for the select component
-const selectStyles: StylesConfig = {
+const selectStyles: StylesConfig<Option, boolean> = {
     control: (provided) => ({...provided, minWidth: 240, margin: 8}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {
@@ -344,7 +344,7 @@ const TeamButton = styled.button`
             color: var(--center-channel-color);
         }
     }
-    
+
 
     .NoAssignee-button, .Assigned-button {
         background-color: transparent;

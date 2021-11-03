@@ -2,28 +2,21 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-
 import debounce from 'debounce';
 import {components, ControlProps} from 'react-select';
-
 import styled from 'styled-components';
-
 import {useSelector} from 'react-redux';
 
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
-
 import {UserProfile} from 'mattermost-redux/types/users';
 
 import {FetchPlaybookRunsParams, PlaybookRunStatus} from 'src/types/playbook_run';
-import ProfileSelector from 'src/components/profile/profile_selector';
-
-import TeamSelector from 'src/components/team/team_selector';
-
+import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
+import TeamSelector, {Option as TeamOption} from 'src/components/team/team_selector';
 import {fetchOwnersInTeam} from 'src/client';
 
 import SearchInput from './search_input';
 import CheckboxInput from './checkbox_input';
-import {StatusFilter} from './status_filter';
 
 interface Props {
     fetchParams: FetchPlaybookRunsParams
@@ -52,7 +45,7 @@ const PlaybookRunListFilters = styled.div`
     }
 `;
 
-const controlComponent = (ownProps: ControlProps<any>, filterName: string) => (
+const controlComponent = (ownProps: ControlProps<TeamOption, boolean> | ControlProps<ProfileOption, boolean>, filterName: string) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
@@ -63,11 +56,11 @@ const controlComponent = (ownProps: ControlProps<any>, filterName: string) => (
     </div>
 );
 
-const OwnerControlComponent = (ownProps: ControlProps<any>) => {
+const OwnerControlComponent = (ownProps: ControlProps<ProfileOption, boolean>) => {
     return controlComponent(ownProps, 'owners');
 };
 
-const TeamControlComponent = (ownProps: ControlProps<any>) => {
+const TeamControlComponent = (ownProps: ControlProps<TeamOption, boolean>) => {
     return controlComponent(ownProps, 'teams');
 };
 
@@ -85,15 +78,13 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
 
     const setOwnerId = (userId?: string) => {
         setFetchParams((oldParams) => {
-            return {...oldParams, owner_user_id: userId, page: 0}
-            ;
+            return {...oldParams, owner_user_id: userId, page: 0};
         });
     };
 
     const setTeamId = (teamId?: string) => {
         setFetchParams((oldParams) => {
-            return {...oldParams, team_id: teamId, page: 0}
-            ;
+            return {...oldParams, team_id: teamId, page: 0};
         });
     };
 
@@ -106,8 +97,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
 
     const setSearchTerm = (term: string) => {
         setFetchParams((oldParams) => {
-            return {...oldParams, search_term: term, page: 0}
-            ;
+            return {...oldParams, search_term: term, page: 0};
         });
     };
 
