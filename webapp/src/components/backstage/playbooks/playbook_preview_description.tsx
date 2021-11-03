@@ -22,7 +22,7 @@ const PlaybookPreviewDescription = (props: Props) => {
     const markdownOptions = useDefaultMarkdownOptionsByTeamId(props.playbook.team_id);
     const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
 
-    if (props.playbook.description === '') {
+    if (props.playbook.description.trim() === '') {
         return null;
     }
 
