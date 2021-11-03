@@ -355,3 +355,11 @@ func ModifyPlaybookCreators(userID string, isAdmin bool, config config.Service) 
 
 	return errors.Wrap(ErrNoPermissions, "not a playbook creator")
 }
+
+func CanStartTrialLicense(userID string, pluginAPI *pluginapi.Client) error {
+	if !pluginAPI.User.HasPermissionTo(userID, model.PermissionManageLicenseInformation) {
+		return errors.Wrap(ErrNoPermissions, "no permission to manage license information")
+	}
+
+	return nil
+}
