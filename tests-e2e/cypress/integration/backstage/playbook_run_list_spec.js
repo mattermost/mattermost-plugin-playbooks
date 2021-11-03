@@ -19,11 +19,6 @@ describe('backstage playbook run list', () => {
             testTeam = team;
             testUser = user;
 
-            // # Turn off growth onboarding screens
-            cy.apiUpdateConfig({
-                ServiceSettings: {EnableOnboardingFlow: false},
-            });
-
             // # Create another user
             cy.apiCreateUser().then(({user: anotherUser}) => {
                 testAnotherUser = anotherUser;
@@ -122,6 +117,7 @@ describe('backstage playbook run list', () => {
                 teamId: testTeam.id,
                 playbookId: testPlaybook.id,
                 playbookRunName: 'testAnotherUsers Run',
+
                 // ownerUserId: testUser.id,
                 ownerUserId: testAnotherUser.id,
             });
@@ -146,7 +142,6 @@ describe('backstage playbook run list', () => {
 
             // # Verify runs by testUser remain visible
             cy.findByText('testUsers Run').should('be.visible');
-
         });
 
         it('for testAnotherUser', () => {
@@ -208,7 +203,6 @@ describe('backstage playbook run list', () => {
 
             // # Verify finished run is visible
             cy.findByText('testUsers Run to be finished').should('be.visible');
-
         });
     });
 

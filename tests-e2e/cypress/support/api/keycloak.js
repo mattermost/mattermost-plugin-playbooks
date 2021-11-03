@@ -32,9 +32,9 @@ function getRealmJson() {
     const baseUrl = Cypress.config('baseUrl');
     const {ldapServer, ldapPort} = Cypress.env();
 
-    const realm = JSON.stringify(realmJson).
-        replace(/localhost:389/g, `${ldapServer}:${ldapPort}`).
-        replace(/http:\/\/localhost:8065/g, baseUrl);
+    const realm = JSON.stringify(realmJson)
+        .replace(/localhost:389/g, `${ldapServer}:${ldapPort}`)
+        .replace(/http:\/\/localhost:8065/g, baseUrl);
     return JSON.parse(realm);
 }
 

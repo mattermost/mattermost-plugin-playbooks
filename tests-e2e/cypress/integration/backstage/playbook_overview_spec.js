@@ -13,11 +13,6 @@ describe('playbook overview', () => {
             testTeam = team;
             testUser = user;
 
-            // # Turn off growth onboarding screens
-            cy.apiUpdateConfig({
-                ServiceSettings: {EnableOnboardingFlow: false},
-            });
-
             // # Create another user
             cy.apiCreateUser().then(({user: anotherUser}) => {
                 // # Login as testUser

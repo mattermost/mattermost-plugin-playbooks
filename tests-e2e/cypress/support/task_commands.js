@@ -158,8 +158,8 @@ __Tips:__
             webhookBaseUrl,
             adminUsername,
             adminPassword,
-        }}).
-        its('status').should('be.equal', 201);
+        }})
+        .its('status').should('be.equal', 201);
 });
 
 Cypress.Commands.add('requireStorybookServer', () => {

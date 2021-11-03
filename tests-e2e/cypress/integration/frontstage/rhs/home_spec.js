@@ -14,11 +14,6 @@ describe('playbook run rhs > home', () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
-
-            // # Turn off growth onboarding screens
-            cy.apiUpdateConfig({
-                ServiceSettings: {EnableOnboardingFlow: false},
-            });
         });
     });
 
