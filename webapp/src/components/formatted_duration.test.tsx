@@ -1,11 +1,10 @@
-import moment from 'moment';
-import {Duration, DurationObjectUnits} from 'luxon';
+import {DateTime, Duration, DurationObjectUnits} from 'luxon';
 
 import React from 'react';
 
 import renderer from 'react-test-renderer';
 
-const mockNow = moment('2017-02-08 12:00');
+const mockNow = DateTime.fromISO('2017-02-08T12:00');
 
 jest.mock('src/hooks', () => {
     return {
@@ -40,19 +39,14 @@ describe('formatDuration', () => {
         expect(formatDuration(duration)).toEqual(expectedNarrow);
         expect(formatDuration(duration, 'long')).toEqual(expecetedLong);
     });
-
-    it('is backwards-compatible with moment durations', () => {
-        const duration = moment.duration({days: 1, hours: 2, minutes: 5});
-        expect(formatDuration(duration)).toEqual('1d 2h 5m');
-    });
 });
 
 describe('FormattedDuration', () => {
     it('renders correctly', () => {
         const duration = renderer.create(
             <FormattedDuration
-                from={moment('2013-02-08 09:30').valueOf()}
-                to={moment('2013-02-08 09:30:59').valueOf()}
+                from={DateTime.fromISO('2013-02-08T09:30').valueOf()}
+                to={DateTime.fromISO('2013-02-08T09:30:59').valueOf()}
             />,
         ).toJSON();
         expect(duration).toMatchSnapshot();
@@ -61,8 +55,8 @@ describe('FormattedDuration', () => {
     it('renders correctly with ago', () => {
         const duration = renderer.create(
             <FormattedDuration
-                from={moment('2013-02-08 09:30').valueOf()}
-                to={moment('2013-02-08 09:30:59').valueOf()}
+                from={DateTime.fromISO('2013-02-08T09:30').valueOf()}
+                to={DateTime.fromISO('2013-02-08T09:30:59').valueOf()}
                 ago={true}
             />,
         ).toJSON();
@@ -72,8 +66,8 @@ describe('FormattedDuration', () => {
     it('renders correctly slightly greater than 1 year', () => {
         const duration = renderer.create(
             <FormattedDuration
-                from={moment('2013-02-08 09:30').valueOf()}
-                to={moment('2014-02-08 09:30:59').valueOf()}
+                from={DateTime.fromISO('2013-02-08T09:30').valueOf()}
+                to={DateTime.fromISO('2014-02-08T09:30:59').valueOf()}
                 ago={true}
             />,
         ).toJSON();
@@ -83,8 +77,8 @@ describe('FormattedDuration', () => {
     it('renders correctly 1.5 years', () => {
         const duration = renderer.create(
             <FormattedDuration
-                from={moment('2013-02-08 09:30').valueOf()}
-                to={moment('2014-08-08 09:30:59').valueOf()}
+                from={DateTime.fromISO('2013-02-08T09:30').valueOf()}
+                to={DateTime.fromISO('2014-08-08T09:30:59').valueOf()}
                 ago={true}
             />,
         ).toJSON();
@@ -94,7 +88,7 @@ describe('FormattedDuration', () => {
     it('renders correctly when to is 0 or undefined', () => {
         const duration = renderer.create(
             <FormattedDuration
-                from={moment('2014-02-08 09:30:59').valueOf()}
+                from={DateTime.fromISO('2014-02-08T09:30:59').valueOf()}
                 ago={true}
             />,
         ).toJSON();

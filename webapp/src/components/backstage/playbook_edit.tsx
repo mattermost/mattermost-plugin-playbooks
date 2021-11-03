@@ -472,14 +472,6 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleToggleExportChannelOnFinishedEnabled = () => {
-        setPlaybook({
-            ...playbook,
-            export_channel_on_finished_enabled: !playbook.export_channel_on_finished_enabled,
-        });
-        setChangesMade(true);
-    };
-
     const handleToggleCategorizePlaybookRun = () => {
         setPlaybook({
             ...playbook,
@@ -702,8 +694,6 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
                                     messageOnJoin={playbook.message_on_join}
                                     messageOnJoinChange={handleMessageOnJoinChange}
-                                    onToggleExportChannelOnFinishedEnabled={handleToggleExportChannelOnFinishedEnabled}
-                                    exportChannelOnFinishedEnabled={playbook.export_channel_on_finished_enabled}
                                     signalAnyKeywordsEnabled={playbook.signal_any_keywords_enabled}
                                     onToggleSignalAnyKeywords={handleToggleSignalAnyKeywords}
                                     signalAnyKeywordsChange={handleSignalAnyKeywordsChange}

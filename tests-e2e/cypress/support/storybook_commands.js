@@ -30,11 +30,11 @@ Cypress.Commands.add('openStoryPanel', (tab = 'Actions') => {
  * Get content of an iframe and return the root where components are being rendered
  */
 Cypress.Commands.add('iframe', (selector, element) => {
-    return cy.get(`iframe${selector || ''}`, {timeout: 10000}).
-        should((iframe) => {
+    return cy.get(`iframe${selector || ''}`, {timeout: 10000})
+        .should((iframe) => {
             expect(iframe.contents().find(element || 'body')).to.exist;
-        }).
-        then((iframe) => {
+        })
+        .then((iframe) => {
             if (element) {
                 return cy.wrap(iframe.contents().find(element));
             }

@@ -220,7 +220,12 @@ const TimelineEventItem = (props: Props) => {
             </HoverMenu>
             }
             <TimeContainer>
-                <TimeHours>{formatMessage({defaultMessage: '{date}'}, {date: <Timestamp value={DateTime.fromMillis(props.event.event_at).toFormat('LLL dd T')}/>})}</TimeHours>
+                <TimeHours>
+                    <Timestamp
+                        value={props.event.event_at}
+                        month='short'
+                    />
+                </TimeHours>
                 {timeSince}
             </TimeContainer>
             <Circle>

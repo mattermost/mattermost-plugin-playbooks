@@ -6,8 +6,6 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import users from '../../../fixtures/users.json';
-
 describe('slash command > todo', () => {
     let team1;
     let team2;
@@ -20,12 +18,6 @@ describe('slash command > todo', () => {
     let run3;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
-
         cy.apiInitSetup().then(({team, user}) => {
             team1 = team;
             testUser = user;
@@ -84,7 +76,7 @@ describe('slash command > todo', () => {
             cy.apiCreateTeam('team2', 'Team 2').then(({team: secondTeam}) => {
                 team2 = secondTeam;
 
-                cy.apiLogin(users.sysadmin);
+                cy.apiAdminLogin();
                 cy.apiAddUserToTeam(team2.id, testUser.id);
                 cy.apiLogin(testUser);
 

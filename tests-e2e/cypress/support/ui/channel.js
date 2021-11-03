@@ -74,9 +74,9 @@ Cypress.Commands.add('goToDm', (username) => {
     // # Start typing part of a username that matches previously created users
     cy.get('#selectItems input').type(username, {force: true});
     cy.findByRole('dialog', {name: 'Direct Messages'}).should('be.visible').wait(TIMEOUTS.ONE_SEC);
-    cy.findByRole('textbox', {name: 'Search for people'}).click({force: true}).
-        type(username).wait(TIMEOUTS.ONE_SEC).
-        type('{enter}');
+    cy.findByRole('textbox', {name: 'Search for people'}).click({force: true})
+        .type(username).wait(TIMEOUTS.ONE_SEC)
+        .type('{enter}');
 
     // # Save the selected item
     return cy.get('#saveItems').click().wait(TIMEOUTS.HALF_SEC);
