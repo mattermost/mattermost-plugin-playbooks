@@ -31,15 +31,16 @@ const (
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
 type PlaybookRunServiceImpl struct {
-	pluginAPI     *pluginapi.Client
-	httpClient    *http.Client
-	configService config.Service
-	store         PlaybookRunStore
-	poster        bot.Poster
-	logger        bot.Logger
-	scheduler     JobOnceScheduler
-	telemetry     PlaybookRunTelemetry
-	api           plugin.API
+	pluginAPI       *pluginapi.Client
+	httpClient      *http.Client
+	configService   config.Service
+	store           PlaybookRunStore
+	poster          bot.Poster
+	logger          bot.Logger
+	scheduler       JobOnceScheduler
+	telemetry       PlaybookRunTelemetry
+	api             plugin.API
+	playbookService PlaybookService
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -76,17 +77,18 @@ const DialogFieldItemCommandKey = "command"
 
 // NewPlaybookRunService creates a new PlaybookRunServiceImpl.
 func NewPlaybookRunService(pluginAPI *pluginapi.Client, store PlaybookRunStore, poster bot.Poster, logger bot.Logger,
-	configService config.Service, scheduler JobOnceScheduler, telemetry PlaybookRunTelemetry, api plugin.API) *PlaybookRunServiceImpl {
+	configService config.Service, scheduler JobOnceScheduler, telemetry PlaybookRunTelemetry, api plugin.API, playbookService PlaybookService) *PlaybookRunServiceImpl {
 	return &PlaybookRunServiceImpl{
-		pluginAPI:     pluginAPI,
-		store:         store,
-		poster:        poster,
-		logger:        logger,
-		configService: configService,
-		scheduler:     scheduler,
-		telemetry:     telemetry,
-		httpClient:    httptools.MakeClient(pluginAPI),
-		api:           api,
+		pluginAPI:       pluginAPI,
+		store:           store,
+		poster:          poster,
+		logger:          logger,
+		configService:   configService,
+		scheduler:       scheduler,
+		telemetry:       telemetry,
+		httpClient:      httptools.MakeClient(pluginAPI),
+		api:             api,
+		playbookService: playbookService,
 	}
 }
 
@@ -664,13 +666,21 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdateToFollowers(post *model.Po
 		return errors.Wrapf(err, "failed to get followers for the playbook run `%s`", playbookRunID)
 	}
 
+	post.Id = "" // Reset the ID so we avoid cloning the whole object
+
 	for _, follower := range followers {
 		// Do not send update to the author
 		if follower == authorID {
 			continue
 		}
+		// Check for access permissions
+		if err := UserCanViewPlaybookRun(follower, playbookRunID, s.playbookService, s, s.pluginAPI); err != nil {
+			continue
+		}
+
 		if err := s.poster.DM(follower, post); err != nil {
-			return errors.Wrapf(err, "failed to send a status update to the follower %s", follower)
+			s.pluginAPI.Log.Warn("failed to broadcast the status update to the follower",
+				"follower", follower, "error", err.Error())
 		}
 	}
 	return nil
@@ -1583,7 +1593,6 @@ func (s *PlaybookRunServiceImpl) ChangeCreationDate(playbookRunID string, creati
 // was invited by actorID.
 func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	playbookRunID, err := s.store.GetPlaybookRunIDForChannel(channelID)
-
 	if err != nil {
 		// This is not a playbook run channel
 		return
@@ -1634,6 +1643,14 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return
+	}
+
+	if user.IsBot {
+		return
+	}
+
+	if err := s.Follow(playbookRun.ID, userID); err != nil {
+		s.logger.Errorf("user `%s` was not able to follow the run `%s`; error: %s", userID, playbookRun.ID, err.Error())
 	}
 
 	if playbookRun.CategoryName != "" {
