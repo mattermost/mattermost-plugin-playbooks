@@ -16,7 +16,9 @@ import {DraggableProvided} from 'react-beautiful-dnd';
 
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {
-    clientRemoveChecklistItem, clientRunChecklistItemSlashCommand,
+    clientSkipChecklistItem,
+    clientRestoreChecklistItem,
+    clientRunChecklistItemSlashCommand,
     setAssignee,
     clientEditChecklistItem,
 } from 'src/client';
@@ -368,7 +370,8 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const [running, setRunning] = useState(false);
     const [lastRun, setLastRun] = useState(props.checklistItem.command_last_run);
     const [showMenu, setShowMenu] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showSkipConfirm, setShowSkipConfirm] = useState(false);
+    const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
 
     // Immediately stop the running indicator when we get notified of a more recent execution.
@@ -462,10 +465,15 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                     }}
                                 />
                                 <HoverMenuButton
-                                    title={'Delete'}
-                                    className={'icon-trash-can-outline icon-16 btn-icon'}
+                                    title={(props.checklistItem.state == ChecklistItemState.Skip)?'Re-Assign':'Skip'}
+                                    className={(props.checklistItem.state == ChecklistItemState.Skip)?'icon-account-plus-outline icon-16 btn-icon':'icon-trash-can-outline icon-16 btn-icon'}
                                     onClick={() => {
-                                        setShowDeleteConfirm(true);
+                                        if(props.checklistItem.state != ChecklistItemState.Skip){
+                                            setShowSkipConfirm(true);
+                                        }
+                                        else{
+                                            setShowRestoreConfirm(true);
+                                        }
                                     }}
                                 />
                             </>
@@ -486,7 +494,8 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             <div
                                 onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
                             >
-                                {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                                {(props.checklistItem.state == ChecklistItemState.Skip)?<strike>{messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions), true, {})}</strike>:
+                                                                messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions))}
                             </div>
                         </label>
                         {props.inlineDescription && (
@@ -532,14 +541,28 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 </ExtrasRow>
             </ItemContainer>
             <ConfirmModal
-                show={showDeleteConfirm}
-                title={'Delete task'}
-                message={'Are you sure you want to delete this task? This will be removed from this run but will not affect the playbook.'}
-                confirmButtonText={'Delete'}
-                onConfirm={() =>
-                    clientRemoveChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum)
+                show={showSkipConfirm}
+                title={'Skip task'}
+                message={'Are you sure you want to skip this task? This will be crossed from this run but will not affect the playbook.'}
+                confirmButtonText={'Skip'}
+                onConfirm={() =>{
+                    clientSkipChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum)
+                    setShowSkipConfirm(false)
                 }
-                onCancel={() => setShowDeleteConfirm(false)}
+                }
+                onCancel={() => setShowSkipConfirm(false)}
+            />
+            <ConfirmModal
+                show={showRestoreConfirm}
+                title={'Restore task'}
+                message={'Are you sure you want to Restore this task? This Task will be added to this run'}
+                confirmButtonText={'Restore'}
+                onConfirm={() =>{
+                    clientRestoreChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum)
+                    setShowRestoreConfirm(false)
+                }
+                }
+                onCancel={() => setShowRestoreConfirm(false)}
             />
             <ChecklistItemEditModal
                 show={showEditDialog}

@@ -1395,6 +1395,49 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 	return nil
 }
 
+// SkipChecklistItem skips the item at the given index from the given checklist
+func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].LastSkipped = model.GetMillis()
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = CheckListItemStateSkipped
+
+	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.SkipTask(playbookRunID, userID, checklistItem)
+
+	return nil
+}
+
+// RestoreChecklistItem restores the item at the given index from the given checklist
+func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateOpen
+
+	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.RestoreTask(playbookRunID, userID, checklistItem)
+
+	return nil
+}
+
 // EditChecklistItem changes the title of a specified checklist item
 func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newTitle, newCommand, newDescription string) error {
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
