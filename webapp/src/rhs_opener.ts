@@ -59,7 +59,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
             return;
         }
 
-        // Record whether we were asked to force the RHS open, and remove
+        // Record (and remove) if we were asked to force the RHS open.
         let forceRHSOpen = false;
         const url = new URL(window.location.href);
         const searchParams = new URLSearchParams(url.searchParams);
