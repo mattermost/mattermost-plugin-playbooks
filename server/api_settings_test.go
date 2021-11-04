@@ -11,23 +11,22 @@ import (
 )
 
 func TestSettings(t *testing.T) {
-	RunTest(t, func(t *testing.T, e *TestEnvironment) {
-		e.CreateBasic()
+	e := Setup(t)
+	e.CreateBasic()
 
-		t.Run("get settings", func(t *testing.T) {
-			t.Run("unauthenticated", func(t *testing.T) {
-				settings, err := e.UnauthenticatedPlaybooksClient.Settings.Get(context.Background())
-				assert.Nil(t, settings)
-				requireErrorWithStatusCode(t, err, http.StatusUnauthorized)
-			})
+	t.Run("get settings", func(t *testing.T) {
+		t.Run("unauthenticated", func(t *testing.T) {
+			settings, err := e.UnauthenticatedPlaybooksClient.Settings.Get(context.Background())
+			assert.Nil(t, settings)
+			requireErrorWithStatusCode(t, err, http.StatusUnauthorized)
+		})
 
-			t.Run("get some settings", func(t *testing.T) {
-				defaultSettings := &client.GlobalSettings{}
+		t.Run("get some settings", func(t *testing.T) {
+			defaultSettings := &client.GlobalSettings{}
 
-				settings, err := e.PlaybooksClient.Settings.Get(context.Background())
-				require.NoError(t, err)
-				assert.Equal(t, defaultSettings, settings)
-			})
+			settings, err := e.PlaybooksClient.Settings.Get(context.Background())
+			require.NoError(t, err)
+			assert.Equal(t, defaultSettings, settings)
 		})
 	})
 }

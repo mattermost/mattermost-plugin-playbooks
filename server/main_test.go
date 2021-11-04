@@ -81,96 +81,94 @@ type TestEnvironment struct {
 	RegularUser             *model.User
 }
 
-func RunTest(t *testing.T, test func(t *testing.T, e *TestEnvironment)) {
-	t.Helper()
-
-	//var driverNames = []string{model.DatabaseDriverPostgres, model.DatabaseDriverMysql}
-	var driverNames = []string{model.DatabaseDriverPostgres}
-
-	for _, driverName := range driverNames {
-		t.Run(driverName, func(t *testing.T) {
-			sqlSettings := storetest.MakeSqlSettings(driverName, false)
-
-			// Directories for plugin stuff
-			dir := t.TempDir()
-			clientDir := t.TempDir()
-			playbooksDir := path.Join(dir, "playbooks")
-			binaryDir := path.Join(playbooksDir, "server", "dist")
-			pluginBinary := path.Join(binaryDir, "plugin-"+runtime.GOOS+"-"+runtime.GOARCH)
-			pluginManifest := path.Join(playbooksDir, "plugin.json")
-			assetsDir := path.Join(playbooksDir, "assets")
-
-			// Create a test memory store and modify configuration appropriately
-			configStore := config.NewTestMemoryStore()
-			config := configStore.Get()
-			config.PluginSettings.Directory = &dir
-			config.PluginSettings.ClientDirectory = &clientDir
-			addr := "localhost:9056"
-			config.ServiceSettings.ListenAddress = &addr
-			config.TeamSettings.MaxUsersPerTeam = model.NewInt(10000)
-			config.LocalizationSettings.SetDefaults()
-			config.SqlSettings = *sqlSettings
-			_, _, err := configStore.Set(config)
-			require.NoError(t, err)
-
-			// Copy ourselves into the correct directory so we are executed.
-			currentBinary, err := os.Executable()
-			require.NoError(t, err)
-			err = utils.CopyFile(currentBinary, pluginBinary)
-			require.NoError(t, err)
-			err = utils.CopyDir("../assets", assetsDir)
-			require.NoError(t, err)
-
-			// Copy the manifest without webapp to the correct directory
-			modifiedManifest := model.Manifest{}
-			_ = json.NewDecoder(strings.NewReader(manifestStr)).Decode(&modifiedManifest)
-			modifiedManifest.Webapp = nil
-			manifestJSONBytes, _ := json.Marshal(modifiedManifest)
-			err = os.WriteFile(pluginManifest, manifestJSONBytes, 0700)
-			require.NoError(t, err)
-
-			// Create a logger to override
-			testLogger, err := mlog.NewLogger()
-			require.NoError(t, err)
-			testLogger.LockConfiguration()
-
-			// Create a server with our specified options
-			err = utils.TranslationsPreInit()
-			require.NoError(t, err)
-
-			options := []sapp.Option{
-				sapp.ConfigStore(configStore),
-				sapp.SetLogger(testLogger),
-			}
-			server, err := sapp.NewServer(options...)
-			require.NoError(t, err)
-			api4.Init(server)
-			err = server.Start()
-			require.NoError(t, err)
-
-			// Cleanup to run after test is complete
-			t.Cleanup(func() {
-				server.Shutdown()
-			})
-
-			ap := sapp.New(sapp.ServerConnector(server.Channels()))
-
-			env := &TestEnvironment{
-				T:   t,
-				Srv: server,
-				A:   ap,
-				Permissions: &serverPermissionsWrapper{
-					TestHelper: api4.TestHelper{
-						Server: server,
-						App:    ap,
-					},
-				},
-			}
-
-			test(t, env)
-		})
+func getEnvWithDefault(name, defaultValue string) string {
+	if value := os.Getenv(name); value != "" {
+		return value
 	}
+	return defaultValue
+}
 
+func Setup(t *testing.T) *TestEnvironment {
+	// Enviroment Settings
+	driverName := getEnvWithDefault("TEST_DATABASE_DRIVERNAME", "postgres")
+
+	sqlSettings := storetest.MakeSqlSettings(driverName, false)
+
+	// Directories for plugin stuff
+	dir := t.TempDir()
+	clientDir := t.TempDir()
+	playbooksDir := path.Join(dir, "playbooks")
+	binaryDir := path.Join(playbooksDir, "server", "dist")
+	pluginBinary := path.Join(binaryDir, "plugin-"+runtime.GOOS+"-"+runtime.GOARCH)
+	pluginManifest := path.Join(playbooksDir, "plugin.json")
+	assetsDir := path.Join(playbooksDir, "assets")
+
+	// Create a test memory store and modify configuration appropriately
+	configStore := config.NewTestMemoryStore()
+	config := configStore.Get()
+	config.PluginSettings.Directory = &dir
+	config.PluginSettings.ClientDirectory = &clientDir
+	addr := "localhost:9056"
+	config.ServiceSettings.ListenAddress = &addr
+	config.TeamSettings.MaxUsersPerTeam = model.NewInt(10000)
+	config.LocalizationSettings.SetDefaults()
+	config.SqlSettings = *sqlSettings
+	_, _, err := configStore.Set(config)
+	require.NoError(t, err)
+
+	// Copy ourselves into the correct directory so we are executed.
+	currentBinary, err := os.Executable()
+	require.NoError(t, err)
+	err = utils.CopyFile(currentBinary, pluginBinary)
+	require.NoError(t, err)
+	err = utils.CopyDir("../assets", assetsDir)
+	require.NoError(t, err)
+
+	// Copy the manifest without webapp to the correct directory
+	modifiedManifest := model.Manifest{}
+	_ = json.NewDecoder(strings.NewReader(manifestStr)).Decode(&modifiedManifest)
+	modifiedManifest.Webapp = nil
+	manifestJSONBytes, _ := json.Marshal(modifiedManifest)
+	err = os.WriteFile(pluginManifest, manifestJSONBytes, 0700)
+	require.NoError(t, err)
+
+	// Create a logger to override
+	testLogger, err := mlog.NewLogger()
+	require.NoError(t, err)
+	testLogger.LockConfiguration()
+
+	// Create a server with our specified options
+	err = utils.TranslationsPreInit()
+	require.NoError(t, err)
+
+	options := []sapp.Option{
+		sapp.ConfigStore(configStore),
+		sapp.SetLogger(testLogger),
+	}
+	server, err := sapp.NewServer(options...)
+	require.NoError(t, err)
+	api4.Init(server)
+	err = server.Start()
+	require.NoError(t, err)
+
+	// Cleanup to run after test is complete
+	t.Cleanup(func() {
+		server.Shutdown()
+	})
+
+	ap := sapp.New(sapp.ServerConnector(server.Channels()))
+
+	return &TestEnvironment{
+		T:   t,
+		Srv: server,
+		A:   ap,
+		Permissions: &serverPermissionsWrapper{
+			TestHelper: api4.TestHelper{
+				Server: server,
+				App:    ap,
+			},
+		},
+	}
 }
 
 func (e *TestEnvironment) CreateClients() {
@@ -305,9 +303,8 @@ func (e *TestEnvironment) CreateBasic() {
 
 // TestTestFramework If this is failing you know the break is not exclusivly in your test.
 func TestTestFramework(t *testing.T) {
-	RunTest(t, func(t *testing.T, e *TestEnvironment) {
-		e.CreateBasic()
-	})
+	e := Setup(t)
+	e.CreateBasic()
 }
 
 func requireErrorWithStatusCode(t *testing.T, err error, statusCode int) {
