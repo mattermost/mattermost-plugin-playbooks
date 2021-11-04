@@ -13,6 +13,8 @@ import {
 
 import styled from 'styled-components';
 
+import {FormattedMessage, useIntl} from 'react-intl';
+
 import {Checklist, emptyChecklist} from 'src/types/playbook';
 
 import HorizontalBar from 'src/components/backstage/horizontal_bar';
@@ -48,6 +50,7 @@ interface Props {
 }
 
 export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
+    const {formatMessage} = useIntl();
     const [confirmRemoveChecklistNum, setConfirmRemoveChecklistNum] = useState(-1);
 
     const onDragEnd = (result: DropResult) => {
@@ -194,15 +197,15 @@ export const StagesAndStepsEdit = (props: Props): React.ReactElement => {
                             onClick={onAddChecklist}
                         >
                             <i className='icon-plus icon-16'/>
-                            {'New checklist'}
+                            <FormattedMessage defaultMessage='New checklist'/>
                         </NewStage>
                     </HorizontalBar>
                 </NewStageContainer>
                 <ConfirmModal
                     show={confirmRemoveChecklistNum >= 0}
-                    title={'Remove checklist'}
-                    message={'Are you sure you want to remove the checklist? All tasks will be removed.'}
-                    confirmButtonText={'Remove'}
+                    title={formatMessage({defaultMessage: 'Remove checklist'})}
+                    message={formatMessage({defaultMessage: 'Are you sure you want to remove the checklist? All tasks will be removed.'})}
+                    confirmButtonText={formatMessage({defaultMessage: 'Remove'})}
                     onConfirm={() => {
                         onRemoveChecklist(confirmRemoveChecklistNum);
                         setConfirmRemoveChecklistNum(-1);

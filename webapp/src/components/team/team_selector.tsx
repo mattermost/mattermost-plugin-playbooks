@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
+import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import classNames from 'classnames';
 import styled from 'styled-components';
@@ -13,7 +14,7 @@ import {PlaybookRunFilterButton} from '../backstage/styles';
 
 import TeamWithIcon from './team_with_icon';
 
-interface Option {
+export interface Option {
     value: string;
     label: JSX.Element | string;
     teamId: string;
@@ -31,7 +32,7 @@ interface Props {
     onlyPlaceholder?: boolean;
     enableEdit: boolean;
     isClearable?: boolean;
-    customControl?: (props: ControlProps<any>) => React.ReactElement;
+    customControl?: (props: ControlProps<Option, boolean>) => React.ReactElement;
     controlledOpenToggle?: boolean;
     teams: Team[];
     onSelectedChange?: (teamId?: string) => void;
@@ -42,6 +43,7 @@ interface Props {
 const dropdownYShift = 27;
 
 export default function TeamSelector(props: Props) {
+    const {formatMessage} = useIntl();
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         if (!isOpen) {
@@ -225,7 +227,7 @@ export default function TeamSelector(props: Props) {
                 isClearable={props.isClearable}
                 menuIsOpen={true}
                 options={teamOptions}
-                placeholder={'Search'}
+                placeholder={formatMessage({defaultMessage: 'Search'})}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}
@@ -239,7 +241,7 @@ export default function TeamSelector(props: Props) {
 }
 
 // styles for the select component
-const selectStyles: StylesConfig = {
+const selectStyles: StylesConfig<Option, boolean> = {
     control: (provided) => ({...provided, minWidth: 240, margin: 8}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {
@@ -344,7 +346,7 @@ const TeamButton = styled.button`
             color: var(--center-channel-color);
         }
     }
-    
+
 
     .NoAssignee-button, .Assigned-button {
         background-color: transparent;

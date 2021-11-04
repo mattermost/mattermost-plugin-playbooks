@@ -6,6 +6,12 @@ import styled from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 
+import {GlobalState} from 'mattermost-redux/types/store';
+import {Channel} from 'mattermost-redux/types/channels';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
 import {
     Badge,
     ExpandRight,
@@ -15,11 +21,15 @@ import {
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
+import Followers from 'src/components/backstage/playbook_runs/playbook_run_backstage/followers';
+
 import {
     clientFetchPlaybook,
     clientRemoveTimelineEvent,
     fetchPlaybookRun,
     fetchPlaybookRunMetadata,
+    followPlaybookRun,
+    unfollowPlaybookRun,
 } from 'src/client';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
@@ -164,12 +174,24 @@ const PositionedUpgradeBadge = styled(UpgradeBadge)`
     vertical-align: sub;
 `;
 
+const Line = styled.hr`
+    border: 1px solid;
+    margin: 0px 0px 0px 12px;
+    height: 32px;
+`;
+
+const Button = styled(SecondaryButtonLarger)`
+    margin-left: 12px;
+`;
+
 const PlaybookRunBackstage = () => {
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
+    const currentUserID = useSelector(getCurrentUserId);
+    const [followers, setFollowers] = useState<string[]>([]);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -184,6 +206,7 @@ const PlaybookRunBackstage = () => {
             setPlaybookRun(playbookRunResult);
             setPlaybookRunMetadata(playbookRunMetadataResult);
             setFetchingState(FetchingStateType.fetched);
+            setFollowers(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
         }).catch(() => {
             setFetchingState(FetchingStateType.notFound);
         });
@@ -223,9 +246,29 @@ const PlaybookRunBackstage = () => {
         navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
     };
 
+    const onFollow = () => {
+        if (followers.includes(currentUserID)) {
+            return;
+        }
+        followPlaybookRun(playbookRun.id);
+        const followersCopy = [...followers, currentUserID];
+        setFollowers(followersCopy);
+    };
+
+    const onUnfollow = () => {
+        unfollowPlaybookRun(playbookRun.id);
+        const followersCopy = followers.filter((item) => item !== currentUserID);
+        setFollowers(followersCopy);
+    };
+
     const closePlaybookRunDetails = () => {
         navigateToPluginUrl('/runs');
     };
+
+    let followButton = (<Button onClick={onFollow}>{formatMessage({defaultMessage: 'Follow'})}</Button>);
+    if (followers.includes(currentUserID)) {
+        followButton = (<Button onClick={onUnfollow}>{formatMessage({defaultMessage: 'Unfollow'})}</Button>);
+    }
 
     return (
         <OuterContainer>
@@ -238,14 +281,17 @@ const PlaybookRunBackstage = () => {
                     <VerticalBlock>
                         <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
                         {playbook &&
-                        <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
-                            <SmallPlaybookIcon/>
-                            <SubTitle>{playbook?.title}</SubTitle>
-                        </PlaybookDiv>
+                            <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
+                                <SmallPlaybookIcon/>
+                                <SubTitle>{playbook?.title}</SubTitle>
+                            </PlaybookDiv>
                         }
                     </VerticalBlock>
                     <Badge status={playbookRun.current_status}/>
                     <ExpandRight/>
+                    <Followers userIds={followers}/>
+                    {followButton}
+                    <Line/>
                     <ExportLink playbookRun={playbookRun}/>
                     <PrimaryButtonLarger onClick={goToChannel}>
                         <i className={'icon icon-message-text-outline mr-1'}/>

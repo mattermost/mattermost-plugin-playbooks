@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {FormattedMessage} from 'react-intl';
 import styled, {css} from 'styled-components';
 
 import {PrimaryButton, TertiaryButton, DestructiveButton} from 'src/components/assets/buttons';
@@ -30,7 +31,7 @@ const RHSPostUpdateButton = (props: Props) => {
             disabled={props.disabled}
             onClick={props.onClick}
         >
-            {'Post update'}
+            <FormattedMessage defaultMessage='Post update'/>
         </ButtonComponent>
     );
 };
