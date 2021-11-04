@@ -30,8 +30,6 @@ export const SET_RHS_ABOUT_COLLAPSED_STATE = pluginId + '_set_rhs_about_collapse
 export const SET_CHECKLIST_COLLAPSED_STATE = pluginId + '_set_checklist_collapsed_state';
 export const SET_ALL_CHECKLISTS_COLLAPSED_STATE = pluginId + '_set_all_checklists_collapsed_state';
 export const SET_CHECKLIST_ITEMS_FILTER = pluginId + '_set_checklist_items_filter';
-export const MM_UPDATE_RHS_STATE = 'UPDATE_RHS_STATE';
-export const MM_SELECT_POST = 'SELECT_POST';
 
 export interface ReceivedToggleRHSAction {
     type: typeof RECEIVED_TOGGLE_RHS_ACTION;

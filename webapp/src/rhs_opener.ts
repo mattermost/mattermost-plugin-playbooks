@@ -11,7 +11,7 @@ import {fetchPlaybookRuns} from 'src/client';
 import {currentPlaybookRun, isPlaybookRunRHSOpen, inPlaybookRunChannel} from 'src/selectors';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
-import {toggleRHS, receivedTeamPlaybookRuns, closeMMRHS} from 'src/actions';
+import {toggleRHS, receivedTeamPlaybookRuns} from 'src/actions';
 import {browserHistory} from 'src/webapp_globals';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
