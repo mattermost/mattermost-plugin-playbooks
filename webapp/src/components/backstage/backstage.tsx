@@ -122,10 +122,10 @@ const Backstage = () => {
                             >
                                 <Icon
                                     path={mdiClipboardPlayMultipleOutline}
-                                    title='Runs'
+                                    title={formatMessage({defaultMessage: 'Runs'})}
                                     size={1.4}
                                 />
-                                {'Runs'}
+                                {formatMessage({defaultMessage: 'Runs'})}
                             </BackstageTitlebarItem>
                             <BackstageTitlebarItem
                                 to={`${match.url}/playbooks`}
@@ -133,7 +133,7 @@ const Backstage = () => {
                                 data-testid='playbooksLHSButton'
                             >
                                 <PlaybookIcon/>
-                                {'Playbooks'}
+                                {formatMessage({defaultMessage: 'Playbooks'})}
                             </BackstageTitlebarItem>
                             <BackstageTitlebarItem
                                 to={`${match.url}/settings`}
@@ -153,10 +153,10 @@ const Backstage = () => {
                                 >
                                     <Icon
                                         path={mdiThumbsUpDown}
-                                        title='Give Feedback'
+                                        title={formatMessage({defaultMessage: 'Give Feedback'})}
                                         size={1}
                                     />
-                                    {'Give Feedback'}
+                                    {formatMessage({defaultMessage: 'Give Feedback'})}
                                 </BackstageTitlebarItem>
                             }
                         </div>

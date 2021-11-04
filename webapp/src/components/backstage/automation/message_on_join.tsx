@@ -4,6 +4,8 @@
 import React from 'react';
 import styled from 'styled-components';
 
+import {FormattedMessage} from 'react-intl';
+
 import {StyledMarkdownTextbox} from 'src/components/backstage/styles';
 
 import {
@@ -37,7 +39,7 @@ export const MessageOnJoin = (props: Props) => {
                     isChecked={props.enabled}
                     onChange={props.onToggle}
                 />
-                <div>{'Send a welcome message'}</div>
+                <div><FormattedMessage defaultMessage='Send a welcome message'/></div>
             </AutomationTitle>
             {props.enabled && (
                 <TextboxWrapper>

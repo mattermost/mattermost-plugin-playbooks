@@ -3,6 +3,7 @@
 
 import React from 'react';
 import {useDispatch, useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
@@ -26,6 +27,7 @@ interface Props {
 
 const RHSAbout = (props: Props) => {
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
     const profilesInChannel = useProfilesInCurrentChannel();
     const collapsed = useSelector(currentRHSAboutCollapsedState);
@@ -84,10 +86,10 @@ const RHSAbout = (props: Props) => {
                 />
                 <Row>
                     <OwnerSection>
-                        <MemberSectionTitle>{'Owner'}</MemberSectionTitle>
+                        <MemberSectionTitle>{formatMessage({defaultMessage: 'Owner'})}</MemberSectionTitle>
                         <StyledProfileSelector
                             selectedUserId={props.playbookRun.owner_user_id}
-                            placeholder={'Assign the owner role'}
+                            placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
                             placeholderButtonClass={'NoAssignee-button'}
                             profileButtonClass={'Assigned-button'}
                             enableEdit={!isFinished}
@@ -97,7 +99,7 @@ const RHSAbout = (props: Props) => {
                         />
                     </OwnerSection>
                     <ParticipantsSection>
-                        <MemberSectionTitle>{'Participants'}</MemberSectionTitle>
+                        <MemberSectionTitle>{formatMessage({defaultMessage: 'Participants'})}</MemberSectionTitle>
                         <RHSParticipants userIds={participantsIds}/>
                     </ParticipantsSection>
                 </Row>

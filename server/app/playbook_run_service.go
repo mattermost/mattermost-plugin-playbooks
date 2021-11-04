@@ -920,26 +920,6 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		}
 	}
 
-	if playbookRunToModify.ExportChannelOnFinishedEnabled {
-		var fileID string
-		fileID, err = s.exportChannelToFile(playbookRunToModify.Name, playbookRunToModify.OwnerUserID, playbookRunToModify.ChannelID)
-		if err != nil {
-			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
-			return nil
-		}
-
-		var channel *model.Channel
-		channel, err = s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
-		if err != nil {
-			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
-			return errors.Wrapf(err, "failed to get channel in export channel on finished, in FinishPlaybookRun, for channelID '%s'", playbookRunToModify.ChannelID)
-		}
-
-		if err = s.poster.DM(playbookRunToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Playbook run ~%s exported successfully", channel.Name), FileIds: []string{fileID}}); err != nil {
-			return errors.Wrap(err, "failed to send exported channel result to playbook owner")
-		}
-	}
-
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
 		CreateAt:      endAt,
@@ -964,37 +944,6 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	return nil
-}
-
-func (s *PlaybookRunServiceImpl) exportChannelToFile(playbookRunName string, ownerUserID string, channelID string) (string, error) {
-	// set url and query string
-	exportPluginURL := fmt.Sprintf("plugins/com.mattermost.plugin-channel-export/api/v1/export?format=csv&channel_id=%s", channelID)
-
-	req, err := http.NewRequest(http.MethodGet, exportPluginURL, bytes.NewBufferString(""))
-	req.Header.Add("Mattermost-User-ID", ownerUserID)
-	if err != nil {
-		errMessage := "failed to create request to generate export file"
-		s.pluginAPI.Log.Warn(errMessage, "plugin", "channel-export", "error", err)
-
-		return "", errors.Wrap(err, errMessage)
-	}
-
-	res := s.pluginAPI.Plugin.HTTP(req)
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		return "", errors.Errorf("There was an error when making a request to upload file with status code %s", strconv.Itoa(res.StatusCode))
-	}
-
-	file, err := s.pluginAPI.File.Upload(res.Body, fmt.Sprintf("%s.csv", playbookRunName), channelID)
-	if err != nil {
-		errMessage := "unable to upload the exported file to a channel"
-		s.pluginAPI.Log.Error(errMessage, "Channel ID", channelID, "Error", err)
-
-		return "", errors.Wrap(err, errMessage)
-	}
-
-	return file.Id, nil
-
 }
 
 func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *PlaybookRun, isInitial bool) error {

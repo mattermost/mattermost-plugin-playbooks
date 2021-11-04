@@ -5,6 +5,8 @@ import React, {useRef, useState} from 'react';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 
+import {FormattedMessage} from 'react-intl';
+
 import {addNewTask} from 'src/actions';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
@@ -54,7 +56,14 @@ const CollapsibleChecklist = ({
                         parentRef={titleRef}
                     />
                 </Title>
-                {titleHelpText || <TitleHelpTextWrapper>{`${completed} / ${total} done`}</TitleHelpTextWrapper>}
+                {titleHelpText || (
+                    <TitleHelpTextWrapper>
+                        <FormattedMessage
+                            defaultMessage='{completed, number} / {total, number} done'
+                            values={{completed, total}}
+                        />
+                    </TitleHelpTextWrapper>
+                )}
                 {
                     showMenu && !disabled &&
                     <AddNewTask
@@ -65,7 +74,7 @@ const CollapsibleChecklist = ({
                         }}
                     >
                         <i className='icon-18 icon-plus'/>
-                        {'Task'}
+                        <FormattedMessage defaultMessage='Task'/>
                     </AddNewTask>
                 }
             </Horizontal>

@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useEffect} from 'react';
+import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import Icon from '@mdi/react';
@@ -22,6 +23,7 @@ interface Props {
 }
 
 const RHSAboutButtons = (props: Props) => {
+    const {formatMessage} = useIntl();
     const playbookName = usePlaybookName(props.playbookRun.playbook_id);
 
     const overviewURL = `/runs/${props.playbookRun.id}`;
@@ -30,7 +32,7 @@ const RHSAboutButtons = (props: Props) => {
     return (
         <>
             <ExpandCollapseButton
-                title={props.collapsed ? 'Expand' : 'Collapse'}
+                title={props.collapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
                 className={(props.collapsed ? 'icon-chevron-down' : 'icon-chevron-up') + ' icon-16 btn-icon'}
                 tabIndex={0}
                 role={'button'}
@@ -52,7 +54,7 @@ const RHSAboutButtons = (props: Props) => {
                         path={mdiClipboardPlayOutline}
                         size={1.25}
                     />
-                    {'Go to run overview'}
+                    <FormattedMessage defaultMessage='Go to run overview'/>
                 </StyledDropdownMenuItem>
                 <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
                     <DropdownIcon
@@ -60,7 +62,7 @@ const RHSAboutButtons = (props: Props) => {
                         size={1.25}
                     />
                     <PlaybookInfo>
-                        {'Go to playbook'}
+                        <FormattedMessage defaultMessage='Go to playbook'/>
                         {(playbookName !== '') && <PlaybookName>{playbookName}</PlaybookName>}
                     </PlaybookInfo>
                 </StyledDropdownMenuItem>

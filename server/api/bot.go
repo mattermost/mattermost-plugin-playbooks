@@ -72,6 +72,12 @@ func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BotHandler) startTrial(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	if err := app.CanStartTrialLicense(userID, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "no permission to start a trial license", err)
+		return
+	}
+
 	var requestData *model.PostActionIntegrationRequest
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {

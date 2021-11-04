@@ -7,69 +7,91 @@
 // ***************************************************************
 
 import {HALF_SEC} from '../../fixtures/timeouts';
-import users from '../../fixtures/users.json';
 
 describe('playbook run rhs checklist', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
-    let teamId;
-    let userId;
-    let playbookId;
+    let testTeam;
+    let testUser;
+    const testUsers = [];
+    let testPlaybook;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+            // # Create extra test users in this team
+            cy.apiCreateUser().then((payload) => {
+                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
+                testUsers.push(payload.user);
+            });
 
-        // # Switch to clean display mode
-        cy.apiSaveMessageDisplayPreference('clean');
+            cy.apiCreateUser().then((payload) => {
+                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
+                testUsers.push(payload.user);
+            });
 
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
-            cy.legacyApiGetCurrentUser().then((user) => {
-                userId = user.id;
+            cy.apiCreateUser().then((payload) => {
+                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
+                testUsers.push(payload.user);
+            });
 
-                // # Create a playbook
-                cy.apiCreatePlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    checklists: [{
-                        title: 'Stage 1',
-                        items: [
-                            {title: 'Step 1', command: '/invalid'},
-                            {title: 'Step 2', command: '/echo VALID'},
-                            {title: 'Step 3'},
-                            {title: 'Step 4'},
-                            {title: 'Step 5'},
-                            {title: 'Step 6'},
-                            {title: 'Step 7'},
-                            {title: 'Step 8'},
-                            {title: 'Step 9'},
-                            {title: 'Step 10'},
-                            {title: 'Step 11'},
-                            {title: 'Step 12'},
-                        ],
-                    }],
-                    memberIDs: [
-                        user.id,
+            cy.apiCreateUser().then((payload) => {
+                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
+                testUsers.push(payload.user);
+            });
+
+            cy.apiCreateUser().then((payload) => {
+                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
+                testUsers.push(payload.user);
+            });
+
+            cy.apiCreateUser().then((payload) => {
+                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
+                testUsers.push(payload.user);
+            });
+
+            // # Login as testUser
+            cy.apiLogin(testUser);
+
+            // # Create a playbook
+            cy.apiCreatePlaybook({
+                teamId: team.id,
+                title: 'Playbook',
+                checklists: [{
+                    title: 'Stage 1',
+                    items: [
+                        {title: 'Step 1', command: '/invalid'},
+                        {title: 'Step 2', command: '/echo VALID'},
+                        {title: 'Step 3'},
+                        {title: 'Step 4'},
+                        {title: 'Step 5'},
+                        {title: 'Step 6'},
+                        {title: 'Step 7'},
+                        {title: 'Step 8'},
+                        {title: 'Step 9'},
+                        {title: 'Step 10'},
+                        {title: 'Step 11'},
+                        {title: 'Step 12'},
                     ],
-                }).then((playbook) => {
-                    playbookId = playbook.id;
-                });
+                }],
+                memberIDs: [
+                    user.id,
+                ],
+            }).then((playbook) => {
+                testPlaybook = playbook;
             });
         });
     });
 
+    // // # Switch to clean display mode
+    // cy.apiSaveMessageDisplayPreference('clean');
+
     beforeEach(() => {
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
         // # Size the viewport to task list without scrolling issues
         cy.viewport('macbook-13');
-
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
     });
 
     describe('rhs stuff', () => {
@@ -82,48 +104,24 @@ describe('playbook run rhs checklist', () => {
             playbookRunName = 'Playbook Run (' + now + ')';
             playbookRunChannelName = 'playbook-run-' + now;
             cy.apiRunPlaybook({
-                teamId,
-                playbookId,
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
                 playbookRunName,
-                ownerUserId: userId,
-            });
-
-            cy.legacyApiGetChannelByName('ad-1', playbookRunChannelName).then(({channel}) => {
-                // # Add @aaron.peterson
-                cy.apiGetUserByEmail('user-7@sample.mattermost.com').then(({user}) => {
-                    cy.legacyApiAddUserToChannel(channel.id, user.id);
-                });
-
-                // # Add @christina.wilson
-                cy.apiGetUserByEmail('user-6@sample.mattermost.com').then(({user}) => {
-                    cy.legacyApiAddUserToChannel(channel.id, user.id);
-                });
-
-                // # Add @diana.wells
-                cy.apiGetUserByEmail('user-8@sample.mattermost.com').then(({user}) => {
-                    cy.legacyApiAddUserToChannel(channel.id, user.id);
-                });
-
-                // # Add @emily.meyer
-                cy.apiGetUserByEmail('user-14@sample.mattermost.com').then(({user}) => {
-                    cy.legacyApiAddUserToChannel(channel.id, user.id);
-                });
-
-                // # Add @craig.reed
-                cy.apiGetUserByEmail('user-11@sample.mattermost.com').then(({user}) => {
-                    cy.legacyApiAddUserToChannel(channel.id, user.id);
-                });
-
-                // # Add @jack.wheeler
-                cy.apiGetUserByEmail('user-3@sample.mattermost.com').then(({user}) => {
-                    cy.legacyApiAddUserToChannel(channel.id, user.id);
-                });
+                ownerUserId: testUser.id,
+            }).then((playbookRun) => {
+                // # Add test users to channel
+                cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[0].id);
+                cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[1].id);
+                cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[2].id);
+                cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[3].id);
+                cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[4].id);
+                cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[5].id);
             });
         });
 
         beforeEach(() => {
             // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
             // * Verify the playbook run RHS is open.
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -165,7 +163,7 @@ describe('playbook run rhs checklist', () => {
 
         it('still shows slash commands as having been run after reload', () => {
             // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
             cy.get('#rhsContainer').should('exist').within(() => {
                 // * Verify the invalid command still has not yet been run.

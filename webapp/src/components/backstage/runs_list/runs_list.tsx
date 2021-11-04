@@ -5,6 +5,8 @@ import React from 'react';
 
 import styled from 'styled-components';
 
+import {FormattedMessage} from 'react-intl';
+
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 
 import PaginationRow from './pagination_row';
@@ -56,7 +58,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
                 />
                 {playbookRuns.length === 0 && !isFiltering &&
                 <div className='text-center pt-8'>
-                    {'There are no runs for this playbook.'}
+                    <FormattedMessage defaultMessage='There are no runs for this playbook.'/>
                 </div>
                 }
                 {playbookRuns.length === 0 && isFiltering &&
