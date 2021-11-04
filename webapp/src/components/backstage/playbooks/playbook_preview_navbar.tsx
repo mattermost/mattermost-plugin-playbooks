@@ -211,15 +211,21 @@ const Items = styled.div`
 `;
 
 const generateItemComponent = (isSectionActive: (id: SectionID) => boolean, scrollToSection: (id: SectionID) => void) => {
-    return (props: {id: SectionID, iconName: string, title: string}) => (
-        <ItemWrapper
-            active={isSectionActive(props.id)}
-            onClick={() => scrollToSection(props.id)}
-        >
-            <i className={`icon-${props.iconName} icon-16`}/>
-            {props.title}
-        </ItemWrapper>
-    );
+    return (props: {id: SectionID, iconName: string, title: string}) => {
+        if (!document.getElementById(props.id)) {
+            return null;
+        }
+
+        return (
+            <ItemWrapper
+                active={isSectionActive(props.id)}
+                onClick={() => scrollToSection(props.id)}
+            >
+                <i className={`icon-${props.iconName} icon-16`}/>
+                {props.title}
+            </ItemWrapper>
+        );
+    };
 };
 
 const ItemWrapper = styled.div<{active: boolean}>`
