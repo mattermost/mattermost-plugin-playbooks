@@ -6,90 +6,75 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import users from '../../../fixtures/users.json';
-
 describe('slash command > owner', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
-    let teamId;
-    let userId;
-    let playbookId;
-    let playbookRunId;
-    let playbookRunName;
-    let playbookRunChannelName;
+    let testTeam;
+    let testUser;
+    let testUser2;
+    let testPlaybook;
+    let testPlaybookRun;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+            cy.apiCreateUser().then(({user: user2}) => {
+                testUser2 = user2;
+                cy.apiAddUserToTeam(testTeam.id, testUser2.id);
+            });
 
-        // # Switch to clean display mode
-        cy.apiSaveMessageDisplayPreference('clean');
+            cy.apiLogin(testUser);
 
-        // # Create and run a playbook.
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
-            cy.legacyApiGetCurrentUser().then((user) => {
-                userId = user.id;
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                checklists: [
+                    {
+                        title: 'Stage 1',
+                        items: [
+                            {title: 'Step 1'},
+                            {title: 'Step 2'},
+                        ],
+                    },
+                    {
+                        title: 'Stage 2',
+                        items: [
+                            {title: 'Step 1'},
+                            {title: 'Step 2'},
+                        ],
+                    },
+                ],
+                memberIDs: [testUser.id],
+            }).then((playbook) => {
+                testPlaybook = playbook;
 
-                cy.apiCreatePlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    checklists: [
-                        {
-                            title: 'Stage 1',
-                            items: [
-                                {title: 'Step 1'},
-                                {title: 'Step 2'},
-                            ],
-                        },
-                        {
-                            title: 'Stage 2',
-                            items: [
-                                {title: 'Step 1'},
-                                {title: 'Step 2'},
-                            ],
-                        },
-                    ],
-                    memberIDs: [user.id],
-                }).then((playbook) => {
-                    playbookId = playbook.id;
-
-                    const now = Date.now();
-                    playbookRunName = 'Playbook Run (' + now + ')';
-                    playbookRunChannelName = 'playbook-run-' + now;
-                    cy.apiRunPlaybook({
-                        teamId,
-                        playbookId,
-                        playbookRunName,
-                        ownerUserId: userId,
-                    }).then((playbookRun) => {
-                        playbookRunId = playbookRun.id;
-                    });
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'Playbook Run',
+                    ownerUserId: testUser.id,
+                }).then((playbookRun) => {
+                    testPlaybookRun = playbookRun;
                 });
             });
         });
     });
 
     beforeEach(() => {
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
-
-        // # Reset the owner to test-1 as necessary.
-        cy.apiChangePlaybookRunOwner(playbookRunId, userId);
+        // # Reset the owner back to testUser as necessary.
+        cy.apiChangePlaybookRunOwner(testPlaybookRun.id, testUser.id);
     });
 
     describe('/playbook owner', () => {
         it('should show an error when not in a playbook run channel', () => {
             // # Navigate to a non-playbook run channel
-            cy.visit('/ad-1/channels/town-square');
+            cy.visit(`/${testTeam.name}/channels/town-square`);
 
             // # Run a slash command to show the current owner
             cy.executeSlashCommand('/playbook owner');
@@ -100,23 +85,23 @@ describe('slash command > owner', () => {
 
         it('should show the current owner', () => {
             // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
+            cy.visit(`/${testTeam.name}/channels/playbook-run`);
 
             // # Run a slash command to show the current owner
             cy.executeSlashCommand('/playbook owner');
 
             // * Verify the expected owner.
-            cy.verifyEphemeralMessage('@user-1 is the current owner for this playbook run.');
+            cy.verifyEphemeralMessage(`@${testUser.username} is the current owner for this playbook run.`);
         });
     });
 
     describe('/playbook owner @username', () => {
         it('should show an error when not in a playbook run channel', () => {
             // # Navigate to a non-playbook run channel
-            cy.visit('/ad-1/channels/town-square');
+            cy.visit(`/${testTeam.name}/channels/town-square`);
 
             // # Run a slash command to change the current owner
-            cy.executeSlashCommand('/playbook owner user-2');
+            cy.executeSlashCommand(`/playbook owner ${testUser2.username}`);
 
             // * Verify the expected error message.
             cy.verifyEphemeralMessage('This command only works when run from a playbook run channel.');
@@ -125,7 +110,7 @@ describe('slash command > owner', () => {
         describe('should show an error when the user is not found', () => {
             beforeEach(() => {
                 // # Navigate directly to the application and the playbook run channel
-                cy.visit('/ad-1/channels/' + playbookRunChannelName);
+                cy.visit(`/${testTeam.name}/channels/playbook-run`);
             });
 
             it('when the username has no @-prefix', () => {
@@ -148,84 +133,84 @@ describe('slash command > owner', () => {
         describe('should show an error when the user is not in the channel', () => {
             beforeEach(() => {
                 // # Navigate directly to the application and the playbook run channel
-                cy.visit('/ad-1/channels/' + playbookRunChannelName);
+                cy.visit(`/${testTeam.name}/channels/playbook-run`);
 
-                // # Ensure the sysadmin is not part of the channel.
-                cy.executeSlashCommand('/kick sysadmin');
+                // # Ensure the user3 is not part of the channel.
+                cy.executeSlashCommand(`/kick ${testUser2.username}`);
             });
 
             it('when the username has no @-prefix', () => {
                 // # Run a slash command to change the current owner
-                cy.executeSlashCommand('/playbook owner sysadmin');
+                cy.executeSlashCommand(`/playbook owner ${testUser2.username}`);
 
                 // * Verify the expected error message.
-                cy.verifyEphemeralMessage('User @sysadmin must be part of this channel to make them owner.');
+                cy.verifyEphemeralMessage(`User @${testUser2.username} must be part of this channel to make them owner.`);
             });
 
             it('when the username has an @-prefix', () => {
                 // # Run a slash command to change the current owner
-                cy.executeSlashCommand('/playbook owner @sysadmin');
+                cy.executeSlashCommand(`/playbook owner @${testUser2.username}`);
 
                 // * Verify the expected error message.
-                cy.verifyEphemeralMessage('User @sysadmin must be part of this channel to make them owner.');
+                cy.verifyEphemeralMessage(`User @${testUser2.username} must be part of this channel to make them owner.`);
             });
         });
 
         describe('should show a message when the user is already the owner', () => {
             beforeEach(() => {
                 // # Navigate directly to the application and the playbook run channel
-                cy.visit('/ad-1/channels/' + playbookRunChannelName);
+                cy.visit(`/${testTeam.name}/channels/playbook-run`);
             });
 
             it('when the username has no @-prefix', () => {
                 // # Run a slash command to change the current owner
-                cy.executeSlashCommand('/playbook owner user-1');
+                cy.executeSlashCommand(`/playbook owner ${testUser.username}`);
 
                 // * Verify the expected error message.
-                cy.verifyEphemeralMessage('User @user-1 is already owner of this playbook run.');
+                cy.verifyEphemeralMessage(`User @${testUser.username} is already owner of this playbook run.`);
             });
 
             it('when the username has an @-prefix', () => {
                 // # Run a slash command to change the current owner
-                cy.executeSlashCommand('/playbook owner @user-1');
+                cy.executeSlashCommand(`/playbook owner @${testUser.username}`);
 
                 // * Verify the expected error message.
-                cy.verifyEphemeralMessage('User @user-1 is already owner of this playbook run.');
+                cy.verifyEphemeralMessage(`User @${testUser.username} is already owner of this playbook run.`);
             });
         });
 
         describe('should change the current owner', () => {
             beforeEach(() => {
                 // # Navigate directly to the application and the playbook run channel
-                cy.visit('/ad-1/channels/' + playbookRunChannelName);
+                cy.visit(`/${testTeam.name}/channels/playbook-run`);
 
-                // # Ensure the sysadmin is part of the channel.
-                cy.executeSlashCommand('/invite sysadmin');
+                // # Ensure the testUser2 is part of the channel.
+                cy.executeSlashCommand(`/invite ${testUser2.username}`);
             });
 
             it('when the username has no @-prefix', () => {
                 // # Run a slash command to change the current owner
-                cy.executeSlashCommand('/playbook owner sysadmin');
+                cy.executeSlashCommand(`/playbook owner ${testUser2.username}`);
 
                 // # Verify the owner has changed.
-                cy.verifyPostedMessage('user-1 changed the owner from @user-1 to @sysadmin.');
+                cy.verifyPostedMessage(`${testUser.username} changed the owner from @${testUser.username} to @${testUser2.username}.`);
             });
 
             it('when the username has an @-prefix', () => {
                 // # Run a slash command to change the current owner
-                cy.executeSlashCommand('/playbook owner @sysadmin');
+                cy.executeSlashCommand(`/playbook owner @${testUser2.username}`);
 
                 // # Verify the owner has changed.
-                cy.verifyPostedMessage('user-1 changed the owner from @user-1 to @sysadmin.');
+                cy.verifyPostedMessage(`${testUser.username} changed the owner from @${testUser.username} to @${testUser2.username}.`);
             });
         });
 
         it('should show an error when specifying more than one username', () => {
             // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
+            cy.visit(`/${testTeam.name}/channels/playbook-run`);
 
             // # Run a slash command with too many parameters
-            cy.executeSlashCommand('/playbook owner user-1 sysadmin');
+            cy.executeSlashCommand(`/playbook owner ${testUser.username} ${testUser2.username}`);
 
             // * Verify the expected error message.
             cy.verifyEphemeralMessage('/playbook owner expects at most one argument.');

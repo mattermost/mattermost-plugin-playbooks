@@ -7,6 +7,8 @@ import {Link, useLocation} from 'react-router-dom';
 
 import qs from 'qs';
 
+import {FormattedMessage} from 'react-intl';
+
 import WarningIcon from 'src/components/assets/icons/warning_icon';
 import {ErrorPageTypes} from 'src/constants';
 import {pluginUrl} from 'src/browser_routing';
@@ -22,23 +24,23 @@ const ErrorPage = () => {
     const queryString = useLocation().search.substr(1);
     const params = qs.parse(queryString);
 
-    let title = 'Page not found';
-    let message = 'The page you were trying to reach does not exist.';
+    let title: React.ReactNode = 'Page not found';
+    let message: React.ReactNode = 'The page you were trying to reach does not exist.';
     let returnTo = '/';
-    let returnToMsg = 'Back to Mattermost';
+    let returnToMsg: React.ReactNode = 'Back to Mattermost';
 
     switch (params.type) {
     case ErrorPageTypes.PLAYBOOK_RUNS:
-        title = 'Run not found';
-        message = "The run you're requesting is private or does not exist.";
+        title = <FormattedMessage defaultMessage='Run not found'/>;
+        message = <FormattedMessage defaultMessage="The run you're requesting is private or does not exist."/>;
         returnTo = pluginUrl('/runs');
         returnToMsg = 'Back to runs';
         break;
     case ErrorPageTypes.PLAYBOOKS:
-        title = 'Playbook Not Found';
-        message = "The playbook you're requesting is private or does not exist.";
+        title = <FormattedMessage defaultMessage='Playbook Not Found'/>;
+        message = <FormattedMessage defaultMessage="The playbook you're requesting is private or does not exist."/>;
         returnTo = pluginUrl('/playbooks');
-        returnToMsg = 'Back to playbooks';
+        returnToMsg = <FormattedMessage defaultMessage='Back to playbooks'/>;
         break;
     }
 

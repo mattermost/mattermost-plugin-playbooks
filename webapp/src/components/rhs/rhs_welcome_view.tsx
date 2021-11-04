@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
+import {FormattedMessage} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
@@ -60,10 +61,10 @@ const RHSWelcomeView = () => {
                     <NoContentPlaybookSvgRhs/>
                     <NoPlaybookRunsItem>
                         <h1>
-                            {'Take action now using playbooks'}
+                            <FormattedMessage defaultMessage='Take action now using playbooks'/>
                         </h1>
                         <p className='mt-3 mb-4 light'>
-                            {'There are no runs in progress at the moment. Run a playbook to start orchestrating workflows for your team and tools.'}
+                            <FormattedMessage defaultMessage='There are no runs in progress at the moment. Run a playbook to start orchestrating workflows for your team and tools.'/>
                         </p>
                         <div className='mb-4'>
                             <PrimaryButton
@@ -71,17 +72,17 @@ const RHSWelcomeView = () => {
                             >
                                 <SideBySide>
                                     <i className='icon-plus icon--no-spacing mr-2'/>
-                                    {'Run playbook'}
+                                    <FormattedMessage defaultMessage='Run playbook'/>
                                 </SideBySide>
                             </PrimaryButton>
                         </div>
                         <p className='mt-3 mb-4 light'>
-                            {'You can also create a playbook ahead of time so it’s available when you need it.'}
+                            <FormattedMessage defaultMessage='You can also create a playbook ahead of time so it’s available when you need it.'/>
                         </p>
                         <TertiaryButton
                             onClick={() => navigateToPluginUrl('/playbooks')}
                         >
-                            {'Create playbook'}
+                            <FormattedMessage defaultMessage='Create playbook'/>
                         </TertiaryButton>
                     </NoPlaybookRunsItem>
                 </NoPlaybookRunsContainer>
@@ -95,16 +96,16 @@ const RHSWelcomeView = () => {
                 <NoContentPlaybookSvgRhs/>
                 <NoPlaybookRunsItem>
                     <h1>
-                        {'Streamline your processes with playbooks'}
+                        <FormattedMessage defaultMessage='Streamline your processes with playbooks'/>
                     </h1>
                     <p className='mt-3 mb-8 light'>
-                        {'Create a playbook to prescribe the workflow that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives.'}
+                        <FormattedMessage defaultMessage='Create a playbook to prescribe the workflow that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives.'/>
                     </p>
                     <div className='header-button-div mb-4'>
                         <PrimaryButton
                             onClick={() => navigateToPluginUrl('/playbooks')}
                         >
-                            {'Create playbook'}
+                            <FormattedMessage defaultMessage='Create playbook'/>
                         </PrimaryButton>
                     </div>
                 </NoPlaybookRunsItem>

@@ -177,6 +177,8 @@ const CardSubEntryContent = styled.div`
         :not(:last-child) {
             margin-bottom: 6px;
         }
+
+        white-space: pre-wrap;
     }
 
     margin-left: 32px;

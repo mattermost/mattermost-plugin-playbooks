@@ -1,46 +1,55 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import users from '../../fixtures/users.json';
-
 // ***************************************************************
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
 describe('playbook run automation', () => {
-    let teamId;
-    let userId;
+    let testTeam;
+    let testUser;
+    let testPublicChannel;
+    const testUsers = [];
 
     before(() => {
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+        cy.apiInitSetup({userPrefix: 'u'}).then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Get the current team and user
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
-        }).then(() => {
-            cy.legacyApiGetCurrentUser().then((user) => {
-                userId = user.id;
+            // # Create extra test users in this team
+            cy.apiCreateUser({prefix: 'u'}).then((payload) => {
+                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
+                testUsers.push(payload.user);
+            });
+
+            cy.apiCreateUser({prefix: 'u'}).then((payload) => {
+                cy.apiAddUserToTeam(testTeam.id, payload.user.id);
+                testUsers.push(payload.user);
+            });
+
+            // # Create a public channel
+            cy.apiCreateChannel(
+                testTeam.id,
+                'public-channel',
+                'Public Channel',
+                'O'
+            ).then(({channel}) => {
+                testPublicChannel = channel;
+                cy.apiAddUserToChannel(channel.id, testUser.id);
             });
         });
     });
 
     beforeEach(() => {
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
 
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
-
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
-
         // # Go to Town Square
-        cy.visit('/ad-1/channels/town-square');
+        cy.visit(`/${testTeam.name}/channels/town-square`);
     });
 
     describe(('when a playbook run starts'), () => {
@@ -51,10 +60,10 @@ describe('playbook run automation', () => {
 
                 // # Create a playbook with the invite users disabled and no invited users
                 cy.apiCreatePlaybook({
-                    teamId,
+                    teamId: testTeam.id,
                     title: playbookName,
                     createPublicPlaybookRun: true,
-                    memberIDs: [userId],
+                    memberIDs: [testUser.id],
                     invitedUserIds: [],
                     inviteUsersEnabled: false,
                 }).then((playbook) => {
@@ -66,14 +75,14 @@ describe('playbook run automation', () => {
                 const playbookRunName = `Run (${now})`;
                 const playbookRunChannelName = `run-${now}`;
                 cy.apiRunPlaybook({
-                    teamId,
+                    teamId: testTeam.id,
                     playbookId,
                     playbookRunName,
-                    ownerUserId: userId,
+                    ownerUserId: testUser.id,
                 });
 
                 // # Navigate to the playbook run channel
-                cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                 // * Verify that no users were invited
                 cy.getFirstPostId().then((id) => {
@@ -87,17 +96,13 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with a couple of invited users and the setting enabled, and a playbook run with it
-                cy.legacyApiGetUsers(['aaron.medina', 'anne.stone']).then((res) => {
-                    const userIds = res.body.map((user) => user.id);
-
-                    return cy.apiCreatePlaybook({
-                        teamId,
-                        title: playbookName,
-                        createPublicPlaybookRun: true,
-                        memberIDs: [userId],
-                        invitedUserIds: userIds,
-                        inviteUsersEnabled: true,
-                    });
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: playbookName,
+                    createPublicPlaybookRun: true,
+                    memberIDs: [testUser.id],
+                    invitedUserIds: [testUsers[0].id, testUsers[1].id],
+                    inviteUsersEnabled: true,
                 }).then((playbook) => {
                     // # Create a new playbook run with that playbook
                     const now = Date.now();
@@ -105,14 +110,14 @@ describe('playbook run automation', () => {
                     const playbookRunChannelName = `run-${now}`;
 
                     cy.apiRunPlaybook({
-                        teamId,
+                        teamId: testTeam.id,
                         playbookId: playbook.id,
                         playbookRunName,
-                        ownerUserId: userId,
+                        ownerUserId: testUser.id,
                     });
 
                     // # Navigate to the playbook run channel
-                    cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                    cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify that the users were invited
                     cy.getFirstPostId().then((id) => {
@@ -120,8 +125,8 @@ describe('playbook run automation', () => {
                             cy.findByText('2 others').click();
                         });
 
-                        cy.get(`#postMessageText_${id}`).contains('@aaron.medina');
-                        cy.get(`#postMessageText_${id}`).contains('@anne.stone');
+                        cy.get(`#postMessageText_${id}`).contains(`@${testUsers[0].username}`);
+                        cy.get(`#postMessageText_${id}`).contains(`@${testUsers[1].username}`);
                         cy.get(`#postMessageText_${id}`).contains('added to the channel by @playbooks.');
                     });
                 });
@@ -131,17 +136,13 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with a couple of invited users and the setting enabled, and a playbook run with it
-                cy.legacyApiGetUsers(['aaron.medina', 'anne.stone']).then((res) => {
-                    const userIds = res.body.map((user) => user.id);
-
-                    return cy.apiCreatePlaybook({
-                        teamId,
-                        title: playbookName,
-                        createPublicPlaybookRun: true,
-                        memberIDs: [userId],
-                        invitedUserIds: userIds,
-                        inviteUsersEnabled: false,
-                    });
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: playbookName,
+                    createPublicPlaybookRun: true,
+                    memberIDs: [testUser.id],
+                    invitedUserIds: [testUsers[0].id, testUsers[1].id],
+                    inviteUsersEnabled: false,
                 }).then((playbook) => {
                     // # Create a new playbook run with that playbook
                     const now = Date.now();
@@ -149,14 +150,14 @@ describe('playbook run automation', () => {
                     const playbookRunChannelName = `run-${now}`;
 
                     cy.apiRunPlaybook({
-                        teamId,
+                        teamId: testTeam.id,
                         playbookId: playbook.id,
                         playbookRunName,
-                        ownerUserId: userId,
+                        ownerUserId: testUser.id,
                     });
 
                     // # Navigate to the playbook run channel
-                    cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                    cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify that no users were invited
                     cy.getFirstPostId().then((id) => {
@@ -172,19 +173,19 @@ describe('playbook run automation', () => {
                 let playbook;
 
                 // # Create a playbook with a user that is later removed from the team
-                cy.legacyApiLogin('sysadmin').then(() => {
+                cy.apiAdminLogin().then(() => {
                     cy.apiCreateUser().then((result) => {
                         userToRemove = result.user;
-                        cy.legacyApiAddUserToTeam(teamId, userToRemove.id);
+                        cy.apiAddUserToTeam(testTeam.id, userToRemove.id);
 
                         const playbookName = 'Playbook (' + Date.now() + ')';
 
                         // # Create a playbook with the user that will be removed from the team.
                         cy.apiCreatePlaybook({
-                            teamId,
+                            teamId: testTeam.id,
                             title: playbookName,
                             createPublicPlaybookRun: true,
-                            memberIDs: [userId],
+                            memberIDs: [testUser.id],
                             invitedUserIds: [userToRemove.id],
                             inviteUsersEnabled: true,
                         }).then((res) => {
@@ -192,10 +193,10 @@ describe('playbook run automation', () => {
                         });
 
                         // # Remove user from the team
-                        cy.legacyApiRemoveUserFromTeam(teamId, userToRemove.id);
+                        cy.apiDeleteUserFromTeam(testTeam.id, userToRemove.id);
                     });
                 }).then(() => {
-                    cy.legacyApiLogin('user-1');
+                    cy.apiLogin(testUser);
 
                     // # Create a new playbook run with the playbook.
                     const now = Date.now();
@@ -203,14 +204,14 @@ describe('playbook run automation', () => {
                     const playbookRunChannelName = `run-${now}`;
 
                     cy.apiRunPlaybook({
-                        teamId,
+                        teamId: testTeam.id,
                         playbookId: playbook.id,
                         playbookRunName,
-                        ownerUserId: userId,
+                        ownerUserId: testUser.id,
                     });
 
                     // # Navigate to the playbook run channel
-                    cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                    cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify that there is an error message from the bot
                     cy.getNthPostId(1).then((id) => {
@@ -229,10 +230,10 @@ describe('playbook run automation', () => {
                 // # Create a playbook with the default owner setting set to false
                 // and no owner specified
                 cy.apiCreatePlaybook({
-                    teamId,
+                    teamId: testTeam.id,
                     title: playbookName,
                     createPublicPlaybookRun: true,
-                    memberIDs: [userId],
+                    memberIDs: [testUser.id],
                     defaultOwnerId: '',
                     defaultOwnerEnabled: false,
                 }).then((playbook) => {
@@ -244,19 +245,19 @@ describe('playbook run automation', () => {
                 const playbookRunName = `Run (${now})`;
                 const playbookRunChannelName = `run-${now}`;
                 cy.apiRunPlaybook({
-                    teamId,
+                    teamId: testTeam.id,
                     playbookId,
                     playbookRunName,
-                    ownerUserId: userId,
+                    ownerUserId: testUser.id,
                 });
 
                 // # Navigate to the playbook run channel
-                cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                 // * Verify that the RHS shows the owner being the creator
                 cy.get('#rhsContainer').within(() => {
                     cy.findByText('Owner').parent().within(() => {
-                        cy.findByText('@user-1');
+                        cy.findByText(`@${testUser.username}`);
                     });
                 });
             });
@@ -268,10 +269,10 @@ describe('playbook run automation', () => {
                 // # Create a playbook with the default owner setting set to false
                 // and no owner specified
                 cy.apiCreatePlaybook({
-                    teamId,
+                    teamId: testTeam.id,
                     title: playbookName,
                     createPublicPlaybookRun: true,
-                    memberIDs: [userId],
+                    memberIDs: [testUser.id],
                     defaultOwnerId: '',
                     defaultOwnerEnabled: true,
                 }).then((playbook) => {
@@ -283,19 +284,19 @@ describe('playbook run automation', () => {
                 const playbookRunName = `Run (${now})`;
                 const playbookRunChannelName = `run-${now}`;
                 cy.apiRunPlaybook({
-                    teamId,
+                    teamId: testTeam.id,
                     playbookId,
                     playbookRunName,
-                    ownerUserId: userId,
+                    ownerUserId: testUser.id,
                 });
 
                 // # Navigate to the playbook run channel
-                cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                 // * Verify that the RHS shows the owner being the creator
                 cy.get('#rhsContainer').within(() => {
                     cy.findByText('Owner').parent().within(() => {
-                        cy.findByText('@user-1');
+                        cy.findByText(`@${testUser.username}`);
                     });
                 });
             });
@@ -304,19 +305,15 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with the owner being part of the invited users
-                cy.legacyApiGetUsers(['anne.stone']).then((res) => {
-                    const userIds = res.body.map((user) => user.id);
-
-                    return cy.apiCreatePlaybook({
-                        teamId,
-                        title: playbookName,
-                        createPublicPlaybookRun: true,
-                        memberIDs: [userId],
-                        invitedUserIds: userIds,
-                        inviteUsersEnabled: true,
-                        defaultOwnerId: userIds[0],
-                        defaultOwnerEnabled: true,
-                    });
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: playbookName,
+                    createPublicPlaybookRun: true,
+                    memberIDs: [testUser.id],
+                    invitedUserIds: [testUsers[0].id],
+                    inviteUsersEnabled: true,
+                    defaultOwnerId: testUsers[0].id,
+                    defaultOwnerEnabled: true,
                 }).then((playbook) => {
                     // # Create a new playbook run with that playbook
                     const now = Date.now();
@@ -324,19 +321,19 @@ describe('playbook run automation', () => {
                     const playbookRunChannelName = `run-${now}`;
 
                     cy.apiRunPlaybook({
-                        teamId,
+                        teamId: testTeam.id,
                         playbookId: playbook.id,
                         playbookRunName,
-                        ownerUserId: userId,
+                        ownerUserId: testUser.id,
                     });
 
                     // # Navigate to the playbook run channel
-                    cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                    cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify that the RHS shows the owner being the invited user
                     cy.get('#rhsContainer').within(() => {
                         cy.findByText('Owner').parent().within(() => {
-                            cy.findByText('@anne.stone');
+                            cy.findByText(`@${testUsers[0].username}`);
                         });
                     });
                 });
@@ -346,19 +343,15 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with the owner being part of the invited users
-                cy.legacyApiGetUsers(['anne.stone']).then((res) => {
-                    const userIds = res.body.map((user) => user.id);
-
-                    return cy.apiCreatePlaybook({
-                        teamId,
-                        title: playbookName,
-                        createPublicPlaybookRun: true,
-                        memberIDs: [userId],
-                        invitedUserIds: [],
-                        inviteUsersEnabled: false,
-                        defaultOwnerId: userIds[0],
-                        defaultOwnerEnabled: true,
-                    });
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: playbookName,
+                    createPublicPlaybookRun: true,
+                    memberIDs: [testUser.id],
+                    invitedUserIds: [],
+                    inviteUsersEnabled: false,
+                    defaultOwnerId: testUsers[0].id,
+                    defaultOwnerEnabled: true,
                 }).then((playbook) => {
                     // # Create a new playbook run with that playbook
                     const now = Date.now();
@@ -366,19 +359,19 @@ describe('playbook run automation', () => {
                     const playbookRunChannelName = `run-${now}`;
 
                     cy.apiRunPlaybook({
-                        teamId,
+                        teamId: testTeam.id,
                         playbookId: playbook.id,
                         playbookRunName,
-                        ownerUserId: userId,
+                        ownerUserId: testUser.id,
                     });
 
                     // # Navigate to the playbook run channel
-                    cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                    cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify that the RHS shows the owner being the invited user
                     cy.get('#rhsContainer').within(() => {
                         cy.findByText('Owner').parent().within(() => {
-                            cy.findByText('@anne.stone');
+                            cy.findByText(`@${testUsers[0].username}`);
                         });
                     });
                 });
@@ -391,11 +384,11 @@ describe('playbook run automation', () => {
                 // # Create a playbook with the default owner setting set to false
                 // and no owner specified
                 cy.apiCreatePlaybook({
-                    teamId,
+                    teamId: testTeam.id,
                     title: playbookName,
                     createPublicPlaybookRun: true,
-                    memberIDs: [userId],
-                    defaultOwnerId: userId,
+                    memberIDs: [testUser.id],
+                    defaultOwnerId: testUser.id,
                     defaultOwnerEnabled: true,
                 }).then((playbook) => {
                     playbookId = playbook.id;
@@ -406,19 +399,19 @@ describe('playbook run automation', () => {
                 const playbookRunName = `Run (${now})`;
                 const playbookRunChannelName = `run-${now}`;
                 cy.apiRunPlaybook({
-                    teamId,
+                    teamId: testTeam.id,
                     playbookId,
                     playbookRunName,
-                    ownerUserId: userId,
+                    ownerUserId: testUser.id,
                 });
 
                 // # Navigate to the playbook run channel
-                cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                 // * Verify that the RHS shows the owner being the creator
                 cy.get('#rhsContainer').within(() => {
                     cy.findByText('Owner').parent().within(() => {
-                        cy.findByText('@user-1');
+                        cy.findByText(`@${testUser.username}`);
                     });
                 });
             });
@@ -429,15 +422,13 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with a couple of invited users and the setting enabled, and a playbook run with it
-                cy.legacyApiGetChannelByName('ad-1', 'town-square').then(({channel}) => {
-                    return cy.apiCreatePlaybook({
-                        teamId,
-                        title: playbookName,
-                        createPublicPlaybookRun: true,
-                        memberIDs: [userId],
-                        broadcastChannelIds: [channel.id],
-                        broadcastEnabled: true,
-                    });
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: playbookName,
+                    createPublicPlaybookRun: true,
+                    memberIDs: [testUser.id],
+                    broadcastChannelIds: [testPublicChannel.id],
+                    broadcastEnabled: true,
                 }).then((playbook) => {
                     // # Create a new playbook run with that playbook
                     const now = Date.now();
@@ -445,14 +436,14 @@ describe('playbook run automation', () => {
                     const playbookRunChannelName = `run-${now}`;
 
                     cy.apiRunPlaybook({
-                        teamId,
+                        teamId: testTeam.id,
                         playbookId: playbook.id,
                         playbookRunName,
-                        ownerUserId: userId,
+                        ownerUserId: testUser.id,
                     });
 
                     // # Navigate to the playbook run channel.
-                    cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                    cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify that the channel is created and that the first post exists.
                     cy.getFirstPostId().then((id) => {
@@ -462,10 +453,10 @@ describe('playbook run automation', () => {
                     });
 
                     // # Navigate to the broadcast channel
-                    cy.visit('/ad-1/channels/town-square');
+                    cy.visit(`/${testTeam.name}/channels/${testPublicChannel.name}`);
 
                     cy.getLastPostId().then((lastPostId) => {
-                        cy.get(`#postMessageText_${lastPostId}`).contains(`@user-1 just ran the ${playbookName} playbook. Visit the link above for more information or join ~${playbookRunName} to participate.`);
+                        cy.get(`#postMessageText_${lastPostId}`).contains(`@${testUser.username} just ran the ${playbookName} playbook. Visit the link above for more information or join ~${playbookRunName} to participate.`);
                     });
                 });
             });
@@ -474,15 +465,13 @@ describe('playbook run automation', () => {
                 const playbookName = 'Playbook (' + Date.now() + ')';
 
                 // # Create a playbook with a couple of invited users and the setting enabled, and a playbook run with it
-                cy.legacyApiGetChannelByName('ad-1', 'town-square').then(({channel}) => {
-                    return cy.apiCreatePlaybook({
-                        teamId,
-                        title: playbookName,
-                        createPublicPlaybookRun: true,
-                        memberIDs: [userId],
-                        broadcastChannelIds: [channel.id],
-                        broadcastEnabled: false,
-                    });
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: playbookName,
+                    createPublicPlaybookRun: true,
+                    memberIDs: [testUser.id],
+                    broadcastChannelIds: [testPublicChannel.id],
+                    broadcastEnabled: false,
                 }).then((playbook) => {
                     // # Create a new playbook run with that playbook
                     const now = Date.now();
@@ -490,14 +479,14 @@ describe('playbook run automation', () => {
                     const playbookRunChannelName = `run-${now}`;
 
                     cy.apiRunPlaybook({
-                        teamId,
+                        teamId: testTeam.id,
                         playbookId: playbook.id,
                         playbookRunName,
-                        ownerUserId: userId,
+                        ownerUserId: testUser.id,
                     });
 
                     // # Navigate to the playbook run channel
-                    cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                    cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify that the channel is created and that the first post exists.
                     cy.getFirstPostId().then((id) => {
@@ -507,7 +496,7 @@ describe('playbook run automation', () => {
                     });
 
                     // # Navigate to the broadcast channel
-                    cy.visit('/ad-1/channels/town-square');
+                    cy.visit(`/${testTeam.name}/channels/${testPublicChannel.name}`);
 
                     cy.getLastPostId().then((lastPostId) => {
                         cy.get(`#postMessageText_${lastPostId}`).should('not.contain', `New Run: ~${playbookRunName}`);
@@ -519,16 +508,16 @@ describe('playbook run automation', () => {
                 let playbookId;
 
                 // # Create a playbook with a channel that is later deleted
-                cy.legacyApiLogin('sysadmin').then(() => {
+                cy.apiAdminLogin().then(() => {
                     const channelDisplayName = String('Channel to delete ' + Date.now());
                     const channelName = channelDisplayName.replace(/ /g, '-').toLowerCase();
-                    cy.legacyApiCreateChannel(teamId, channelName, channelDisplayName).then(({channel}) => {
+                    cy.apiCreateChannel(testTeam.id, channelName, channelDisplayName).then(({channel}) => {
                         // # Create a playbook with the channel to be deleted as the announcement channel
                         cy.apiCreatePlaybook({
-                            teamId,
+                            teamId: testTeam.id,
                             title: 'Playbook (' + Date.now() + ')',
                             createPublicPlaybookRun: true,
-                            memberIDs: [userId],
+                            memberIDs: [testUser.id],
                             broadcastChannelIds: [channel.id],
                             broadcastEnabled: true,
                         }).then((playbook) => {
@@ -536,10 +525,10 @@ describe('playbook run automation', () => {
                         });
 
                         // # Delete channel
-                        cy.legacyApiDeleteChannel(channel.id);
+                        cy.apiDeleteChannel(channel.id);
                     });
                 }).then(() => {
-                    cy.legacyApiLogin('user-1');
+                    cy.apiLogin(testUser);
 
                     // # Create a new playbook run with the playbook.
                     const now = Date.now();
@@ -547,14 +536,14 @@ describe('playbook run automation', () => {
                     const playbookRunChannelName = `run-${now}`;
 
                     cy.apiRunPlaybook({
-                        teamId,
+                        teamId: testTeam.id,
                         playbookId,
                         playbookRunName,
-                        ownerUserId: userId,
+                        ownerUserId: testUser.id,
                     });
 
                     // # Navigate to the playbook run channel
-                    cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                    cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify that there is an error message from the bot
                     cy.getLastPostId().then((id) => {
@@ -571,10 +560,10 @@ describe('playbook run automation', () => {
 
                 // # Create a playbook with a correct webhook and the setting enabled
                 cy.apiCreatePlaybook({
-                    teamId,
+                    teamId: testTeam.id,
                     title: playbookName,
                     createPublicPlaybookRun: true,
-                    memberIDs: [userId],
+                    memberIDs: [testUser.id],
                     webhookOnCreationURLs: ['https://httpbin.org/post'],
                     webhookOnCreationEnabled: true,
                 }).then((playbook) => {
@@ -584,15 +573,15 @@ describe('playbook run automation', () => {
                     const playbookRunChannelName = `run-${now}`;
 
                     cy.apiRunPlaybook({
-                        teamId,
+                        teamId: testTeam.id,
                         playbookId: playbook.id,
                         playbookRunName,
-                        ownerUserId: userId,
+                        ownerUserId: testUser.id,
                         description: 'Playbook run description.',
                     });
 
                     // # Navigate to the playbook run channel
-                    cy.visit(`/ad-1/channels/${playbookRunChannelName}`);
+                    cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
                     // * Verify that the bot has not posted a message informing of the failure to send the webhook
                     cy.getLastPostId().then((lastPostId) => {

@@ -4,6 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useSelector, useDispatch} from 'react-redux';
+import {FormattedMessage} from 'react-intl';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
@@ -19,7 +20,8 @@ const RHSParticipants = (props: Props) => {
     if (props.userIds.length === 0) {
         return (
             <NoParticipants>
-                {'Nobody yet. '}
+                <FormattedMessage defaultMessage='Nobody yet.'/>
+                {' '}
                 <AddParticipants/>
             </NoParticipants>
         );
@@ -117,7 +119,7 @@ const AddParticipants = () => {
                 }));
             }}
         >
-            {'Add participants?'}
+            <FormattedMessage defaultMessage='Add participants?'/>
         </a>
     );
 };

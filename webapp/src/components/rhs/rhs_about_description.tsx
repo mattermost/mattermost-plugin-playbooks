@@ -9,6 +9,8 @@ import {Team} from 'mattermost-redux/types/teams';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 
+import {useIntl} from 'react-intl';
+
 import PostText from 'src/components/post_text';
 import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
 
@@ -18,7 +20,8 @@ interface DescriptionProps {
 }
 
 const RHSAboutDescription = (props: DescriptionProps) => {
-    const placeholder = 'Add a description...';
+    const {formatMessage} = useIntl();
+    const placeholder = formatMessage({defaultMessage: 'Add a description…'});
 
     const [editing, setEditing] = useState(false);
     const [editedValue, setEditedValue] = useState(props.value);

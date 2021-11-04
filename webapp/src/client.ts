@@ -478,6 +478,18 @@ export const notifyConnect = async () => {
     });
 };
 
+export const followPlaybookRun = async (playbookRunId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/followers`, {
+        method: 'PUT',
+    });
+};
+
+export const unfollowPlaybookRun = async (playbookRunId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/followers`, {
+        method: 'DELETE',
+    });
+};
+
 export const doGet = async <TData = any>(url: string) => {
     const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 

@@ -4,6 +4,8 @@
 import React from 'react';
 import styled from 'styled-components';
 
+import {useIntl} from 'react-intl';
+
 import {FetchPlaybookRunsParams} from 'src/types/playbook_run';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 
@@ -23,6 +25,7 @@ interface Props {
 }
 
 const RunListHeader = ({fetchParams, setFetchParams}: Props) => {
+    const {formatMessage} = useIntl();
     function colHeaderClicked(colName: string) {
         if (fetchParams.sort === colName) {
             // we're already sorting on this column; reverse the direction
@@ -49,7 +52,7 @@ const RunListHeader = ({fetchParams, setFetchParams}: Props) => {
             <div className='row'>
                 <div className='col-sm-4'>
                     <SortableColHeader
-                        name={'Run name'}
+                        name={formatMessage({defaultMessage: 'Run name'})}
                         direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                         active={fetchParams.sort ? fetchParams.sort === 'name' : false}
                         onClick={() => colHeaderClicked('name')}
@@ -57,7 +60,7 @@ const RunListHeader = ({fetchParams, setFetchParams}: Props) => {
                 </div>
                 <div className='col-sm-2'>
                     <SortableColHeader
-                        name={'Status / Last update'}
+                        name={formatMessage({defaultMessage: 'Status / Last update'})}
                         direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                         active={fetchParams.sort ? fetchParams.sort === 'last_status_update_at' : false}
                         onClick={() => colHeaderClicked('last_status_update_at')}
@@ -65,17 +68,17 @@ const RunListHeader = ({fetchParams, setFetchParams}: Props) => {
                 </div>
                 <div className='col-sm-2'>
                     <SortableColHeader
-                        name={'Duration / Started on'}
+                        name={formatMessage({defaultMessage: 'Duration / Started on'})}
                         direction={fetchParams.direction ? fetchParams.direction : 'desc'}
                         active={fetchParams.sort ? fetchParams.sort === 'create_at' : false}
                         onClick={() => colHeaderClicked('create_at')}
                     />
                 </div>
                 <div className='col-sm-2'>
-                    {'Owner / Participants'}
+                    {formatMessage({defaultMessage: 'Owner / Participants'})}
                 </div>
                 <div className='col-sm-2'>
-                    {'Tasks finished'}
+                    {formatMessage({defaultMessage: 'Tasks finished'})}
                 </div>
             </div>
         </PlaybookRunListHeader>

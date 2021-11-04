@@ -6,47 +6,35 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import users from '../../../fixtures/users.json';
-
 describe('playbook run rhs > header', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
-    let teamId;
-    let userId;
-    let playbookId;
+    let testTeam;
+    let testUser;
+    let testPlaybook;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+            cy.apiLogin(testUser);
 
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
-            cy.legacyApiGetCurrentUser().then((user) => {
-                userId = user.id;
-
-                // # Create a playbook
-                cy.apiCreateTestPlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    userId: user.id,
-                }).then((playbook) => {
-                    playbookId = playbook.id;
-                });
+            // # Create a playbook
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                userId: testUser.id,
+            }).then((playbook) => {
+                testPlaybook = playbook;
             });
         });
     });
 
     beforeEach(() => {
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
-
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
     });
 
     describe('shows name', () => {
@@ -56,14 +44,14 @@ describe('playbook run rhs > header', () => {
             const playbookRunName = 'Playbook Run (' + now + ')';
             const playbookRunChannelName = 'playbook-run-' + now;
             cy.apiRunPlaybook({
-                teamId,
-                playbookId,
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
                 playbookRunName,
-                ownerUserId: userId,
+                ownerUserId: testUser.id,
             });
 
             // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
             // * Verify the title is displayed
             cy.get('#rhsContainer').contains(playbookRunName);
@@ -75,28 +63,26 @@ describe('playbook run rhs > header', () => {
             const playbookRunName = 'Playbook Run (' + now + ')';
             const playbookRunChannelName = 'playbook-run-' + now;
             cy.apiRunPlaybook({
-                teamId,
-                playbookId,
+                teamId: testTeam.id,
+                playbookId: testPlaybook.id,
                 playbookRunName,
-                ownerUserId: userId,
-            });
+                ownerUserId: testUser.id,
+            }).then((playbookRun) => {
+                // # Navigate directly to the application and the playbook run channel
+                cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
-            // # Navigate directly to the application and the playbook run channel
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
+                // * Verify the existing title is displayed
+                cy.get('#rhsContainer').contains(playbookRunName);
 
-            // * Verify the existing title is displayed
-            cy.get('#rhsContainer').contains(playbookRunName);
-
-            cy.legacyApiGetChannelByName('ad-1', playbookRunChannelName).then(({channel}) => {
                 // # Rename the channel
-                cy.legacyApiPatchChannel(channel.id, {
-                    id: channel.id,
+                cy.apiPatchChannel(playbookRun.channel_id, {
+                    id: playbookRun.channel_id,
                     display_name: 'Updated',
                 });
-            });
 
-            // * Verify the updated title is displayed
-            cy.get('#rhsContainer').contains(playbookRunName);
+                // * Verify the updated title is displayed
+                cy.get('#rhsContainer').contains(playbookRunName);
+            });
         });
     });
 });

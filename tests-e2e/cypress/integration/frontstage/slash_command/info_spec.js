@@ -6,90 +6,75 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import users from '../../../fixtures/users.json';
-
 describe('slash command > info', () => {
-    const playbookName = 'Playbook (' + Date.now() + ')';
-    let teamId;
-    let userId;
-    let playbookId;
-    let playbookRunId;
-    let playbookRunName;
-    let playbookRunChannelName;
+    let testTeam;
+    let testUser;
+    let testUser2;
+    let testPlaybook;
+    let testPlaybookRun;
 
     before(() => {
-        // # Turn off growth onboarding screens
-        cy.apiLogin(users.sysadmin);
-        cy.apiUpdateConfig({
-            ServiceSettings: {EnableOnboardingFlow: false},
-        });
+        cy.apiInitSetup().then(({team, user}) => {
+            testTeam = team;
+            testUser = user;
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
+            cy.apiCreateUser().then(({user: user2}) => {
+                testUser2 = user2;
+                cy.apiAddUserToTeam(testTeam.id, testUser2.id);
+            });
 
-        // # Switch to clean display mode
-        cy.apiSaveMessageDisplayPreference('clean');
+            cy.apiLogin(testUser);
 
-        // # Create and run a playbook.
-        cy.legacyApiGetTeamByName('ad-1').then((team) => {
-            teamId = team.id;
-            cy.legacyApiGetCurrentUser().then((user) => {
-                userId = user.id;
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                checklists: [
+                    {
+                        title: 'Stage 1',
+                        items: [
+                            {title: 'Step 1'},
+                            {title: 'Step 2'},
+                        ],
+                    },
+                    {
+                        title: 'Stage 2',
+                        items: [
+                            {title: 'Step 1'},
+                            {title: 'Step 2'},
+                        ],
+                    },
+                ],
+                memberIDs: [testUser.id],
+            }).then((playbook) => {
+                testPlaybook = playbook;
 
-                cy.apiCreatePlaybook({
-                    teamId: team.id,
-                    title: playbookName,
-                    checklists: [
-                        {
-                            title: 'Stage 1',
-                            items: [
-                                {title: 'Step 1'},
-                                {title: 'Step 2'},
-                            ],
-                        },
-                        {
-                            title: 'Stage 2',
-                            items: [
-                                {title: 'Step 1'},
-                                {title: 'Step 2'},
-                            ],
-                        },
-                    ],
-                    memberIDs: [user.id],
-                }).then((playbook) => {
-                    playbookId = playbook.id;
-
-                    const now = Date.now();
-                    playbookRunName = 'Playbook Run (' + now + ')';
-                    playbookRunChannelName = 'playbook-run-' + now;
-                    cy.apiRunPlaybook({
-                        teamId,
-                        playbookId,
-                        playbookRunName,
-                        ownerUserId: userId,
-                    }).then((playbookRun) => {
-                        playbookRunId = playbookRun.id;
-                    });
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: testPlaybook.id,
+                    playbookRunName: 'Playbook Run',
+                    ownerUserId: testUser.id,
+                }).then((playbookRun) => {
+                    testPlaybookRun = playbookRun;
                 });
             });
         });
     });
 
     beforeEach(() => {
+        // # Login as testUser
+        cy.apiLogin(testUser);
+
         // # Size the viewport to show the RHS without covering posts.
         cy.viewport('macbook-13');
 
-        // # Login as user-1
-        cy.legacyApiLogin('user-1');
-
-        // # Reset the owner to test-1 as necessary.
-        cy.apiChangePlaybookRunOwner(playbookRunId, userId);
+        // # Reset the owner back to testUser as necessary.
+        cy.apiChangePlaybookRunOwner(testPlaybookRun.id, testUser.id);
     });
 
     describe('/playbook info', () => {
         it('should show an error when not in a playbook run channel', () => {
             // # Navigate to a non-playbook run channel.
-            cy.visit('/ad-1/channels/town-square');
+            cy.visit(`/${testTeam.name}/channels/town-square`);
 
             // # Run a slash command to show the playbook run's info.
             cy.executeSlashCommand('/playbook info');
@@ -100,7 +85,7 @@ describe('slash command > info', () => {
 
         it('should open the RHS when it is not open', () => {
             // # Navigate directly to the application and the playbook run channel.
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
+            cy.visit(`/${testTeam.name}/channels/playbook-run`);
 
             // # Close the RHS, which is opened by default when navigating to a playbook run channel.
             cy.get('#searchResultsCloseButton').click();
@@ -117,7 +102,7 @@ describe('slash command > info', () => {
 
         it('should show an ephemeral post when the RHS is already open', () => {
             // # Navigate directly to the application and the playbook run channel.
-            cy.visit('/ad-1/channels/' + playbookRunChannelName);
+            cy.visit(`/${testTeam.name}/channels/playbook-run`);
 
             // * Verify that the RHS is open.
             cy.get('#rhsContainer').should('be.visible');

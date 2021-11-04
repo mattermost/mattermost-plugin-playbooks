@@ -3,6 +3,7 @@
 
 import React from 'react';
 import {Modal} from 'react-bootstrap';
+import {FormattedMessage} from 'react-intl';
 
 type Props = {
 
@@ -162,7 +163,7 @@ export default class ConfirmModal extends React.Component<Props, State> {
         if (this.props.cancelButtonText) {
             cancelText = this.props.cancelButtonText;
         } else {
-            cancelText = 'Cancel';
+            cancelText = <FormattedMessage defaultMessage='Cancel'/>;
         }
 
         let cancelButton;

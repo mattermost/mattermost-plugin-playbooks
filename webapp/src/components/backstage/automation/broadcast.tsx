@@ -9,6 +9,8 @@ import styled from 'styled-components';
 
 import {Channel} from 'mattermost-redux/types/channels';
 
+import {FormattedMessage} from 'react-intl';
+
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
 import {Toggle} from 'src/components/backstage/automation/toggle';
 import ChannelSelector from 'src/components/backstage/channel_selector';
@@ -29,7 +31,7 @@ export const Broadcast = (props: Props) => {
                     isChecked={props.enabled}
                     onChange={props.onToggle}
                 />
-                <div>{'Broadcast update to other channels'}</div>
+                <div><FormattedMessage defaultMessage='Broadcast update to other channels'/></div>
             </AutomationTitle>
             <SelectorWrapper>
                 <StyledChannelSelector
@@ -103,7 +105,7 @@ const ThumbVertical = styled.div`
 const MenuList = (props: MenuListComponentProps<Channel>) => {
     return (
         <MenuListWrapper>
-            <MenuHeader>{'Announcement channel'}</MenuHeader>
+            <MenuHeader><FormattedMessage defaultMessage='Announcement channel'/></MenuHeader>
             <StyledScrollbars
                 autoHeight={true}
                 renderThumbVertical={({style, ...thumbProps}) => <ThumbVertical {...thumbProps}/>}
