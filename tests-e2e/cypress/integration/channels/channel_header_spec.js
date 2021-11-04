@@ -1,7 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-describe('channel header', () => {
+// ***************************************************************
+// - [#] indicates a test step (e.g. # Go to a page)
+// - [*] indicates an assertion (e.g. * Check the title)
+// ***************************************************************
+
+describe('channels > channel header', () => {
     let testTeam;
     let testUser;
     let testPlaybook;

@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('slash command > todo', () => {
+describe('channels > slash command > todo', () => {
     let team1;
     let team2;
     let testUser;

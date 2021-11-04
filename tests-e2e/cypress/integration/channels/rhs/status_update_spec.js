@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('playbook run rhs > latest update', () => {
+describe('channels > rhs > status update', () => {
     const defaultReminderMessage = '# Default reminder message';
     let testTeam;
     let testChannel;

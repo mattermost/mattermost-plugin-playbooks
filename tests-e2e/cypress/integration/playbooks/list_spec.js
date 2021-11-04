@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('backstage playbook list', () => {
+describe('playbooks > list', () => {
     let testTeam;
     let testUser;
 
@@ -30,16 +30,13 @@ describe('backstage playbook list', () => {
     beforeEach(() => {
         // # Login as testUser
         cy.apiLogin(testUser);
-
-        // # Navigate to the application
-        cy.visit('/ad-1/');
     });
 
     it('has "Playbooks" in heading', () => {
-        // # Open backstage
+        // # Open the product
         cy.visit('/playbooks');
 
-        // # Switch to Playbooks backstage
+        // # Switch to Playbooks
         cy.findByTestId('playbooksLHSButton').click();
 
         // * Assert contents of heading.
