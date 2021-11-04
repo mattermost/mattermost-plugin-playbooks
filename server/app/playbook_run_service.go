@@ -780,13 +780,6 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 			DeleteAt: channelPost.DeleteAt,
 		})
 
-	playbookRunToModify.PreviousReminder = options.Reminder
-	playbookRunToModify.LastStatusUpdateAt = channelPost.CreateAt
-
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-		return errors.Wrap(err, "failed to update playbook run")
-	}
-
 	if err = s.store.UpdateStatus(&SQLStatusPost{
 		PlaybookRunID: playbookRunID,
 		PostID:        channelPost.Id,
@@ -804,16 +797,8 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
-	s.RemoveReminder(playbookRunID)
-
-	if options.Reminder != 0 {
-		if err = s.SetReminder(playbookRunID, options.Reminder); err != nil {
-			return errors.Wrap(err, "failed to set the reminder for playbook run")
-		}
-	}
-
-	if err = s.removeReminderPost(playbookRunToModify); err != nil {
-		return errors.Wrap(err, "failed to remove reminder post")
+	if err = s.SetNewReminder(playbookRunID, options.Reminder); err != nil {
+		return errors.Wrapf(err, "failed to set new reminder")
 	}
 
 	event := &TimelineEvent{

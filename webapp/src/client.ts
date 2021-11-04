@@ -490,6 +490,15 @@ export const unfollowPlaybookRun = async (playbookRunId: string) => {
     });
 };
 
+export const resetReminder = async (playbookRunId: string, newReminderSeconds: number) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/reminder`, {
+        method: 'POST',
+        body: JSON.stringify({
+            new_reminder_seconds: newReminderSeconds,
+        }),
+    });
+};
+
 export const doGet = async <TData = any>(url: string) => {
     const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 

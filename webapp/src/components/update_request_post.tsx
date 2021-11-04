@@ -1,10 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {CSSProperties} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
+import {components, ContainerProps} from 'react-select';
 
 import {Post} from 'mattermost-redux/types/posts';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -17,9 +18,13 @@ import {currentPlaybookRun} from 'src/selectors';
 import PostText from 'src/components/post_text';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
-import {doDelete} from 'src/client';
+import {doDelete, resetReminder} from 'src/client';
 import {pluginId} from 'src/manifest';
 import {CustomPostContainer} from 'src/components/custom_post_styles';
+import {makeOption, Mode, ms, Option} from 'src/components/datetime_input';
+import {nearest} from 'src/utils';
+import {optionFromSeconds} from 'src/components/modals/update_run_status_modal';
+import {StyledSelect} from 'src/components/backstage/styles';
 
 interface Props {
     post: Post;
@@ -38,6 +43,42 @@ export const UpdateRequestPost = (props: Props) => {
     if (!currentRun) {
         return null;
     }
+
+    const options = [
+        makeOption('in 60 minutes', Mode.DurationValue),
+        makeOption('in 24 hours', Mode.DurationValue),
+        makeOption('in 7 days', Mode.DurationValue),
+    ];
+    const pushIfNotIn = (option: Option) => {
+        if (!options.find((o) => ms(option.value) === ms(o.value))) {
+            // option doesn't already exist
+            options.push(option);
+        }
+    };
+    if (currentRun.previous_reminder) {
+        pushIfNotIn(optionFromSeconds(nearest(currentRun.previous_reminder * 1e-9, 1)));
+    }
+    if (currentRun.reminder_timer_default_seconds) {
+        pushIfNotIn(optionFromSeconds(currentRun.reminder_timer_default_seconds));
+    }
+    options.sort((a, b) => ms(a.value) - ms(b.value));
+
+    const snoozeFor = (option: Option) => {
+        resetReminder(currentRun.id, ms(option.value) / 1000);
+    };
+
+    const SelectContainer = ({children, ...ownProps}: ContainerProps<Option, boolean>) => {
+        return (
+            <components.SelectContainer
+                {...ownProps}
+
+                // @ts-ignore
+                innerProps={{...ownProps.innerProps, role: 'button'}}
+            >
+                {children}
+            </components.SelectContainer>
+        );
+    };
 
     return (
         <>
@@ -62,6 +103,27 @@ export const UpdateRequestPost = (props: Props) => {
                 <PostUpdateTertiaryButton onClick={() => doDelete(dismissUrl, dismissBody)}>
                     {formatMessage({defaultMessage: 'Dismiss'})}
                 </PostUpdateTertiaryButton>
+                <Spacer/>
+                <StyledSelect
+                    classNamePrefix='channel-selector'
+                    filterOption={null}
+                    isMulti={false}
+                    menuPlacement={'top'}
+                    components={{
+                        IndicatorSeparator: () => null,
+                        SelectContainer,
+                    }}
+                    placeholder={formatMessage({defaultMessage: 'Snooze'})}
+                    options={options}
+                    onChange={snoozeFor}
+                    menuPortalTarget={document.body}
+                    styles={{
+                        control: (base: CSSProperties) => ({
+                            ...base,
+                            height: '40px',
+                        }),
+                    }}
+                />
             </Container>
         </>
     );

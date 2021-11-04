@@ -439,12 +439,12 @@ func TestUpdateStatus(t *testing.T) {
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		store.EXPECT().UpdatePlaybookRun(gomock.AssignableToTypeOf(&app.PlaybookRun{})).Return(nil)
 		store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&app.SQLStatusPost{})).Return(nil)
-		store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(4)
+		store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(5)
 		store.EXPECT().GetFollowers(gomock.Any()).Return([]string{}, nil)
 
 		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
 
-		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), homeChannelID)
+		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), homeChannelID).Times(2)
 
 		// there is an existing rootID stored, so no call to set.
 		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunID).
@@ -550,12 +550,12 @@ func TestUpdateStatusWebhookFailure(t *testing.T) {
 	store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 	store.EXPECT().UpdatePlaybookRun(gomock.AssignableToTypeOf(&app.PlaybookRun{})).Return(nil)
 	store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&app.SQLStatusPost{})).Return(nil)
-	store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(4)
+	store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(5)
 	store.EXPECT().GetFollowers(gomock.Any()).Return([]string{}, nil)
 
 	configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "playbooks"}).Times(2)
 
-	poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), homeChannelID)
+	poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), homeChannelID).Times(2)
 
 	// there is an existing rootID stored, so no call to set.
 	store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunID).
@@ -1131,12 +1131,12 @@ func TestMultipleWebhooks(t *testing.T) {
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{}))
 		store.EXPECT().UpdatePlaybookRun(gomock.AssignableToTypeOf(&app.PlaybookRun{})).Return(nil)
 		store.EXPECT().UpdateStatus(gomock.AssignableToTypeOf(&app.SQLStatusPost{})).Return(nil)
-		store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(4)
+		store.EXPECT().GetPlaybookRun(gomock.Any()).Return(playbookRun, nil).Times(5)
 		store.EXPECT().GetFollowers(gomock.Any()).Return([]string{}, nil)
 
 		configService.EXPECT().GetManifest().Return(&model.Manifest{Id: "com.mattermost.plugin-incident-management"}).Times(2)
 
-		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), homeChannelID)
+		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), homeChannelID).Times(2)
 
 		// there is an existing rootID stored, so no call to set.
 		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunID).

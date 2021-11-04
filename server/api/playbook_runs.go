@@ -70,6 +70,7 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	playbookRunRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder", handler.reminderDelete).Methods(http.MethodDelete)
+	playbookRunRouterAuthorized.HandleFunc("/reminder", handler.reminderReset).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/no-retrospective-button", handler.noRetrospectiveButton).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
@@ -827,6 +828,49 @@ func (h *PlaybookRunHandler) reminderDelete(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// reminderButtonDismiss handles the POST /runs/{id}/reminder endpoint, called when a
+// user clicks on the reminder custom_update_status time selector
+func (h *PlaybookRunHandler) reminderReset(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+	var payload struct {
+		NewReminderSeconds int `json:"new_reminder_seconds"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	if payload.NewReminderSeconds <= 0 {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "new_reminder_seconds must be > 0", errors.New("new_reminder_seconds was <= 0"))
+		return
+	}
+
+	storedPlaybookRun, err := h.playbookRunService.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		err = errors.Wrapf(err, "reminderReset: no playbook run for path's playbookRunID: %s", playbookRunID)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "no playbook run for path's playbookRunID", err)
+		return
+	}
+
+	if err = app.EditPlaybookRun(userID, storedPlaybookRun.ChannelID, h.pluginAPI); err != nil {
+		if errors.Is(err, app.ErrNoPermissions) {
+			ReturnJSON(w, nil, http.StatusForbidden)
+			return
+		}
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error getting permissions", err)
+		return
+	}
+
+	if err = h.playbookRunService.SetNewReminder(playbookRunID, time.Duration(payload.NewReminderSeconds)*time.Second); err != nil {
+		err = errors.Wrapf(err, "reminderReset: error setting new reminder for playbookRunID %s", playbookRunID)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder post", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // reminderButtonDismiss handles the POST /runs/{id}/reminder/button-dismiss endpoint, called when a
 // user clicks on the reminder interactive button
 func (h *PlaybookRunHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.Request) {
@@ -847,7 +891,7 @@ func (h *PlaybookRunHandler) reminderButtonDismiss(w http.ResponseWriter, r *htt
 func (h *PlaybookRunHandler) removeReminderPost(w http.ResponseWriter, userID, playbookRunID, channelID string) {
 	storedPlaybookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
 	if err != nil {
-		h.log.Errorf("reminderButtonDismiss: no playbook run for requestData's channelID: %s", channelID)
+		err = errors.Wrapf(err, "reminderButtonDismiss: no playbook run for requestData's channelID: %s", channelID)
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "no playbook run for requestData's channelID", err)
 		return
 	}
@@ -857,7 +901,7 @@ func (h *PlaybookRunHandler) removeReminderPost(w http.ResponseWriter, userID, p
 		return
 	}
 
-	if err := app.EditPlaybookRun(userID, channelID, h.pluginAPI); err != nil {
+	if err = app.EditPlaybookRun(userID, channelID, h.pluginAPI); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
 			ReturnJSON(w, nil, http.StatusForbidden)
 			return
@@ -866,14 +910,14 @@ func (h *PlaybookRunHandler) removeReminderPost(w http.ResponseWriter, userID, p
 		return
 	}
 
-	if err := h.playbookRunService.RemoveReminderPost(playbookRunID); err != nil {
-		h.log.Errorf("reminderButtonDismiss: error removing reminder for channelID: %s; error: %s", channelID, err.Error())
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder", err)
+	if err = h.playbookRunService.RemoveReminderPost(playbookRunID); err != nil {
+		err = errors.Wrapf(err, "reminderButtonDismiss: error removing reminder post for channelID: %s", channelID)
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder post", err)
 		return
 	}
 
-	if err := h.playbookRunService.ResetReminderTimer(playbookRunID); err != nil {
-		h.log.Errorf("reminderButtonDismiss: error resetting reminder for channelID: %s; error: %s", channelID, err.Error())
+	if err = h.playbookRunService.ResetReminderTimer(playbookRunID); err != nil {
+		err = errors.Wrapf(err, "reminderButtonDismiss: error resetting reminder for channelID: %s", channelID)
 		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error resetting reminder", err)
 		return
 	}

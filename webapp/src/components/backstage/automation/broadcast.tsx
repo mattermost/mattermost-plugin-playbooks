@@ -102,7 +102,7 @@ const ThumbVertical = styled.div`
     margin-top: 6px;
 `;
 
-const MenuList = (props: MenuListComponentProps<Channel>) => {
+const MenuList = (props: MenuListComponentProps<Channel, boolean>) => {
     return (
         <MenuListWrapper>
             <MenuHeader><FormattedMessage defaultMessage='Announcement channel'/></MenuHeader>

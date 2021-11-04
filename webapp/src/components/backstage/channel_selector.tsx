@@ -16,7 +16,7 @@ export interface Props {
     onChannelsSelected: (channelIds: string[]) => void;
     channelIds: string[];
     isClearable?: boolean;
-    selectComponents?: SelectComponentsConfig<Channel>;
+    selectComponents?: SelectComponentsConfig<Channel, boolean>;
     isDisabled: boolean;
     captureMenuScroll: boolean;
     shouldRenderValue: boolean;
