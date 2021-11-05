@@ -144,7 +144,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"ConcatenatedBroadcastChannelIDs", "ConcatenatedWebhookOnCreationURLs", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "ExportChannelOnFinishedEnabled",
+			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs",
 			"COALESCE(CategoryName, '') CategoryName").
 		Column(participantsCol).
 		From("IR_Incident AS i").
@@ -377,7 +377,6 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"RetrospectiveReminderIntervalSeconds":  rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":              rawPlaybookRun.RetrospectiveWasCanceled,
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
-			"ExportChannelOnFinishedEnabled":        rawPlaybookRun.ExportChannelOnFinishedEnabled,
 			"CategoryName":                          rawPlaybookRun.CategoryName,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
@@ -429,7 +428,6 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 			"RetrospectiveReminderIntervalSeconds":  rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":              rawPlaybookRun.RetrospectiveWasCanceled,
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
-			"ExportChannelOnFinishedEnabled":        rawPlaybookRun.ExportChannelOnFinishedEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 
@@ -725,7 +723,7 @@ func (s *playbookRunStore) NukeDB() (err error) {
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember,  IR_StatusPosts, IR_TimelineEvent, IR_Incident, IR_Playbook, IR_System"); err != nil {
+	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember, IR_Run_Participants, IR_StatusPosts, IR_TimelineEvent, IR_Incident, IR_Playbook, IR_System"); err != nil {
 		return errors.Wrap(err, "could not delete all IR tables")
 	}
 
@@ -1063,6 +1061,54 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 	}
 
 	return ret, nil
+}
+
+func (s *playbookRunStore) Follow(playbookRunID, userID string) error {
+	return s.followHelper(playbookRunID, userID, true)
+}
+
+func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
+	return s.followHelper(playbookRunID, userID, false)
+}
+
+func (s *playbookRunStore) followHelper(playbookRunID, userID string, value bool) error {
+	var err error
+	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+		_, err = s.store.execBuilder(s.store.db, sq.
+			Insert("IR_Run_Participants").
+			Columns("IncidentID", "UserID", "IsFollower").
+			Values(playbookRunID, userID, value).
+			Suffix("ON DUPLICATE KEY UPDATE IsFollower = ?", value))
+	} else {
+		_, err = s.store.execBuilder(s.store.db, sq.
+			Insert("IR_Run_Participants").
+			Columns("IncidentID", "UserID", "IsFollower").
+			Values(playbookRunID, userID, value).
+			Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", value))
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to upsert follower '%s' for run '%s'", userID, playbookRunID)
+	}
+
+	return nil
+}
+
+func (s *playbookRunStore) GetFollowers(playbookRunID string) ([]string, error) {
+	query := s.queryBuilder.
+		Select("UserID").
+		From("IR_Run_Participants").
+		Where(sq.And{sq.Eq{"IsFollower": true}, sq.Eq{"IncidentID": playbookRunID}})
+
+	var followers []string
+	err := s.store.selectBuilder(s.store.db, &followers, query)
+	if err == sql.ErrNoRows {
+		return []string{}, nil
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "failed to get followers for run '%s'", playbookRunID)
+	}
+
+	return followers, nil
 }
 
 func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {

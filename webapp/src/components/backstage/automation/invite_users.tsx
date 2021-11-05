@@ -7,6 +7,8 @@ import styled from 'styled-components';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
+import {FormattedMessage} from 'react-intl';
+
 import Profile from 'src/components/profile/profile';
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
 import {Toggle} from 'src/components/backstage/automation/toggle';
@@ -31,7 +33,7 @@ export const InviteUsers = (props: Props) => {
                         isChecked={props.enabled}
                         onChange={props.onToggle}
                     />
-                    <div>{'Invite members'}</div>
+                    <div><FormattedMessage defaultMessage='Invite members'/></div>
                 </AutomationTitle>
                 <SelectorWrapper>
                     <InviteUsersSelector
