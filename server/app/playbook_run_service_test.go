@@ -514,6 +514,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 		configService := mock_config.NewMockService(controller)
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
+		playbookService := mock_app.NewMockPlaybookService(controller)
 
 		now := model.GetMillis()
 		playbookRun := &app.PlaybookRun{
@@ -545,7 +546,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService)
 
 		err := s.RestorePlaybookRun("testPlaybookRunID", "testUserID")
 		require.NoError(t, err)
@@ -561,6 +562,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 		configService := mock_config.NewMockService(controller)
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
+		playbookService := mock_app.NewMockPlaybookService(controller)
 
 		playbookRun := &app.PlaybookRun{
 			ID:            "testPlaybookRunID",
@@ -576,7 +578,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI)
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService)
 
 		err := s.RestorePlaybookRun("testPlaybookRunID", "testUserID")
 		require.NoError(t, err)
