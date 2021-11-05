@@ -178,6 +178,7 @@
   "Z/hwEf": "The channel will be reminded to perform the retrospective {reminderEnabled, select, true {every} other {}}",
   "Z7vWDQ": "There was an error",
   "ZAJviT": "We weren't able to notify the System Admin.",
+  "ZWtlyd": "Run restored by {name}",
   "ZdWYcm": "No, skip retrospective",
   "ZwlIYH": "{activeRuns, number} active {activeRuns, plural, one {run} other {runs}}",
   "aACJNp": "Run started by {name}",

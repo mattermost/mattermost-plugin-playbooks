@@ -218,5 +218,6 @@ const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
     const filterRecord = filter as unknown as Record<string, boolean>;
     return filterRecord[eventType] ||
         (eventType === TimelineEventType.RunCreated && filterRecord[TimelineEventType.StatusUpdated]) ||
-        (eventType === TimelineEventType.RunFinished && filterRecord[TimelineEventType.StatusUpdated]);
+        (eventType === TimelineEventType.RunFinished && filterRecord[TimelineEventType.StatusUpdated]) ||
+        (eventType === TimelineEventType.RunRestored && filterRecord[TimelineEventType.StatusUpdated]);
 };
