@@ -6,9 +6,9 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import {HALF_SEC} from '../../fixtures/timeouts';
+import {HALF_SEC} from '../../../fixtures/timeouts';
 
-describe('playbook run rhs checklist', () => {
+describe('channels > rhs > checklist', () => {
     let testTeam;
     let testUser;
     const testUsers = [];

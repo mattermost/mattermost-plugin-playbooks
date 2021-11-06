@@ -140,10 +140,6 @@ type PlaybookRun struct {
 	// the playbook run.
 	MessageOnJoin string `json:"message_on_join"`
 
-	// ExportChannelOnArchiveEnabled is true if the channel is exported when the status is updated
-	// to "Archived", false otherwise.
-	ExportChannelOnFinishedEnabled bool `json:"export_channel_on_finished_enabled"`
-
 	// ParticipantIDs is an array of the identifiers of all the participants in the playbook run.
 	// A participant is any member of the playbook run channel that isn't a bot.
 	ParticipantIDs []string `json:"participant_ids"`
@@ -482,9 +478,9 @@ type PlaybookRunService interface {
 	// NukeDB removes all playbook run related data.
 	NukeDB() error
 
-	// SetReminder sets a reminder. After timeInMinutes in the future, the owner will be
-	// reminded to update the playbook run's status.
-	SetReminder(playbookRunID string, timeInMinutes time.Duration) error
+	// SetReminder sets a reminder. After time.Now().Add(fromNow) in the future,
+	// the owner will be reminded to update the playbook run's status.
+	SetReminder(playbookRunID string, fromNow time.Duration) error
 
 	// RemoveReminder removes the pending reminder for playbookRunID (if any).
 	RemoveReminder(playbookRunID string)
@@ -497,6 +493,11 @@ type PlaybookRunService interface {
 
 	// ResetReminderTimer sets the previous reminder timer to 0.
 	ResetReminderTimer(playbookRunID string) error
+
+	// SetNewReminder sets a new reminder for playbookRunID, removes any pending reminder, removes the
+	// reminder post in the playbookRun's channel, and resets the PreviousReminder and
+	// LastStatusUpdateAt (so the countdown timer to "update due" shows the correct time)
+	SetNewReminder(playbookRunID string, newReminder time.Duration) error
 
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error

@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
+import {useIntl} from 'react-intl';
 import {Prompt} from 'react-router-dom';
 
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
@@ -14,6 +15,7 @@ interface Props {
 
 // Credit to: https://michaelchan-13570.medium.com/using-react-router-v4-prompt-with-custom-modal-component-ca839f5faf39
 const RouteLeavingGuard = (props: Props) => {
+    const {formatMessage} = useIntl();
     const [modalVisible, setModalVisible] = useState(false);
     const [lastLocation, setLastLocation] = useState<Location | null>(null);
     const [confirmedNavigation, setConfirmedNavigation] = useState(false);
@@ -52,9 +54,9 @@ const RouteLeavingGuard = (props: Props) => {
             />
             <ConfirmModal
                 show={modalVisible}
-                title={'Discard changes'}
-                message={'Are you sure you want to discard your changes?'}
-                confirmButtonText={'Discard'}
+                title={formatMessage({defaultMessage: 'Discard changes'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to discard your changes?'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Discard'})}
                 onConfirm={handleConfirmNavigationClick}
                 onCancel={closeModal}
             />

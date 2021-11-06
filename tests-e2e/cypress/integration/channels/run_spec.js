@@ -6,21 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-/*
- * This test spec includes tests for the playbook run creation using all 3 methods:
- * - Slash command
- * - RHS
- * - Post action menu
- *
- * This spec also includes tests for starting a playbook run in all types of channels:
- * - Public
- * - Private
- * - Group message
- * - Direct message
- * - Direct message with self
- */
-
-describe('playbook runs can be started', () => {
+describe('channels > run', () => {
     let testTeam;
     let testUser;
     let testPrivateChannel;

@@ -31,15 +31,16 @@ const (
 
 // PlaybookRunServiceImpl holds the information needed by the PlaybookRunService's methods to complete their functions.
 type PlaybookRunServiceImpl struct {
-	pluginAPI     *pluginapi.Client
-	httpClient    *http.Client
-	configService config.Service
-	store         PlaybookRunStore
-	poster        bot.Poster
-	logger        bot.Logger
-	scheduler     JobOnceScheduler
-	telemetry     PlaybookRunTelemetry
-	api           plugin.API
+	pluginAPI       *pluginapi.Client
+	httpClient      *http.Client
+	configService   config.Service
+	store           PlaybookRunStore
+	poster          bot.Poster
+	logger          bot.Logger
+	scheduler       JobOnceScheduler
+	telemetry       PlaybookRunTelemetry
+	api             plugin.API
+	playbookService PlaybookService
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -76,17 +77,18 @@ const DialogFieldItemCommandKey = "command"
 
 // NewPlaybookRunService creates a new PlaybookRunServiceImpl.
 func NewPlaybookRunService(pluginAPI *pluginapi.Client, store PlaybookRunStore, poster bot.Poster, logger bot.Logger,
-	configService config.Service, scheduler JobOnceScheduler, telemetry PlaybookRunTelemetry, api plugin.API) *PlaybookRunServiceImpl {
+	configService config.Service, scheduler JobOnceScheduler, telemetry PlaybookRunTelemetry, api plugin.API, playbookService PlaybookService) *PlaybookRunServiceImpl {
 	return &PlaybookRunServiceImpl{
-		pluginAPI:     pluginAPI,
-		store:         store,
-		poster:        poster,
-		logger:        logger,
-		configService: configService,
-		scheduler:     scheduler,
-		telemetry:     telemetry,
-		httpClient:    httptools.MakeClient(pluginAPI),
-		api:           api,
+		pluginAPI:       pluginAPI,
+		store:           store,
+		poster:          poster,
+		logger:          logger,
+		configService:   configService,
+		scheduler:       scheduler,
+		telemetry:       telemetry,
+		httpClient:      httptools.MakeClient(pluginAPI),
+		api:             api,
+		playbookService: playbookService,
 	}
 }
 
@@ -664,13 +666,21 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdateToFollowers(post *model.Po
 		return errors.Wrapf(err, "failed to get followers for the playbook run `%s`", playbookRunID)
 	}
 
+	post.Id = "" // Reset the ID so we avoid cloning the whole object
+
 	for _, follower := range followers {
 		// Do not send update to the author
 		if follower == authorID {
 			continue
 		}
+		// Check for access permissions
+		if err := UserCanViewPlaybookRun(follower, playbookRunID, s.playbookService, s, s.pluginAPI); err != nil {
+			continue
+		}
+
 		if err := s.poster.DM(follower, post); err != nil {
-			return errors.Wrapf(err, "failed to send a status update to the follower %s", follower)
+			s.pluginAPI.Log.Warn("failed to broadcast the status update to the follower",
+				"follower", follower, "error", err.Error())
 		}
 	}
 	return nil
@@ -770,13 +780,6 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 			DeleteAt: channelPost.DeleteAt,
 		})
 
-	playbookRunToModify.PreviousReminder = options.Reminder
-	playbookRunToModify.LastStatusUpdateAt = channelPost.CreateAt
-
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-		return errors.Wrap(err, "failed to update playbook run")
-	}
-
 	if err = s.store.UpdateStatus(&SQLStatusPost{
 		PlaybookRunID: playbookRunID,
 		PostID:        channelPost.Id,
@@ -794,16 +797,8 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
-	s.RemoveReminder(playbookRunID)
-
-	if options.Reminder != 0 {
-		if err = s.SetReminder(playbookRunID, options.Reminder); err != nil {
-			return errors.Wrap(err, "failed to set the reminder for playbook run")
-		}
-	}
-
-	if err = s.removeReminderPost(playbookRunToModify); err != nil {
-		return errors.Wrap(err, "failed to remove reminder post")
+	if err = s.SetNewReminder(playbookRunID, options.Reminder); err != nil {
+		return errors.Wrapf(err, "failed to set new reminder")
 	}
 
 	event := &TimelineEvent{
@@ -920,26 +915,6 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		}
 	}
 
-	if playbookRunToModify.ExportChannelOnFinishedEnabled {
-		var fileID string
-		fileID, err = s.exportChannelToFile(playbookRunToModify.Name, playbookRunToModify.OwnerUserID, playbookRunToModify.ChannelID)
-		if err != nil {
-			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
-			return nil
-		}
-
-		var channel *model.Channel
-		channel, err = s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
-		if err != nil {
-			_, _ = s.poster.PostMessage(playbookRunToModify.ChannelID, "Mattermost Playbooks failed to export channel. Contact your System Admin for more information.")
-			return errors.Wrapf(err, "failed to get channel in export channel on finished, in FinishPlaybookRun, for channelID '%s'", playbookRunToModify.ChannelID)
-		}
-
-		if err = s.poster.DM(playbookRunToModify.OwnerUserID, &model.Post{Message: fmt.Sprintf("Playbook run ~%s exported successfully", channel.Name), FileIds: []string{fileID}}); err != nil {
-			return errors.Wrap(err, "failed to send exported channel result to playbook owner")
-		}
-	}
-
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
 		CreateAt:      endAt,
@@ -964,37 +939,6 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	return nil
-}
-
-func (s *PlaybookRunServiceImpl) exportChannelToFile(playbookRunName string, ownerUserID string, channelID string) (string, error) {
-	// set url and query string
-	exportPluginURL := fmt.Sprintf("plugins/com.mattermost.plugin-channel-export/api/v1/export?format=csv&channel_id=%s", channelID)
-
-	req, err := http.NewRequest(http.MethodGet, exportPluginURL, bytes.NewBufferString(""))
-	req.Header.Add("Mattermost-User-ID", ownerUserID)
-	if err != nil {
-		errMessage := "failed to create request to generate export file"
-		s.pluginAPI.Log.Warn(errMessage, "plugin", "channel-export", "error", err)
-
-		return "", errors.Wrap(err, errMessage)
-	}
-
-	res := s.pluginAPI.Plugin.HTTP(req)
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		return "", errors.Errorf("There was an error when making a request to upload file with status code %s", strconv.Itoa(res.StatusCode))
-	}
-
-	file, err := s.pluginAPI.File.Upload(res.Body, fmt.Sprintf("%s.csv", playbookRunName), channelID)
-	if err != nil {
-		errMessage := "unable to upload the exported file to a channel"
-		s.pluginAPI.Log.Error(errMessage, "Channel ID", channelID, "Error", err)
-
-		return "", errors.Wrap(err, errMessage)
-	}
-
-	return file.Id, nil
-
 }
 
 func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *PlaybookRun, isInitial bool) error {
@@ -1683,7 +1627,6 @@ func (s *PlaybookRunServiceImpl) ChangeCreationDate(playbookRunID string, creati
 // was invited by actorID.
 func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
 	playbookRunID, err := s.store.GetPlaybookRunIDForChannel(channelID)
-
 	if err != nil {
 		// This is not a playbook run channel
 		return
@@ -1734,6 +1677,14 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return
+	}
+
+	if user.IsBot {
+		return
+	}
+
+	if err := s.Follow(playbookRun.ID, userID); err != nil {
+		s.logger.Errorf("user `%s` was not able to follow the run `%s`; error: %s", userID, playbookRun.ID, err.Error())
 	}
 
 	if playbookRun.CategoryName != "" {

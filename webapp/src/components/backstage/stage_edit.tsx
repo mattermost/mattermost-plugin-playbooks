@@ -11,6 +11,8 @@ import {
 
 import styled from 'styled-components';
 
+import {FormattedMessage} from 'react-intl';
+
 import {Checklist, ChecklistItem, ChecklistItemState, newChecklistItem} from 'src/types/playbook';
 
 import {TertiaryButton} from 'src/components/assets/buttons';
@@ -120,7 +122,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                             <DragPlaceholderText
                                 onClick={handleAddChecklistItem}
                             >
-                                {'Drag and drop an existing task or click to create a new task.'}
+                                <FormattedMessage defaultMessage='Drag and drop an existing task or click to create a new task.'/>
                             </DragPlaceholderText>
                         )}
                         {droppableProvided.placeholder}
@@ -132,7 +134,7 @@ export const StageEditor = (props: Props): React.ReactElement => {
                 onClick={handleAddChecklistItem}
             >
                 <i className='icon-plus'/>
-                {'New task'}
+                <FormattedMessage defaultMessage='New task'/>
             </TertiaryButton>
         </CollapsibleSection>
     );

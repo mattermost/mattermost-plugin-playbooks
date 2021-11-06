@@ -2,6 +2,7 @@
 // See License for license information.
 
 import React, {useRef} from 'react';
+import {FormattedMessage} from 'react-intl';
 import {useSelector} from 'react-redux';
 
 import PlaybooksProductIcon, {Ref as PlaybookRunIconRef} from 'src/components/assets/icons/playbooks_product_icon';
@@ -33,10 +34,10 @@ export const ChannelHeaderButton = () => {
 export const ChannelHeaderText = () => {
     const currentChannelIsPlaybookRun = useSelector(inPlaybookRunChannel);
     if (currentChannelIsPlaybookRun) {
-        return 'Toggle Run Details';
+        return <FormattedMessage defaultMessage='Toggle Run Details'/>;
     }
 
-    return 'Toggle Playbook List';
+    return <FormattedMessage defaultMessage='Toggle Playbook List'/>;
 };
 
 export const ChannelHeaderTooltip = ChannelHeaderText;

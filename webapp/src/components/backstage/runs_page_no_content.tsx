@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
+import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
 import {useDispatch, useSelector} from 'react-redux';
@@ -139,14 +140,14 @@ const NoContentPage = () => {
                 onHide={hideUpgradeModal}
             />
             <NoContentTextContainer>
-                <NoContentTitle>{'What are playbook runs?'}</NoContentTitle>
-                <NoContentDescription>{'Running a playbook orchestrates workflows for your team and tools.'}</NoContentDescription>
+                <NoContentTitle><FormattedMessage defaultMessage='What are playbook runs?'/></NoContentTitle>
+                <NoContentDescription><FormattedMessage defaultMessage='Running a playbook orchestrates workflows for your team and tools.'/></NoContentDescription>
                 <NoContentButton
                     className='mt-6'
                     onClick={handleClick}
                 >
                     <i className='icon-plus mr-2'/>
-                    {playbookExist ? 'Run playbook' : 'Create playbook'}
+                    {playbookExist ? <FormattedMessage defaultMessage='Run playbook'/> : <FormattedMessage defaultMessage='Create playbook'/>}
                 </NoContentButton>
             </NoContentTextContainer>
             <NoContentPlaybookRunSvgContainer>

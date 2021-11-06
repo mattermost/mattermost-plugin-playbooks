@@ -17,7 +17,7 @@ import ProfileButton from 'src/components/profile/profile_button';
 import {useClientRect} from 'src/hooks';
 import {PlaybookRunFilterButton} from '../backstage/styles';
 
-interface Option {
+export interface Option {
     value: string;
     label: JSX.Element | string;
     userId: string;
@@ -36,7 +36,7 @@ interface Props {
     onlyPlaceholder?: boolean;
     enableEdit: boolean;
     isClearable?: boolean;
-    customControl?: (props: ControlProps<any>) => React.ReactElement;
+    customControl?: (props: ControlProps<Option, boolean>) => React.ReactElement;
     controlledOpenToggle?: boolean;
     withoutProfilePic?: boolean;
     defaultValue?: string;
@@ -270,7 +270,7 @@ export default function ProfileSelector(props: Props) {
 }
 
 // styles for the select component
-const selectStyles: StylesConfig = {
+const selectStyles: StylesConfig<Option, boolean> = {
     control: (provided) => ({...provided, minWidth: 240, margin: 8}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {

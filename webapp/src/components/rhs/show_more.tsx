@@ -7,6 +7,8 @@ import {useDispatch, useSelector} from 'react-redux';
 
 import styled, {css} from 'styled-components';
 
+import {FormattedMessage} from 'react-intl';
+
 import {getIsRhsExpanded} from 'src/selectors';
 
 interface CollapsibleProps {
@@ -192,10 +194,10 @@ const ShowMore = (props: Props) => {
     }
 
     let showIcon = 'fa fa-angle-up';
-    let showText = 'Show less';
+    let showText = <FormattedMessage defaultMessage='Show less'/>;
     if (isCollapsed) {
         showIcon = 'fa fa-angle-down';
-        showText = 'Show more';
+        showText = <FormattedMessage defaultMessage='Show more'/>;
     }
 
     return (

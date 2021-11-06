@@ -6,7 +6,7 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('playbook creation button', () => {
+describe('playbooks > creation button', () => {
     let testTeam;
     let testUser;
     let testUser2;
@@ -45,10 +45,10 @@ describe('playbook creation button', () => {
         const url = 'playbooks/new';
         const playbookName = 'Untitled playbook';
 
-        // # Open backstage
+        // # Open the product
         cy.visit('/playbooks');
 
-        // # Switch to playbooks backstage
+        // # Switch to playbooks
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'New Playbook' button
@@ -62,10 +62,10 @@ describe('playbook creation button', () => {
         const url = 'playbooks/new';
         const playbookName = 'Untitled playbook';
 
-        // # Open backstage
+        // # Open the product
         cy.visit('/playbooks');
 
-        // # Switch to playbooks backstage
+        // # Switch to playbooks
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'Blank'
@@ -80,10 +80,10 @@ describe('playbook creation button', () => {
         const url2 = '&template_title=Service%20Reliability%20Incident';
         const playbookName = 'Service Reliability Incident';
 
-        // # Open backstage
+        // # Open the product
         cy.visit('/playbooks');
 
-        // # Switch to playbooks backstage
+        // # Switch to playbooks
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'Service Reliability Incident'
@@ -95,10 +95,10 @@ describe('playbook creation button', () => {
     });
 
     it('shows remove beside members when > 1 member', () => {
-        // # Open backstage
+        // # Open the product
         cy.visit('/playbooks');
 
-        // # Switch to playbooks backstage
+        // # Switch to playbooks
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'Create playbook' button
