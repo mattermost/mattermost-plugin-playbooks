@@ -542,10 +542,9 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 confirmButtonText={'Skip'}
                 onConfirm={() => {
                     clientSkipChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
-                        if (props.onChange) {
-                            console.log("onchange trigerred in checklist_item.tsx skipped");
-                            props.onChange(ChecklistItemState.Skip);
-                        }
+                    if (props.onChange) {
+                        props.onChange(ChecklistItemState.Skip);
+                    }
                     setShowSkipConfirm(false);
                 }
                 }
@@ -558,10 +557,9 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 confirmButtonText={'Restore'}
                 onConfirm={() => {
                     clientRestoreChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
-                        if (props.onChange) {
-                            console.log("onchange trigerred in checklist_item.tsx restored");
-                            props.onChange(ChecklistItemState.Open);
-                        }
+                    if (props.onChange) {
+                        props.onChange(ChecklistItemState.Open);
+                    }
                     setShowRestoreConfirm(false);
                 }
                 }

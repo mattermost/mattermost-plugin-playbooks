@@ -193,7 +193,6 @@ const RHSChecklists = (props: Props) => {
                                                                 playbookRunId={props.playbookRun.id}
                                                                 onChange={(newState: ChecklistItemState) => {
                                                                     setChecklistItemState(props.playbookRun.id, checklistIndex, index, newState);
-                                                                    console.log("rhs_checklist.tsx onChange trigerred "+newState)
                                                                 }}
                                                                 onRedirect={() => {
                                                                     if (isMobile()) {
