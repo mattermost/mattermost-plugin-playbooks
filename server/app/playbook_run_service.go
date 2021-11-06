@@ -1183,6 +1183,12 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	if newState == ChecklistItemStateOpen {
 		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
+	if newState == CheckListItemStateSkipped {
+		modifyMessage = fmt.Sprintf("skipped checklist item **%v**", stripmd.Strip(itemToCheck.Title))
+	}
+	if itemToCheck.State == CheckListItemStateSkipped && newState == ChecklistItemStateOpen {
+		modifyMessage = fmt.Sprintf("restored checklist item **%v**", stripmd.Strip(itemToCheck.Title))
+	}
 	post, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
 		return err

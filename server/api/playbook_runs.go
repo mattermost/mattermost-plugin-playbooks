@@ -1242,6 +1242,11 @@ func (h *PlaybookRunHandler) itemSkip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// if err := h.playbookRunService.ModifyCheckedState(id, userID, "skipped", checklistNum, itemNum); err != nil {
+	// 	h.HandleError(w, err)
+	// 	return
+	// }
+
 	w.WriteHeader(http.StatusNoContent)
 }
 

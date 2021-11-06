@@ -309,7 +309,8 @@ const (
 func IsValidChecklistItemState(state string) bool {
 	return state == ChecklistItemStateClosed ||
 		state == ChecklistItemStateInProgress ||
-		state == ChecklistItemStateOpen
+		state == ChecklistItemStateOpen ||
+		state == CheckListItemStateSkipped
 }
 
 func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int) bool {
