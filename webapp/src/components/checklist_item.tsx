@@ -466,7 +466,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                 />
                                 <HoverMenuButton
                                     title={(props.checklistItem.state === ChecklistItemState.Skip) ? 'Restore' : 'Skip'}
-                                    className={(props.checklistItem.state === ChecklistItemState.Skip) ? 'icon-account-plus-outline icon-16 btn-icon' : 'icon-trash-can-outline icon-16 btn-icon'}
+                                    className={(props.checklistItem.state === ChecklistItemState.Skip) ? 'icon-refresh icon-16 btn-icon' : 'icon-close-circle-outline icon-16 btn-icon'}
                                     onClick={() => {
                                         if (props.checklistItem.state === ChecklistItemState.Skip) {
                                             setShowRestoreConfirm(true);

@@ -174,6 +174,17 @@ describe('channels > rhs > checklist', () => {
             });
         });
 
+        it('skip task', () => {
+            // Hover over the checklist item
+            cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
+
+            // Click the trash
+            cy.get('.icon-trash-can-outline').click();
+
+            // Press the delete button
+            cy.findByText('Skip').click();
+        });
+
         it('add new task', () => {
             const newTasktext = 'This is my new task' + Date.now();
 
