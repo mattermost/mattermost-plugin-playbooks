@@ -179,7 +179,7 @@ describe('channels > rhs > checklist', () => {
             cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
 
             // Click the trash
-            cy.get('.icon-trash-can-outline').click();
+            cy.get('.icon-close-circle-outline').click();
 
             // Press the delete button
             cy.findByText('Skip').click();
