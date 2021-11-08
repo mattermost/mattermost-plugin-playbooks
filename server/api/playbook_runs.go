@@ -167,16 +167,9 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(w http.ResponseWriter, r 
 		return
 	}
 
-	// Delay sending the websocket message because the front end may try to change to the newly created
-	// channel, and the server may respond with a "channel not found" error. This happens in e2e tests,
-	// and possibly in the wild.
-	go func() {
-		time.Sleep(1 * time.Second)
-
-		h.poster.PublishWebsocketEventToUser(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
-			"playbook_run": playbookRun,
-		}, userID)
-	}()
+	h.poster.PublishWebsocketEventToUser(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
+		"playbook_run": playbookRun,
+	}, userID)
 
 	w.Header().Add("Location", fmt.Sprintf("/api/v0/runs/%s", playbookRun.ID))
 	ReturnJSON(w, &playbookRun, http.StatusCreated)

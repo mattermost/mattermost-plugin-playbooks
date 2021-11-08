@@ -78,7 +78,8 @@ describe('channels > rhs', () => {
                 if ($body.find('#channelHeaderFlagButton').length > 0) {
                     cy.get('#channelHeaderFlagButton').click({force: true});
                 } else {
-                    cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'}).click({force: true});
+                    cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'})
+                        .click({force: true});
                 }
             });
 
@@ -285,7 +286,7 @@ describe('channels > rhs', () => {
             });
         });
 
-        it('when starting a playbook run when rhs is already open', () => {
+        it.only('when starting a playbook run when rhs is already open', () => {
             // # Navigate to the application and a channel without a playbook run
             cy.visit(`/${testTeam.name}/channels/off-topic`);
 
@@ -293,13 +294,8 @@ describe('channels > rhs', () => {
             cy.get('#post-create').should('exist');
 
             // # Open the flagged posts RHS
-            cy.get('body').then(($body) => {
-                if ($body.find('#channelHeaderFlagButton').length > 0) {
-                    cy.get('#channelHeaderFlagButton').click({force: true});
-                } else {
-                    cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'}).click({force: true});
-                }
-            });
+            cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'})
+                .click({force: true});
 
             // * Verify Saved Posts is open
             cy.get('.sidebar--right__title').should('contain.text', 'Saved Posts');
