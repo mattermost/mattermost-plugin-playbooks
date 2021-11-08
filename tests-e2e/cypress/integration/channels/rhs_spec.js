@@ -293,7 +293,7 @@ describe('channels > rhs', () => {
             // # Wait until the channel loads enough to show the post textbox.
             cy.get('#post-create').should('exist');
 
-            // # Open the flagged posts RHS
+            // # Open the saved posts RHS
             cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'})
                 .click({force: true});
 
@@ -328,27 +328,18 @@ describe('channels > rhs', () => {
                     reminder: 1,
                 });
 
-                // # Navigate to the application and a channel without a playbook run
-                cy.visit(`/${testTeam.name}/channels/off-topic`);
+                // # Switch to playbooks DM channel
+                cy.visit(`/${testTeam.name}/messages/@playbooks`);
 
                 // # Wait until the channel loads enough to show the post textbox.
                 cy.get('#post-create').should('exist');
 
-                // # Switch to playbooks DM channel
-                cy.visit(`/${testTeam.name}/messages/@playbooks`);
-
                 // # Run a slash command to show the to-do list.
                 cy.executeSlashCommand('/playbook todo');
 
-                // # Open the flagged posts RHS
-                cy.get('body').then(($body) => {
-                    if ($body.find('#channelHeaderFlagButton').length > 0) {
-                        cy.get('#channelHeaderFlagButton').click({force: true});
-                    } else {
-                        cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'})
-                            .click({force: true});
-                    }
-                });
+                // # Open the saved posts RHS
+                cy.findByRole('button', {name: 'Select to toggle a list of saved posts.'})
+                    .click({force: true});
 
                 // * Verify Saved Posts is open
                 cy.get('.sidebar--right__title').should('contain.text', 'Saved Posts');
@@ -356,8 +347,6 @@ describe('channels > rhs', () => {
                 // # Should show the runs overdue -- ignoring the rest
                 cy.getLastPost().within(() => {
                     cy.get('li').then((liItems) => {
-                        expect(liItems[0]).to.contain.text(runName);
-
                         // # Click to get to the run's channel
                         cy.wrap(liItems[0]).get('a').contains(runName).click();
                     });
