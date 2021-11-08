@@ -73,7 +73,7 @@ export function handleWebsocketPlaybookRunUpdated(getState: GetStateFunc, dispat
 }
 
 export function handleWebsocketPlaybookRunCreated(getState: GetStateFunc, dispatch: Dispatch) {
-    return async (msg: WebSocketMessage<{ payload: string }>): Promise<void> => {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
         if (!msg.data.payload) {
             return;
         }
@@ -96,10 +96,6 @@ export function handleWebsocketPlaybookRunCreated(getState: GetStateFunc, dispat
         }
 
         const currentTeam = getCurrentTeam(getState());
-
-        // Pause to let the server catch up (sometimes we navigate so quickly, the server says
-        // the channel does not exist)
-        await new Promise((r) => setTimeout(r, 500));
 
         // Navigate to the newly created channel
         const pathname = `/${currentTeam.name}/channels/${payload.channel_name}`;
