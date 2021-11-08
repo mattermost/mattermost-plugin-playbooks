@@ -27,12 +27,19 @@ export enum SectionID {
 interface Props {
     playbookId: string;
     runsInProgress: number;
+    showElements: {
+        description: boolean,
+        checklists: boolean,
+        actions: boolean,
+        statusUpdates: boolean,
+        retrospective: boolean,
+    };
 }
 
 // Height of the headers in pixels
 const headersOffset = 140;
 
-const PlaybookPreviewNavbar = ({playbookId, runsInProgress}: Props) => {
+const PlaybookPreviewNavbar = ({playbookId, runsInProgress, showElements}: Props) => {
     const {formatMessage} = useIntl();
     const match = useRouteMatch();
     const [activeId, setActiveId] = useState(SectionID.Description);
@@ -142,26 +149,31 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress}: Props) => {
                     id={SectionID.Description}
                     iconName={'information-outline'}
                     title={formatMessage({defaultMessage: 'Description'})}
+                    show={showElements.description}
                 />
                 <Item
                     id={SectionID.Checklists}
                     iconName={'check-all'}
                     title={formatMessage({defaultMessage: 'Checklists'})}
+                    show={showElements.checklists}
                 />
                 <Item
                     id={SectionID.Actions}
                     iconName={'sync'}
                     title={formatMessage({defaultMessage: 'Actions'})}
+                    show={showElements.actions}
                 />
                 <Item
                     id={SectionID.StatusUpdates}
                     iconName={'update'}
                     title={formatMessage({defaultMessage: 'Status updates'})}
+                    show={showElements.statusUpdates}
                 />
                 <Item
                     id={SectionID.Retrospective}
                     iconName={'lightbulb-outline'}
                     title={formatMessage({defaultMessage: 'Retrospective'})}
+                    show={showElements.retrospective}
                 />
             </Items>
             <UsageButton
@@ -211,8 +223,8 @@ const Items = styled.div`
 `;
 
 const generateItemComponent = (isSectionActive: (id: SectionID) => boolean, scrollToSection: (id: SectionID) => void) => {
-    return (props: {id: SectionID, iconName: string, title: string}) => {
-        if (!document.getElementById(props.id)) {
+    return (props: {id: SectionID, iconName: string, title: string, show: boolean}) => {
+        if (!props.show) {
             return null;
         }
 
