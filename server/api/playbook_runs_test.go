@@ -76,11 +76,11 @@ func TestPlaybookRuns(t *testing.T) {
 
 		configService.EXPECT().
 			IsAtLeastE10Licensed().
-			Return(true)
+			Return(true).AnyTimes()
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{})
+			Return(&config.Configuration{}).AnyTimes()
 	}
 
 	t.Run("create valid playbook run from dialog", func(t *testing.T) {
