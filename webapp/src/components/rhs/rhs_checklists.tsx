@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
+import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {
@@ -63,6 +64,7 @@ interface Props {
 
 const RHSChecklists = (props: Props) => {
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
     const checklistsState = useSelector(currentChecklistCollapsedState);
     const allCollapsed = useSelector(currentChecklistAllCollapsed);
@@ -103,7 +105,7 @@ const RHSChecklists = (props: Props) => {
                 showMenu &&
                 <HoverRow>
                     <HoverMenuButton
-                        title={allCollapsed ? 'Expand' : 'Collapse'}
+                        title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
                         className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
                         onClick={() => dispatch(setAllChecklistsCollapsedState(channelId, !allCollapsed, checklists.length))}
                     />
@@ -119,7 +121,7 @@ const RHSChecklists = (props: Props) => {
                     />
                 </HoverRow>
             }
-            <MainTitle>{'Checklists'}</MainTitle>
+            <MainTitle>{formatMessage({defaultMessage: 'Checklists'})}</MainTitle>
             {checklists.map((checklist: Checklist, checklistIndex: number) => (
                 <CollapsibleChecklist
                     key={checklist.title + checklistIndex}
@@ -220,7 +222,7 @@ const RHSChecklists = (props: Props) => {
             {
                 active &&
                 <FinishButton onClick={() => dispatch(finishRun(props.playbookRun.team_id))}>
-                    {'Finish run'}
+                    {formatMessage({defaultMessage: 'Finish run'})}
                 </FinishButton>
             }
         </InnerContainer>

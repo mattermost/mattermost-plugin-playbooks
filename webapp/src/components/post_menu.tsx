@@ -13,6 +13,8 @@ import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {Channel} from 'mattermost-redux/types/channels';
 
+import {FormattedMessage} from 'react-intl';
+
 import PlaybookRunPostMenuIcon from 'src/components/assets/icons/post_menu_icon';
 
 import {addToTimeline, startPlaybookRun, showPostMenuModal} from 'src/actions';
@@ -55,7 +57,7 @@ export const StartPlaybookRunPostMenu = (props: Props) => {
                     role='presentation'
                 >
                     <PlaybookRunPostMenuIcon/>
-                    {'Run playbook'}
+                    <FormattedMessage defaultMessage='Run playbook'/>
                 </button>
             </li>
         </React.Fragment>
@@ -92,7 +94,7 @@ export const AttachToPlaybookRunPostMenu = (props: Props) => {
                     role='presentation'
                 >
                     <PlaybookRunPostMenuIcon/>
-                    {'Add to run timeline'}
+                    <FormattedMessage defaultMessage='Add to run timeline'/>
                     {!allowMessage && <PositionedUpgradeBadge/>}
                 </button>
             </li>

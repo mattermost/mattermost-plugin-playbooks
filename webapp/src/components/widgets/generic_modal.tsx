@@ -6,6 +6,8 @@ import classNames from 'classnames';
 import React from 'react';
 import {Modal} from 'react-bootstrap';
 
+import {FormattedMessage} from 'react-intl';
+
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 type Props = {
@@ -69,7 +71,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
     render() {
         let confirmButton;
         if (this.props.handleConfirm) {
-            let confirmButtonText: React.ReactNode = 'Confirm';
+            let confirmButtonText: React.ReactNode = <FormattedMessage defaultMessage='Confirm'/>;
             if (this.props.confirmButtonText) {
                 confirmButtonText = this.props.confirmButtonText;
             }
@@ -90,7 +92,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
 
         let cancelButton;
         if (this.props.handleCancel) {
-            let cancelButtonText: React.ReactNode = 'Cancel';
+            let cancelButtonText: React.ReactNode = <FormattedMessage defaultMessage='Cancel'/>;
             if (this.props.cancelButtonText) {
                 cancelButtonText = this.props.cancelButtonText;
             }

@@ -4,7 +4,7 @@
 import React, {useRef} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {Link} from 'react-router-dom';
 
 import Icon from '@mdi/react';
@@ -196,10 +196,16 @@ export const RHSHomePlaybook = ({
                     {num_runs > 0 ? (
                         <>
                             <span>
-                                {'Last run was '}
-                                <Timestamp
-                                    value={last_run_at}
-                                    {...TIME_SPEC}
+                                <FormattedMessage
+                                    defaultMessage='Last run was {relativeTime}'
+                                    values={{
+                                        relativeTime: (
+                                            <Timestamp
+                                                value={last_run_at}
+                                                {...TIME_SPEC}
+                                            />
+                                        ),
+                                    }}
                                 />
                                 <span className='separator'>{'·'}</span>
                             </span>
@@ -237,7 +243,7 @@ export const RHSHomePlaybook = ({
                     path={mdiClipboardPlayOutline}
                     size={1.5}
                 />
-                {'Run'}
+                <FormattedMessage defaultMessage='Run'/>
             </RunButton>
         </Item>
     );
@@ -291,7 +297,6 @@ export const RHSHomeTemplate = ({
                             size={1}
                         />
                         {formatMessage({
-
                             defaultMessage: '{num_checklists, plural, =0 {no checklists} one {# checklist} other {# checklists}}',
                         }, {num_checklists: template.num_stages})}
                     </MetaItem>
@@ -312,7 +317,7 @@ export const RHSHomeTemplate = ({
                     path={mdiOpenInNew}
                     size={1.5}
                 />
-                {'Use'}
+                {formatMessage({defaultMessage: 'Use'})}
             </RunButton>
         </Item>
     );

@@ -43,14 +43,10 @@ const PlaybookPreviewActions = (props: Props) => {
         !props.playbook.message_on_join_enabled &&
         !props.playbook.categorize_channel_enabled;
 
-    const emptyRunFinishEntry =
-        !props.playbook.export_channel_on_finished_enabled;
-
     const allEmpty =
         emptyPromptEntry &&
         emptyRunStartEntry &&
-        emptyNewMemberEntry &&
-        emptyRunFinishEntry;
+        emptyNewMemberEntry;
 
     if (allEmpty) {
         return null;
@@ -170,11 +166,6 @@ const PlaybookPreviewActions = (props: Props) => {
                         )}
                     />
                 </CardEntry>
-                <CardEntry
-                    title={formatMessage({defaultMessage: 'When a run is finished, export the channel'})}
-                    iconName={'flag-outline'}
-                    enabled={emptyRunFinishEntry}
-                />
             </Card>
         </Section>
     );
