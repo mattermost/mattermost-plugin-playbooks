@@ -286,7 +286,7 @@ describe('channels > rhs', () => {
             });
         });
 
-        it.only('when starting a playbook run when rhs is already open', () => {
+        it('when starting a playbook run when rhs is already open', () => {
             // # Navigate to the application and a channel without a playbook run
             cy.visit(`/${testTeam.name}/channels/off-topic`);
 
