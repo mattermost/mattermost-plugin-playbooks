@@ -182,7 +182,7 @@ func setupSQLStoreForUserInfo(t *testing.T, db *sqlx.DB) *SQLStore {
 		scheduler,
 	}
 
-	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).Times(2)
+	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).AnyTimes()
 
 	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
 	require.NoError(t, err)
