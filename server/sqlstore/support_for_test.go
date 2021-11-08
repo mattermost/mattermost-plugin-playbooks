@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"testing"
 
+	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
@@ -44,6 +46,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 
 	mockCtrl := gomock.NewController(t)
 	logger := mock_bot.NewMockLogger(mockCtrl)
+	scheduler := mock_app.NewMockJobOnceScheduler(mockCtrl)
 
 	driverName := db.DriverName()
 
@@ -56,9 +59,10 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 		logger,
 		db,
 		builder,
+		scheduler,
 	}
 
-	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).Times(2)
+	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).AnyTimes()
 
 	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
 	require.NoError(t, err)
@@ -68,6 +72,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	setupBotsTable(t, db)
 	setupChannelMembersTable(t, db)
 	setupKVStoreTable(t, db)
+	setupUsersTable(t, db)
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		err = sqlStore.Migrate(currentSchemaVersion)
@@ -111,7 +116,8 @@ func setupUsersTable(t *testing.T, db *sqlx.DB) {
 				locale character varying(5),
 				timezone character varying(256),
 				mfaactive boolean,
-				mfasecret character varying(128)
+				mfasecret character varying(128),
+				PRIMARY KEY (Id)
 			);
 		`)
 		require.NoError(t, err)

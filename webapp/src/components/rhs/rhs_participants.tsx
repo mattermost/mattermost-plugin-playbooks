@@ -4,6 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useSelector, useDispatch} from 'react-redux';
+import {FormattedMessage} from 'react-intl';
 
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 
@@ -19,11 +20,14 @@ const RHSParticipants = (props: Props) => {
     if (props.userIds.length === 0) {
         return (
             <NoParticipants>
-                {'Nobody yet. '}
+                <FormattedMessage defaultMessage='Nobody yet.'/>
+                {' '}
                 <AddParticipants/>
             </NoParticipants>
         );
     }
+
+    const height = 28;
 
     return (
         <UserRow
@@ -37,16 +41,28 @@ const RHSParticipants = (props: Props) => {
                 }
             }}
         >
-            {props.userIds.slice(0, 6).map((userId: string) => (
+            <UserList
+                userIds={props.userIds}
+                sizeInPx={height}
+            />
+        </UserRow>
+    );
+};
+
+export const UserList = ({userIds, sizeInPx}: {userIds: string[], sizeInPx: number}) => {
+    return (
+        <>
+            {userIds.slice(0, 6).map((userId: string) => (
                 <RHSParticipant
                     key={userId}
                     userId={userId}
+                    sizeInPx={sizeInPx}
                 />
             ))}
-            {props.userIds.length > 6 &&
-            <Rest>{'+' + (props.userIds.length - 6)}</Rest>
+            {userIds.length > 6 &&
+            <Rest sizeInPx={sizeInPx}>{'+' + (userIds.length - 6)}</Rest>
             }
-        </UserRow>
+        </>
     );
 };
 
@@ -103,7 +119,7 @@ const AddParticipants = () => {
                 }));
             }}
         >
-            {'Add participants?'}
+            <FormattedMessage defaultMessage='Add participants?'/>
         </a>
     );
 };

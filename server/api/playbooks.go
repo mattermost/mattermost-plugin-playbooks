@@ -52,6 +52,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("", handler.updatePlaybook).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("", handler.deletePlaybook).Methods(http.MethodDelete)
+	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPost)
 
 	return handler
 }
@@ -67,6 +68,11 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 
 	if playbook.ID != "" {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "Playbook given already has ID", nil)
+		return
+	}
+
+	if playbook.ReminderTimerDefaultSeconds <= 0 {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be > 0", nil)
 		return
 	}
 
@@ -302,6 +308,31 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	err = h.playbookService.Delete(playbookToDelete, userID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *PlaybookHandler) restorePlaybook(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+		return
+	}
+
+	playbookToRestore, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	err = h.playbookService.Restore(playbookToRestore, userID)
 	if err != nil {
 		h.HandleError(w, err)
 		return

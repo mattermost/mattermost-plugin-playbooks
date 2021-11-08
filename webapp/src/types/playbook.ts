@@ -37,7 +37,6 @@ export interface PlaybookWithChecklist extends Playbook {
     message_on_join_enabled: boolean;
     retrospective_reminder_interval_seconds: number;
     retrospective_template: string;
-    export_channel_on_finished_enabled: boolean;
     signal_any_keywords_enabled: boolean;
     signal_any_keywords: string[];
     category_name: string;
@@ -106,7 +105,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         checklists: [emptyChecklist()],
         member_ids: [],
         reminder_message_template: '',
-        reminder_timer_default_seconds: 0,
+        reminder_timer_default_seconds: 7 * 24 * 60 * 60, // 7 days
         invited_user_ids: [],
         invited_group_ids: [],
         invite_users_enabled: false,
@@ -122,7 +121,6 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         message_on_join_enabled: false,
         retrospective_reminder_interval_seconds: 0,
         retrospective_template: defaultRetrospectiveTemplate,
-        export_channel_on_finished_enabled: false,
         signal_any_keywords: [],
         signal_any_keywords_enabled: false,
         category_name: '',
@@ -165,7 +163,7 @@ export interface ChecklistItemsFilter extends Record<string, boolean> {
 
 export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
     all: false,
-    checked: false,
+    checked: true,
     me: true,
     unassigned: true,
     others: true,

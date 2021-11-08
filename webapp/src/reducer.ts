@@ -31,6 +31,8 @@ import {
     PlaybookCreated,
     PLAYBOOK_DELETED,
     PlaybookDeleted,
+    PLAYBOOK_RESTORED,
+    PlaybookRestored,
     ReceivedTeamNumPlaybooks,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedGlobalSettings,
@@ -46,7 +48,9 @@ import {
     SetChecklistCollapsedState,
     SetAllChecklistsCollapsedState,
     SET_CHECKLIST_COLLAPSED_STATE,
-    SET_ALL_CHECKLISTS_COLLAPSED_STATE, SetChecklistItemsFilter, SET_CHECKLIST_ITEMS_FILTER,
+    SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    SetChecklistItemsFilter,
+    SET_CHECKLIST_ITEMS_FILTER,
 } from 'src/types/actions';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
@@ -181,10 +185,20 @@ const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {},
     }
 };
 
-const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookDeleted | ReceivedTeamNumPlaybooks) => {
+const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookDeleted | PlaybookRestored | ReceivedTeamNumPlaybooks) => {
     switch (action.type) {
     case PLAYBOOK_CREATED: {
         const playbookCreatedAction = action as PlaybookCreated;
+        const teamID = playbookCreatedAction.teamID;
+        const prevCount = state[teamID] || 0;
+
+        return {
+            ...state,
+            [teamID]: prevCount + 1,
+        };
+    }
+    case PLAYBOOK_RESTORED: {
+        const playbookCreatedAction = action as PlaybookRestored;
         const teamID = playbookCreatedAction.teamID;
         const prevCount = state[teamID] || 0;
 

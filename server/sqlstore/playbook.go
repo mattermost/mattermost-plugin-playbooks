@@ -116,8 +116,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 				CASE WHEN MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
 				CASE WHEN SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
-				CASE WHEN CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
+				CASE WHEN CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate",
 			"ReminderTimerDefaultSeconds",
@@ -136,7 +135,6 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"RetrospectiveTemplate",
 			"ConcatenatedWebhookOnStatusUpdateURLs",
 			"WebhookOnStatusUpdateEnabled",
-			"ExportChannelOnFinishedEnabled",
 			"ConcatenatedSignalAnyKeywords",
 			"SignalAnyKeywordsEnabled",
 			"CategorizeChannelEnabled",
@@ -209,7 +207,6 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"RetrospectiveTemplate":                 rawPlaybook.RetrospectiveTemplate,
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs,
 			"WebhookOnStatusUpdateEnabled":          rawPlaybook.WebhookOnStatusUpdateEnabled,
-			"ExportChannelOnFinishedEnabled":        rawPlaybook.ExportChannelOnFinishedEnabled,
 			"ConcatenatedSignalAnyKeywords":         rawPlaybook.ConcatenatedSignalAnyKeywords,
 			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
@@ -306,8 +303,7 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
+				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 		).
 		From("IR_Playbook AS p").
@@ -371,8 +367,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
+				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 		).
 		From("IR_Playbook AS p").
@@ -565,7 +560,6 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"RetrospectiveTemplate":                 rawPlaybook.RetrospectiveTemplate,
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs,
 			"WebhookOnStatusUpdateEnabled":          rawPlaybook.WebhookOnStatusUpdateEnabled,
-			"ExportChannelOnFinishedEnabled":        rawPlaybook.ExportChannelOnFinishedEnabled,
 			"ConcatenatedSignalAnyKeywords":         rawPlaybook.ConcatenatedSignalAnyKeywords,
 			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
@@ -601,6 +595,24 @@ func (p *playbookStore) Delete(id string) error {
 
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete playbook with id '%s'", id)
+	}
+
+	return nil
+}
+
+// Restore restores a deleted playbook.
+func (p *playbookStore) Restore(id string) error {
+	if id == "" {
+		return errors.New("ID cannot be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		Set("DeleteAt", 0).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to restore playbook with id '%s'", id)
 	}
 
 	return nil

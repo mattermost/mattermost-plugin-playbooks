@@ -117,17 +117,10 @@ const PostCard = (props: Props) => {
                             }
                         }}
                     >
-                        {formatMessage({
-                            defaultMessage: '{timestamp}',
-                        },
-                        {
-                            timestamp: (
-                                <Timestamp
-                                    value={props.post.create_at}
-                                />
-                            ),
-                        })
-                        }
+                        <Timestamp
+                            value={props.post.create_at}
+                            useRelative={true}
+                        />
                     </UpdateTimeLink>
                 </UpdateHeader>
                 <PostText

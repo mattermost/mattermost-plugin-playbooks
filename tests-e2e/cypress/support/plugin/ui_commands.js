@@ -85,23 +85,6 @@ Cypress.Commands.add('startPlaybookRunFromPostMenu', (playbookName, playbookRunN
     cy.startPlaybookRun(playbookName, playbookRunName);
 });
 
-Cypress.Commands.add('openBackstage', () => {
-    cy.get('#lhsHeader', {timeout: 120000}).should('exist').within(() => {
-        // # Wait until the channel loads enough to show the post textbox.
-        cy.get('#post-create').should('exist');
-        cy.wait(2000);
-
-        // # Click hamburger main menu
-        cy.get('#sidebarHeaderDropdownButton').click();
-
-        // * Dropdown menu should be visible
-        cy.get('.dropdown-menu').should('exist').within(() => {
-            // Click main menu option
-            cy.findByText('Playbooks').should('exist').click();
-        });
-    });
-});
-
 // Create playbook
 Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
     cy.visit('/playbooks/playbooks/new');
@@ -191,17 +174,9 @@ Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
         // # remove what's there if applicable, and type the new update in the textbox.
         cy.findByTestId('update_run_status_textbox').clear().type(message);
 
-        if (reminderQuery && reminderQuery !== 'none') {
+        if (reminderQuery) {
             cy.get('#reminder_timer_datetime').within(() => {
                 cy.get('input').type(reminderQuery, {delay: 200, force: true}).type('{enter}', {force: true});
-            });
-        } else if (reminderQuery === 'none') {
-            // there MUST be a pre-selected option or this will fail
-
-            // # click clear button
-            cy.get('#reminder_timer_datetime').within(() => {
-
-                cy.get('[class$=indicatorContainer]').eq(0).click();
             });
         }
 

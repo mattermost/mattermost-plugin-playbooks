@@ -16,7 +16,9 @@
     "test:watch": "jest --watch",
     "test-ci": "jest --forceExit --detectOpenHandles --maxWorkers=2",
     "check-types": "tsc",
-    "extract": "formatjs extract 'src/**/*.{ts,tsx}' --out-file i18n/temp.json --id-interpolation-pattern '[sha512:contenthash:base64:6]' && formatjs compile 'i18n/temp.json' --out-file i18n/en.json && rm i18n/temp.json"
+    "extract": "formatjs extract 'src/**/*.{ts,tsx}' --out-file i18n/temp.json --id-interpolation-pattern '[sha512:contenthash:base64:6]' && formatjs compile 'i18n/temp.json' --out-file i18n/en.json && rm i18n/temp.json",
+    "preinstall": "node skip_integrity_check.js",
+    "postinstall": "node skip_integrity_check.js"
   },
   "author": "",
   "license": "",
@@ -43,7 +45,7 @@
     "@types/react-dom": "16.9.8",
     "@types/react-redux": "7.1.18",
     "@types/react-router-dom": "5.1.8",
-    "@types/react-select": "3.0.13",
+    "@types/react-select": "^3.1.2",
     "@types/react-test-renderer": "16.9.3",
     "@types/redux-mock-store": "1.0.3",
     "@types/shallow-equals": "1.0.0",
@@ -91,7 +93,6 @@
     "debounce": "1.2.1",
     "luxon": "2.0.2",
     "mattermost-webapp": "github:mattermost/mattermost-webapp#0621a51815150aa4158bce383cc3b745cd6d8d51",
-    "moment": "2.29.1",
     "parse-duration": "1.0.0",
     "qs": "6.10.1",
     "react": "16.13.1",
@@ -99,7 +100,7 @@
     "react-dom": "16.13.1",
     "react-intl": "5.3.2",
     "react-redux": "7.2.4",
-    "react-select": "3.1.1",
+    "react-select": "3.2.0",
     "redux": "4.1.0",
     "styled-components": "5.3.0",
     "typescript": "4.3.5"
