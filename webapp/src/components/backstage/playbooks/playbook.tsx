@@ -20,12 +20,14 @@ import {useForceDocumentTitle, useStats} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
 
-import {clientFetchPlaybook, telemetryEventForPlaybook} from 'src/client';
+import {clientFetchPlaybook, clientFetchIsPlaybookFollower, followPlaybook, unfollowPlaybook, telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import {RegularHeading} from 'src/styles/headings';
+import CheckboxInput from '../runs_list/checkbox_input';
+import {SecondaryButtonLargerRight} from '../playbook_runs/shared';
 
 interface MatchParams {
     playbookId: string
@@ -44,7 +46,18 @@ const Playbook = () => {
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
     const stats = useStats(match.params.playbookId);
+    const [isFollowed, setIsFollowed] = useState(false);
 
+    const changeFollowing = (check: boolean) => {
+        if (playbook?.id) {
+            if (check) {
+                followPlaybook(playbook.id);
+            } else {
+                unfollowPlaybook(playbook.id);
+            }
+            setIsFollowed(check);
+        }
+    };
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
     const activeNavItemStyle = {
@@ -69,10 +82,13 @@ const Playbook = () => {
             if (playbookId) {
                 try {
                     const fetchedPlaybook = await clientFetchPlaybook(playbookId);
+                    const isPlaybookFollower = await clientFetchIsPlaybookFollower(playbookId);
                     setPlaybook(fetchedPlaybook!);
                     setFetchingState(FetchingStateType.fetched);
+                    setIsFollowed(isPlaybookFollower);
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
+                    setIsFollowed(false);
                 }
             }
         };
@@ -121,6 +137,14 @@ const Playbook = () => {
                             <SubTitle>{subTitle}</SubTitle>
                         </HorizontalBlock>
                     </VerticalBlock>
+                    <SecondaryButtonLargerRight>
+                        <CheckboxInputStyled
+                            testId={'auto-follow-runs'}
+                            text={'Auto-follow runs'}
+                            checked={isFollowed}
+                            onChange={changeFollowing}
+                        />
+                    </SecondaryButtonLargerRight>
                     <PrimaryButtonLarger
                         onClick={runPlaybook}
                         disabled={!enableRunPlaybook}
@@ -240,8 +264,15 @@ const SubTitle = styled.div`
 const PrimaryButtonLarger = styled(PrimaryButton)`
     padding: 0 16px;
     height: 36px;
-    margin-left: auto;
+    margin-left: 12px;
 `;
+
+const CheckboxInputStyled = styled(CheckboxInput)`
+    &:hover {
+        background-color: transparent;
+    }
+`;
+
 const Navbar = styled.nav`
     background: var(--center-channel-bg);
     height: 55px;

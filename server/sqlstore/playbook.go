@@ -661,6 +661,71 @@ INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
 	return nil
 }
 
+func (p *playbookStore) Follow(playbookID, userID string) error {
+	return p.followHelper(playbookID, userID, true)
+}
+
+func (p *playbookStore) Unfollow(playbookID, userID string) error {
+	return p.followHelper(playbookID, userID, false)
+}
+
+func (p *playbookStore) followHelper(playbookID, userID string, value bool) error {
+	var err error
+	if p.store.db.DriverName() == model.DatabaseDriverMysql {
+		_, err = p.store.execBuilder(p.store.db, sq.
+			Insert("IR_Playbook_Participants").
+			Columns("PlaybookID", "UserID", "IsFollower").
+			Values(playbookID, userID, value).
+			Suffix("ON DUPLICATE KEY UPDATE IsFollower = ?", value))
+	} else {
+		_, err = p.store.execBuilder(p.store.db, sq.
+			Insert("IR_Playbook_Participants").
+			Columns("PlaybookID", "UserID", "IsFollower").
+			Values(playbookID, userID, value).
+			Suffix("ON CONFLICT (PlaybookID,UserID) DO UPDATE SET IsFollower = ?", value))
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to upsert follower '%s' for playbook '%s'", userID, playbookID)
+	}
+
+	return nil
+}
+
+func (p *playbookStore) GetFollowers(playbookID string) ([]string, error) {
+	query := p.queryBuilder.
+		Select("UserID").
+		From("IR_Playbook_Participants").
+		Where(sq.And{sq.Eq{"IsFollower": true}, sq.Eq{"PlaybookID": playbookID}})
+
+	var followers []string
+	err := p.store.selectBuilder(p.store.db, &followers, query)
+	if err == sql.ErrNoRows {
+		return []string{}, nil
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "failed to get followers for playbook '%s'", playbookID)
+	}
+
+	return followers, nil
+}
+
+func (p *playbookStore) IsFollower(playbookID, followerID string) (bool, error) {
+	query := p.queryBuilder.
+		Select("IsFollower").
+		From("IR_Playbook_Participants").
+		Where(sq.And{sq.Eq{"PlaybookID": playbookID}, sq.Eq{"UserID": followerID}})
+
+	var isFollower bool
+	err := p.store.getBuilder(p.store.db, &isFollower, query)
+	if err == sql.ErrNoRows {
+		return false, nil
+	} else if err != nil {
+		return false, errors.Wrapf(err, "failed to get follower status for playbook '%s'", playbookID)
+	}
+
+	return isFollower, nil
+}
+
 func addMembersToPlaybooks(memberIDs playbookMembers, playbook []app.Playbook) {
 	pToM := make(map[string][]string)
 	for _, m := range memberIDs {

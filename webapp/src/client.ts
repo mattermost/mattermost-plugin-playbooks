@@ -490,6 +490,27 @@ export const unfollowPlaybookRun = async (playbookRunId: string) => {
     });
 };
 
+export const followPlaybook = async (playbookId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/followers`, {
+        method: 'PUT',
+    });
+};
+
+export const unfollowPlaybook = async (playbookId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/followers`, {
+        method: 'DELETE',
+    });
+};
+
+export async function clientFetchIsPlaybookFollower(playbookId: string): Promise<boolean> {
+    const data = await doGet(`${apiUrl}/playbooks/${playbookId}/followers/check`);
+    if (!data) {
+        return false;
+    }
+
+    return data as boolean;
+}
+
 export const resetReminder = async (playbookRunId: string, newReminderSeconds: number) => {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/reminder`, {
         method: 'POST',

@@ -314,6 +314,46 @@ func (s *playbookService) getPlaybooksAndTriggersByAccess(triggeredPlaybooks []c
 	return resultPlaybooks, removeDuplicates(resultTriggers)
 }
 
+// Follow method lets user follow a all runs of a specific playbook
+func (s *playbookService) Follow(playbookID, userID string) error {
+	if err := s.store.Follow(playbookID, userID); err != nil {
+		return errors.Wrapf(err, "user `%s` failed to follow the playbook `%s`", userID, playbookID)
+	}
+
+	return nil
+}
+
+// Unfollow method lets user to not follow from the newly created playbook runs
+func (s *playbookService) Unfollow(playbookID, userID string) error {
+	if err := s.store.Unfollow(playbookID, userID); err != nil {
+		return errors.Wrapf(err, "user `%s` failed to unfollow the playbook `%s`", userID, playbookID)
+	}
+
+	return nil
+}
+
+// GetFollowers returns followers of a playbook
+func (s *playbookService) GetFollowers(playbookID string) ([]string, error) {
+	var followers []string
+	var err error
+	if followers, err = s.store.GetFollowers(playbookID); err != nil {
+		return nil, errors.Wrapf(err, "failed to get followers for the playbook `%s`", playbookID)
+	}
+
+	return followers, nil
+}
+
+// IsFollower returns weather user is a follower of a playbook runs
+func (s *playbookService) IsFollower(playbookID, userID string) (bool, error) {
+	var isFollower bool
+	var err error
+	if isFollower, err = s.store.IsFollower(playbookID, userID); err != nil {
+		return false, errors.Wrapf(err, "failed to get if user follows for the playbook `%s`", playbookID)
+	}
+
+	return isFollower, nil
+}
+
 func getPlaybookTriggersForAMessage(playbook *CachedPlaybook, message string) []string {
 	triggers := []string{}
 	for _, keyword := range playbook.SignalAnyKeywords {

@@ -54,6 +54,11 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("", handler.deletePlaybook).Methods(http.MethodDelete)
 	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPost)
 
+	followersRouter := playbookRouter.PathPrefix("/followers").Subrouter()
+	followersRouter.HandleFunc("", handler.follow).Methods(http.MethodPut)
+	followersRouter.HandleFunc("", handler.unfollow).Methods(http.MethodDelete)
+	followersRouter.HandleFunc("/check", handler.isFollower).Methods(http.MethodGet)
+
 	return handler
 }
 
@@ -530,4 +535,57 @@ func (h *PlaybookHandler) validateCategoryName(categoryName string) error {
 		return errors.Errorf(msg)
 	}
 	return nil
+}
+
+func (h *PlaybookHandler) follow(w http.ResponseWriter, r *http.Request) {
+	playbookID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook.", err)
+		return
+	}
+
+	if err := h.playbookService.Follow(playbookID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookHandler) unfollow(w http.ResponseWriter, r *http.Request) {
+	playbookID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook.", err)
+		return
+	}
+
+	if err := h.playbookService.Unfollow(playbookID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookHandler) isFollower(w http.ResponseWriter, r *http.Request) {
+	playbookID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook.", err)
+		return
+	}
+
+	var isFollower bool
+	var err error
+	if isFollower, err = h.playbookService.IsFollower(playbookID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	ReturnJSON(w, isFollower, http.StatusOK)
 }
