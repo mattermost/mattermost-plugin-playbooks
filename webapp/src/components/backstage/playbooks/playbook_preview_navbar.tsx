@@ -66,6 +66,8 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, showElements}: Props
         }
     };
 
+    useEffect(updateActiveSection, []);
+
     useEffect(() => {
         const root = document.getElementById(BackstageID);
 
