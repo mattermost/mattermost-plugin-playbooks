@@ -24,7 +24,7 @@ import {
 import Spinner from 'src/components/assets/icons/spinner';
 import {ChecklistItemButton} from 'src/components/checklist_item_input';
 import Profile from 'src/components/profile/profile';
-import ProfileSelector from 'src/components/profile/profile_selector';
+import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
@@ -334,7 +334,7 @@ const ControlComponentAnchor = styled.a`
     top: -4px;
 `;
 
-const ControlComponent = (ownProps: ControlProps<any>) => (
+const ControlComponent = (ownProps: ControlProps<ProfileOption, boolean>) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (

@@ -130,6 +130,9 @@ func (p *Plugin) OnActivate() error {
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
 
+	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
+
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,
 		playbookRunStore,
@@ -139,6 +142,7 @@ func (p *Plugin) OnActivate() error {
 		scheduler,
 		p.telemetryClient,
 		p.API,
+		p.playbookService,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
@@ -159,10 +163,6 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed to run migrations")
 	}
 	mutex.Unlock()
-
-	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
-
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,

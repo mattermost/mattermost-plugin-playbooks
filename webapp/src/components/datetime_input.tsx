@@ -114,6 +114,8 @@ const DateTimeInput = ({
     value,
     defaultOptions,
     makeOptions = defaultMakeOptions,
+    isClearable = true,
+    placeholder,
     ...selectProps
 }: Props) => {
     const [options, setOptions] = useState<Option[] | null>(null);
@@ -134,7 +136,7 @@ const DateTimeInput = ({
             isMulti={false}
 
             //
-            placeholder={formatMessage({
+            placeholder={placeholder ?? formatMessage({
                 defaultMessage: 'Select or specify a {mode, select, DurationValue {time span ("4 hours", "7 days"...)} DateTimeValue {time ("in 4 hours", "May 1", "Tomorrow at 1 PM"...)} other {time or time span}}',
             }, {mode})}
 
@@ -142,7 +144,7 @@ const DateTimeInput = ({
             onInputChange={updateOptions}
             options={options ?? defaultOptions}
             value={value}
-            isClearable={true}
+            isClearable={isClearable}
 
             // styling
             maxMenuHeight={380}

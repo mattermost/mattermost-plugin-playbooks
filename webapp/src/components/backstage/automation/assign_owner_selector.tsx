@@ -81,7 +81,7 @@ const AssignOwnerSelector = (props: Props) => {
             placeholder={formatMessage({defaultMessage: 'Search for member'})}
             components={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
             styles={{
-                control: (provided: ControlProps<UserProfile>) => ({
+                control: (provided: ControlProps<UserProfile, boolean>) => ({
                     ...provided,
                     minHeight: 34,
                 }),
@@ -217,7 +217,7 @@ const ThumbVertical = styled.div`
     margin-top: 6px;
 `;
 
-const MenuList = (props: MenuListComponentProps<UserProfile>) => {
+const MenuList = (props: MenuListComponentProps<UserProfile, boolean>) => {
     const {formatMessage} = useIntl();
     return (
         <MenuListWrapper>

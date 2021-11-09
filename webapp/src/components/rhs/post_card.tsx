@@ -119,6 +119,7 @@ const PostCard = (props: Props) => {
                     >
                         <Timestamp
                             value={props.post.create_at}
+                            useRelative={true}
                         />
                     </UpdateTimeLink>
                 </UpdateHeader>
