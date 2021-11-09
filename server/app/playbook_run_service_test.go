@@ -538,7 +538,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 		store.EXPECT().GetPlaybookRun(playbookRun.ID).Return(playbookRun, nil).Times(2)
 		pluginAPI.On("GetUser", "testUserID").Return(user, nil)
 		store.EXPECT().RestorePlaybookRun(playbookRun.ID, gomock.Any()).Return(nil)
-		poster.EXPECT().PostMessage(playbookRun.ChannelID, "@testUsername restored this run.").Return(post, nil)
+		poster.EXPECT().PostMessage(playbookRun.ChannelID, "@testUsername changed this run's status from Finished to In Progress.").Return(post, nil)
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{})).Return(event, nil)
 		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), gomock.Any())
 

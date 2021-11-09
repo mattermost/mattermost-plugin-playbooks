@@ -954,7 +954,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		return errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
-	message := fmt.Sprintf("@%s restored this run.", user.Username)
+	message := fmt.Sprintf("@%s changed this run's status from Finished to In Progress.", user.Username)
 	postID := ""
 	post, err := s.poster.PostMessage(playbookRunToRestore.ChannelID, message)
 	if err != nil {
