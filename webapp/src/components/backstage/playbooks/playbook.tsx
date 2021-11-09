@@ -24,7 +24,6 @@ import {clientFetchPlaybook, telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import {RegularHeading} from 'src/styles/headings';
 
 interface MatchParams {

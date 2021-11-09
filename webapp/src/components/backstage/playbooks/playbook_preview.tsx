@@ -6,11 +6,12 @@ import React from 'react';
 
 import {PlaybookWithChecklist} from 'src/types/playbook';
 
-import Actions from 'src/components/backstage/playbooks/playbook_preview_actions';
-import Checklists from 'src/components/backstage/playbooks/playbook_preview_checklists';
+import renderActions from 'src/components/backstage/playbooks/playbook_preview_actions';
+import renderChecklists from 'src/components/backstage/playbooks/playbook_preview_checklists';
+import renderDescription from 'src/components/backstage/playbooks/playbook_preview_description';
+import renderRetrospective from 'src/components/backstage/playbooks/playbook_preview_retrospective';
+import renderStatusUpdates from 'src/components/backstage/playbooks/playbook_preview_status_updates';
 import Navbar, {SectionID} from 'src/components/backstage/playbooks/playbook_preview_navbar';
-import Retrospective from 'src/components/backstage/playbooks/playbook_preview_retrospective';
-import StatusUpdates from 'src/components/backstage/playbooks/playbook_preview_status_updates';
 
 interface Props {
     playbook: PlaybookWithChecklist;
@@ -18,29 +19,50 @@ interface Props {
 }
 
 const PlaybookPreview = (props: Props) => {
+    const description = renderDescription({
+        id: SectionID.Description,
+        playbook: props.playbook,
+    });
+
+    const checklists = renderChecklists({
+        id: SectionID.Checklists,
+        playbook: props.playbook,
+    });
+
+    const actions = renderActions({
+        id: SectionID.Actions,
+        playbook: props.playbook,
+    });
+
+    const statusUpdates = renderStatusUpdates({
+        id: SectionID.StatusUpdates,
+        playbook: props.playbook,
+    });
+
+    const retrospective = renderRetrospective({
+        id: SectionID.Retrospective,
+        playbook: props.playbook,
+    });
+
     return (
         <Container>
             <Content>
-                <Checklists
-                    id={SectionID.Checklists}
-                    playbook={props.playbook}
-                />
-                <Actions
-                    id={SectionID.Actions}
-                    playbook={props.playbook}
-                />
-                <StatusUpdates
-                    id={SectionID.StatusUpdates}
-                    playbook={props.playbook}
-                />
-                <Retrospective
-                    id={SectionID.Retrospective}
-                    playbook={props.playbook}
-                />
+                {description}
+                {checklists}
+                {actions}
+                {statusUpdates}
+                {retrospective}
             </Content>
             <Navbar
                 playbookId={props.playbook.id}
                 runsInProgress={props.runsInProgress}
+                showElements={{
+                    description: description !== null,
+                    checklists: checklists !== null,
+                    actions: actions !== null,
+                    statusUpdates: statusUpdates !== null,
+                    retrospective: retrospective !== null,
+                }}
             />
         </Container>
     );

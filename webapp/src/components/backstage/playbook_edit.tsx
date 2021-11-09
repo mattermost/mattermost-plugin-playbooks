@@ -30,11 +30,11 @@ import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
 import {RegularHeading} from 'src/styles/headings';
 import DefaultUpdateTimer from 'src/components/backstage/default_update_timer';
+import EditTitleDescriptionModal from 'src/components/backstage/playbook_edit_title_description_modal';
 
 import './playbook.scss';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 
-import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import {
     BackstageSubheader,
@@ -88,7 +88,7 @@ const SecondaryButtonLarger = styled(SecondaryButtonSmaller)`
     padding: 0 20px;
 `;
 
-const EditableTexts = styled.div`
+const TitleAndDescription = styled.div`
     ${RegularHeading}
 
     display: flex;
@@ -96,11 +96,40 @@ const EditableTexts = styled.div`
     justify-content: flex-start;
     padding: 0 15px;
     font-weight: normal;
+
+    cursor: pointer;
+
+    i {
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+    }
+
+    :hover {
+        i {
+            color: var(--center-channel-color);
+        }
+    }
 `;
 
-const EditableTitleContainer = styled.div`
+const Title = styled.div`
     font-size: 20px;
     line-height: 28px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 650px;
+    white-space: nowrap;
+`;
+
+const Description = styled.div`
+    font-size: 11px;
+    line-height: 16px;
+
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 530px;
+    white-space: nowrap;
 `;
 
 const RadioContainer = styled.div`
@@ -200,6 +229,8 @@ const PlaybookEdit = (props: Props) => {
     });
     const [changesMade, setChangesMade] = useState(false);
 
+    const [showTitleDescriptionModal, setShowTitleDescriptionModal] = useState(false);
+
     const urlParams = useParams<URLParams>();
     const location = useLocation();
 
@@ -276,15 +307,20 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleTitleChange = (title: string) => {
+    const handleTitleAndDescriptionChange = (title: string, description: string) => {
         if (title.trim().length === 0) {
-            // Keep the original title from the props.
+            // Keep the original title from the props, only change the description
+            setPlaybook({
+                ...playbook,
+                description,
+            });
             return;
         }
 
         setPlaybook({
             ...playbook,
             title,
+            description,
         });
         setChangesMade(true);
     };
@@ -509,21 +545,29 @@ const PlaybookEdit = (props: Props) => {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
     }
 
+    const playbookTitle = playbook.title || formatMessage({defaultMessage: 'Untitled playbook'});
+
     return (
         <OuterContainer>
             <PlaybookNavbar
                 data-testid='backstage-nav-bar'
             >
-                <EditableTexts>
-                    <EditableTitleContainer>
-                        <EditableText
-                            id='playbook-name'
-                            text={playbook.title}
-                            onChange={handleTitleChange}
-                            placeholder={'Untitled playbook'}
-                        />
-                    </EditableTitleContainer>
-                </EditableTexts>
+                <TitleAndDescription onClick={() => setShowTitleDescriptionModal(true)}>
+                    <Title>
+                        {playbookTitle}
+                        <i className='editable-trigger icon-pencil-outline'/>
+                    </Title>
+                    <Description>
+                        {playbook.description || formatMessage({defaultMessage: 'Add playbook description...'})}
+                    </Description>
+                    <EditTitleDescriptionModal
+                        onChange={handleTitleAndDescriptionChange}
+                        show={showTitleDescriptionModal}
+                        onHide={() => setShowTitleDescriptionModal(false)}
+                        playbookTitle={playbookTitle}
+                        playbookDescription={playbook.description}
+                    />
+                </TitleAndDescription>
                 <NavbarPadding/>
                 <SecondaryButtonLarger
                     className='mr-4'
@@ -578,7 +622,7 @@ const PlaybookEdit = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {formatMessage({defaultMessage: 'Description'})}
+                                        {formatMessage({defaultMessage: 'Run Summary'})}
                                         <BackstageSubheaderDescription>
                                             {formatMessage({defaultMessage: 'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'})}
                                         </BackstageSubheaderDescription>
@@ -587,11 +631,11 @@ const PlaybookEdit = (props: Props) => {
                                         className={'playbook_description'}
                                         id={'playbook_description_edit'}
                                         placeholder={formatMessage({defaultMessage: 'Use Markdown to create a template.'})}
-                                        value={playbook.description}
-                                        setValue={(description: string) => {
+                                        value={playbook.run_summary_template}
+                                        setValue={(run_summary_template: string) => {
                                             setPlaybook({
                                                 ...playbook,
-                                                description,
+                                                run_summary_template,
                                             });
                                             setChangesMade(true);
                                         }}
@@ -636,7 +680,6 @@ const PlaybookEdit = (props: Props) => {
                                                 });
                                                 setChangesMade(true);
                                             }}
-                                            classNamePrefix='channel-selector'
                                             options={retrospectiveReminderOptions}
                                             isClearable={false}
                                         />

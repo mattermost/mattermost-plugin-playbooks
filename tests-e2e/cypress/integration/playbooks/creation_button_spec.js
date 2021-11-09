@@ -137,7 +137,7 @@ function verifyPlaybookCreationPageOpened(url, playbookName) {
     cy.url().should('include', url);
 
     // * Verify the playbook name matches the one provided
-    cy.get('#playbook-name').within(() => {
+    cy.findByTestId('backstage-nav-bar').within(() => {
         cy.findByText(playbookName).should('be.visible');
     });
 

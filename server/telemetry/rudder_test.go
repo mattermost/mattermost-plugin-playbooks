@@ -83,7 +83,7 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 var dummyPlaybookRun = &app.PlaybookRun{
 	ID:             "id",
 	Name:           "name",
-	Description:    "description",
+	Summary:        "description",
 	OwnerUserID:    "owner_user_id",
 	ReporterUserID: "reporter_user_id",
 	TeamID:         "team_id",
@@ -159,7 +159,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 		return &app.PlaybookRun{
 			ID:               properties[telemetryKeyPlaybookRunID].(string),
 			Name:             dummyPlaybookRun.Name, // not included in the tracked event
-			Description:      dummyPlaybookRun.Description,
+			Summary:          dummyPlaybookRun.Summary,
 			OwnerUserID:      properties["CommanderUserID"].(string),
 			ReporterUserID:   properties["ReporterUserID"].(string),
 			TeamID:           properties["TeamID"].(string),

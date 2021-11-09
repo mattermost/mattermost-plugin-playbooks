@@ -105,7 +105,6 @@ export const UpdateRequestPost = (props: Props) => {
                 </PostUpdateTertiaryButton>
                 <Spacer/>
                 <StyledSelect
-                    classNamePrefix='channel-selector'
                     filterOption={null}
                     isMulti={false}
                     menuPlacement={'top'}

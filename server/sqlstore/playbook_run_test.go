@@ -1234,7 +1234,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				Name:        "new description",
 				PlaybookRun: NewBuilder(t).WithDescription("old description").ToPlaybookRun(),
 				Update: func(old app.PlaybookRun) *app.PlaybookRun {
-					old.Description = "new description"
+					old.Summary = "new description"
 					return &old
 				},
 				ExpectedErr: nil,
@@ -2140,7 +2140,7 @@ func (ib *PlaybookRunBuilder) WithName(name string) *PlaybookRunBuilder {
 }
 
 func (ib *PlaybookRunBuilder) WithDescription(desc string) *PlaybookRunBuilder {
-	ib.playbookRun.Description = desc
+	ib.playbookRun.Summary = desc
 
 	return ib
 }
