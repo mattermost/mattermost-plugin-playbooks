@@ -1,12 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled, {css} from 'styled-components';
+import styled, {css, createGlobalStyle} from 'styled-components';
 import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
 
 import {RegularHeading} from 'src/styles/headings';
 import MarkdownTextbox from 'src/components/markdown_textbox';
+import {pluginId} from 'src/manifest';
 
 export const Banner = styled.div`
     color: var(--button-color);
@@ -87,29 +88,8 @@ export const StyledMarkdownTextbox = styled(MarkdownTextbox)`
     }
 `;
 
-const commonSelectStyle = css`
-    flex-grow: 1;
-    background-color: var(--center-channel-bg);
-
-    .channel-selector__menu-list {
-        background-color: var(--center-channel-bg);
-        border: none;
-    }
-
-    .channel-selector__input {
-        color: var(--center-channel-color);
-    }
-
-    .channel-selector__option--is-selected {
-        background-color: var(--center-channel-color-08);
-        color: inherit;
-    }
-
-    .channel-selector__option--is-focused {
-        background-color: var(--center-channel-color-16);
-    }
-
-    .channel-selector__control {
+export const GlobalSelectStyle = createGlobalStyle`
+    .playbooks-select__control.playbooks-select__control {
         transition: all 0.15s ease;
         transition-delay: 0s;
         background-color: transparent;
@@ -124,38 +104,74 @@ const commonSelectStyle = css`
         }
     }
 
-    .channel-selector__option {
-        &:active {
-            background-color: var(--center-channel-color-08);
+    .playbooks-select__control,
+    .playbooks-select__menu {
+        .playbooks-select__menu-list {
+            background-color: var(--center-channel-bg);
+            border: none;
         }
-    }
 
-    .channel-selector__single-value {
-        color: var(--center-channel-color);
-    }
-
-    .channel-selector__multi-value {
-        height: 20px;
-        line-height: 19px;
-        background-color: var(--center-channel-color-08);
-        border-radius: 10px;
-        padding-left: 8px;
-
-        .channel-selector__multi-value__label {
-            padding: 0;
+        .playbooks-select__input {
             color: var(--center-channel-color);
         }
-        .channel-selector__multi-value__remove {
-            color: var(--center-channel-bg-80);
+
+        .playbooks-select__option--is-selected {
+            background-color: var(--center-channel-color-08);
+            color: inherit;
+        }
+
+        .playbooks-select__option--is-focused {
+            background-color: var(--center-channel-color-16);
+        }
+
+        .playbooks-select__option {
+            &:active {
+                background-color: var(--center-channel-color-08);
+            }
+        }
+
+        .playbooks-select__single-value {
+            color: var(--center-channel-color);
+        }
+
+        .playbooks-select__multi-value {
+            height: 20px;
+            line-height: 19px;
+            background-color: var(--center-channel-color-08);
+            border-radius: 10px;
+            padding-left: 8px;
+
+            .playbooks-select__multi-value__label {
+                padding: 0;
+                color: var(--center-channel-color);
+            }
+            .playbooks-select__multi-value__remove {
+                color: var(--center-channel-bg-80);
+            }
         }
     }
 `;
 
-export const StyledAsyncSelect = styled(AsyncSelect)`
+const commonSelectStyle = css`
+    flex-grow: 1;
+    background-color: var(--center-channel-bg);
+`;
+
+export const StyledAsyncSelect = styled(AsyncSelect).attrs((props) => {
+    return {
+        classNamePrefix: 'playbooks-select',
+        ...props,
+    };
+})`
     ${commonSelectStyle}
 `;
 
-export const StyledSelect = styled(Select)`
+export const StyledSelect = styled(Select).attrs((props) => {
+    return {
+        classNamePrefix: 'playbooks-select',
+        ...props,
+    };
+})`
     ${commonSelectStyle}
 `;
 

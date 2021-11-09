@@ -636,7 +636,6 @@ const PlaybookEdit = (props: Props) => {
                                                 });
                                                 setChangesMade(true);
                                             }}
-                                            classNamePrefix='channel-selector'
                                             options={retrospectiveReminderOptions}
                                             isClearable={false}
                                         />

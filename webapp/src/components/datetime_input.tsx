@@ -131,7 +131,6 @@ const DateTimeInput = ({
     return (
         <StyledSelect
             {...selectProps}
-            classNamePrefix='channel-selector'
             filterOption={null}
             isMulti={false}
 

@@ -53,7 +53,7 @@ export const Broadcast = (props: Props) => {
 const StyledChannelSelector = styled(ChannelSelector)`
     background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
 
-    .channel-selector__control {
+    .playbooks-select__control {
         padding: 4px 16px 4px 3.2rem;
 
         &:before {
