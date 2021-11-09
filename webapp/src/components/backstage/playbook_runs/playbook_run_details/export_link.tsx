@@ -69,14 +69,14 @@ const ExportLink = (props: ExportLinkProps) => {
 
     const downloadStartedBanner = showBanner && (
         <Banner>
-            <Icon16><i className='icon icon-download-outline mr-1'/></Icon16>
+            <Icon16 className='icon icon-download-outline mr-1'/>
             {formatMessage({defaultMessage: 'Downloading channel log'})}
         </Banner>
     );
 
     const linkText = (
         <>
-            <Icon16><i className='icon icon-download-outline export-icon'/></Icon16>
+            <Icon16 className='icon icon-download-outline export-icon'/>
             {formatMessage({defaultMessage: 'Export channel log'})}
         </>
     );

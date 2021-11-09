@@ -294,7 +294,7 @@ const PlaybookRunBackstage = () => {
                         onClick={goToChannel}
                         style={{marginLeft: 12}}
                     >
-                        <Icon16><i className={'icon icon-message-text-outline mr-1'}/></Icon16>
+                        <Icon16 className={'icon icon-message-text-outline mr-1'}/>
                         {formatMessage({defaultMessage: 'Go to channel'})}
                     </PrimaryButtonLarger>
                 </FirstRow>
