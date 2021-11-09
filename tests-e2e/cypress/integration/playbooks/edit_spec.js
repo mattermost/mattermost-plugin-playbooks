@@ -817,7 +817,7 @@ describe('playooks > edit', () => {
                     cy.get('#broadcast-channels').within(() => {
                         cy.getStyledComponent('StyledSelect').should(
                             'have.class',
-                            'channel-selector--is-disabled'
+                            'playbooks-select--is-disabled'
                         );
                     });
                 });
@@ -846,7 +846,7 @@ describe('playooks > edit', () => {
                         cy.selectChannel('Town Square');
 
                         // * Verify that the control shows the selected owner
-                        cy.get('.channel-selector__control').contains(
+                        cy.get('.playbooks-select__control').contains(
                             'Town Square'
                         );
                     });
@@ -876,12 +876,12 @@ describe('playooks > edit', () => {
                         cy.selectChannel('Town Square');
 
                         // * Verify that the control shows the selected channel
-                        cy.get('.channel-selector__control').contains(
+                        cy.get('#playbook-automation-broadcast .playbooks-select__control').contains(
                             'Town Square'
                         );
 
                         // # Open the channel selector
-                        cy.get('.channel-selector__control').click({
+                        cy.get('#playbook-automation-broadcast .playbooks-select__control').click({
                             force: true,
                         });
 
@@ -889,7 +889,7 @@ describe('playooks > edit', () => {
                         cy.selectChannel(testPublicChannel.display_name);
 
                         // * Verify that the control shows the selected channel
-                        cy.get('.channel-selector__control').contains(
+                        cy.get('#playbook-automation-broadcast .playbooks-select__control').contains(
                             testPublicChannel.display_name,
                         );
                     });
@@ -919,7 +919,7 @@ describe('playooks > edit', () => {
                         cy.selectChannel('Town Square');
 
                         // * Verify that the control shows the selected channel
-                        cy.get('.channel-selector__control').contains(
+                        cy.get('#playbook-automation-broadcast .playbooks-select__control').contains(
                             'Town Square'
                         );
 
@@ -950,7 +950,7 @@ describe('playooks > edit', () => {
                         cy.get('label input').should('be.checked');
 
                         // * Verify that the control still shows the selected channel
-                        cy.get('.channel-selector__control').contains(
+                        cy.get('#playbook-automation-broadcast .playbooks-select__control').contains(
                             'Town Square'
                         );
                     });
@@ -1021,7 +1021,7 @@ describe('playooks > edit', () => {
                                 cy.get('label input').click({force: true});
 
                                 // * Verify that the control shows no selected channel
-                                cy.get('.channel-selector__control').within(
+                                cy.get('#playbook-automation-broadcast .playbooks-select__control').within(
                                     () => {
                                         cy.findByText('Select a channel');
                                     }
