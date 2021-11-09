@@ -89,7 +89,7 @@ export const StyledMarkdownTextbox = styled(MarkdownTextbox)`
 `;
 
 export const GlobalSelectStyle = createGlobalStyle`
-    .playbooks-select__control.playbooks-select__control {
+    .playbooks-rselect__control.playbooks-rselect__control {
         transition: all 0.15s ease;
         transition-delay: 0s;
         background-color: transparent;
@@ -104,48 +104,48 @@ export const GlobalSelectStyle = createGlobalStyle`
         }
     }
 
-    .playbooks-select__control,
-    .playbooks-select__menu {
-        .playbooks-select__menu-list {
+    .playbooks-rselect__control,
+    .playbooks-rselect__menu {
+        .playbooks-rselect__menu-list {
             background-color: var(--center-channel-bg);
             border: none;
         }
 
-        .playbooks-select__input {
+        .playbooks-rselect__input {
             color: var(--center-channel-color);
         }
 
-        .playbooks-select__option--is-selected {
+        .playbooks-rselect__option--is-selected {
             background-color: var(--center-channel-color-08);
             color: inherit;
         }
 
-        .playbooks-select__option--is-focused {
+        .playbooks-rselect__option--is-focused {
             background-color: var(--center-channel-color-16);
         }
 
-        .playbooks-select__option {
+        .playbooks-rselect__option {
             &:active {
                 background-color: var(--center-channel-color-08);
             }
         }
 
-        .playbooks-select__single-value {
+        .playbooks-rselect__single-value {
             color: var(--center-channel-color);
         }
 
-        .playbooks-select__multi-value {
+        .playbooks-rselect__multi-value {
             height: 20px;
             line-height: 19px;
             background-color: var(--center-channel-color-08);
             border-radius: 10px;
             padding-left: 8px;
 
-            .playbooks-select__multi-value__label {
+            .playbooks-rselect__multi-value__label {
                 padding: 0;
                 color: var(--center-channel-color);
             }
-            .playbooks-select__multi-value__remove {
+            .playbooks-rselect__multi-value__remove {
                 color: var(--center-channel-bg-80);
             }
         }
@@ -159,7 +159,7 @@ const commonSelectStyle = css`
 
 export const StyledAsyncSelect = styled(AsyncSelect).attrs((props) => {
     return {
-        classNamePrefix: 'playbooks-select',
+        classNamePrefix: 'playbooks-rselect',
         ...props,
     };
 })`
@@ -168,7 +168,7 @@ export const StyledAsyncSelect = styled(AsyncSelect).attrs((props) => {
 
 export const StyledSelect = styled(Select).attrs((props) => {
     return {
-        classNamePrefix: 'playbooks-select',
+        classNamePrefix: 'playbooks-rselect',
         ...props,
     };
 })`
