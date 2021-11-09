@@ -2,27 +2,25 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
+import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 import {useIntl} from 'react-intl';
-
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Channel} from 'mattermost-redux/types/channels';
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {
     Badge,
     ExpandRight,
+    Icon16,
     PrimaryButtonLarger,
+    SecondaryButtonLarger,
 } from 'src/components/backstage/playbook_runs/shared';
 
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
 import Followers from 'src/components/backstage/playbook_runs/playbook_run_backstage/followers';
-
 import {
     clientFetchPlaybook,
     clientRemoveTimelineEvent,
@@ -35,7 +33,6 @@ import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_ro
 import {ErrorPageTypes} from 'src/constants';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
-
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -293,8 +290,11 @@ const PlaybookRunBackstage = () => {
                     {followButton}
                     <Line/>
                     <ExportLink playbookRun={playbookRun}/>
-                    <PrimaryButtonLarger onClick={goToChannel}>
-                        <i className={'icon icon-message-text-outline mr-1'}/>
+                    <PrimaryButtonLarger
+                        onClick={goToChannel}
+                        style={{marginLeft: 12}}
+                    >
+                        <Icon16><i className={'icon icon-message-text-outline mr-1'}/></Icon16>
                         {formatMessage({defaultMessage: 'Go to channel'})}
                     </PrimaryButtonLarger>
                 </FirstRow>

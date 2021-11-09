@@ -93,3 +93,9 @@ export const Badge = styled(StatusBadge)`
     height: unset;
     white-space: nowrap;
 `;
+
+export const Icon16 = styled.div`
+    > i {
+      font-size: 16px;
+    }
+`;
