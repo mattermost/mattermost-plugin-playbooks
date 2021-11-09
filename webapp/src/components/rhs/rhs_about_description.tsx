@@ -21,7 +21,7 @@ interface DescriptionProps {
 
 const RHSAboutDescription = (props: DescriptionProps) => {
     const {formatMessage} = useIntl();
-    const placeholder = formatMessage({defaultMessage: 'Add a description…'});
+    const placeholder = formatMessage({defaultMessage: 'Add a run summary…'});
 
     const [editing, setEditing] = useState(false);
     const [editedValue, setEditedValue] = useState(props.value);

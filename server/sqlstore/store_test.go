@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMigrationIdempotency(t *testing.T) {
+func TestMigrations(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	logger := mock_bot.NewMockLogger(mockCtrl)
 	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).Times(2)
@@ -118,17 +118,7 @@ func TestMigrationIdempotency(t *testing.T) {
 			setupKVStoreTable(t, db)
 
 			// Apply the migrations up to and including 0.36
-			for _, migration := range migrations {
-				if migration.toVersion.GT(semver.MustParse("0.36.0")) {
-					break
-				}
-				err := sqlStore.migrate(migration)
-				require.NoError(t, err)
-
-				currentSchemaVersion, err := sqlStore.GetCurrentVersion()
-				require.NoError(t, err)
-				require.Equal(t, currentSchemaVersion, migration.toVersion)
-			}
+			migrateUpTo(t, sqlStore, semver.MustParse("0.36.0"))
 
 			now := time.Now()
 			// Insert runs to test
@@ -188,17 +178,7 @@ func TestMigrationIdempotency(t *testing.T) {
 				})
 
 			// Apply the migrations from 0.37-on
-			for _, migration := range migrations {
-				if migration.toVersion.LE(semver.MustParse("0.36.0")) {
-					continue
-				}
-				err := sqlStore.migrate(migration)
-				require.NoError(t, err)
-
-				currentSchemaVersion, err := sqlStore.GetCurrentVersion()
-				require.NoError(t, err)
-				require.Equal(t, currentSchemaVersion, migration.toVersion)
-			}
+			migrateFrom(t, sqlStore, semver.MustParse("0.36.0"))
 
 			// Test that the runs that should have been changed now have new reminders
 			expiredRun, err := getRun(expired, sqlStore)
@@ -225,6 +205,107 @@ func TestMigrationIdempotency(t *testing.T) {
 			inactive2Run, err := getRun(inactive2, sqlStore)
 			require.NoError(t, err)
 			require.Equal(t, inactive2Run.PreviousReminder, time.Duration(0))
+		})
+
+		t.Run("copy Description column into new RunSummaryTemplate", func(t *testing.T) {
+			db := setupTestDB(t, driver)
+			sqlStore := &SQLStore{
+				logger,
+				db,
+				builder,
+				scheduler,
+			}
+
+			// Make sure we start from scratch
+			currentSchemaVersion, err := sqlStore.GetCurrentVersion()
+			require.NoError(t, err)
+			require.Equal(t, currentSchemaVersion, semver.Version{})
+
+			// Migration to 0.10.0 needs the Channels table to work
+			setupChannelsTable(t, db)
+			// Migration to 0.21.0 need the Posts table
+			setupPostsTable(t, db)
+			// Migration to 0.31.0 needs the PluginKeyValueStore
+			setupKVStoreTable(t, db)
+
+			// Apply the migrations up to and including 0.38
+			migrateUpTo(t, sqlStore, semver.MustParse("0.38.0"))
+
+			playbookWithDescriptionID := model.NewId()
+			nonEmptyDescription := "a non-empty description"
+
+			// Insert a playbook with a non-empty description
+			_, err = sqlStore.execBuilder(sqlStore.db, sq.
+				Insert("IR_Playbook").
+				SetMap(map[string]interface{}{
+					"ID":          playbookWithDescriptionID,
+					"Description": nonEmptyDescription,
+					// Have to be set:
+					"Title":                                "Playbook",
+					"TeamID":                               model.NewId(),
+					"CreatePublicIncident":                 true,
+					"CreateAt":                             0,
+					"DeleteAt":                             0,
+					"ChecklistsJSON":                       []byte("{}"),
+					"NumStages":                            0,
+					"NumSteps":                             0,
+					"ReminderTimerDefaultSeconds":          0,
+					"RetrospectiveReminderIntervalSeconds": 0,
+					"UpdateAt":                             0,
+					"ExportChannelOnFinishedEnabled":       false,
+				}))
+			require.NoError(t, err)
+
+			playbookWithEmptyDescriptionID := model.NewId()
+
+			// Insert a playbook with an empty description
+			_, err = sqlStore.execBuilder(sqlStore.db, sq.
+				Insert("IR_Playbook").
+				SetMap(map[string]interface{}{
+					"ID":          playbookWithEmptyDescriptionID,
+					"Description": "",
+					// Have to be set:
+					"Title":                                "Playbook",
+					"Teamid":                               model.NewId(),
+					"CreatePublicIncident":                 true,
+					"CreateAt":                             0,
+					"DeleteAt":                             0,
+					"ChecklistsJSON":                       []byte("{}"),
+					"NumStages":                            0,
+					"NumSteps":                             0,
+					"ReminderTimerDefaultSeconds":          0,
+					"RetrospectiveReminderIntervalSeconds": 0,
+					"UpdateAt":                             0,
+					"ExportChannelOnFinishedEnabled":       false,
+				}))
+			require.NoError(t, err)
+
+			// Apply the migrations from 0.38-on
+			migrateFrom(t, sqlStore, semver.MustParse("0.38.0"))
+
+			// Get the playbook with the non-empty description
+			var playbookWithDescription app.Playbook
+			err = sqlStore.getBuilder(sqlStore.db, &playbookWithDescription, sqlStore.builder.
+				Select("ID", "Description", "RunSummaryTemplate").
+				From("IR_Playbook").
+				Where(sq.Eq{"ID": playbookWithDescriptionID}))
+			require.NoError(t, err)
+
+			// Get the playbook with the empty description
+			var playbookWithEmptyDescription app.Playbook
+			err = sqlStore.getBuilder(sqlStore.db, &playbookWithEmptyDescription, sqlStore.builder.
+				Select("ID", "Description", "RunSummaryTemplate").
+				From("IR_Playbook").
+				Where(sq.Eq{"ID": playbookWithEmptyDescriptionID}))
+			require.NoError(t, err)
+
+			// Check that the copy was successful in the playbook with the non-empty description
+			require.Equal(t, playbookWithDescription.Description, "")
+			require.Equal(t, playbookWithDescription.RunSummaryTemplate, nonEmptyDescription)
+
+			// Check that the copy was successful in the playbook with the empty description
+			require.Equal(t, playbookWithEmptyDescription.Description, "")
+			require.Equal(t, playbookWithEmptyDescription.RunSummaryTemplate, "")
 		})
 	}
 }

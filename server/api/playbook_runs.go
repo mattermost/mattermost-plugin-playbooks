@@ -145,7 +145,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(w http.ResponseWriter, r 
 			OwnerUserID: playbookRunCreateOptions.OwnerUserID,
 			TeamID:      playbookRunCreateOptions.TeamID,
 			Name:        playbookRunCreateOptions.Name,
-			Description: playbookRunCreateOptions.Description,
+			Summary:     playbookRunCreateOptions.Description,
 			PostID:      playbookRunCreateOptions.PostID,
 			PlaybookID:  playbookRunCreateOptions.PlaybookID,
 		},
@@ -392,7 +392,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.Checklists = pb.Checklists
 		public = pb.CreatePublicPlaybookRun
 
-		playbookRun.Description = pb.Description
+		playbookRun.Summary = pb.RunSummaryTemplate
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
 		playbookRun.ReminderTimerDefaultSeconds = pb.ReminderTimerDefaultSeconds

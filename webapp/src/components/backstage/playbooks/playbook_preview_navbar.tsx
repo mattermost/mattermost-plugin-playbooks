@@ -17,6 +17,7 @@ import {BackstageID} from 'src/components/backstage/backstage';
 const prefix = 'playbooks-playbookPreview-';
 
 export enum SectionID {
+    Description = 'playbooks-playbookPreview-description',
     Checklists = 'playbooks-playbookPreview-checklists',
     Actions = 'playbooks-playbookPreview-actions',
     StatusUpdates = 'playbooks-playbookPreview-statusUpdates',
@@ -26,15 +27,22 @@ export enum SectionID {
 interface Props {
     playbookId: string;
     runsInProgress: number;
+    showElements: {
+        description: boolean,
+        checklists: boolean,
+        actions: boolean,
+        statusUpdates: boolean,
+        retrospective: boolean,
+    };
 }
 
 // Height of the headers in pixels
 const headersOffset = 140;
 
-const PlaybookPreviewNavbar = ({playbookId, runsInProgress}: Props) => {
+const PlaybookPreviewNavbar = ({playbookId, runsInProgress, showElements}: Props) => {
     const {formatMessage} = useIntl();
     const match = useRouteMatch();
-    const [activeId, setActiveId] = useState(SectionID.Checklists);
+    const [activeId, setActiveId] = useState(SectionID.Description);
 
     const updateActiveSection = () => {
         const threshold = (window.innerHeight / 2) - headersOffset;
@@ -57,6 +65,8 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress}: Props) => {
             setActiveId(finalId);
         }
     };
+
+    useEffect(updateActiveSection, []);
 
     useEffect(() => {
         const root = document.getElementById(BackstageID);
@@ -138,24 +148,34 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress}: Props) => {
             </Header>
             <Items>
                 <Item
+                    id={SectionID.Description}
+                    iconName={'information-outline'}
+                    title={formatMessage({defaultMessage: 'Description'})}
+                    show={showElements.description}
+                />
+                <Item
                     id={SectionID.Checklists}
                     iconName={'check-all'}
                     title={formatMessage({defaultMessage: 'Checklists'})}
+                    show={showElements.checklists}
                 />
                 <Item
                     id={SectionID.Actions}
                     iconName={'sync'}
                     title={formatMessage({defaultMessage: 'Actions'})}
+                    show={showElements.actions}
                 />
                 <Item
                     id={SectionID.StatusUpdates}
                     iconName={'update'}
                     title={formatMessage({defaultMessage: 'Status updates'})}
+                    show={showElements.statusUpdates}
                 />
                 <Item
                     id={SectionID.Retrospective}
                     iconName={'lightbulb-outline'}
                     title={formatMessage({defaultMessage: 'Retrospective'})}
+                    show={showElements.retrospective}
                 />
             </Items>
             <UsageButton
@@ -205,15 +225,21 @@ const Items = styled.div`
 `;
 
 const generateItemComponent = (isSectionActive: (id: SectionID) => boolean, scrollToSection: (id: SectionID) => void) => {
-    return (props: {id: SectionID, iconName: string, title: string}) => (
-        <ItemWrapper
-            active={isSectionActive(props.id)}
-            onClick={() => scrollToSection(props.id)}
-        >
-            <i className={`icon-${props.iconName} icon-16`}/>
-            {props.title}
-        </ItemWrapper>
-    );
+    return (props: {id: SectionID, iconName: string, title: string, show: boolean}) => {
+        if (!props.show) {
+            return null;
+        }
+
+        return (
+            <ItemWrapper
+                active={isSectionActive(props.id)}
+                onClick={() => scrollToSection(props.id)}
+            >
+                <i className={`icon-${props.iconName} icon-16`}/>
+                {props.title}
+            </ItemWrapper>
+        );
+    };
 };
 
 const ItemWrapper = styled.div<{active: boolean}>`
@@ -269,10 +295,9 @@ const UsageButton = ({playbookId, activeRuns}: {playbookId: string, activeRuns: 
                 size={1.2}
             />
             {formatMessage(
-                {defaultMessage: '{activeRuns, number} active {activeRuns, plural, one {run} other {runs}}'},
+                {defaultMessage: '{activeRuns, number} {activeRuns, plural, one {run} other {runs}} in progress'},
                 {activeRuns},
             )}
-            <i className='icon-arrow-right icon-16'/>
         </UsageButtonWrapper>
     );
 };
@@ -281,7 +306,7 @@ const UsageButtonWrapper = styled.div`
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 8px 12px;
+    padding: 8px 10px;
     cursor: pointer;
 
     background: rgba(var(--center-channel-color-rgb), 0.04);
