@@ -157,7 +157,7 @@ Cypress.Commands.add('selectOwner', (userName) => {
 });
 
 Cypress.Commands.add('selectChannel', (channelName) => {
-    cy.get('.channel-selector__menu').within(() => {
+    cy.get('#playbook-automation-broadcast .playbooks-rselect__menu').within(() => {
         cy.findByText(channelName).click({force: true});
     });
 });
