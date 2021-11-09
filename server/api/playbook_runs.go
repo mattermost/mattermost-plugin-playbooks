@@ -701,7 +701,7 @@ func (h *PlaybookRunHandler) finish(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
 }
 
-// restore "un-finish" a playbook run
+// restore "un-finishes" a playbook run
 func (h *PlaybookRunHandler) restore(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
