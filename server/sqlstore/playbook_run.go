@@ -468,7 +468,8 @@ func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) 
 			"CurrentStatus": app.StatusFinished,
 			"EndAt":         endAt,
 		}).
-		Where(sq.Eq{"ID": playbookRunID})); err != nil {
+		Where(sq.Eq{"ID": playbookRunID}),
+	); err != nil {
 		return errors.Wrapf(err, "failed to finish run for id '%s'", playbookRunID)
 	}
 
