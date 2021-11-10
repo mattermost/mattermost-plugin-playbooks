@@ -1252,7 +1252,7 @@ func TestPlaybooks(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("delete playbook", func(t *testing.T) {
+	t.Run("archive playbook", func(t *testing.T) {
 		reset(t)
 
 		playbookService.EXPECT().
@@ -1261,23 +1261,23 @@ func TestPlaybooks(t *testing.T) {
 			Times(2)
 
 		playbookService.EXPECT().
-			Delete(withMember, "testuserid").
+			Archive(withMember, "testuserid").
 			Return(nil).
 			Times(1)
 
 		poster.EXPECT().
-			PublishWebsocketEventToTeam("playbook_deleted", map[string]interface{}{
+			PublishWebsocketEventToTeam("playbook_archived", map[string]interface{}{
 				"teamID": playbooktest.TeamID,
 			}, playbooktest.TeamID)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 
-		err := c.Playbooks.Delete(context.TODO(), "testplaybookid")
+		err := c.Playbooks.Archive(context.TODO(), "testplaybookid")
 		require.NoError(t, err)
 	})
 
-	t.Run("delete playbook no team permission", func(t *testing.T) {
+	t.Run("archive playbook no team permission", func(t *testing.T) {
 		reset(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -1288,7 +1288,7 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(false)
 
-		err := c.Playbooks.Delete(context.TODO(), "testplaybookid")
+		err := c.Playbooks.Archive(context.TODO(), "testplaybookid")
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
@@ -1435,7 +1435,7 @@ func TestPlaybooks(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
-	t.Run("delete playbook by member", func(t *testing.T) {
+	t.Run("archive playbook by member", func(t *testing.T) {
 		reset(t)
 
 		playbookService.EXPECT().
@@ -1444,23 +1444,23 @@ func TestPlaybooks(t *testing.T) {
 			Times(2)
 
 		playbookService.EXPECT().
-			Delete(withMember, "testuserid").
+			Archive(withMember, "testuserid").
 			Return(nil).
 			Times(1)
 
 		poster.EXPECT().
-			PublishWebsocketEventToTeam("playbook_deleted", map[string]interface{}{
+			PublishWebsocketEventToTeam("playbook_archived", map[string]interface{}{
 				"teamID": playbooktest.TeamID,
 			}, playbooktest.TeamID)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(false)
 
-		err := c.Playbooks.Delete(context.TODO(), "playbookwithmember")
+		err := c.Playbooks.Archive(context.TODO(), "playbookwithmember")
 		require.NoError(t, err)
 	})
 
-	t.Run("delete playbook by non-member", func(t *testing.T) {
+	t.Run("archive playbook by non-member", func(t *testing.T) {
 		reset(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 		mattermostUserID = "unknownMember"
@@ -1473,7 +1473,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("HasPermissionTo", "unknownMember", model.PermissionManageSystem).Return(false)
 
-		err := c.Playbooks.Delete(context.TODO(), "playbookwithmember")
+		err := c.Playbooks.Archive(context.TODO(), "playbookwithmember")
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 

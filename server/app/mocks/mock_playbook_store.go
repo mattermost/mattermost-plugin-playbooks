@@ -33,6 +33,20 @@ func (m *MockPlaybookStore) EXPECT() *MockPlaybookStoreMockRecorder {
 	return m.recorder
 }
 
+// Archive mocks base method
+func (m *MockPlaybookStore) Archive(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Archive", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Archive indicates an expected call of Archive
+func (mr *MockPlaybookStoreMockRecorder) Archive(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Archive", reflect.TypeOf((*MockPlaybookStore)(nil).Archive), arg0)
+}
+
 // Create mocks base method
 func (m *MockPlaybookStore) Create(arg0 app.Playbook) (string, error) {
 	m.ctrl.T.Helper()
@@ -46,20 +60,6 @@ func (m *MockPlaybookStore) Create(arg0 app.Playbook) (string, error) {
 func (mr *MockPlaybookStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockPlaybookStore)(nil).Create), arg0)
-}
-
-// Delete mocks base method
-func (m *MockPlaybookStore) Delete(arg0 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Delete indicates an expected call of Delete
-func (mr *MockPlaybookStoreMockRecorder) Delete(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPlaybookStore)(nil).Delete), arg0)
 }
 
 // Get mocks base method

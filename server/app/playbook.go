@@ -226,13 +226,13 @@ type PlaybookService interface {
 	// Update updates a playbook
 	Update(playbook Playbook, userID string) error
 
-	// Delete deletes a playbook
-	Delete(playbook Playbook, userID string) error
+	// Archive archives a playbook
+	Archive(playbook Playbook, userID string) error
 
 	// MessageHasBeenPosted suggests playbooks to the user if triggered
 	MessageHasBeenPosted(sessionID string, post *model.Post)
 
-	// Restores a deleted playbook
+	// Restores an archived playbook
 	Restore(playbook Playbook, userID string) error
 }
 
@@ -266,8 +266,8 @@ type PlaybookStore interface {
 	// Update updates a playbook
 	Update(playbook Playbook) error
 
-	// Delete deletes a playbook
-	Delete(id string) error
+	// Archive archives a playbook
+	Archive(id string) error
 
 	// Restore restores a deleted playbook
 	Restore(id string) error

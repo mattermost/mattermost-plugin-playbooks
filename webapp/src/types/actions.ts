@@ -15,7 +15,7 @@ export const SET_CLIENT_ID = pluginId + '_set_client_id';
 export const PLAYBOOK_RUN_CREATED = pluginId + '_playbook_run_created';
 export const PLAYBOOK_RUN_UPDATED = pluginId + '_playbook_run_updated';
 export const PLAYBOOK_CREATED = pluginId + '_playbook_created';
-export const PLAYBOOK_DELETED = pluginId + '_playbook_deleted';
+export const PLAYBOOK_ARCHIVED = pluginId + '_playbook_archived';
 export const PLAYBOOK_RESTORED = pluginId + '_playbook_restored';
 export const RECEIVED_TEAM_NUM_PLAYBOOKS = pluginId + '_received_team_num_playbooks';
 export const RECEIVED_TEAM_PLAYBOOK_RUNS = pluginId + '_received_team_playbook_run_channels';
@@ -66,8 +66,8 @@ export interface PlaybookCreated {
     teamID: string;
 }
 
-export interface PlaybookDeleted {
-    type: typeof PLAYBOOK_DELETED;
+export interface PlaybookArchived {
+    type: typeof PLAYBOOK_ARCHIVED;
     teamID: string;
 }
 

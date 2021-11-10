@@ -108,7 +108,7 @@ func (s *PlaybooksService) Update(ctx context.Context, playbook Playbook) error 
 	return nil
 }
 
-func (s *PlaybooksService) Delete(ctx context.Context, playbookID string) error {
+func (s *PlaybooksService) Archive(ctx context.Context, playbookID string) error {
 	updateURL := fmt.Sprintf("playbooks/%s", playbookID)
 	req, err := s.client.newRequest(http.MethodDelete, updateURL, nil)
 	if err != nil {

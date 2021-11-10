@@ -14,7 +14,7 @@ import (
 
 const (
 	playbookCreatedWSEvent  = "playbook_created"
-	playbookDeletedWSEvent  = "playbook_deleted"
+	playbookArchivedWSEvent = "playbook_archived"
 	playbookRestoredWSEvent = "playbook_restored"
 )
 
@@ -77,6 +77,10 @@ func (s *playbookService) GetNumPlaybooksForTeam(teamID string) (int, error) {
 }
 
 func (s *playbookService) Update(playbook Playbook, userID string) error {
+	if playbook.DeleteAt != 0 {
+		return errors.New("cannot update a playbook that is archived")
+	}
+
 	playbook.UpdateAt = model.GetMillis()
 
 	if err := s.store.Update(playbook); err != nil {
@@ -88,18 +92,18 @@ func (s *playbookService) Update(playbook Playbook, userID string) error {
 	return nil
 }
 
-func (s *playbookService) Delete(playbook Playbook, userID string) error {
+func (s *playbookService) Archive(playbook Playbook, userID string) error {
 	if playbook.ID == "" {
-		return errors.New("can't delete a playbook without an ID")
+		return errors.New("can't archive a playbook without an ID")
 	}
 
-	if err := s.store.Delete(playbook.ID); err != nil {
+	if err := s.store.Archive(playbook.ID); err != nil {
 		return err
 	}
 
 	s.telemetry.DeletePlaybook(playbook, userID)
 
-	s.poster.PublishWebsocketEventToTeam(playbookDeletedWSEvent, map[string]interface{}{
+	s.poster.PublishWebsocketEventToTeam(playbookArchivedWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,
 	}, playbook.TeamID)
 
