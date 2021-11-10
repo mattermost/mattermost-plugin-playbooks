@@ -314,5 +314,16 @@
     "9tBhzB": "Jetzt aktualisieren",
     "9qc7BX": "Schlummern",
     "9kCT7Q": "Erleichtern Sie Retrospektiven mit einer Zeitleiste, die automatisch die wichtigsten Ereignisse und Botschaften festhält, so dass Teams sie sofort zur Hand haben.",
-    "5j6GD/": "{numParticipants, plural, =0 {Kein Teilnehmer} =1 {# Teilnehmer} other {# Teilnehmer}}"
+    "5j6GD/": "{numParticipants, plural, =0 {Kein Teilnehmer} =1 {# Teilnehmer} other {# Teilnehmer}}",
+    "wX3k9U": "Unbenanntes Playbook",
+    "l7zMH6": "Wählen Sie eine Option oder definieren Sie eine eigene Laufzeit",
+    "l0hFoB": "Playbook Beschreibung hinzufügen...",
+    "eLeFE2": "Name und Beschreibung bearbeiten",
+    "dvhvum": "(Optional) Beschreiben Sie, wie dieses Playbook genutzt werden soll",
+    "djALPR": "{activeRuns, number} {activeRuns, plural, one {Durchlauf} other {Durchläufe}} in Arbeit",
+    "IfxUgC": "Durchlauf-Zusammenfassung hinzufügen…",
+    "IOnm/Z": "Es ist keine Durchlauf-Zusammenfassung vorhanden.",
+    "YMrTRm": "Durchlauf-Zusammenfassung",
+    "Oo5sdB": "Playbook Name",
+    "E0LnBo": "Sie können eine Option auswählen oder eine individuelle Dauer (\"2 Wochen\", \"3 Tage 12 Stunden\", \"45 Minuten\",...) angeben"
 }
