@@ -29,17 +29,23 @@ const PlaybookPreviewStatusUpdates = (props: Props) => {
     // hiding them if they don't have any visible subentries.
     // If a new CardSubEntry is added or the conditions are changed, these booleans need to be updated.
 
-    const emptyReminderEntry =
-        props.playbook.reminder_timer_default_seconds === 0 &&
-        props.playbook.reminder_message_template === '';
+    const updateReminderEnabled = props.playbook.reminder_timer_default_seconds !== 0;
+    const updateTemplateEnabled = props.playbook.reminder_message_template !== '';
 
-    const emptyUpdatePostedEntry =
-        !props.playbook.broadcast_enabled &&
-        !props.playbook.webhook_on_status_update_enabled;
+    const showReminderCardEntry =
+        updateReminderEnabled ||
+        updateTemplateEnabled;
+
+    const broadcastEnabled = props.playbook.broadcast_enabled && props.playbook.broadcast_channel_ids.length !== 0;
+    const webhookOnStatusUpdateEnabled = props.playbook.webhook_on_status_update_enabled && props.playbook.webhook_on_status_update_urls.length !== 0;
+
+    const showUpdatePostCardEntryemptyUpdatePostedEntry =
+        broadcastEnabled ||
+        webhookOnStatusUpdateEnabled;
 
     const allEmpty =
-        emptyReminderEntry &&
-        emptyUpdatePostedEntry;
+        !showReminderCardEntry &&
+        !showUpdatePostCardEntryemptyUpdatePostedEntry;
 
     if (allEmpty) {
         return null;
@@ -57,18 +63,18 @@ const PlaybookPreviewStatusUpdates = (props: Props) => {
                         {reminderEnabled: props.playbook.reminder_timer_default_seconds !== 0},
                     )}
                     iconName={'clock-outline'}
-                    extraInfo={props.playbook.reminder_timer_default_seconds !== 0 && (
+                    extraInfo={updateReminderEnabled && (
                         <TextBadge>
                             {formatDuration(Duration.fromObject({seconds: props.playbook.reminder_timer_default_seconds}), 'long')}
                         </TextBadge>
                     )}
-                    enabled={!emptyReminderEntry}
+                    enabled={showReminderCardEntry}
                 >
                     <CardSubEntry
                         title={formatMessage({
                             defaultMessage: 'Update template',
                         })}
-                        enabled={props.playbook.reminder_message_template !== ''}
+                        enabled={updateTemplateEnabled}
                     >
                         {renderMarkdown(props.playbook.reminder_message_template)}
                     </CardSubEntry>
@@ -78,14 +84,14 @@ const PlaybookPreviewStatusUpdates = (props: Props) => {
                         defaultMessage: 'When an update is posted',
                     })}
                     iconName={'message-check-outline'}
-                    enabled={!emptyUpdatePostedEntry}
+                    enabled={showUpdatePostCardEntryemptyUpdatePostedEntry}
                 >
                     <CardSubEntry
                         title={formatMessage(
                             {defaultMessage: 'Broadcast updates in the {oneChannel, plural, one {channel} other {channels}}'},
                             {oneChannel: props.playbook.broadcast_channel_ids.length}
                         )}
-                        enabled={props.playbook.broadcast_enabled}
+                        enabled={broadcastEnabled}
                         extraInfo={props.playbook.broadcast_channel_ids.map((id) => (
                             <ChannelBadge
                                 key={id}
@@ -97,7 +103,7 @@ const PlaybookPreviewStatusUpdates = (props: Props) => {
                         title={formatMessage({
                             defaultMessage: 'Send an outgoing webhook',
                         })}
-                        enabled={props.playbook.webhook_on_status_update_enabled}
+                        enabled={webhookOnStatusUpdateEnabled}
                     >
                         {props.playbook.webhook_on_status_update_urls.map((url) => (<p key={url}>{url}</p>))}
                     </CardSubEntry>
