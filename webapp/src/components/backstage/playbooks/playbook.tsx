@@ -24,7 +24,6 @@ import {clientFetchPlaybook, clientFetchIsPlaybookFollower, followPlaybook, unfo
 import {ErrorPageTypes} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import {RegularHeading} from 'src/styles/headings';
 import CheckboxInput from '../runs_list/checkbox_input';
 import {SecondaryButtonLargerRight} from '../playbook_runs/shared';

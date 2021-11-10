@@ -121,7 +121,7 @@ func playbookRunProperties(playbookRun *app.PlaybookRun, userID string) map[stri
 	return map[string]interface{}{
 		"UserActualID":            userID,
 		telemetryKeyPlaybookRunID: playbookRun.ID,
-		"HasDescription":          playbookRun.Description != "",
+		"HasDescription":          playbookRun.Summary != "",
 		"CommanderUserID":         playbookRun.OwnerUserID,
 		"ReporterUserID":          playbookRun.ReporterUserID,
 		"TeamID":                  playbookRun.TeamID,

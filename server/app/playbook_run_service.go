@@ -468,7 +468,7 @@ func (s *PlaybookRunServiceImpl) OpenUpdateStatusDialog(playbookRunID, triggerID
 		message = currentPlaybookRun.ReminderMessageTemplate
 	}
 
-	dialog, err := s.newUpdatePlaybookRunDialog(currentPlaybookRun.Description, message, currentPlaybookRun.BroadcastChannelIDs, currentPlaybookRun.PreviousReminder)
+	dialog, err := s.newUpdatePlaybookRunDialog(currentPlaybookRun.Summary, message, currentPlaybookRun.BroadcastChannelIDs, currentPlaybookRun.PreviousReminder)
 	if err != nil {
 		return errors.Wrap(err, "failed to create update status dialog")
 	}
@@ -1784,7 +1784,7 @@ func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description st
 		return errors.Wrap(err, "unable to get playbook run")
 	}
 
-	playbookRun.Description = description
+	playbookRun.Summary = description
 	if err = s.store.UpdatePlaybookRun(playbookRun); err != nil {
 		return errors.Wrap(err, "failed to update playbook run")
 	}
@@ -2437,7 +2437,7 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) string
 	message := fmt.Sprintf("##### Your Outstanding Tasks\nYou have %s in %s:\n\n", taskPlural, runPlural)
 
 	for _, run := range runs {
-		message += fmt.Sprintf("[%s](%s/%s/channels/%s?telem=todo_assignedtask_clicked)\n",
+		message += fmt.Sprintf("[%s](%s/%s/channels/%s?telem=todo_assignedtask_clicked&forceRHSOpen)\n",
 			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
 
 		for _, task := range run.Tasks {
@@ -2463,7 +2463,7 @@ func buildRunsInProgressMessage(runs []RunLink, siteURL string) string {
 	message := fmt.Sprintf("\n##### Runs in Progress\nYou have %d %s currently in progress:\n", total, runPlural)
 
 	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_runsinprogress_clicked)\n",
+		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_runsinprogress_clicked&forceRHSOpen)\n",
 			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
 	}
 
@@ -2485,7 +2485,7 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string) string {
 	message := fmt.Sprintf("\n##### Overdue Status Updates\nYou have %d %s overdue for a status update:\n", total, runPlural)
 
 	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked) (Owner: @%s)\n",
+		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen) (Owner: @%s)\n",
 			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName, run.OwnerUserName)
 	}
 

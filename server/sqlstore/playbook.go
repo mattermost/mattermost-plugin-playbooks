@@ -139,6 +139,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"SignalAnyKeywordsEnabled",
 			"CategorizeChannelEnabled",
 			"COALESCE(CategoryName, '') CategoryName",
+			"COALESCE(RunSummaryTemplate, '') RunSummaryTemplate",
 		).
 		From("IR_Playbook")
 
@@ -211,6 +212,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
 			"CategoryName":                          rawPlaybook.CategoryName,
+			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -564,6 +566,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
 			"CategoryName":                          rawPlaybook.CategoryName,
+			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

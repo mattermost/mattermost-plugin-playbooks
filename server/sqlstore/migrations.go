@@ -1507,6 +1507,32 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating index IR_Playbook_Participants_PlaybookID")
 				}
 			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.38.0"),
+		toVersion:   semver.MustParse("0.39.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "RunSummaryTemplate", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column RunSummaryTemplate to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET RunSummaryTemplate = '' WHERE RunSummaryTemplate IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed updating default value of column RunSummaryTemplate from table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "RunSummaryTemplate", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column RunSummaryTemplate to table IR_Playbook")
+				}
+			}
+
+			// Copy the values from the Description column, historically used for the run summary template, into the new RunSummaryTemplate column
+			if _, err := e.Exec("UPDATE IR_Playbook SET RunSummaryTemplate = Description, Description = '' WHERE Description <> ''"); err != nil {
+				return errors.Wrapf(err, "failed updating default value of column RunSummaryTemplate from table IR_Playbook")
+			}
+
 			return nil
 		},
 	},
