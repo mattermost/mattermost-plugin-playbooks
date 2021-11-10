@@ -1,13 +1,15 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
 import Icon from '@mdi/react';
 import {mdiClipboardPlayOutline} from '@mdi/js';
+
+import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
@@ -21,7 +23,7 @@ import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
 
 import {clientFetchPlaybook, clientFetchIsPlaybookFollower, followPlaybook, unfollowPlaybook, telemetryEventForPlaybook} from 'src/client';
-import {ErrorPageTypes} from 'src/constants';
+import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {RegularHeading} from 'src/styles/headings';
@@ -121,6 +123,17 @@ const Playbook = () => {
 
     const enableRunPlaybook = playbook?.delete_at === 0;
 
+    let toolTipText = formatMessage({defaultMessage: 'If checked you\'ll automatically be added as a follower for all new runs of this playbook.'});
+    if (isFollowed) {
+        toolTipText = formatMessage({defaultMessage: 'You\'ll automatically be added as a follower for all new runs of this playbook.'});
+    }
+
+    const tooltip = (
+        <Tooltip id={`auto-follow-tooltip-${isFollowed}`}>
+            {toolTipText}
+        </Tooltip>
+    );
+
     return (
         <>
             <TopContainer>
@@ -136,14 +149,22 @@ const Playbook = () => {
                             <SubTitle>{subTitle}</SubTitle>
                         </HorizontalBlock>
                     </VerticalBlock>
-                    <SecondaryButtonLargerRight>
-                        <CheckboxInputStyled
-                            testId={'auto-follow-runs'}
-                            text={'Auto-follow runs'}
-                            checked={isFollowed}
-                            onChange={changeFollowing}
-                        />
-                    </SecondaryButtonLargerRight>
+                    <SecondaryButtonLargerRightStyled checked={isFollowed}>
+                        <OverlayTrigger
+                            placement={'bottom'}
+                            delay={OVERLAY_DELAY}
+                            overlay={tooltip}
+                        >
+                            <div>
+                                <CheckboxInputStyled
+                                    testId={'auto-follow-runs'}
+                                    text={'Auto-follow runs'}
+                                    checked={isFollowed}
+                                    onChange={changeFollowing}
+                                />
+                            </div>
+                        </OverlayTrigger>
+                    </SecondaryButtonLargerRightStyled>
                     <PrimaryButtonLarger
                         onClick={runPlaybook}
                         disabled={!enableRunPlaybook}
@@ -267,10 +288,32 @@ const PrimaryButtonLarger = styled(PrimaryButton)`
 `;
 
 const CheckboxInputStyled = styled(CheckboxInput)`
+    padding-right: 4px;
+    padding-left: 4px;
     &:hover {
         background-color: transparent;
     }
 `;
+
+interface CheckedProps {
+    checked: boolean;
+}
+const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <CheckedProps>`
+    border: 1px solid var(--center-channel-color-24);
+    color: var(--center-channel-color-56);
+
+    &:hover:enabled {
+        background-color: var(--center-channel-color-08);
+    }
+
+    ${(props: CheckedProps) => props.checked && css`
+        border: 1px solid var(--button-bg);
+        color: var(--button-bg);
+
+        &:hover:enabled {
+            background-color: rgba(var(--button-bg-rgb),0.12);
+        }
+    `}`;
 
 const Navbar = styled.nav`
     background: var(--center-channel-bg);

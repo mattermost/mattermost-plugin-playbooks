@@ -664,25 +664,25 @@ INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
 	return nil
 }
 
-func (p *playbookStore) Follow(playbookID, userID string) error {
-	return p.followHelper(playbookID, userID, true)
+func (p *playbookStore) AutoFollow(playbookID, userID string) error {
+	return p.autoFollowHelper(playbookID, userID, true)
 }
 
-func (p *playbookStore) Unfollow(playbookID, userID string) error {
-	return p.followHelper(playbookID, userID, false)
+func (p *playbookStore) AutoUnfollow(playbookID, userID string) error {
+	return p.autoFollowHelper(playbookID, userID, false)
 }
 
-func (p *playbookStore) followHelper(playbookID, userID string, value bool) error {
+func (p *playbookStore) autoFollowHelper(playbookID, userID string, value bool) error {
 	var err error
 	if p.store.db.DriverName() == model.DatabaseDriverMysql {
 		_, err = p.store.execBuilder(p.store.db, sq.
-			Insert("IR_Playbook_Participants").
+			Insert("PlaybookAutoFollowers").
 			Columns("PlaybookID", "UserID", "IsFollower").
 			Values(playbookID, userID, value).
 			Suffix("ON DUPLICATE KEY UPDATE IsFollower = ?", value))
 	} else {
 		_, err = p.store.execBuilder(p.store.db, sq.
-			Insert("IR_Playbook_Participants").
+			Insert("PlaybookAutoFollowers").
 			Columns("PlaybookID", "UserID", "IsFollower").
 			Values(playbookID, userID, value).
 			Suffix("ON CONFLICT (PlaybookID,UserID) DO UPDATE SET IsFollower = ?", value))
@@ -695,10 +695,10 @@ func (p *playbookStore) followHelper(playbookID, userID string, value bool) erro
 	return nil
 }
 
-func (p *playbookStore) GetFollowers(playbookID string) ([]string, error) {
+func (p *playbookStore) GetAutoFollowers(playbookID string) ([]string, error) {
 	query := p.queryBuilder.
 		Select("UserID").
-		From("IR_Playbook_Participants").
+		From("PlaybookAutoFollowers").
 		Where(sq.And{sq.Eq{"IsFollower": true}, sq.Eq{"PlaybookID": playbookID}})
 
 	var followers []string
@@ -712,10 +712,10 @@ func (p *playbookStore) GetFollowers(playbookID string) ([]string, error) {
 	return followers, nil
 }
 
-func (p *playbookStore) IsFollower(playbookID, followerID string) (bool, error) {
+func (p *playbookStore) IsAutoFollower(playbookID, followerID string) (bool, error) {
 	query := p.queryBuilder.
 		Select("IsFollower").
-		From("IR_Playbook_Participants").
+		From("PlaybookAutoFollowers").
 		Where(sq.And{sq.Eq{"PlaybookID": playbookID}, sq.Eq{"UserID": followerID}})
 
 	var isFollower bool

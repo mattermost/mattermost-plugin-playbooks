@@ -391,7 +391,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	//auto-follow playbook run
 	if pb != nil {
-		followers, err := s.playbookService.GetFollowers(pb.ID)
+		followers, err := s.playbookService.GetAutoFollowers(pb.ID)
 		if err != nil {
 			return playbookRun, errors.Wrapf(err, "failed to get followers of the playbook `%s`", pb.ID)
 		}

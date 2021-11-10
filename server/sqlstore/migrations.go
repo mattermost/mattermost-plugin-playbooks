@@ -1470,52 +1470,6 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.39.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
-				if _, err := e.Exec(`
-					CREATE TABLE IF NOT EXISTS IR_Playbook_Participants (
-						PlaybookID VARCHAR(26) NULL REFERENCES IR_Playbook(ID),
-						UserID VARCHAR(26) NOT NULL,
-						IsFollower BOOLEAN NOT NULL,
-						INDEX IR_Playbook_Participants_UserID (UserID),
-						INDEX IR_Playbook_Participants_PlaybookID (PlaybookID)
-					)
-				` + MySQLCharset); err != nil {
-					return errors.Wrapf(err, "failed creating table IR_Playbook_Participants")
-				}
-				if err := addPrimaryKey(e, sqlStore, "IR_Playbook_Participants", "(PlaybookID, UserID)"); err != nil {
-					return errors.Wrapf(err, "failed creating primary key for IR_Playbook_Participants")
-				}
-			} else {
-				if _, err := e.Exec(`
-				CREATE TABLE IF NOT EXISTS IR_Playbook_Participants (
-					PlaybookID TEXT NULL REFERENCES IR_Playbook(ID),
-					UserID TEXT NOT NULL,
-					IsFollower BOOLEAN NOT NULL
-				);
-			`); err != nil {
-					return errors.Wrapf(err, "failed creating table IR_Playbook_Participants")
-				}
-
-				if err := addPrimaryKey(e, sqlStore, "ir_playbook_participants", "(PlaybookID, UserID)"); err != nil {
-					return errors.Wrapf(err, "failed creating primary key for ir_playbook_participants")
-				}
-
-				if _, err := e.Exec(createPGIndex("IR_Playbook_Participants_UserID", "IR_Playbook_Participants", "UserID")); err != nil {
-					return errors.Wrapf(err, "failed creating index IR_Playbook_Participants_UserID")
-				}
-
-				if _, err := e.Exec(createPGIndex("IR_Playbook_Participants_PlaybookID", "IR_Playbook_Participants", "PlaybookID")); err != nil {
-					return errors.Wrapf(err, "failed creating index IR_Playbook_Participants_PlaybookID")
-				}
-			}
-
-			return nil
-		},
-	},
-	{
-		fromVersion: semver.MustParse("0.38.0"),
-		toVersion:   semver.MustParse("0.39.0"),
-		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "RunSummaryTemplate", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column RunSummaryTemplate to table IR_Playbook")
 				}
@@ -1531,6 +1485,52 @@ var migrations = []Migration{
 			// Copy the values from the Description column, historically used for the run summary template, into the new RunSummaryTemplate column
 			if _, err := e.Exec("UPDATE IR_Playbook SET RunSummaryTemplate = Description, Description = '' WHERE Description <> ''"); err != nil {
 				return errors.Wrapf(err, "failed updating default value of column RunSummaryTemplate from table IR_Playbook")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.39.0"),
+		toVersion:   semver.MustParse("0.40.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS PlaybookAutoFollowers (
+						PlaybookID VARCHAR(26) NULL REFERENCES IR_Playbook(ID),
+						UserID VARCHAR(26) NOT NULL,
+						IsFollower BOOLEAN NOT NULL,
+						INDEX PlaybookAutoFollowers_UserID (UserID),
+						INDEX PlaybookAutoFollowers_PlaybookID (PlaybookID)
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table PlaybookAutoFollowers")
+				}
+				if err := addPrimaryKey(e, sqlStore, "PlaybookAutoFollowers", "(PlaybookID, UserID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for PlaybookAutoFollowers")
+				}
+			} else {
+				if _, err := e.Exec(`
+				CREATE TABLE IF NOT EXISTS PlaybookAutoFollowers (
+					PlaybookID TEXT NULL REFERENCES IR_Playbook(ID),
+					UserID TEXT NOT NULL,
+					IsFollower BOOLEAN NOT NULL
+				);
+			`); err != nil {
+					return errors.Wrapf(err, "failed creating table PlaybookAutoFollowers")
+				}
+
+				if err := addPrimaryKey(e, sqlStore, "playbookautofollowers", "(PlaybookID, UserID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for playbookautofollowers")
+				}
+
+				if _, err := e.Exec(createPGIndex("PlaybookAutoFollowers_UserID", "PlaybookAutoFollowers", "UserID")); err != nil {
+					return errors.Wrapf(err, "failed creating index PlaybookAutoFollowers_UserID")
+				}
+
+				if _, err := e.Exec(createPGIndex("PlaybookAutoFollowers_PlaybookID", "PlaybookAutoFollowers", "PlaybookID")); err != nil {
+					return errors.Wrapf(err, "failed creating index PlaybookAutoFollowers_PlaybookID")
+				}
 			}
 
 			return nil

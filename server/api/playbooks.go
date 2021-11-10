@@ -55,9 +55,11 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPost)
 
 	followersRouter := playbookRouter.PathPrefix("/followers").Subrouter()
-	followersRouter.HandleFunc("", handler.follow).Methods(http.MethodPut)
-	followersRouter.HandleFunc("", handler.unfollow).Methods(http.MethodDelete)
-	followersRouter.HandleFunc("/check", handler.isFollower).Methods(http.MethodGet)
+	followersRouter.HandleFunc("", handler.autoFollow).Methods(http.MethodPut)
+	followersRouter.HandleFunc("", handler.autoUnfollow).Methods(http.MethodDelete)
+
+	followerRouter := playbookRouter.PathPrefix("/follow").Subrouter()
+	followerRouter.HandleFunc("", handler.isAutoFollower).Methods(http.MethodGet)
 
 	return handler
 }
@@ -537,7 +539,7 @@ func (h *PlaybookHandler) validateCategoryName(categoryName string) error {
 	return nil
 }
 
-func (h *PlaybookHandler) follow(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) autoFollow(w http.ResponseWriter, r *http.Request) {
 	playbookID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
@@ -546,7 +548,7 @@ func (h *PlaybookHandler) follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.playbookService.Follow(playbookID, userID); err != nil {
+	if err := h.playbookService.AutoFollow(playbookID, userID); err != nil {
 		h.HandleError(w, err)
 		return
 	}
@@ -554,7 +556,7 @@ func (h *PlaybookHandler) follow(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookHandler) unfollow(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) autoUnfollow(w http.ResponseWriter, r *http.Request) {
 	playbookID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
@@ -563,7 +565,7 @@ func (h *PlaybookHandler) unfollow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.playbookService.Unfollow(playbookID, userID); err != nil {
+	if err := h.playbookService.AutoUnfollow(playbookID, userID); err != nil {
 		h.HandleError(w, err)
 		return
 	}
@@ -571,7 +573,7 @@ func (h *PlaybookHandler) unfollow(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookHandler) isFollower(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) isAutoFollower(w http.ResponseWriter, r *http.Request) {
 	playbookID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
@@ -582,7 +584,7 @@ func (h *PlaybookHandler) isFollower(w http.ResponseWriter, r *http.Request) {
 
 	var isFollower bool
 	var err error
-	if isFollower, err = h.playbookService.IsFollower(playbookID, userID); err != nil {
+	if isFollower, err = h.playbookService.IsAutoFollower(playbookID, userID); err != nil {
 		h.HandleError(w, err)
 		return
 	}

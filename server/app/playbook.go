@@ -235,17 +235,17 @@ type PlaybookService interface {
 	// Restores a deleted playbook
 	Restore(playbook Playbook, userID string) error
 
-	// Follow method lets user follow a all runs of a specific playbook
-	Follow(playbookID, userID string) error
+	// AutoFollow method lets user follow a all runs of a specific playbook
+	AutoFollow(playbookID, userID string) error
 
-	// Unfollow method lets user to not follow from the newly created playbook runs
-	Unfollow(playbookID, userID string) error
+	// AutoUnfollow method lets user to not follow from the newly created playbook runs
+	AutoUnfollow(playbookID, userID string) error
 
-	// GetFollowers returns followers of a playbook
-	GetFollowers(playbookID string) ([]string, error)
+	// GetAutoFollowers returns followers of a playbook
+	GetAutoFollowers(playbookID string) ([]string, error)
 
-	// IsFollower returns weather user is a follower of a playbook runs
-	IsFollower(playbookID, userID string) (bool, error)
+	// IsAutoFollower returns weather user is a follower of a playbook runs
+	IsAutoFollower(playbookID, userID string) (bool, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -284,17 +284,17 @@ type PlaybookStore interface {
 	// Restore restores a deleted playbook
 	Restore(id string) error
 
-	// Follow method lets user follow a all runs of a specific playbook
-	Follow(playbookID, userID string) error
+	// AutoFollow method lets user follow a all runs of a specific playbook
+	AutoFollow(playbookID, userID string) error
 
-	// Unfollow method lets user to not follow from the newly created playbook runs
-	Unfollow(playbookID, userID string) error
+	// AutoUnfollow method lets user to not follow from the newly created playbook runs
+	AutoUnfollow(playbookID, userID string) error
 
-	// GetFollowers returns followers of a playbook
-	GetFollowers(playbookID string) ([]string, error)
+	// GetAutoFollowers returns followers of a playbook
+	GetAutoFollowers(playbookID string) ([]string, error)
 
-	// IsFollower returns weather user is a follower of a playbook runs
-	IsFollower(playbookID, userID string) (bool, error)
+	// IsAutoFollower returns weather user is a follower of a playbook runs
+	IsAutoFollower(playbookID, userID string) (bool, error)
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.
