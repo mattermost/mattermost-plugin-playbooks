@@ -155,6 +155,13 @@ func (t *RudderTelemetry) FinishPlaybookRun(playbookRun *app.PlaybookRun, userID
 	t.track(eventPlaybookRun, properties)
 }
 
+// RestorePlaybookRun tracks the restoration of the playbook run.
+func (t *RudderTelemetry) RestorePlaybookRun(playbookRun *app.PlaybookRun, userID string) {
+	properties := playbookRunProperties(playbookRun, userID)
+	properties["Action"] = actionRestore
+	t.track(eventPlaybookRun, properties)
+}
+
 // RestartPlaybookRun tracks the restart of the playbook run.
 func (t *RudderTelemetry) RestartPlaybookRun(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
