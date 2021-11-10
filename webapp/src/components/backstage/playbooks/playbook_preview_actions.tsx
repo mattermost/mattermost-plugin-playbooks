@@ -9,11 +9,12 @@ import {useDefaultMarkdownOptionsByTeamId} from 'src/hooks/general';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
-import {TextBadge, ChannelBadge} from 'src/components/backstage/playbooks/playbook_preview_badges';
+import {EllipsizedText, TextBadge, ChannelBadge} from 'src/components/backstage/playbooks/playbook_preview_badges';
 import {Card, CardEntry, CardSubEntry} from 'src/components/backstage/playbooks/playbook_preview_cards';
 import Section from 'src/components/backstage/playbooks/playbook_preview_section';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {UserList} from 'src/components/rhs/rhs_participants';
+import Tooltip from 'src/components/widgets/tooltip';
 
 interface Props {
     id: string;
@@ -59,13 +60,12 @@ const PlaybookPreviewActions = (props: Props) => {
         >
             <Card>
                 <CardEntry
-                    title={formatMessage({
-                        defaultMessage: 'Prompt to run this playbook when a user posts a message containing the keywords',
-                    })}
+                    title={formatMessage(
+                        {defaultMessage: 'Prompt to run this playbook when a message contains {numKeywords, select, 1 {the keyword} other {one or more of these}}'},
+                        {numKeywords: props.playbook.signal_any_keywords.length},
+                    )}
                     iconName={'message-text-outline'}
-                    extraInfo={props.playbook.signal_any_keywords.map((keyword) => (
-                        <TextBadge key={keyword}>{keyword}</TextBadge>
-                    ))}
+                    extraInfo={<KeywordsExtraInfo keywords={props.playbook.signal_any_keywords}/>}
                     enabled={!emptyPromptEntry}
                 />
                 <CardEntry
@@ -210,6 +210,41 @@ const StyledProfileSelector = styled(ProfileSelector)`
 const UserRow = styled.div`
     display: flex;
     flex-direction: row;
+`;
+
+const KeywordsExtraInfo = ({keywords}: {keywords: string[]}) => {
+    const {formatMessage} = useIntl();
+
+    if (keywords.length === 1) {
+        return (
+            <Tooltip
+                id={'playbook-preview-actions-keywords-extra-info'}
+                content={keywords[0]}
+            >
+                <ShortTextBadge>
+                    <EllipsizedText>{keywords[0]}</EllipsizedText>
+                </ShortTextBadge>
+            </Tooltip>
+        );
+    }
+
+    return (
+        <Tooltip
+            id={'playbook-preview-actions-keywords-extra-info'}
+            content={keywords.join(', ')}
+        >
+            <TextBadge>
+                {formatMessage(
+                    {defaultMessage: '{numKeywords, number} keywords'},
+                    {numKeywords: keywords.length},
+                )}
+            </TextBadge>
+        </Tooltip>
+    );
+};
+
+const ShortTextBadge = styled(TextBadge)`
+    max-width: 150px;
 `;
 
 export default PlaybookPreviewActions;
