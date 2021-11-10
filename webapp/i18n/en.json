@@ -223,9 +223,11 @@
   "gt6BhE": "Run details",
   "guunZt": "Assign",
   "gy/Kkr": "(edited)",
+  "h+e7G+": "Prompt to run this playbook when a message contains {numKeywords, select, 1 {the keyword} other {one or more of these}}",
   "hO9EdA": "Invite {numInvitedUsers, plural, =0 {no members} =1 {one member} other {# members}} to the channel",
   "hVFgh4": "Include finished",
   "hXIYHG": "Install and enable the Channel Export plugin to support exporting the channel",
+  "hbP3Ix": "{numKeywords, number} keywords",
   "hfrrC7": "Team Initials",
   "hzt6l8": "Use Markdown to create a template.",
   "iNU1lj": "The run you're requesting is private or does not exist.",
@@ -318,6 +320,5 @@
   "zELxbG": "Saved messages",
   "zINlao": "Owner",
   "zWkvNO": "Timeline",
-  "zx0myy": "Participants",
-  "zy3cJT": "Prompt to run this playbook when a user posts a message containing the keywords"
+  "zx0myy": "Participants"
 }
