@@ -582,9 +582,8 @@ func (h *PlaybookHandler) isAutoFollower(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var isFollower bool
-	var err error
-	if isFollower, err = h.playbookService.IsAutoFollower(playbookID, userID); err != nil {
+	isFollower, err := h.playbookService.IsAutoFollower(playbookID, userID)
+	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
