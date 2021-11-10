@@ -299,6 +299,20 @@ func (mr *MockPlaybookRunStoreMockRecorder) NukeDB() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NukeDB", reflect.TypeOf((*MockPlaybookRunStore)(nil).NukeDB))
 }
 
+// RestorePlaybookRun mocks base method
+func (m *MockPlaybookRunStore) RestorePlaybookRun(arg0 string, arg1 int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RestorePlaybookRun", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RestorePlaybookRun indicates an expected call of RestorePlaybookRun
+func (mr *MockPlaybookRunStoreMockRecorder) RestorePlaybookRun(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestorePlaybookRun", reflect.TypeOf((*MockPlaybookRunStore)(nil).RestorePlaybookRun), arg0, arg1)
+}
+
 // SetBroadcastChannelIDsToRootID mocks base method
 func (m *MockPlaybookRunStore) SetBroadcastChannelIDsToRootID(arg0 string, arg1 map[string]string) error {
 	m.ctrl.T.Helper()
