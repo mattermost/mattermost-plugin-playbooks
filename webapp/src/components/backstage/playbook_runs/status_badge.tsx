@@ -9,7 +9,7 @@ import {FormattedMessage} from 'react-intl';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 interface BadgeProps {
-    status: PlaybookRunStatus;
+    status: PlaybookRunStatus | 'Archived';
     compact?: boolean;
 }
 
@@ -33,6 +33,10 @@ const Badge = styled.div<BadgeProps>`
         case PlaybookRunStatus.Finished:
             return css`
                 background-color: var(--center-channel-color-64);
+        `;
+        case 'Archived':
+            return css`
+                background-color: rgba(var(--center-channel-color-rgb), 0.32);
         `;
         default:
             return css`

@@ -129,6 +129,13 @@ export const GrayTertiaryButton = styled.button`
 export const SecondaryButton = styled(TertiaryButton)`
     background: var(--button-color-rgb);
     border: 1px solid var(--button-bg);
+
+
+    &:disabled {
+        color: rgba(var(--center-channel-color-rgb), 0.32);
+        background: transparent;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.32);
+    }
 `;
 
 export const DestructiveButton = styled.button`

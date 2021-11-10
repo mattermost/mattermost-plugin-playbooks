@@ -25,6 +25,7 @@ import {ErrorPageTypes} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {RegularHeading} from 'src/styles/headings';
+import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
 
 interface MatchParams {
     playbookId: string
@@ -103,7 +104,7 @@ const Playbook = () => {
         subTitle = formatMessage({defaultMessage: 'Everyone in this team can access this playbook'});
     }
 
-    const enableRunPlaybook = playbook?.delete_at === 0;
+    const archived = playbook?.delete_at !== 0;
 
     return (
         <>
@@ -120,9 +121,13 @@ const Playbook = () => {
                             <SubTitle>{subTitle}</SubTitle>
                         </HorizontalBlock>
                     </VerticalBlock>
+                    {
+                        archived &&
+                        <StatusBadge status='Archived'/>
+                    }
                     <PrimaryButtonLarger
                         onClick={runPlaybook}
-                        disabled={!enableRunPlaybook}
+                        disabled={archived}
                         data-testid='run-playbook'
                     >
                         <RightMarginedIcon
@@ -267,7 +272,7 @@ const NavItem = styled(NavLink)`
             color: var(--button-bg);
         }
 
-       :hover, :focus {
+        :hover, :focus {
             text-decoration: none;
         }
     }

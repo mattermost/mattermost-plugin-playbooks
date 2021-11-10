@@ -26,7 +26,7 @@ interface Props {
     displayTeam: boolean
     onClick: () => void
     onEdit: () => void
-    onDelete: () => void
+    onArchive: () => void
 }
 
 const teamNameSelector = (teamId: string) => (state: GlobalState): string => getTeam(state, teamId).display_name;
@@ -52,7 +52,7 @@ const PlaybookListRow = (props: Props) => {
             <div className='col-sm-2 action-col'>
                 <PlaybookActionMenu
                     onEdit={props.onEdit}
-                    onDelete={props.onDelete}
+                    onArchive={props.onArchive}
                 />
             </div>
         </div>
@@ -61,7 +61,7 @@ const PlaybookListRow = (props: Props) => {
 
 interface PlaybookActionMenuProps {
     onEdit: () => void;
-    onDelete: () => void;
+    onArchive: () => void;
 }
 
 const IconWrapper = styled.div`
@@ -84,9 +84,9 @@ const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
                 <FormattedMessage defaultMessage='Edit'/>
             </DropdownMenuItem>
             <DropdownMenuItem
-                onClick={props.onDelete}
+                onClick={props.onArchive}
             >
-                <FormattedMessage defaultMessage='Delete'/>
+                <FormattedMessage defaultMessage='Archive'/>
             </DropdownMenuItem>
         </DotMenu>
     );

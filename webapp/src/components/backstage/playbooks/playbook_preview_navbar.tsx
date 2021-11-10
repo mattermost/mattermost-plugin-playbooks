@@ -27,6 +27,7 @@ export enum SectionID {
 interface Props {
     playbookId: string;
     runsInProgress: number;
+    archived: boolean;
     showElements: {
         description: boolean,
         checklists: boolean,
@@ -39,7 +40,7 @@ interface Props {
 // Height of the headers in pixels
 const headersOffset = 140;
 
-const PlaybookPreviewNavbar = ({playbookId, runsInProgress, showElements}: Props) => {
+const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElements}: Props) => {
     const {formatMessage} = useIntl();
     const match = useRouteMatch();
     const [activeId, setActiveId] = useState(SectionID.Description);
@@ -139,7 +140,10 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, showElements}: Props
 
     return (
         <Wrapper>
-            <EditButton onClick={() => navigateToUrl(match.url.replace('/preview', '/edit'))}>
+            <EditButton
+                disabled={archived}
+                onClick={() => navigateToUrl(match.url.replace('/preview', '/edit'))}
+            >
                 <i className={'icon-pencil-outline icon-16'}/>
                 {formatMessage({defaultMessage: 'Edit'})}
             </EditButton>

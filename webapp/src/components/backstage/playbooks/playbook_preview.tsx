@@ -56,6 +56,7 @@ const PlaybookPreview = (props: Props) => {
             <Navbar
                 playbookId={props.playbook.id}
                 runsInProgress={props.runsInProgress}
+                archived={props.playbook.delete_at !== 0}
                 showElements={{
                     description: description !== null,
                     checklists: checklists !== null,
