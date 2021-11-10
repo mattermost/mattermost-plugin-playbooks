@@ -48,7 +48,9 @@ import {
     SetChecklistCollapsedState,
     SetAllChecklistsCollapsedState,
     SET_CHECKLIST_COLLAPSED_STATE,
-    SET_ALL_CHECKLISTS_COLLAPSED_STATE, SetChecklistItemsFilter, SET_CHECKLIST_ITEMS_FILTER,
+    SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    SetChecklistItemsFilter,
+    SET_CHECKLIST_ITEMS_FILTER,
 } from 'src/types/actions';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';

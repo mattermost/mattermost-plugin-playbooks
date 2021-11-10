@@ -38,11 +38,11 @@ const dbGetActiveUserSessions = async ({dbConfig, params: {username, userId, lim
         }
 
         const now = Date.now();
-        const sessions = await knexClient(toLowerCase(dbConfig, 'Sessions')).
-            where('userid', user ? user.id : userId).
-            where('expiresat', '>', now).
-            orderBy('lastactivityat', 'desc').
-            limit(limit && limit <= maxLimit ? limit : maxLimit);
+        const sessions = await knexClient(toLowerCase(dbConfig, 'Sessions'))
+            .where('userid', user ? user.id : userId)
+            .where('expiresat', '>', now)
+            .orderBy('lastactivityat', 'desc')
+            .limit(limit && limit <= maxLimit ? limit : maxLimit);
 
         return {
             user,
@@ -75,9 +75,9 @@ const dbGetUserSession = async ({dbConfig, params: {sessionId}}) => {
     }
 
     try {
-        const session = await knexClient(toLowerCase(dbConfig, 'Sessions')).
-            where('id', '=', sessionId).
-            first();
+        const session = await knexClient(toLowerCase(dbConfig, 'Sessions'))
+            .where('id', '=', sessionId)
+            .first();
 
         return {session: convertKeysToLowercase(session)};
     } catch (error) {
@@ -102,15 +102,15 @@ const dbUpdateUserSession = async ({dbConfig, params: {sessionId, userId, fields
 
         user = convertKeysToLowercase(user);
 
-        await knexClient(toLowerCase(dbConfig, 'Sessions')).
-            where('id', '=', sessionId).
-            where('userid', '=', user.id).
-            update(fieldsToUpdate);
+        await knexClient(toLowerCase(dbConfig, 'Sessions'))
+            .where('id', '=', sessionId)
+            .where('userid', '=', user.id)
+            .update(fieldsToUpdate);
 
-        const session = await knexClient(toLowerCase(dbConfig, 'Sessions')).
-            where('id', '=', sessionId).
-            where('userid', '=', user.id).
-            first();
+        const session = await knexClient(toLowerCase(dbConfig, 'Sessions'))
+            .where('id', '=', sessionId)
+            .where('userid', '=', user.id)
+            .first();
 
         return {session: convertKeysToLowercase(session)};
     } catch (error) {

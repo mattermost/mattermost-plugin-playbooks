@@ -27,8 +27,8 @@ type PlaybookRun struct {
 	// Name is the name of the playbook run's channel.
 	Name string `json:"name"`
 
-	// Description is a short string, in Markdown, describing what the run is.
-	Description string `json:"description"`
+	// Summary is a short string, in Markdown, describing what the run is.
+	Summary string `json:"summary"`
 
 	// OwnerUserID is the user identifier of the playbook run's owner.
 	OwnerUserID string `json:"owner_user_id"`
@@ -140,10 +140,6 @@ type PlaybookRun struct {
 	// the playbook run.
 	MessageOnJoin string `json:"message_on_join"`
 
-	// ExportChannelOnArchiveEnabled is true if the channel is exported when the status is updated
-	// to "Archived", false otherwise.
-	ExportChannelOnFinishedEnabled bool `json:"export_channel_on_finished_enabled"`
-
 	// ParticipantIDs is an array of the identifiers of all the participants in the playbook run.
 	// A participant is any member of the playbook run channel that isn't a bot.
 	ParticipantIDs []string `json:"participant_ids"`
@@ -237,11 +233,12 @@ type StatusUpdateOptions struct {
 
 // Metadata tracks ancillary metadata about a playbook run.
 type Metadata struct {
-	ChannelName        string `json:"channel_name"`
-	ChannelDisplayName string `json:"channel_display_name"`
-	TeamName           string `json:"team_name"`
-	NumParticipants    int64  `json:"num_participants"`
-	TotalPosts         int64  `json:"total_posts"`
+	ChannelName        string   `json:"channel_name"`
+	ChannelDisplayName string   `json:"channel_display_name"`
+	TeamName           string   `json:"team_name"`
+	NumParticipants    int64    `json:"num_participants"`
+	TotalPosts         int64    `json:"total_posts"`
+	Followers          []string `json:"followers"`
 }
 
 type timelineEventType string
@@ -366,6 +363,7 @@ type RunLink struct {
 	TeamName           string
 	ChannelName        string
 	ChannelDisplayName string
+	OwnerUserName      string
 }
 
 // AssignedRun represents all the info needed to display a Run & ChecklistItem to a user
@@ -475,9 +473,9 @@ type PlaybookRunService interface {
 	// NukeDB removes all playbook run related data.
 	NukeDB() error
 
-	// SetReminder sets a reminder. After timeInMinutes in the future, the owner will be
-	// reminded to update the playbook run's status.
-	SetReminder(playbookRunID string, timeInMinutes time.Duration) error
+	// SetReminder sets a reminder. After time.Now().Add(fromNow) in the future,
+	// the owner will be reminded to update the playbook run's status.
+	SetReminder(playbookRunID string, fromNow time.Duration) error
 
 	// RemoveReminder removes the pending reminder for playbookRunID (if any).
 	RemoveReminder(playbookRunID string)
@@ -490,6 +488,11 @@ type PlaybookRunService interface {
 
 	// ResetReminderTimer sets the previous reminder timer to 0.
 	ResetReminderTimer(playbookRunID string) error
+
+	// SetNewReminder sets a new reminder for playbookRunID, removes any pending reminder, removes the
+	// reminder post in the playbookRun's channel, and resets the PreviousReminder and
+	// LastStatusUpdateAt (so the countdown timer to "update due" shows the correct time)
+	SetNewReminder(playbookRunID string, newReminder time.Duration) error
 
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
@@ -530,6 +533,15 @@ type PlaybookRunService interface {
 
 	// GetOverdueUpdateRuns returns the list of userID's runs that have overdue updates
 	GetOverdueUpdateRuns(userID string) ([]RunLink, error)
+
+	// Follow method lets user follow a specific playbook run
+	Follow(playbookRunID, userID string) error
+
+	// UnFollow method lets user unfollow a specific playbook run
+	Unfollow(playbookRunID, userID string) error
+
+	// GetFollowers returns list of followers for a specific playbook run
+	GetFollowers(playbookRunID string) ([]string, error)
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -599,8 +611,17 @@ type PlaybookRunStore interface {
 	// GetParticipatingRuns returns the list of active runs with userID as a participant
 	GetParticipatingRuns(userID string) ([]RunLink, error)
 
-	// GetOverdueUpdateRuns returns the list of userID's runs that have overdue updates
+	// GetOverdueUpdateRuns returns the list of runs that userID is participating in that have overdue updates
 	GetOverdueUpdateRuns(userID string) ([]RunLink, error)
+
+	// Follow method lets user follow a specific playbook run
+	Follow(playbookRunID, userID string) error
+
+	// UnFollow method lets user unfollow a specific playbook run
+	Unfollow(playbookRunID, userID string) error
+
+	// GetFollowers returns list of followers for a specific playbook run
+	GetFollowers(playbookRunID string) ([]string, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

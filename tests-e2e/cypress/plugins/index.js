@@ -3,6 +3,8 @@
 
 /* eslint-disable no-console */
 
+const installLogsPrinter = require('cypress-terminal-report/src/installLogsPrinter');
+
 const {
     dbGetActiveUserSessions,
     dbGetUser,
@@ -57,7 +59,7 @@ module.exports = (on, config) => {
         return launchOptions;
     });
 
-    require('cypress-terminal-report/src/installLogsPrinter')(on);
+    installLogsPrinter(on);
 
     return config;
 };

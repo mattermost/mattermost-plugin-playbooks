@@ -139,12 +139,12 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 
 	// When adding a Playbook Run column #1: add to this select
 	playbookRunSelect := sqlStore.builder.
-		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
+		Select("i.ID", "c.DisplayName AS Name", "i.Description AS Summary", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
 			"ConcatenatedBroadcastChannelIDs", "ConcatenatedWebhookOnCreationURLs", "Retrospective", "MessageOnJoin", "RetrospectivePublishedAt", "RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs", "ExportChannelOnFinishedEnabled",
+			"RetrospectiveWasCanceled", "ConcatenatedWebhookOnStatusUpdateURLs",
 			"COALESCE(CategoryName, '') CategoryName").
 		Column(participantsCol).
 		From("IR_Incident AS i").
@@ -350,7 +350,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		SetMap(map[string]interface{}{
 			"ID":                                    rawPlaybookRun.ID,
 			"Name":                                  rawPlaybookRun.Name,
-			"Description":                           rawPlaybookRun.Description,
+			"Description":                           rawPlaybookRun.Summary,
 			"CommanderUserID":                       rawPlaybookRun.OwnerUserID,
 			"ReporterUserID":                        rawPlaybookRun.ReporterUserID,
 			"TeamID":                                rawPlaybookRun.TeamID,
@@ -377,7 +377,6 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 			"RetrospectiveReminderIntervalSeconds":  rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":              rawPlaybookRun.RetrospectiveWasCanceled,
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
-			"ExportChannelOnFinishedEnabled":        rawPlaybookRun.ExportChannelOnFinishedEnabled,
 			"CategoryName":                          rawPlaybookRun.CategoryName,
 			// Preserved for backwards compatibility with v1.2
 			"ActiveStage":      0,
@@ -412,7 +411,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
 			"Name":                                  "",
-			"Description":                           rawPlaybookRun.Description,
+			"Description":                           rawPlaybookRun.Summary,
 			"CommanderUserID":                       rawPlaybookRun.OwnerUserID,
 			"LastStatusUpdateAt":                    rawPlaybookRun.LastStatusUpdateAt,
 			"ChecklistsJSON":                        rawPlaybookRun.ChecklistsJSON,
@@ -429,7 +428,6 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 			"RetrospectiveReminderIntervalSeconds":  rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":              rawPlaybookRun.RetrospectiveWasCanceled,
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybookRun.ConcatenatedWebhookOnStatusUpdateURLs,
-			"ExportChannelOnFinishedEnabled":        rawPlaybookRun.ExportChannelOnFinishedEnabled,
 		}).
 		Where(sq.Eq{"ID": rawPlaybookRun.ID}))
 
@@ -710,7 +708,7 @@ func (s *playbookRunStore) NukeDB() (err error) {
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember,  IR_StatusPosts, IR_TimelineEvent, IR_Incident, IR_Playbook, IR_System"); err != nil {
+	if _, err := tx.Exec("DROP TABLE IF EXISTS IR_PlaybookMember, IR_Run_Participants, IR_StatusPosts, IR_TimelineEvent, IR_Incident, IR_Playbook, IR_System"); err != nil {
 		return errors.Wrap(err, "could not delete all IR tables")
 	}
 
@@ -934,11 +932,12 @@ func (s *playbookRunStore) GetRunsWithAssignedTasks(userID string) ([]app.Assign
 	}
 
 	query := s.store.builder.Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
-		"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName",
+		"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName", "u.UserName AS OwnerUserName",
 		"i.ChecklistsJSON AS ChecklistsJSON").
 		From("IR_Incident AS i").
 		Join("Teams AS t ON (i.TeamID = t.Id)").
 		Join("Channels AS c ON (i.ChannelID = c.Id)").
+		Join("Users AS u ON i.CommanderUserID = u.Id").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		OrderBy("ChannelDisplayName")
 
@@ -996,10 +995,11 @@ func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, e
 
 	query := s.store.builder.
 		Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
-			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName").
+			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName", "u.UserName AS OwnerUserName").
 		From("IR_Incident AS i").
 		Join("Teams AS t ON (i.TeamID = t.Id)").
 		Join("Channels AS c ON (i.ChannelId = c.Id)").
+		Join("Users AS u ON i.CommanderUserID = u.Id").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		Where(membershipClause).
 		OrderBy("ChannelDisplayName")
@@ -1012,17 +1012,26 @@ func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, e
 	return ret, nil
 }
 
-// GetOverdueUpdateRuns returns the list of userID's runs that have overdue updates
+// GetOverdueUpdateRuns returns the list of runs that userID is participating in that have overdue updates
 func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, error) {
+	membershipClause := s.queryBuilder.
+		Select("1").
+		Prefix("EXISTS(").
+		From("ChannelMembers AS cm").
+		Where("cm.ChannelId = i.ChannelID").
+		Where(sq.Eq{"cm.UserId": userID}).
+		Suffix(")")
+
 	query := s.store.builder.
 		Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
-			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName").
+			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName", "u.UserName AS OwnerUserName").
 		From("IR_Incident AS i").
 		Join("Teams AS t ON (i.TeamID = t.Id)").
 		Join("Channels AS c ON (i.ChannelId = c.Id)").
-		Where(sq.Eq{"i.CommanderUserID": userID}).
+		LeftJoin("Users AS u ON i.CommanderUserID = u.Id").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		Where(sq.NotEq{"i.PreviousReminder": 0}).
+		Where(membershipClause).
 		OrderBy("ChannelDisplayName")
 
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
@@ -1037,6 +1046,54 @@ func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, e
 	}
 
 	return ret, nil
+}
+
+func (s *playbookRunStore) Follow(playbookRunID, userID string) error {
+	return s.followHelper(playbookRunID, userID, true)
+}
+
+func (s *playbookRunStore) Unfollow(playbookRunID, userID string) error {
+	return s.followHelper(playbookRunID, userID, false)
+}
+
+func (s *playbookRunStore) followHelper(playbookRunID, userID string, value bool) error {
+	var err error
+	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+		_, err = s.store.execBuilder(s.store.db, sq.
+			Insert("IR_Run_Participants").
+			Columns("IncidentID", "UserID", "IsFollower").
+			Values(playbookRunID, userID, value).
+			Suffix("ON DUPLICATE KEY UPDATE IsFollower = ?", value))
+	} else {
+		_, err = s.store.execBuilder(s.store.db, sq.
+			Insert("IR_Run_Participants").
+			Columns("IncidentID", "UserID", "IsFollower").
+			Values(playbookRunID, userID, value).
+			Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET IsFollower = ?", value))
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to upsert follower '%s' for run '%s'", userID, playbookRunID)
+	}
+
+	return nil
+}
+
+func (s *playbookRunStore) GetFollowers(playbookRunID string) ([]string, error) {
+	query := s.queryBuilder.
+		Select("UserID").
+		From("IR_Run_Participants").
+		Where(sq.And{sq.Eq{"IsFollower": true}, sq.Eq{"IncidentID": playbookRunID}})
+
+	var followers []string
+	err := s.store.selectBuilder(s.store.db, &followers, query)
+	if err == sql.ErrNoRows {
+		return []string{}, nil
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "failed to get followers for run '%s'", playbookRunID)
+	}
+
+	return followers, nil
 }
 
 func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {

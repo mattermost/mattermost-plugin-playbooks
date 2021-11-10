@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
+import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
@@ -50,6 +51,7 @@ const RunListSearch = styled.div`
 `;
 
 export default function SearchInput(props: Props) {
+    const {formatMessage} = useIntl();
     const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setTerm(event.target.value);
         props.onSearch(event.target.value);
@@ -63,7 +65,7 @@ export default function SearchInput(props: Props) {
         >
             <input
                 type='text'
-                placeholder='Search by run name'
+                placeholder={formatMessage({defaultMessage: 'Search by run name'})}
                 onChange={onChange}
                 value={term}
             />

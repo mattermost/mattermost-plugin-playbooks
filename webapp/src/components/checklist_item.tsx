@@ -3,6 +3,7 @@
 
 import React, {useRef, useState} from 'react';
 import ReactDOM from 'react-dom';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -23,7 +24,7 @@ import {
 import Spinner from 'src/components/assets/icons/spinner';
 import {ChecklistItemButton} from 'src/components/checklist_item_input';
 import Profile from 'src/components/profile/profile';
-import ProfileSelector from 'src/components/profile/profile_selector';
+import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
@@ -46,9 +47,10 @@ interface ChecklistItemDetailsProps {
     playbookRunId: string;
     onChange?: (item: ChecklistItemState) => void;
     onRedirect?: () => void;
-    draggableProvided: DraggableProvided;
+    draggableProvided?: DraggableProvided;
     dragging: boolean;
     disabled: boolean;
+    inlineDescription: boolean;
 }
 
 const RunningTimeout = 1000;
@@ -202,6 +204,31 @@ export const CheckboxContainer = styled.div`
     }
 `;
 
+const ChecklistItemLabel = styled.div`
+    display: flex;
+    flex-direction: column;
+`;
+
+const ChecklistItemDescription = styled.div`
+    font-size: 12px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+
+    display: flex;
+    flex-direction: column;
+
+    max-width: 630px;
+    margin: 4px 0 0 2px;
+
+    // Fix default markdown styling in the paragraphs
+    p {
+        :last-child {
+            margin-bottom: 0;
+        }
+
+        white-space: pre-wrap;
+    }
+`;
+
 const Command = styled.div`
     word-break: break-word;
     display: inline;
@@ -247,6 +274,7 @@ interface StepDescriptionProps {
 
 const StepDescription = (props: StepDescriptionProps): React.ReactElement<StepDescriptionProps> => {
     const [showTooltip, setShowTooltip] = useState(false);
+    const {formatMessage} = useIntl();
     const target = useRef(null);
     const popoverRef = useRef(null);
     useClickOutsideRef(popoverRef, () => {
@@ -261,7 +289,7 @@ const StepDescription = (props: StepDescriptionProps): React.ReactElement<StepDe
     return (
         <>
             <HoverMenuButton
-                title={'Description'}
+                title={formatMessage({defaultMessage: 'Description'})}
                 tabIndex={0}
                 className={'icon-information-outline icon-16 btn-icon'}
                 ref={target}
@@ -306,12 +334,12 @@ const ControlComponentAnchor = styled.a`
     top: -4px;
 `;
 
-const ControlComponent = (ownProps: ControlProps<any>) => (
+const ControlComponent = (ownProps: ControlProps<ProfileOption, boolean>) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
             <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
-                {'No Assignee'}
+                <FormattedMessage defaultMessage='No Assignee'/>
             </ControlComponentAnchor>
         )}
     </div>
@@ -323,6 +351,7 @@ document.body.appendChild(portal);
 export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
     const commandRef = useRef(null);
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
@@ -379,20 +408,20 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const content = (
         <>
             <ItemContainer
-                ref={props.draggableProvided.innerRef}
-                {...props.draggableProvided.draggableProps}
+                ref={props.draggableProvided?.innerRef}
+                {...props.draggableProvided?.draggableProps}
                 onMouseEnter={() => setShowMenu(true)}
                 onMouseLeave={() => setShowMenu(false)}
                 data-testid='checkbox-item-container'
             >
                 <CheckboxContainer>
-                    {showMenu && (!props.disabled || props.checklistItem.description !== '') &&
+                    {showMenu && (!props.disabled || props.checklistItem.description !== '') && !props.inlineDescription &&
                     <HoverMenu>
                         {!props.disabled &&
                             <HoverMenuButton
-                                title={'Drag me to reorder'}
+                                title={formatMessage({defaultMessage: 'Drag me to reorder'})}
                                 className={'icon icon-menu'}
-                                {...props.draggableProvided.dragHandleProps}
+                                {...props.draggableProvided?.dragHandleProps}
                             />
                         }
                         {props.checklistItem.description !== '' &&
@@ -409,7 +438,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                     onlyPlaceholder={true}
                                     placeholder={
                                         <HoverMenuButton
-                                            title={'Assign'}
+                                            title={formatMessage({defaultMessage: 'Assign'})}
                                             className={'icon-account-plus-outline icon-16 btn-icon'}
                                         />
                                     }
@@ -426,14 +455,14 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                     showOnRight={true}
                                 />
                                 <HoverMenuButton
-                                    title={'Edit'}
+                                    title={formatMessage({defaultMessage: 'Edit'})}
                                     className={'icon-pencil-outline icon-16 btn-icon'}
                                     onClick={() => {
                                         setShowEditDialog(true);
                                     }}
                                 />
                                 <HoverMenuButton
-                                    title={'Delete'}
+                                    title={formatMessage({defaultMessage: 'Delete'})}
                                     className={'icon-trash-can-outline icon-16 btn-icon'}
                                     onClick={() => {
                                         setShowDeleteConfirm(true);
@@ -452,13 +481,20 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             }
                         }}
                     />
-                    <label title={title}>
-                        <div
-                            onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
-                        >
-                            {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
-                        </div>
-                    </label>
+                    <ChecklistItemLabel>
+                        <label title={title}>
+                            <div
+                                onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
+                            >
+                                {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                            </div>
+                        </label>
+                        {props.inlineDescription && (
+                            <ChecklistItemDescription>
+                                {messageHtmlToComponent(formatText(props.checklistItem.description, {...markdownOptions, singleline: false}), true, {})}
+                            </ChecklistItemDescription>
+                        )}
+                    </ChecklistItemLabel>
                 </CheckboxContainer>
                 <ExtrasRow>
                     {props.checklistItem.assignee_id &&
@@ -497,9 +533,9 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             </ItemContainer>
             <ConfirmModal
                 show={showDeleteConfirm}
-                title={'Delete task'}
-                message={'Are you sure you want to delete this task? This will be removed from this run but will not affect the playbook.'}
-                confirmButtonText={'Delete'}
+                title={formatMessage({defaultMessage: 'Delete task'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to delete this task? This will be removed from this run but will not affect the playbook.'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Delete'})}
                 onConfirm={() =>
                     clientRemoveChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum)
                 }
@@ -553,6 +589,7 @@ const FormContainer = styled.div`
 `;
 
 const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {
+    const {formatMessage} = useIntl();
     const [title, setTitle] = useState(props.taskTitle);
     const [description, setDescription] = useState<string>(props.taskDescription);
     const [command, setCommand] = useState(props.taskCommand);
@@ -570,16 +607,16 @@ const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {
         <GenericModal
             id={'taskEditModalc' + props.checklistNum + 'i' + props.itemNum}
             show={props.show}
-            modalHeaderText={'Edit task'}
+            modalHeaderText={formatMessage({defaultMessage: 'Edit task'})}
             onHide={props.onDone}
-            confirmButtonText={'Edit task'}
-            cancelButtonText={'Cancel'}
+            confirmButtonText={formatMessage({defaultMessage: 'Edit task'})}
+            cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
             handleCancel={props.onDone}
             handleConfirm={submit}
         >
             <FormContainer>
                 <ModalField
-                    placeholder={'Task name'}
+                    placeholder={formatMessage({defaultMessage: 'Task name'})}
                     type='text'
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
@@ -596,7 +633,7 @@ const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {
                     value={description ?? ''}
                     setValue={setDescription}
                     channelId={props.channelId}
-                    createMessage='Task description'
+                    createMessage={formatMessage({defaultMessage: 'Task description'})}
                 />
             </FormContainer>
         </GenericModal>

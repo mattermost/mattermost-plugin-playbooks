@@ -150,7 +150,7 @@ const ProfileAutocomplete = (props: Props) => {
 export default ProfileAutocomplete;
 
 const customStyles = {
-    control: (provided: ControlProps<UserProfile>) => ({
+    control: (provided: ControlProps<UserProfile, boolean>) => ({
         ...provided,
         minHeight: 34,
     }),

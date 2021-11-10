@@ -470,7 +470,33 @@ export const updatePlaybookRunDescription = async (playbookRunId: string, newDes
 };
 
 export const notifyConnect = async () => {
-    await doFetchWithoutResponse(`${apiUrl}/bot/connect`, {method: 'GET'});
+    await doFetchWithoutResponse(`${apiUrl}/bot/connect`, {
+        method: 'GET',
+        headers: {
+            'X-Timezone-Offset': -new Date().getTimezoneOffset() / 60,
+        },
+    });
+};
+
+export const followPlaybookRun = async (playbookRunId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/followers`, {
+        method: 'PUT',
+    });
+};
+
+export const unfollowPlaybookRun = async (playbookRunId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/followers`, {
+        method: 'DELETE',
+    });
+};
+
+export const resetReminder = async (playbookRunId: string, newReminderSeconds: number) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/reminder`, {
+        method: 'POST',
+        body: JSON.stringify({
+            new_reminder_seconds: newReminderSeconds,
+        }),
+    });
 };
 
 export const doGet = async <TData = any>(url: string) => {

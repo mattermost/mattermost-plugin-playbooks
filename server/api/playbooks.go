@@ -71,6 +71,11 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if playbook.ReminderTimerDefaultSeconds <= 0 {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be > 0", nil)
+		return
+	}
+
 	if err := app.CreatePlaybook(userID, playbook, h.config, h.pluginAPI, h.playbookService); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return

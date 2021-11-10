@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/blang/semver"
+	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
@@ -44,6 +47,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 
 	mockCtrl := gomock.NewController(t)
 	logger := mock_bot.NewMockLogger(mockCtrl)
+	scheduler := mock_app.NewMockJobOnceScheduler(mockCtrl)
 
 	driverName := db.DriverName()
 
@@ -56,9 +60,10 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 		logger,
 		db,
 		builder,
+		scheduler,
 	}
 
-	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).Times(2)
+	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).AnyTimes()
 
 	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
 	require.NoError(t, err)
@@ -68,6 +73,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	setupBotsTable(t, db)
 	setupChannelMembersTable(t, db)
 	setupKVStoreTable(t, db)
+	setupUsersTable(t, db)
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		err = sqlStore.Migrate(currentSchemaVersion)
@@ -111,7 +117,8 @@ func setupUsersTable(t *testing.T, db *sqlx.DB) {
 				locale character varying(5),
 				timezone character varying(256),
 				mfaactive boolean,
-				mfasecret character varying(128)
+				mfasecret character varying(128),
+				PRIMARY KEY (Id)
 			);
 		`)
 		require.NoError(t, err)
@@ -650,4 +657,46 @@ func savePosts(t testing.TB, store *SQLStore, posts []*model.Post) {
 
 	_, err := store.execBuilder(store.db, insertBuilder)
 	require.NoError(t, err)
+}
+
+func migrateUpTo(t *testing.T, store *SQLStore, lastExpectedVersion semver.Version) {
+	t.Helper()
+
+	for _, migration := range migrations {
+		if migration.toVersion.GT(lastExpectedVersion) {
+			break
+		}
+
+		err := store.migrate(migration)
+		require.NoError(t, err)
+
+		currentSchemaVersion, err := store.GetCurrentVersion()
+		require.NoError(t, err)
+		require.Equal(t, currentSchemaVersion, migration.toVersion)
+	}
+
+	currentSchemaVersion, err := store.GetCurrentVersion()
+	require.NoError(t, err)
+	require.Equal(t, currentSchemaVersion, lastExpectedVersion)
+}
+
+func migrateFrom(t *testing.T, store *SQLStore, firstExpectedVersion semver.Version) {
+	t.Helper()
+
+	currentSchemaVersion, err := store.GetCurrentVersion()
+	require.NoError(t, err)
+	require.Equal(t, currentSchemaVersion, firstExpectedVersion)
+
+	for _, migration := range migrations {
+		if migration.toVersion.LE(firstExpectedVersion) {
+			continue
+		}
+
+		err := store.migrate(migration)
+		require.NoError(t, err)
+
+		currentSchemaVersion, err := store.GetCurrentVersion()
+		require.NoError(t, err)
+		require.Equal(t, currentSchemaVersion, migration.toVersion)
+	}
 }

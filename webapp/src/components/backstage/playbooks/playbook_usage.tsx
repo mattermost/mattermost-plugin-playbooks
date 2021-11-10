@@ -4,10 +4,9 @@
 import styled from 'styled-components';
 import React, {useEffect, useState, ReactNode} from 'react';
 
-import {fetchPlaybookStats} from 'src/client';
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {EmptyPlaybookStats} from 'src/types/stats';
+import {PlaybookStats} from 'src/types/stats';
 import StatsView from 'src/components/backstage/playbooks/stats_view';
 import {useRunsList} from 'src/hooks';
 import RunList from '../runs_list/runs_list';
@@ -29,36 +28,24 @@ const RunListContainer = styled.div`
 
 interface Props {
     playbook: PlaybookWithChecklist;
+    stats: PlaybookStats;
 }
 
 const PlaybookUsage = (props: Props) => {
     const [filterPill, setFilterPill] = useState<ReactNode>(null);
-    const [stats, setStats] = useState(EmptyPlaybookStats);
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const ret = await fetchPlaybookStats(props.playbook.id);
-                setStats(ret);
-            } catch {
-                // Ignore any errors here. If it fails, it's most likely also failed to fetch
-                // the playbook above.
-            }
-        };
-
         setFetchParams((oldParams) => {
             return {...oldParams, playbook_id: props.playbook.id};
         });
-
-        fetchStats();
     }, [props.playbook.id, setFetchParams]);
 
     return (
         <OuterContainer>
             <InnerContainer>
                 <StatsView
-                    stats={stats}
+                    stats={props.stats}
                     fetchParams={fetchParams}
                     setFetchParams={setFetchParams}
                     setFilterPill={setFilterPill}

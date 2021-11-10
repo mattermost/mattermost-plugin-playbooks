@@ -43,11 +43,11 @@ type Playbook struct {
 	RetrospectiveTemplate                string      `json:"retrospective_template"`
 	WebhookOnStatusUpdateURLs            []string    `json:"webhook_on_status_update_urls"`
 	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
-	ExportChannelOnFinishedEnabled       bool        `json:"export_channel_on_finished_enabled"`
 	SignalAnyKeywords                    []string    `json:"signal_any_keywords"`
 	SignalAnyKeywordsEnabled             bool        `json:"signal_any_keywords_enabled"`
 	CategorizeChannelEnabled             bool        `json:"categorize_channel_enabled"`
 	CategoryName                         string      `json:"category_name"`
+	RunSummaryTemplate                   string      `json:"run_summary_template"`
 }
 
 func (p Playbook) Clone() Playbook {

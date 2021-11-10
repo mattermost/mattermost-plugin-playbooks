@@ -27,7 +27,7 @@ interface ExportLinkProps {
 const ExportBannerTimeout = 2500;
 
 const SecondaryButtonWithSpace = styled(SecondaryButtonLarger)`
-    margin: 0 0 0 20px;
+    margin: 0 0 0 12px;
 `;
 
 const SecondaryButtonDisabled = styled(SecondaryButtonWithSpace)`
