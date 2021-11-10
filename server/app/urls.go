@@ -39,3 +39,17 @@ func getPlaybookDetailsURL(siteURL string, manifestID string, playbookID string)
 		playbookID,
 	)
 }
+
+func getRelativeRunDetailsURL(playbookRunID string) string {
+	return fmt.Sprintf(
+		"/playbooks/runs/%s",
+		playbookRunID,
+	)
+}
+
+func getRelativePlaybookDetailsURL(playbookID string) string {
+	return fmt.Sprintf(
+		"/playbooks/playbooks/%s",
+		playbookID,
+	)
+}
