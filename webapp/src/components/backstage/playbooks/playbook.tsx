@@ -123,7 +123,10 @@ const Playbook = () => {
                     </VerticalBlock>
                     {
                         archived &&
-                        <StatusBadge status='Archived'/>
+                        <StatusBadge
+                            data-testid='archived-badge'
+                            status='Archived'
+                        />
                     }
                     <PrimaryButtonLarger
                         onClick={runPlaybook}

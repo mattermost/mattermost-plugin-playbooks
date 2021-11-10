@@ -143,6 +143,7 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
             <EditButton
                 disabled={archived}
                 onClick={() => navigateToUrl(match.url.replace('/preview', '/edit'))}
+                data-testid='edit-playbook'
             >
                 <i className={'icon-pencil-outline icon-16'}/>
                 {formatMessage({defaultMessage: 'Edit'})}

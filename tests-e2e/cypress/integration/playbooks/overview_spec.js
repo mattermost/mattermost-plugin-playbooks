@@ -80,7 +80,8 @@ describe('playbooks > overview', () => {
             });
 
             // # Verify permissions text
-            cy.findByTestId('playbookPermissionsDescription').contains(`Everyone in ${testTeam.display_name} can access this playbook`);
+            cy.findByTestId('playbookPermissionsDescription')
+                .contains(`Everyone in ${testTeam.display_name} can access this playbook`);
         });
 
         it('should describe playbooks private only to the current user', () => {
@@ -93,7 +94,8 @@ describe('playbooks > overview', () => {
             });
 
             // # Verify permissions text
-            cy.findByTestId('playbookPermissionsDescription').contains('Only you can access this playbook');
+            cy.findByTestId('playbookPermissionsDescription')
+                .contains('Only you can access this playbook');
         });
 
         it('should describe playbooks private to multiple users', () => {
@@ -106,7 +108,8 @@ describe('playbooks > overview', () => {
             });
 
             // # Verify permissions text
-            cy.findByTestId('playbookPermissionsDescription').contains('2 people can access this playbook');
+            cy.findByTestId('playbookPermissionsDescription')
+                .contains('2 people can access this playbook');
         });
     });
 
@@ -120,6 +123,50 @@ describe('playbooks > overview', () => {
         // * Verify the playbook run creation dialog has opened
         cy.get('#interactiveDialogModal').should('exist').within(() => {
             cy.findByText('Start run').should('exist');
+        });
+    });
+
+    describe.only('archiving', () => {
+        const playbookTitle = 'Playbook (' + Date.now() + ')';
+        let testPlaybook;
+
+        before(() => {
+            cy.apiCreateTestPlaybook({
+                teamId: testTeam.id,
+                title: playbookTitle,
+                userId: testUser.id,
+            }).then((playbook) => {
+                testPlaybook = playbook;
+            });
+        });
+
+        it('shows intended UI and disallows further updates', () => {
+            // # Programmatically archive it
+            cy.apiArchivePlaybook(testPlaybook.id);
+
+            // # Visit the selected playbook
+            cy.visit(`/playbooks/playbooks/${testPlaybook.id}`);
+
+            // * Verify we're on the right playbook
+            cy.get('[class^="Title-"]').contains(playbookTitle);
+
+            // * Verify we an see the archived badge
+            cy.findByTestId('archived-badge').should('be.visible');
+
+            // * Verify the run button is disabled
+            cy.findByTestId('run-playbook').should('be.disabled');
+
+            // * Verify the edit button is disabled
+            cy.findByTestId('edit-playbook').should('be.disabled');
+
+            // # Attempt to edit the playbook
+            cy.apiGetPlaybook(testPlaybook.id).then((playbook) => {
+                // # New title
+                playbook.title = 'new Title!!!';
+
+                // * Verify update fails
+                cy.apiUpdatePlaybook(playbook, 400);
+            });
         });
     });
 });
