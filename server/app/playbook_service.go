@@ -151,12 +151,11 @@ func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Pos
 		return
 	}
 
-	pluginID := s.configService.GetManifest().Id
 	siteURL := model.ServiceSettingsDefaultSiteURL
 	if s.api.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
 		siteURL = *s.api.Configuration.GetConfig().ServiceSettings.SiteURL
 	}
-	playbooksURL := getPlaybooksURL(siteURL, pluginID)
+	playbooksURL := getPlaybooksURL(siteURL)
 
 	message := s.getPlaybookSuggestionsMessage(suggestedPlaybooks, triggers, playbooksURL)
 	attachment := s.getPlaybookSuggestionsSlackAttachment(suggestedPlaybooks, post.Id, playbooksURL, session.IsMobileApp())

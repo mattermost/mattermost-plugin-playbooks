@@ -2,54 +2,35 @@ package app
 
 import "fmt"
 
-func getRunsURL(siteURL string, manifestID string) string {
-	return fmt.Sprintf(
-		"%s/playbooks/runs",
-		siteURL,
-	)
+const (
+	PlaybooksPath = "/playbooks/playbooks"
+	RunsPath      = "/playbooks/runs"
+)
+
+func getRunDetailsRelativeURL(playbookRunID string) string {
+	return fmt.Sprintf("%s/%s", RunsPath, playbookRunID)
 }
 
-func getRunDetailsURL(siteURL string, manifestID string, playbookRunID string) string {
-	return fmt.Sprintf(
-		"%s/%s",
-		getRunsURL(siteURL, manifestID),
-		playbookRunID,
-	)
+func getPlaybookDetailsRelativeURL(playbookID string) string {
+	return fmt.Sprintf("%s/%s", PlaybooksPath, playbookID)
 }
 
-func getRunRetrospectiveURL(siteURL string, manifestID string, playbookRunID string) string {
-	return fmt.Sprintf("%s/retrospective", getRunDetailsURL(siteURL, manifestID, playbookRunID))
+func getRunDetailsURL(siteURL string, playbookRunID string) string {
+	return fmt.Sprintf("%s%s", siteURL, getRunDetailsRelativeURL(playbookRunID))
 }
 
-func getPlaybooksURL(siteURL string, manifestID string) string {
-	return fmt.Sprintf(
-		"%s/playbooks/playbooks",
-		siteURL,
-	)
+func getRunRetrospectiveURL(siteURL string, playbookRunID string) string {
+	return fmt.Sprintf("%s/retrospective", getRunDetailsURL(siteURL, playbookRunID))
 }
 
-func getPlaybooksNewURL(siteURL string, manifestID string) string {
-	return fmt.Sprintf("%s/new", getPlaybooksURL(siteURL, manifestID))
+func getPlaybooksURL(siteURL string) string {
+	return fmt.Sprintf("%s%s", siteURL, PlaybooksPath)
 }
 
-func getPlaybookDetailsURL(siteURL string, manifestID string, playbookID string) string {
-	return fmt.Sprintf(
-		"%s/%s",
-		getPlaybooksURL(siteURL, manifestID),
-		playbookID,
-	)
+func getPlaybooksNewURL(siteURL string) string {
+	return fmt.Sprintf("%s/new", getPlaybooksURL(siteURL))
 }
 
-func getRelativeRunDetailsURL(playbookRunID string) string {
-	return fmt.Sprintf(
-		"/playbooks/runs/%s",
-		playbookRunID,
-	)
-}
-
-func getRelativePlaybookDetailsURL(playbookID string) string {
-	return fmt.Sprintf(
-		"/playbooks/playbooks/%s",
-		playbookID,
-	)
+func getPlaybookDetailsURL(siteURL string, playbookID string) string {
+	return fmt.Sprintf("%s%s", siteURL, getPlaybookDetailsRelativeURL(playbookID))
 }
