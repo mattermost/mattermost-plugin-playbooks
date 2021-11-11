@@ -402,7 +402,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const assignee_id = props.checklistItem.assignee_id; // to make typescript happy
 
     const title = props.checklistItem.title;
-    const labelText= messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions), true, {})
+    const labelText = messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions), true, {});
 
     const resetAssignee = () => {
         onAssigneeChange();
