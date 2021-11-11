@@ -30,16 +30,13 @@ interface Props {
 
 const ActionCol = styled.div`
     margin-left: -8px;
+	width: 16.666667%;
+	float: left;
     position: relative;
-    width: 100%;
-    min-height: 1px;
-    padding-right: 15px;
-    padding-left: 15px;
-    @media (min-width: 576){
-        -webkit-box-flex: 0;
-        flex: 0 0 16.666667%;
-        max-width: 16.666667%;
-    }
+	min-height: 1px;
+	padding-left: 15px;
+	padding-right: 15px;
+	cursor: pointer;
 `;
 
 const PlaybookItem = styled.div`
@@ -50,33 +47,27 @@ const PlaybookItem = styled.div`
     align-items: center;
     margin: 0;
     border-bottom: 1px solid var(--center-channel-color-16);
-    flex-wrap: wrap;
-    margin-right: -15px;
-    margin-left: -15px;
-    &:hover {
-        background: var(--center-channel-color-04);
-    }
 `;
 
 const PlaybookItemTitle = styled.div`
     display: flex;
+	font-weight: 600;
     flex-direction: column;
     position: relative;
-    width: 100%;
+    width: 33.333333%;
     min-height: 1px;
     padding-right: 15px;
     padding-left: 15px;
-    > span {
-        font-weight: 600;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-    @media (min-width: 576){
-        -webkit-box-flex: 0;
-        flex: 0 0 33.333333%;
-        max-width: 33.333333%;
-    }
+	float: left;
+`;
+
+const PlaybookItemRow = styled.div`
+	width: 16.666667%;
+	float: left;
+    position: relative;
+	min-height: 1px;
+	padding-left: 15px;
+	padding-right: 15px;
 `;
 
 const teamNameSelector = (teamId: string) => (state: GlobalState): string => getTeam(state, teamId).display_name;
@@ -95,9 +86,9 @@ const PlaybookListRow = (props: Props) => {
                 />
                 {props.displayTeam && <InfoLine>{teamName}</InfoLine>}
             </PlaybookItemTitle>
-            <div className='col-sm-2'>{props.playbook.num_stages}</div>
-            <div className='col-sm-2'>{props.playbook.num_steps}</div>
-            <div className='col-sm-2'>{props.playbook.num_runs}</div>
+            <PlaybookItemRow>{props.playbook.num_stages}</PlaybookItemRow>
+            <PlaybookItemRow>{props.playbook.num_steps}</PlaybookItemRow>
+            <PlaybookItemRow>{props.playbook.num_runs}</PlaybookItemRow>
             <ActionCol>
                 <PlaybookActionMenu
                     onEdit={props.onEdit}
