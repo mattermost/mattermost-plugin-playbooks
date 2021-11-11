@@ -4,6 +4,7 @@
   "+ZIXOR": "Channel access",
   "+hddg7": "Add to run timeline",
   "/1FEJW": "ACTIVE PARTICIPANTS per day over the last 14 days",
+  "/4tOwT": "Skip",
   "/HtNUp": "Select or specify a {mode, select, DurationValue {time span (\"4 hours\", \"7 days\"...)} DateTimeValue {time (\"in 4 hours\", \"May 1\", \"Tomorrow at 1 PM\"...)} other {time or time span}}",
   "/MaJux": "Start retrospective",
   "/YZ/sw": "Start trial",
@@ -36,6 +37,7 @@
   "6jDabx": "Give Feedback",
   "6n0XDG": "Are you sure you want to remove the checklist? All tasks will be removed.",
   "6uhSSw": "Select a channel",
+  "7VTSeD": "Are you sure you want to skip this task? This will be crossed from this run but will not affect the playbook.",
   "8hDbW6": "Send an outgoing webhook",
   "9+Ddtu": "Next",
   "91Hr5f": "Drag me to reorder",
@@ -199,6 +201,7 @@
   "c8hxKk": "Week of {date}",
   "d8KvXJ": "Your trial license expires on {expiryDate}. You can purchase a license at any time through the <PortalLink>Customer Portal</PortalLink> to avoid any disruption.",
   "d9epHh": "Export channel log",
+  "dSC1YD": "Skip task",
   "djALPR": "{activeRuns, number} {activeRuns, plural, one {run} other {runs}} in progress",
   "djXM+y": "Only selected users can access.",
   "dsTLW1": "Edit task",
@@ -298,6 +301,7 @@
   "w7tf2z": "Published",
   "wEQDC6": "Edit",
   "wL7VAE": "Actions",
+  "wO6NOM": "Are you sure you want to Restore this task? This Task will be added to this run",
   "wX3k9U": "Untitled playbook",
   "wZ83YL": "Not right now",
   "waVyVY": "Participants currently active",
@@ -310,6 +314,7 @@
   "xmcVZ0": "Search",
   "yhU1et": "Tasks",
   "yhzuSC": "Time: {time}",
+  "ypIsVG": "Restore task",
   "yqpcOa": "Use",
   "yxguVq": "Discard changes",
   "z3A0LP": "Last run was {relativeTime}",
@@ -318,5 +323,6 @@
   "zINlao": "Owner",
   "zWkvNO": "Timeline",
   "zx0myy": "Participants",
-  "zy3cJT": "Prompt to run this playbook when a user posts a message containing the keywords"
+  "zy3cJT": "Prompt to run this playbook when a user posts a message containing the keywords",
+  "zz6ObK": "Restore"
 }
