@@ -30,6 +30,7 @@ const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	"* `/playbook info` - Show a summary of the current playbook run. \n" +
 	"* `/playbook timeline` - Show the timeline for the current playbook run. \n" +
 	"* `/playbook todo` - Get a list of your assigned tasks. \n" +
+	"* `/playbook settings digest [on/off]` - turn daily digest on/off. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -51,7 +52,7 @@ func getCommand(addTestCommands bool) *model.Command {
 		DisplayName:      "Playbook",
 		Description:      "Playbooks",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: run, finish, update, check, list, owner, info, todo",
+		AutoCompleteDesc: "Available commands: run, finish, update, check, list, owner, info, todo, settings",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(addTestCommands),
 	}
@@ -59,7 +60,7 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	command := model.NewAutocompleteData("playbook", "[command]",
-		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline, todo")
+		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline, todo, settings")
 
 	run := model.NewAutocompleteData("run", "", "Starts a new playbook run")
 	command.AddCommand(run)
@@ -111,6 +112,22 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	todo := model.NewAutocompleteData("todo", "", "Get a list of your assigned tasks")
 	command.AddCommand(todo)
 
+	settings := model.NewAutocompleteData("settings", "digest [on/off]", "Change personal playbook settings")
+	display := model.NewAutocompleteData(" ", "Display current settings", "")
+	settings.AddCommand(display)
+
+	digest := model.NewAutocompleteData("digest", "[on/off]", "Turn digest on/off")
+	digestValue := []model.AutocompleteListItem{{
+		HelpText: "Turn daily digest on",
+		Item:     "on",
+	}, {
+		HelpText: "Turn daily digest off",
+		Item:     "off",
+	}}
+	digest.AddStaticListArgument("", true, digestValue)
+	settings.AddCommand(digest)
+	command.AddCommand(settings)
+
 	if addTestCommands {
 		test := model.NewAutocompleteData("test", "", "Commands for testing and debugging.")
 
@@ -150,11 +167,15 @@ type Runner struct {
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
 	configService      config.Service
+	userInfoStore      app.UserInfoStore
+	userInfoTelemetry  app.UserInfoTelemetry
 }
 
 // NewCommandRunner creates a command runner.
 func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
-	logger bot.Logger, poster bot.Poster, playbookRunService app.PlaybookRunService, playbookService app.PlaybookService, configService config.Service) *Runner {
+	logger bot.Logger, poster bot.Poster, playbookRunService app.PlaybookRunService,
+	playbookService app.PlaybookService, configService config.Service,
+	userInfoStore app.UserInfoStore, userInfoTelemetry app.UserInfoTelemetry) *Runner {
 	return &Runner{
 		context:            ctx,
 		args:               args,
@@ -164,6 +185,8 @@ func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *plugina
 		playbookRunService: playbookRunService,
 		playbookService:    playbookService,
 		configService:      configService,
+		userInfoStore:      userInfoStore,
+		userInfoTelemetry:  userInfoTelemetry,
 	}
 }
 
@@ -817,109 +840,70 @@ func (r *Runner) timeSince(event app.TimelineEvent, reported time.Time) string {
 	return "-" + timeutils.DurationString(eventAt, reported)
 }
 
-func (r *Runner) actionTodo(args []string) {
-	siteURL := model.ServiceSettingsDefaultSiteURL
-	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-		siteURL = *r.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	}
-
-	runs, err := r.playbookRunService.GetAssignedTasks(r.args.UserId)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error getting assigned tasks: %v", err)
-		return
-	}
-	message := buildAssignedTaskMessage(runs, siteURL)
-
-	runsOverdue, err := r.playbookRunService.GetOverdueUpdateRuns(r.args.UserId)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error getting overdue runs: %v", err)
-		return
-	}
-	message += buildRunsOverdueMessage(runsOverdue, siteURL)
-
-	runsInProgress, err := r.playbookRunService.GetParticipatingRuns(r.args.UserId)
-	if err != nil {
-		r.warnUserAndLogErrorf("Error getting runs in progress: %v", err)
-		return
-	}
-	message += buildRunsInProgressMessage(runsInProgress, siteURL)
-
-	if err = r.poster.DM(r.args.UserId, &model.Post{Message: message}); err != nil {
-		r.warnUserAndLogErrorf("failed to send digest: %v", err)
+func (r *Runner) actionTodo() {
+	if err := r.playbookRunService.DMTodoDigestToUser(r.args.UserId, true); err != nil {
+		r.warnUserAndLogErrorf("Error getting tasks and runs digest: %v", err)
 	}
 }
 
-func buildAssignedTaskMessage(runs []app.AssignedRun, siteURL string) string {
-	total := 0
-	for _, run := range runs {
-		total += len(run.Tasks)
+func (r *Runner) actionSettings(args []string) {
+	settingsHelpText := "###### Playbooks Personal Settings - Slash Command Help\n" +
+		"* `/playbook settings` - display current settings. \n" +
+		"* `/playbook settings digest on` - turn daily digest on. \n" +
+		"* `/playbook settings digest off` - turn daily digest off."
+
+	if len(args) == 0 {
+		r.displayCurrentSettings()
+		return
 	}
 
-	if total == 0 {
-		return "### Your Assigned Tasks:\nYou have 0 assigned tasks.\n"
+	if len(args) != 2 || args[0] != "digest" || (args[1] != "on" && args[1] != "off") {
+		r.postCommandResponse(settingsHelpText)
+		return
 	}
 
-	message := fmt.Sprintf("### Your Assigned Tasks:\nYou have %d total assigned tasks:\n", total)
-
-	for _, run := range runs {
-		numTasks := len(run.Tasks)
-		taskPlural := "task"
-		if numTasks > 1 {
-			taskPlural += "s"
+	info, err := r.userInfoStore.Get(r.args.UserId)
+	if errors.Is(err, app.ErrNotFound) {
+		info = app.UserInfo{
+			ID: r.args.UserId,
 		}
-		message += fmt.Sprintf("- You have %d assigned %s in [%s](%s/%s/channels/%s):\n",
-			numTasks, taskPlural, run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+	} else if err != nil {
+		r.warnUserAndLogErrorf("Error getting userInfo: %v", err)
+		return
+	}
 
-		for _, task := range run.Tasks {
-			message += fmt.Sprintf("  - %s: %s\n", task.ChecklistTitle, task.Title)
+	oldInfo := info
+
+	if args[1] == "off" {
+		info.DisableDailyDigest = true
+	} else {
+		info.DisableDailyDigest = false
+	}
+
+	if err = r.userInfoStore.Upsert(info); err != nil {
+		r.warnUserAndLogErrorf("Error updating userInfo: %v", err)
+		return
+	}
+
+	r.userInfoTelemetry.ChangeDigestSettings(r.args.UserId, oldInfo.DigestNotificationSettings, info.DigestNotificationSettings)
+
+	r.displayCurrentSettings()
+}
+
+func (r *Runner) displayCurrentSettings() {
+	info, err := r.userInfoStore.Get(r.args.UserId)
+	if err != nil {
+		if !errors.Is(err, app.ErrNotFound) {
+			r.warnUserAndLogErrorf("Error getting userInfo: %v", err)
+			return
 		}
 	}
 
-	return message
-}
-
-func buildRunsInProgressMessage(runs []app.RunLink, siteURL string) string {
-	total := len(runs)
-
-	if total == 0 {
-		return "\n### Runs in Progress\nYou have 0 runs currently in progress.\n"
+	dailyDigestSetting := "Daily digest: on"
+	if info.DisableDailyDigest {
+		dailyDigestSetting = "Daily digest: off"
 	}
-
-	runPlural := "run"
-	if total > 1 {
-		runPlural += "s"
-	}
-
-	message := fmt.Sprintf("\n### Runs in Progress\nYou have %d %s currently in progress:\n", total, runPlural)
-
-	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
-			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
-	}
-
-	return message
-}
-
-func buildRunsOverdueMessage(runs []app.RunLink, siteURL string) string {
-	total := len(runs)
-
-	if total == 0 {
-		return "\n### Overdue Status Updates\nYou have 0 runs overdue.\n"
-	}
-
-	runPlural := "run"
-	if total > 1 {
-		runPlural += "s"
-	}
-
-	message := fmt.Sprintf("\n### Overdue Status Updates\nYou have %d %s overdue for status update:\n", total, runPlural)
-
-	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s)\n",
-			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
-	}
-
-	return message
+	r.postCommandResponse(fmt.Sprintf("###### Playbooks Personal Settings\n- %s", dailyDigestSetting))
 }
 
 func (r *Runner) actionTestSelf(args []string) {
@@ -1869,11 +1853,6 @@ func (r *Runner) Execute() error {
 		return nil
 	}
 
-	if !app.IsOnEnabledTeam(r.args.TeamId, r.configService) {
-		r.postCommandResponse("Not enabled on this team.")
-		return nil
-	}
-
 	switch cmd {
 	case "run":
 		r.actionRun(parameters)
@@ -1900,7 +1879,9 @@ func (r *Runner) Execute() error {
 	case "timeline":
 		r.actionTimeline()
 	case "todo":
-		r.actionTodo(parameters)
+		r.actionTodo()
+	case "settings":
+		r.actionSettings(parameters)
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "test":

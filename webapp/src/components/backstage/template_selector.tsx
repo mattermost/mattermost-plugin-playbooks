@@ -8,6 +8,8 @@ import {mdiRocketLaunchOutline, mdiHandshakeOutline, mdiCodeBraces} from '@mdi/j
 
 import {Team} from 'mattermost-redux/types/teams';
 
+import {FormattedMessage} from 'react-intl';
+
 import {DraftPlaybookWithChecklist, emptyPlaybook, newChecklistItem} from 'src/types/playbook';
 import FileIcon from 'src/components/assets/icons/file_icon';
 import AlertIcon from 'src/components/assets/icons/alert_icon';
@@ -26,7 +28,6 @@ export const PresetTemplates: PresetTemplate[] = [
         icon: <FileIcon/>,
         template: {
             ...emptyPlaybook(),
-            reminder_timer_default_seconds: 86400,
         },
     },
     {
@@ -90,7 +91,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 'Hello and welcome!\n\n' +
                 'This channel was created as part of the **Product Release** playbook and is where conversations related to this release are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.',
             categorize_channel_enabled: true,
-            description:
+            run_summary_template:
                 '**About**\n' +
                 '- Version number: TBD\n' +
                 '- Target-date: TBD\n' +
@@ -183,7 +184,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 'Hello and welcome!\n\n' +
                 'This channel was created as part of the **Customer Onboarding** playbook and is where conversations related to this customer are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.',
             categorize_channel_enabled: true,
-            description:
+            run_summary_template:
                 '**About**\n' +
                 '- Account name: [TBD](#)\n' +
                 '- Salesforce opportunity: [TBD](#)\n' +
@@ -253,7 +254,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 'Hello and welcome!\n\n' +
                 'This channel was created as part of the **Service Reliability Incident** playbook and is where conversations related to this release are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.',
             categorize_channel_enabled: true,
-            description:
+            run_summary_template:
                 '**Summary**\n' +
                 '\n' +
                 '**Customer impact**\n' +
@@ -379,7 +380,7 @@ export const PresetTemplates: PresetTemplate[] = [
                 'Hello and welcome!\n\n' +
                 'This channel was created as part of the **Feature Lifecycle** playbook and is where conversations related to developing this feature are held. You can customize this message using Markdown so that every new channel member can be welcomed with helpful context and resources.',
             categorize_channel_enabled: true,
-            description:
+            run_summary_template:
                 '**One-liner**\n' +
                 '<ie. Enable users to prescribe a description template so it\'s consistent for every run and therefore easier to read.>\n' +
                 '\n' +
@@ -489,7 +490,7 @@ const TemplateSelector = ({templates = PresetTemplates, onSelect, teams, allowPl
             <RootContainer>
                 <InnerContainer>
                     <Title>
-                        {'Create a playbook'}
+                        <FormattedMessage defaultMessage='Create a playbook'/>
                         {!allowPlaybookCreation && <NotAllowedIcon className='icon icon-key-variant-circle'/>}
                     </Title>
                     <TemplateItemDiv>

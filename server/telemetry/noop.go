@@ -23,6 +23,10 @@ func (t *NoopTelemetry) CreatePlaybookRun(*app.PlaybookRun, string, bool) {
 func (t *NoopTelemetry) FinishPlaybookRun(*app.PlaybookRun, string) {
 }
 
+// RestorePlaybookRun does nothing
+func (t *NoopTelemetry) RestorePlaybookRun(*app.PlaybookRun, string) {
+}
+
 // RestartPlaybookRun does nothing
 func (t *NoopTelemetry) RestartPlaybookRun(*app.PlaybookRun, string) {
 }
@@ -79,6 +83,10 @@ func (t *NoopTelemetry) UpdatePlaybook(app.Playbook, string) {
 func (t *NoopTelemetry) DeletePlaybook(app.Playbook, string) {
 }
 
+// RestorePlaybook does nothing either.
+func (t *NoopTelemetry) RestorePlaybook(app.Playbook, string) {
+}
+
 // ChangeOwner does nothing
 func (t *NoopTelemetry) ChangeOwner(*app.PlaybookRun, string) {
 }
@@ -107,4 +115,8 @@ func (t *NoopTelemetry) FrontendTelemetryForPlaybook(playbook app.Playbook, user
 
 // FrontendTelemetryForPlaybookTemplate does nothing.
 func (t *NoopTelemetry) FrontendTelemetryForPlaybookTemplate(templateName string, userID, action string) {
+}
+
+// ChangeDigestSettings does nothing
+func (t *NoopTelemetry) ChangeDigestSettings(userID string, old app.DigestNotificationSettings, new app.DigestNotificationSettings) {
 }

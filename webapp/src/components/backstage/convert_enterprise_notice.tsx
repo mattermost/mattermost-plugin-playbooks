@@ -1,4 +1,5 @@
 import React from 'react';
+import {FormattedMessage} from 'react-intl';
 
 import styled from 'styled-components';
 
@@ -13,11 +14,11 @@ const ConvertEnterpriseNotice = () => (
                         target={'_blank'}
                         rel='noreferrer'
                     >
-                        {'Convert to a commercial edition.'}
+                        <FormattedMessage defaultMessage='Convert to a commercial edition.'/>
                     </a>
                 </li>
                 <li>
-                    {'Start a trial or upgrade your subscription.'}
+                    <FormattedMessage defaultMessage='Start a trial or upgrade your subscription.'/>
                 </li>
             </StyledOl>
         </p>

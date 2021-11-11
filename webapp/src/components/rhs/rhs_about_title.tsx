@@ -11,6 +11,8 @@ import Permissions from 'mattermost-redux/constants/permissions';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
 
+import {FormattedMessage} from 'react-intl';
+
 import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
 import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
 import {SemiBoldHeading} from 'src/styles/headings';
@@ -100,7 +102,7 @@ const RHSAboutTitle = (props: Props) => {
             />
             {invalidValue &&
             <ErrorMessage>
-                {'Run name must have at least two characters'}
+                <FormattedMessage defaultMessage='Run name must have at least two characters'/>
             </ErrorMessage>
             }
         </>
@@ -115,11 +117,7 @@ const hasPermissionsToChangeChannelName = (state: GlobalState) => {
 
     const permission = channel.type === General.OPEN_CHANNEL ? Permissions.MANAGE_PUBLIC_CHANNEL_PROPERTIES : Permissions.MANAGE_PRIVATE_CHANNEL_PROPERTIES;
 
-    return haveIChannelPermission(state, {
-        channel: channel.id,
-        team: channel.team_id,
-        permission,
-    });
+    return haveIChannelPermission(state, channel.team_id, channel.id, permission);
 };
 
 const TitleInput = styled.input`

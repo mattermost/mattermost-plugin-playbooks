@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useEffect} from 'react';
+import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import Icon from '@mdi/react';
@@ -22,6 +23,7 @@ interface Props {
 }
 
 const RHSAboutButtons = (props: Props) => {
+    const {formatMessage} = useIntl();
     const playbookName = usePlaybookName(props.playbookRun.playbook_id);
 
     const overviewURL = `/runs/${props.playbookRun.id}`;
@@ -29,32 +31,9 @@ const RHSAboutButtons = (props: Props) => {
 
     return (
         <>
-            <DotMenu
-                icon={<ThreeDotsIcon/>}
-                left={true}
-                dotMenuButton={StyledDotMenuButton}
-            >
-                <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
-                    <DropdownIcon
-                        path={mdiClipboardPlayOutline}
-                        size={1.25}
-                    />
-                    {'Go to run overview'}
-                </StyledDropdownMenuItem>
-                <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
-                    <DropdownIcon
-                        path={mdiNotebookOutline}
-                        size={1.25}
-                    />
-                    <PlaybookInfo>
-                        {'Go to playbook'}
-                        {(playbookName !== '') && <PlaybookName>{playbookName}</PlaybookName>}
-                    </PlaybookInfo>
-                </StyledDropdownMenuItem>
-            </DotMenu>
             <ExpandCollapseButton
-                title={props.collapsed ? 'Expand' : 'Collapse'}
-                className={(props.collapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
+                title={props.collapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
+                className={(props.collapsed ? 'icon-chevron-down' : 'icon-chevron-up') + ' icon-16 btn-icon'}
                 tabIndex={0}
                 role={'button'}
                 onClick={props.toggleCollapsed}
@@ -65,6 +44,29 @@ const RHSAboutButtons = (props: Props) => {
                     }
                 }}
             />
+            <DotMenu
+                icon={<ThreeDotsIcon/>}
+                left={true}
+                dotMenuButton={StyledDotMenuButton}
+            >
+                <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
+                    <DropdownIcon
+                        path={mdiClipboardPlayOutline}
+                        size={1.25}
+                    />
+                    <FormattedMessage defaultMessage='Go to run overview'/>
+                </StyledDropdownMenuItem>
+                <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(playbookURL)}>
+                    <DropdownIcon
+                        path={mdiNotebookOutline}
+                        size={1.25}
+                    />
+                    <PlaybookInfo>
+                        <FormattedMessage defaultMessage='Go to playbook'/>
+                        {(playbookName !== '') && <PlaybookName>{playbookName}</PlaybookName>}
+                    </PlaybookInfo>
+                </StyledDropdownMenuItem>
+            </DotMenu>
         </>
     );
 };

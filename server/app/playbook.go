@@ -35,19 +35,19 @@ type Playbook struct {
 	DefaultOwnerEnabled                  bool        `json:"default_owner_enabled"`
 	BroadcastChannelIDs                  []string    `json:"broadcast_channel_ids"`
 	BroadcastEnabled                     bool        `json:"broadcast_enabled"`
-	WebhookOnCreationURL                 string      `json:"webhook_on_creation_url"`
+	WebhookOnCreationURLs                []string    `json:"webhook_on_creation_urls"`
 	WebhookOnCreationEnabled             bool        `json:"webhook_on_creation_enabled"`
 	MessageOnJoin                        string      `json:"message_on_join"`
 	MessageOnJoinEnabled                 bool        `json:"message_on_join_enabled"`
 	RetrospectiveReminderIntervalSeconds int64       `json:"retrospective_reminder_interval_seconds"`
 	RetrospectiveTemplate                string      `json:"retrospective_template"`
-	WebhookOnStatusUpdateURL             string      `json:"webhook_on_status_update_url"`
+	WebhookOnStatusUpdateURLs            []string    `json:"webhook_on_status_update_urls"`
 	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
-	ExportChannelOnFinishedEnabled       bool        `json:"export_channel_on_finished_enabled"`
 	SignalAnyKeywords                    []string    `json:"signal_any_keywords"`
 	SignalAnyKeywordsEnabled             bool        `json:"signal_any_keywords_enabled"`
 	CategorizeChannelEnabled             bool        `json:"categorize_channel_enabled"`
 	CategoryName                         string      `json:"category_name"`
+	RunSummaryTemplate                   string      `json:"run_summary_template"`
 }
 
 func (p Playbook) Clone() Playbook {
@@ -69,6 +69,12 @@ func (p Playbook) Clone() Playbook {
 	}
 	if len(p.BroadcastChannelIDs) != 0 {
 		newPlaybook.BroadcastChannelIDs = append([]string(nil), p.BroadcastChannelIDs...)
+	}
+	if len(p.WebhookOnCreationURLs) != 0 {
+		newPlaybook.WebhookOnCreationURLs = append([]string(nil), p.WebhookOnCreationURLs...)
+	}
+	if len(p.WebhookOnStatusUpdateURLs) != 0 {
+		newPlaybook.WebhookOnStatusUpdateURLs = append([]string(nil), p.WebhookOnStatusUpdateURLs...)
 	}
 	return newPlaybook
 }
@@ -100,6 +106,12 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	}
 	if old.BroadcastChannelIDs == nil {
 		old.BroadcastChannelIDs = []string{}
+	}
+	if old.WebhookOnCreationURLs == nil {
+		old.WebhookOnCreationURLs = []string{}
+	}
+	if old.WebhookOnStatusUpdateURLs == nil {
+		old.WebhookOnStatusUpdateURLs = []string{}
 	}
 
 	return json.Marshal(old)
@@ -219,6 +231,9 @@ type PlaybookService interface {
 
 	// MessageHasBeenPosted suggests playbooks to the user if triggered
 	MessageHasBeenPosted(sessionID string, post *model.Post)
+
+	// Restores a deleted playbook
+	Restore(playbook Playbook, userID string) error
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -253,6 +268,9 @@ type PlaybookStore interface {
 
 	// Delete deletes a playbook
 	Delete(id string) error
+
+	// Restore restores a deleted playbook
+	Restore(id string) error
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.
@@ -266,6 +284,9 @@ type PlaybookTelemetry interface {
 
 	// DeletePlaybook tracks the deletion of a playbook.
 	DeletePlaybook(playbook Playbook, userID string)
+
+	// RestorePlaybook tracks the restoration of a playbook.
+	RestorePlaybook(playbook Playbook, userID string)
 
 	// FrontendTelemetryForPlaybook tracks an event originating from the frontend
 	FrontendTelemetryForPlaybook(playbook Playbook, userID, action string)

@@ -4,7 +4,7 @@
 import React, {useState} from 'react';
 import styled from 'styled-components';
 
-import {StylesConfig} from 'react-select';
+import {OptionTypeBase, StylesConfig} from 'react-select';
 
 import CreatableSelect from 'react-select/creatable';
 
@@ -103,7 +103,7 @@ export const InputKeywords = (props: Props) => {
 };
 
 // styles for the select component
-const selectStyles: StylesConfig = {
+const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
     control: (provided, {isDisabled}) => ({
         ...provided,
         backgroundColor: isDisabled ? 'rgba(var(--center-channel-bg-rgb),0.16)' : 'var(--center-channel-bg)',
@@ -120,24 +120,37 @@ const selectStyles: StylesConfig = {
     }),
     multiValue: (provided) => ({
         ...provided,
-        backgroundColor: 'rgba(var(--center-channel-bg-rgb),0.50)',
-        borderRadius: '4px',
+        backgroundColor: 'var(--center-channel-color-08)',
+        borderRadius: '10px',
+        paddingLeft: '8px',
+        overflow: 'hidden',
     }),
     multiValueLabel: (provided) => ({
         ...provided,
-        backgroundColor: 'var(--center-channel-color-08)',
+        padding: 0,
+        paddingLeft: 0,
+        lineHeight: '18px',
         color: 'var(--center-channel-color)',
     }),
     multiValueRemove: (provided) => ({
         ...provided,
-        backgroundColor: 'var(--center-channel-color-04)',
-        color: 'var(--center-channel-color-56)',
+        color: 'var(--center-channel-bg-80)',
+        backgroundColor: 'rgba(var(--center-channel-color-rgb),0.32)',
+        borderRadius: '50%',
+        margin: '4px',
+        padding: 0,
+        cursor: 'pointer',
+        width: '13px',
+        height: '13px',
         ':hover': {
-            backgroundColor: 'rgba(var(--button-bg-rgb), 0.12)',
-            color: 'var(--button-bg)',
+            backgroundColor: 'rgba(var(--center-channel-color-rgb),0.56)',
         },
         ':active': {
-            backgroundColor: 'rgba(var(--button-bg-rgb), 0.16)',
+            backgroundColor: 'rgba(var(--center-channel-color-rgb),0.56)',
+        },
+        '> svg': {
+            height: '13px',
+            width: '13px',
         },
     }),
 };

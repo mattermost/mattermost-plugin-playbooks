@@ -7,7 +7,7 @@ import {Checklist, isChecklist} from 'src/types/playbook';
 export interface PlaybookRun {
     id: string;
     name: string;
-    description: string;
+    summary: string;
     owner_user_id: string;
     reporter_user_id: string;
     team_id: string;
@@ -47,6 +47,7 @@ export interface Metadata {
     team_name: string;
     num_participants: number;
     total_posts: number;
+    followers: string[];
 }
 
 export interface FetchPlaybookRunsReturn {
@@ -54,7 +55,6 @@ export interface FetchPlaybookRunsReturn {
     page_count: number;
     has_more: boolean;
     items: PlaybookRun[];
-    disabled?: boolean;
 }
 
 export enum PlaybookRunStatus {
@@ -103,7 +103,8 @@ export function isMetadata(arg: any): arg is Metadata {
         arg.channel_display_name && typeof arg.channel_display_name === 'string' &&
         arg.team_name && typeof arg.team_name === 'string' &&
         typeof arg.num_participants === 'number' &&
-        typeof arg.total_posts === 'number');
+        typeof arg.total_posts === 'number' &&
+        arg.followers && Array.isArray(arg.followers) && arg.followers.every(isString));
 }
 
 export function isTimelineEvent(arg: any): arg is TimelineEvent {
@@ -139,7 +140,6 @@ export interface FetchPlaybookRunsParams {
     owner_user_id?: string;
     participant_id?: string;
     search_term?: string;
-    disabled?: boolean;
     playbook_id?: string;
     active_gte?: number;
     active_lt?: number;

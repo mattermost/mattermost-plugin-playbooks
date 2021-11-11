@@ -11,7 +11,8 @@ import {fetchPlaybookRuns} from 'src/client';
 import {currentPlaybookRun, isPlaybookRunRHSOpen, inPlaybookRunChannel} from 'src/selectors';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
-import {toggleRHS, receivedTeamPlaybookRuns, receivedDisabledOnTeam} from 'src/actions';
+import {toggleRHS, receivedTeamPlaybookRuns} from 'src/actions';
+import {browserHistory} from 'src/webapp_globals';
 
 export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
     let currentTeamId = '';
@@ -42,11 +43,7 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
                 team_id: currentTeam.id,
                 participant_id: currentUserId,
             });
-            if (fetched.disabled) {
-                store.dispatch(receivedDisabledOnTeam(currentTeam.id));
-            } else {
-                store.dispatch(receivedTeamPlaybookRuns(fetched.items));
-            }
+            store.dispatch(receivedTeamPlaybookRuns(fetched.items));
         }
 
         // Only consider opening the RHS if the channel has changed and wasn't already seen as
@@ -57,23 +54,41 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         currentChannelId = currentChannel.id;
         currentChannelIsPlaybookRun = inPlaybookRunChannel(state);
 
-        // Don't do anything if the playbook run RHS is already open.
-        if (isPlaybookRunRHSOpen(state)) {
-            return;
-        }
-
-        // Don't navigate away from an alternate sidebar that is open.
-        if (mmRhsOpen) {
-            return;
-        }
-
         // Don't do anything unless we're in a playbook run channel.
         if (!currentChannelIsPlaybookRun) {
             return;
         }
 
+        // Record (and remove) if we were asked to force the RHS open.
+        let forceRHSOpen = false;
+        const url = new URL(window.location.href);
+        const searchParams = new URLSearchParams(url.searchParams);
+        if (searchParams.has('forceRHSOpen')) {
+            forceRHSOpen = true;
+            searchParams.delete('forceRHSOpen');
+            url.search = searchParams.toString();
+            browserHistory.replace({pathname: url.pathname, search: url.search});
+        }
+
+        // Don't do anything if the playbook run RHS is already open.
+        if (isPlaybookRunRHSOpen(state)) {
+            return;
+        }
+
+        // Should we force open the RHS?
+        if (forceRHSOpen) {
+            //@ts-ignore thunk
+            store.dispatch(toggleRHS());
+            return;
+        }
+
         // Don't do anything if the playbook run is finished.
         if (playbookRun && playbookRun.current_status === PlaybookRunStatus.Finished) {
+            return;
+        }
+
+        // Don't navigate away from an alternate sidebar that is open.
+        if (mmRhsOpen) {
             return;
         }
 

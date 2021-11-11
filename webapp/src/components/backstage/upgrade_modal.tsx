@@ -72,7 +72,7 @@ const UpgradeModal = (props: Props) => {
 
         setActionState(ModalActionState.Loading);
 
-        const response = await postMessageToAdmins(props.messageType, isServerTeamEdition);
+        const response = await postMessageToAdmins(props.messageType);
         if (response.error) {
             setActionState(ModalActionState.Error);
         } else {

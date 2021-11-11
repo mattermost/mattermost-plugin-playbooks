@@ -1,4 +1,5 @@
 import React from 'react';
+import {useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 
@@ -25,8 +26,9 @@ interface Props {
 }
 
 export const UpdatePost = (props: Props) => {
+    const {formatMessage} = useIntl();
     const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel.team_id));
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel?.team_id));
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const currentRun = useSelector(currentPlaybookRun);
 
@@ -52,13 +54,15 @@ export const UpdatePost = (props: Props) => {
     const overviewURL = `/playbooks/runs/${playbookRunId}`;
     const runName = props.post.props.runName ?? '';
 
-    // Add a link to the overview page if this post is the one in the broadcast channel
-    const textSuffix = currentRun?.id === playbookRunId ? '' : ` for [${runName}](${overviewURL})`;
-
     return (
         <>
             <StyledPostText
-                text={`@${authorUsername} posted an update${textSuffix}`}
+                text={formatMessage({defaultMessage: '{withRunName, select, true {@{authorUsername} posted an update for [{runName}]({overviewURL})} other {@{authorUsername} posted an update}}'}, {
+                    runName,
+                    overviewURL,
+                    withRunName: currentRun?.id === playbookRunId ? 'false' : 'true', // show run name/link when not in run channel (e.g. a Broadcast channel)
+                    authorUsername,
+                })}
                 team={team}
             />
             <FullWidthContainer>
@@ -66,24 +70,20 @@ export const UpdatePost = (props: Props) => {
                     <TextBody>{mdText(props.post.message)}</TextBody>
                     <Separator/>
                     <Badges>
-                        <Badge tooltipText={'Tasks'}>
+                        <Badge tooltipText={formatMessage({defaultMessage: 'Tasks'})}>
                             <Icon
                                 path={mdiCheckAll}
                                 size={1}
                             />
                             <span>
-                                <b>{numTasksChecked}</b>
-                                {' of '}
-                                <b>{numTasks}</b>
-                                {` task${numTasks === 1 ? '' : 's'} checked`}
+                                {formatMessage({defaultMessage: '<b>{numTasksChecked, number}</b> of <b>{numTasks, number}</b> {numTasks, plural, =1 {task} other {tasks}} checked'}, {b: (x) => <b>{x}</b>, numTasksChecked, numTasks})}
                             </span>
                         </Badge>
                         <BadgeSeparator/>
                         <Badge tooltipText={participantUsernames}>
                             <BadgeIcon className={'icon-account-multiple-outline icon-12'}/>
                             <span>
-                                <b>{numParticipants}</b>
-                                {` participant${numParticipants === 1 ? '' : 's'}`}
+                                {formatMessage({defaultMessage: '{numParticipants, plural, =1 {<b>#</b> participant} other {<b>#</b> participants}}'}, {b: (x) => <b>{x}</b>, numParticipants})}
                             </span>
                         </Badge>
                     </Badges>

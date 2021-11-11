@@ -5,6 +5,8 @@ import React from 'react';
 
 import styled from 'styled-components';
 
+import {FormattedMessage} from 'react-intl';
+
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 
 import PaginationRow from './pagination_row';
@@ -12,18 +14,18 @@ import Row from './row';
 import RunListHeader from './run_list_header';
 import Filters from './filters';
 
-import './runs_list.scss';
-
 interface Props {
     playbookRuns: PlaybookRun[]
     totalCount: number
     fetchParams: FetchPlaybookRunsParams
     setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>
-    filterPill: React.ReactNode
+    filterPill: React.ReactNode | null
     fixedTeam?: boolean
 }
 
-const PlaybookRunListContainer = styled.div`
+const PlaybookRunList = styled.div`
+    font-family: 'Open Sans', sans-serif;
+    color: var(--center-channel-color-90);
 `;
 
 const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterPill, fixedTeam}: Props) => {
@@ -39,7 +41,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
     };
 
     return (
-        <PlaybookRunListContainer className='PlaybookRunList'>
+        <PlaybookRunList className='PlaybookRunList'>
             <div
                 id='playbookRunList'
                 className='list'
@@ -56,7 +58,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
                 />
                 {playbookRuns.length === 0 && !isFiltering &&
                 <div className='text-center pt-8'>
-                    {'There are no runs for this playbook.'}
+                    <FormattedMessage defaultMessage='There are no runs for this playbook.'/>
                 </div>
                 }
                 {playbookRuns.length === 0 && isFiltering &&
@@ -78,7 +80,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
                     setPage={setPage}
                 />
             </div>
-        </PlaybookRunListContainer>
+        </PlaybookRunList>
     );
 };
 

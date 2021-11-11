@@ -160,22 +160,6 @@ func IsChannelActiveInTeam(channelID string, expectedTeamID string, pluginAPI *p
 	return nil
 }
 
-func IsOnEnabledTeam(teamID string, cfgService config.Service) bool {
-	enabledTeams := cfgService.GetConfiguration().EnabledTeams
-
-	if len(enabledTeams) == 0 {
-		return true
-	}
-
-	for _, enabledTeam := range enabledTeams {
-		if enabledTeam == teamID {
-			return true
-		}
-	}
-
-	return false
-}
-
 func isPlaybookCreator(userID string, cfgService config.Service) error {
 	playbookCreators := cfgService.GetConfiguration().PlaybookCreatorsUserIds
 	if len(playbookCreators) == 0 {
@@ -263,10 +247,6 @@ func PlaybookLicensedFeatures(playbook Playbook, cfgService config.Service, play
 func CreatePlaybook(userID string, playbook Playbook, cfgService config.Service, pluginAPI *pluginapi.Client, playbookService PlaybookService) error {
 	if err := isPlaybookCreator(userID, cfgService); err != nil {
 		return err
-	}
-
-	if !IsOnEnabledTeam(playbook.TeamID, cfgService) {
-		return errors.Wrap(ErrNoPermissions, "not enabled on this team")
 	}
 
 	if err := PlaybookLicensedFeatures(playbook, cfgService, playbookService); err != nil {
@@ -374,4 +354,12 @@ func ModifyPlaybookCreators(userID string, isAdmin bool, config config.Service) 
 	}
 
 	return errors.Wrap(ErrNoPermissions, "not a playbook creator")
+}
+
+func CanStartTrialLicense(userID string, pluginAPI *pluginapi.Client) error {
+	if !pluginAPI.User.HasPermissionTo(userID, model.PermissionManageLicenseInformation) {
+		return errors.Wrap(ErrNoPermissions, "no permission to manage license information")
+	}
+
+	return nil
 }

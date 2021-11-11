@@ -62,7 +62,7 @@ func TestPlaybook_MarshalJSON(t *testing.T) {
 				ReminderTimerDefaultSeconds:  0,
 				InvitedUserIDs:               nil,
 				InvitedGroupIDs:              nil,
-				WebhookOnStatusUpdateURL:     "testurl",
+				WebhookOnStatusUpdateURLs:    []string{"testurl"},
 				WebhookOnStatusUpdateEnabled: true,
 			},
 			expected: []byte(`"checklists":[{"id":"checklist1","title":"checklist 1","items":[]}]`),

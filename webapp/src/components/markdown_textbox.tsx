@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {MouseEvent, ChangeEvent, useState, ComponentProps} from 'react';
+import {useIntl} from 'react-intl';
 
 import {useSelector} from 'react-redux';
 
@@ -33,7 +34,6 @@ const MarkdownTextbox = ({
     const [showPreview, setShowPreview] = useState(false);
     const config = useSelector(getConfig);
 
-    // @ts-expect-error
     const charLimit = parseInt(config.MaxPostSize || '', 10) || DEFAULT_CHAR_LIMIT;
 
     return (
@@ -114,6 +114,8 @@ function TextboxLinks({
 
     const hasText = message?.length > 0;
 
+    const {formatMessage} = useIntl();
+
     return (
         <div
             className={classNames(className, {
@@ -125,12 +127,12 @@ function TextboxLinks({
                 className={'help__format-text'}
             >
                 <HelpText>
-                    <b>{'**bold**'}</b>
-                    <i>{'*italic*'}</i>
-                    <span>{'~~'}<s>{'strike'}</s>{'~~ '}</span>
-                    <span>{'`inline code`'}</span>
-                    <span>{'```preformatted```'}</span>
-                    <span>{'>quote'}</span>
+                    <b>{'**'}{formatMessage({defaultMessage: 'bold'})}{'**'}</b>
+                    <i>{'*'}{formatMessage({defaultMessage: 'italic'})}{'*'}</i>
+                    <span>{'~~'}<s>{formatMessage({defaultMessage: 'strike'})}</s>{'~~ '}</span>
+                    <span>{'`'}{formatMessage({defaultMessage: 'inline code'})}{'`'}</span>
+                    <span>{'```'}{formatMessage({defaultMessage: 'preformatted'})}{'```'}</span>
+                    <span>{'>'}{formatMessage({defaultMessage: 'quote'})}</span>
                 </HelpText>
             </div>
             <div>
@@ -138,7 +140,7 @@ function TextboxLinks({
                     onClick={togglePreview}
                     className='style--none textbox-preview-link color--link'
                 >
-                    {showPreview ? 'Edit' : 'Preview'}
+                    {showPreview ? formatMessage({defaultMessage: 'Edit'}) : formatMessage({defaultMessage: 'Preview'})}
                 </button>
                 <Link
                     target='_blank'
@@ -146,7 +148,7 @@ function TextboxLinks({
                     to='/help/formatting'
                     className='textbox-help-link'
                 >
-                    {'Help'}
+                    {formatMessage({defaultMessage: 'Help'})}
                 </Link>
             </div>
         </div>

@@ -35,6 +35,7 @@ import {formatDuration} from '../formatted_duration';
 import {PlaybookRun} from 'src/types/playbook_run';
 import {nearest} from 'src/utils';
 import Tooltip from 'src/components/widgets/tooltip';
+import WarningIcon from '../assets/icons/warning_icon';
 
 const ID = 'playbooks_update_run_status_dialog';
 
@@ -67,6 +68,12 @@ const UpdateRunStatusModal = ({
     }
 
     const {input: reminderInput, reminder} = useReminderTimerOption(run);
+
+    const isReminderValid = reminder && reminder > 0;
+    let warningMessage = formatMessage({defaultMessage: 'Date must be in the future.'});
+    if (!reminder || reminder === 0) {
+        warningMessage = formatMessage({defaultMessage: 'Please specify a future date/time for the update reminder.'});
+    }
 
     const onConfirm = () => {
         if (hasPermission && message?.trim() && currentUserId && channelId && run?.team_id) {
@@ -117,7 +124,7 @@ const UpdateRunStatusModal = ({
                 })}
             </Description>
             <Label>
-                {'Change since last update'}
+                {formatMessage({defaultMessage: 'Change since last update'})}
             </Label>
             <MarkdownTextbox
                 id='update_run_status_textbox'
@@ -126,28 +133,33 @@ const UpdateRunStatusModal = ({
                 channelId={channelId}
             />
             <Label>
-                {'Timer for next update'}
+                {formatMessage({defaultMessage: 'Timer for next update'})}
             </Label>
             {reminderInput}
+            {!isReminderValid &&
+            <WarningLine>
+                <WarningIcon/> {warningMessage}
+            </WarningLine>
+            }
         </FormContainer>
     );
 
     const warning = (
         <WarningBlock>
             <span>
-                {'You do not have permission to post an update.'}
+                {formatMessage({defaultMessage: 'You do not have permission to post an update.'})}
             </span>
         </WarningBlock>
     );
 
     return (
         <GenericModal
-            modalHeaderText={'Post update'}
-            cancelButtonText={hasPermission ? 'Cancel' : 'Close'}
-            confirmButtonText={hasPermission ? 'Post' : 'Ok'}
+            modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
+            cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
+            confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post'}) : formatMessage({defaultMessage: 'Ok'})}
             handleCancel={() => true}
             handleConfirm={hasPermission ? onConfirm : null}
-            isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id)}
+            isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
             {...modalProps}
             id={ID}
         >
@@ -172,7 +184,7 @@ const useDefaultMessage = (run: PlaybookRun | null | undefined) => {
     return null;
 };
 
-const optionFromSeconds = (seconds: number) => {
+export const optionFromSeconds = (seconds: number) => {
     const duration = Duration.fromObject({seconds});
 
     return {
@@ -243,6 +255,7 @@ const FormContainer = styled.div`
     display: flex;
     flex-direction: column;
     color: var(--center-channel-color);
+
     ${Description} {
         span {
             text-decoration: underline;
@@ -255,9 +268,15 @@ const WarningBlock = styled.div`
     padding: 2rem;
     display: flex;
     place-content: center;
+
     span {
         padding: 1.5rem;
     }
+`;
+
+const WarningLine = styled.p`
+    color: var(--error-text);
+    margin-top: 0.6rem;
 `;
 
 export default UpdateRunStatusModal;

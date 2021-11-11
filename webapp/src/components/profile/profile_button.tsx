@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import styled from 'styled-components';
 
-import './profile_button.scss';
 import Profile from 'src/components/profile/profile';
 
 interface Props {
@@ -26,7 +26,7 @@ export default function ProfileButton(props: Props) {
     };
 
     return (
-        <button
+        <Button
             onClick={props.onClick}
             className={props.profileButtonClass || 'PlaybookRunProfileButton'}
         >
@@ -37,6 +37,87 @@ export default function ProfileButton(props: Props) {
                 nameFormatter={formatName}
                 withoutProfilePic={props.withoutProfilePic}
             />
-        </button>
+        </Button>
     );
 }
+
+const Button = styled.button`
+    font-weight: 600;
+    height: 40px;
+    padding: 0 4px 0 12px;
+    border-radius: 4px;
+    color: var(--center-channel-color-56);
+
+    -webkit-transition: all 0.15s ease;
+    -webkit-transition-delay: 0s;
+    -moz-transition: all 0.15s ease;
+    -o-transition: all 0.15s ease;
+    transition: all 0.15s ease;
+
+    border: none;
+    background-color: unset;
+    cursor: unset;
+
+    &:hover {
+        background: var(--center-channel-color-08);
+        color: var(--center-channel-color-72);
+    }
+
+    .PlaybookRunProfile {
+        &:active {
+            background: var(--button-bg-08);
+            color: var(--button-bg);
+        }
+
+        &.active {
+            cursor: pointer;
+            color: var(--center-channel-color);
+        }
+    }
+
+    .NoAssignee-button, .Assigned-button {
+        background-color: transparent;
+        border: none;
+        padding: 4px;
+        margin-top: 4px;
+        border-radius: 100px;
+        color: var(--center-channel-color-64);
+        cursor: pointer;
+        font-weight: normal;
+        font-size: 12px;
+        line-height: 16px;
+
+        -webkit-transition: all 0.15s ease;
+        -moz-transition: all 0.15s ease;
+        -o-transition: all 0.15s ease;
+        transition: all 0.15s ease;
+
+        &:hover {
+            background: var(--center-channel-color-08);
+            color: var(--center-channel-color-72);
+        }
+
+        &:active {
+            background: var(--button-bg-08);
+            color: var(--button-bg);
+        }
+
+        &.active {
+            cursor: pointer;
+        }
+
+        .icon-chevron-down {
+            &:before {
+                margin: 0;
+            }
+        }
+    }
+
+    .first-container .Assigned-button {
+        margin-top: 0;
+        padding: 2px 0;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--center-channel-color);
+    }
+`;

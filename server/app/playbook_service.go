@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	playbookCreatedWSEvent = "playbook_created"
-	playbookDeletedWSEvent = "playbook_deleted"
+	playbookCreatedWSEvent  = "playbook_created"
+	playbookDeletedWSEvent  = "playbook_deleted"
+	playbookRestoredWSEvent = "playbook_restored"
 )
 
 type playbookService struct {
@@ -105,6 +106,28 @@ func (s *playbookService) Delete(playbook Playbook, userID string) error {
 	return nil
 }
 
+func (s *playbookService) Restore(playbook Playbook, userID string) error {
+	if playbook.ID == "" {
+		return errors.New("can't restore a playbook without an ID")
+	}
+
+	if playbook.DeleteAt == 0 {
+		return errors.New("can't restore an undeleted playbook")
+	}
+
+	if err := s.store.Restore(playbook.ID); err != nil {
+		return err
+	}
+
+	s.telemetry.RestorePlaybook(playbook, userID)
+
+	s.poster.PublishWebsocketEventToTeam(playbookRestoredWSEvent, map[string]interface{}{
+		"teamID": playbook.TeamID,
+	}, playbook.TeamID)
+
+	return nil
+}
+
 func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Post) {
 	if post.IsSystemMessage() || s.keywordsThreadIgnorer.IsIgnored(post.RootId, post.UserId) {
 		return
@@ -138,7 +161,11 @@ func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Pos
 	message := s.getPlaybookSuggestionsMessage(suggestedPlaybooks, triggers, playbooksURL)
 	attachment := s.getPlaybookSuggestionsSlackAttachment(suggestedPlaybooks, post.Id, playbooksURL, session.IsMobileApp())
 
-	s.poster.EphemeralPostWithAttachments(post.UserId, post.ChannelId, post.Id, []*model.SlackAttachment{attachment}, message)
+	rootID := post.RootId
+	if rootID == "" {
+		rootID = post.Id
+	}
+	s.poster.EphemeralPostWithAttachments(post.UserId, post.ChannelId, rootID, []*model.SlackAttachment{attachment}, message)
 }
 
 func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []*CachedPlaybook, triggers []string, playbooksURL string) string {

@@ -3,6 +3,8 @@
 
 import React, {useEffect, useState} from 'react';
 
+import {FormattedMessage} from 'react-intl';
+
 import {fetchPlaybookRuns} from 'src/client';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
@@ -53,7 +55,7 @@ const RunsPage = () => {
     return (
         <div className='PlaybookRunList container-medium'>
             <BackstageHeader data-testid='titlePlaybookRun'>
-                {'Runs'}
+                <FormattedMessage defaultMessage='Runs'/>
             </BackstageHeader>
             <RunList
                 playbookRuns={playbookRuns}

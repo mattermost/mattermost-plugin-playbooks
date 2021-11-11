@@ -4,8 +4,8 @@
 import React, {useState} from 'react';
 import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
-import moment, {duration, Moment} from 'moment';
 import {Team} from 'mattermost-redux/types/teams';
+import {useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';
 
@@ -92,7 +92,7 @@ const SummaryDetail = styled.div`
 
 interface Props {
     event: TimelineEvent;
-    reportedAt: Moment;
+    reportedAt: DateTime;
     channelNames: ChannelNamesMap;
     team: Team;
     deleteEvent: () => void;
@@ -123,42 +123,48 @@ const TimelineEventItem = (props: Props) => {
             dispatch(toggleRHS());
         }
     };
+    const {formatMessage} = useIntl();
 
     let iconClass = '';
     let summaryTitle = '';
     let summary = '';
     let testid = '';
-    const diff = moment(props.event.event_at).diff(moment(props.reportedAt));
-    let stamp = formatDuration(duration(diff));
-    if (diff < 0) {
-        stamp = '-' + formatDuration(duration(diff).abs());
+    const diff = DateTime.fromMillis(props.event.event_at).diff(props.reportedAt);
+    let stamp = formatDuration(diff);
+    if (diff.toMillis() < 0) {
+        stamp = '-' + formatDuration(diff.negate());
     }
-    let timeSince: JSX.Element | null = <TimeDay>{'Time: ' + stamp}</TimeDay>;
+    let timeSince: JSX.Element | null = <TimeDay>{formatMessage({defaultMessage: 'Time: {time}'}, {time: stamp})}</TimeDay>;
 
     switch (props.event.event_type) {
     case TimelineEventType.RunCreated:
         iconClass = 'icon icon-shield-alert-outline';
-        summaryTitle = 'Run started by ' + props.event.subject_display_name;
+        summaryTitle = formatMessage({defaultMessage: 'Run started by {name}'}, {name: props.event.subject_display_name});
         timeSince = null;
         testid = TimelineEventType.RunCreated;
         break;
     case TimelineEventType.RunFinished:
         iconClass = 'icon icon-shield-alert-outline';
-        summaryTitle = 'Run finished by ' + props.event.subject_display_name;
+        summaryTitle = formatMessage({defaultMessage: 'Run finished by {name}'}, {name: props.event.subject_display_name});
         testid = TimelineEventType.RunFinished;
+        break;
+    case TimelineEventType.RunRestored:
+        iconClass = 'icon icon-shield-alert-outline';
+        summaryTitle = formatMessage({defaultMessage: 'Run restored by {name}'}, {name: props.event.subject_display_name});
+        testid = TimelineEventType.RunRestored;
         break;
     case TimelineEventType.StatusUpdated:
         iconClass = 'icon icon-flag-outline';
         if (props.event.summary === '') {
-            summaryTitle = props.event.subject_display_name + ' posted a status update';
+            summaryTitle = formatMessage({defaultMessage: '{name} posted a status update'}, {name: props.event.subject_display_name});
         } else {
-            summaryTitle = props.event.subject_display_name + ' changed status from ' + props.event.summary;
+            summaryTitle = formatMessage({defaultMessage: '{name} changed status from {summary}'}, {name: props.event.subject_display_name, summary: props.event.summary});
         }
         testid = TimelineEventType.StatusUpdated;
         break;
     case TimelineEventType.OwnerChanged:
         iconClass = 'icon icon-pencil-outline';
-        summaryTitle = 'Owner changed from ' + props.event.summary;
+        summaryTitle = formatMessage({defaultMessage: 'Owner changed from {summary}'}, {summary: props.event.summary});
         testid = TimelineEventType.OwnerChanged;
         break;
     case TimelineEventType.TaskStateModified:
@@ -169,13 +175,13 @@ const TimelineEventItem = (props: Props) => {
         break;
     case TimelineEventType.AssigneeChanged:
         iconClass = 'icon icon-pencil-outline';
-        summaryTitle = 'Assignee Changed';
+        summaryTitle = formatMessage({defaultMessage: 'Assignee Changed'});
         summary = props.event.subject_display_name + ' ' + props.event.summary;
         testid = TimelineEventType.AssigneeChanged;
         break;
     case TimelineEventType.RanSlashCommand:
         iconClass = 'icon icon-pencil-outline';
-        summaryTitle = 'Slash Command Executed';
+        summaryTitle = formatMessage({defaultMessage: 'Slash Command Executed'});
         summary = props.event.subject_display_name + ' ' + props.event.summary;
         testid = TimelineEventType.RanSlashCommand;
         break;
@@ -192,12 +198,12 @@ const TimelineEventItem = (props: Props) => {
         break;
     case TimelineEventType.PublishedRetrospective:
         iconClass = 'icon icon-pencil-outline';
-        summaryTitle = 'Retrospective published by ' + props.event.subject_display_name;
+        summaryTitle = formatMessage({defaultMessage: 'Retrospective published by {name}'}, {name: props.event.subject_display_name});
         testid = TimelineEventType.PublishedRetrospective;
         break;
     case TimelineEventType.CanceledRetrospective:
         iconClass = 'icon icon-cancel';
-        summaryTitle = 'Retrospective canceled by ' + props.event.subject_display_name;
+        summaryTitle = formatMessage({defaultMessage: 'Retrospective canceled by {name}'}, {name: props.event.subject_display_name});
         testid = TimelineEventType.CanceledRetrospective;
         break;
     }
@@ -219,7 +225,12 @@ const TimelineEventItem = (props: Props) => {
             </HoverMenu>
             }
             <TimeContainer>
-                <TimeHours>{moment(props.event.event_at).format('MMM DD HH:mm')}</TimeHours>
+                <TimeHours>
+                    <Timestamp
+                        value={props.event.event_at}
+                        month='short'
+                    />
+                </TimeHours>
                 {timeSince}
             </TimeContainer>
             <Circle>
@@ -234,7 +245,7 @@ const TimelineEventItem = (props: Props) => {
                 </SummaryTitle>
                 {statusPostDeleted && (
                     <SummaryDeleted>
-                        {'Status post deleted: '}
+                        {formatMessage({defaultMessage: 'Status post deleted: '})}
                         <Timestamp
                             value={props.event.status_delete_at}
                             // eslint-disable-next-line no-undefined
@@ -247,9 +258,9 @@ const TimelineEventItem = (props: Props) => {
             </SummaryContainer>
             <ConfirmModal
                 show={showDeleteConfirm}
-                title={'Confirm Entry Delete'}
-                message={'Are you sure you want to delete this event? Deleted events will be permanently removed from the timeline.'}
-                confirmButtonText={'Delete Entry'}
+                title={formatMessage({defaultMessage: 'Confirm Entry Delete'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to delete this event? Deleted events will be permanently removed from the timeline.'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Delete Entry'})}
                 onConfirm={() => {
                     props.deleteEvent();
                     setShowDeleteConfirm(false);

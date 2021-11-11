@@ -1,9 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {ReactNode} from 'react';
 import styled from 'styled-components';
-import moment from 'moment';
+
+import {useIntl} from 'react-intl';
+
+import {DateTime} from 'luxon';
 
 import LineGraph from 'src/components/backstage/playbooks/line_graph';
 import {
@@ -20,15 +23,18 @@ import {useAllowPlaybookStatsView} from 'src/hooks';
 import UpgradePlaybookPlaceholder
     from 'src/components/backstage/playbooks/upgrade_playbook_placeholder';
 import Pill from 'src/components/widgets/pill';
+import {Timestamp} from 'src/webapp_globals';
+import {DateTimeFormats} from 'src/constants';
 
 interface Props {
     stats: PlaybookStats
     fetchParams: FetchPlaybookRunsParams
     setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>
-    setFilterPill: (pill: JSX.Element | null) => void
+    setFilterPill: (pill: ReactNode) => void
 }
 
 const StatsView = (props: Props) => {
+    const {formatMessage} = useIntl();
     const allowStatsView = useAllowPlaybookStatsView();
 
     if (!allowStatsView) {
@@ -54,9 +60,12 @@ const StatsView = (props: Props) => {
         };
 
         if (!fetchParamsTimeEqual(props.fetchParams, nextFetchParamsTime)) {
-            const text = 'Runs started between ' +
-                moment.utc(started).format('D MMM') + ' and ' +
-                moment.utc(ended).format('D MMM');
+            const text = formatMessage({
+                defaultMessage: 'Runs started between {start} and {end}',
+            }, {
+                start: <Timestamp value={started}/>,
+                end: <Timestamp value={ended}/>,
+            });
 
             props.setFilterPill(pill(text));
             props.setFetchParams((oldParams) => {
@@ -80,7 +89,17 @@ const StatsView = (props: Props) => {
         };
 
         if (!fetchParamsTimeEqual(props.fetchParams, nextFetchParamsTime)) {
-            const text = 'Runs active on ' + moment.utc(started).format('D MMM');
+            const text = formatMessage({
+                defaultMessage: 'Runs active on {date}',
+            },
+            {
+                date: (
+                    <Timestamp
+                        value={started}
+                        useTime={false}
+                    />
+                ),
+            });
 
             props.setFilterPill(pill(text));
             props.setFetchParams((oldParams) => {
@@ -96,7 +115,7 @@ const StatsView = (props: Props) => {
         });
     };
 
-    const pill = (text: string) => (
+    const pill = (text: ReactNode) => (
         <PillRow>
             <Pill
                 text={text}
@@ -110,17 +129,17 @@ const StatsView = (props: Props) => {
             <BottomRow>
                 <StatCard>
                     <ClipboardsPlayBig/>
-                    <StatText>{'Runs currently in progress'}</StatText>
+                    <StatText>{formatMessage({defaultMessage: 'Runs currently in progress'})}</StatText>
                     <StatNum>{props.stats.runs_in_progress}</StatNum>
                 </StatCard>
                 <StatCard>
                     <ProfilesBig/>
-                    <StatText>{'Participants currently active'}</StatText>
+                    <StatText>{formatMessage({defaultMessage: 'Participants currently active'})}</StatText>
                     <StatNum>{props.stats.participants_active}</StatNum>
                 </StatCard>
                 <StatCard>
                     <ClipboardsCheckmarkBig/>
-                    <StatText>{'Runs finished in the last 30 days'}</StatText>
+                    <StatText>{formatMessage({defaultMessage: 'Runs finished in the last 30 days'})}</StatText>
                     <StatNumRow>
                         <StatNum>{props.stats.runs_finished_prev_30_days}</StatNum>
                         {percentageChange(props.stats.runs_finished_percentage_change)}
@@ -128,14 +147,11 @@ const StatsView = (props: Props) => {
                 </StatCard>
                 <GraphBox>
                     <LineGraph
-                        title={'TOTAL RUNS started per week over the last 12 weeks'}
-                        labels={props.stats.runs_started_per_week_labels}
+                        title={formatMessage({defaultMessage: 'TOTAL RUNS started per week over the last 12 weeks'})}
+                        labels={props.stats.runs_started_per_week_times.map(([start, _]) => DateTime.fromMillis(start).toLocaleString(DateTimeFormats.DATE_MED_NO_YEAR))}
                         data={props.stats.runs_started_per_week}
-                        tooltipTitleCallback={(xLabel) => 'Week of ' + xLabel}
-                        tooltipLabelCallback={(yLabel) => {
-                            const runs = (yLabel === 1) ? 'run' : 'runs';
-                            return `${yLabel} ${runs} started`;
-                        }}
+                        tooltipTitleCallback={(date) => formatMessage({defaultMessage: 'Week of {date}'}, {date})}
+                        tooltipLabelCallback={(numTotalRuns) => formatMessage({defaultMessage: '{numTotalRuns, plural, =0 {no runs started} =1 {# run started} other {# runs started}}'}, {numTotalRuns})}
                         onClick={filterStarted}
                     />
                 </GraphBox>
@@ -143,28 +159,22 @@ const StatsView = (props: Props) => {
             <BottomRow>
                 <GraphBox>
                     <BarGraph
-                        title={'ACTIVE RUNS per day over the last 14 days'}
-                        labels={props.stats.active_runs_per_day_labels}
+                        title={formatMessage({defaultMessage: 'ACTIVE RUNS per day over the last 14 days'})}
+                        labels={props.stats.active_runs_per_day_times.map(([start, _]) => DateTime.fromMillis(start).toLocaleString(DateTimeFormats.DATE_MED_NO_YEAR))}
                         data={props.stats.active_runs_per_day}
-                        tooltipTitleCallback={(xLabel) => 'Day: ' + xLabel}
-                        tooltipLabelCallback={(yLabel) => {
-                            const runs = (yLabel === 1) ? 'run' : 'runs';
-                            return `${yLabel} active ${runs}`;
-                        }}
+                        tooltipTitleCallback={(date) => formatMessage({defaultMessage: 'Day: {date}'}, {date})}
+                        tooltipLabelCallback={(numActiveRuns) => formatMessage({defaultMessage: '{numActiveRuns, plural, =0 {no active runs} =1 {# active run} other {# active runs}}'}, {numActiveRuns})}
                         onClick={filterActive}
                     />
                 </GraphBox>
                 <GraphBox>
                     <BarGraph
-                        title={'ACTIVE PARTICIPANTS per day over the last 14 days'}
-                        labels={props.stats.active_participants_per_day_labels}
+                        title={formatMessage({defaultMessage: 'ACTIVE PARTICIPANTS per day over the last 14 days'})}
+                        labels={props.stats.active_participants_per_day_times.map(([start, _]) => DateTime.fromMillis(start).toLocaleString(DateTimeFormats.DATE_MED_NO_YEAR))}
                         data={props.stats.active_participants_per_day}
                         color={'--center-channel-color-40'}
-                        tooltipTitleCallback={(xLabel) => 'Day: ' + xLabel}
-                        tooltipLabelCallback={(yLabel) => {
-                            const participants = (yLabel === 1) ? 'participant' : 'participants';
-                            return `${yLabel} active ${participants}`;
-                        }}
+                        tooltipTitleCallback={(date) => formatMessage({defaultMessage: 'Day: {date}'}, {date})}
+                        tooltipLabelCallback={(numParticipants) => formatMessage({defaultMessage: '{numParticipants, plural, =0 {no active participants} =1 {# active participant} other {# active participants}}'}, {numParticipants})}
                     />
                 </GraphBox>
             </BottomRow>

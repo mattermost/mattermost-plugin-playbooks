@@ -6,6 +6,7 @@ import {getProfiles, searchProfiles} from 'mattermost-redux/actions/users';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {useDispatch, useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
@@ -73,6 +74,8 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
     const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
     const isAdmin = useSelector(isCurrentUserAdmin);
 
+    const {formatMessage} = useIntl();
+
     const userMaybeAdded = (userid: string) => {
         // Need to ignore double adds
         if (props.settings.playbook_creators_user_ids.includes(userid)) {
@@ -131,14 +134,16 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
     if (!hasPermissions) {
         if (props.settings.playbook_creators_user_ids.length === 0) {
             return (
-                <>
-                    <NoPermissionsTitle>{'Everyone in this workspace can create playbooks. System administrators may change this setting.'}</NoPermissionsTitle>
-                </>
+                <NoPermissionsTitle>
+                    {formatMessage({defaultMessage: 'Everyone in this workspace can create playbooks. System administrators may change this setting.'})}
+                </NoPermissionsTitle>
             );
         }
         return (
             <>
-                <NoPermissionsTitle>{'Only the users below can create playbooks. These users, as well as system administrators, may change this setting.'}</NoPermissionsTitle>
+                <NoPermissionsTitle>
+                    {formatMessage({defaultMessage: 'Only the users below can create playbooks. These users, as well as system administrators, may change this setting.'})}
+                </NoPermissionsTitle>
                 <NoPermissionsUsers>
                     {props.settings.playbook_creators_user_ids.map((userId) => (
                         <NoPermissionsUserEntry
@@ -155,7 +160,7 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
     return (
         <>
             <BackstageSubheader>
-                {'Playbook creation'}
+                {formatMessage({defaultMessage: 'Playbook creation'})}
             </BackstageSubheader>
             <RadioContainer>
                 <RadioLabel>
@@ -166,7 +171,7 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
                         checked={!enabled}
                         onChange={handleDisabled}
                     />
-                    {'Everyone in this workspace can create playbooks.'}
+                    {formatMessage({defaultMessage: 'Everyone in this workspace can create playbooks.'})}
                 </RadioLabel>
                 <RadioLabel>
                     <RadioInput
@@ -176,7 +181,7 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
                         checked={enabled}
                         onChange={handleEnabled}
                     />
-                    {'Only selected users can create playbooks.'}
+                    {formatMessage({defaultMessage: 'Only selected users can create playbooks.'})}
                     {!allowPlaybookCreationRestriction && <PositionedUpgradeBadge/>}
                 </RadioLabel>
             </RadioContainer>
@@ -199,9 +204,9 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
             </UserSelectorWrapper>
             <ConfirmModal
                 show={confirmRemoveSelfOpen !== ''}
-                title={'Remove from playbook'}
-                message={'After you remove your own access to this playbook, you won\'t be able to add yourself back. Are you sure you\'d like to perform this action?'}
-                confirmButtonText={'Remove'}
+                title={formatMessage({defaultMessage: 'Remove from playbook'})}
+                message={formatMessage({defaultMessage: 'After you remove your own access to this playbook, you won\'t be able to add yourself back. Are you sure you\'d like to perform this action?'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Remove'})}
                 onConfirm={() => {
                     removeUser(confirmRemoveSelfOpen);
                     setConfirmRemoveSelfOpen('');
@@ -220,6 +225,8 @@ const PlaybookCreators = (props: PlaybookCreatorsProps) => {
 const SettingsView = () => {
     const dispatch = useDispatch();
     const settings = useSelector(globalSettings);
+
+    const {formatMessage} = useIntl();
 
     const updateSettings = (newsettings: GlobalSettings) => {
         dispatch(actionSetGlobalSettings(newsettings));
@@ -240,7 +247,7 @@ const SettingsView = () => {
     return (
         <SettingsContainer>
             <BackstageHeader data-testid='titleStats'>
-                {'Settings'}
+                {formatMessage({defaultMessage: 'Settings'})}
             </BackstageHeader>
             <PlaybookCreators
                 settings={settings}

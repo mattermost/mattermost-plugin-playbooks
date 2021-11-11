@@ -17,7 +17,9 @@ import {
     removedFromPlaybookRunChannel,
     receivedTeamPlaybookRuns,
     playbookCreated,
-    playbookDeleted, setHasViewedChannel,
+    playbookDeleted,
+    playbookRestored,
+    setHasViewedChannel,
 } from 'src/actions';
 import {
     fetchCheckAndSendMessageOnJoin,
@@ -96,8 +98,9 @@ export function handleWebsocketPlaybookRunCreated(getState: GetStateFunc, dispat
         const currentTeam = getCurrentTeam(getState());
 
         // Navigate to the newly created channel
-        const url = `/${currentTeam.name}/channels/${playbookRun.channel_id}`;
-        navigateToUrl(url);
+        const pathname = `/${currentTeam.name}/channels/${payload.channel_name}`;
+        const search = '?forceRHSOpen';
+        navigateToUrl({pathname, search});
     };
 }
 
@@ -122,6 +125,18 @@ export function handleWebsocketPlaybookDeleted(getState: GetStateFunc, dispatch:
         const payload = JSON.parse(msg.data.payload);
 
         dispatch(playbookDeleted(payload.teamID));
+    };
+}
+
+export function handleWebsocketPlaybookRestored(getState: GetStateFunc, dispatch: Dispatch) {
+    return (msg: WebSocketMessage<{ payload: string }>): void => {
+        if (!msg.data.payload) {
+            return;
+        }
+
+        const payload = JSON.parse(msg.data.payload);
+
+        dispatch(playbookRestored(payload.teamID));
     };
 }
 

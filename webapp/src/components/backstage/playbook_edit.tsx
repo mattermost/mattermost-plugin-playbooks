@@ -9,11 +9,17 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
 import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
+import {useIntl, FormattedMessage} from 'react-intl';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
 import {navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
-import {DraftPlaybookWithChecklist, PlaybookWithChecklist, Checklist, emptyPlaybook} from 'src/types/playbook';
+import {
+    DraftPlaybookWithChecklist,
+    PlaybookWithChecklist,
+    Checklist,
+    emptyPlaybook,
+} from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/stages_and_steps_edit';
 import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
@@ -24,10 +30,10 @@ import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
 import {RegularHeading} from 'src/styles/headings';
 import DefaultUpdateTimer from 'src/components/backstage/default_update_timer';
+import EditTitleDescriptionModal from 'src/components/backstage/playbook_edit_title_description_modal';
 
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 
-import EditableText from './editable_text';
 import SharePlaybook from './share_playbook';
 import {
     BackstageSubheader,
@@ -81,7 +87,7 @@ const SecondaryButtonLarger = styled(SecondaryButtonSmaller)`
     padding: 0 20px;
 `;
 
-const EditableTexts = styled.div`
+const TitleAndDescription = styled.div`
     ${RegularHeading}
 
     display: flex;
@@ -89,11 +95,40 @@ const EditableTexts = styled.div`
     justify-content: flex-start;
     padding: 0 15px;
     font-weight: normal;
+
+    cursor: pointer;
+
+    i {
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+    }
+
+    :hover {
+        i {
+            color: var(--center-channel-color);
+        }
+    }
 `;
 
-const EditableTitleContainer = styled.div`
+const Title = styled.div`
     font-size: 20px;
     line-height: 28px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 650px;
+    white-space: nowrap;
+`;
+
+const Description = styled.div`
+    font-size: 11px;
+    line-height: 16px;
+
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 530px;
+    white-space: nowrap;
 `;
 
 const RadioContainer = styled.div`
@@ -158,10 +193,10 @@ const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
 });
 
 export const tabInfo = [
-    {id: 'checklists', name: 'Checklists'},
-    {id: 'templates', name: 'Templates'},
-    {id: 'actions', name: 'Actions'},
-    {id: 'permissions', name: 'Permissions'},
+    {id: 'checklists', name: <FormattedMessage defaultMessage='Checklists'/>},
+    {id: 'templates', name: <FormattedMessage defaultMessage='Templates'/>},
+    {id: 'actions', name: <FormattedMessage defaultMessage='Actions'/>},
+    {id: 'permissions', name: <FormattedMessage defaultMessage='Permissions'/>},
 ] as const;
 
 const retrospectiveReminderOptions = [
@@ -182,6 +217,8 @@ const PlaybookNavbar = styled(BackstageNavbar)`
 const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
+    const {formatMessage} = useIntl();
+
     const currentUserId = useSelector(getCurrentUserId);
 
     const [playbook, setPlaybook] = useState<DraftPlaybookWithChecklist | PlaybookWithChecklist>({
@@ -190,6 +227,8 @@ const PlaybookEdit = (props: Props) => {
         team_id: props.teamId || '',
     });
     const [changesMade, setChangesMade] = useState(false);
+
+    const [showTitleDescriptionModal, setShowTitleDescriptionModal] = useState(false);
 
     const urlParams = useParams<URLParams>();
     const location = useLocation();
@@ -249,8 +288,15 @@ const PlaybookEdit = (props: Props) => {
         fetchData();
     }, [urlParams.playbookId, props.isNew, props.teamId]);
 
-    dispatch(selectTeam(props.teamId || playbook.team_id));
-    dispatch(fetchMyChannelsAndMembers(props.teamId || playbook.team_id));
+    useEffect(() => {
+        const teamId = props.teamId || playbook.team_id;
+        if (!teamId) {
+            return;
+        }
+
+        dispatch(selectTeam(teamId));
+        dispatch(fetchMyChannelsAndMembers(teamId));
+    }, [dispatch, props.teamId, playbook.team_id]);
 
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
@@ -260,21 +306,31 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleTitleChange = (title: string) => {
+    const handleTitleAndDescriptionChange = (title: string, description: string) => {
         if (title.trim().length === 0) {
-            // Keep the original title from the props.
+            // Keep the original title from the props, only change the description
+            setPlaybook({
+                ...playbook,
+                description,
+            });
             return;
         }
 
         setPlaybook({
             ...playbook,
             title,
+            description,
         });
         setChangesMade(true);
     };
 
     const onSave = async () => {
-        const data = await savePlaybook(setPlaybookDefaults(playbook));
+        const pb = setPlaybookDefaults(playbook);
+
+        pb.webhook_on_creation_urls = pb.webhook_on_creation_urls.filter((url) => url.trim().length > 0);
+        pb.webhook_on_status_update_urls = pb.webhook_on_status_update_urls.filter((url) => url.trim().length > 0);
+
+        const data = await savePlaybook(pb);
         setChangesMade(false);
         onClose(data?.id);
     };
@@ -361,24 +417,20 @@ const PlaybookEdit = (props: Props) => {
         }
     };
 
-    const handleWebhookOnCreationChange = (url: string) => {
-        if (playbook.webhook_on_creation_url !== url) {
-            setPlaybook({
-                ...playbook,
-                webhook_on_creation_url: url,
-            });
-            setChangesMade(true);
-        }
+    const handleWebhookOnCreationChange = (urls: string) => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_creation_urls: urls.split('\n'),
+        });
+        setChangesMade(true);
     };
 
-    const handleWebhookOnStatusUpdateChange = (url: string) => {
-        if (playbook.webhook_on_status_update_url !== url) {
-            setPlaybook({
-                ...playbook,
-                webhook_on_status_update_url: url,
-            });
-            setChangesMade(true);
-        }
+    const handleWebhookOnStatusUpdateChange = (urls: string) => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_status_update_urls: urls.split('\n'),
+        });
+        setChangesMade(true);
     };
 
     const handleMessageOnJoinChange = (message: string) => {
@@ -455,14 +507,6 @@ const PlaybookEdit = (props: Props) => {
         setChangesMade(true);
     };
 
-    const handleToggleExportChannelOnFinishedEnabled = () => {
-        setPlaybook({
-            ...playbook,
-            export_channel_on_finished_enabled: !playbook.export_channel_on_finished_enabled,
-        });
-        setChangesMade(true);
-    };
-
     const handleToggleCategorizePlaybookRun = () => {
         setPlaybook({
             ...playbook,
@@ -500,28 +544,36 @@ const PlaybookEdit = (props: Props) => {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
     }
 
+    const playbookTitle = playbook.title || formatMessage({defaultMessage: 'Untitled playbook'});
+
     return (
         <OuterContainer>
             <PlaybookNavbar
                 data-testid='backstage-nav-bar'
             >
-                <EditableTexts>
-                    <EditableTitleContainer>
-                        <EditableText
-                            id='playbook-name'
-                            text={playbook.title}
-                            onChange={handleTitleChange}
-                            placeholder={'Untitled playbook'}
-                        />
-                    </EditableTitleContainer>
-                </EditableTexts>
+                <TitleAndDescription onClick={() => setShowTitleDescriptionModal(true)}>
+                    <Title>
+                        {playbookTitle}
+                        <i className='editable-trigger icon-pencil-outline'/>
+                    </Title>
+                    <Description>
+                        {playbook.description || formatMessage({defaultMessage: 'Add playbook description...'})}
+                    </Description>
+                    <EditTitleDescriptionModal
+                        onChange={handleTitleAndDescriptionChange}
+                        show={showTitleDescriptionModal}
+                        onHide={() => setShowTitleDescriptionModal(false)}
+                        playbookTitle={playbookTitle}
+                        playbookDescription={playbook.description}
+                    />
+                </TitleAndDescription>
                 <NavbarPadding/>
                 <SecondaryButtonLarger
                     className='mr-4'
                     onClick={() => onClose()}
                 >
                     <span>
-                        {'Cancel'}
+                        {formatMessage({defaultMessage: 'Cancel'})}
                     </span>
                 </SecondaryButtonLarger>
                 <PrimaryButton
@@ -530,7 +582,7 @@ const PlaybookEdit = (props: Props) => {
                     onClick={onSave}
                 >
                     <span>
-                        {'Save'}
+                        {formatMessage({defaultMessage: 'Save'})}
                     </span>
                 </PrimaryButton>
             </PlaybookNavbar>
@@ -541,9 +593,7 @@ const PlaybookEdit = (props: Props) => {
                             currentTab={currentTab}
                             setCurrentTab={setCurrentTab}
                         >
-                            {tabInfo.map((item) => {
-                                return (item.name);
-                            })}
+                            {tabInfo.map(({id, name}) => <React.Fragment key={id}>{name}</React.Fragment>)}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>
@@ -559,7 +609,8 @@ const PlaybookEdit = (props: Props) => {
                                     <DefaultUpdateTimer
                                         seconds={playbook.reminder_timer_default_seconds}
                                         setSeconds={(seconds: number) => {
-                                            if (seconds !== playbook.reminder_timer_default_seconds) {
+                                            if (seconds !== playbook.reminder_timer_default_seconds &&
+                                                seconds > 0) {
                                                 setPlaybook({
                                                     ...playbook,
                                                     reminder_timer_default_seconds: seconds,
@@ -570,20 +621,20 @@ const PlaybookEdit = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Description'}
+                                        {formatMessage({defaultMessage: 'Run Summary'})}
                                         <BackstageSubheaderDescription>
-                                            {'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'}
+                                            {formatMessage({defaultMessage: 'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'})}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <StyledMarkdownTextbox
                                         className={'playbook_description'}
                                         id={'playbook_description_edit'}
-                                        placeholder={'Use Markdown to create a template.'}
-                                        value={playbook.description}
-                                        setValue={(description: string) => {
+                                        placeholder={formatMessage({defaultMessage: 'Use Markdown to create a template.'})}
+                                        value={playbook.run_summary_template}
+                                        setValue={(run_summary_template: string) => {
                                             setPlaybook({
                                                 ...playbook,
-                                                description,
+                                                run_summary_template,
                                             });
                                             setChangesMade(true);
                                         }}
@@ -591,15 +642,15 @@ const PlaybookEdit = (props: Props) => {
                                 </SidebarBlock>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Status updates'}
+                                        {formatMessage({defaultMessage: 'Status updates'})}
                                         <BackstageSubheaderDescription>
-                                            {'This template helps to standardize the format for recurring updates that take place throughout each run to keep.'}
+                                            {formatMessage({defaultMessage: 'This template helps to standardize the format for recurring updates that take place throughout each run to keep.'})}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <StyledMarkdownTextbox
                                         className={'playbook_reminder_message'}
                                         id={'playbook_reminder_message_edit'}
-                                        placeholder={'Use Markdown to create a template.'}
+                                        placeholder={formatMessage({defaultMessage: 'Use Markdown to create a template.'})}
                                         value={playbook.reminder_message_template}
                                         setValue={(value: string) => {
                                             setPlaybook({
@@ -611,50 +662,49 @@ const PlaybookEdit = (props: Props) => {
                                     />
                                 </SidebarBlock>
                                 {retrospectiveAccess &&
-                                    <>
-                                        <SidebarBlock>
-                                            <BackstageSubheader>
-                                                {'Retrospective reminder interval'}
-                                                <BackstageSubheaderDescription>
-                                                    {'Reminds the channel at a specified interval to fill out the retrospective.'}
-                                                </BackstageSubheaderDescription>
-                                            </BackstageSubheader>
-                                            <StyledSelect
-                                                value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
-                                                onChange={(option: {label: string, value: number}) => {
-                                                    setPlaybook({
-                                                        ...playbook,
-                                                        retrospective_reminder_interval_seconds: option ? option.value : option,
-                                                    });
-                                                    setChangesMade(true);
-                                                }}
-                                                classNamePrefix='channel-selector'
-                                                options={retrospectiveReminderOptions}
-                                                isClearable={false}
-                                            />
-                                        </SidebarBlock>
-                                        <SidebarBlock>
-                                            <BackstageSubheader>
-                                                {'Retrospective template'}
-                                                <BackstageSubheaderDescription>
-                                                    {'Default text for the retrospective.'}
-                                                </BackstageSubheaderDescription>
-                                            </BackstageSubheader>
-                                            <StyledMarkdownTextbox
-                                                className={'playbook_retrospective_template'}
-                                                id={'playbook_retrospective_template_edit'}
-                                                placeholder={'Enter retrospective template'}
-                                                value={playbook.retrospective_template}
-                                                setValue={(value: string) => {
-                                                    setPlaybook({
-                                                        ...playbook,
-                                                        retrospective_template: value,
-                                                    });
-                                                    setChangesMade(true);
-                                                }}
-                                            />
-                                        </SidebarBlock>
-                                    </>
+                                <>
+                                    <SidebarBlock>
+                                        <BackstageSubheader>
+                                            {formatMessage({defaultMessage: 'Retrospective reminder interval'})}
+                                            <BackstageSubheaderDescription>
+                                                {formatMessage({defaultMessage: 'Reminds the channel at a specified interval to fill out the retrospective.'})}
+                                            </BackstageSubheaderDescription>
+                                        </BackstageSubheader>
+                                        <StyledSelect
+                                            value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
+                                            onChange={(option: { label: string, value: number }) => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    retrospective_reminder_interval_seconds: option ? option.value : option,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                            options={retrospectiveReminderOptions}
+                                            isClearable={false}
+                                        />
+                                    </SidebarBlock>
+                                    <SidebarBlock>
+                                        <BackstageSubheader>
+                                            {formatMessage({defaultMessage: 'Retrospective template'})}
+                                            <BackstageSubheaderDescription>
+                                                {formatMessage({defaultMessage: 'Default text for the retrospective.'})}
+                                            </BackstageSubheaderDescription>
+                                        </BackstageSubheader>
+                                        <StyledMarkdownTextbox
+                                            className={'playbook_retrospective_template'}
+                                            id={'playbook_retrospective_template_edit'}
+                                            placeholder={formatMessage({defaultMessage: 'Enter retrospective template'})}
+                                            value={playbook.retrospective_template}
+                                            setValue={(value: string) => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    retrospective_template: value,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                        />
+                                    </SidebarBlock>
+                                </>
                                 }
                             </TabContainer>
                             <TabContainer>
@@ -677,17 +727,15 @@ const PlaybookEdit = (props: Props) => {
                                     webhookOnCreationEnabled={playbook.webhook_on_creation_enabled}
                                     onToggleWebhookOnCreation={handleToggleWebhookOnCreation}
                                     webhookOnCreationChange={handleWebhookOnCreationChange}
-                                    webhookOnCreationURL={playbook.webhook_on_creation_url}
+                                    webhookOnCreationURLs={playbook.webhook_on_creation_urls}
                                     webhookOnStatusUpdateEnabled={playbook.webhook_on_status_update_enabled}
                                     onToggleWebhookOnStatusUpdate={handleToggleWebhookOnStatusUpdate}
-                                    webhookOnStatusUpdateURL={playbook.webhook_on_status_update_url}
+                                    webhookOnStatusUpdateURLs={playbook.webhook_on_status_update_urls}
                                     webhookOnStatusUpdateChange={handleWebhookOnStatusUpdateChange}
                                     messageOnJoinEnabled={playbook.message_on_join_enabled}
                                     onToggleMessageOnJoin={handleToggleMessageOnJoin}
                                     messageOnJoin={playbook.message_on_join}
                                     messageOnJoinChange={handleMessageOnJoinChange}
-                                    onToggleExportChannelOnFinishedEnabled={handleToggleExportChannelOnFinishedEnabled}
-                                    exportChannelOnFinishedEnabled={playbook.export_channel_on_finished_enabled}
                                     signalAnyKeywordsEnabled={playbook.signal_any_keywords_enabled}
                                     onToggleSignalAnyKeywords={handleToggleSignalAnyKeywords}
                                     signalAnyKeywordsChange={handleSignalAnyKeywordsChange}
@@ -701,9 +749,9 @@ const PlaybookEdit = (props: Props) => {
                             <TabContainer>
                                 <SidebarBlock>
                                     <BackstageSubheader>
-                                        {'Channel access'}
+                                        {formatMessage({defaultMessage: 'Channel access'})}
                                         <BackstageSubheaderDescription>
-                                            {'Determine the type of channel this playbook creates.'}
+                                            {formatMessage({defaultMessage: 'Determine the type of channel this playbook creates.'})}
                                         </BackstageSubheaderDescription>
                                     </BackstageSubheader>
                                     <RadioContainer>
@@ -715,7 +763,7 @@ const PlaybookEdit = (props: Props) => {
                                                 checked={playbook.create_public_playbook_run}
                                                 onChange={handlePublicChange}
                                             />
-                                            {'Public'}
+                                            {formatMessage({defaultMessage: 'Public'})}
                                         </RadioLabel>
                                         <RadioLabel>
                                             <RadioInput
@@ -725,7 +773,7 @@ const PlaybookEdit = (props: Props) => {
                                                 checked={!playbook.create_public_playbook_run}
                                                 onChange={handlePublicChange}
                                             />
-                                            {'Private'}
+                                            {formatMessage({defaultMessage: 'Private'})}
                                         </RadioLabel>
                                     </RadioContainer>
                                 </SidebarBlock>

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import moment from 'moment';
+import {DateTime} from 'luxon';
 import styled from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -10,6 +10,8 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 
 import {useSelector} from 'react-redux';
+
+import {FormattedMessage} from 'react-intl';
 
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {PlaybookRun} from 'src/types/playbook_run';
@@ -64,6 +66,20 @@ const RunName = styled.div`
     line-height: 16px;
 `;
 
+const PlaybookRunItem = styled.div`
+    display: flex;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    align-items: center;
+    margin: 0;
+    border-bottom: 1px solid var(--center-channel-color-16);
+    cursor: pointer;
+
+    &:hover {
+        background: var(--center-channel-color-04);
+    }
+`;
+
 interface Props {
     playbookRun: PlaybookRun
     fixedTeam?: boolean
@@ -87,8 +103,8 @@ const Row = (props: Props) => {
     }
 
     return (
-        <div
-            className='row playbook-run-item'
+        <PlaybookRunItem
+            className='row'
             key={props.playbookRun.id}
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >
@@ -122,7 +138,12 @@ const Row = (props: Props) => {
             </div>
             <div className='col-sm-2'>
                 <SmallProfile userId={props.playbookRun.owner_user_id}/>
-                <SmallText>{participantsText(props.playbookRun.participant_ids)}</SmallText>
+                <SmallText>
+                    <FormattedMessage
+                        defaultMessage='{numParticipants, plural, =0 {no participants} =1 {# participant} other {# participants}}'
+                        values={{numParticipants: props.playbookRun.participant_ids.length}}
+                    />
+                </SmallText>
             </div>
             <div className='col-sm-2'>
                 <NormalText>{completedTasks + ' / ' + totalTasks}</NormalText>
@@ -131,14 +152,8 @@ const Row = (props: Props) => {
                     total={totalTasks}
                 />
             </div>
-        </div>
+        </PlaybookRunItem>
     );
-};
-
-const participantsText = (participantIds: string[]) => {
-    const num = participantIds.length;
-    const suffix = num === 1 ? '' : 's';
-    return num + ' participant' + suffix;
 };
 
 const tasksCompletedTotal = (checklists: Checklist[]) => {
@@ -158,15 +173,15 @@ const tasksCompletedTotal = (checklists: Checklist[]) => {
 };
 
 const formatDate = (millis: number) => {
-    const mom = moment(millis);
-    if (mom.isAfter(moment().startOf('d').subtract(2, 'd'))) {
-        return mom.calendar();
+    const dt = DateTime.fromMillis(millis);
+    if (dt > DateTime.now().startOf('day').minus({days: 2})) {
+        return dt.toRelativeCalendar();
     }
 
-    if (mom.isSame(moment(), 'year')) {
-        return mom.format('MMM DD LT');
+    if (dt.hasSame(DateTime.now(), 'year')) {
+        return dt.toFormat('LLL dd t');
     }
-    return mom.format('MMM DD YYYY LT');
+    return dt.toFormat('LLL dd yyyy t');
 };
 
 export default Row;

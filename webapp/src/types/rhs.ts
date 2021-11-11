@@ -17,7 +17,8 @@ export enum TimelineEventType {
     UserJoinedLeft = 'user_joined_left',
     PublishedRetrospective = 'published_retrospective',
     CanceledRetrospective = 'canceled_retrospective',
-    RunFinished = 'run_finished'
+    RunFinished = 'run_finished',
+    RunRestored = 'run_restored',
 }
 
 export interface TimelineEvent {

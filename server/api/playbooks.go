@@ -52,6 +52,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("", handler.updatePlaybook).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("", handler.deletePlaybook).Methods(http.MethodDelete)
+	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPost)
 
 	return handler
 }
@@ -70,36 +71,57 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if playbook.ReminderTimerDefaultSeconds <= 0 {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "playbook ReminderTimerDefaultSeconds must be > 0", nil)
+		return
+	}
+
 	if err := app.CreatePlaybook(userID, playbook, h.config, h.pluginAPI, h.playbookService); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 		return
 	}
 
 	if playbook.WebhookOnCreationEnabled {
-		url, err := url.ParseRequestURI(playbook.WebhookOnCreationURL)
-		if err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
+		if len(playbook.WebhookOnCreationURLs) > 64 {
+			msg := "too many registered creation webhook urls, limit to less than 64"
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
 
-		if url.Scheme != "http" && url.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-			return
+		for _, webhook := range playbook.WebhookOnCreationURLs {
+			url, err := url.ParseRequestURI(webhook)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
+				return
+			}
+
+			if url.Scheme != "http" && url.Scheme != "https" {
+				msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+				return
+			}
 		}
 	}
 
 	if playbook.WebhookOnStatusUpdateEnabled {
-		url, err := url.ParseRequestURI(playbook.WebhookOnStatusUpdateURL)
-		if err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
+		if len(playbook.WebhookOnStatusUpdateURLs) > 64 {
+			msg := "too many registered update webhook urls, limit to less than 64"
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
 			return
 		}
 
-		if url.Scheme != "http" && url.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-			return
+		for _, webhook := range playbook.WebhookOnStatusUpdateURLs {
+			url, err := url.ParseRequestURI(webhook)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
+				return
+			}
+
+			if url.Scheme != "http" && url.Scheme != "https" {
+				msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+				return
+			}
 		}
 	}
 
@@ -176,32 +198,36 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	if playbook.WebhookOnCreationEnabled {
-		var parsedURL *url.URL
-		parsedURL, err = url.ParseRequestURI(playbook.WebhookOnCreationURL)
-		if err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
-			return
-		}
+		for _, webhook := range playbook.WebhookOnCreationURLs {
+			var parsedURL *url.URL
+			parsedURL, err = url.ParseRequestURI(webhook)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
+				return
+			}
 
-		if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-			return
+			if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+				msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
+				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+				return
+			}
 		}
 	}
 
 	if playbook.WebhookOnStatusUpdateEnabled {
-		var parsedURL *url.URL
-		parsedURL, err = url.ParseRequestURI(playbook.WebhookOnStatusUpdateURL)
-		if err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
-			return
-		}
+		for _, webhook := range playbook.WebhookOnStatusUpdateURLs {
+			var parsedURL *url.URL
+			parsedURL, err = url.ParseRequestURI(webhook)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
+				return
+			}
 
-		if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-			msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-			return
+			if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+				msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
+				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+				return
+			}
 		}
 	}
 
@@ -282,6 +308,31 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 	}
 
 	err = h.playbookService.Delete(playbookToDelete, userID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *PlaybookHandler) restorePlaybook(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+		return
+	}
+
+	playbookToRestore, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	err = h.playbookService.Restore(playbookToRestore, userID)
 	if err != nil {
 		h.HandleError(w, err)
 		return

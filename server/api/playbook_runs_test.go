@@ -76,57 +76,12 @@ func TestPlaybookRuns(t *testing.T) {
 
 		configService.EXPECT().
 			IsAtLeastE10Licensed().
-			Return(true)
+			Return(true).AnyTimes()
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			})
+			Return(&config.Configuration{}).AnyTimes()
 	}
-
-	t.Run("create valid playbook run, but it's disabled on this team", func(t *testing.T) {
-		reset(t)
-
-		configService.EXPECT().
-			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{"notthisteam"},
-			})
-
-		setDefaultExpectations(t)
-		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
-
-		teamID := model.NewId()
-		withid := app.Playbook{
-			ID:                      "playbookid1",
-			Title:                   "My Playbook",
-			TeamID:                  teamID,
-			CreatePublicPlaybookRun: true,
-			MemberIDs:               []string{"testUserID"},
-		}
-
-		testPlaybookRun := app.PlaybookRun{
-			OwnerUserID: "testUserID",
-			TeamID:      teamID,
-			Name:        "playbookRunName",
-			PlaybookID:  withid.ID,
-			Checklists:  withid.Checklists,
-		}
-
-		playbookRunJSON, err := json.Marshal(testPlaybookRun)
-		require.NoError(t, err)
-
-		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/runs", bytes.NewBuffer(playbookRunJSON))
-		testreq.Header.Add("Mattermost-User-ID", "testUserID")
-		require.NoError(t, err)
-		handler.ServeHTTP(testrecorder, testreq)
-
-		resp := testrecorder.Result()
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	})
 
 	t.Run("create valid playbook run from dialog", func(t *testing.T) {
 		reset(t)
@@ -137,7 +92,7 @@ func TestPlaybookRuns(t *testing.T) {
 			ID:                      "playbookid1",
 			Title:                   "My Playbook",
 			TeamID:                  teamID,
-			Description:             "description",
+			RunSummaryTemplate:      "description",
 			CreatePublicPlaybookRun: true,
 			MemberIDs:               []string{"testUserID"},
 			InviteUsersEnabled:      false,
@@ -161,13 +116,15 @@ func TestPlaybookRuns(t *testing.T) {
 			Times(1)
 
 		i := app.PlaybookRun{
-			OwnerUserID:     dialogRequest.UserId,
-			TeamID:          dialogRequest.TeamId,
-			Name:            "playbookRunName",
-			PlaybookID:      "playbookid1",
-			Description:     "description",
-			InvitedUserIDs:  []string{},
-			InvitedGroupIDs: []string{},
+			OwnerUserID:               dialogRequest.UserId,
+			TeamID:                    dialogRequest.TeamId,
+			Name:                      "playbookRunName",
+			PlaybookID:                "playbookid1",
+			Summary:                   "description",
+			InvitedUserIDs:            []string{},
+			InvitedGroupIDs:           []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 		retI := i.Clone()
 		retI.ChannelID = "channelID"
@@ -179,7 +136,8 @@ func TestPlaybookRuns(t *testing.T) {
 		playbookRunService.EXPECT().CreatePlaybookRun(&i, &withid, "testUserID", true).Return(retI, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		dialogRequestBytes, _ := json.Marshal(dialogRequest)
+		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequestBytes))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq)
@@ -198,7 +156,7 @@ func TestPlaybookRuns(t *testing.T) {
 			ID:                      "playbookid1",
 			Title:                   "My Playbook",
 			TeamID:                  teamID,
-			Description:             "description",
+			RunSummaryTemplate:      "description",
 			CreatePublicPlaybookRun: true,
 			MemberIDs:               []string{"testUserID"},
 			InviteUsersEnabled:      false,
@@ -222,14 +180,16 @@ func TestPlaybookRuns(t *testing.T) {
 			Times(1)
 
 		i := app.PlaybookRun{
-			OwnerUserID:     dialogRequest.UserId,
-			TeamID:          dialogRequest.TeamId,
-			Name:            "playbookRunName",
-			Description:     "description",
-			PlaybookID:      withid.ID,
-			Checklists:      withid.Checklists,
-			InvitedUserIDs:  []string{},
-			InvitedGroupIDs: []string{},
+			OwnerUserID:               dialogRequest.UserId,
+			TeamID:                    dialogRequest.TeamId,
+			Name:                      "playbookRunName",
+			Summary:                   "description",
+			PlaybookID:                withid.ID,
+			Checklists:                withid.Checklists,
+			InvitedUserIDs:            []string{},
+			InvitedGroupIDs:           []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 		retI := i
 		retI.ChannelID = "channelID"
@@ -241,7 +201,8 @@ func TestPlaybookRuns(t *testing.T) {
 		playbookRunService.EXPECT().CreatePlaybookRun(&i, &withid, "testUserID", true).Return(&retI, nil)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		dialogRequestBytes, _ := json.Marshal(dialogRequest)
+		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequestBytes))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq)
@@ -296,7 +257,8 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePublicChannel).Return(false)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		dialogRequestBytes, _ := json.Marshal(dialogRequest)
+		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequestBytes))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq)
@@ -363,7 +325,8 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionCreatePrivateChannel).Return(false)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		dialogRequestBytes, _ := json.Marshal(dialogRequest)
+		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequestBytes))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq)
@@ -428,7 +391,8 @@ func TestPlaybookRuns(t *testing.T) {
 		retI.ChannelID = "channelID"
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		dialogRequestBytes, _ := json.Marshal(dialogRequest)
+		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequestBytes))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq)
@@ -470,7 +434,8 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		dialogRequestBytes, _ := json.Marshal(dialogRequest)
+		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequestBytes))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq)
@@ -520,7 +485,8 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PermissionReadChannel).Return(false)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		dialogRequestBytes, _ := json.Marshal(dialogRequest)
+		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequestBytes))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq)
@@ -569,7 +535,8 @@ func TestPlaybookRuns(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", "testUserID", "privateChannelId", model.PermissionReadChannel).Return(false)
 
 		testrecorder := httptest.NewRecorder()
-		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequest.ToJson()))
+		dialogRequestBytes, _ := json.Marshal(dialogRequest)
+		testreq, err := http.NewRequest("POST", "/api/v0/runs/dialog", bytes.NewBuffer(dialogRequestBytes))
 		testreq.Header.Add("Mattermost-User-ID", "testUserID")
 		require.NoError(t, err)
 		handler.ServeHTTP(testrecorder, testreq)
@@ -588,7 +555,7 @@ func TestPlaybookRuns(t *testing.T) {
 			ID:                      "playbookid1",
 			Title:                   "My Playbook",
 			TeamID:                  teamID,
-			Description:             "description",
+			RunSummaryTemplate:      "description",
 			CreatePublicPlaybookRun: true,
 			MemberIDs:               []string{"testUserID"},
 			InviteUsersEnabled:      false,
@@ -597,14 +564,16 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		testPlaybookRun := app.PlaybookRun{
-			OwnerUserID:     "testUserID",
-			TeamID:          teamID,
-			Name:            "playbookRunName",
-			Description:     "description",
-			PlaybookID:      testPlaybook.ID,
-			Checklists:      testPlaybook.Checklists,
-			InvitedUserIDs:  []string{},
-			InvitedGroupIDs: []string{},
+			OwnerUserID:               "testUserID",
+			TeamID:                    teamID,
+			Name:                      "playbookRunName",
+			Summary:                   "description",
+			PlaybookID:                testPlaybook.ID,
+			Checklists:                testPlaybook.Checklists,
+			InvitedUserIDs:            []string{},
+			InvitedGroupIDs:           []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 
 		playbookService.EXPECT().
@@ -628,7 +597,7 @@ func TestPlaybookRuns(t *testing.T) {
 			Name:        testPlaybookRun.Name,
 			OwnerUserID: testPlaybookRun.OwnerUserID,
 			TeamID:      testPlaybookRun.TeamID,
-			Description: testPlaybookRun.Description,
+			Description: testPlaybookRun.Summary,
 			PlaybookID:  testPlaybookRun.PlaybookID,
 		})
 		require.NoError(t, err)
@@ -644,7 +613,7 @@ func TestPlaybookRuns(t *testing.T) {
 			ID:                      "playbookid1",
 			Title:                   "My Playbook",
 			TeamID:                  teamID,
-			Description:             "description",
+			RunSummaryTemplate:      "description",
 			CreatePublicPlaybookRun: true,
 			MemberIDs:               []string{"testUserID"},
 			InviteUsersEnabled:      true,
@@ -653,14 +622,16 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		testPlaybookRun := app.PlaybookRun{
-			OwnerUserID:     "testUserID",
-			TeamID:          teamID,
-			Name:            "playbookRunName",
-			Description:     "description",
-			PlaybookID:      testPlaybook.ID,
-			Checklists:      testPlaybook.Checklists,
-			InvitedUserIDs:  []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs: []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			OwnerUserID:               "testUserID",
+			TeamID:                    teamID,
+			Name:                      "playbookRunName",
+			Summary:                   "description",
+			PlaybookID:                testPlaybook.ID,
+			Checklists:                testPlaybook.Checklists,
+			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 
 		playbookService.EXPECT().
@@ -684,7 +655,7 @@ func TestPlaybookRuns(t *testing.T) {
 			Name:        testPlaybookRun.Name,
 			OwnerUserID: testPlaybookRun.OwnerUserID,
 			TeamID:      testPlaybookRun.TeamID,
-			Description: testPlaybookRun.Description,
+			Description: testPlaybookRun.Summary,
 			PlaybookID:  testPlaybookRun.PlaybookID,
 		})
 		require.NoError(t, err)
@@ -808,16 +779,14 @@ func TestPlaybookRuns(t *testing.T) {
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			})
+			Return(&config.Configuration{})
 
 		teamID := model.NewId()
 		testPlaybook := app.Playbook{
 			ID:                      "playbookid1",
 			Title:                   "My Playbook",
 			TeamID:                  teamID,
-			Description:             "description",
+			RunSummaryTemplate:      "description",
 			CreatePublicPlaybookRun: true,
 			MemberIDs:               []string{"testUserID"},
 			InviteUsersEnabled:      false,
@@ -826,14 +795,16 @@ func TestPlaybookRuns(t *testing.T) {
 		}
 
 		testPlaybookRun := app.PlaybookRun{
-			OwnerUserID:     "testUserID",
-			TeamID:          teamID,
-			Name:            "playbookRunName",
-			Description:     "description",
-			PlaybookID:      testPlaybook.ID,
-			Checklists:      testPlaybook.Checklists,
-			InvitedUserIDs:  []string{},
-			InvitedGroupIDs: []string{},
+			OwnerUserID:               "testUserID",
+			TeamID:                    teamID,
+			Name:                      "playbookRunName",
+			Summary:                   "description",
+			PlaybookID:                testPlaybook.ID,
+			Checklists:                testPlaybook.Checklists,
+			InvitedUserIDs:            []string{},
+			InvitedGroupIDs:           []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 
 		playbookService.EXPECT().
@@ -857,7 +828,7 @@ func TestPlaybookRuns(t *testing.T) {
 			Name:        testPlaybookRun.Name,
 			OwnerUserID: testPlaybookRun.OwnerUserID,
 			TeamID:      testPlaybookRun.TeamID,
-			Description: testPlaybookRun.Description,
+			Description: testPlaybookRun.Summary,
 			PlaybookID:  testPlaybookRun.PlaybookID,
 		})
 		require.NoError(t, err)

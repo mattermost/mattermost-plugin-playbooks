@@ -4,7 +4,7 @@
 import React, {useEffect} from 'react';
 import {Switch, Route, NavLink, useRouteMatch, Redirect} from 'react-router-dom';
 import {useSelector} from 'react-redux';
-
+import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
@@ -12,32 +12,26 @@ import {mdiThumbsUpDown, mdiClipboardPlayMultipleOutline} from '@mdi/js';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
-import {Theme} from 'mattermost-redux/types/preferences';
+import {Theme} from 'mattermost-redux/types/themes';
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences';
 
+import Playbook from 'src/components/backstage/playbooks/playbook';
 import {promptForFeedback} from 'src/client';
-
 import PlaybookRunBackstage
     from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
-
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
 import {ErrorPageTypes} from 'src/constants';
 import {pluginErrorUrl} from 'src/browser_routing';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
-
-import PlaybookBackstage from 'src/components/backstage/playbooks/playbook_backstage';
-import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
+import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
-
-import ErrorPage from '../error_page';
-
-import SettingsView from './settings';
-import {BackstageNavbar} from './backstage_navbar';
-
-import {applyTheme} from './css_utils';
-import RunsPage from './runs_page';
+import ErrorPage from 'src/components/error_page';
+import SettingsView from 'src/components/backstage/settings';
+import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
+import RunsPage from 'src/components/backstage/runs_page';
+import {applyTheme} from 'src/components/backstage/css_utils';
 
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
@@ -52,23 +46,28 @@ const BackstageTitlebarItem = styled(NavLink)`
     && {
         font-size: 16px;
         cursor: pointer;
-        color: var(--center-channel-color);
-        fill: var(--center-channel-color);
-        padding: 0 8px;
-        margin-right: 39px;
+        color: var(--center-channel-color-80);
+        fill: var(--center-channel-color-80);
+        padding: 0 12px;
+        margin-right: 20px;
         display: flex;
         align-items: center;
+        height: 40px;
+        border-radius: 4px;
+        border: 0px;
 
         &:hover {
             text-decoration: unset;
-            color: var(--button-bg);
-            fill: var(--button-bg);
+            color: var(--center-channel-color-80);
+            fill: var(--center-channel-color-80);
+            background: var(--center-channel-color-08);
         }
 
         &.active {
             color: var(--button-bg);
             fill: var(--button-bg);
             text-decoration: unset;
+            background: var(--button-bg-08);
         }
 
         & > :first-child {
@@ -83,8 +82,11 @@ const BackstageBody = styled.div`
 `;
 
 const Backstage = () => {
+    const {formatMessage} = useIntl();
+
     //@ts-ignore plugins state is a thing
     const npsAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.nps']));
+    const currentTheme = useSelector<GlobalState, Theme>(getTheme);
     useEffect(() => {
         // This class, critical for all the styling to work, is added by ChannelController,
         // which is not loaded when rendering this root component.
@@ -98,19 +100,16 @@ const Backstage = () => {
         return function cleanUp() {
             document.body.classList.remove('app__body');
         };
-    }, []);
+    }, [currentTheme]);
 
     useForceDocumentTitle('Playbooks');
 
-    const currentTheme = useSelector<GlobalState, Theme>(getTheme);
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
 
     const match = useRouteMatch();
 
-    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
-
     return (
-        <BackstageContainer>
+        <BackstageContainer id={BackstageID}>
             <Switch>
                 <Route path={`${match.url}/error`}/>
                 <Route>
@@ -123,10 +122,10 @@ const Backstage = () => {
                             >
                                 <Icon
                                     path={mdiClipboardPlayMultipleOutline}
-                                    title='Runs'
+                                    title={formatMessage({defaultMessage: 'Runs'})}
                                     size={1.4}
                                 />
-                                {'Runs'}
+                                {formatMessage({defaultMessage: 'Runs'})}
                             </BackstageTitlebarItem>
                             <BackstageTitlebarItem
                                 to={`${match.url}/playbooks`}
@@ -134,7 +133,7 @@ const Backstage = () => {
                                 data-testid='playbooksLHSButton'
                             >
                                 <PlaybookIcon/>
-                                {'Playbooks'}
+                                {formatMessage({defaultMessage: 'Playbooks'})}
                             </BackstageTitlebarItem>
                             <BackstageTitlebarItem
                                 to={`${match.url}/settings`}
@@ -142,7 +141,7 @@ const Backstage = () => {
                                 data-testid='settingsLHSButton'
                             >
                                 <div className={'fa fa-gear'}/>
-                                {'Settings'}
+                                {formatMessage({defaultMessage: 'Settings'})}
                             </BackstageTitlebarItem>
                         </div>
                         <div className='d-flex items-center'>
@@ -154,10 +153,10 @@ const Backstage = () => {
                                 >
                                     <Icon
                                         path={mdiThumbsUpDown}
-                                        title='Give Feedback'
+                                        title={formatMessage({defaultMessage: 'Give Feedback'})}
                                         size={1}
                                     />
-                                    {'Give Feedback'}
+                                    {formatMessage({defaultMessage: 'Give Feedback'})}
                                 </BackstageTitlebarItem>
                             }
                         </div>
@@ -175,7 +174,7 @@ const Backstage = () => {
                         />
                     </Route>
                     <Route path={`${match.url}/playbooks/:playbookId`}>
-                        <PlaybookBackstage/>
+                        <Playbook/>
                     </Route>
                     <Route path={`${match.url}/playbooks`}>
                         <PlaybookList/>
@@ -204,7 +203,7 @@ const Backstage = () => {
                         exact={true}
                         path={`${match.url}/`}
                     >
-                        <Redirect to={`${match.url}/runs`}/>
+                        <RunsPage/>
                     </Route>
                     <Route>
                         <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>
@@ -215,5 +214,7 @@ const Backstage = () => {
         </BackstageContainer>
     );
 };
+
+export const BackstageID = 'playbooks-backstageRoot';
 
 export default Backstage;

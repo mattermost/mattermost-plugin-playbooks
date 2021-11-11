@@ -3,17 +3,13 @@
 import {AnyAction, Dispatch} from 'redux';
 
 import {generateId} from 'mattermost-redux/utils/helpers';
-
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
-
 import {
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
@@ -34,12 +30,12 @@ import {
     SetRHSOpen,
     SetRHSState,
     SetTriggerId,
-    RECEIVED_TEAM_DISABLED,
-    ReceivedTeamDisabled,
     PLAYBOOK_CREATED,
     PlaybookCreated,
     PLAYBOOK_DELETED,
     PlaybookDeleted,
+    PLAYBOOK_RESTORED,
+    PlaybookRestored,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedTeamNumPlaybooks,
     RECEIVED_GLOBAL_SETTINGS,
@@ -56,14 +52,13 @@ import {
     SetChecklistCollapsedState,
     SetAllChecklistsCollapsedState,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
-    SET_CHECKLIST_ITEMS_FILTER, SetChecklistItemsFilter,
+    SET_CHECKLIST_ITEMS_FILTER,
+    SetChecklistItemsFilter,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
-
 import {modals} from 'src/webapp_globals';
-
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
@@ -208,6 +203,11 @@ export const playbookDeleted = (teamID: string): PlaybookDeleted => ({
     teamID,
 });
 
+export const playbookRestored = (teamID: string): PlaybookRestored => ({
+    type: PLAYBOOK_RESTORED,
+    teamID,
+});
+
 export const receivedTeamNumPlaybooks = (teamID: string, numPlaybooks: number): ReceivedTeamNumPlaybooks => ({
     type: RECEIVED_TEAM_NUM_PLAYBOOKS,
     teamID,
@@ -217,11 +217,6 @@ export const receivedTeamNumPlaybooks = (teamID: string, numPlaybooks: number): 
 export const receivedTeamPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedTeamPlaybookRuns => ({
     type: RECEIVED_TEAM_PLAYBOOK_RUNS,
     playbookRuns,
-});
-
-export const receivedDisabledOnTeam = (teamId: string): ReceivedTeamDisabled => ({
-    type: RECEIVED_TEAM_DISABLED,
-    teamId,
 });
 
 export const removedFromPlaybookRunChannel = (channelId: string): RemovedFromChannel => ({

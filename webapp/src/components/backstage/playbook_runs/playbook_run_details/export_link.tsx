@@ -6,15 +6,16 @@ import {useSelector} from 'react-redux';
 import {GlobalState} from 'mattermost-redux/types/store';
 import styled from 'styled-components';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+import {useIntl} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
-import {SecondaryButtonLarger} from 'src/components/backstage/playbook_runs/shared';
-
+import {
+    Icon16,
+    SecondaryButtonLarger,
+} from 'src/components/backstage/playbook_runs/shared';
 import {OVERLAY_DELAY, AdminNotificationType} from 'src/constants';
 import {useAllowChannelExport} from 'src/hooks';
 import {exportChannelUrl} from 'src/client';
-
 import {Banner} from 'src/components/backstage/styles';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
@@ -26,7 +27,7 @@ interface ExportLinkProps {
 const ExportBannerTimeout = 2500;
 
 const SecondaryButtonWithSpace = styled(SecondaryButtonLarger)`
-    margin: 0 0 0 20px;
+    margin: 0 0 0 12px;
 `;
 
 const SecondaryButtonDisabled = styled(SecondaryButtonWithSpace)`
@@ -48,6 +49,7 @@ const ExportLink = (props: ExportLinkProps) => {
     //@ts-ignore plugins state is a thing
     const exportAvailable = useSelector<GlobalState, boolean>((state) => Boolean(state.plugins?.plugins?.['com.mattermost.plugin-channel-export']));
     const allowChannelExport = useAllowChannelExport();
+    const {formatMessage} = useIntl();
     const [showModal, setShowModal] = useState(false);
 
     const [showBanner, setShowBanner] = useState(false);
@@ -67,15 +69,15 @@ const ExportLink = (props: ExportLinkProps) => {
 
     const downloadStartedBanner = showBanner && (
         <Banner>
-            <i className='icon icon-download-outline mr-1'/>
-            {'Downloading channel log'}
+            <Icon16 className='icon icon-download-outline mr-1'/>
+            {formatMessage({defaultMessage: 'Downloading channel log'})}
         </Banner>
     );
 
     const linkText = (
         <>
-            <i className='icon icon-download-outline export-icon'/>
-            {'Export channel log'}
+            <Icon16 className='icon icon-download-outline export-icon'/>
+            {formatMessage({defaultMessage: 'Export channel log'})}
         </>
     );
 
@@ -94,14 +96,14 @@ const ExportLink = (props: ExportLinkProps) => {
 
     let tooltip = (
         <Tooltip id='export'>
-            {'Download a CSV containing all messages from the channel'}
+            {formatMessage({defaultMessage: 'Download a CSV containing all messages from the channel'})}
         </Tooltip>
     );
 
     if (!exportAvailable) {
         tooltip = (
             <Tooltip id='exportUnavailable'>
-                {'Install and enable the Channel Export plugin to support exporting the channel'}
+                {formatMessage({defaultMessage: 'Install and enable the Channel Export plugin to support exporting the channel'})}
             </Tooltip>
         );
     }

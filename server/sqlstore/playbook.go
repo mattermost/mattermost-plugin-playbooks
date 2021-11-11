@@ -16,11 +16,13 @@ import (
 
 type sqlPlaybook struct {
 	app.Playbook
-	ChecklistsJSON                  json.RawMessage
-	ConcatenatedInvitedUserIDs      string
-	ConcatenatedInvitedGroupIDs     string
-	ConcatenatedSignalAnyKeywords   string
-	ConcatenatedBroadcastChannelIDs string
+	ChecklistsJSON                        json.RawMessage
+	ConcatenatedInvitedUserIDs            string
+	ConcatenatedInvitedGroupIDs           string
+	ConcatenatedSignalAnyKeywords         string
+	ConcatenatedBroadcastChannelIDs       string
+	ConcatenatedWebhookOnCreationURLs     string
+	ConcatenatedWebhookOnStatusUpdateURLs string
 }
 
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
@@ -114,8 +116,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 				CASE WHEN MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
 				CASE WHEN SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
-				CASE WHEN CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
+				CASE WHEN CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate",
 			"ReminderTimerDefaultSeconds",
@@ -126,19 +127,19 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"DefaultCommanderEnabled AS DefaultOwnerEnabled",
 			"ConcatenatedBroadcastChannelIDs",
 			"BroadcastEnabled",
-			"WebhookOnCreationURL",
+			"ConcatenatedWebhookOnCreationURLs",
 			"WebhookOnCreationEnabled",
 			"MessageOnJoin",
 			"MessageOnJoinEnabled",
 			"RetrospectiveReminderIntervalSeconds",
 			"RetrospectiveTemplate",
-			"WebhookOnStatusUpdateURL",
+			"ConcatenatedWebhookOnStatusUpdateURLs",
 			"WebhookOnStatusUpdateEnabled",
-			"ExportChannelOnFinishedEnabled",
 			"ConcatenatedSignalAnyKeywords",
 			"SignalAnyKeywordsEnabled",
 			"CategorizeChannelEnabled",
 			"COALESCE(CategoryName, '') CategoryName",
+			"COALESCE(RunSummaryTemplate, '') RunSummaryTemplate",
 		).
 		From("IR_Playbook")
 
@@ -179,39 +180,39 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 	_, err = p.store.execBuilder(tx, sq.
 		Insert("IR_Playbook").
 		SetMap(map[string]interface{}{
-			"ID":                                   rawPlaybook.ID,
-			"Title":                                rawPlaybook.Title,
-			"Description":                          rawPlaybook.Description,
-			"TeamID":                               rawPlaybook.TeamID,
-			"CreatePublicIncident":                 rawPlaybook.CreatePublicPlaybookRun,
-			"CreateAt":                             rawPlaybook.CreateAt,
-			"UpdateAt":                             rawPlaybook.UpdateAt,
-			"DeleteAt":                             rawPlaybook.DeleteAt,
-			"ChecklistsJSON":                       rawPlaybook.ChecklistsJSON,
-			"NumStages":                            len(rawPlaybook.Checklists),
-			"NumSteps":                             getSteps(rawPlaybook.Playbook),
-			"ReminderMessageTemplate":              rawPlaybook.ReminderMessageTemplate,
-			"ReminderTimerDefaultSeconds":          rawPlaybook.ReminderTimerDefaultSeconds,
-			"ConcatenatedInvitedUserIDs":           rawPlaybook.ConcatenatedInvitedUserIDs,
-			"ConcatenatedInvitedGroupIDs":          rawPlaybook.ConcatenatedInvitedGroupIDs,
-			"InviteUsersEnabled":                   rawPlaybook.InviteUsersEnabled,
-			"DefaultCommanderID":                   rawPlaybook.DefaultOwnerID,
-			"DefaultCommanderEnabled":              rawPlaybook.DefaultOwnerEnabled,
-			"ConcatenatedBroadcastChannelIDs":      rawPlaybook.ConcatenatedBroadcastChannelIDs,
-			"BroadcastEnabled":                     rawPlaybook.BroadcastEnabled,
-			"WebhookOnCreationURL":                 rawPlaybook.WebhookOnCreationURL,
-			"WebhookOnCreationEnabled":             rawPlaybook.WebhookOnCreationEnabled,
-			"MessageOnJoin":                        rawPlaybook.MessageOnJoin,
-			"MessageOnJoinEnabled":                 rawPlaybook.MessageOnJoinEnabled,
-			"RetrospectiveReminderIntervalSeconds": rawPlaybook.RetrospectiveReminderIntervalSeconds,
-			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
-			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
-			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
-			"ExportChannelOnFinishedEnabled":       rawPlaybook.ExportChannelOnFinishedEnabled,
-			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
-			"SignalAnyKeywordsEnabled":             rawPlaybook.SignalAnyKeywordsEnabled,
-			"CategorizeChannelEnabled":             rawPlaybook.CategorizeChannelEnabled,
-			"CategoryName":                         rawPlaybook.CategoryName,
+			"ID":                                    rawPlaybook.ID,
+			"Title":                                 rawPlaybook.Title,
+			"Description":                           rawPlaybook.Description,
+			"TeamID":                                rawPlaybook.TeamID,
+			"CreatePublicIncident":                  rawPlaybook.CreatePublicPlaybookRun,
+			"CreateAt":                              rawPlaybook.CreateAt,
+			"UpdateAt":                              rawPlaybook.UpdateAt,
+			"DeleteAt":                              rawPlaybook.DeleteAt,
+			"ChecklistsJSON":                        rawPlaybook.ChecklistsJSON,
+			"NumStages":                             len(rawPlaybook.Checklists),
+			"NumSteps":                              getSteps(rawPlaybook.Playbook),
+			"ReminderMessageTemplate":               rawPlaybook.ReminderMessageTemplate,
+			"ReminderTimerDefaultSeconds":           rawPlaybook.ReminderTimerDefaultSeconds,
+			"ConcatenatedInvitedUserIDs":            rawPlaybook.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs":           rawPlaybook.ConcatenatedInvitedGroupIDs,
+			"InviteUsersEnabled":                    rawPlaybook.InviteUsersEnabled,
+			"DefaultCommanderID":                    rawPlaybook.DefaultOwnerID,
+			"DefaultCommanderEnabled":               rawPlaybook.DefaultOwnerEnabled,
+			"ConcatenatedBroadcastChannelIDs":       rawPlaybook.ConcatenatedBroadcastChannelIDs,
+			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled,
+			"ConcatenatedWebhookOnCreationURLs":     rawPlaybook.ConcatenatedWebhookOnCreationURLs,
+			"WebhookOnCreationEnabled":              rawPlaybook.WebhookOnCreationEnabled,
+			"MessageOnJoin":                         rawPlaybook.MessageOnJoin,
+			"MessageOnJoinEnabled":                  rawPlaybook.MessageOnJoinEnabled,
+			"RetrospectiveReminderIntervalSeconds":  rawPlaybook.RetrospectiveReminderIntervalSeconds,
+			"RetrospectiveTemplate":                 rawPlaybook.RetrospectiveTemplate,
+			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs,
+			"WebhookOnStatusUpdateEnabled":          rawPlaybook.WebhookOnStatusUpdateEnabled,
+			"ConcatenatedSignalAnyKeywords":         rawPlaybook.ConcatenatedSignalAnyKeywords,
+			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
+			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
+			"CategoryName":                          rawPlaybook.CategoryName,
+			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -304,8 +305,7 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
+				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 		).
 		From("IR_Playbook AS p").
@@ -369,8 +369,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
+				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 		).
 		From("IR_Playbook AS p").
@@ -537,37 +536,37 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 	_, err = p.store.execBuilder(tx, sq.
 		Update("IR_Playbook").
 		SetMap(map[string]interface{}{
-			"Title":                                rawPlaybook.Title,
-			"Description":                          rawPlaybook.Description,
-			"TeamID":                               rawPlaybook.TeamID,
-			"CreatePublicIncident":                 rawPlaybook.CreatePublicPlaybookRun,
-			"UpdateAt":                             rawPlaybook.UpdateAt,
-			"DeleteAt":                             rawPlaybook.DeleteAt,
-			"ChecklistsJSON":                       rawPlaybook.ChecklistsJSON,
-			"NumStages":                            len(rawPlaybook.Checklists),
-			"NumSteps":                             getSteps(rawPlaybook.Playbook),
-			"ReminderMessageTemplate":              rawPlaybook.ReminderMessageTemplate,
-			"ReminderTimerDefaultSeconds":          rawPlaybook.ReminderTimerDefaultSeconds,
-			"ConcatenatedInvitedUserIDs":           rawPlaybook.ConcatenatedInvitedUserIDs,
-			"ConcatenatedInvitedGroupIDs":          rawPlaybook.ConcatenatedInvitedGroupIDs,
-			"InviteUsersEnabled":                   rawPlaybook.InviteUsersEnabled,
-			"DefaultCommanderID":                   rawPlaybook.DefaultOwnerID,
-			"DefaultCommanderEnabled":              rawPlaybook.DefaultOwnerEnabled,
-			"ConcatenatedBroadcastChannelIDs":      rawPlaybook.ConcatenatedBroadcastChannelIDs,
-			"BroadcastEnabled":                     rawPlaybook.BroadcastEnabled,
-			"WebhookOnCreationURL":                 rawPlaybook.WebhookOnCreationURL,
-			"WebhookOnCreationEnabled":             rawPlaybook.WebhookOnCreationEnabled,
-			"MessageOnJoin":                        rawPlaybook.MessageOnJoin,
-			"MessageOnJoinEnabled":                 rawPlaybook.MessageOnJoinEnabled,
-			"RetrospectiveReminderIntervalSeconds": rawPlaybook.RetrospectiveReminderIntervalSeconds,
-			"RetrospectiveTemplate":                rawPlaybook.RetrospectiveTemplate,
-			"WebhookOnStatusUpdateURL":             rawPlaybook.WebhookOnStatusUpdateURL,
-			"WebhookOnStatusUpdateEnabled":         rawPlaybook.WebhookOnStatusUpdateEnabled,
-			"ExportChannelOnFinishedEnabled":       rawPlaybook.ExportChannelOnFinishedEnabled,
-			"ConcatenatedSignalAnyKeywords":        rawPlaybook.ConcatenatedSignalAnyKeywords,
-			"SignalAnyKeywordsEnabled":             rawPlaybook.SignalAnyKeywordsEnabled,
-			"CategorizeChannelEnabled":             rawPlaybook.CategorizeChannelEnabled,
-			"CategoryName":                         rawPlaybook.CategoryName,
+			"Title":                                 rawPlaybook.Title,
+			"Description":                           rawPlaybook.Description,
+			"TeamID":                                rawPlaybook.TeamID,
+			"CreatePublicIncident":                  rawPlaybook.CreatePublicPlaybookRun,
+			"UpdateAt":                              rawPlaybook.UpdateAt,
+			"DeleteAt":                              rawPlaybook.DeleteAt,
+			"ChecklistsJSON":                        rawPlaybook.ChecklistsJSON,
+			"NumStages":                             len(rawPlaybook.Checklists),
+			"NumSteps":                              getSteps(rawPlaybook.Playbook),
+			"ReminderMessageTemplate":               rawPlaybook.ReminderMessageTemplate,
+			"ReminderTimerDefaultSeconds":           rawPlaybook.ReminderTimerDefaultSeconds,
+			"ConcatenatedInvitedUserIDs":            rawPlaybook.ConcatenatedInvitedUserIDs,
+			"ConcatenatedInvitedGroupIDs":           rawPlaybook.ConcatenatedInvitedGroupIDs,
+			"InviteUsersEnabled":                    rawPlaybook.InviteUsersEnabled,
+			"DefaultCommanderID":                    rawPlaybook.DefaultOwnerID,
+			"DefaultCommanderEnabled":               rawPlaybook.DefaultOwnerEnabled,
+			"ConcatenatedBroadcastChannelIDs":       rawPlaybook.ConcatenatedBroadcastChannelIDs,
+			"BroadcastEnabled":                      rawPlaybook.BroadcastEnabled,
+			"ConcatenatedWebhookOnCreationURLs":     rawPlaybook.ConcatenatedWebhookOnCreationURLs,
+			"WebhookOnCreationEnabled":              rawPlaybook.WebhookOnCreationEnabled,
+			"MessageOnJoin":                         rawPlaybook.MessageOnJoin,
+			"MessageOnJoinEnabled":                  rawPlaybook.MessageOnJoinEnabled,
+			"RetrospectiveReminderIntervalSeconds":  rawPlaybook.RetrospectiveReminderIntervalSeconds,
+			"RetrospectiveTemplate":                 rawPlaybook.RetrospectiveTemplate,
+			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs,
+			"WebhookOnStatusUpdateEnabled":          rawPlaybook.WebhookOnStatusUpdateEnabled,
+			"ConcatenatedSignalAnyKeywords":         rawPlaybook.ConcatenatedSignalAnyKeywords,
+			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
+			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
+			"CategoryName":                          rawPlaybook.CategoryName,
+			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
@@ -599,6 +598,24 @@ func (p *playbookStore) Delete(id string) error {
 
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete playbook with id '%s'", id)
+	}
+
+	return nil
+}
+
+// Restore restores a deleted playbook.
+func (p *playbookStore) Restore(id string) error {
+	if id == "" {
+		return errors.New("ID cannot be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		Set("DeleteAt", 0).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to restore playbook with id '%s'", id)
 	}
 
 	return nil
@@ -673,12 +690,14 @@ func toSQLPlaybook(playbook app.Playbook) (*sqlPlaybook, error) {
 	}
 
 	return &sqlPlaybook{
-		Playbook:                        playbook,
-		ChecklistsJSON:                  checklistsJSON,
-		ConcatenatedInvitedUserIDs:      strings.Join(playbook.InvitedUserIDs, ","),
-		ConcatenatedInvitedGroupIDs:     strings.Join(playbook.InvitedGroupIDs, ","),
-		ConcatenatedSignalAnyKeywords:   strings.Join(playbook.SignalAnyKeywords, ","),
-		ConcatenatedBroadcastChannelIDs: strings.Join(playbook.BroadcastChannelIDs, ","),
+		Playbook:                              playbook,
+		ChecklistsJSON:                        checklistsJSON,
+		ConcatenatedInvitedUserIDs:            strings.Join(playbook.InvitedUserIDs, ","),
+		ConcatenatedInvitedGroupIDs:           strings.Join(playbook.InvitedGroupIDs, ","),
+		ConcatenatedSignalAnyKeywords:         strings.Join(playbook.SignalAnyKeywords, ","),
+		ConcatenatedBroadcastChannelIDs:       strings.Join(playbook.BroadcastChannelIDs, ","),
+		ConcatenatedWebhookOnCreationURLs:     strings.Join(playbook.WebhookOnCreationURLs, ","),
+		ConcatenatedWebhookOnStatusUpdateURLs: strings.Join(playbook.WebhookOnStatusUpdateURLs, ","),
 	}, nil
 }
 
@@ -708,6 +727,16 @@ func toPlaybook(rawPlaybook sqlPlaybook) (app.Playbook, error) {
 	p.BroadcastChannelIDs = []string(nil)
 	if rawPlaybook.ConcatenatedBroadcastChannelIDs != "" {
 		p.BroadcastChannelIDs = strings.Split(rawPlaybook.ConcatenatedBroadcastChannelIDs, ",")
+	}
+
+	p.WebhookOnCreationURLs = []string(nil)
+	if rawPlaybook.ConcatenatedWebhookOnCreationURLs != "" {
+		p.WebhookOnCreationURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnCreationURLs, ",")
+	}
+
+	p.WebhookOnStatusUpdateURLs = []string(nil)
+	if rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs != "" {
+		p.WebhookOnStatusUpdateURLs = strings.Split(rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs, ",")
 	}
 
 	return p, nil

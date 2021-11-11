@@ -27,12 +27,12 @@ import {
     REMOVED_FROM_CHANNEL,
     SetRHSEventsFilter,
     SET_RHS_EVENTS_FILTER,
-    ReceivedTeamDisabled,
-    RECEIVED_TEAM_DISABLED,
     PLAYBOOK_CREATED,
     PlaybookCreated,
     PLAYBOOK_DELETED,
     PlaybookDeleted,
+    PLAYBOOK_RESTORED,
+    PlaybookRestored,
     ReceivedTeamNumPlaybooks,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedGlobalSettings,
@@ -48,7 +48,9 @@ import {
     SetChecklistCollapsedState,
     SetAllChecklistsCollapsedState,
     SET_CHECKLIST_COLLAPSED_STATE,
-    SET_ALL_CHECKLISTS_COLLAPSED_STATE, SetChecklistItemsFilter, SET_CHECKLIST_ITEMS_FILTER,
+    SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    SetChecklistItemsFilter,
+    SET_CHECKLIST_ITEMS_FILTER,
 } from 'src/types/actions';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
@@ -95,11 +97,10 @@ type TStateMyPlaybookRunsByTeam = Record<Team['id'], null | Record<Channel['id']
  * @returns a map of teamId->{channelId->playbookRuns} for which the current user is a playbook run member
  * @remarks
  * It is lazy loaded on team change, but will also track incremental updates as provided by websocket events.
- * Additionally, it handles the plugin being disabled on the team.
  */
 const myPlaybookRunsByTeam = (
     state: TStateMyPlaybookRunsByTeam = {},
-    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel | ReceivedTeamDisabled,
+    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel
 ): TStateMyPlaybookRunsByTeam => {
     switch (action.type) {
     case PLAYBOOK_RUN_CREATED: {
@@ -167,13 +168,6 @@ const myPlaybookRunsByTeam = (
         }
         return newState;
     }
-    case RECEIVED_TEAM_DISABLED: {
-        const teamDisabledAction = action as ReceivedTeamDisabled;
-        return {
-            ...state,
-            [teamDisabledAction.teamId]: null,
-        };
-    }
     default:
         return state;
     }
@@ -191,10 +185,20 @@ const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {},
     }
 };
 
-const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookDeleted | ReceivedTeamNumPlaybooks) => {
+const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookDeleted | PlaybookRestored | ReceivedTeamNumPlaybooks) => {
     switch (action.type) {
     case PLAYBOOK_CREATED: {
         const playbookCreatedAction = action as PlaybookCreated;
+        const teamID = playbookCreatedAction.teamID;
+        const prevCount = state[teamID] || 0;
+
+        return {
+            ...state,
+            [teamID]: prevCount + 1,
+        };
+    }
+    case PLAYBOOK_RESTORED: {
+        const playbookCreatedAction = action as PlaybookRestored;
         const teamID = playbookCreatedAction.teamID;
         const prevCount = state[teamID] || 0;
 

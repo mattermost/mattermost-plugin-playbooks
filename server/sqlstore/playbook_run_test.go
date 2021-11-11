@@ -970,7 +970,6 @@ func TestGetPlaybookRuns(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 
 		_, store := setupSQLStore(t, db)
-		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
 		setupChannelsTable(t, db)
@@ -1235,7 +1234,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				Name:        "new description",
 				PlaybookRun: NewBuilder(t).WithDescription("old description").ToPlaybookRun(),
 				Update: func(old app.PlaybookRun) *app.PlaybookRun {
-					old.Description = "new description"
+					old.Summary = "new description"
 					return &old
 				},
 				ExpectedErr: nil,
@@ -1275,6 +1274,36 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				require.Equal(t, expected, actual)
 			})
 		}
+	}
+}
+
+func TestRestorePlaybookRun(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		_, store := setupSQLStore(t, db)
+
+		now := model.GetMillis()
+		initialPlaybookRun := NewBuilder(t).
+			WithCreateAt(now - 1000).
+			WithCurrentStatus(app.StatusFinished).
+			ToPlaybookRun()
+
+		returned, err := playbookRunStore.CreatePlaybookRun(initialPlaybookRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, returned)
+
+		err = playbookRunStore.RestorePlaybookRun(returned.ID, now)
+		require.NoError(t, err)
+
+		finalPlaybookRun := *returned
+		finalPlaybookRun.CurrentStatus = app.StatusInProgress
+		finalPlaybookRun.EndAt = 0
+		finalPlaybookRun.LastStatusUpdateAt = now
+
+		actual, err := playbookRunStore.GetPlaybookRun(returned.ID)
+		require.NoError(t, err)
+		require.Equal(t, &finalPlaybookRun, actual)
 	}
 }
 
@@ -1705,7 +1734,6 @@ func TestGetOwners(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 
 		_, store := setupSQLStore(t, db)
-		setupUsersTable(t, db)
 		setupChannelMemberHistoryTable(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
@@ -1775,7 +1803,6 @@ func TestNukeDB(t *testing.T) {
 		_, store := setupSQLStore(t, db)
 
 		setupChannelsTable(t, db)
-		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 
 		playbookRunStore := setupPlaybookRunStore(t, db)
@@ -1903,7 +1930,7 @@ func TestCheckAndSendMessageOnJoin(t *testing.T) {
 	}
 }
 
-func TestTasksAndRunsDiges(t *testing.T) {
+func TestTasksAndRunsDigest(t *testing.T) {
 	for _, driverName := range driverNames {
 		db := setupTestDB(t, driverName)
 		_, store := setupSQLStore(t, db)
@@ -1911,7 +1938,10 @@ func TestTasksAndRunsDiges(t *testing.T) {
 		setupTeamsTable(t, db)
 
 		userID := "testUserID"
-		testUser := userInfo{ID: userID}
+		testUser := userInfo{ID: userID, Name: "test.user"}
+		otherCommanderUserID := model.NewId()
+		otherCommander := userInfo{ID: otherCommanderUserID, Name: "other.commander"}
+		addUsers(t, store, []userInfo{testUser, otherCommander})
 
 		team1 := model.Team{
 			Id:   model.NewId(),
@@ -1928,8 +1958,9 @@ func TestTasksAndRunsDiges(t *testing.T) {
 		channel03 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-03"}
 		channel04 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-04"}
 		channel05 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-05"}
-		channels := []model.Channel{channel01, channel02, channel03, channel04, channel05}
-		addUsersToChannels(t, store, []userInfo{testUser}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id})
+		channel06 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-06"}
+		channels := []model.Channel{channel01, channel02, channel03, channel04, channel05, channel06}
+		addUsersToChannels(t, store, []userInfo{testUser}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel06.Id})
 
 		// three assigned tasks for inc01, and an overdue update
 		inc01 := *NewBuilder(nil).
@@ -1991,11 +2022,23 @@ func TestTasksAndRunsDiges(t *testing.T) {
 			WithName("inc05 - this is the playbook name for channel 05").
 			WithChannel(&channel05).
 			WithTeamID(team1.Id).
+			WithOwnerUserID(otherCommanderUserID).
 			WithChecklists([]int{1, 2, 3, 4}).
 			ToPlaybookRun()
 		inc05.Checklists[3].Items[2].AssigneeID = "someotheruserid"
 
-		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05}
+		// no assigned task for inc06, with overdue update, not commander but participating
+		inc06 := *NewBuilder(nil).
+			WithName("inc06 - this is the playbook name for channel 06").
+			WithChannel(&channel06).
+			WithTeamID(team1.Id).
+			WithOwnerUserID(otherCommanderUserID).
+			WithUpdateOverdueBy(2 * time.Minute).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc03.Checklists[2].Items[2].AssigneeID = "someotheruserid"
+
+		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05, inc06}
 
 		for i := range playbookRuns {
 			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
@@ -2005,7 +2048,7 @@ func TestTasksAndRunsDiges(t *testing.T) {
 		createChannels(t, store, channels)
 
 		t.Run("gets assigned tasks only", func(t *testing.T) {
-			runs, err := playbookRunStore.GetAssignedTasks(userID)
+			runs, err := playbookRunStore.GetRunsWithAssignedTasks(userID)
 			require.NoError(t, err)
 
 			total := 0
@@ -2034,13 +2077,14 @@ func TestTasksAndRunsDiges(t *testing.T) {
 
 			total := len(runs)
 
-			require.Equal(t, 3, total)
+			require.Equal(t, 4, total)
 
 			// don't make assumptions about ordering until we figure that out PM-side
 			expected := map[string]int{
 				channel01.Name: 1,
 				channel02.Name: 1,
 				channel03.Name: 1,
+				channel06.Name: 1,
 			}
 
 			actual := make(map[string]int)
@@ -2058,12 +2102,13 @@ func TestTasksAndRunsDiges(t *testing.T) {
 
 			total := len(runs)
 
-			require.Equal(t, 2, total)
+			require.Equal(t, 3, total)
 
 			// don't make assumptions about ordering until we figure that out PM-side
 			expected := map[string]int{
 				channel01.Name: 1,
 				channel02.Name: 1,
+				channel06.Name: 1,
 			}
 
 			actual := make(map[string]int)
@@ -2125,7 +2170,7 @@ func (ib *PlaybookRunBuilder) WithName(name string) *PlaybookRunBuilder {
 }
 
 func (ib *PlaybookRunBuilder) WithDescription(desc string) *PlaybookRunBuilder {
-	ib.playbookRun.Description = desc
+	ib.playbookRun.Summary = desc
 
 	return ib
 }

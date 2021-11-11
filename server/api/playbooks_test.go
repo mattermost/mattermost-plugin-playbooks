@@ -48,10 +48,11 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:           []string{},
-		InvitedUserIDs:      []string{},
-		InvitedGroupIDs:     []string{},
-		BroadcastChannelIDs: []string{},
+		MemberIDs:                   []string{},
+		InvitedUserIDs:              []string{},
+		InvitedGroupIDs:             []string{},
+		BroadcastChannelIDs:         []string{},
+		ReminderTimerDefaultSeconds: 60,
 	}
 	withid := app.Playbook{
 		ID:     "testplaybookid",
@@ -67,10 +68,11 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:           []string{},
-		InvitedUserIDs:      []string{},
-		InvitedGroupIDs:     []string{},
-		BroadcastChannelIDs: []string{},
+		MemberIDs:                   []string{},
+		InvitedUserIDs:              []string{},
+		InvitedGroupIDs:             []string{},
+		BroadcastChannelIDs:         []string{},
+		ReminderTimerDefaultSeconds: 60,
 	}
 
 	withMember := app.Playbook{
@@ -87,10 +89,11 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:           []string{"testuserid"},
-		InvitedUserIDs:      []string{},
-		InvitedGroupIDs:     []string{},
-		BroadcastChannelIDs: []string{},
+		MemberIDs:                   []string{"testuserid"},
+		InvitedUserIDs:              []string{},
+		InvitedGroupIDs:             []string{},
+		BroadcastChannelIDs:         []string{},
+		ReminderTimerDefaultSeconds: 60,
 	}
 	withBroadcastChannel := app.Playbook{
 		ID:     "testplaybookid",
@@ -106,10 +109,11 @@ func TestPlaybooks(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:           []string{"testuserid"},
-		BroadcastChannelIDs: []string{"nonemptychannelid"},
-		InvitedUserIDs:      []string{},
-		InvitedGroupIDs:     []string{},
+		MemberIDs:                   []string{"testuserid"},
+		BroadcastChannelIDs:         []string{"nonemptychannelid"},
+		InvitedUserIDs:              []string{},
+		InvitedGroupIDs:             []string{},
+		ReminderTimerDefaultSeconds: 60,
 	}
 
 	var mockCtrl *gomock.Controller
@@ -161,7 +165,6 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 	}
@@ -183,7 +186,6 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
@@ -205,12 +207,13 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:           playbooktest.Title,
-			TeamID:          playbooktest.TeamID,
-			Checklists:      toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:       playbooktest.MemberIDs,
-			InvitedUserIDs:  playbooktest.InvitedUserIDs,
-			InvitedGroupIDs: playbooktest.InvitedGroupIDs,
+			Title:                       playbooktest.Title,
+			TeamID:                      playbooktest.TeamID,
+			Checklists:                  toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:                   playbooktest.MemberIDs,
+			InvitedUserIDs:              playbooktest.InvitedUserIDs,
+			InvitedGroupIDs:             playbooktest.InvitedGroupIDs,
+			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		assert.Nil(t, resultPlaybook)
@@ -233,7 +236,6 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
@@ -258,13 +260,14 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:               playbooktest.Title,
-			TeamID:              playbooktest.TeamID,
-			Checklists:          toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:           playbooktest.MemberIDs,
-			InvitedUserIDs:      playbooktest.InvitedUserIDs,
-			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
-			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
+			Title:                       playbooktest.Title,
+			TeamID:                      playbooktest.TeamID,
+			Checklists:                  toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:                   playbooktest.MemberIDs,
+			InvitedUserIDs:              playbooktest.InvitedUserIDs,
+			InvitedGroupIDs:             playbooktest.InvitedGroupIDs,
+			BroadcastChannelIDs:         playbooktest.BroadcastChannelIDs,
+			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -296,15 +299,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
@@ -318,13 +318,14 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:               playbooktest.Title,
-			TeamID:              playbooktest.TeamID,
-			Checklists:          toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:           playbooktest.MemberIDs,
-			InvitedUserIDs:      playbooktest.InvitedUserIDs,
-			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
-			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
+			Title:                       playbooktest.Title,
+			TeamID:                      playbooktest.TeamID,
+			Checklists:                  toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:                   playbooktest.MemberIDs,
+			InvitedUserIDs:              playbooktest.InvitedUserIDs,
+			InvitedGroupIDs:             playbooktest.InvitedGroupIDs,
+			BroadcastChannelIDs:         playbooktest.BroadcastChannelIDs,
+			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -356,15 +357,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
@@ -378,13 +376,14 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:               playbooktest.Title,
-			TeamID:              playbooktest.TeamID,
-			Checklists:          toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:           playbooktest.MemberIDs,
-			InvitedUserIDs:      playbooktest.InvitedUserIDs,
-			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
-			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
+			Title:                       playbooktest.Title,
+			TeamID:                      playbooktest.TeamID,
+			Checklists:                  toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:                   playbooktest.MemberIDs,
+			InvitedUserIDs:              playbooktest.InvitedUserIDs,
+			InvitedGroupIDs:             playbooktest.InvitedGroupIDs,
+			BroadcastChannelIDs:         playbooktest.BroadcastChannelIDs,
+			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -411,15 +410,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(playbooktest.TeamID).Return(0, nil)
@@ -433,13 +429,14 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:               playbooktest.Title,
-			TeamID:              playbooktest.TeamID,
-			Checklists:          toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:           playbooktest.MemberIDs,
-			InvitedUserIDs:      playbooktest.InvitedUserIDs,
-			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
-			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
+			Title:                       playbooktest.Title,
+			TeamID:                      playbooktest.TeamID,
+			Checklists:                  toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:                   playbooktest.MemberIDs,
+			InvitedUserIDs:              playbooktest.InvitedUserIDs,
+			InvitedGroupIDs:             playbooktest.InvitedGroupIDs,
+			BroadcastChannelIDs:         playbooktest.BroadcastChannelIDs,
+			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -471,15 +468,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(withMember.TeamID).Return(0, nil)
@@ -495,13 +489,14 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:               withMember.Title,
-			TeamID:              withMember.TeamID,
-			Checklists:          toAPIChecklists(withMember.Checklists),
-			MemberIDs:           withMember.MemberIDs,
-			InvitedUserIDs:      withMember.InvitedUserIDs,
-			InvitedGroupIDs:     withMember.InvitedGroupIDs,
-			BroadcastChannelIDs: withMember.BroadcastChannelIDs,
+			Title:                       withMember.Title,
+			TeamID:                      withMember.TeamID,
+			Checklists:                  toAPIChecklists(withMember.Checklists),
+			MemberIDs:                   withMember.MemberIDs,
+			InvitedUserIDs:              withMember.InvitedUserIDs,
+			InvitedGroupIDs:             withMember.InvitedGroupIDs,
+			BroadcastChannelIDs:         withMember.BroadcastChannelIDs,
+			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		assert.Nil(t, resultPlaybook)
@@ -533,15 +528,12 @@ func TestPlaybooks(t *testing.T) {
 			GetConfiguration().
 			AnyTimes().
 			Return(&config.Configuration{
-				EnabledTeams:            []string{},
 				PlaybookCreatorsUserIds: []string{},
 			})
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{
-				EnabledTeams: []string{},
-			}).
+			Return(&config.Configuration{}).
 			AnyTimes()
 
 		playbookService.EXPECT().GetNumPlaybooksForTeam(withMember.TeamID).Return(0, nil)
@@ -557,13 +549,14 @@ func TestPlaybooks(t *testing.T) {
 			Times(1)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:               withMember.Title,
-			TeamID:              withMember.TeamID,
-			Checklists:          toAPIChecklists(withMember.Checklists),
-			MemberIDs:           withMember.MemberIDs,
-			InvitedUserIDs:      withMember.InvitedUserIDs,
-			InvitedGroupIDs:     withMember.InvitedGroupIDs,
-			BroadcastChannelIDs: withMember.BroadcastChannelIDs,
+			Title:                       withMember.Title,
+			TeamID:                      withMember.TeamID,
+			Checklists:                  toAPIChecklists(withMember.Checklists),
+			MemberIDs:                   withMember.MemberIDs,
+			InvitedUserIDs:              withMember.InvitedUserIDs,
+			InvitedGroupIDs:             withMember.InvitedGroupIDs,
+			BroadcastChannelIDs:         withMember.BroadcastChannelIDs,
+			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		assert.Nil(t, resultPlaybook)
@@ -586,13 +579,14 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:               playbooktest.Title,
-			TeamID:              playbooktest.TeamID,
-			Checklists:          toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:           playbooktest.MemberIDs,
-			InvitedUserIDs:      playbooktest.InvitedUserIDs,
-			InvitedGroupIDs:     playbooktest.InvitedGroupIDs,
-			BroadcastChannelIDs: playbooktest.BroadcastChannelIDs,
+			Title:                       playbooktest.Title,
+			TeamID:                      playbooktest.TeamID,
+			Checklists:                  toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:                   playbooktest.MemberIDs,
+			InvitedUserIDs:              playbooktest.InvitedUserIDs,
+			InvitedGroupIDs:             playbooktest.InvitedGroupIDs,
+			BroadcastChannelIDs:         playbooktest.BroadcastChannelIDs,
+			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -611,11 +605,12 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Roles: "system_guest"}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:          playbooktest.Title,
-			TeamID:         playbooktest.TeamID,
-			Checklists:     toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:      playbooktest.MemberIDs,
-			InvitedUserIDs: playbooktest.InvitedUserIDs,
+			Title:                       playbooktest.Title,
+			TeamID:                      playbooktest.TeamID,
+			Checklists:                  toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:                   playbooktest.MemberIDs,
+			InvitedUserIDs:              playbooktest.InvitedUserIDs,
+			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		assert.Nil(t, resultPlaybook)
@@ -648,7 +643,8 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			}),
-			BroadcastChannelIDs: []string{broadcastChannelID},
+			BroadcastChannelIDs:         []string{broadcastChannelID},
+			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		assert.Nil(t, resultPlaybook)
@@ -670,10 +666,11 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:          []string{"testuserid"},
-			InviteUsersEnabled: true,
-			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			MemberIDs:                   []string{"testuserid"},
+			InviteUsersEnabled:          true,
+			InvitedUserIDs:              []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:             []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			ReminderTimerDefaultSeconds: 60,
 		}
 
 		playbookService.EXPECT().
@@ -713,10 +710,11 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			}),
-			MemberIDs:          []string{"testuserid"},
-			InviteUsersEnabled: true,
-			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			MemberIDs:                   []string{"testuserid"},
+			InviteUsersEnabled:          true,
+			InvitedUserIDs:              []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:             []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -738,10 +736,11 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:          []string{"testuserid"},
-			InviteUsersEnabled: false,
-			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			MemberIDs:                   []string{"testuserid"},
+			InviteUsersEnabled:          false,
+			InvitedUserIDs:              []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:             []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			ReminderTimerDefaultSeconds: 60,
 		}
 
 		playbookService.EXPECT().
@@ -781,10 +780,11 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			}),
-			MemberIDs:          []string{"testuserid"},
-			InviteUsersEnabled: false,
-			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			MemberIDs:                   []string{"testuserid"},
+			InviteUsersEnabled:          false,
+			InvitedUserIDs:              []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:             []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultPlaybook.ID)
@@ -807,10 +807,11 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:          []string{"testuserid"},
-			InviteUsersEnabled: true,
-			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			MemberIDs:                   []string{"testuserid"},
+			InviteUsersEnabled:          true,
+			InvitedUserIDs:              []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:             []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			ReminderTimerDefaultSeconds: 60,
 		}
 
 		playbookService.EXPECT().
@@ -845,10 +846,11 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			}),
-			MemberIDs:          []string{"testuserid"},
-			InviteUsersEnabled: true,
-			InvitedUserIDs:     []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:    []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			MemberIDs:                   []string{"testuserid"},
+			InviteUsersEnabled:          true,
+			InvitedUserIDs:              []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:             []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		require.Nil(t, resultPlaybook)
@@ -1080,12 +1082,14 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:           []string{"testuserid"},
-			BroadcastChannelIDs: []string{},
-			InviteUsersEnabled:  true,
-			InvitedUserIDs:      []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:     []string{"testInvitedGroupID1", "testInvitedGroupID2"},
-			SignalAnyKeywords:   []string{},
+			MemberIDs:                 []string{"testuserid"},
+			BroadcastChannelIDs:       []string{},
+			InviteUsersEnabled:        true,
+			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:         []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
@@ -1138,12 +1142,14 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:           []string{"testuserid"},
-			BroadcastChannelIDs: []string{},
-			InviteUsersEnabled:  false,
-			InvitedUserIDs:      []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:     []string{"testInvitedGroupID1", "testInvitedGroupID2"},
-			SignalAnyKeywords:   []string{},
+			MemberIDs:                 []string{"testuserid"},
+			BroadcastChannelIDs:       []string{},
+			InviteUsersEnabled:        false,
+			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:         []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
@@ -1198,12 +1204,14 @@ func TestPlaybooks(t *testing.T) {
 					},
 				},
 			},
-			MemberIDs:           []string{"testuserid"},
-			BroadcastChannelIDs: []string{},
-			InviteUsersEnabled:  false,
-			InvitedUserIDs:      []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:     []string{"testInvitedGroupID1", "testInvitedGroupID2"},
-			SignalAnyKeywords:   []string{},
+			MemberIDs:                 []string{"testuserid"},
+			BroadcastChannelIDs:       []string{},
+			InviteUsersEnabled:        false,
+			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			SignalAnyKeywords:         []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
 		}
 
 		testrecorder := httptest.NewRecorder()
@@ -1292,11 +1300,12 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
 		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
-			Title:          playbooktest.Title,
-			TeamID:         playbooktest.TeamID,
-			Checklists:     toAPIChecklists(playbooktest.Checklists),
-			MemberIDs:      playbooktest.MemberIDs,
-			InvitedUserIDs: playbooktest.InvitedUserIDs,
+			Title:                       playbooktest.Title,
+			TeamID:                      playbooktest.TeamID,
+			Checklists:                  toAPIChecklists(playbooktest.Checklists),
+			MemberIDs:                   playbooktest.MemberIDs,
+			InvitedUserIDs:              playbooktest.InvitedUserIDs,
+			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		assert.Nil(t, resultPlaybook)

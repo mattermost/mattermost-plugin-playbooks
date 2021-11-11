@@ -5,14 +5,14 @@
     "homepage_url": "https://github.com/mattermost/mattermost-plugin-playbooks/",
     "support_url": "https://github.com/mattermost/mattermost-plugin-playbooks/issues",
     "icon_path": "assets/plugin_icon.svg",
-    "min_server_version": "5.38.0",
+    "min_server_version": "6.0.0",
     "server": {
         "executables": {
             "linux-amd64": "server/dist/plugin-linux-amd64",
             "darwin-amd64": "server/dist/plugin-darwin-amd64",
+            "darwin-arm64": "server/dist/plugin-darwin-arm64",
             "windows-amd64": "server/dist/plugin-windows-amd64.exe"
-        },
-        "executable": ""
+        }
     },
     "webapp": {
         "bundle_path": "webapp/dist/main.js"
@@ -20,11 +20,7 @@
     "settings_schema": {
         "header": "",
         "footer": "",
-        "settings": [{
-            "key": "EnabledTeams",
-            "type": "custom",
-            "display_name": "Enabled Teams:"
-        },
+        "settings": [
         {
             "key": "EnableExperimentalFeatures",
             "type": "bool",

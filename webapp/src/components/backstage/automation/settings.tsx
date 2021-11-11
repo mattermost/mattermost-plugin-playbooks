@@ -7,13 +7,15 @@ import styled from 'styled-components';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
+import {useIntl} from 'react-intl';
+
 import {PatternedInput} from 'src/components/backstage/automation/patterned_input';
 import {InputKeywords} from 'src/components/backstage/automation/input_keywords';
+import {PatternedTextArea} from 'src/components/backstage/automation/patterned_text_area';
 
 import {InviteUsers} from 'src/components/backstage/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/automation/auto_assign_owner';
 import {Broadcast} from 'src/components/backstage/automation/broadcast';
-import {ExportChannelOnArchive} from 'src/components/backstage/automation/export_channel_on_archive';
 
 import {MessageOnJoin} from 'src/components/backstage/automation/message_on_join';
 
@@ -36,17 +38,15 @@ interface Props {
     webhookOnCreationEnabled: boolean;
     onToggleWebhookOnCreation: () => void;
     webhookOnCreationChange: (url: string) => void;
-    webhookOnCreationURL: string;
+    webhookOnCreationURLs: string[];
     webhookOnStatusUpdateEnabled: boolean;
     onToggleWebhookOnStatusUpdate: () => void;
-    webhookOnStatusUpdateURL: string;
+    webhookOnStatusUpdateURLs: string[];
     webhookOnStatusUpdateChange: (url: string) => void;
     messageOnJoinEnabled: boolean;
     onToggleMessageOnJoin: () => void;
     messageOnJoin: string;
     messageOnJoinChange: (message: string) => void;
-    exportChannelOnFinishedEnabled: boolean;
-    onToggleExportChannelOnFinishedEnabled: () => void;
     signalAnyKeywordsEnabled: boolean;
     onToggleSignalAnyKeywords: () => void;
     signalAnyKeywordsChange: (keywords: string[]) => void;
@@ -58,18 +58,19 @@ interface Props {
 }
 
 export const AutomationSettings = (props: Props) => {
+    const {formatMessage} = useIntl();
     return (
         <>
             <Section>
                 <SectionTitle>
-                    {'Prompt to run the playbook when a user posts a message'}
+                    {formatMessage({defaultMessage: 'Prompt to run the playbook when a user posts a message'})}
                 </SectionTitle>
                 <Setting id={'signal-any-keywords'}>
                     <InputKeywords
                         enabled={props.signalAnyKeywordsEnabled}
                         onToggle={props.onToggleSignalAnyKeywords}
-                        textOnToggle={'Containing any of these keywords'}
-                        placeholderText={'Add keywords'}
+                        textOnToggle={formatMessage({defaultMessage: 'Containing any of these keywords'})}
+                        placeholderText={formatMessage({defaultMessage: 'Add keywords'})}
                         keywords={props.signalAnyKeywords}
                         onKeywordsChange={props.signalAnyKeywordsChange}
                     />
@@ -77,7 +78,7 @@ export const AutomationSettings = (props: Props) => {
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When a run starts'}
+                    {formatMessage({defaultMessage: 'When a run starts'})}
                 </SectionTitle>
                 <Setting id={'invite-users'}>
                     <InviteUsers
@@ -101,22 +102,26 @@ export const AutomationSettings = (props: Props) => {
                     />
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>
-                    <PatternedInput
+                    <PatternedTextArea
                         enabled={props.webhookOnCreationEnabled}
                         onToggle={props.onToggleWebhookOnCreation}
-                        input={props.webhookOnCreationURL}
+                        input={props.webhookOnCreationURLs.join('\n')}
                         onChange={props.webhookOnCreationChange}
                         pattern={'https?://.*'}
-                        placeholderText={'Enter webhook'}
-                        textOnToggle={'Send outgoing webhook'}
-                        type={'url'}
-                        errorText={'URL is not valid.'}
+                        delimiter={'\n'}
+                        maxLength={1000}
+                        rows={3}
+                        placeholderText={formatMessage({defaultMessage: 'Enter webhook'})}
+                        textOnToggle={formatMessage({defaultMessage: 'Send outgoing webhook (One per line)'})}
+                        errorText={formatMessage({defaultMessage: 'Invalid webhook URLs'})}
+                        maxRows={64}
+                        maxErrorText={formatMessage({defaultMessage: 'Invalid entry: the maximum number of webhooks allowed is 64'})}
                     />
                 </Setting>
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When an update is posted'}
+                    {formatMessage({defaultMessage: 'When an update is posted'})}
                 </SectionTitle>
                 <Setting id={'broadcast-channels'}>
                     <Broadcast
@@ -127,22 +132,26 @@ export const AutomationSettings = (props: Props) => {
                     />
                 </Setting>
                 <Setting id={'playbook-run-status-update__outgoing-webhook'}>
-                    <PatternedInput
+                    <PatternedTextArea
                         enabled={props.webhookOnStatusUpdateEnabled}
                         onToggle={props.onToggleWebhookOnStatusUpdate}
-                        input={props.webhookOnStatusUpdateURL}
+                        input={props.webhookOnStatusUpdateURLs.join('\n')}
                         onChange={props.webhookOnStatusUpdateChange}
                         pattern={'https?://.*'}
-                        placeholderText={'Enter webhook'}
-                        textOnToggle={'Send outgoing webhook'}
-                        type={'url'}
-                        errorText={'URL is not valid.'}
+                        delimiter={'\n'}
+                        maxLength={1000}
+                        rows={3}
+                        placeholderText={formatMessage({defaultMessage: 'Enter webhook'})}
+                        textOnToggle={formatMessage({defaultMessage: 'Send outgoing webhook (One per line)'})}
+                        errorText={formatMessage({defaultMessage: 'Invalid webhook URLs'})}
+                        maxRows={64}
+                        maxErrorText={formatMessage({defaultMessage: 'Invalid entry: the maximum number of webhooks allowed is 64'})}
                     />
                 </Setting>
             </Section>
             <Section>
                 <SectionTitle>
-                    {'When a new member joins the channel'}
+                    {formatMessage({defaultMessage: 'When a new member joins the channel'})}
                 </SectionTitle>
                 <Setting id={'user-joins-message'}>
                     <MessageOnJoin
@@ -160,21 +169,10 @@ export const AutomationSettings = (props: Props) => {
                         onChange={props.categoryNameChange}
                         pattern={'[\\s\\S]*'}
                         placeholderText={'Enter category name'}
-                        textOnToggle={'Add the channel to a sidebar category'}
+                        textOnToggle={formatMessage({defaultMessage: 'Add the channel to a sidebar category'})}
                         type={'text'}
-                        errorText={'Invalid category name.'} // this should not happen
+                        errorText={formatMessage({defaultMessage: 'Invalid category name.'})} // this should not happen
                         maxLength={22}
-                    />
-                </Setting>
-            </Section>
-            <Section>
-                <SectionTitle>
-                    {'When a run is finished'}
-                </SectionTitle>
-                <Setting id={'export-channel-on-finished'}>
-                    <ExportChannelOnArchive
-                        enabled={props.exportChannelOnFinishedEnabled}
-                        onToggle={props.onToggleExportChannelOnFinishedEnabled}
                     />
                 </Setting>
             </Section>

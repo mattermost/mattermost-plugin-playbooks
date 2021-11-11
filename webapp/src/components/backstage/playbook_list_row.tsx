@@ -10,6 +10,8 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {useSelector} from 'react-redux';
 
+import {FormattedMessage} from 'react-intl';
+
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from '../widgets/text_with_tooltip';
 
@@ -128,12 +130,12 @@ const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
             <DropdownMenuItem
                 onClick={props.onEdit}
             >
-                {'Edit'}
+                <FormattedMessage defaultMessage='Edit'/>
             </DropdownMenuItem>
             <DropdownMenuItem
                 onClick={props.onDelete}
             >
-                {'Delete'}
+                <FormattedMessage defaultMessage='Delete'/>
             </DropdownMenuItem>
         </DotMenu>
     );

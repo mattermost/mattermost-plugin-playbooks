@@ -7,21 +7,19 @@ import {
     useMemo,
 } from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-import moment from 'moment';
+import {DateTime} from 'luxon';
 
-import {getCurrentTeam, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeam, getMyTeams, getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
+import {Team} from 'mattermost-redux/types/teams';
 import {
     getProfilesInCurrentChannel,
     getCurrentUserId,
     getUser,
 } from 'mattermost-redux/selectors/entities/users';
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentChannelId, getChannelsNameMapInTeam, getChannel as getChannelFromState} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
-import {
-    getProfilesByIds,
-    getProfilesInChannel,
-} from 'mattermost-redux/actions/users';
+import {getProfilesByIds, getProfilesInChannel} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -29,10 +27,11 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
+import {EmptyPlaybookStats} from 'src/types/stats';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';
-import {clientFetchPlaybooksCount, fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun} from 'src/client';
+import {clientFetchPlaybooksCount, fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookStats} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
 import {
@@ -275,6 +274,10 @@ export function useRun(runId: string, teamId?: string, channelId?: string) {
     });
 }
 
+export function useChannel(channelId: string) {
+    return useThing(channelId, Client4.getChannel, getChannelFromState);
+}
+
 export function useNumPlaybooksInCurrentTeam() {
     const dispatch = useDispatch();
     const team = useSelector(getCurrentTeam);
@@ -464,11 +467,11 @@ export function useFormattedUsernameByID(userId: string) {
 }
 
 export function useNow(refreshIntervalMillis = 1000) {
-    const [now, setNow] = useState(moment());
+    const [now, setNow] = useState(DateTime.now());
 
     useEffect(() => {
         const tick = () => {
-            setNow(moment());
+            setNow(DateTime.now());
         };
         const timerId = setInterval(tick, refreshIntervalMillis);
 
@@ -527,4 +530,40 @@ export const usePlaybookName = (playbookId: string) => {
     }, [playbookId]);
 
     return playbookName;
+};
+
+export const useDefaultMarkdownOptions = (team: Team) => {
+    const channelNamesMap = useSelector((state: GlobalState) => getChannelsNameMapInTeam(state, team.id));
+
+    return {
+        atMentions: true,
+        mentionHighlight: true,
+        team,
+        channelNamesMap,
+    };
+};
+
+export const useDefaultMarkdownOptionsByTeamId = (teamId: string) => {
+    const team = useSelector((state: GlobalState) => getTeam(state, teamId));
+
+    return useDefaultMarkdownOptions(team);
+};
+
+export const useStats = (playbookId: string) => {
+    const [stats, setStats] = useState(EmptyPlaybookStats);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const ret = await fetchPlaybookStats(playbookId);
+                setStats(ret);
+            } catch {
+                setStats(EmptyPlaybookStats);
+            }
+        };
+
+        fetchStats();
+    }, [playbookId]);
+
+    return stats;
 };

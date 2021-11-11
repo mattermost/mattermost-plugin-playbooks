@@ -12,8 +12,7 @@ import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities
 import {Client4} from 'mattermost-redux/client';
 
 import classNames from 'classnames';
-
-import './profile.scss';
+import styled from 'styled-components';
 
 interface Props {
     userId: string;
@@ -24,6 +23,44 @@ interface Props {
     withoutName?: boolean;
     nameFormatter?: (preferredName: string, userName: string, firstName: string, lastName: string, nickName: string) => JSX.Element;
 }
+
+const PlaybookRunProfile = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+`;
+
+const ProfileImage = styled.img`
+    margin: 0 8px 0 0;
+    width: 32px;
+    height: 32px;
+    background-color: #bbb;
+    border-radius: 50%;
+    display: inline-block;
+
+    .image-sm {
+        width: 24px;
+        height: 24px;
+    }
+
+    .Assigned-button & {
+        margin: 0 4px 0 0;
+        width: 20px;
+        height: 20px;
+    }
+`;
+
+const ProfileName = styled.div`
+    padding: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    .description {
+        color: var(--center-channel-color-56);
+        margin-left: 4px;
+    }
+`;
 
 const Profile = (props: Props) => {
     const dispatch = useDispatch();
@@ -48,19 +85,19 @@ const Profile = (props: Props) => {
     }
 
     return (
-        <div className={classNames('PlaybookRunProfile', props.classNames, props.className)}>
+        <PlaybookRunProfile className={classNames('PlaybookRunProfile', props.classNames, props.className)}>
             {
                 !props.withoutProfilePic &&
-                <img
+                <ProfileImage
                     className='image'
                     src={profileUri || ''}
                 />
             }
             { !props.withoutName &&
-                <div className='name'>{name}</div>
+                <ProfileName className='name'>{name}</ProfileName>
             }
             {props.extra}
-        </div>
+        </PlaybookRunProfile>
     );
 };
 
