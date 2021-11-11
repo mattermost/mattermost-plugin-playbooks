@@ -117,7 +117,7 @@ const UpgradeBanner = (props: Props) => {
 
         setActionState(ActionState.Loading);
 
-        const response = await postMessageToAdmins(props.notificationType, isServerTeamEdition);
+        const response = await postMessageToAdmins(props.notificationType);
         if (response.error) {
             setActionState(ActionState.Error);
         } else {
