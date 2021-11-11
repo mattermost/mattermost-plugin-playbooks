@@ -23,6 +23,10 @@ func (t *NoopTelemetry) CreatePlaybookRun(*app.PlaybookRun, string, bool) {
 func (t *NoopTelemetry) FinishPlaybookRun(*app.PlaybookRun, string) {
 }
 
+// RestorePlaybookRun does nothing
+func (t *NoopTelemetry) RestorePlaybookRun(*app.PlaybookRun, string) {
+}
+
 // RestartPlaybookRun does nothing
 func (t *NoopTelemetry) RestartPlaybookRun(*app.PlaybookRun, string) {
 }

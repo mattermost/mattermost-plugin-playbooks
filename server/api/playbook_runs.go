@@ -76,6 +76,7 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/check-and-send-message-on-join/{channel_id:[A-Za-z0-9]+}", handler.checkAndSendMessageOnJoin).Methods(http.MethodGet)
 	playbookRunRouterAuthorized.HandleFunc("/update-description", handler.updateDescription).Methods(http.MethodPut)
+	playbookRunRouterAuthorized.HandleFunc("/restore", handler.restore).Methods(http.MethodPut)
 
 	channelRouter := playbookRunsRouter.PathPrefix("/channel").Subrouter()
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
@@ -147,7 +148,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(w http.ResponseWriter, r 
 			OwnerUserID: playbookRunCreateOptions.OwnerUserID,
 			TeamID:      playbookRunCreateOptions.TeamID,
 			Name:        playbookRunCreateOptions.Name,
-			Description: playbookRunCreateOptions.Description,
+			Summary:     playbookRunCreateOptions.Description,
 			PostID:      playbookRunCreateOptions.PostID,
 			PlaybookID:  playbookRunCreateOptions.PlaybookID,
 		},
@@ -271,10 +272,24 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 		return
 	}
 
-	h.poster.PublishWebsocketEventToUser(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
-		"client_id":    state.ClientID,
-		"playbook_run": playbookRun,
-	}, request.UserId)
+	channel, err := h.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to get new channel", err)
+		return
+	}
+
+	// Delay sending the websocket message because the front end may try to change to the newly created
+	// channel, and the server may respond with a "channel not found" error. This happens in e2e tests,
+	// and possibly in the wild.
+	go func() {
+		time.Sleep(1 * time.Second) // arbitrary 1 second magic number
+
+		h.poster.PublishWebsocketEventToUser(app.PlaybookRunCreatedWSEvent, map[string]interface{}{
+			"client_id":    state.ClientID,
+			"playbook_run": playbookRun,
+			"channel_name": channel.Name,
+		}, request.UserId)
+	}()
 
 	if err := h.postPlaybookRunCreatedMessage(playbookRun, request.ChannelId); err != nil {
 		h.HandleError(w, err)
@@ -380,7 +395,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.Checklists = pb.Checklists
 		public = pb.CreatePublicPlaybookRun
 
-		playbookRun.Description = pb.Description
+		playbookRun.Summary = pb.RunSummaryTemplate
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
 		playbookRun.ReminderTimerDefaultSeconds = pb.ReminderTimerDefaultSeconds
@@ -694,6 +709,20 @@ func (h *PlaybookRunHandler) finish(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"OK"}`))
+}
+
+// restore "un-finishes" a playbook run
+func (h *PlaybookRunHandler) restore(w http.ResponseWriter, r *http.Request) {
+	playbookRunID := mux.Vars(r)["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.RestorePlaybookRun(playbookRunID, userID); err != nil {
 		h.HandleError(w, err)
 		return
 	}

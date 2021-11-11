@@ -123,7 +123,7 @@ func playbookRunProperties(playbookRun *app.PlaybookRun, userID string) map[stri
 	return map[string]interface{}{
 		"UserActualID":            userID,
 		telemetryKeyPlaybookRunID: playbookRun.ID,
-		"HasDescription":          playbookRun.Description != "",
+		"HasDescription":          playbookRun.Summary != "",
 		"CommanderUserID":         playbookRun.OwnerUserID,
 		"ReporterUserID":          playbookRun.ReporterUserID,
 		"TeamID":                  playbookRun.TeamID,
@@ -154,6 +154,13 @@ func (t *RudderTelemetry) CreatePlaybookRun(playbookRun *app.PlaybookRun, userID
 func (t *RudderTelemetry) FinishPlaybookRun(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionEnd
+	t.track(eventPlaybookRun, properties)
+}
+
+// RestorePlaybookRun tracks the restoration of the playbook run.
+func (t *RudderTelemetry) RestorePlaybookRun(playbookRun *app.PlaybookRun, userID string) {
+	properties := playbookRunProperties(playbookRun, userID)
+	properties["Action"] = actionRestore
 	t.track(eventPlaybookRun, properties)
 }
 

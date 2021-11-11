@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {render, unmountComponentAtNode} from 'react-dom';
 import {Store, Unsubscribe} from 'redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
@@ -11,6 +12,8 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
+
+import {GlobalSelectStyle} from 'src/components/backstage/styles';
 
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
@@ -76,6 +79,8 @@ const OldRoutesRedirect = () => {
 export default class Plugin {
     removeRHSListener?: Unsubscribe;
     activityFunc?: () => void;
+
+    stylesContainer?: Element;
 
     doRegistrations(registry: PluginRegistry, store: Store<GlobalState>): void {
         registry.registerReducer(reducer);
@@ -162,6 +167,9 @@ export default class Plugin {
 
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
         this.doRegistrations(registry, store);
+        this.stylesContainer = document.createElement('div');
+        document.body.appendChild(this.stylesContainer);
+        render(<><GlobalSelectStyle/></>, this.stylesContainer);
 
         // Consume the SiteURL so that the client is subpath aware. We also do this for Client4
         // in our version of the mattermost-redux, since webapp only does it in its copy.
@@ -189,6 +197,9 @@ export default class Plugin {
         if (this.activityFunc) {
             document.removeEventListener('click', this.activityFunc);
             delete this.activityFunc;
+        }
+        if (this.stylesContainer) {
+            unmountComponentAtNode(this.stylesContainer);
         }
     }
 }

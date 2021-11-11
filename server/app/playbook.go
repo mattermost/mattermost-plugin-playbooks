@@ -47,6 +47,7 @@ type Playbook struct {
 	SignalAnyKeywordsEnabled             bool        `json:"signal_any_keywords_enabled"`
 	CategorizeChannelEnabled             bool        `json:"categorize_channel_enabled"`
 	CategoryName                         string      `json:"category_name"`
+	RunSummaryTemplate                   string      `json:"run_summary_template"`
 }
 
 func (p Playbook) Clone() Playbook {

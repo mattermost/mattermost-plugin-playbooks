@@ -402,6 +402,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const assignee_id = props.checklistItem.assignee_id; // to make typescript happy
 
     const title = props.checklistItem.title;
+    const labelText= messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions), true, {})
 
     const resetAssignee = () => {
         onAssigneeChange();
@@ -465,7 +466,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                     }}
                                 />
                                 <HoverMenuButton
-                                    title={(props.checklistItem.state === ChecklistItemState.Skip) ? 'Restore' : 'Skip'}
+                                    title={(props.checklistItem.state === ChecklistItemState.Skip) ? formatMessage({defaultMessage: 'Restore'}) : formatMessage({defaultMessage: 'Skip'})}
                                     className={(props.checklistItem.state === ChecklistItemState.Skip) ? 'icon-refresh icon-16 btn-icon' : 'icon-close-circle-outline icon-16 btn-icon'}
                                     onClick={() => {
                                         if (props.checklistItem.state === ChecklistItemState.Skip) {
@@ -493,7 +494,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             <div
                                 onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
                             >
-                                {(props.checklistItem.state === ChecklistItemState.Skip) ? <StrikeThrough>{messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions), true, {})}</StrikeThrough> : messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions))}
+                                {(props.checklistItem.state === ChecklistItemState.Skip) ? <StrikeThrough>{labelText}</StrikeThrough> : labelText}
                             </div>
                         </label>
                         {props.inlineDescription && (
@@ -540,9 +541,9 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             </ItemContainer>
             <ConfirmModal
                 show={showSkipConfirm}
-                title={'Skip task'}
-                message={'Are you sure you want to skip this task? This will be crossed from this run but will not affect the playbook.'}
-                confirmButtonText={'Skip'}
+                title={formatMessage({defaultMessage: 'Skip task'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to skip this task? This will be crossed from this run but will not affect the playbook.'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Skip'})}
                 onConfirm={() => {
                     clientSkipChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
                     if (props.onChange) {
@@ -555,9 +556,9 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             />
             <ConfirmModal
                 show={showRestoreConfirm}
-                title={'Restore task'}
-                message={'Are you sure you want to Restore this task? This Task will be added to this run'}
-                confirmButtonText={'Restore'}
+                title={formatMessage({defaultMessage: 'Restore task'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to Restore this task? This Task will be added to this run'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Restore'})}
                 onConfirm={() => {
                     clientRestoreChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
                     if (props.onChange) {

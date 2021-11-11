@@ -503,6 +503,88 @@ func TestUpdateStatus(t *testing.T) {
 	})
 }
 
+func TestRestorePlaybookRun(t *testing.T) {
+	t.Run("Restore finished playbook", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		store := mock_app.NewMockPlaybookRunStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_app.NewMockJobOnceScheduler(controller)
+		playbookService := mock_app.NewMockPlaybookService(controller)
+
+		now := model.GetMillis()
+		playbookRun := &app.PlaybookRun{
+			ID:            "testPlaybookRunID",
+			OwnerUserID:   "testUserID",
+			CurrentStatus: app.StatusFinished,
+			ChannelID:     "testChannelID",
+			EndAt:         1,
+		}
+		post := &model.Post{Id: "testPostID"}
+		user := &model.User{Id: "testUserID", Username: "testUsername"}
+		event := &app.TimelineEvent{
+			PlaybookRunID: playbookRun.ID,
+			CreateAt:      now,
+			EventAt:       now,
+			EventType:     app.RunRestored,
+			PostID:        post.Id,
+			SubjectUserID: user.Id,
+		}
+
+		store.EXPECT().GetPlaybookRun(playbookRun.ID).Return(playbookRun, nil).Times(2)
+		pluginAPI.On("GetUser", "testUserID").Return(user, nil)
+		store.EXPECT().RestorePlaybookRun(playbookRun.ID, gomock.Any()).Return(nil)
+		poster.EXPECT().PostMessage(playbookRun.ChannelID, "@testUsername changed this run's status from Finished to In Progress.").Return(post, nil)
+		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{})).Return(event, nil)
+		poster.EXPECT().PublishWebsocketEventToChannel("playbook_run_updated", gomock.Any(), gomock.Any())
+
+		mattermostConfig := &model.Config{}
+		mattermostConfig.SetDefaults()
+		pluginAPI.On("GetConfig").Return(mattermostConfig)
+
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService)
+
+		err := s.RestorePlaybookRun("testPlaybookRunID", "testUserID")
+		require.NoError(t, err)
+	})
+
+	t.Run("Restore unfinished playbook", func(t *testing.T) {
+		controller := gomock.NewController(t)
+		pluginAPI := &plugintest.API{}
+		client := pluginapi.NewClient(pluginAPI, &plugintest.Driver{})
+		store := mock_app.NewMockPlaybookRunStore(controller)
+		poster := mock_bot.NewMockPoster(controller)
+		logger := mock_bot.NewMockLogger(controller)
+		configService := mock_config.NewMockService(controller)
+		telemetryService := &telemetry.NoopTelemetry{}
+		scheduler := mock_app.NewMockJobOnceScheduler(controller)
+		playbookService := mock_app.NewMockPlaybookService(controller)
+
+		playbookRun := &app.PlaybookRun{
+			ID:            "testPlaybookRunID",
+			OwnerUserID:   "testUserID",
+			CurrentStatus: app.StatusInProgress,
+			ChannelID:     "testChannelID",
+			EndAt:         1,
+		}
+
+		store.EXPECT().GetPlaybookRun(playbookRun.ID).Return(playbookRun, nil).Times(1)
+
+		mattermostConfig := &model.Config{}
+		mattermostConfig.SetDefaults()
+		pluginAPI.On("GetConfig").Return(mattermostConfig)
+
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService)
+
+		err := s.RestorePlaybookRun("testPlaybookRunID", "testUserID")
+		require.NoError(t, err)
+	})
+}
+
 func TestUpdateStatusWebhookFailure(t *testing.T) {
 	controller := gomock.NewController(t)
 	pluginAPI := &plugintest.API{}

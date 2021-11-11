@@ -148,6 +148,11 @@ const TimelineEventItem = (props: Props) => {
         summaryTitle = formatMessage({defaultMessage: 'Run finished by {name}'}, {name: props.event.subject_display_name});
         testid = TimelineEventType.RunFinished;
         break;
+    case TimelineEventType.RunRestored:
+        iconClass = 'icon icon-shield-alert-outline';
+        summaryTitle = formatMessage({defaultMessage: 'Run restored by {name}'}, {name: props.event.subject_display_name});
+        testid = TimelineEventType.RunRestored;
+        break;
     case TimelineEventType.StatusUpdated:
         iconClass = 'icon icon-flag-outline';
         if (props.event.summary === '') {

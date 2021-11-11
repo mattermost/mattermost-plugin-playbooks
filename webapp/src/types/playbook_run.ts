@@ -7,7 +7,7 @@ import {Checklist, isChecklist} from 'src/types/playbook';
 export interface PlaybookRun {
     id: string;
     name: string;
-    description: string;
+    summary: string;
     owner_user_id: string;
     reporter_user_id: string;
     team_id: string;

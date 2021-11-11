@@ -139,7 +139,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 
 	// When adding a Playbook Run column #1: add to this select
 	playbookRunSelect := sqlStore.builder.
-		Select("i.ID", "c.DisplayName AS Name", "i.Description", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
+		Select("i.ID", "c.DisplayName AS Name", "i.Description AS Summary", "i.CommanderUserID AS OwnerUserID", "i.TeamID", "i.ChannelID",
 			"i.CreateAt", "i.EndAt", "i.DeleteAt", "i.PostID", "i.PlaybookID", "i.ReporterUserID", "i.CurrentStatus", "i.LastStatusUpdateAt",
 			"i.ChecklistsJSON", "COALESCE(i.ReminderPostID, '') ReminderPostID", "i.PreviousReminder",
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate", "ReminderTimerDefaultSeconds", "ConcatenatedInvitedUserIDs", "ConcatenatedInvitedGroupIDs", "DefaultCommanderID AS DefaultOwnerID",
@@ -350,7 +350,7 @@ func (s *playbookRunStore) CreatePlaybookRun(playbookRun *app.PlaybookRun) (*app
 		SetMap(map[string]interface{}{
 			"ID":                                    rawPlaybookRun.ID,
 			"Name":                                  rawPlaybookRun.Name,
-			"Description":                           rawPlaybookRun.Description,
+			"Description":                           rawPlaybookRun.Summary,
 			"CommanderUserID":                       rawPlaybookRun.OwnerUserID,
 			"ReporterUserID":                        rawPlaybookRun.ReporterUserID,
 			"TeamID":                                rawPlaybookRun.TeamID,
@@ -411,7 +411,7 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
 			"Name":                                  "",
-			"Description":                           rawPlaybookRun.Description,
+			"Description":                           rawPlaybookRun.Summary,
 			"CommanderUserID":                       rawPlaybookRun.OwnerUserID,
 			"LastStatusUpdateAt":                    rawPlaybookRun.LastStatusUpdateAt,
 			"ChecklistsJSON":                        rawPlaybookRun.ChecklistsJSON,
@@ -468,8 +468,24 @@ func (s *playbookRunStore) FinishPlaybookRun(playbookRunID string, endAt int64) 
 			"CurrentStatus": app.StatusFinished,
 			"EndAt":         endAt,
 		}).
-		Where(sq.Eq{"ID": playbookRunID})); err != nil {
+		Where(sq.Eq{"ID": playbookRunID}),
+	); err != nil {
 		return errors.Wrapf(err, "failed to finish run for id '%s'", playbookRunID)
+	}
+
+	return nil
+}
+
+func (s *playbookRunStore) RestorePlaybookRun(playbookRunID string, restoredAt int64) error {
+	if _, err := s.store.execBuilder(s.store.db, sq.
+		Update("IR_Incident").
+		SetMap(map[string]interface{}{
+			"CurrentStatus":      app.StatusInProgress,
+			"EndAt":              0,
+			"LastStatusUpdateAt": restoredAt,
+		}).
+		Where(sq.Eq{"ID": playbookRunID})); err != nil {
+		return errors.Wrapf(err, "failed to restore run for id '%s'", playbookRunID)
 	}
 
 	return nil

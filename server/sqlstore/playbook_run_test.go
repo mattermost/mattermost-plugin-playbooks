@@ -1234,7 +1234,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				Name:        "new description",
 				PlaybookRun: NewBuilder(t).WithDescription("old description").ToPlaybookRun(),
 				Update: func(old app.PlaybookRun) *app.PlaybookRun {
-					old.Description = "new description"
+					old.Summary = "new description"
 					return &old
 				},
 				ExpectedErr: nil,
@@ -1274,6 +1274,36 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				require.Equal(t, expected, actual)
 			})
 		}
+	}
+}
+
+func TestRestorePlaybookRun(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		_, store := setupSQLStore(t, db)
+
+		now := model.GetMillis()
+		initialPlaybookRun := NewBuilder(t).
+			WithCreateAt(now - 1000).
+			WithCurrentStatus(app.StatusFinished).
+			ToPlaybookRun()
+
+		returned, err := playbookRunStore.CreatePlaybookRun(initialPlaybookRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, returned)
+
+		err = playbookRunStore.RestorePlaybookRun(returned.ID, now)
+		require.NoError(t, err)
+
+		finalPlaybookRun := *returned
+		finalPlaybookRun.CurrentStatus = app.StatusInProgress
+		finalPlaybookRun.EndAt = 0
+		finalPlaybookRun.LastStatusUpdateAt = now
+
+		actual, err := playbookRunStore.GetPlaybookRun(returned.ID)
+		require.NoError(t, err)
+		require.Equal(t, &finalPlaybookRun, actual)
 	}
 }
 
@@ -2140,7 +2170,7 @@ func (ib *PlaybookRunBuilder) WithName(name string) *PlaybookRunBuilder {
 }
 
 func (ib *PlaybookRunBuilder) WithDescription(desc string) *PlaybookRunBuilder {
-	ib.playbookRun.Description = desc
+	ib.playbookRun.Summary = desc
 
 	return ib
 }

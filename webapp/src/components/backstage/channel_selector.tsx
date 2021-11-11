@@ -87,7 +87,6 @@ const ChannelSelector = (props: Props & { className?: string }) => {
             isClearable={props.isClearable}
             value={values}
             placeholder={props.placeholder || formatMessage({defaultMessage: 'Select a channel'})}
-            classNamePrefix='channel-selector'
             components={components}
             isDisabled={props.isDisabled}
             captureMenuScroll={props.captureMenuScroll}
