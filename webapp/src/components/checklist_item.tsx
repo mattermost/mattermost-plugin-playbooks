@@ -12,7 +12,7 @@ import {Overlay, Popover, PopoverProps} from 'react-bootstrap';
 import Scrollbars from 'react-custom-scrollbars';
 import {useDispatch, useSelector} from 'react-redux';
 import {components, ControlProps} from 'react-select';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 
 import {handleFormattedTextClick} from 'src/browser_routing';
@@ -50,7 +50,7 @@ interface ChecklistItemDetailsProps {
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     disabled: boolean;
-    inlineDescription: boolean;
+    collapsibleDescription: boolean;
 }
 
 const RunningTimeout = 1000;
@@ -204,9 +204,20 @@ export const CheckboxContainer = styled.div`
     }
 `;
 
-const ChecklistItemLabel = styled.div`
+const ChecklistItemLabel = styled.div<{clickable: boolean}>`
     display: flex;
     flex-direction: column;
+    width: 100%;
+
+    ${({clickable}) => clickable && css`
+        cursor: pointer;
+
+        // This is somehow needed to override the
+        // cursor style in the item title
+        label {
+            cursor: pointer;
+        }
+    `}
 `;
 
 const ChecklistItemDescription = styled.div`
@@ -353,6 +364,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
     const profilesInChannel = useProfilesInCurrentChannel();
+    const [showDescription, setShowDescription] = useState(true);
 
     const markdownOptions = {
         singleline: true,
@@ -402,6 +414,8 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
         setProfileSelectorToggle(!profileSelectorToggle);
     };
 
+    const toggleDescription = () => setShowDescription(!showDescription);
+
     const content = (
         <>
             <ItemContainer
@@ -412,21 +426,21 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 data-testid='checkbox-item-container'
             >
                 <CheckboxContainer>
-                    {showMenu && (!props.disabled || props.checklistItem.description !== '') && !props.inlineDescription &&
+                    {showMenu && (!props.disabled || props.checklistItem.description !== '') &&
                     <HoverMenu>
+                        {props.collapsibleDescription && props.checklistItem.description !== '' &&
+                            <HoverMenuButton
+                                title={formatMessage({defaultMessage: 'Toggle description'})}
+                                className={`icon icon-chevron-${showDescription ? 'up' : 'down'}`}
+                                onClick={toggleDescription}
+                            />
+                        }
                         {!props.disabled &&
                             <HoverMenuButton
                                 title={formatMessage({defaultMessage: 'Drag me to reorder'})}
                                 className={'icon icon-menu'}
                                 {...props.draggableProvided?.dragHandleProps}
                             />
-                        }
-                        {props.checklistItem.description !== '' &&
-                        <StepDescription
-                            text={props.checklistItem.description}
-                            channelNames={channelNamesMap}
-                            team={team}
-                        />
                         }
                         {!props.disabled &&
                             <>
@@ -478,7 +492,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             }
                         }}
                     />
-                    <ChecklistItemLabel>
+                    <ChecklistItemLabel onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()} clickable={props.collapsibleDescription && props.checklistItem.description !== ''}>
                         <label title={title}>
                             <div
                                 onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
@@ -486,7 +500,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                 {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
                             </div>
                         </label>
-                        {props.inlineDescription && (
+                        {showDescription && (
                             <ChecklistItemDescription>
                                 {messageHtmlToComponent(formatText(props.checklistItem.description, {...markdownOptions, singleline: false}), true, {})}
                             </ChecklistItemDescription>
