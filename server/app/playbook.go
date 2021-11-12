@@ -178,7 +178,7 @@ type ChecklistItem struct {
 
 	// LastSkipped is the timestamp, in milliseconds since epoch, of the last time the item
 	// was skipped. 0 if it was never skipped.
-	LastSkipped int64 `json:"deleted_at"`
+	LastSkipped int64 `json:"delete_at"`
 }
 
 type GetPlaybooksResults struct {
