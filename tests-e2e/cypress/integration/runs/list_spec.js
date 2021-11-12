@@ -130,9 +130,15 @@ describe('runs > list', () => {
             // # Open the product
             cy.visit('/playbooks');
 
+            // # Filter to all runs
+            cy.findByTestId('my-runs-only').click();
+
             // # Make sure both runs are visible by default
             cy.findByText('testUsers Run').should('be.visible');
             cy.findByText('testAnotherUsers Run').should('be.visible');
+
+            // # Filter to only my runs
+            cy.findByTestId('my-runs-only').click();
 
             // # Verify runs by testAnotherUser are not visible
             cy.findByText('testAnotherUsers Run').should('not.exist');
@@ -148,9 +154,15 @@ describe('runs > list', () => {
             // # Open the product
             cy.visit('/playbooks');
 
+            // # Filter to all runs
+            cy.findByTestId('my-runs-only').click();
+
             // Make sure both runs are visible by default
             cy.findByText('testUsers Run').should('be.visible');
             cy.findByText('testAnotherUsers Run').should('be.visible');
+
+            // # Filter to only my runs
+            cy.findByTestId('my-runs-only').click();
 
             // # Verify runs by testUser are not visible
             cy.findByText('testUsers Run').should('not.exist');
@@ -183,13 +195,13 @@ describe('runs > list', () => {
             // # Open the product
             cy.visit('/playbooks');
 
+            // # Filter to all runs
+            cy.findByTestId('my-runs-only').click();
+
             // # Make sure runs are visible by default, and finished is not
             cy.findByText('testUsers Run').should('be.visible');
             cy.findByText('testAnotherUsers Run').should('be.visible');
             cy.findByText('testUsers Run to be finished').should('not.exist');
-
-            // # Filter to all runs
-            cy.findByTestId('my-runs-only').click();
 
             // # Filter to finished runs as well
             cy.findByTestId('finished-runs').click();

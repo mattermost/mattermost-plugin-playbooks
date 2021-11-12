@@ -17,7 +17,6 @@ const defaultPlaybookFetchParams = {
     per_page: BACKSTAGE_LIST_PER_PAGE,
     sort: 'last_status_update_at',
     direction: 'desc',
-    participant_or_follower_id: 'me',
     statuses: [PlaybookRunStatus.InProgress],
 };
 
