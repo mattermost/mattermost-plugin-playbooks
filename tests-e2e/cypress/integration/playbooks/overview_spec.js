@@ -126,7 +126,7 @@ describe('playbooks > overview', () => {
         });
     });
 
-    describe.only('archiving', () => {
+    describe('archiving', () => {
         const playbookTitle = 'Playbook (' + Date.now() + ')';
         let testPlaybook;
 
@@ -150,7 +150,7 @@ describe('playbooks > overview', () => {
             // * Verify we're on the right playbook
             cy.get('[class^="Title-"]').contains(playbookTitle);
 
-            // * Verify we an see the archived badge
+            // * Verify we can see the archived badge
             cy.findByTestId('archived-badge').should('be.visible');
 
             // * Verify the run button is disabled

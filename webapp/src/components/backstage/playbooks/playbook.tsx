@@ -25,7 +25,7 @@ import {ErrorPageTypes} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {RegularHeading} from 'src/styles/headings';
-import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
+import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
 interface MatchParams {
     playbookId: string
@@ -124,8 +124,8 @@ const Playbook = () => {
                     {
                         archived &&
                         <StatusBadge
-                            data-testid='archived-badge'
-                            status='Archived'
+                            data-testid={'archived-badge'}
+                            status={BadgeType.Archived}
                         />
                     }
                     <PrimaryButtonLarger
