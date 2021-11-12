@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ReactNode, useState} from 'react';
+import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
@@ -158,7 +158,7 @@ const PlaybookList = () => {
                 <RightFade/>
                 <LeftDots/>
                 <LeftFade/>
-                <div className='playbook-list container-medium'>
+                <ContainerMedium>
                     <PlaybooksHeader data-testid='titlePlaybook'>
                         <FormattedMessage defaultMessage='Playbooks'/>
                         <ExpandRight/>
@@ -227,7 +227,7 @@ const PlaybookList = () => {
                         totalCount={totalCount}
                         setPage={setPage}
                     />
-                </div>
+                </ContainerMedium>
             </>
         );
     }
