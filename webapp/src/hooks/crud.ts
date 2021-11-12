@@ -102,7 +102,7 @@ export function usePlaybooksCrud(
             return;
         }
 
-        setParams({sort: colName, direction: 'asc'});
+        setParams({sort: colName, direction: 'desc'});
     };
 
     return [
