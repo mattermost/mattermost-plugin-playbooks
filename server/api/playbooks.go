@@ -506,11 +506,14 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'per_page': it should be a positive number")
 	}
 
+	searchTerm := u.Query().Get("search_term")
+
 	return app.PlaybookFilterOptions{
-		Sort:      sortField,
-		Direction: sortDirection,
-		Page:      page,
-		PerPage:   perPage,
+		Sort:       sortField,
+		Direction:  sortDirection,
+		Page:       page,
+		PerPage:    perPage,
+		SearchTerm: searchTerm,
 	}, nil
 }
 

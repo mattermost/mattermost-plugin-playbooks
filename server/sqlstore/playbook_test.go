@@ -434,7 +434,12 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		Name: "Desmond",
 	}
 
-	users := []userInfo{jon, andrew, matt, lucia, bill, jen, desmond}
+	rosie := userInfo{
+		ID:   model.NewId(),
+		Name: "Rosie",
+	}
+
+	users := []userInfo{jon, andrew, matt, lucia, bill, jen, desmond, rosie}
 
 	pb01 := NewPBBuilder().
 		WithTitle("playbook 1").
@@ -443,7 +448,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithCreateAt(500).
 		WithUpdateAt(0).
 		WithChecklists([]int{1, 2}).
-		WithMembers([]userInfo{jon, andrew, matt}).
+		WithMembers([]userInfo{jon, andrew, matt, rosie}).
 		ToPlaybook()
 
 	pb02 := NewPBBuilder().
@@ -453,7 +458,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithUpdateAt(0).
 		WithCreatePublic(true).
 		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
-		WithMembers([]userInfo{andrew, matt}).
+		WithMembers([]userInfo{andrew, matt, rosie}).
 		ToPlaybook()
 
 	pb03 := NewPBBuilder().
@@ -462,7 +467,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithChecklists([]int{1, 2, 3}).
 		WithCreateAt(700).
 		WithUpdateAt(0).
-		WithMembers([]userInfo{jon, matt, lucia}).
+		WithMembers([]userInfo{jon, matt, lucia, rosie}).
 		ToPlaybook()
 
 	pb04 := NewPBBuilder().
@@ -472,7 +477,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithCreateAt(800).
 		WithUpdateAt(0).
 		WithChecklists([]int{20}).
-		WithMembers([]userInfo{matt}).
+		WithMembers([]userInfo{matt, rosie}).
 		ToPlaybook()
 
 	pb05 := NewPBBuilder().
@@ -481,7 +486,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithCreateAt(1000).
 		WithUpdateAt(0).
 		WithChecklists([]int{1}).
-		WithMembers([]userInfo{jon, andrew}).
+		WithMembers([]userInfo{jon, andrew, rosie}).
 		ToPlaybook()
 
 	pb06 := NewPBBuilder().
@@ -490,16 +495,16 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithCreateAt(1100).
 		WithUpdateAt(0).
 		WithChecklists([]int{1, 2, 3}).
-		WithMembers([]userInfo{matt}).
+		WithMembers([]userInfo{matt, rosie}).
 		ToPlaybook()
 
 	pb07 := NewPBBuilder().
-		WithTitle("playbook 7").
+		WithTitle("playbook 7 - with a long title abracadabra bimbadaboom").
 		WithTeamID(team3id).
 		WithCreateAt(1200).
 		WithUpdateAt(0).
 		WithChecklists([]int{1}).
-		WithMembers([]userInfo{andrew}).
+		WithMembers([]userInfo{andrew, rosie}).
 		ToPlaybook()
 
 	pb08 := NewPBBuilder().
@@ -508,7 +513,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithCreateAt(1300).
 		WithUpdateAt(0).
 		WithChecklists([]int{1}).
-		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
+		WithMembers(append(multipleUserInfo(100), desmond, lucia, rosie)).
 		ToPlaybook()
 
 	pb09 := NewPBBuilder().
@@ -930,10 +935,93 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PerPage: 1000,
 			},
 			expected: app.GetPlaybooksResults{
-				TotalCount: 3,
+				TotalCount: 5,
 				PageCount:  1,
 				HasMore:    false,
-				Items:      []app.Playbook{pb01, pb02, pb05},
+				Items:      []app.Playbook{pb01, pb02, pb05, pb07, pb09},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:   "all teams, all playbooks",
+			teamID: "",
+			requesterInfo: app.RequesterInfo{
+				UserID: rosie.ID,
+				TeamID: "",
+			},
+			options: app.PlaybookFilterOptions{
+				Sort:    app.SortByTitle,
+				Page:    0,
+				PerPage: 1000,
+			},
+			expected: app.GetPlaybooksResults{
+				TotalCount: 9,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:   "all teams, all playbooks, search for: desmond",
+			teamID: "",
+			requesterInfo: app.RequesterInfo{
+				UserID: rosie.ID,
+				TeamID: "",
+			},
+			options: app.PlaybookFilterOptions{
+				Sort:       app.SortByTitle,
+				Page:       0,
+				PerPage:    1000,
+				SearchTerm: "Desmond",
+			},
+			expected: app.GetPlaybooksResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []app.Playbook{pb08},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:   "all teams, all playbooks, search for: BIm",
+			teamID: "",
+			requesterInfo: app.RequesterInfo{
+				UserID: rosie.ID,
+				TeamID: "",
+			},
+			options: app.PlaybookFilterOptions{
+				Sort:       app.SortByTitle,
+				Page:       0,
+				PerPage:    1000,
+				SearchTerm: "BIm",
+			},
+			expected: app.GetPlaybooksResults{
+				TotalCount: 1,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []app.Playbook{pb07},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:   "all teams, all playbooks, search for: ayboo",
+			teamID: "",
+			requesterInfo: app.RequesterInfo{
+				UserID: rosie.ID,
+				TeamID: "",
+			},
+			options: app.PlaybookFilterOptions{
+				Sort:       app.SortByTitle,
+				Page:       0,
+				PerPage:    1000,
+				SearchTerm: "ayboo",
+			},
+			expected: app.GetPlaybooksResults{
+				TotalCount: 9,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09},
 			},
 			expectedErr: nil,
 		},
@@ -954,6 +1042,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		addUsers(t, store, users)
 		addUsersToTeam(t, store, users, team1id)
 		addUsersToTeam(t, store, users, team2id)
+		addUsersToTeam(t, store, users, team3id)
 		makeAdmin(t, store, lucy)
 
 		createPlaybooks(playbookStore)

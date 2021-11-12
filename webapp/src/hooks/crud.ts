@@ -1,9 +1,16 @@
 import {useEffect, useState} from 'react';
+import debounce from 'debounce';
 
-import {clientFetchPlaybook, clientFetchPlaybooks, archivePlaybook as clientArchivePlaybook} from 'src/client';
+import {
+    clientFetchPlaybook,
+    clientFetchPlaybooks,
+    archivePlaybook as clientArchivePlaybook,
+} from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
 
 type ParamsState = Required<FetchPlaybooksParams>;
+
+const searchDebounceDelayMilliseconds = 300;
 
 export async function getPlaybookOrFetch(id: string, playbooks: Playbook[] | null) {
     return playbooks?.find((p) => p.id === id) ?? clientFetchPlaybook(id);
@@ -38,6 +45,7 @@ export function usePlaybooksCrud(
         direction: 'asc',
         page: 0,
         per_page: 10,
+        search_term: '',
         ...defaultParams,
     });
 
@@ -104,9 +112,24 @@ export function usePlaybooksCrud(
         setParams({sort: colName, direction: 'desc'});
     };
 
+    const setSearchTerm = (term: string) => {
+        setParams({search_term: term});
+    };
+    const setSearchTermDebounced = debounce(setSearchTerm, searchDebounceDelayMilliseconds);
+
+    const isFiltering = (params?.search_term?.length ?? 0) > 0;
+
     return [
         playbooks,
         {isLoading, totalCount, hasMore, params, selectedPlaybook},
-        {setPage, setParams, sortBy, setSelectedPlaybook, archivePlaybook},
+        {
+            setPage,
+            setParams,
+            sortBy,
+            setSelectedPlaybook,
+            archivePlaybook,
+            setSearchTerm: setSearchTermDebounced,
+            isFiltering,
+        },
     ] as const;
 }
