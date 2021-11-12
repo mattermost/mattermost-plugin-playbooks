@@ -1498,7 +1498,7 @@ var migrations = []Migration{
 				if _, err := e.Exec(`
 					CREATE TABLE IF NOT EXISTS IR_PlaybookAutoFollow (
 						PlaybookID VARCHAR(26) NULL REFERENCES IR_Playbook(ID),
-						UserID VARCHAR(26) NOT NULL,
+						UserID VARCHAR(26) NOT NULL
 					)
 				` + MySQLCharset); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_PlaybookAutoFollow")
@@ -1516,7 +1516,7 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed creating table IR_PlaybookAutoFollow")
 				}
 
-				if err := addPrimaryKey(e, sqlStore, "IR_PlaybookAutoFollow", "(PlaybookID, UserID)"); err != nil {
+				if err := addPrimaryKey(e, sqlStore, "ir_playbookautofollow", "(PlaybookID, UserID)"); err != nil {
 					return errors.Wrapf(err, "failed creating primary key for IR_PlaybookAutoFollow")
 				}
 			}
