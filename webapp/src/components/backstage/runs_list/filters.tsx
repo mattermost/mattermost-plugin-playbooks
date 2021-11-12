@@ -72,10 +72,10 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
     const [teamSelectorToggle, setTeamSelectorToggle] = useState(false);
 
-    const myRunsOnly = fetchParams.participant_id === 'me';
+    const myRunsOnly = fetchParams.participant_or_follower_id === 'me';
     const setMyRunsOnly = (checked?: boolean) => {
         setFetchParams((oldParams) => {
-            return {...oldParams, participant_id: checked ? 'me' : ''};
+            return {...oldParams, participant_or_follower_id: checked ? 'me' : ''};
         });
     };
 

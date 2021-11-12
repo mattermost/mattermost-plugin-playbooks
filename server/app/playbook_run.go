@@ -725,6 +725,9 @@ type PlaybookRunFilterOptions struct {
 	// ParticipantID filters playbook runs that have this member. Defaults to blank (no filter).
 	ParticipantID string `url:"participant_id,omitempty"`
 
+	// ParticipantOrFollowerID filters playbook runs that have this user as member or as follower. Defaults to blank (no filter).
+	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
 	// not returned in relevance order).
@@ -805,6 +808,10 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 
 	if options.ParticipantID != "" && !model.IsValidId(options.ParticipantID) {
 		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'participant_id': must be 26 characters or blank")
+	}
+
+	if options.ParticipantOrFollowerID != "" && !model.IsValidId(options.ParticipantOrFollowerID) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'participant_or_follower_id': must be 26 characters or blank")
 	}
 
 	if options.PlaybookID != "" && !model.IsValidId(options.PlaybookID) {
