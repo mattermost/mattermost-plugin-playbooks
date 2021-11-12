@@ -6,13 +6,13 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline, mdiNotebookOutline} from '@mdi/js';
+import {mdiClipboardPlayOutline, mdiNotebookOutline, mdiPencil} from '@mdi/js';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import DotMenu, {DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
+import {ClosableDotMenu, DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {usePlaybookName} from 'src/hooks';
 
@@ -20,6 +20,7 @@ interface Props {
     playbookRun: PlaybookRun;
     collapsed: boolean;
     toggleCollapsed: () => void;
+    editSummary: () => void;
 }
 
 const RHSAboutButtons = (props: Props) => {
@@ -28,6 +29,8 @@ const RHSAboutButtons = (props: Props) => {
 
     const overviewURL = `/runs/${props.playbookRun.id}`;
     const playbookURL = `/playbooks/${props.playbookRun.playbook_id}`;
+
+    const [isDotMenuOpen, setDotMenuOpen] = useState(false);
 
     return (
         <>
@@ -44,11 +47,27 @@ const RHSAboutButtons = (props: Props) => {
                     }
                 }}
             />
-            <DotMenu
+            <ClosableDotMenu
                 icon={<ThreeDotsIcon/>}
+                isOpen={isDotMenuOpen}
+                setOpen={setDotMenuOpen}
                 left={true}
                 dotMenuButton={StyledDotMenuButton}
+                data-testid='run-dot-menu'
             >
+                <StyledDropdownMenuItem
+                    onClick={() => {
+                        setDotMenuOpen(false);
+                        props.editSummary();
+                    }}
+                >
+                    <DropdownIcon
+                        path={mdiPencil}
+                        size={1.25}
+                    />
+                    <FormattedMessage defaultMessage='Edit run summary'/>
+                </StyledDropdownMenuItem>
+                <Separator/>
                 <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
                     <DropdownIcon
                         path={mdiClipboardPlayOutline}
@@ -66,7 +85,7 @@ const RHSAboutButtons = (props: Props) => {
                         {(playbookName !== '') && <PlaybookName>{playbookName}</PlaybookName>}
                     </PlaybookInfo>
                 </StyledDropdownMenuItem>
-            </DotMenu>
+            </ClosableDotMenu>
         </>
     );
 };
@@ -98,6 +117,14 @@ const DropdownIcon = styled(Icon)`
 const StyledDropdownMenuItem = styled(DropdownMenuItem)`
     display: flex;
     align-content: center;
+`;
+
+const Separator = styled.hr`
+    display: flex;
+    align-content: center;
+    border-top: 1px solid var(--center-channel-color-08);
+    margin: 5px auto;
+    width: 100%;
 `;
 
 const PlaybookInfo = styled.div`
