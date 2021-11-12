@@ -44,9 +44,6 @@ const ArchiveBannerTimeout = 5000;
 
 const PlaybooksHeader = styled(BackstageSubheader)`
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
     padding: 4rem 0 3.2rem;
 `;
 
@@ -170,6 +167,7 @@ const PlaybookList = () => {
                             default={params.search_term}
                             onSearch={setSearchTerm}
                             placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
+                            maxWidthRem={36}
                         />
                         {canCreatePlaybooks &&
                         <>
