@@ -68,15 +68,9 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
     z-index: 1;
 `;
 
-interface ClosableDotMenuProps {
-    children: JSX.Element[] | JSX.Element;
+interface ClosableDotMenuProps extends DotMenuProps {
     isOpen: boolean;
     setOpen: (open: boolean) => void;
-    icon: JSX.Element;
-    top?: boolean;
-    left?: boolean;
-    wide?: boolean;
-    dotMenuButton?: StyledComponentBase<'div', any>;
 }
 
 export const ClosableDotMenu = (props: ClosableDotMenuProps) => {
