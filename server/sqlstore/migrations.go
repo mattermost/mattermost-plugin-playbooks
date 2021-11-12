@@ -1496,40 +1496,28 @@ var migrations = []Migration{
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
 				if _, err := e.Exec(`
-					CREATE TABLE IF NOT EXISTS PlaybookAutoFollowers (
+					CREATE TABLE IF NOT EXISTS IR_PlaybookAutoFollow (
 						PlaybookID VARCHAR(26) NULL REFERENCES IR_Playbook(ID),
 						UserID VARCHAR(26) NOT NULL,
-						IsFollower BOOLEAN NOT NULL,
-						INDEX PlaybookAutoFollowers_UserID (UserID),
-						INDEX PlaybookAutoFollowers_PlaybookID (PlaybookID)
 					)
 				` + MySQLCharset); err != nil {
-					return errors.Wrapf(err, "failed creating table PlaybookAutoFollowers")
+					return errors.Wrapf(err, "failed creating table IR_PlaybookAutoFollow")
 				}
-				if err := addPrimaryKey(e, sqlStore, "PlaybookAutoFollowers", "(PlaybookID, UserID)"); err != nil {
-					return errors.Wrapf(err, "failed creating primary key for PlaybookAutoFollowers")
+				if err := addPrimaryKey(e, sqlStore, "IR_PlaybookAutoFollow", "(PlaybookID, UserID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_PlaybookAutoFollow")
 				}
 			} else {
 				if _, err := e.Exec(`
-				CREATE TABLE IF NOT EXISTS PlaybookAutoFollowers (
+				CREATE TABLE IF NOT EXISTS IR_PlaybookAutoFollow (
 					PlaybookID TEXT NULL REFERENCES IR_Playbook(ID),
-					UserID TEXT NOT NULL,
-					IsFollower BOOLEAN NOT NULL
+					UserID TEXT NOT NULL
 				);
 			`); err != nil {
-					return errors.Wrapf(err, "failed creating table PlaybookAutoFollowers")
+					return errors.Wrapf(err, "failed creating table IR_PlaybookAutoFollow")
 				}
 
-				if err := addPrimaryKey(e, sqlStore, "playbookautofollowers", "(PlaybookID, UserID)"); err != nil {
-					return errors.Wrapf(err, "failed creating primary key for playbookautofollowers")
-				}
-
-				if _, err := e.Exec(createPGIndex("PlaybookAutoFollowers_UserID", "PlaybookAutoFollowers", "UserID")); err != nil {
-					return errors.Wrapf(err, "failed creating index PlaybookAutoFollowers_UserID")
-				}
-
-				if _, err := e.Exec(createPGIndex("PlaybookAutoFollowers_PlaybookID", "PlaybookAutoFollowers", "PlaybookID")); err != nil {
-					return errors.Wrapf(err, "failed creating index PlaybookAutoFollowers_PlaybookID")
+				if err := addPrimaryKey(e, sqlStore, "IR_PlaybookAutoFollow", "(PlaybookID, UserID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_PlaybookAutoFollow")
 				}
 			}
 

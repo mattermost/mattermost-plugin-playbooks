@@ -665,68 +665,56 @@ INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
 }
 
 func (p *playbookStore) AutoFollow(playbookID, userID string) error {
-	return p.autoFollowHelper(playbookID, userID, true)
-}
-
-func (p *playbookStore) AutoUnfollow(playbookID, userID string) error {
-	return p.autoFollowHelper(playbookID, userID, false)
-}
-
-func (p *playbookStore) autoFollowHelper(playbookID, userID string, value bool) error {
-	var err error
-	if p.store.db.DriverName() == model.DatabaseDriverMysql {
-		_, err = p.store.execBuilder(p.store.db, sq.
-			Insert("PlaybookAutoFollowers").
-			Columns("PlaybookID", "UserID", "IsFollower").
-			Values(playbookID, userID, value).
-			Suffix("ON DUPLICATE KEY UPDATE IsFollower = ?", value))
-	} else {
-		_, err = p.store.execBuilder(p.store.db, sq.
-			Insert("PlaybookAutoFollowers").
-			Columns("PlaybookID", "UserID", "IsFollower").
-			Values(playbookID, userID, value).
-			Suffix("ON CONFLICT (PlaybookID,UserID) DO UPDATE SET IsFollower = ?", value))
+	if _, err := p.store.execBuilder(p.store.db, sq.
+		Insert("IR_PlaybookAutoFollow").
+		Columns("PlaybookID", "UserID").
+		Values(playbookID, userID)); err != nil {
+		return errors.Wrapf(err, "failed to insert autofollowing '%s' for playbook '%s'", userID, playbookID)
 	}
-
-	if err != nil {
-		return errors.Wrapf(err, "failed to upsert follower '%s' for playbook '%s'", userID, playbookID)
-	}
-
 	return nil
 }
 
-func (p *playbookStore) GetAutoFollowers(playbookID string) ([]string, error) {
+func (p *playbookStore) AutoUnfollow(playbookID, userID string) error {
+	if _, err := p.store.execBuilder(p.store.db, sq.
+		Delete("IR_PlaybookAutoFollow").
+		Where(sq.And{sq.Eq{"UserID": userID}, sq.Eq{"PlaybookID": playbookID}})); err != nil {
+		return errors.Wrapf(err, "failed to delete autofollow '%s' for playbook '%s'", userID, playbookID)
+	}
+	return nil
+}
+
+func (p *playbookStore) GetAutoFollows(playbookID string) ([]string, error) {
 	query := p.queryBuilder.
 		Select("UserID").
-		From("PlaybookAutoFollowers").
-		Where(sq.And{sq.Eq{"IsFollower": true}, sq.Eq{"PlaybookID": playbookID}})
+		From("IR_PlaybookAutoFollow").
+		Where(sq.Eq{"PlaybookID": playbookID})
 
-	var followers []string
-	err := p.store.selectBuilder(p.store.db, &followers, query)
+	var autoFollows []string
+	err := p.store.selectBuilder(p.store.db, &autoFollows, query)
 	if err == sql.ErrNoRows {
 		return []string{}, nil
 	} else if err != nil {
-		return nil, errors.Wrapf(err, "failed to get followers for playbook '%s'", playbookID)
+		return nil, errors.Wrapf(err, "failed to get autoFollows for playbook '%s'", playbookID)
 	}
 
-	return followers, nil
+	return autoFollows, nil
 }
 
-func (p *playbookStore) IsAutoFollower(playbookID, followerID string) (bool, error) {
+func (p *playbookStore) IsAutoFollowing(playbookID, userID string) (bool, error) {
 	query := p.queryBuilder.
-		Select("IsFollower").
-		From("PlaybookAutoFollowers").
-		Where(sq.And{sq.Eq{"PlaybookID": playbookID}, sq.Eq{"UserID": followerID}})
+		Select("PlaybookID").
+		From("IR_PlaybookAutoFollow").
+		Where(sq.And{sq.Eq{"PlaybookID": playbookID}, sq.Eq{"UserID": userID}})
 
-	var isFollower bool
-	err := p.store.getBuilder(p.store.db, &isFollower, query)
+	var returnedPlaybookID string
+	err := p.store.getBuilder(p.store.db, &returnedPlaybookID, query)
 	if err == sql.ErrNoRows {
 		return false, nil
 	} else if err != nil {
 		return false, errors.Wrapf(err, "failed to get follower status for playbook '%s'", playbookID)
 	}
 
-	return isFollower, nil
+	return returnedPlaybookID == playbookID, nil
 }
 
 func addMembersToPlaybooks(memberIDs playbookMembers, playbook []app.Playbook) {

@@ -14,6 +14,7 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {useIntl} from 'react-intl';
 
@@ -48,13 +49,14 @@ const Playbook = () => {
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
     const stats = useStats(match.params.playbookId);
     const [isFollowed, setIsFollowed] = useState(false);
+    const currentUserId = useSelector(getCurrentUserId);
 
     const changeFollowing = (check: boolean) => {
         if (playbook?.id) {
             if (check) {
-                followPlaybook(playbook.id);
+                followPlaybook(playbook.id, currentUserId);
             } else {
-                unfollowPlaybook(playbook.id);
+                unfollowPlaybook(playbook.id, currentUserId);
             }
             setIsFollowed(check);
         }
@@ -83,7 +85,7 @@ const Playbook = () => {
             if (playbookId) {
                 try {
                     const fetchedPlaybook = await clientFetchPlaybook(playbookId);
-                    const isPlaybookFollower = await clientFetchIsPlaybookFollower(playbookId);
+                    const isPlaybookFollower = await clientFetchIsPlaybookFollower(playbookId, currentUserId);
                     setPlaybook(fetchedPlaybook!);
                     setFetchingState(FetchingStateType.fetched);
                     setIsFollowed(isPlaybookFollower);
@@ -123,9 +125,9 @@ const Playbook = () => {
 
     const enableRunPlaybook = playbook?.delete_at === 0;
 
-    let toolTipText = formatMessage({defaultMessage: 'If checked you\'ll automatically be added as a follower for all new runs of this playbook.'});
+    let toolTipText = formatMessage({defaultMessage: 'Select this to automatically receive updates when this playbook is run.'});
     if (isFollowed) {
-        toolTipText = formatMessage({defaultMessage: 'You\'ll automatically be added as a follower for all new runs of this playbook.'});
+        toolTipText = formatMessage({defaultMessage: 'You automatically receive updates when this playbook is run.'});
     }
 
     const tooltip = (
@@ -290,6 +292,8 @@ const PrimaryButtonLarger = styled(PrimaryButton)`
 const CheckboxInputStyled = styled(CheckboxInput)`
     padding-right: 4px;
     padding-left: 4px;
+    font-size: 14px;
+
     &:hover {
         background-color: transparent;
     }

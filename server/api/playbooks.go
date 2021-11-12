@@ -54,12 +54,11 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("", handler.deletePlaybook).Methods(http.MethodDelete)
 	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPost)
 
-	followersRouter := playbookRouter.PathPrefix("/followers").Subrouter()
-	followersRouter.HandleFunc("", handler.autoFollow).Methods(http.MethodPut)
-	followersRouter.HandleFunc("", handler.autoUnfollow).Methods(http.MethodDelete)
-
-	followerRouter := playbookRouter.PathPrefix("/follow").Subrouter()
-	followerRouter.HandleFunc("", handler.isAutoFollower).Methods(http.MethodGet)
+	autoFollowsRouter := playbookRouter.PathPrefix("/autofollows").Subrouter()
+	autoFollowRouter := autoFollowsRouter.PathPrefix("/{followID:[A-Za-z0-9]+}").Subrouter()
+	autoFollowRouter.HandleFunc("", handler.autoFollow).Methods(http.MethodPut)
+	autoFollowRouter.HandleFunc("", handler.autoUnfollow).Methods(http.MethodDelete)
+	autoFollowRouter.HandleFunc("", handler.isAutoFollowing).Methods(http.MethodGet)
 
 	return handler
 }
@@ -542,13 +541,19 @@ func (h *PlaybookHandler) validateCategoryName(categoryName string) error {
 func (h *PlaybookHandler) autoFollow(w http.ResponseWriter, r *http.Request) {
 	playbookID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
+	followID := mux.Vars(r)["followID"]
 
-	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+	if followID != userID {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
+		return
+	}
+
+	if err := app.PlaybookAccess(followID, playbookID, h.playbookService, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook.", err)
 		return
 	}
 
-	if err := h.playbookService.AutoFollow(playbookID, userID); err != nil {
+	if err := h.playbookService.AutoFollow(playbookID, followID); err != nil {
 		h.HandleError(w, err)
 		return
 	}
@@ -559,13 +564,19 @@ func (h *PlaybookHandler) autoFollow(w http.ResponseWriter, r *http.Request) {
 func (h *PlaybookHandler) autoUnfollow(w http.ResponseWriter, r *http.Request) {
 	playbookID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
+	followID := mux.Vars(r)["followID"]
 
-	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+	if followID != userID {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to make another user autoUnfollow the playbook.", nil)
+		return
+	}
+
+	if err := app.PlaybookAccess(followID, playbookID, h.playbookService, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook.", err)
 		return
 	}
 
-	if err := h.playbookService.AutoUnfollow(playbookID, userID); err != nil {
+	if err := h.playbookService.AutoUnfollow(playbookID, followID); err != nil {
 		h.HandleError(w, err)
 		return
 	}
@@ -573,20 +584,25 @@ func (h *PlaybookHandler) autoUnfollow(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookHandler) isAutoFollower(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) isAutoFollowing(w http.ResponseWriter, r *http.Request) {
 	playbookID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
+	followID := mux.Vars(r)["followID"]
 
-	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+	if followID != userID {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to check another user's autoUnfollowing status.", nil)
+		return
+	}
+	if err := app.PlaybookAccess(followID, playbookID, h.playbookService, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook.", err)
 		return
 	}
 
-	isFollower, err := h.playbookService.IsAutoFollower(playbookID, userID)
+	isAutoFollowing, err := h.playbookService.IsAutoFollowing(playbookID, followID)
 	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
 
-	ReturnJSON(w, isFollower, http.StatusOK)
+	ReturnJSON(w, isAutoFollowing, http.StatusOK)
 }

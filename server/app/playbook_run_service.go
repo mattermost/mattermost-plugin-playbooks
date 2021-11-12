@@ -391,14 +391,14 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 
 	//auto-follow playbook run
 	if pb != nil {
-		followers, err := s.playbookService.GetAutoFollowers(pb.ID)
+		autoFollows, err := s.playbookService.GetAutoFollows(pb.ID)
 		if err != nil {
-			return playbookRun, errors.Wrapf(err, "failed to get followers of the playbook `%s`", pb.ID)
+			return playbookRun, errors.Wrapf(err, "failed to get autoFollows of the playbook `%s`", pb.ID)
 		}
-		for _, follower := range followers {
-			if err := s.Follow(playbookRun.ID, follower); err != nil {
+		for _, autoFollow := range autoFollows {
+			if err := s.Follow(playbookRun.ID, autoFollow); err != nil {
 				s.pluginAPI.Log.Warn("failed to follow the playbook run",
-					"playbookRunID", playbookRun.ID, "follower", follower, "error", err.Error())
+					"playbookRunID", playbookRun.ID, "autoFollow", autoFollow, "error", err.Error())
 			}
 		}
 	}

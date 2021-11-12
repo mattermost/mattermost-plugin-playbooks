@@ -106,19 +106,19 @@ func (mr *MockPlaybookServiceMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPlaybookService)(nil).Get), arg0)
 }
 
-// GetAutoFollowers mocks base method
-func (m *MockPlaybookService) GetAutoFollowers(arg0 string) ([]string, error) {
+// GetAutoFollows mocks base method
+func (m *MockPlaybookService) GetAutoFollows(arg0 string) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAutoFollowers", arg0)
+	ret := m.ctrl.Call(m, "GetAutoFollows", arg0)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAutoFollowers indicates an expected call of GetAutoFollowers
-func (mr *MockPlaybookServiceMockRecorder) GetAutoFollowers(arg0 interface{}) *gomock.Call {
+// GetAutoFollows indicates an expected call of GetAutoFollows
+func (mr *MockPlaybookServiceMockRecorder) GetAutoFollows(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAutoFollowers", reflect.TypeOf((*MockPlaybookService)(nil).GetAutoFollowers), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAutoFollows", reflect.TypeOf((*MockPlaybookService)(nil).GetAutoFollows), arg0)
 }
 
 // GetNumPlaybooksForTeam mocks base method
@@ -181,19 +181,19 @@ func (mr *MockPlaybookServiceMockRecorder) GetSuggestedPlaybooks(arg0, arg1, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSuggestedPlaybooks", reflect.TypeOf((*MockPlaybookService)(nil).GetSuggestedPlaybooks), arg0, arg1, arg2)
 }
 
-// IsAutoFollower mocks base method
-func (m *MockPlaybookService) IsAutoFollower(arg0, arg1 string) (bool, error) {
+// IsAutoFollowing mocks base method
+func (m *MockPlaybookService) IsAutoFollowing(arg0, arg1 string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsAutoFollower", arg0, arg1)
+	ret := m.ctrl.Call(m, "IsAutoFollowing", arg0, arg1)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// IsAutoFollower indicates an expected call of IsAutoFollower
-func (mr *MockPlaybookServiceMockRecorder) IsAutoFollower(arg0, arg1 interface{}) *gomock.Call {
+// IsAutoFollowing indicates an expected call of IsAutoFollowing
+func (mr *MockPlaybookServiceMockRecorder) IsAutoFollowing(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAutoFollower", reflect.TypeOf((*MockPlaybookService)(nil).IsAutoFollower), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAutoFollowing", reflect.TypeOf((*MockPlaybookService)(nil).IsAutoFollowing), arg0, arg1)
 }
 
 // MessageHasBeenPosted mocks base method

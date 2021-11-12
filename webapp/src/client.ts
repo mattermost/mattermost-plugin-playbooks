@@ -490,20 +490,20 @@ export const unfollowPlaybookRun = async (playbookRunId: string) => {
     });
 };
 
-export const followPlaybook = async (playbookId: string) => {
-    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/followers`, {
+export const followPlaybook = async (playbookId: string, userId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`, {
         method: 'PUT',
     });
 };
 
-export const unfollowPlaybook = async (playbookId: string) => {
-    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/followers`, {
+export const unfollowPlaybook = async (playbookId: string, userId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`, {
         method: 'DELETE',
     });
 };
 
-export async function clientFetchIsPlaybookFollower(playbookId: string): Promise<boolean> {
-    const data = await doGet(`${apiUrl}/playbooks/${playbookId}/followers/check`);
+export async function clientFetchIsPlaybookFollower(playbookId: string, userId: string): Promise<boolean> {
+    const data = await doGet(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`);
     if (!data) {
         return false;
     }
