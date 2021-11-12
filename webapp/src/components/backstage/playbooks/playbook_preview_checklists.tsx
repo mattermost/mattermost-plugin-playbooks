@@ -22,6 +22,10 @@ const PlaybookPreviewChecklists = (props: Props) => {
     const initialArray = Array(props.playbook.checklists.length).fill(false);
     const [checklistsCollapsed, setChecklistsCollapsed] = useState(initialArray);
 
+    if (props.playbook.checklists.length === 0) {
+        return null;
+    }
+
     return (
         <Section
             id={props.id}

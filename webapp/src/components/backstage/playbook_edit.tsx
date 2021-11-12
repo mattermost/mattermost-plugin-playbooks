@@ -32,7 +32,6 @@ import {RegularHeading} from 'src/styles/headings';
 import DefaultUpdateTimer from 'src/components/backstage/default_update_timer';
 import EditTitleDescriptionModal from 'src/components/backstage/playbook_edit_title_description_modal';
 
-import './playbook.scss';
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 
 import SharePlaybook from './share_playbook';

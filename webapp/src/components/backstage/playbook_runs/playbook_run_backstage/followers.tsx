@@ -46,8 +46,6 @@ const FollowersWrapper = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 11px;
     line-height: 16px;
-
-    margin-left: auto;
 `;
 
 const UserRow = styled.div`

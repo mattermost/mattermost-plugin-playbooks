@@ -255,6 +255,7 @@ const (
 	PublishedRetrospective timelineEventType = "published_retrospective"
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
+	RunRestored            timelineEventType = "run_restored"
 )
 
 type TimelineEvent struct {
@@ -542,6 +543,9 @@ type PlaybookRunService interface {
 
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
+
+	// RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
+	RestorePlaybookRun(playbookRunID, userID string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -560,6 +564,9 @@ type PlaybookRunStore interface {
 
 	// FinishPlaybookRun finishes a run at endAt (in millis)
 	FinishPlaybookRun(playbookRunID string, endAt int64) error
+
+	// RestorePlaybookRun restores a run at restoreAt (in millis)
+	RestorePlaybookRun(playbookRunID string, restoreAt int64) error
 
 	// GetTimelineEvent returns the timeline event for playbookRunID by the timeline event ID.
 	GetTimelineEvent(playbookRunID, eventID string) (*TimelineEvent, error)
@@ -632,6 +639,9 @@ type PlaybookRunTelemetry interface {
 
 	// FinishPlaybookRun tracks the end of a playbook run.
 	FinishPlaybookRun(playbookRun *PlaybookRun, userID string)
+
+	// RestorePlaybookRun tracks the restoration of a playbook run.
+	RestorePlaybookRun(playbookRun *PlaybookRun, userID string)
 
 	// RestartPlaybookRun tracks the restart of a playbook run.
 	RestartPlaybookRun(playbookRun *PlaybookRun, userID string)

@@ -17,7 +17,6 @@ import TemplateSelector, {isPlaybookCreationAllowed, PresetTemplate} from 'src/c
 import {telemetryEventForTemplate} from 'src/client';
 
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
-import './playbook.scss';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
 import {BACKSTAGE_LIST_PER_PAGE, AdminNotificationType} from 'src/constants';
@@ -51,6 +50,17 @@ const PlaybooksHeader = styled(BackstageSubheader)`
     align-items: center;
     justify-content: space-between;
     padding: 4rem 0 3.2rem;
+`;
+
+const ContainerMedium = styled.div`
+    margin: 0 auto;
+    max-width: 1160px;
+    padding: 0 20px;
+`;
+
+const PlaybookContainer = styled.div`
+    font-family: $font-family;
+    color: var(--center-channel-color-90);
 `;
 
 const PlaybookList = () => {
@@ -134,7 +144,7 @@ const PlaybookList = () => {
     }
 
     return (
-        <div className='Playbook'>
+        <PlaybookContainer>
             <UpgradeModal
                 messageType={AdminNotificationType.PLAYBOOK}
                 show={isUpgradeModalShown}
@@ -171,7 +181,7 @@ const PlaybookList = () => {
                     <RightFade/>
                     <LeftDots/>
                     <LeftFade/>
-                    <div className='playbook-list container-medium'>
+                    <ContainerMedium>
                         <PlaybooksHeader data-testid='titlePlaybook'>
                             <FormattedMessage defaultMessage='Playbooks'/>
                             {canCreatePlaybooks &&
@@ -231,7 +241,7 @@ const PlaybookList = () => {
                             totalCount={totalCount}
                             setPage={setPage}
                         />
-                    </div>
+                    </ContainerMedium>
                     <ConfirmModal
                         show={showConfirmation}
                         title={formatMessage({defaultMessage: 'Archive playbook'})}
@@ -242,7 +252,7 @@ const PlaybookList = () => {
                     />
                 </>
             }
-        </div>
+        </PlaybookContainer>
     );
 };
 

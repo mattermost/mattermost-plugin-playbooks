@@ -9,13 +9,13 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {useIntl} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
-import {SecondaryButtonLarger} from 'src/components/backstage/playbook_runs/shared';
-
+import {
+    Icon16,
+    SecondaryButtonLarger,
+} from 'src/components/backstage/playbook_runs/shared';
 import {OVERLAY_DELAY, AdminNotificationType} from 'src/constants';
 import {useAllowChannelExport} from 'src/hooks';
 import {exportChannelUrl} from 'src/client';
-
 import {Banner} from 'src/components/backstage/styles';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
@@ -69,14 +69,14 @@ const ExportLink = (props: ExportLinkProps) => {
 
     const downloadStartedBanner = showBanner && (
         <Banner>
-            <i className='icon icon-download-outline mr-1'/>
+            <Icon16 className='icon icon-download-outline mr-1'/>
             {formatMessage({defaultMessage: 'Downloading channel log'})}
         </Banner>
     );
 
     const linkText = (
         <>
-            <i className='icon icon-download-outline export-icon'/>
+            <Icon16 className='icon icon-download-outline export-icon'/>
             {formatMessage({defaultMessage: 'Export channel log'})}
         </>
     );

@@ -1277,6 +1277,36 @@ func TestUpdatePlaybookRun(t *testing.T) {
 	}
 }
 
+func TestRestorePlaybookRun(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		_, store := setupSQLStore(t, db)
+
+		now := model.GetMillis()
+		initialPlaybookRun := NewBuilder(t).
+			WithCreateAt(now - 1000).
+			WithCurrentStatus(app.StatusFinished).
+			ToPlaybookRun()
+
+		returned, err := playbookRunStore.CreatePlaybookRun(initialPlaybookRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, returned)
+
+		err = playbookRunStore.RestorePlaybookRun(returned.ID, now)
+		require.NoError(t, err)
+
+		finalPlaybookRun := *returned
+		finalPlaybookRun.CurrentStatus = app.StatusInProgress
+		finalPlaybookRun.EndAt = 0
+		finalPlaybookRun.LastStatusUpdateAt = now
+
+		actual, err := playbookRunStore.GetPlaybookRun(returned.ID)
+		require.NoError(t, err)
+		require.Equal(t, &finalPlaybookRun, actual)
+	}
+}
+
 // intended to catch problems with the code assembling StatusPosts
 func TestStressTestGetPlaybookRuns(t *testing.T) {
 	rand.Seed(time.Now().UTC().UnixNano())

@@ -29,26 +29,34 @@ const PlaybookPreviewActions = (props: Props) => {
     // hiding them if they don't have any visible subentries.
     // If a new CardSubEntry is added or the conditions are changed, these booleans need to be updated.
 
-    const emptyPromptEntry =
-        !props.playbook.signal_any_keywords_enabled;
+    const showPromptCardEntry = props.playbook.signal_any_keywords_enabled && props.playbook.signal_any_keywords.length !== 0;
 
-    const emptyRunStartEntry =
-        !props.playbook.invite_users_enabled &&
-        !props.playbook.default_owner_enabled &&
-        !props.playbook.broadcast_enabled &&
-        !props.playbook.webhook_on_status_update_enabled &&
-        !props.playbook.webhook_on_creation_enabled;
+    const inviteUsersEnabled = props.playbook.invite_users_enabled && props.playbook.invited_user_ids.length !== 0;
+    const defaultOwnerEnabled = props.playbook.default_owner_enabled && props.playbook.default_owner_id !== '';
+    const broadcastEnabled = props.playbook.broadcast_enabled && props.playbook.broadcast_channel_ids.length !== 0;
+    const runSummaryEnabled = props.playbook.run_summary_template !== '';
+    const webhookOnCreationEnabled = props.playbook.webhook_on_creation_enabled && props.playbook.webhook_on_creation_urls.length !== 0;
 
-    const emptyNewMemberEntry =
-        !props.playbook.message_on_join_enabled &&
-        !props.playbook.categorize_channel_enabled;
+    const showRunStartCardEntry =
+        inviteUsersEnabled ||
+        broadcastEnabled ||
+        defaultOwnerEnabled ||
+        runSummaryEnabled ||
+        webhookOnCreationEnabled;
 
-    const allEmpty =
-        emptyPromptEntry &&
-        emptyRunStartEntry &&
-        emptyNewMemberEntry;
+    const messageOnJoinEnabled = props.playbook.message_on_join_enabled && props.playbook.message_on_join !== '';
+    const categorizeChannelEnabled = props.playbook.categorize_channel_enabled && props.playbook.category_name !== '';
 
-    if (allEmpty) {
+    const showNewMemberCardEntry =
+        messageOnJoinEnabled ||
+        categorizeChannelEnabled;
+
+    const allCardEntriesEmpty =
+        !showPromptCardEntry &&
+        !showRunStartCardEntry &&
+        !showNewMemberCardEntry;
+
+    if (allCardEntriesEmpty) {
         return null;
     }
 
@@ -66,14 +74,14 @@ const PlaybookPreviewActions = (props: Props) => {
                     extraInfo={props.playbook.signal_any_keywords.map((keyword) => (
                         <TextBadge key={keyword}>{keyword}</TextBadge>
                     ))}
-                    enabled={!emptyPromptEntry}
+                    enabled={showPromptCardEntry}
                 />
                 <CardEntry
                     title={formatMessage({
                         defaultMessage: 'When a run starts',
                     })}
                     iconName={'play'}
-                    enabled={!emptyRunStartEntry}
+                    enabled={showRunStartCardEntry}
                 >
                     <CardSubEntry
                         title={formatMessage(
@@ -95,13 +103,13 @@ const PlaybookPreviewActions = (props: Props) => {
                                 />
                             </UserRow>
                         )}
-                        enabled={props.playbook.invite_users_enabled}
+                        enabled={inviteUsersEnabled}
                     />
                     <CardSubEntry
                         title={formatMessage({
                             defaultMessage: 'Assign the owner role to',
                         })}
-                        enabled={props.playbook.default_owner_enabled}
+                        enabled={defaultOwnerEnabled}
                         extraInfo={(
                             <StyledProfileSelector
                                 selectedUserId={props.playbook.default_owner_id}
@@ -118,7 +126,7 @@ const PlaybookPreviewActions = (props: Props) => {
                             {defaultMessage: 'Announce in the {oneChannel, plural, one {channel} other {channels}}'},
                             {oneChannel: props.playbook.broadcast_channel_ids.length}
                         )}
-                        enabled={props.playbook.broadcast_enabled}
+                        enabled={broadcastEnabled}
                         extraInfo={props.playbook.broadcast_channel_ids.map((id) => (
                             <ChannelBadge
                                 key={id}
@@ -130,15 +138,15 @@ const PlaybookPreviewActions = (props: Props) => {
                         title={formatMessage({
                             defaultMessage: 'Update run summary',
                         })}
-                        enabled={props.playbook.webhook_on_status_update_enabled}
+                        enabled={runSummaryEnabled}
                     >
-                        {renderMarkdown(props.playbook.reminder_message_template)}
+                        {renderMarkdown(props.playbook.run_summary_template)}
                     </CardSubEntry>
                     <CardSubEntry
                         title={formatMessage({
                             defaultMessage: 'Send an outgoing webhook',
                         })}
-                        enabled={props.playbook.webhook_on_creation_enabled}
+                        enabled={webhookOnCreationEnabled}
                     >
                         {props.playbook.webhook_on_creation_urls.map((url) => (<p key={url}>{url}</p>))}
                     </CardSubEntry>
@@ -146,19 +154,19 @@ const PlaybookPreviewActions = (props: Props) => {
                 <CardEntry
                     title={formatMessage({defaultMessage: 'When a new member joins the channel'})}
                     iconName={'account-outline'}
-                    enabled={!emptyNewMemberEntry}
+                    enabled={showNewMemberCardEntry}
                 >
                     <CardSubEntry
                         title={formatMessage({
                             defaultMessage: 'Send a welcome message',
                         })}
-                        enabled={props.playbook.message_on_join_enabled}
+                        enabled={messageOnJoinEnabled}
                     >
                         {renderMarkdown(props.playbook.message_on_join)}
                     </CardSubEntry>
                     <CardSubEntry
                         title={formatMessage({defaultMessage: 'Add the channel to the sidebar category'})}
-                        enabled={props.playbook.categorize_channel_enabled}
+                        enabled={categorizeChannelEnabled}
                         extraInfo={(
                             <TextBadge>
                                 {props.playbook.category_name}
