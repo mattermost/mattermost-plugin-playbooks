@@ -115,4 +115,71 @@ func TestPlaybooks(t *testing.T) {
 		})
 		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
 	})
+
+	t.Run("playbooks can be searched by title", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "SearchTest 1 -- all access",
+			TeamID: e.BasicTeam.Id,
+		})
+		assert.Nil(t, err)
+		assert.NotEmpty(t, id)
+
+		id, err = e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:     "SearchTest 2 -- only regular user access",
+			TeamID:    e.BasicTeam.Id,
+			MemberIDs: []string{e.RegularUser.Id},
+		})
+		assert.Nil(t, err)
+		assert.NotEmpty(t, id)
+
+		id, err = e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "SearchTest 3 -- strange string: hümberdångle",
+			TeamID: e.BasicTeam.Id,
+		})
+		assert.Nil(t, err)
+		assert.NotEmpty(t, id)
+
+		id, err = e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "SearchTest 4 -- team 2 string: よこそ",
+			TeamID: e.BasicTeam2.Id,
+		})
+		assert.Nil(t, err)
+		assert.NotEmpty(t, id)
+
+		playbookResults, err := e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
+			SearchTeam: "SearchTest",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, 4, playbookResults.TotalCount)
+
+		playbookResults, err = e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
+			SearchTeam: "SearchTest 2",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, 1, playbookResults.TotalCount)
+
+		playbookResults, err = e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
+			SearchTeam: "ümber",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, 1, playbookResults.TotalCount)
+
+		playbookResults, err = e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
+			SearchTeam: "よこそ",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, 1, playbookResults.TotalCount)
+
+		playbookResults, err = e.PlaybooksClient2.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
+			SearchTeam: "SearchTest",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, 2, playbookResults.TotalCount)
+
+		playbookResults, err = e.PlaybooksClient2.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
+			SearchTeam: "ümberdå",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, 1, playbookResults.TotalCount)
+	})
 }
