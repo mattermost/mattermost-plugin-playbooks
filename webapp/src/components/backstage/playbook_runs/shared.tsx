@@ -3,7 +3,7 @@
 
 import styled, {css} from 'styled-components';
 
-import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
+import StatusBadge from 'src/components/backstage/status_badge';
 
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';

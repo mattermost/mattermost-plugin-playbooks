@@ -51,7 +51,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("", handler.updatePlaybook).Methods(http.MethodPut)
-	playbookRouter.HandleFunc("", handler.deletePlaybook).Methods(http.MethodDelete)
+	playbookRouter.HandleFunc("", handler.archivePlaybook).Methods(http.MethodDelete)
 	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPost)
 
 	return handler
@@ -197,6 +197,11 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if oldPlaybook.DeleteAt != 0 {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Playbook cannot be modified", fmt.Errorf("playbook with id '%s' cannot be modified because it is archived", playbook.ID))
+		return
+	}
+
 	if playbook.WebhookOnCreationEnabled {
 		for _, webhook := range playbook.WebhookOnCreationURLs {
 			var parsedURL *url.URL
@@ -291,7 +296,7 @@ func doPlaybookModificationChecks(playbook *app.Playbook, userID string, pluginA
 	return nil
 }
 
-func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookHandler) archivePlaybook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -301,13 +306,13 @@ func (h *PlaybookHandler) deletePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	playbookToDelete, err := h.playbookService.Get(playbookID)
+	playbookToArchive, err := h.playbookService.Get(playbookID)
 	if err != nil {
 		h.HandleError(w, err)
 		return
 	}
 
-	err = h.playbookService.Delete(playbookToDelete, userID)
+	err = h.playbookService.Archive(playbookToArchive, userID)
 	if err != nil {
 		h.HandleError(w, err)
 		return

@@ -329,3 +329,40 @@ Cypress.Commands.add('verifyPlaybookCreated', (teamId, playbookTitle) => (
         assert.isDefined(playbook);
     })
 ));
+
+// Get a playbook
+Cypress.Commands.add('apiGetPlaybook', (playbookId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/playbooks/${playbookId}`,
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        cy.wrap(response.body);
+    });
+});
+
+// Update a playbook
+Cypress.Commands.add('apiUpdatePlaybook', (playbook, expectedHttpCode = 200) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/playbooks/${playbook.id}`,
+        method: 'PUT',
+        body: JSON.stringify(playbook),
+        failOnStatusCode: false,
+    }).then((response) => {
+        expect(response.status).to.equal(expectedHttpCode);
+        cy.wrap(response.body);
+    });
+});
+
+// Archive a playbook
+Cypress.Commands.add('apiArchivePlaybook', (playbookId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/playbooks/${playbookId}`,
+        method: 'DELETE',
+    }).then((response) => {
+        expect(response.status).to.equal(204);
+    });
+});

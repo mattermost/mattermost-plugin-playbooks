@@ -222,7 +222,7 @@ export async function savePlaybook(playbook: PlaybookWithChecklist | DraftPlaybo
     return {id: playbook.id};
 }
 
-export async function deletePlaybook(playbookId: Playbook['id']) {
+export async function archivePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}`, {
         method: 'delete',
     });

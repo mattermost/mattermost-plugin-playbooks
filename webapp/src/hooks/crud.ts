@@ -1,8 +1,7 @@
 import {useEffect, useState} from 'react';
 
-import {clientFetchPlaybook, clientFetchPlaybooks, deletePlaybook as clientDeletePlaybook, fetchPlaybookRun} from 'src/client';
+import {clientFetchPlaybook, clientFetchPlaybooks, archivePlaybook as clientArchivePlaybook} from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
-import {PlaybookRun} from 'src/types/playbook_run';
 
 type ParamsState = Required<FetchPlaybooksParams>;
 
@@ -81,8 +80,8 @@ export function usePlaybooksCrud(
         setLoading(false);
     };
 
-    const deletePlaybook = async (playbookId: Playbook['id']) => {
-        await clientDeletePlaybook(playbookId);
+    const archivePlaybook = async (playbookId: Playbook['id']) => {
+        await clientArchivePlaybook(playbookId);
 
         // Fetch latest count
         const result = await clientFetchPlaybooks(params.team_id, params);
@@ -108,6 +107,6 @@ export function usePlaybooksCrud(
     return [
         playbooks,
         {isLoading, totalCount, hasMore, params, selectedPlaybook},
-        {setPage, setParams, sortBy, setSelectedPlaybook, deletePlaybook},
+        {setPage, setParams, sortBy, setSelectedPlaybook, archivePlaybook},
     ] as const;
 }
