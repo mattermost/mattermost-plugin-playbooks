@@ -23,7 +23,7 @@ import {useForceDocumentTitle, useStats} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
 
-import {clientFetchPlaybook, clientFetchIsPlaybookFollower, followPlaybook, unfollowPlaybook, telemetryEventForPlaybook} from 'src/client';
+import {clientFetchPlaybook, clientFetchIsPlaybookFollower, autoFollowPlaybook, autoUnfollowPlaybook, telemetryEventForPlaybook} from 'src/client';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -54,9 +54,9 @@ const Playbook = () => {
     const changeFollowing = (check: boolean) => {
         if (playbook?.id) {
             if (check) {
-                followPlaybook(playbook.id, currentUserId);
+                autoFollowPlaybook(playbook.id, currentUserId);
             } else {
-                unfollowPlaybook(playbook.id, currentUserId);
+                autoUnfollowPlaybook(playbook.id, currentUserId);
             }
             setIsFollowed(check);
         }

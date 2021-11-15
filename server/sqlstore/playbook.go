@@ -665,13 +665,21 @@ INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
 }
 
 func (p *playbookStore) AutoFollow(playbookID, userID string) error {
-	if _, err := p.store.execBuilder(p.store.db, sq.
-		Insert("IR_PlaybookAutoFollow").
-		Columns("PlaybookID", "UserID").
-		Values(playbookID, userID)); err != nil {
-		return errors.Wrapf(err, "failed to insert autofollowing '%s' for playbook '%s'", userID, playbookID)
+	var err error
+	if p.store.db.DriverName() == model.DatabaseDriverMysql {
+		_, err = p.store.execBuilder(p.store.db, sq.
+			Insert("IR_PlaybookAutoFollow").
+			Columns("PlaybookID", "UserID").
+			Values(playbookID, userID).
+			Suffix("ON DUPLICATE KEY UPDATE playbookID = playbookID"))
+	} else {
+		_, err = p.store.execBuilder(p.store.db, sq.
+			Insert("IR_PlaybookAutoFollow").
+			Columns("PlaybookID", "UserID").
+			Values(playbookID, userID).
+			Suffix("ON CONFLICT (PlaybookID,UserID) DO NOTHING"))
 	}
-	return nil
+	return errors.Wrapf(err, "failed to insert autofollowing '%s' for playbook '%s'", userID, playbookID)
 }
 
 func (p *playbookStore) AutoUnfollow(playbookID, userID string) error {
@@ -702,19 +710,19 @@ func (p *playbookStore) GetAutoFollows(playbookID string) ([]string, error) {
 
 func (p *playbookStore) IsAutoFollowing(playbookID, userID string) (bool, error) {
 	query := p.queryBuilder.
-		Select("PlaybookID").
+		Select("TRUE").
 		From("IR_PlaybookAutoFollow").
 		Where(sq.And{sq.Eq{"PlaybookID": playbookID}, sq.Eq{"UserID": userID}})
 
-	var returnedPlaybookID string
-	err := p.store.getBuilder(p.store.db, &returnedPlaybookID, query)
+	var isAutoFollowing bool
+	err := p.store.getBuilder(p.store.db, &isAutoFollowing, query)
 	if err == sql.ErrNoRows {
 		return false, nil
 	} else if err != nil {
 		return false, errors.Wrapf(err, "failed to get follower status for playbook '%s'", playbookID)
 	}
 
-	return returnedPlaybookID == playbookID, nil
+	return isAutoFollowing, nil
 }
 
 func addMembersToPlaybooks(memberIDs playbookMembers, playbook []app.Playbook) {

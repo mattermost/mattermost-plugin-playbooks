@@ -490,13 +490,13 @@ export const unfollowPlaybookRun = async (playbookRunId: string) => {
     });
 };
 
-export const followPlaybook = async (playbookId: string, userId: string) => {
+export const autoFollowPlaybook = async (playbookId: string, userId: string) => {
     await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`, {
         method: 'PUT',
     });
 };
 
-export const unfollowPlaybook = async (playbookId: string, userId: string) => {
+export const autoUnfollowPlaybook = async (playbookId: string, userId: string) => {
     await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`, {
         method: 'DELETE',
     });
