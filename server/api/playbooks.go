@@ -543,7 +543,7 @@ func (h *PlaybookHandler) autoFollow(w http.ResponseWriter, r *http.Request) {
 	currentUserID := r.Header.Get("Mattermost-User-ID")
 	userID := mux.Vars(r)["userID"]
 
-	if currentUserID != userID || !app.IsAdmin(currentUserID, h.pluginAPI) {
+	if currentUserID != userID && !app.IsAdmin(currentUserID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
 		return
 	}
@@ -566,7 +566,7 @@ func (h *PlaybookHandler) autoUnfollow(w http.ResponseWriter, r *http.Request) {
 	currentUserID := r.Header.Get("Mattermost-User-ID")
 	userID := mux.Vars(r)["userID"]
 
-	if currentUserID != userID || !app.IsAdmin(currentUserID, h.pluginAPI) {
+	if currentUserID != userID && !app.IsAdmin(currentUserID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
 		return
 	}
@@ -589,7 +589,7 @@ func (h *PlaybookHandler) isAutoFollowing(w http.ResponseWriter, r *http.Request
 	currentUserID := r.Header.Get("Mattermost-User-ID")
 	userID := mux.Vars(r)["userID"]
 
-	if currentUserID != userID || !app.IsAdmin(currentUserID, h.pluginAPI) {
+	if currentUserID != userID && !app.IsAdmin(currentUserID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Current user doesn't have permissions to check whether user is autofollowing or not.", nil)
 		return
 	}
