@@ -33,6 +33,7 @@ export const PatternedInput = (props: Props) => (
         <SelectorWrapper>
             <TextBox
                 enabled={props.enabled}
+                disabled={!props.enabled}
                 type={props.type}
                 required={true}
                 value={props.enabled ? props.input : ''}

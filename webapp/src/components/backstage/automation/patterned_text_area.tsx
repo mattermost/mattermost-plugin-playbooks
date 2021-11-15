@@ -62,6 +62,7 @@ export const PatternedTextArea = (props: Props) => {
             <SelectorWrapper>
                 <TextArea
                     enabled={props.enabled}
+                    disabled={!props.enabled}
                     required={true}
                     rows={props.rows}
                     value={props.enabled ? props.input : ''}
