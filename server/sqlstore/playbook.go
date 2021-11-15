@@ -585,8 +585,8 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 	return nil
 }
 
-// Delete deletes a playbook.
-func (p *playbookStore) Delete(id string) error {
+// Archive archives a playbook.
+func (p *playbookStore) Archive(id string) error {
 	if id == "" {
 		return errors.New("ID cannot be empty")
 	}

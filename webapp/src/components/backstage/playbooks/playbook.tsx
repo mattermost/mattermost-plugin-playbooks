@@ -30,6 +30,7 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 import {RegularHeading} from 'src/styles/headings';
 import CheckboxInput from '../runs_list/checkbox_input';
 import {SecondaryButtonLargerRight} from '../playbook_runs/shared';
+import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
 interface MatchParams {
     playbookId: string
@@ -123,7 +124,7 @@ const Playbook = () => {
         subTitle = formatMessage({defaultMessage: 'Everyone in this team can access this playbook'});
     }
 
-    const enableRunPlaybook = playbook?.delete_at === 0;
+    const archived = playbook?.delete_at !== 0;
 
     let toolTipText = formatMessage({defaultMessage: 'Select this to automatically receive updates when this playbook is run.'});
     if (isFollowed) {
@@ -151,7 +152,17 @@ const Playbook = () => {
                             <SubTitle>{subTitle}</SubTitle>
                         </HorizontalBlock>
                     </VerticalBlock>
-                    <SecondaryButtonLargerRightStyled checked={isFollowed}>
+                    {
+                        archived &&
+                        <StatusBadge
+                            data-testid={'archived-badge'}
+                            status={BadgeType.Archived}
+                        />
+                    }
+                    <SecondaryButtonLargerRightStyled
+                        checked={isFollowed}
+                        disabled={archived}
+                    >
                         <OverlayTrigger
                             placement={'bottom'}
                             delay={OVERLAY_DELAY}
@@ -162,6 +173,7 @@ const Playbook = () => {
                                     testId={'auto-follow-runs'}
                                     text={'Auto-follow runs'}
                                     checked={isFollowed}
+                                    disabled={archived}
                                     onChange={changeFollowing}
                                 />
                             </div>
@@ -169,7 +181,7 @@ const Playbook = () => {
                     </SecondaryButtonLargerRightStyled>
                     <PrimaryButtonLarger
                         onClick={runPlaybook}
-                        disabled={!enableRunPlaybook}
+                        disabled={archived}
                         data-testid='run-playbook'
                     >
                         <RightMarginedIcon
@@ -345,7 +357,7 @@ const NavItem = styled(NavLink)`
             color: var(--button-bg);
         }
 
-       :hover, :focus {
+        :hover, :focus {
             text-decoration: none;
         }
     }

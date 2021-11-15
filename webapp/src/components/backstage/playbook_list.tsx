@@ -17,7 +17,6 @@ import TemplateSelector, {isPlaybookCreationAllowed, PresetTemplate} from 'src/c
 import {telemetryEventForTemplate} from 'src/client';
 
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
-import './playbook.scss';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
 import {BACKSTAGE_LIST_PER_PAGE, AdminNotificationType} from 'src/constants';
@@ -43,7 +42,7 @@ import {Playbook} from 'src/types/playbook';
 
 import PlaybookListRow from './playbook_list_row';
 
-const DeleteBannerTimeout = 5000;
+const ArchiveBannerTimeout = 5000;
 
 const PlaybooksHeader = styled(BackstageSubheader)`
     display: flex;
@@ -51,6 +50,17 @@ const PlaybooksHeader = styled(BackstageSubheader)`
     align-items: center;
     justify-content: space-between;
     padding: 4rem 0 3.2rem;
+`;
+
+const ContainerMedium = styled.div`
+    margin: 0 auto;
+    max-width: 1160px;
+    padding: 0 20px;
+`;
+
+const PlaybookContainer = styled.div`
+    font-family: $font-family;
+    color: var(--center-channel-color-90);
 `;
 
 const PlaybookList = () => {
@@ -65,7 +75,7 @@ const PlaybookList = () => {
     const [
         playbooks,
         {totalCount, params, selectedPlaybook},
-        {setPage, sortBy, setSelectedPlaybook, deletePlaybook},
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const {view, edit, create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
@@ -82,14 +92,14 @@ const PlaybookList = () => {
         setShowConfirmation(false);
     };
 
-    const onConfirmDelete = (playbook: Playbook) => {
+    const onConfirmArchive = (playbook: Playbook) => {
         setSelectedPlaybook(playbook);
         setShowConfirmation(true);
     };
 
-    const onDelete = async () => {
+    const onArchive = async () => {
         if (selectedPlaybook) {
-            await deletePlaybook(selectedPlaybook.id);
+            await archivePlaybook(selectedPlaybook.id);
 
             hideConfirmModal();
             setShowBanner(true);
@@ -97,15 +107,15 @@ const PlaybookList = () => {
             window.setTimeout(() => {
                 setShowBanner(false);
                 setSelectedPlaybook(null);
-            }, DeleteBannerTimeout);
+            }, ArchiveBannerTimeout);
         }
     };
 
-    const deleteSuccessfulBanner = showBanner && (
+    const archiveSuccessfulBanner = showBanner && (
         <Banner>
             <i className='icon icon-check mr-1'/>
             <FormattedMessage
-                defaultMessage='The playbook {title} was successfully deleted.'
+                defaultMessage='The playbook {title} was successfully archived.'
                 values={{title: selectedPlaybook?.title}}
             />
         </Banner>
@@ -128,19 +138,19 @@ const PlaybookList = () => {
                 displayTeam={teams.length > 1}
                 onClick={() => view(p)}
                 onEdit={() => edit(p)}
-                onDelete={() => onConfirmDelete(p)}
+                onArchive={() => onConfirmArchive(p)}
             />
         ));
     }
 
     return (
-        <div className='Playbook'>
+        <PlaybookContainer>
             <UpgradeModal
                 messageType={AdminNotificationType.PLAYBOOK}
                 show={isUpgradeModalShown}
                 onHide={hideUpgradeModal}
             />
-            {deleteSuccessfulBanner}
+            {archiveSuccessfulBanner}
             {canCreatePlaybooks &&
                 <TemplateSelector
                     onSelect={(team: Team, template: PresetTemplate) => {
@@ -171,7 +181,7 @@ const PlaybookList = () => {
                     <RightFade/>
                     <LeftDots/>
                     <LeftFade/>
-                    <div className='playbook-list container-medium'>
+                    <ContainerMedium>
                         <PlaybooksHeader data-testid='titlePlaybook'>
                             <FormattedMessage defaultMessage='Playbooks'/>
                             {canCreatePlaybooks &&
@@ -231,18 +241,18 @@ const PlaybookList = () => {
                             totalCount={totalCount}
                             setPage={setPage}
                         />
-                    </div>
+                    </ContainerMedium>
                     <ConfirmModal
                         show={showConfirmation}
-                        title={formatMessage({defaultMessage: 'Delete playbook'})}
-                        message={formatMessage({defaultMessage: 'Are you sure you want to delete the playbook {title}?'}, {title: selectedPlaybook?.title})}
-                        confirmButtonText={formatMessage({defaultMessage: 'Delete'})}
-                        onConfirm={onDelete}
+                        title={formatMessage({defaultMessage: 'Archive playbook'})}
+                        message={formatMessage({defaultMessage: 'Are you sure you want to archive the playbook {title}?'}, {title: selectedPlaybook?.title})}
+                        confirmButtonText={formatMessage({defaultMessage: 'Archive'})}
+                        onConfirm={onArchive}
                         onCancel={hideConfirmModal}
                     />
                 </>
             }
-        </div>
+        </PlaybookContainer>
     );
 };
 

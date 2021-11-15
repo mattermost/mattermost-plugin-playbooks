@@ -37,6 +37,7 @@ import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import ExportLink from '../playbook_run_details/export_link';
+import {BadgeType} from 'src/components/backstage/status_badge';
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
@@ -284,7 +285,7 @@ const PlaybookRunBackstage = () => {
                             </PlaybookDiv>
                         }
                     </VerticalBlock>
-                    <Badge status={playbookRun.current_status}/>
+                    <Badge status={BadgeType[playbookRun.current_status]}/>
                     <ExpandRight/>
                     <Followers userIds={followers}/>
                     {followButton}

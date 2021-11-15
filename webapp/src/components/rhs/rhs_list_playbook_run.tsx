@@ -6,13 +6,10 @@ import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
 import FormattedDuration from 'src/components/formatted_duration';
 import {lastUpdatedByPlaybookRunId} from 'src/selectors';
-
 import {SmallerProfile} from 'src/components/rhs/rhs_shared';
-
-import StatusBadge from '../backstage/playbook_runs/status_badge';
+import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
 const PlaybookRunContainer = styled.div<PlaybookRunContainerProps>`
     display: flex;
@@ -101,7 +98,7 @@ const RHSListPlaybookRun = (props: Props) => {
                 <Col1>{'Status:'}</Col1>
                 <Col2>
                     <div>
-                        <StatusBadge status={props.playbookRun.current_status}/>
+                        <StatusBadge status={BadgeType[props.playbookRun.current_status]}/>
                     </div>
                 </Col2>
             </Row>
