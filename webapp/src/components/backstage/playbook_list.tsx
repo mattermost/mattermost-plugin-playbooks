@@ -234,7 +234,7 @@ const PlaybookList = () => {
 
     return (
         <PlaybookContainer>
-            {deleteSuccessfulBanner}
+            {archiveSuccessfulBanner}
             {
                 canCreatePlaybooks &&
                 <TemplateSelector
@@ -258,7 +258,7 @@ const PlaybookList = () => {
                 title={formatMessage({defaultMessage: 'Delete playbook'})}
                 message={formatMessage({defaultMessage: 'Are you sure you want to delete the playbook {title}?'}, {title: selectedPlaybook?.title})}
                 confirmButtonText={formatMessage({defaultMessage: 'Delete'})}
-                onConfirm={onDelete}
+                onConfirm={onArchive}
                 onCancel={hideConfirmModal}
             />
         </PlaybookContainer>
