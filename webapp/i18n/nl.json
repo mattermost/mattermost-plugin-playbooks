@@ -173,5 +173,19 @@
     "C9NScU": "Geef jouw team de touwtjes in handen",
     "C1khRR": "Terug naar Playbooks",
     "CkYhdY": "Voeg het kanaal toe aan de zijbalk categorie",
-    "CSts8B": "Teampictogram"
+    "CSts8B": "Teampictogram",
+    "GwtR3W": "Sleep een bestaande taak of klik om een nieuwe taak aan te maken.",
+    "GRTyvN": "Toggle Playbook Lijst",
+    "G/yZLu": "Verwijderen",
+    "EQpfkS": "Voltooid",
+    "Cy1AK/": "Bekijk details van de uitvoering",
+    "36GNZj": "De playbook {title} is succesvol gearchiveerd.",
+    "0HT+Ib": "Gearchiveerd",
+    "E0LnBo": "Je kaneen optie kiezen of een aangepaste duur opgeven (\"2 weken\", \"3 dagen 12 uur\", \"45 minuten\", ...)",
+    "DuRxjT": "Een Playbook maken",
+    "DtCplA": "{numParticipants, plural, =1 {<b>#</b> deelnemer} other {<b>#</b> deelnemers}}",
+    "DSVJjB": "Momenteel wordt de <strong>{playbookTitle}</strong> playbook uitgevoerd",
+    "D55vrs": "Jouw licentie kon niet gegenereerd worden",
+    "D2CE02": "Webhook invoeren",
+    "CyGaem": "Naam van de uitvoering"
 }
