@@ -429,9 +429,10 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     {showMenu && (!props.disabled || props.checklistItem.description !== '') &&
                     <HoverMenu>
                         {props.collapsibleDescription && props.checklistItem.description !== '' &&
-                            <HoverMenuButton
+                            <ToggleDescriptionButton
                                 title={formatMessage({defaultMessage: 'Toggle description'})}
-                                className={`icon icon-chevron-${showDescription ? 'up' : 'down'}`}
+                                className={`icon icon-chevron-up`}
+                                showDescription={showDescription}
                                 onClick={toggleDescription}
                             />
                         }
@@ -572,6 +573,11 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
 
     return content;
 };
+
+const ToggleDescriptionButton = styled(HoverMenuButton)<{showDescription: boolean}>`
+    transition: all 0.2s linear;
+    transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
+`;
 
 interface ChecklistItemEditModalProps {
     show: boolean;
