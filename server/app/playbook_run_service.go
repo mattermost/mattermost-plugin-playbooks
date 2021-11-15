@@ -124,13 +124,13 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbookTitle, pla
 	announcementMsg := fmt.Sprintf(
 		"### New run started: [%s](%s)\n",
 		playbookRun.Name,
-		getRunDetailsURL(*siteURL, playbookRun.ID),
+		getRunDetailsRelativeURL(playbookRun.ID),
 	)
 	announcementMsg += fmt.Sprintf(
 		"@%s just ran the [%s](%s) playbook.",
 		owner.Username,
 		playbookTitle,
-		getPlaybookDetailsURL(*siteURL, playbookID),
+		getPlaybookDetailsRelativeURL(playbookID),
 	)
 
 	if playbookRunChannel.Type == model.ChannelTypeOpen {
