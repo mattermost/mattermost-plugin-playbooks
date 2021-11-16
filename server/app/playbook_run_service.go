@@ -124,13 +124,13 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbookTitle, pla
 	announcementMsg := fmt.Sprintf(
 		"### New run started: [%s](%s)\n",
 		playbookRun.Name,
-		getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID),
+		getRunDetailsRelativeURL(playbookRun.ID),
 	)
 	announcementMsg += fmt.Sprintf(
 		"@%s just ran the [%s](%s) playbook.",
 		owner.Username,
 		playbookTitle,
-		getPlaybookDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookID),
+		getPlaybookDetailsRelativeURL(playbookID),
 	)
 
 	if playbookRunChannel.Type == model.ChannelTypeOpen {
@@ -188,7 +188,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID)
+	detailsURL := getRunDetailsURL(*siteURL, playbookRun.ID)
 
 	payload := PlaybookRunWebhookPayload{
 		PlaybookRun: playbookRun,
@@ -227,9 +227,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookURL := ""
 
 	header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
-	if siteURL != "" && pb != nil {
-		overviewURL = getRunDetailsURL(siteURL, s.configService.GetManifest().Id, playbookRun.ID)
-		playbookURL = getPlaybookDetailsURL(siteURL, s.configService.GetManifest().Id, pb.ID)
+	if pb != nil {
+		overviewURL = getRunDetailsRelativeURL(playbookRun.ID)
+		playbookURL = getPlaybookDetailsRelativeURL(pb.ID)
 		header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
 			pb.Title, playbookURL, overviewURL)
 	}
@@ -743,7 +743,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID)
+	detailsURL := getRunDetailsURL(*siteURL, playbookRun.ID)
 
 	payload := PlaybookRunWebhookPayload{
 		PlaybookRun: *playbookRun,
@@ -1010,11 +1010,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 }
 
 func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *PlaybookRun, isInitial bool) error {
-	retrospectiveURL := getRunRetrospectiveURL(
-		"",
-		s.configService.GetManifest().Id,
-		playbookRun.ID,
-	)
+	retrospectiveURL := getRunRetrospectiveURL("", playbookRun.ID)
 
 	attachments := []*model.SlackAttachment{
 		{
@@ -2020,7 +2016,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 	}
 	newPlaybookMarkdown := ""
 	if siteURL != "" && !isMobileApp {
-		url := getPlaybooksNewURL(siteURL, s.configService.GetManifest().Id)
+		url := getPlaybooksNewURL(siteURL)
 		newPlaybookMarkdown = fmt.Sprintf("[Click here](%s) to create your own playbook.", url)
 	}
 
@@ -2239,11 +2235,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, text, publi
 		return errors.Wrap(err, "failed to get publisher user")
 	}
 
-	retrospectiveURL := getRunRetrospectiveURL(
-		"",
-		s.configService.GetManifest().Id,
-		playbookRunToPublish.ID,
-	)
+	retrospectiveURL := getRunRetrospectiveURL("", playbookRunToPublish.ID)
 	if _, err = s.poster.PostMessage(playbookRunToPublish.ChannelID, "@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n%s", publisherUser.Username, retrospectiveURL, text); err != nil {
 		return errors.Wrap(err, "failed to post to channel")
 	}
