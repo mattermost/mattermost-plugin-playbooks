@@ -3,6 +3,8 @@ import {SelectComponentsConfig, components as defaultComponents} from 'react-sel
 import {useSelector} from 'react-redux';
 import {makeGetCategoriesForTeam} from 'mattermost-redux/selectors/entities/channel_categories';
 
+import {useIntl} from 'react-intl';
+
 import {ChannelCategory} from 'mattermost-redux/types/channel_categories';
 import {GlobalState} from 'mattermost-redux/types/store';
 
@@ -24,6 +26,8 @@ const getCategoriesForTeam = makeGetCategoriesForTeam();
 const getMyCategories = (state: GlobalState) => getCategoriesForTeam(state, state.entities.teams.currentTeamId);
 
 const CategorySelector = (props: Props & { className?: string }) => {
+    const {formatMessage} = useIntl();
+
     const selectableCategories = useSelector(getMyCategories);
 
     const options = React.useMemo(() => {
@@ -53,11 +57,12 @@ const CategorySelector = (props: Props & { className?: string }) => {
             openMenuOnClick={true}
             isClearable={props.isClearable}
             value={{value: props.categoryName, label: props.categoryName}}
-            placeholder={props.placeholder || 'Add channel to category'}
+            placeholder={props.placeholder || formatMessage({defaultMessage: 'Add channel to category'})}
             classNamePrefix='channel-selector'
             components={components}
             isDisabled={props.isDisabled}
             captureMenuScroll={props.captureMenuScroll}
+            menuPlacement={'top'}
         />
     );
 };

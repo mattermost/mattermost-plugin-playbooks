@@ -38,7 +38,6 @@ export const CategorizePlaybookRun = (props: Props) => (
                 isDisabled={!props.enabled}
                 captureMenuScroll={false}
                 shouldRenderValue={props.enabled}
-                placeholder={'Enter category name'}
             />
         </SelectorWrapper>
     </AutomationHeader>
