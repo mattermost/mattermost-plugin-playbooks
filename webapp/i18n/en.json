@@ -1,6 +1,7 @@
 {
   "+8G9qr": "Default text for the retrospective.",
   "+QgvjN": "Assign the owner role to",
+  "+Tmpup": "You automatically receive updates when this playbook is run.",
   "+ZIXOR": "Channel access",
   "+hddg7": "Add to run timeline",
   "/1FEJW": "ACTIVE PARTICIPANTS per day over the last 14 days",
@@ -176,6 +177,7 @@
   "WTQpnI": "Take action now using playbooks",
   "X/koAN": "Invalid entry: the maximum number of webhooks allowed is 64",
   "X3DLGJ": "Everyone in this workspace can create playbooks.",
+  "XXbWAU": "Select this to automatically receive updates when this playbook is run.",
   "XmUdvV": "All the statistics you need",
   "YDuW/T": "{num_runs, plural, =0 {Not run yet} one {# run} other {# total runs}}",
   "YKn+7s": "This channel is not running any playbook.",

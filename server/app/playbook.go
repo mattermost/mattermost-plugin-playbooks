@@ -234,6 +234,18 @@ type PlaybookService interface {
 
 	// Restores an archived playbook
 	Restore(playbook Playbook, userID string) error
+
+	// AutoFollow method lets user auto-follow all runs of a specific playbook
+	AutoFollow(playbookID, userID string) error
+
+	// AutoUnfollow method lets user to not auto-follow the newly created playbook runs
+	AutoUnfollow(playbookID, userID string) error
+
+	// GetAutoFollows returns list of users who auto-follows a playbook
+	GetAutoFollows(playbookID string) ([]string, error)
+
+	// IsAutoFollowing returns weather user is auto-following a playbook
+	IsAutoFollowing(playbookID, userID string) (bool, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -271,6 +283,18 @@ type PlaybookStore interface {
 
 	// Restore restores a deleted playbook
 	Restore(id string) error
+
+	// AutoFollow method lets user auto-follow all runs of a specific playbook
+	AutoFollow(playbookID, userID string) error
+
+	// AutoUnfollow method lets user to not auto-follow the newly created playbook runs
+	AutoUnfollow(playbookID, userID string) error
+
+	// GetAutoFollows returns list of users who auto-follows a playbook
+	GetAutoFollows(playbookID string) ([]string, error)
+
+	// IsAutoFollowing returns weather user is auto-following a playbook
+	IsAutoFollowing(playbookID, userID string) (bool, error)
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.

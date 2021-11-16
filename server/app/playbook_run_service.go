@@ -389,6 +389,20 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 	playbookRun.TimelineEvents = append(playbookRun.TimelineEvents, *event)
 
+	//auto-follow playbook run
+	if pb != nil {
+		autoFollows, err := s.playbookService.GetAutoFollows(pb.ID)
+		if err != nil {
+			return playbookRun, errors.Wrapf(err, "failed to get autoFollows of the playbook `%s`", pb.ID)
+		}
+		for _, autoFollow := range autoFollows {
+			if err := s.Follow(playbookRun.ID, autoFollow); err != nil {
+				s.pluginAPI.Log.Warn("failed to follow the playbook run",
+					"playbookRunID", playbookRun.ID, "autoFollow", autoFollow, "error", err.Error())
+			}
+		}
+	}
+
 	if len(playbookRun.WebhookOnCreationURLs) != 0 {
 		s.sendWebhooksOnCreation(*playbookRun)
 	}
