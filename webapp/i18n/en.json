@@ -226,6 +226,7 @@
   "gt6BhE": "Run details",
   "guunZt": "Assign",
   "gy/Kkr": "(edited)",
+  "h+e7G+": "Prompt to run this playbook when a message contains {numKeywords, select, 1 {the keyword} other {one or more of these}}",
   "hO9EdA": "Invite {numInvitedUsers, plural, =0 {no members} =1 {one member} other {# members}} to the channel",
   "hVFgh4": "Include finished",
   "hXIYHG": "Install and enable the Channel Export plugin to support exporting the channel",
@@ -246,6 +247,7 @@
   "jvo0vs": "Save",
   "jwimQJ": "Ok",
   "k9q07e": "Broadcast update to other channels",
+  "kDcpd/": "{numKeywords, plural, other {# keywords}}",
   "kGI46P": "Task description",
   "kXFojL": "You can also create a playbook ahead of time so it’s available when you need it.",
   "kvgvNW": "Know what happened",
@@ -324,6 +326,5 @@
   "zELxbG": "Saved messages",
   "zINlao": "Owner",
   "zWkvNO": "Timeline",
-  "zx0myy": "Participants",
-  "zy3cJT": "Prompt to run this playbook when a user posts a message containing the keywords"
+  "zx0myy": "Participants"
 }
