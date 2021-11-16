@@ -32,7 +32,6 @@ export const PatternedInput = (props: Props) => (
         </AutomationTitle>
         <SelectorWrapper>
             <TextBox
-                enabled={props.enabled}
                 disabled={!props.enabled}
                 type={props.type}
                 required={true}
@@ -56,7 +55,7 @@ const ErrorMessage = styled.div`
 `;
 
 interface TextBoxProps {
-    enabled: boolean;
+    disabled: boolean;
 }
 
 const TextBox = styled.input<TextBoxProps>`
@@ -68,7 +67,7 @@ const TextBox = styled.input<TextBoxProps>`
     height: 40px;
     width: 100%;
 
-    background-color: ${(props) => (props.enabled ? 'var(--center-channel-bg)' : 'rgba(var(--center-channel-bg-rgb), 0.16)')};
+    background-color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
     color: var(--center-channel-color);
     border-radius: 4px;
     border: none;
@@ -77,7 +76,7 @@ const TextBox = styled.input<TextBoxProps>`
     padding-left: 16px;
     padding-right: 16px;
 
-    ${(props) => props.enabled && props.value && css`
+    ${(props) => !props.disabled && props.value && css`
         :invalid:not(:focus) {
             box-shadow: inset 0 0 0 1px var(--error-text);
 
