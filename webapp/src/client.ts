@@ -293,6 +293,20 @@ export async function clientRemoveChecklistItem(playbookRunID: string, checklist
     });
 }
 
+export async function clientSkipChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/skip`, {
+        method: 'put',
+        body: '',
+    });
+}
+
+export async function clientRestoreChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/restore`, {
+        method: 'put',
+        body: '',
+    });
+}
+
 interface ChecklistItemUpdate {
     title: string
     command: string

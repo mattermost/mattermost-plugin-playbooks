@@ -174,18 +174,26 @@ describe('channels > rhs > checklist', () => {
             });
         });
 
-        it('delete task', () => {
-            // Hover over the checklist item
+        it('can skip and restore task', () => {
+            // # Hover over the checklist item
             cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
 
-            // Click the trash
-            cy.get('.icon-trash-can-outline').click();
+            // # Click the skip button and confirm
+            cy.get('.icon-close-circle-outline').click();
+            cy.findByText('Skip').click();
 
-            // Press the delete button
-            cy.findByText('Delete').click();
+            // * Verify the skip message
+            cy.verifyPostedMessage('skipped checklist item Step 1');
 
-            // Verify the first task is gone
-            cy.findByText('Step 1').should('not.exist');
+            // # Hover over the checklist item
+            cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
+
+            // # Click the restore button and confirm
+            cy.get('.icon-refresh').click();
+            cy.findByText('Restore').click();
+
+            // * Verify the restore message
+            cy.verifyPostedMessage('restored checklist item Step 1');
         });
 
         it('add new task', () => {

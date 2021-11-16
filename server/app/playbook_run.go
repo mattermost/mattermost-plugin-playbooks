@@ -459,6 +459,12 @@ type PlaybookRunService interface {
 	// RemoveChecklistItem removes an item from the specified checklist
 	RemoveChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
 
+	// SkipChecklistItem removes an item from the specified checklist
+	SkipChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
+
+	// RestoreChecklistItem restores a skipped item from the specified checklist
+	RestoreChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
+
 	// EditChecklistItem changes the title, command and description of a specified checklist item.
 	EditChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int, newTitle, newCommand, newDescription string) error
 
@@ -672,6 +678,12 @@ type PlaybookRunTelemetry interface {
 
 	// RemoveTask tracks the removal of a checklist item.
 	RemoveTask(playbookRunID, userID string, task ChecklistItem)
+
+	// SkipTask tracks the skipping of a checklist item.
+	SkipTask(playbookRunID, userID string, task ChecklistItem)
+
+	// RestoreTask tracks the restoring of a checklist item.
+	RestoreTask(playbookRunID, userID string, task ChecklistItem)
 
 	// RenameTask tracks the update of a checklist item.
 	RenameTask(playbookRunID, userID string, task ChecklistItem)
