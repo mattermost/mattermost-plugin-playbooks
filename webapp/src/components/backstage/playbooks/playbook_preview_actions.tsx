@@ -243,7 +243,7 @@ const KeywordsExtraInfo = ({keywords}: {keywords: string[]}) => {
         >
             <TextBadge>
                 {formatMessage(
-                    {defaultMessage: '{numKeywords, number} keywords'},
+                    {defaultMessage: '{numKeywords, plural, other {# keywords}}'},
                     {numKeywords: keywords.length},
                 )}
             </TextBadge>
