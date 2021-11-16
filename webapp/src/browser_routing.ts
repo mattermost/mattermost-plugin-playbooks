@@ -6,7 +6,12 @@ import React from 'react';
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
 
-export const navigateToUrl = (urlPath: string) => {
+type PathLike = {
+    pathname: string;
+    search: string;
+}
+
+export const navigateToUrl = (urlPath: string | PathLike) => {
     WebappUtils.browserHistory.push(urlPath);
 };
 

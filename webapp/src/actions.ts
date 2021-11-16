@@ -3,17 +3,13 @@
 import {AnyAction, Dispatch} from 'redux';
 
 import {generateId} from 'mattermost-redux/utils/helpers';
-
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-
 import {GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
-
 import {
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
@@ -36,8 +32,10 @@ import {
     SetTriggerId,
     PLAYBOOK_CREATED,
     PlaybookCreated,
-    PLAYBOOK_DELETED,
-    PlaybookDeleted,
+    PLAYBOOK_ARCHIVED,
+    PlaybookArchived,
+    PLAYBOOK_RESTORED,
+    PlaybookRestored,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedTeamNumPlaybooks,
     RECEIVED_GLOBAL_SETTINGS,
@@ -54,14 +52,13 @@ import {
     SetChecklistCollapsedState,
     SetAllChecklistsCollapsedState,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
-    SET_CHECKLIST_ITEMS_FILTER, SetChecklistItemsFilter,
+    SET_CHECKLIST_ITEMS_FILTER,
+    SetChecklistItemsFilter,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
-
 import {modals} from 'src/webapp_globals';
-
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
@@ -201,8 +198,13 @@ export const playbookCreated = (teamID: string): PlaybookCreated => ({
     teamID,
 });
 
-export const playbookDeleted = (teamID: string): PlaybookDeleted => ({
-    type: PLAYBOOK_DELETED,
+export const playbookArchived = (teamID: string): PlaybookArchived => ({
+    type: PLAYBOOK_ARCHIVED,
+    teamID,
+});
+
+export const playbookRestored = (teamID: string): PlaybookRestored => ({
+    type: PLAYBOOK_RESTORED,
     teamID,
 });
 

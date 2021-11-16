@@ -5,6 +5,10 @@ import React from 'react';
 
 import styled from 'styled-components';
 
+import {Channel} from 'mattermost-redux/types/channels';
+
+import {FormattedMessage} from 'react-intl';
+
 import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
 import {Toggle} from 'src/components/backstage/automation/toggle';
 import ChannelSelector from 'src/components/backstage/channel_selector';
@@ -27,7 +31,7 @@ export const Broadcast = (props: Props) => {
                     isChecked={props.enabled}
                     onChange={props.onToggle}
                 />
-                <div>{'Broadcast update to other channels'}</div>
+                <div><FormattedMessage defaultMessage='Broadcast update to other channels'/></div>
             </AutomationTitle>
             <SelectorWrapper>
                 <StyledChannelSelector
@@ -49,7 +53,7 @@ export const Broadcast = (props: Props) => {
 const StyledChannelSelector = styled(ChannelSelector)`
     background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
 
-    .channel-selector__control {
+    .playbooks-rselect__control {
         padding: 4px 16px 4px 3.2rem;
 
         &:before {

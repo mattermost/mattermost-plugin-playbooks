@@ -76,11 +76,11 @@ func TestPlaybookRuns(t *testing.T) {
 
 		configService.EXPECT().
 			IsAtLeastE10Licensed().
-			Return(true)
+			Return(true).AnyTimes()
 
 		configService.EXPECT().
 			GetConfiguration().
-			Return(&config.Configuration{})
+			Return(&config.Configuration{}).AnyTimes()
 	}
 
 	t.Run("create valid playbook run from dialog", func(t *testing.T) {
@@ -92,7 +92,7 @@ func TestPlaybookRuns(t *testing.T) {
 			ID:                      "playbookid1",
 			Title:                   "My Playbook",
 			TeamID:                  teamID,
-			Description:             "description",
+			RunSummaryTemplate:      "description",
 			CreatePublicPlaybookRun: true,
 			MemberIDs:               []string{"testUserID"},
 			InviteUsersEnabled:      false,
@@ -120,7 +120,7 @@ func TestPlaybookRuns(t *testing.T) {
 			TeamID:                    dialogRequest.TeamId,
 			Name:                      "playbookRunName",
 			PlaybookID:                "playbookid1",
-			Description:               "description",
+			Summary:                   "description",
 			InvitedUserIDs:            []string{},
 			InvitedGroupIDs:           []string{},
 			WebhookOnCreationURLs:     []string{},
@@ -156,7 +156,7 @@ func TestPlaybookRuns(t *testing.T) {
 			ID:                      "playbookid1",
 			Title:                   "My Playbook",
 			TeamID:                  teamID,
-			Description:             "description",
+			RunSummaryTemplate:      "description",
 			CreatePublicPlaybookRun: true,
 			MemberIDs:               []string{"testUserID"},
 			InviteUsersEnabled:      false,
@@ -183,7 +183,7 @@ func TestPlaybookRuns(t *testing.T) {
 			OwnerUserID:               dialogRequest.UserId,
 			TeamID:                    dialogRequest.TeamId,
 			Name:                      "playbookRunName",
-			Description:               "description",
+			Summary:                   "description",
 			PlaybookID:                withid.ID,
 			Checklists:                withid.Checklists,
 			InvitedUserIDs:            []string{},
@@ -555,7 +555,7 @@ func TestPlaybookRuns(t *testing.T) {
 			ID:                      "playbookid1",
 			Title:                   "My Playbook",
 			TeamID:                  teamID,
-			Description:             "description",
+			RunSummaryTemplate:      "description",
 			CreatePublicPlaybookRun: true,
 			MemberIDs:               []string{"testUserID"},
 			InviteUsersEnabled:      false,
@@ -567,7 +567,7 @@ func TestPlaybookRuns(t *testing.T) {
 			OwnerUserID:               "testUserID",
 			TeamID:                    teamID,
 			Name:                      "playbookRunName",
-			Description:               "description",
+			Summary:                   "description",
 			PlaybookID:                testPlaybook.ID,
 			Checklists:                testPlaybook.Checklists,
 			InvitedUserIDs:            []string{},
@@ -597,7 +597,7 @@ func TestPlaybookRuns(t *testing.T) {
 			Name:        testPlaybookRun.Name,
 			OwnerUserID: testPlaybookRun.OwnerUserID,
 			TeamID:      testPlaybookRun.TeamID,
-			Description: testPlaybookRun.Description,
+			Description: testPlaybookRun.Summary,
 			PlaybookID:  testPlaybookRun.PlaybookID,
 		})
 		require.NoError(t, err)
@@ -613,7 +613,7 @@ func TestPlaybookRuns(t *testing.T) {
 			ID:                      "playbookid1",
 			Title:                   "My Playbook",
 			TeamID:                  teamID,
-			Description:             "description",
+			RunSummaryTemplate:      "description",
 			CreatePublicPlaybookRun: true,
 			MemberIDs:               []string{"testUserID"},
 			InviteUsersEnabled:      true,
@@ -625,7 +625,7 @@ func TestPlaybookRuns(t *testing.T) {
 			OwnerUserID:               "testUserID",
 			TeamID:                    teamID,
 			Name:                      "playbookRunName",
-			Description:               "description",
+			Summary:                   "description",
 			PlaybookID:                testPlaybook.ID,
 			Checklists:                testPlaybook.Checklists,
 			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
@@ -655,7 +655,7 @@ func TestPlaybookRuns(t *testing.T) {
 			Name:        testPlaybookRun.Name,
 			OwnerUserID: testPlaybookRun.OwnerUserID,
 			TeamID:      testPlaybookRun.TeamID,
-			Description: testPlaybookRun.Description,
+			Description: testPlaybookRun.Summary,
 			PlaybookID:  testPlaybookRun.PlaybookID,
 		})
 		require.NoError(t, err)
@@ -761,6 +761,56 @@ func TestPlaybookRuns(t *testing.T) {
 		require.Nil(t, resultPlaybookRun)
 	})
 
+	t.Run("create invalid playbook run - playbook is archived", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+
+		teamID := model.NewId()
+		testPlaybook := app.Playbook{
+			ID:                      "playbookid1",
+			Title:                   "My Playbook",
+			TeamID:                  teamID,
+			RunSummaryTemplate:      "description",
+			CreatePublicPlaybookRun: true,
+			MemberIDs:               []string{"testUserID"},
+			InviteUsersEnabled:      false,
+			InvitedUserIDs:          []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:         []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			DeleteAt:                1,
+		}
+
+		testPlaybookRun := app.PlaybookRun{
+			OwnerUserID:               "testUserID",
+			TeamID:                    teamID,
+			Name:                      "playbookRunName",
+			Summary:                   "description",
+			PlaybookID:                testPlaybook.ID,
+			Checklists:                testPlaybook.Checklists,
+			InvitedUserIDs:            []string{},
+			InvitedGroupIDs:           []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
+		}
+
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(testPlaybook, nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
+
+		resultPlaybookRun, err := c.PlaybookRuns.Create(context.TODO(), icClient.PlaybookRunCreateOptions{
+			Name:        testPlaybookRun.Name,
+			OwnerUserID: testPlaybookRun.OwnerUserID,
+			TeamID:      testPlaybookRun.TeamID,
+			Description: testPlaybookRun.Summary,
+			PlaybookID:  testPlaybookRun.PlaybookID,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		require.Nil(t, resultPlaybookRun)
+	})
+
 	t.Run("create playbook run in unlicensed server with pricing plan differentiation enabled", func(*testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)
@@ -786,7 +836,7 @@ func TestPlaybookRuns(t *testing.T) {
 			ID:                      "playbookid1",
 			Title:                   "My Playbook",
 			TeamID:                  teamID,
-			Description:             "description",
+			RunSummaryTemplate:      "description",
 			CreatePublicPlaybookRun: true,
 			MemberIDs:               []string{"testUserID"},
 			InviteUsersEnabled:      false,
@@ -798,7 +848,7 @@ func TestPlaybookRuns(t *testing.T) {
 			OwnerUserID:               "testUserID",
 			TeamID:                    teamID,
 			Name:                      "playbookRunName",
-			Description:               "description",
+			Summary:                   "description",
 			PlaybookID:                testPlaybook.ID,
 			Checklists:                testPlaybook.Checklists,
 			InvitedUserIDs:            []string{},
@@ -828,7 +878,7 @@ func TestPlaybookRuns(t *testing.T) {
 			Name:        testPlaybookRun.Name,
 			OwnerUserID: testPlaybookRun.OwnerUserID,
 			TeamID:      testPlaybookRun.TeamID,
-			Description: testPlaybookRun.Description,
+			Description: testPlaybookRun.Summary,
 			PlaybookID:  testPlaybookRun.PlaybookID,
 		})
 		require.NoError(t, err)

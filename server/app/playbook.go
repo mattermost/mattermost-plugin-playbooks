@@ -43,11 +43,11 @@ type Playbook struct {
 	RetrospectiveTemplate                string      `json:"retrospective_template"`
 	WebhookOnStatusUpdateURLs            []string    `json:"webhook_on_status_update_urls"`
 	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
-	ExportChannelOnFinishedEnabled       bool        `json:"export_channel_on_finished_enabled"`
 	SignalAnyKeywords                    []string    `json:"signal_any_keywords"`
 	SignalAnyKeywordsEnabled             bool        `json:"signal_any_keywords_enabled"`
 	CategorizeChannelEnabled             bool        `json:"categorize_channel_enabled"`
 	CategoryName                         string      `json:"category_name"`
+	RunSummaryTemplate                   string      `json:"run_summary_template"`
 }
 
 func (p Playbook) Clone() Playbook {
@@ -226,11 +226,26 @@ type PlaybookService interface {
 	// Update updates a playbook
 	Update(playbook Playbook, userID string) error
 
-	// Delete deletes a playbook
-	Delete(playbook Playbook, userID string) error
+	// Archive archives a playbook
+	Archive(playbook Playbook, userID string) error
 
 	// MessageHasBeenPosted suggests playbooks to the user if triggered
 	MessageHasBeenPosted(sessionID string, post *model.Post)
+
+	// Restores an archived playbook
+	Restore(playbook Playbook, userID string) error
+
+	// AutoFollow method lets user auto-follow all runs of a specific playbook
+	AutoFollow(playbookID, userID string) error
+
+	// AutoUnfollow method lets user to not auto-follow the newly created playbook runs
+	AutoUnfollow(playbookID, userID string) error
+
+	// GetAutoFollows returns list of users who auto-follows a playbook
+	GetAutoFollows(playbookID string) ([]string, error)
+
+	// IsAutoFollowing returns weather user is auto-following a playbook
+	IsAutoFollowing(playbookID, userID string) (bool, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -263,8 +278,23 @@ type PlaybookStore interface {
 	// Update updates a playbook
 	Update(playbook Playbook) error
 
-	// Delete deletes a playbook
-	Delete(id string) error
+	// Archive archives a playbook
+	Archive(id string) error
+
+	// Restore restores a deleted playbook
+	Restore(id string) error
+
+	// AutoFollow method lets user auto-follow all runs of a specific playbook
+	AutoFollow(playbookID, userID string) error
+
+	// AutoUnfollow method lets user to not auto-follow the newly created playbook runs
+	AutoUnfollow(playbookID, userID string) error
+
+	// GetAutoFollows returns list of users who auto-follows a playbook
+	GetAutoFollows(playbookID string) ([]string, error)
+
+	// IsAutoFollowing returns weather user is auto-following a playbook
+	IsAutoFollowing(playbookID, userID string) (bool, error)
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.
@@ -278,6 +308,9 @@ type PlaybookTelemetry interface {
 
 	// DeletePlaybook tracks the deletion of a playbook.
 	DeletePlaybook(playbook Playbook, userID string)
+
+	// RestorePlaybook tracks the restoration of a playbook.
+	RestorePlaybook(playbook Playbook, userID string)
 
 	// FrontendTelemetryForPlaybook tracks an event originating from the frontend
 	FrontendTelemetryForPlaybook(playbook Playbook, userID, action string)

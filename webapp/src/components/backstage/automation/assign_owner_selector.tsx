@@ -9,6 +9,8 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
+import {useIntl} from 'react-intl';
+
 import Profile from 'src/components/profile/profile';
 import ClearIndicator from 'src/components/backstage/automation/clear_indicator';
 import MenuList from 'src/components/backstage/automation/menu_list';
@@ -22,6 +24,7 @@ interface Props {
 }
 
 const AssignOwnerSelector = (props: Props) => {
+    const {formatMessage} = useIntl();
     const [options, setOptions] = useState<UserProfile[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const ownerUser = useSelector<GlobalState, UserProfile>((state: GlobalState) => getUser(state, props.ownerID));
@@ -74,10 +77,10 @@ const AssignOwnerSelector = (props: Props) => {
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
             isClearable={true}
-            placeholder={'Search for member'}
+            placeholder={formatMessage({defaultMessage: 'Search for member'})}
             components={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
             styles={{
-                control: (provided: ControlProps<UserProfile>) => ({
+                control: (provided: ControlProps<UserProfile, boolean>) => ({
                     ...provided,
                     minHeight: 34,
                 }),

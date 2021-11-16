@@ -116,8 +116,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 				CASE WHEN MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
 				CASE WHEN SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
-				CASE WHEN CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
+				CASE WHEN CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate",
 			"ReminderTimerDefaultSeconds",
@@ -136,11 +135,11 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"RetrospectiveTemplate",
 			"ConcatenatedWebhookOnStatusUpdateURLs",
 			"WebhookOnStatusUpdateEnabled",
-			"ExportChannelOnFinishedEnabled",
 			"ConcatenatedSignalAnyKeywords",
 			"SignalAnyKeywordsEnabled",
 			"CategorizeChannelEnabled",
 			"COALESCE(CategoryName, '') CategoryName",
+			"COALESCE(RunSummaryTemplate, '') RunSummaryTemplate",
 		).
 		From("IR_Playbook")
 
@@ -209,11 +208,11 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"RetrospectiveTemplate":                 rawPlaybook.RetrospectiveTemplate,
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs,
 			"WebhookOnStatusUpdateEnabled":          rawPlaybook.WebhookOnStatusUpdateEnabled,
-			"ExportChannelOnFinishedEnabled":        rawPlaybook.ExportChannelOnFinishedEnabled,
 			"ConcatenatedSignalAnyKeywords":         rawPlaybook.ConcatenatedSignalAnyKeywords,
 			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
 			"CategoryName":                          rawPlaybook.CategoryName,
+			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -306,8 +305,7 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
+				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 		).
 		From("IR_Playbook AS p").
@@ -371,8 +369,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END +
-				CASE WHEN p.ExportChannelOnFinishedEnabled THEN 1 ELSE 0 END
+				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 		).
 		From("IR_Playbook AS p").
@@ -565,11 +562,11 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"RetrospectiveTemplate":                 rawPlaybook.RetrospectiveTemplate,
 			"ConcatenatedWebhookOnStatusUpdateURLs": rawPlaybook.ConcatenatedWebhookOnStatusUpdateURLs,
 			"WebhookOnStatusUpdateEnabled":          rawPlaybook.WebhookOnStatusUpdateEnabled,
-			"ExportChannelOnFinishedEnabled":        rawPlaybook.ExportChannelOnFinishedEnabled,
 			"ConcatenatedSignalAnyKeywords":         rawPlaybook.ConcatenatedSignalAnyKeywords,
 			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
 			"CategoryName":                          rawPlaybook.CategoryName,
+			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 
@@ -588,8 +585,8 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 	return nil
 }
 
-// Delete deletes a playbook.
-func (p *playbookStore) Delete(id string) error {
+// Archive archives a playbook.
+func (p *playbookStore) Archive(id string) error {
 	if id == "" {
 		return errors.New("ID cannot be empty")
 	}
@@ -601,6 +598,24 @@ func (p *playbookStore) Delete(id string) error {
 
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete playbook with id '%s'", id)
+	}
+
+	return nil
+}
+
+// Restore restores a deleted playbook.
+func (p *playbookStore) Restore(id string) error {
+	if id == "" {
+		return errors.New("ID cannot be empty")
+	}
+
+	_, err := p.store.execBuilder(p.store.db, sq.
+		Update("IR_Playbook").
+		Set("DeleteAt", 0).
+		Where(sq.Eq{"ID": id}))
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to restore playbook with id '%s'", id)
 	}
 
 	return nil
@@ -647,6 +662,67 @@ INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
 	}
 
 	return nil
+}
+
+func (p *playbookStore) AutoFollow(playbookID, userID string) error {
+	var err error
+	if p.store.db.DriverName() == model.DatabaseDriverMysql {
+		_, err = p.store.execBuilder(p.store.db, sq.
+			Insert("IR_PlaybookAutoFollow").
+			Columns("PlaybookID", "UserID").
+			Values(playbookID, userID).
+			Suffix("ON DUPLICATE KEY UPDATE playbookID = playbookID"))
+	} else {
+		_, err = p.store.execBuilder(p.store.db, sq.
+			Insert("IR_PlaybookAutoFollow").
+			Columns("PlaybookID", "UserID").
+			Values(playbookID, userID).
+			Suffix("ON CONFLICT (PlaybookID,UserID) DO NOTHING"))
+	}
+	return errors.Wrapf(err, "failed to insert autofollowing '%s' for playbook '%s'", userID, playbookID)
+}
+
+func (p *playbookStore) AutoUnfollow(playbookID, userID string) error {
+	if _, err := p.store.execBuilder(p.store.db, sq.
+		Delete("IR_PlaybookAutoFollow").
+		Where(sq.And{sq.Eq{"UserID": userID}, sq.Eq{"PlaybookID": playbookID}})); err != nil {
+		return errors.Wrapf(err, "failed to delete autofollow '%s' for playbook '%s'", userID, playbookID)
+	}
+	return nil
+}
+
+func (p *playbookStore) GetAutoFollows(playbookID string) ([]string, error) {
+	query := p.queryBuilder.
+		Select("UserID").
+		From("IR_PlaybookAutoFollow").
+		Where(sq.Eq{"PlaybookID": playbookID})
+
+	var autoFollows []string
+	err := p.store.selectBuilder(p.store.db, &autoFollows, query)
+	if err == sql.ErrNoRows {
+		return []string{}, nil
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "failed to get autoFollows for playbook '%s'", playbookID)
+	}
+
+	return autoFollows, nil
+}
+
+func (p *playbookStore) IsAutoFollowing(playbookID, userID string) (bool, error) {
+	query := p.queryBuilder.
+		Select("TRUE").
+		From("IR_PlaybookAutoFollow").
+		Where(sq.And{sq.Eq{"PlaybookID": playbookID}, sq.Eq{"UserID": userID}})
+
+	var isAutoFollowing bool
+	err := p.store.getBuilder(p.store.db, &isAutoFollowing, query)
+	if err == sql.ErrNoRows {
+		return false, nil
+	} else if err != nil {
+		return false, errors.Wrapf(err, "failed to get follower status for playbook '%s'", playbookID)
+	}
+
+	return isAutoFollowing, nil
 }
 
 func addMembersToPlaybooks(memberIDs playbookMembers, playbook []app.Playbook) {

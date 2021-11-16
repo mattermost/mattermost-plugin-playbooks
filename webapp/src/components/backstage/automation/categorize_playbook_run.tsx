@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {FormattedMessage} from 'react-intl';
 
 import styled from 'styled-components';
 
@@ -26,7 +27,7 @@ export const CategorizePlaybookRun = (props: Props) => (
                 isChecked={props.enabled}
                 onChange={props.onToggle}
             />
-            <div>{'Add the channel to a sidebar category'}</div>
+            <div><FormattedMessage defaultMessage='Add the channel to a sidebar category'/></div>
         </AutomationTitle>
         <SelectorWrapper>
             <StyledCategorySelector

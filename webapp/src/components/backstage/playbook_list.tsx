@@ -3,6 +3,7 @@
 
 import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
+import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
@@ -16,7 +17,6 @@ import TemplateSelector, {isPlaybookCreationAllowed, PresetTemplate} from 'src/c
 import {telemetryEventForTemplate} from 'src/client';
 
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
-import './playbook.scss';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {PaginationRow} from 'src/components/pagination_row';
 import {BACKSTAGE_LIST_PER_PAGE, AdminNotificationType} from 'src/constants';
@@ -42,7 +42,7 @@ import {Playbook} from 'src/types/playbook';
 
 import PlaybookListRow from './playbook_list_row';
 
-const DeleteBannerTimeout = 5000;
+const ArchiveBannerTimeout = 5000;
 
 const PlaybooksHeader = styled(BackstageSubheader)`
     display: flex;
@@ -52,7 +52,19 @@ const PlaybooksHeader = styled(BackstageSubheader)`
     padding: 4rem 0 3.2rem;
 `;
 
+const ContainerMedium = styled.div`
+    margin: 0 auto;
+    max-width: 1160px;
+    padding: 0 20px;
+`;
+
+const PlaybookContainer = styled.div`
+    font-family: $font-family;
+    color: var(--center-channel-color-90);
+`;
+
 const PlaybookList = () => {
+    const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
     const canCreatePlaybooks = useCanCreatePlaybooks();
@@ -63,7 +75,7 @@ const PlaybookList = () => {
     const [
         playbooks,
         {totalCount, params, selectedPlaybook},
-        {setPage, sortBy, setSelectedPlaybook, deletePlaybook},
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const {view, edit, create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
@@ -80,14 +92,14 @@ const PlaybookList = () => {
         setShowConfirmation(false);
     };
 
-    const onConfirmDelete = (playbook: Playbook) => {
+    const onConfirmArchive = (playbook: Playbook) => {
         setSelectedPlaybook(playbook);
         setShowConfirmation(true);
     };
 
-    const onDelete = async () => {
+    const onArchive = async () => {
         if (selectedPlaybook) {
-            await deletePlaybook(selectedPlaybook.id);
+            await archivePlaybook(selectedPlaybook.id);
 
             hideConfirmModal();
             setShowBanner(true);
@@ -95,14 +107,17 @@ const PlaybookList = () => {
             window.setTimeout(() => {
                 setShowBanner(false);
                 setSelectedPlaybook(null);
-            }, DeleteBannerTimeout);
+            }, ArchiveBannerTimeout);
         }
     };
 
-    const deleteSuccessfulBanner = showBanner && (
+    const archiveSuccessfulBanner = showBanner && (
         <Banner>
             <i className='icon icon-check mr-1'/>
-            {`The playbook ${selectedPlaybook?.title} was successfully deleted.`}
+            <FormattedMessage
+                defaultMessage='The playbook {title} was successfully archived.'
+                values={{title: selectedPlaybook?.title}}
+            />
         </Banner>
     );
 
@@ -112,7 +127,7 @@ const PlaybookList = () => {
     } else if (playbooks?.length === 0) {
         body = (
             <div className='text-center pt-8'>
-                {'There are no playbooks defined yet.'}
+                <FormattedMessage defaultMessage='There are no playbooks defined yet.'/>
             </div>
         );
     } else {
@@ -123,19 +138,19 @@ const PlaybookList = () => {
                 displayTeam={teams.length > 1}
                 onClick={() => view(p)}
                 onEdit={() => edit(p)}
-                onDelete={() => onConfirmDelete(p)}
+                onArchive={() => onConfirmArchive(p)}
             />
         ));
     }
 
     return (
-        <div className='Playbook'>
+        <PlaybookContainer>
             <UpgradeModal
                 messageType={AdminNotificationType.PLAYBOOK}
                 show={isUpgradeModalShown}
                 onHide={hideUpgradeModal}
             />
-            {deleteSuccessfulBanner}
+            {archiveSuccessfulBanner}
             {canCreatePlaybooks &&
                 <TemplateSelector
                     onSelect={(team: Team, template: PresetTemplate) => {
@@ -166,9 +181,9 @@ const PlaybookList = () => {
                     <RightFade/>
                     <LeftDots/>
                     <LeftFade/>
-                    <div className='playbook-list container-medium'>
+                    <ContainerMedium>
                         <PlaybooksHeader data-testid='titlePlaybook'>
-                            {'Playbooks'}
+                            <FormattedMessage defaultMessage='Playbooks'/>
                             {canCreatePlaybooks &&
                                 <div>
                                     <TeamSelectorButton
@@ -184,7 +199,7 @@ const PlaybookList = () => {
                             <div className='row'>
                                 <div className='col-sm-4'>
                                     <SortableColHeader
-                                        name={'Name'}
+                                        name={formatMessage({defaultMessage: 'Name'})}
                                         direction={params.direction}
                                         active={params.sort === 'title'}
                                         onClick={() => sortBy('title')}
@@ -192,7 +207,7 @@ const PlaybookList = () => {
                                 </div>
                                 <div className='col-sm-2'>
                                     <SortableColHeader
-                                        name={'Checklists'}
+                                        name={formatMessage({defaultMessage: 'Checklists'})}
                                         direction={params.direction}
                                         active={params.sort === 'stages'}
                                         onClick={() => sortBy('stages')}
@@ -208,13 +223,15 @@ const PlaybookList = () => {
                                 </div>
                                 <div className='col-sm-2'>
                                     <SortableColHeader
-                                        name={'Runs'}
+                                        name={formatMessage({defaultMessage: 'Runs'})}
                                         direction={params.direction}
                                         active={params.sort === 'runs'}
                                         onClick={() => sortBy('runs')}
                                     />
                                 </div>
-                                <div className='col-sm-2'>{'Actions'}</div>
+                                <div className='col-sm-2'>
+                                    <FormattedMessage defaultMessage='Actions'/>
+                                </div>
                             </div>
                         </BackstageListHeader>
                         {body}
@@ -224,24 +241,25 @@ const PlaybookList = () => {
                             totalCount={totalCount}
                             setPage={setPage}
                         />
-                    </div>
+                    </ContainerMedium>
                     <ConfirmModal
                         show={showConfirmation}
-                        title={'Delete playbook'}
-                        message={`Are you sure you want to delete the playbook "${selectedPlaybook?.title}"?`}
-                        confirmButtonText={'Delete'}
-                        onConfirm={onDelete}
+                        title={formatMessage({defaultMessage: 'Archive playbook'})}
+                        message={formatMessage({defaultMessage: 'Are you sure you want to archive the playbook {title}?'}, {title: selectedPlaybook?.title})}
+                        confirmButtonText={formatMessage({defaultMessage: 'Archive'})}
+                        onConfirm={onArchive}
                         onCancel={hideConfirmModal}
                     />
                 </>
             }
-        </div>
+        </PlaybookContainer>
     );
 };
 
 type CreatePlaybookButtonProps = UpgradeButtonProps & {teams: Team[], allowPlaybookCreationInTeams:Map<string, boolean>, showUpgradeModal?: () => void};
 
 const TeamSelectorButton = (props: CreatePlaybookButtonProps) => {
+    const {formatMessage} = useIntl();
     const {teams, allowPlaybookCreationInTeams, showUpgradeModal, ...rest} = props;
     if (isPlaybookCreationAllowed(allowPlaybookCreationInTeams)) {
         return (
@@ -256,7 +274,7 @@ const TeamSelectorButton = (props: CreatePlaybookButtonProps) => {
             >
                 <CreatePlaybookButton>
                     <i className='icon-plus mr-2'/>
-                    {'Create playbook'}
+                    {formatMessage({defaultMessage: 'Create playbook'})}
                 </CreatePlaybookButton>
             </CreatePlaybookTeamSelector>
         );
@@ -266,7 +284,7 @@ const TeamSelectorButton = (props: CreatePlaybookButtonProps) => {
             onClick={showUpgradeModal}
         >
             <i className='icon-plus mr-2'/>
-            {'Create playbook'}
+            {formatMessage({defaultMessage: 'Create playbook'})}
             <NotAllowedIcon className='icon icon-key-variant-circle'/>
         </CreatePlaybookButton>
     );
@@ -336,8 +354,8 @@ const DescriptionWarn = styled(Description)`
 const NoContentPage = (props: { onNewPlaybook: (team: Team) => void, canCreatePlaybooks: boolean, teams: Team[], allowPlaybookCreationInTeams: Map<string, boolean>}) => {
     return (
         <Container>
-            <Title>{'What is a playbook?'}</Title>
-            <Description>{'A playbook is a workflow that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives.'}</Description>
+            <Title><FormattedMessage defaultMessage='What is a playbook?'/></Title>
+            <Description><FormattedMessage defaultMessage='A playbook is a workflow that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives.'/></Description>
             { props.canCreatePlaybooks &&
                 <TeamSelectorButton
                     className='mt-6'
@@ -347,7 +365,7 @@ const NoContentPage = (props: { onNewPlaybook: (team: Team) => void, canCreatePl
                 />
             }
             {!props.canCreatePlaybooks &&
-                <DescriptionWarn>{"There are no playbooks to view. You don't have permission to create playbooks in this workspace."}</DescriptionWarn>
+                <DescriptionWarn><FormattedMessage defaultMessage="There are no playbooks to view. You don't have permission to create playbooks in this workspace."/></DescriptionWarn>
             }
         </Container>
     );

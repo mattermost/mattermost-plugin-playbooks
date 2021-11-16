@@ -92,7 +92,6 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 		statsStore := setupStatsStore(t, db)
 
 		_, store := setupSQLStore(t, db)
-		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
 		setupChannelsTable(t, db)

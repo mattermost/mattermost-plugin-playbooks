@@ -222,7 +222,7 @@ export async function savePlaybook(playbook: PlaybookWithChecklist | DraftPlaybo
     return {id: playbook.id};
 }
 
-export async function deletePlaybook(playbookId: Playbook['id']) {
+export async function archivePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}`, {
         method: 'delete',
     });
@@ -436,8 +436,8 @@ export const requestTrialLicense = async (users: number, action: string) => {
     }
 };
 
-export const postMessageToAdmins = async (messageType: AdminNotificationType, isServerTeamEdition: boolean) => {
-    const body = `{"message_type": "${messageType}", "is_team_edition": ${isServerTeamEdition}}`;
+export const postMessageToAdmins = async (messageType: AdminNotificationType) => {
+    const body = `{"message_type": "${messageType}"}`;
     try {
         const response = await doPost(`${apiUrl}/bot/notify-admins`, body);
         return {data: response};
@@ -470,7 +470,54 @@ export const updatePlaybookRunDescription = async (playbookRunId: string, newDes
 };
 
 export const notifyConnect = async () => {
-    await doFetchWithoutResponse(`${apiUrl}/bot/connect`, {method: 'GET'});
+    await doFetchWithoutResponse(`${apiUrl}/bot/connect`, {
+        method: 'GET',
+        headers: {
+            'X-Timezone-Offset': -new Date().getTimezoneOffset() / 60,
+        },
+    });
+};
+
+export const followPlaybookRun = async (playbookRunId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/followers`, {
+        method: 'PUT',
+    });
+};
+
+export const unfollowPlaybookRun = async (playbookRunId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/followers`, {
+        method: 'DELETE',
+    });
+};
+
+export const autoFollowPlaybook = async (playbookId: string, userId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`, {
+        method: 'PUT',
+    });
+};
+
+export const autoUnfollowPlaybook = async (playbookId: string, userId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`, {
+        method: 'DELETE',
+    });
+};
+
+export async function clientFetchIsPlaybookFollower(playbookId: string, userId: string): Promise<boolean> {
+    const data = await doGet(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`);
+    if (!data) {
+        return false;
+    }
+
+    return data as boolean;
+}
+
+export const resetReminder = async (playbookRunId: string, newReminderSeconds: number) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/reminder`, {
+        method: 'POST',
+        body: JSON.stringify({
+            new_reminder_seconds: newReminderSeconds,
+        }),
+    });
 };
 
 export const doGet = async <TData = any>(url: string) => {

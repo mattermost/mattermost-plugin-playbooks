@@ -11,12 +11,14 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 import {useSelector} from 'react-redux';
 
+import {FormattedMessage} from 'react-intl';
+
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {PlaybookRun} from 'src/types/playbook_run';
 import FormattedDuration from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
-import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
+import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
 
 import {findLastUpdatedWithDefault} from 'src/utils';
@@ -112,7 +114,7 @@ const Row = (props: Props) => {
             </div>
             <div className='col-sm-2'>
                 <SmallStatusBadge
-                    status={props.playbookRun.current_status}
+                    status={BadgeType[props.playbookRun.current_status]}
                 />
                 <SmallText>
                     <FormattedDuration
@@ -136,7 +138,12 @@ const Row = (props: Props) => {
             </div>
             <div className='col-sm-2'>
                 <SmallProfile userId={props.playbookRun.owner_user_id}/>
-                <SmallText>{participantsText(props.playbookRun.participant_ids)}</SmallText>
+                <SmallText>
+                    <FormattedMessage
+                        defaultMessage='{numParticipants, plural, =0 {no participants} =1 {# participant} other {# participants}}'
+                        values={{numParticipants: props.playbookRun.participant_ids.length}}
+                    />
+                </SmallText>
             </div>
             <div className='col-sm-2'>
                 <NormalText>{completedTasks + ' / ' + totalTasks}</NormalText>
@@ -147,12 +154,6 @@ const Row = (props: Props) => {
             </div>
         </PlaybookRunItem>
     );
-};
-
-const participantsText = (participantIds: string[]) => {
-    const num = participantIds.length;
-    const suffix = num === 1 ? '' : 's';
-    return num + ' participant' + suffix;
 };
 
 const tasksCompletedTotal = (checklists: Checklist[]) => {

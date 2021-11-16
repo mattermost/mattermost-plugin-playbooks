@@ -8,6 +8,8 @@ import styled from 'styled-components';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import General from 'mattermost-redux/constants/general';
 
+import {FormattedMessage} from 'react-intl';
+
 import Spinner from 'src/components/assets/icons/spinner';
 import {getAdminAnalytics, isTeamEdition} from 'src/selectors';
 import StartTrialNotice from 'src/components/backstage/start_trial_notice';
@@ -115,7 +117,7 @@ const UpgradeBanner = (props: Props) => {
 
         setActionState(ActionState.Loading);
 
-        const response = await postMessageToAdmins(props.notificationType, isServerTeamEdition);
+        const response = await postMessageToAdmins(props.notificationType);
         if (response.error) {
             setActionState(ActionState.Error);
         } else {
@@ -152,7 +154,7 @@ const UpgradeBanner = (props: Props) => {
         adminMainAction = openUpgradeModal;
     }
 
-    let titleText = props.titleText;
+    let titleText: React.ReactNode = props.titleText;
     let helpText: React.ReactNode = props.helpText;
     let stateImage = <StyledUpgradeIllustration/>;
 
@@ -162,18 +164,18 @@ const UpgradeBanner = (props: Props) => {
 
     if (actionState === ActionState.Success) {
         stateImage = <SuccessSvg/>;
-        titleText = 'Thank you!';
-        helpText = 'Your System Admin has been notified.';
+        titleText = <FormattedMessage defaultMessage='Thank you!'/>;
+        helpText = <FormattedMessage defaultMessage='Your System Admin has been notified.'/>;
     }
 
     if (actionState === ActionState.Error) {
         stateImage = <ErrorSvg/>;
         if (isCurrentUserAdmin) {
-            titleText = 'Your license could not be generated';
-            helpText = 'Please check the system logs for more information.';
+            titleText = <FormattedMessage defaultMessage='Your license could not be generated'/>;
+            helpText = <FormattedMessage defaultMessage='Please check the system logs for more information.'/>;
         } else {
-            titleText = 'There was an error';
-            helpText = 'We weren\'t able to notify the System Admin.';
+            titleText = <FormattedMessage defaultMessage='There was an error'/>;
+            helpText = <FormattedMessage defaultMessage="We weren't able to notify the System Admin."/>;
         }
     }
 
@@ -237,7 +239,7 @@ const Button = (props: ButtonProps) => {
                 <ButtonSC
                     onClick={() => window.open('https://mattermost.com/support/')}
                 >
-                    {'Contact support'}
+                    <FormattedMessage defaultMessage='Contact support'/>
                 </ButtonSC>
             );
         }
@@ -248,12 +250,12 @@ const Button = (props: ButtonProps) => {
         return null;
     }
 
-    let buttonText = 'Notify System Admin';
+    let buttonText = <FormattedMessage defaultMessage='Notify System Admin'/>;
     let handleClick: HandlerType = props.endUserMainAction;
 
     if (props.isCurrentUserAdmin) {
         handleClick = props.adminMainAction;
-        buttonText = props.isCloud ? 'Upgrade now' : 'Start trial';
+        buttonText = props.isCloud ? <FormattedMessage defaultMessage='Upgrade now'/> : <FormattedMessage defaultMessage='Start trial'/>;
     }
 
     return (

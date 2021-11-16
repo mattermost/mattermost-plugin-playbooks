@@ -46,6 +46,7 @@ const (
 	eventPlaybook = "playbook"
 	actionUpdate  = "update"
 	actionDelete  = "delete"
+	actionRestore = "restore"
 
 	eventFrontend = "frontend"
 
@@ -120,7 +121,7 @@ func playbookRunProperties(playbookRun *app.PlaybookRun, userID string) map[stri
 	return map[string]interface{}{
 		"UserActualID":            userID,
 		telemetryKeyPlaybookRunID: playbookRun.ID,
-		"HasDescription":          playbookRun.Description != "",
+		"HasDescription":          playbookRun.Summary != "",
 		"CommanderUserID":         playbookRun.OwnerUserID,
 		"ReporterUserID":          playbookRun.ReporterUserID,
 		"TeamID":                  playbookRun.TeamID,
@@ -151,6 +152,13 @@ func (t *RudderTelemetry) CreatePlaybookRun(playbookRun *app.PlaybookRun, userID
 func (t *RudderTelemetry) FinishPlaybookRun(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionEnd
+	t.track(eventPlaybookRun, properties)
+}
+
+// RestorePlaybookRun tracks the restoration of the playbook run.
+func (t *RudderTelemetry) RestorePlaybookRun(playbookRun *app.PlaybookRun, userID string) {
+	properties := playbookRunProperties(playbookRun, userID)
+	properties["Action"] = actionRestore
 	t.track(eventPlaybookRun, properties)
 }
 
@@ -343,6 +351,13 @@ func (t *RudderTelemetry) UpdatePlaybook(playbook app.Playbook, userID string) {
 func (t *RudderTelemetry) DeletePlaybook(playbook app.Playbook, userID string) {
 	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionDelete
+	t.track(eventPlaybook, properties)
+}
+
+// RestorePlaybook tracks the deletion of a playbook.
+func (t *RudderTelemetry) RestorePlaybook(playbook app.Playbook, userID string) {
+	properties := playbookProperties(playbook, userID)
+	properties["Action"] = actionRestore
 	t.track(eventPlaybook, properties)
 }
 

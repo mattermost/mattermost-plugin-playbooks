@@ -12,6 +12,8 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getUser} from 'mattermost-redux/selectors/entities/users';
 
+import {useIntl} from 'react-intl';
+
 import Profile from 'src/components/profile/profile';
 import {useEnsureProfiles} from 'src/hooks';
 
@@ -27,6 +29,7 @@ interface Props {
 }
 
 const InviteUsersSelector = (props: Props) => {
+    const {formatMessage} = useIntl();
     const [searchTerm, setSearchTerm] = useState('');
     const invitedUsers = useSelector<GlobalState, UserProfile[]>((state: GlobalState) => props.userIds.map((id) => getUser(state, id)));
     const [searchedUsers, setSearchedUsers] = useState<UserProfile[]>([]);
@@ -111,10 +114,10 @@ const InviteUsersSelector = (props: Props) => {
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
             isClearable={false}
-            placeholder={'Search for member'}
+            placeholder={formatMessage({defaultMessage: 'Search for member'})}
             components={{DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
             styles={{
-                control: (provided: ControlProps<UserProfile>) => ({
+                control: (provided: ControlProps<UserProfile, boolean>) => ({
                     ...provided,
                     minHeight: 34,
                 }),

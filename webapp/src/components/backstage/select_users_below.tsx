@@ -2,6 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
+import {FormattedMessage} from 'react-intl';
+
 import Profile from '../profile/profile';
 
 import ProfileAutocomplete from './profile_autocomplete';
@@ -60,7 +62,9 @@ const SelectUsersBelow = (props: SelectUsersBelowProps) => {
                         <BelowLineProfile userId={userId}/>
                         {
                             props.userIds.length > 1 &&
-                            <RemoveLink onClick={() => props.onRemoveUser(userId)}>{'Remove'}</RemoveLink>
+                            <RemoveLink onClick={() => props.onRemoveUser(userId)}>
+                                <FormattedMessage defaultMessage='Remove'/>
+                            </RemoveLink>
                         }
                     </UserLine>
                 ))}

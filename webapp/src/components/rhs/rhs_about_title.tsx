@@ -11,7 +11,9 @@ import Permissions from 'mattermost-redux/constants/permissions';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {haveIChannelPermission} from 'mattermost-redux/selectors/entities/roles';
 
-import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
+import {FormattedMessage} from 'react-intl';
+
+import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
 import {SemiBoldHeading} from 'src/styles/headings';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
@@ -77,7 +79,7 @@ const RHSAboutTitle = (props: Props) => {
                     {editedValue}
                 </RenderedTitle>
                 {props.status === PlaybookRunStatus.Finished &&
-                    <StatusBadgeWrapper status={PlaybookRunStatus.Finished}/>
+                    <StatusBadgeWrapper status={BadgeType.Finished}/>
                 }
             </TitleWrapper>
         );
@@ -100,7 +102,7 @@ const RHSAboutTitle = (props: Props) => {
             />
             {invalidValue &&
             <ErrorMessage>
-                {'Run name must have at least two characters'}
+                <FormattedMessage defaultMessage='Run name must have at least two characters'/>
             </ErrorMessage>
             }
         </>

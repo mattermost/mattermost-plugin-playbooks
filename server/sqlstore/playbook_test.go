@@ -950,7 +950,6 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		})
 
 		_, store := setupSQLStore(t, db)
-		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 		addUsers(t, store, users)
 		addUsersToTeam(t, store, users, team1id)
@@ -1230,7 +1229,7 @@ func TestDeletePlaybook(t *testing.T) {
 		playbookStore := setupPlaybookStore(t, db)
 
 		t.Run(driverName+" - id empty", func(t *testing.T) {
-			err := playbookStore.Delete("")
+			err := playbookStore.Archive("")
 			require.Error(t, err)
 			require.EqualError(t, err, "ID cannot be empty")
 		})
@@ -1243,7 +1242,7 @@ func TestDeletePlaybook(t *testing.T) {
 			expected := pb02.Clone()
 			expected.ID = id
 
-			err = playbookStore.Delete(id)
+			err = playbookStore.Archive(id)
 			require.NoError(t, err)
 
 			actual, err := playbookStore.Get(id)
@@ -1529,7 +1528,6 @@ func TestGetPlaybookIDsForUser(t *testing.T) {
 		})
 
 		_, store := setupSQLStore(t, db)
-		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 		addUsers(t, store, users)
 

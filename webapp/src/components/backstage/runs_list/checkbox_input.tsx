@@ -50,6 +50,8 @@ interface Props {
     text: string;
     checked: boolean;
     onChange: (checked: boolean) => void;
+    className?: string
+    disabled?: boolean;
 }
 
 const CheckboxInput = (props: Props) => {
@@ -58,11 +60,15 @@ const CheckboxInput = (props: Props) => {
     };
 
     return (
-        <Component data-testid={props.testId}>
+        <Component
+            data-testid={props.testId}
+            className={props.className}
+        >
             <input
                 type='checkbox'
                 onChange={onChange}
                 checked={props.checked}
+                disabled={props.disabled}
             />
             <span>
                 {props.text}

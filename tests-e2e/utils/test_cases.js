@@ -41,9 +41,9 @@ function getStepStateSummary(steps = []) {
 }
 
 function getTM4JTestCases(report) {
-    return getAllTests(report.results).
-        filter((item) => /^(MM-T)\w+/g.test(item.title)). // eslint-disable-line wrap-regex
-        map((item) => {
+    return getAllTests(report.results)
+        .filter((item) => /^(MM-T)\w+/g.test(item.title)) // eslint-disable-line wrap-regex
+        .map((item) => {
             return {
                 title: item.title,
                 duration: item.duration,
@@ -53,8 +53,8 @@ function getTM4JTestCases(report) {
                 fail: item.fail,
                 pending: item.pending,
             };
-        }).
-        reduce((acc, item) => {
+        })
+        .reduce((acc, item) => {
             // Extract the key to exactly match with "MM-T[0-9]+"
             const key = item.title.match(/(MM-T\d+)/)[0];
 
@@ -74,6 +74,7 @@ function saveToEndpoint(url, data) {
         url,
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
+            // eslint-disable-next-line no-process-env
             Authorization: process.env.TM4J_API_KEY,
         },
         data,
@@ -90,7 +91,7 @@ async function createTestCycle(startDate, endDate) {
         JIRA_PROJECT_KEY,
         TM4J_CYCLE_NAME,
         TM4J_FOLDER_ID,
-    } = process.env;
+    } = process.env; // eslint-disable-line no-process-env
 
     const testCycle = {
         projectKey: JIRA_PROJECT_KEY,
@@ -111,7 +112,7 @@ async function createTestExecutions(report, testCycle) {
         BROWSER,
         JIRA_PROJECT_KEY,
         TM4J_ENVIRONMENT_NAME,
-    } = process.env;
+    } = process.env; // eslint-disable-line no-process-env
 
     const testCases = getTM4JTestCases(report);
     const startDate = new Date(report.stats.start);
@@ -119,9 +120,9 @@ async function createTestExecutions(report, testCycle) {
 
     const promises = [];
     Object.entries(testCases).forEach(([key, steps], index) => {
-        const testScriptResults = steps.
-            sort((a, b) => a.title.localeCompare(b.title)).
-            map((item) => {
+        const testScriptResults = steps
+            .sort((a, b) => a.title.localeCompare(b.title))
+            .map((item) => {
                 return {
                     statusName: status[item.state],
                     actualEndDate: new Date(startTime + item.incrementalDuration).toISOString(),
@@ -172,6 +173,7 @@ async function saveTestExecution(testExecution, index) {
         url: 'https://api.zephyrscale.smartbear.com/v2/testexecutions',
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
+            // eslint-disable-next-line no-process-env
             Authorization: process.env.TM4J_API_KEY,
         },
         data: testExecution,

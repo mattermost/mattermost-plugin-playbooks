@@ -46,23 +46,28 @@ const BackstageTitlebarItem = styled(NavLink)`
     && {
         font-size: 16px;
         cursor: pointer;
-        color: var(--center-channel-color);
-        fill: var(--center-channel-color);
-        padding: 0 8px;
-        margin-right: 39px;
+        color: var(--center-channel-color-80);
+        fill: var(--center-channel-color-80);
+        padding: 0 12px;
+        margin-right: 20px;
         display: flex;
         align-items: center;
+        height: 40px;
+        border-radius: 4px;
+        border: 0px;
 
         &:hover {
             text-decoration: unset;
-            color: var(--button-bg);
-            fill: var(--button-bg);
+            color: var(--center-channel-color-80);
+            fill: var(--center-channel-color-80);
+            background: var(--center-channel-color-08);
         }
 
         &.active {
             color: var(--button-bg);
             fill: var(--button-bg);
             text-decoration: unset;
+            background: var(--button-bg-08);
         }
 
         & > :first-child {
@@ -104,7 +109,7 @@ const Backstage = () => {
     const match = useRouteMatch();
 
     return (
-        <BackstageContainer>
+        <BackstageContainer id={BackstageID}>
             <Switch>
                 <Route path={`${match.url}/error`}/>
                 <Route>
@@ -117,10 +122,10 @@ const Backstage = () => {
                             >
                                 <Icon
                                     path={mdiClipboardPlayMultipleOutline}
-                                    title='Runs'
+                                    title={formatMessage({defaultMessage: 'Runs'})}
                                     size={1.4}
                                 />
-                                {'Runs'}
+                                {formatMessage({defaultMessage: 'Runs'})}
                             </BackstageTitlebarItem>
                             <BackstageTitlebarItem
                                 to={`${match.url}/playbooks`}
@@ -128,7 +133,7 @@ const Backstage = () => {
                                 data-testid='playbooksLHSButton'
                             >
                                 <PlaybookIcon/>
-                                {'Playbooks'}
+                                {formatMessage({defaultMessage: 'Playbooks'})}
                             </BackstageTitlebarItem>
                             <BackstageTitlebarItem
                                 to={`${match.url}/settings`}
@@ -148,10 +153,10 @@ const Backstage = () => {
                                 >
                                     <Icon
                                         path={mdiThumbsUpDown}
-                                        title='Give Feedback'
+                                        title={formatMessage({defaultMessage: 'Give Feedback'})}
                                         size={1}
                                     />
-                                    {'Give Feedback'}
+                                    {formatMessage({defaultMessage: 'Give Feedback'})}
                                 </BackstageTitlebarItem>
                             }
                         </div>
@@ -198,7 +203,7 @@ const Backstage = () => {
                         exact={true}
                         path={`${match.url}/`}
                     >
-                        <Redirect to={`${match.url}/runs`}/>
+                        <RunsPage/>
                     </Route>
                     <Route>
                         <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>
@@ -209,5 +214,7 @@ const Backstage = () => {
         </BackstageContainer>
     );
 };
+
+export const BackstageID = 'playbooks-backstageRoot';
 
 export default Backstage;

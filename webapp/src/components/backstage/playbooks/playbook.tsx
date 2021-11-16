@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
@@ -9,24 +9,28 @@ import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom'
 import Icon from '@mdi/react';
 import {mdiClipboardPlayOutline} from '@mdi/js';
 
+import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {useIntl} from 'react-intl';
 
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
-import {useExperimentalFeaturesEnabled, useForceDocumentTitle} from 'src/hooks';
+import {useForceDocumentTitle, useStats} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
+import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
 
-import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
-import {clientFetchPlaybook, telemetryEventForPlaybook} from 'src/client';
-import {ErrorPageTypes} from 'src/constants';
+import {clientFetchPlaybook, clientFetchIsPlaybookFollower, autoFollowPlaybook, autoUnfollowPlaybook, telemetryEventForPlaybook} from 'src/client';
+import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
-import {startPlaybookRunById} from 'src/actions';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import ClipboardsPlay from 'src/components/assets/icons/clipboards_play';
 import {RegularHeading} from 'src/styles/headings';
+import CheckboxInput from '../runs_list/checkbox_input';
+import {SecondaryButtonLargerRight} from '../playbook_runs/shared';
+import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
 interface MatchParams {
     playbookId: string
@@ -41,11 +45,23 @@ const FetchingStateType = {
 const Playbook = () => {
     const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
-    const experimentalFeaturesEnabled = useExperimentalFeaturesEnabled();
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
+    const stats = useStats(match.params.playbookId);
+    const [isFollowed, setIsFollowed] = useState(false);
+    const currentUserId = useSelector(getCurrentUserId);
 
+    const changeFollowing = (check: boolean) => {
+        if (playbook?.id) {
+            if (check) {
+                autoFollowPlaybook(playbook.id, currentUserId);
+            } else {
+                autoUnfollowPlaybook(playbook.id, currentUserId);
+            }
+            setIsFollowed(check);
+        }
+    };
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
     const activeNavItemStyle = {
@@ -55,10 +71,6 @@ const Playbook = () => {
 
     const goToPlaybooks = () => {
         navigateToPluginUrl('/playbooks');
-    };
-
-    const goToEdit = () => {
-        navigateToUrl(match.url + '/edit');
     };
 
     const runPlaybook = () => {
@@ -74,10 +86,13 @@ const Playbook = () => {
             if (playbookId) {
                 try {
                     const fetchedPlaybook = await clientFetchPlaybook(playbookId);
+                    const isPlaybookFollower = await clientFetchIsPlaybookFollower(playbookId, currentUserId);
                     setPlaybook(fetchedPlaybook!);
                     setFetchingState(FetchingStateType.fetched);
+                    setIsFollowed(isPlaybookFollower);
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
+                    setIsFollowed(false);
                 }
             }
         };
@@ -109,7 +124,18 @@ const Playbook = () => {
         subTitle = formatMessage({defaultMessage: 'Everyone in this team can access this playbook'});
     }
 
-    const enableRunPlaybook = playbook?.delete_at === 0;
+    const archived = playbook?.delete_at !== 0;
+
+    let toolTipText = formatMessage({defaultMessage: 'Select this to automatically receive updates when this playbook is run.'});
+    if (isFollowed) {
+        toolTipText = formatMessage({defaultMessage: 'You automatically receive updates when this playbook is run.'});
+    }
+
+    const tooltip = (
+        <Tooltip id={`auto-follow-tooltip-${isFollowed}`}>
+            {toolTipText}
+        </Tooltip>
+    );
 
     return (
         <>
@@ -126,13 +152,36 @@ const Playbook = () => {
                             <SubTitle>{subTitle}</SubTitle>
                         </HorizontalBlock>
                     </VerticalBlock>
-                    <SecondaryButtonLargerRight onClick={goToEdit}>
-                        <i className={'icon icon-pencil-outline'}/>
-                        {formatMessage({defaultMessage: 'Edit'})}
-                    </SecondaryButtonLargerRight>
+                    {
+                        archived &&
+                        <StatusBadge
+                            data-testid={'archived-badge'}
+                            status={BadgeType.Archived}
+                        />
+                    }
+                    <SecondaryButtonLargerRightStyled
+                        checked={isFollowed}
+                        disabled={archived}
+                    >
+                        <OverlayTrigger
+                            placement={'bottom'}
+                            delay={OVERLAY_DELAY}
+                            overlay={tooltip}
+                        >
+                            <div>
+                                <CheckboxInputStyled
+                                    testId={'auto-follow-runs'}
+                                    text={'Auto-follow runs'}
+                                    checked={isFollowed}
+                                    disabled={archived}
+                                    onChange={changeFollowing}
+                                />
+                            </div>
+                        </OverlayTrigger>
+                    </SecondaryButtonLargerRightStyled>
                     <PrimaryButtonLarger
                         onClick={runPlaybook}
-                        disabled={!enableRunPlaybook}
+                        disabled={archived}
                         data-testid='run-playbook'
                     >
                         <RightMarginedIcon
@@ -143,38 +192,42 @@ const Playbook = () => {
                     </PrimaryButtonLarger>
                 </TitleRow>
             </TopContainer>
-            {(!experimentalFeaturesEnabled && <PlaybookUsage playbook={playbook}/>) ||
-                <>
-                    <Navbar>
-                        <NavItem
-                            activeStyle={activeNavItemStyle}
-                            to={`${match.url}/preview`}
-                        >
-                            {formatMessage({defaultMessage: 'Preview'})}
-                        </NavItem>
-                        <NavItem
-                            activeStyle={activeNavItemStyle}
-                            to={`${match.url}/usage`}
-                        >
-                            {formatMessage({defaultMessage: 'Usage'})}
-                        </NavItem>
-                    </Navbar>
-                    <Switch>
-                        <Route
-                            exact={true}
-                            path={`${match.path}`}
-                        >
-                            <Redirect to={`${match.url}/usage`}/>
-                        </Route>
-                        <Route path={`${match.path}/preview`}>
-                            <h4>{'Site under construction'}</h4>
-                        </Route>
-                        <Route path={`${match.path}/usage`}>
-                            <PlaybookUsage playbook={playbook}/>
-                        </Route>
-                    </Switch>
-                </>
-            }
+            <Navbar>
+                <NavItem
+                    activeStyle={activeNavItemStyle}
+                    to={`${match.url}/preview`}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_preview_tab_clicked')}
+                >
+                    {formatMessage({defaultMessage: 'Preview'})}
+                </NavItem>
+                <NavItem
+                    activeStyle={activeNavItemStyle}
+                    to={`${match.url}/usage`}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_usage_tab_clicked')}
+                >
+                    {formatMessage({defaultMessage: 'Usage'})}
+                </NavItem>
+            </Navbar>
+            <Switch>
+                <Route
+                    exact={true}
+                    path={`${match.path}`}
+                >
+                    <Redirect to={`${match.url}/preview`}/>
+                </Route>
+                <Route path={`${match.path}/preview`}>
+                    <PlaybookPreview
+                        playbook={playbook}
+                        runsInProgress={stats.runs_in_progress}
+                    />
+                </Route>
+                <Route path={`${match.path}/usage`}>
+                    <PlaybookUsage
+                        playbook={playbook}
+                        stats={stats}
+                    />
+                </Route>
+            </Switch>
         </>
     );
 };
@@ -242,18 +295,42 @@ const SubTitle = styled.div`
     line-height: 16px;
 `;
 
-const ClipboardsPlaySmall = styled(ClipboardsPlay)`
-    height: 18px;
-    width: auto;
-    margin-right: 7px;
-    color: var(--button-color);
-`;
-
 const PrimaryButtonLarger = styled(PrimaryButton)`
     padding: 0 16px;
     height: 36px;
     margin-left: 12px;
 `;
+
+const CheckboxInputStyled = styled(CheckboxInput)`
+    padding-right: 4px;
+    padding-left: 4px;
+    font-size: 14px;
+
+    &:hover {
+        background-color: transparent;
+    }
+`;
+
+interface CheckedProps {
+    checked: boolean;
+}
+const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <CheckedProps>`
+    border: 1px solid var(--center-channel-color-24);
+    color: var(--center-channel-color-56);
+
+    &:hover:enabled {
+        background-color: var(--center-channel-color-08);
+    }
+
+    ${(props: CheckedProps) => props.checked && css`
+        border: 1px solid var(--button-bg);
+        color: var(--button-bg);
+
+        &:hover:enabled {
+            background-color: rgba(var(--button-bg-rgb),0.12);
+        }
+    `}`;
+
 const Navbar = styled.nav`
     background: var(--center-channel-bg);
     height: 55px;
@@ -280,7 +357,7 @@ const NavItem = styled(NavLink)`
             color: var(--button-bg);
         }
 
-       :hover, :focus {
+        :hover, :focus {
             text-decoration: none;
         }
     }

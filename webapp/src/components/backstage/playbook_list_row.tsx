@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
@@ -9,7 +10,7 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {useSelector} from 'react-redux';
 
-import styled from 'styled-components';
+import {FormattedMessage} from 'react-intl';
 
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from '../widgets/text_with_tooltip';
@@ -24,42 +25,83 @@ interface Props {
     displayTeam: boolean
     onClick: () => void
     onEdit: () => void
-    onDelete: () => void
+    onArchive: () => void
 }
+
+const ActionCol = styled.div`
+    margin-left: -8px;
+	width: 16.666667%;
+	float: left;
+    position: relative;
+	min-height: 1px;
+	padding-left: 15px;
+	padding-right: 15px;
+	cursor: pointer;
+`;
+
+const PlaybookItem = styled.div`
+    cursor: pointer;
+    display: flex;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    align-items: center;
+    margin: 0;
+    border-bottom: 1px solid var(--center-channel-color-16);
+`;
+
+const PlaybookItemTitle = styled.div`
+    display: flex;
+	font-weight: 600;
+    flex-direction: column;
+    position: relative;
+    width: 33.333333%;
+    min-height: 1px;
+    padding-right: 15px;
+    padding-left: 15px;
+	float: left;
+`;
+
+const PlaybookItemRow = styled.div`
+	width: 16.666667%;
+	float: left;
+    position: relative;
+	min-height: 1px;
+	padding-left: 15px;
+	padding-right: 15px;
+`;
 
 const teamNameSelector = (teamId: string) => (state: GlobalState): string => getTeam(state, teamId).display_name;
 
 const PlaybookListRow = (props: Props) => {
     const teamName = useSelector(teamNameSelector(props.playbook.team_id));
     return (
-        <div
-            className='row playbook-item'
+        <PlaybookItem
             key={props.playbook.id}
             onClick={props.onClick}
         >
-            <div className='col-sm-4 title'>
+            <PlaybookItemTitle>
                 <TextWithTooltip
                     id={props.playbook.title}
                     text={props.playbook.title}
                 />
                 {props.displayTeam && <InfoLine>{teamName}</InfoLine>}
-            </div>
-            <div className='col-sm-2'>{props.playbook.num_stages}</div>
-            <div className='col-sm-2'>{props.playbook.num_steps}</div>
-            <div className='col-sm-2'>{props.playbook.num_runs}</div>
-            <div className='col-sm-2 action-col'>
+            </PlaybookItemTitle>
+            <PlaybookItemRow>{props.playbook.num_stages}</PlaybookItemRow>
+            <PlaybookItemRow>{props.playbook.num_steps}</PlaybookItemRow>
+            <PlaybookItemRow>{props.playbook.num_runs}</PlaybookItemRow>
+            <ActionCol>
                 <PlaybookActionMenu
                     onEdit={props.onEdit}
-                    onDelete={props.onDelete}
+                    onArchive={props.onArchive}
                 />
-            </div>
-        </div>
+            </ActionCol>
+        </PlaybookItem>
     );
 };
 
 interface PlaybookActionMenuProps {
     onEdit: () => void;
-    onDelete: () => void;
+    onArchive: () => void;
 }
 
 const IconWrapper = styled.div`
@@ -79,12 +121,12 @@ const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
             <DropdownMenuItem
                 onClick={props.onEdit}
             >
-                {'Edit'}
+                <FormattedMessage defaultMessage='Edit'/>
             </DropdownMenuItem>
             <DropdownMenuItem
-                onClick={props.onDelete}
+                onClick={props.onArchive}
             >
-                {'Delete'}
+                <FormattedMessage defaultMessage='Archive'/>
             </DropdownMenuItem>
         </DotMenu>
     );

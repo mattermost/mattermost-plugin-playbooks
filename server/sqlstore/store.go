@@ -3,6 +3,8 @@ package sqlstore
 import (
 	"database/sql"
 
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -11,13 +13,14 @@ import (
 )
 
 type SQLStore struct {
-	log     bot.Logger
-	db      *sqlx.DB
-	builder sq.StatementBuilderType
+	log       bot.Logger
+	db        *sqlx.DB
+	builder   sq.StatementBuilderType
+	scheduler app.JobOnceScheduler
 }
 
 // New constructs a new instance of SQLStore.
-func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
+func New(pluginAPI PluginAPIClient, log bot.Logger, scheduler app.JobOnceScheduler) (*SQLStore, error) {
 	var db *sqlx.DB
 
 	origDB, err := pluginAPI.Store.GetMasterDB()
@@ -39,6 +42,7 @@ func New(pluginAPI PluginAPIClient, log bot.Logger) (*SQLStore, error) {
 		log,
 		db,
 		builder,
+		scheduler,
 	}, nil
 }
 

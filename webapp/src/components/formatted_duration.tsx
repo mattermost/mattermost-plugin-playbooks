@@ -1,7 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import moment from 'moment';
 import {DateTime, Duration, Interval} from 'luxon';
 import React from 'react';
 
@@ -29,9 +28,8 @@ const label = (num: number, style: FormatStyle, narrow: string, singular: string
     return num >= 2 ? plural : singular;
 };
 
-export const formatDuration = (value: Duration | moment.Duration, style: FormatStyle = 'narrow') => {
-    const duration = (Duration.isDuration(value) ? value : Duration.fromMillis(value.as('milliseconds')))
-        .shiftTo('years', 'days', 'hours', 'minutes');
+export const formatDuration = (value: Duration, style: FormatStyle = 'narrow') => {
+    const duration = value.shiftTo('years', 'days', 'hours', 'minutes');
 
     if (duration.as('seconds') < 60) {
         return style === 'narrow' ? '< 1m' : 'less than 1 minute';

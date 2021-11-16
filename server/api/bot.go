@@ -50,8 +50,7 @@ func NewBotHandler(router *mux.Router, api *pluginapi.Client, poster bot.Poster,
 }
 
 type messagePayload struct {
-	MessageType   string `json:"message_type"`
-	IsTeamEdition bool   `json:"is_team_edition"`
+	MessageType string `json:"message_type"`
 }
 
 func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +62,7 @@ func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.poster.NotifyAdmins(payload.MessageType, userID, payload.IsTeamEdition); err != nil {
+	if err := h.poster.NotifyAdmins(payload.MessageType, userID, h.pluginAPI.System.IsEnterpriseReady()); err != nil {
 		h.HandleError(w, err)
 		return
 	}
@@ -72,6 +71,12 @@ func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BotHandler) startTrial(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("Mattermost-User-ID")
+	if err := app.CanStartTrialLicense(userID, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "no permission to start a trial license", err)
+		return
+	}
+
 	var requestData *model.PostActionIntegrationRequest
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
@@ -187,7 +192,7 @@ func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request) {
 
 	var timezone *time.Location
 	offset, _ := strconv.Atoi(r.Header.Get("X-Timezone-Offset"))
-	timezone = time.FixedZone("local", -60*offset)
+	timezone = time.FixedZone("local", offset*60*60)
 
 	// DM message if it's the next day and been more than an hour since the last post
 	// Hat tip to Github plugin for the logic.
