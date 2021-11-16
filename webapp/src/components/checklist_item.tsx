@@ -215,9 +215,6 @@ const ChecklistItemDescription = styled.div`
     font-size: 12px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 
-    display: flex;
-    flex-direction: column;
-
     max-width: 630px;
     margin: 4px 0 0 2px;
 

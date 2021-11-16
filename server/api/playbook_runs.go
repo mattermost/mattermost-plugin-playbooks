@@ -388,6 +388,10 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, errors.Wrapf(err, "failed to get playbook")
 		}
 
+		if pb.DeleteAt != 0 {
+			return nil, errors.New("playbook is archived, cannot create a new run using an archived playbook")
+		}
+
 		if len(pb.MemberIDs) != 0 && !sliceContains(pb.MemberIDs, userID) {
 			return nil, errors.New("userID is not a member of playbook")
 		}

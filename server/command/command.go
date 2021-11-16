@@ -1059,7 +1059,7 @@ And... yes, of course, we have emojis
 		return
 	}
 	testPlaybook.ID = todeleteid
-	if err = r.playbookService.Delete(testPlaybook, r.args.UserId); err != nil {
+	if err = r.playbookService.Archive(testPlaybook, r.args.UserId); err != nil {
 		r.postCommandResponse("There was an error while deleting playbook. Err: " + err.Error())
 		return
 	}

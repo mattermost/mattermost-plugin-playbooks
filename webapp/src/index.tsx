@@ -41,7 +41,7 @@ import {
     handleWebsocketPlaybookRunUpdated,
     handleWebsocketPlaybookRunCreated,
     handleWebsocketPlaybookCreated,
-    handleWebsocketPlaybookDeleted,
+    handleWebsocketPlaybookArchived,
     handleWebsocketPlaybookRestored,
     handleWebsocketUserAdded,
     handleWebsocketUserRemoved,
@@ -52,7 +52,7 @@ import {
     WEBSOCKET_PLAYBOOK_RUN_UPDATED,
     WEBSOCKET_PLAYBOOK_RUN_CREATED,
     WEBSOCKET_PLAYBOOK_CREATED,
-    WEBSOCKET_PLAYBOOK_DELETED,
+    WEBSOCKET_PLAYBOOK_ARCHIVED,
     WEBSOCKET_PLAYBOOK_RESTORED,
 } from 'src/types/websocket_events';
 import {fetchGlobalSettings, notifyConnect, setSiteUrl} from 'src/client';
@@ -121,7 +121,7 @@ export default class Plugin {
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RUN_UPDATED, handleWebsocketPlaybookRunUpdated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RUN_CREATED, handleWebsocketPlaybookRunCreated(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_CREATED, handleWebsocketPlaybookCreated(store.getState, store.dispatch));
-        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_DELETED, handleWebsocketPlaybookDeleted(store.getState, store.dispatch));
+        registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_ARCHIVED, handleWebsocketPlaybookArchived(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RESTORED, handleWebsocketPlaybookRestored(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_ADDED, handleWebsocketUserAdded(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WebsocketEvents.USER_REMOVED, handleWebsocketUserRemoved(store.getState, store.dispatch));

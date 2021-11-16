@@ -761,6 +761,56 @@ func TestPlaybookRuns(t *testing.T) {
 		require.Nil(t, resultPlaybookRun)
 	})
 
+	t.Run("create invalid playbook run - playbook is archived", func(t *testing.T) {
+		reset(t)
+		setDefaultExpectations(t)
+		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
+
+		teamID := model.NewId()
+		testPlaybook := app.Playbook{
+			ID:                      "playbookid1",
+			Title:                   "My Playbook",
+			TeamID:                  teamID,
+			RunSummaryTemplate:      "description",
+			CreatePublicPlaybookRun: true,
+			MemberIDs:               []string{"testUserID"},
+			InviteUsersEnabled:      false,
+			InvitedUserIDs:          []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:         []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			DeleteAt:                1,
+		}
+
+		testPlaybookRun := app.PlaybookRun{
+			OwnerUserID:               "testUserID",
+			TeamID:                    teamID,
+			Name:                      "playbookRunName",
+			Summary:                   "description",
+			PlaybookID:                testPlaybook.ID,
+			Checklists:                testPlaybook.Checklists,
+			InvitedUserIDs:            []string{},
+			InvitedGroupIDs:           []string{},
+			WebhookOnCreationURLs:     []string{},
+			WebhookOnStatusUpdateURLs: []string{},
+		}
+
+		playbookService.EXPECT().
+			Get("playbookid1").
+			Return(testPlaybook, nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testUserID", teamID, model.PermissionViewTeam).Return(true)
+
+		resultPlaybookRun, err := c.PlaybookRuns.Create(context.TODO(), icClient.PlaybookRunCreateOptions{
+			Name:        testPlaybookRun.Name,
+			OwnerUserID: testPlaybookRun.OwnerUserID,
+			TeamID:      testPlaybookRun.TeamID,
+			Description: testPlaybookRun.Summary,
+			PlaybookID:  testPlaybookRun.PlaybookID,
+		})
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+		require.Nil(t, resultPlaybookRun)
+	})
+
 	t.Run("create playbook run in unlicensed server with pricing plan differentiation enabled", func(*testing.T) {
 		mockCtrl = gomock.NewController(t)
 		configService = mock_config.NewMockService(mockCtrl)

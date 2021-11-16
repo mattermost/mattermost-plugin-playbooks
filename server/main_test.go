@@ -274,10 +274,13 @@ func (e *TestEnvironment) CreateBasicServer() {
 func (e *TestEnvironment) CreateBasicPlaybooks() {
 	e.T.Helper()
 
-	playbook, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "TestPlaybook",
 		TeamID: e.BasicTeam.Id,
 	})
+	require.NoError(e.T, err)
+
+	playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
 	require.NoError(e.T, err)
 
 	e.BasicPlaybook = playbook

@@ -206,7 +206,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(model.NewId(), nil).
 			Times(1)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:                       playbooktest.Title,
 			TeamID:                      playbooktest.TeamID,
 			Checklists:                  toAPIChecklists(playbooktest.Checklists),
@@ -216,7 +216,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Nil(t, resultPlaybook)
+		assert.Empty(t, id)
 	})
 
 	t.Run("create playbook, E10-licensed, with one pre-existing playbook in the team", func(t *testing.T) {
@@ -259,7 +259,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(model.NewId(), nil).
 			Times(1)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:                       playbooktest.Title,
 			TeamID:                      playbooktest.TeamID,
 			Checklists:                  toAPIChecklists(playbooktest.Checklists),
@@ -270,7 +270,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
-		assert.NotEmpty(t, resultPlaybook.ID)
+		assert.NotEmpty(t, id)
 	})
 
 	t.Run("create playbook, unlicensed with zero pre-existing playbooks in the team", func(t *testing.T) {
@@ -317,7 +317,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(model.NewId(), nil).
 			Times(1)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:                       playbooktest.Title,
 			TeamID:                      playbooktest.TeamID,
 			Checklists:                  toAPIChecklists(playbooktest.Checklists),
@@ -328,7 +328,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
-		assert.NotEmpty(t, resultPlaybook.ID)
+		assert.NotEmpty(t, id)
 	})
 
 	t.Run("create playbook, E10-licensed, with zero pre-existing playbooks in the team", func(t *testing.T) {
@@ -375,7 +375,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(model.NewId(), nil).
 			Times(1)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:                       playbooktest.Title,
 			TeamID:                      playbooktest.TeamID,
 			Checklists:                  toAPIChecklists(playbooktest.Checklists),
@@ -386,7 +386,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
-		assert.NotEmpty(t, resultPlaybook.ID)
+		assert.NotEmpty(t, id)
 	})
 
 	t.Run("create playbook, E20-licensed, with zero pre-existing playbooks in the team", func(t *testing.T) {
@@ -428,7 +428,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(model.NewId(), nil).
 			Times(1)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:                       playbooktest.Title,
 			TeamID:                      playbooktest.TeamID,
 			Checklists:                  toAPIChecklists(playbooktest.Checklists),
@@ -439,7 +439,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
-		assert.NotEmpty(t, resultPlaybook.ID)
+		assert.NotEmpty(t, id)
 	})
 
 	t.Run("create playbook, unlicensed, with playbook members", func(t *testing.T) {
@@ -488,7 +488,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(model.NewId(), nil).
 			Times(1)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:                       withMember.Title,
 			TeamID:                      withMember.TeamID,
 			Checklists:                  toAPIChecklists(withMember.Checklists),
@@ -499,7 +499,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Nil(t, resultPlaybook)
+		assert.Empty(t, id)
 	})
 
 	t.Run("create playbook, E10-licensed, with playbook members", func(t *testing.T) {
@@ -548,7 +548,7 @@ func TestPlaybooks(t *testing.T) {
 			Return(model.NewId(), nil).
 			Times(1)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:                       withMember.Title,
 			TeamID:                      withMember.TeamID,
 			Checklists:                  toAPIChecklists(withMember.Checklists),
@@ -559,7 +559,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Nil(t, resultPlaybook)
+		assert.Empty(t, id)
 	})
 
 	t.Run("create playbook", func(t *testing.T) {
@@ -578,7 +578,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:                       playbooktest.Title,
 			TeamID:                      playbooktest.TeamID,
 			Checklists:                  toAPIChecklists(playbooktest.Checklists),
@@ -589,7 +589,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
-		assert.NotEmpty(t, resultPlaybook.ID)
+		assert.NotEmpty(t, id)
 	})
 
 	t.Run("create playbook, as guest", func(t *testing.T) {
@@ -604,7 +604,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{Roles: "system_guest"}, nil)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:                       playbooktest.Title,
 			TeamID:                      playbooktest.TeamID,
 			Checklists:                  toAPIChecklists(playbooktest.Checklists),
@@ -613,7 +613,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Nil(t, resultPlaybook)
+		assert.Empty(t, id)
 	})
 
 	t.Run("create playbook, no permissions to broadcast channel", func(t *testing.T) {
@@ -630,7 +630,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToChannel", "testuserid", broadcastChannelID, model.PermissionCreatePost).Return(false)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: toAPIChecklists([]app.Checklist{
@@ -647,7 +647,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Nil(t, resultPlaybook)
+		assert.Empty(t, id)
 	})
 
 	t.Run("create playbook with invited users and groups", func(t *testing.T) {
@@ -697,7 +697,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: toAPIChecklists([]app.Checklist{
@@ -717,7 +717,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
-		assert.NotEmpty(t, resultPlaybook.ID)
+		assert.NotEmpty(t, id)
 	})
 
 	t.Run("create playbook with invited users and groups, invite disabled", func(t *testing.T) {
@@ -767,7 +767,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: toAPIChecklists([]app.Checklist{
@@ -787,7 +787,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		require.NoError(t, err)
-		assert.NotEmpty(t, resultPlaybook.ID)
+		assert.NotEmpty(t, id)
 	})
 
 	t.Run("create playbook with invited users and groups, group disallowing mention", func(t *testing.T) {
@@ -833,7 +833,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:  "My Playbook",
 			TeamID: "testteamid",
 			Checklists: toAPIChecklists([]app.Checklist{
@@ -853,7 +853,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		require.Nil(t, resultPlaybook)
+		require.Empty(t, id)
 
 	})
 
@@ -1252,7 +1252,7 @@ func TestPlaybooks(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("delete playbook", func(t *testing.T) {
+	t.Run("archive playbook", func(t *testing.T) {
 		reset(t)
 
 		playbookService.EXPECT().
@@ -1261,23 +1261,23 @@ func TestPlaybooks(t *testing.T) {
 			Times(2)
 
 		playbookService.EXPECT().
-			Delete(withMember, "testuserid").
+			Archive(withMember, "testuserid").
 			Return(nil).
 			Times(1)
 
 		poster.EXPECT().
-			PublishWebsocketEventToTeam("playbook_deleted", map[string]interface{}{
+			PublishWebsocketEventToTeam("playbook_archived", map[string]interface{}{
 				"teamID": playbooktest.TeamID,
 			}, playbooktest.TeamID)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
 
-		err := c.Playbooks.Delete(context.TODO(), "testplaybookid")
+		err := c.Playbooks.Archive(context.TODO(), "testplaybookid")
 		require.NoError(t, err)
 	})
 
-	t.Run("delete playbook no team permission", func(t *testing.T) {
+	t.Run("archive playbook no team permission", func(t *testing.T) {
 		reset(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -1288,7 +1288,7 @@ func TestPlaybooks(t *testing.T) {
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(false)
 
-		err := c.Playbooks.Delete(context.TODO(), "testplaybookid")
+		err := c.Playbooks.Archive(context.TODO(), "testplaybookid")
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
@@ -1299,7 +1299,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(false)
 		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
 
-		resultPlaybook, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
+		id, err := c.Playbooks.Create(context.TODO(), icClient.PlaybookCreateOptions{
 			Title:                       playbooktest.Title,
 			TeamID:                      playbooktest.TeamID,
 			Checklists:                  toAPIChecklists(playbooktest.Checklists),
@@ -1308,7 +1308,7 @@ func TestPlaybooks(t *testing.T) {
 			ReminderTimerDefaultSeconds: 60,
 		})
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Nil(t, resultPlaybook)
+		assert.Empty(t, id)
 	})
 
 	t.Run("get playbook no team permission", func(t *testing.T) {
@@ -1435,7 +1435,7 @@ func TestPlaybooks(t *testing.T) {
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 
-	t.Run("delete playbook by member", func(t *testing.T) {
+	t.Run("archive playbook by member", func(t *testing.T) {
 		reset(t)
 
 		playbookService.EXPECT().
@@ -1444,23 +1444,23 @@ func TestPlaybooks(t *testing.T) {
 			Times(2)
 
 		playbookService.EXPECT().
-			Delete(withMember, "testuserid").
+			Archive(withMember, "testuserid").
 			Return(nil).
 			Times(1)
 
 		poster.EXPECT().
-			PublishWebsocketEventToTeam("playbook_deleted", map[string]interface{}{
+			PublishWebsocketEventToTeam("playbook_archived", map[string]interface{}{
 				"teamID": playbooktest.TeamID,
 			}, playbooktest.TeamID)
 
 		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(false)
 
-		err := c.Playbooks.Delete(context.TODO(), "playbookwithmember")
+		err := c.Playbooks.Archive(context.TODO(), "playbookwithmember")
 		require.NoError(t, err)
 	})
 
-	t.Run("delete playbook by non-member", func(t *testing.T) {
+	t.Run("archive playbook by non-member", func(t *testing.T) {
 		reset(t)
 		logger.EXPECT().Warnf(gomock.Any(), gomock.Any(), gomock.Any())
 		mattermostUserID = "unknownMember"
@@ -1473,7 +1473,7 @@ func TestPlaybooks(t *testing.T) {
 		pluginAPI.On("HasPermissionToTeam", "unknownMember", "testteamid", model.PermissionViewTeam).Return(true)
 		pluginAPI.On("HasPermissionTo", "unknownMember", model.PermissionManageSystem).Return(false)
 
-		err := c.Playbooks.Delete(context.TODO(), "playbookwithmember")
+		err := c.Playbooks.Archive(context.TODO(), "playbookwithmember")
 		requireErrorWithStatusCode(t, err, http.StatusForbidden)
 	})
 

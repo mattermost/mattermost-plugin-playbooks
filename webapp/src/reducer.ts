@@ -29,8 +29,8 @@ import {
     SET_RHS_EVENTS_FILTER,
     PLAYBOOK_CREATED,
     PlaybookCreated,
-    PLAYBOOK_DELETED,
-    PlaybookDeleted,
+    PLAYBOOK_ARCHIVED,
+    PlaybookArchived,
     PLAYBOOK_RESTORED,
     PlaybookRestored,
     ReceivedTeamNumPlaybooks,
@@ -185,7 +185,7 @@ const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {},
     }
 };
 
-const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookDeleted | PlaybookRestored | ReceivedTeamNumPlaybooks) => {
+const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookArchived | PlaybookRestored | ReceivedTeamNumPlaybooks) => {
     switch (action.type) {
     case PLAYBOOK_CREATED: {
         const playbookCreatedAction = action as PlaybookCreated;
@@ -207,7 +207,7 @@ const numPlaybooksByTeam = (state: Record<string, number> = {}, action: Playbook
             [teamID]: prevCount + 1,
         };
     }
-    case PLAYBOOK_DELETED: {
+    case PLAYBOOK_ARCHIVED: {
         const playbookDeletedAction = action as PlaybookCreated;
         const teamID = playbookDeletedAction.teamID;
         const prevCount = state[teamID] || 0;

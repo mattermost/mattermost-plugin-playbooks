@@ -7,14 +7,13 @@ import styled from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Channel} from 'mattermost-redux/types/channels';
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
-
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {
     Badge,
+    ExpandRight,
+    Icon16,
+    PrimaryButtonLarger,
     SecondaryButtonLarger,
 } from 'src/components/backstage/playbook_runs/shared';
 
@@ -22,7 +21,6 @@ import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_r
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
 import Followers from 'src/components/backstage/playbook_runs/playbook_run_backstage/followers';
-
 import {
     clientFetchPlaybook,
     clientRemoveTimelineEvent,
@@ -35,11 +33,11 @@ import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_ro
 import {ErrorPageTypes} from 'src/constants';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
-
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import ExportLink from '../playbook_run_details/export_link';
+import {BadgeType} from 'src/components/backstage/status_badge';
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
@@ -188,7 +186,6 @@ const PlaybookRunBackstage = () => {
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
-    const channel = useSelector<GlobalState, Channel | null>((state) => (playbookRun ? getChannel(state, playbookRun.channel_id) : null));
     const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
     const currentUserID = useSelector(getCurrentUserId);
@@ -262,11 +259,6 @@ const PlaybookRunBackstage = () => {
         setFollowers(followersCopy);
     };
 
-    let channelIcon = 'icon-mattermost';
-    if (channel) {
-        channelIcon = channel.type === 'O' ? 'icon-globe' : 'icon-lock-outline';
-    }
-
     const closePlaybookRunDetails = () => {
         navigateToPluginUrl('/runs');
     };
@@ -293,15 +285,19 @@ const PlaybookRunBackstage = () => {
                             </PlaybookDiv>
                         }
                     </VerticalBlock>
-                    <Badge status={playbookRun.current_status}/>
+                    <Badge status={BadgeType[playbookRun.current_status]}/>
+                    <ExpandRight/>
                     <Followers userIds={followers}/>
                     {followButton}
                     <Line/>
-                    <Button onClick={goToChannel}>
-                        <i className={'icon ' + channelIcon}/>
-                        {formatMessage({defaultMessage: 'Go to channel'})}
-                    </Button>
                     <ExportLink playbookRun={playbookRun}/>
+                    <PrimaryButtonLarger
+                        onClick={goToChannel}
+                        style={{marginLeft: 12}}
+                    >
+                        <Icon16 className={'icon icon-message-text-outline mr-1'}/>
+                        {formatMessage({defaultMessage: 'Go to channel'})}
+                    </PrimaryButtonLarger>
                 </FirstRow>
                 <SecondRow>
                     <TabItem
