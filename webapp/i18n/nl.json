@@ -187,5 +187,6 @@
     "DSVJjB": "Momenteel wordt de <strong>{playbookTitle}</strong> playbook uitgevoerd",
     "D55vrs": "Jouw licentie kon niet gegenereerd worden",
     "D2CE02": "Webhook invoeren",
-    "CyGaem": "Naam van de uitvoering"
+    "CyGaem": "Naam van de uitvoering",
+    "+Tmpup": "Je ontvangt automatisch updates wanneer deze playbook wordt uitgevoerd."
 }
