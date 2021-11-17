@@ -336,5 +336,11 @@
     "XXbWAU": "Jelölje ki ezt, ha szeretne automatikusan értesítéseket kapni amikor ez a forgatókönyv fut.",
     "+Tmpup": "Ön automatikusan értesítéseket kap amikor ez a forgatókönyv fut.",
     "h+e7G+": "Kérdezze meg, hogy futtassa-e ezt a forgatókönyvet amikor az üzenet {numKeywords, select, 1 {tartalmazza a kulcsszót} other {tartalmaz egy vagy többet ezek közül}}",
-    "kDcpd/": "{numKeywords, plural, other {# kulcsszó}}"
+    "kDcpd/": "{numKeywords, plural, other {# kulcsszó}}",
+    "zz6ObK": "Helyreállítás",
+    "ypIsVG": "Feladat helyreállítása",
+    "wO6NOM": "Biztosan helyre kívánja állítani ezt a feladatot? Ez a feladat hozzá lesz adva ehhez a futáshoz",
+    "dSC1YD": "Feladat kihagyása",
+    "7VTSeD": "Biztosan kihagyja ezt a feladatot? Ugyan a mostani futásból ki lesz vágva, de a forgatókönyvet nem fogja befolyásolni.",
+    "/4tOwT": "Kihagyás"
 }
