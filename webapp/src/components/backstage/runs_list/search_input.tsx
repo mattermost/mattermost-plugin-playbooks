@@ -15,7 +15,6 @@ interface Props {
 const RunListSearch = styled.div`
     position: relative;
     max-width: 56rem;
-    width: 100%;
 
     input {
         -webkit-transition: all 0.15s ease;
