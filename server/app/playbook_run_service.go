@@ -894,9 +894,13 @@ func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRu
 	if siteURL == nil {
 		return "", errors.New("SiteURL not set")
 	}
-
 	announcementMsg := fmt.Sprintf(
-		"### Run finished\n@%s just marked [%s](%s) run as finished. Visit the link for more information.",
+		"### Run finished: [%s](%s)\n",
+		playbookRun.Name,
+		getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID),
+	)
+	announcementMsg += fmt.Sprintf(
+		"@%s just marked [%s](%s) as finished. Visit the link above for more information.",
 		userName,
 		playbookRun.Name,
 		getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID),
@@ -2299,7 +2303,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, text, publi
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
-	retrospectivePublishedMessage := fmt.Sprintf("### Retrospective has been published\n@%s just published the [retrospective](%s). Visit the link for more information.\n%s", publisherUser.Username, retrospectiveURL, text)
+	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, text)
 	if err := s.broadcastPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, playbookRunToPublish.ID, publisherID); err != nil {
 		s.pluginAPI.Log.Warn("failed to broadcast retrospective to run followers", "PlaybookRunID", playbookRunToPublish.ID, "error", err)
 	}
