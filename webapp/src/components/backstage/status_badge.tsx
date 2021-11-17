@@ -8,8 +8,14 @@ import {FormattedMessage} from 'react-intl';
 
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
+export enum BadgeType {
+    InProgress = 'InProgress',
+    Finished = 'Finished',
+    Archived = 'Archived',
+}
+
 interface BadgeProps {
-    status: PlaybookRunStatus;
+    status: BadgeType;
     compact?: boolean;
 }
 
@@ -26,19 +32,23 @@ const Badge = styled.div<BadgeProps>`
 
     ${(props) => {
         switch (props.status) {
-        case PlaybookRunStatus.InProgress:
+        case BadgeType.InProgress:
             return css`
                 background-color: var(--sidebar-text-active-border);
-        `;
-        case PlaybookRunStatus.Finished:
+            `;
+        case BadgeType.Finished:
             return css`
                 background-color: var(--center-channel-color-64);
-        `;
+            `;
+        case BadgeType.Archived:
+            return css`
+                background-color: rgba(var(--center-channel-color-rgb), 0.32);
+            `;
         default:
             return css`
                 color: var(--center-channel-color);
                 box-shadow: gray 0 0 2pt;
-        `;
+            `;
         }
     }}
 
@@ -53,10 +63,21 @@ const Badge = styled.div<BadgeProps>`
     `}
 `;
 
-const StatusBadge = (props: BadgeProps) => (
-    <Badge {...props}>
-        {props.status === PlaybookRunStatus.InProgress ? <FormattedMessage defaultMessage='In Progress'/> : props.status}
-    </Badge>
-);
+const StatusBadge = (props: BadgeProps) => {
+    let message;
+    switch (props.status) {
+    case BadgeType.InProgress:
+        message = <FormattedMessage defaultMessage='In Progress'/>;
+        break;
+    case BadgeType.Finished:
+        message = <FormattedMessage defaultMessage='Finished'/>;
+        break;
+    case BadgeType.Archived:
+        message = <FormattedMessage defaultMessage='Archived'/>;
+        break;
+    }
+
+    return <Badge {...props}>{message}</Badge>;
+};
 
 export default StatusBadge;

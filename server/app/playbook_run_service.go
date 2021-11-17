@@ -124,13 +124,13 @@ func (s *PlaybookRunServiceImpl) broadcastPlaybookRunCreation(playbookTitle, pla
 	announcementMsg := fmt.Sprintf(
 		"### New run started: [%s](%s)\n",
 		playbookRun.Name,
-		getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID),
+		getRunDetailsRelativeURL(playbookRun.ID),
 	)
 	announcementMsg += fmt.Sprintf(
 		"@%s just ran the [%s](%s) playbook.",
 		owner.Username,
 		playbookTitle,
-		getPlaybookDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookID),
+		getPlaybookDetailsRelativeURL(playbookID),
 	)
 
 	if playbookRunChannel.Type == model.ChannelTypeOpen {
@@ -188,7 +188,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnCreation(playbookRun PlaybookRun)
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID)
+	detailsURL := getRunDetailsURL(*siteURL, playbookRun.ID)
 
 	payload := PlaybookRunWebhookPayload{
 		PlaybookRun: playbookRun,
@@ -227,9 +227,9 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookURL := ""
 
 	header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
-	if siteURL != "" && pb != nil {
-		overviewURL = getRunDetailsURL(siteURL, s.configService.GetManifest().Id, playbookRun.ID)
-		playbookURL = getPlaybookDetailsURL(siteURL, s.configService.GetManifest().Id, pb.ID)
+	if pb != nil {
+		overviewURL = getRunDetailsRelativeURL(playbookRun.ID)
+		playbookURL = getPlaybookDetailsRelativeURL(pb.ID)
 		header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
 			pb.Title, playbookURL, overviewURL)
 	}
@@ -388,6 +388,20 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		return playbookRun, errors.Wrap(err, "failed to create timeline event")
 	}
 	playbookRun.TimelineEvents = append(playbookRun.TimelineEvents, *event)
+
+	//auto-follow playbook run
+	if pb != nil {
+		autoFollows, err := s.playbookService.GetAutoFollows(pb.ID)
+		if err != nil {
+			return playbookRun, errors.Wrapf(err, "failed to get autoFollows of the playbook `%s`", pb.ID)
+		}
+		for _, autoFollow := range autoFollows {
+			if err := s.Follow(playbookRun.ID, autoFollow); err != nil {
+				s.pluginAPI.Log.Warn("failed to follow the playbook run",
+					"playbookRunID", playbookRun.ID, "autoFollow", autoFollow, "error", err.Error())
+			}
+		}
+	}
 
 	if len(playbookRun.WebhookOnCreationURLs) != 0 {
 		s.sendWebhooksOnCreation(*playbookRun)
@@ -729,7 +743,7 @@ func (s *PlaybookRunServiceImpl) sendWebhooksOnUpdateStatus(playbookRunID string
 
 	channelURL := getChannelURL(*siteURL, team.Name, channel.Name)
 
-	detailsURL := getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID)
+	detailsURL := getRunDetailsURL(*siteURL, playbookRun.ID)
 
 	payload := PlaybookRunWebhookPayload{
 		PlaybookRun: *playbookRun,
@@ -996,11 +1010,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 }
 
 func (s *PlaybookRunServiceImpl) postRetrospectiveReminder(playbookRun *PlaybookRun, isInitial bool) error {
-	retrospectiveURL := getRunRetrospectiveURL(
-		"",
-		s.configService.GetManifest().Id,
-		playbookRun.ID,
-	)
+	retrospectiveURL := getRunRetrospectiveURL("", playbookRun.ID)
 
 	attachments := []*model.SlackAttachment{
 		{
@@ -1180,6 +1190,12 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	if newState == ChecklistItemStateOpen {
 		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
+	}
+	if newState == CheckListItemStateSkipped {
+		modifyMessage = fmt.Sprintf("skipped checklist item **%v**", stripmd.Strip(itemToCheck.Title))
+	}
+	if itemToCheck.State == CheckListItemStateSkipped && newState == ChecklistItemStateOpen {
+		modifyMessage = fmt.Sprintf("restored checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 	post, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
 	if err != nil {
@@ -1417,6 +1433,49 @@ func (s *PlaybookRunServiceImpl) RemoveChecklistItem(playbookRunID, userID strin
 
 	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
 	s.telemetry.RemoveTask(playbookRunID, userID, checklistItem)
+
+	return nil
+}
+
+// SkipChecklistItem skips the item at the given index from the given checklist
+func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].LastSkipped = model.GetMillis()
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = CheckListItemStateSkipped
+
+	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.SkipTask(playbookRunID, userID, checklistItem)
+
+	return nil
+}
+
+// RestoreChecklistItem restores the item at the given index from the given checklist
+func (s *PlaybookRunServiceImpl) RestoreChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateOpen
+
+	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.RestoreTask(playbookRunID, userID, checklistItem)
 
 	return nil
 }
@@ -2006,7 +2065,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 	}
 	newPlaybookMarkdown := ""
 	if siteURL != "" && !isMobileApp {
-		url := getPlaybooksNewURL(siteURL, s.configService.GetManifest().Id)
+		url := getPlaybooksNewURL(siteURL)
 		newPlaybookMarkdown = fmt.Sprintf("[Click here](%s) to create your own playbook.", url)
 	}
 
@@ -2225,11 +2284,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, text, publi
 		return errors.Wrap(err, "failed to get publisher user")
 	}
 
-	retrospectiveURL := getRunRetrospectiveURL(
-		"",
-		s.configService.GetManifest().Id,
-		playbookRunToPublish.ID,
-	)
+	retrospectiveURL := getRunRetrospectiveURL("", playbookRunToPublish.ID)
 	if _, err = s.poster.PostMessage(playbookRunToPublish.ChannelID, "@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n%s", publisherUser.Username, retrospectiveURL, text); err != nil {
 		return errors.Wrap(err, "failed to post to channel")
 	}

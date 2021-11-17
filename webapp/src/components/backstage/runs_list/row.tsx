@@ -18,7 +18,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import FormattedDuration from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
-import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
+import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
 
 import {findLastUpdatedWithDefault} from 'src/utils';
@@ -114,7 +114,7 @@ const Row = (props: Props) => {
             </div>
             <div className='col-sm-2'>
                 <SmallStatusBadge
-                    status={props.playbookRun.current_status}
+                    status={BadgeType[props.playbookRun.current_status]}
                 />
                 <SmallText>
                     <FormattedDuration
@@ -162,13 +162,14 @@ const tasksCompletedTotal = (checklists: Checklist[]) => {
 
     for (const cl of checklists) {
         for (const item of cl.items) {
-            total++;
+            if (item.state !== ChecklistItemState.Skip) {
+                total++;
+            }
             if (item.state === ChecklistItemState.Closed) {
                 completed++;
             }
         }
     }
-
     return [completed, total];
 };
 

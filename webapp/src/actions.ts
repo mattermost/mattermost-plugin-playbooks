@@ -32,8 +32,8 @@ import {
     SetTriggerId,
     PLAYBOOK_CREATED,
     PlaybookCreated,
-    PLAYBOOK_DELETED,
-    PlaybookDeleted,
+    PLAYBOOK_ARCHIVED,
+    PlaybookArchived,
     PLAYBOOK_RESTORED,
     PlaybookRestored,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
@@ -198,8 +198,8 @@ export const playbookCreated = (teamID: string): PlaybookCreated => ({
     teamID,
 });
 
-export const playbookDeleted = (teamID: string): PlaybookDeleted => ({
-    type: PLAYBOOK_DELETED,
+export const playbookArchived = (teamID: string): PlaybookArchived => ({
+    type: PLAYBOOK_ARCHIVED,
     teamID,
 });
 

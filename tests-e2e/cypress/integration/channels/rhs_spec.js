@@ -163,6 +163,9 @@ describe('channels > rhs', () => {
             // # Select a channel without a playbook run.
             cy.get('#sidebarItem_off-topic').click({force: true});
 
+            // * Verify the playbook run RHS is not open.
+            cy.get('#rhsContainer').should('not.exist');
+
             // # Run the playbook after loading the application
             const now = Date.now();
             const playbookRunName = 'Playbook Run (' + now + ')';
@@ -179,6 +182,9 @@ describe('channels > rhs', () => {
                 // # End the playbook run
                 cy.apiFinishRun(playbookRun.id);
             });
+
+            // # Wait because this test is flaky if we move too quickly
+            cy.wait(TIMEOUTS.FIVE_SEC);
 
             // # Open the playbook run channel from the LHS.
             cy.get(`#sidebarItem_${playbookRunChannelName}`).click({force: true});

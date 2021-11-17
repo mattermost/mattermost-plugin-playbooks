@@ -143,8 +143,8 @@ type ChecklistItem struct {
 	// Title is the content of the checklist item.
 	Title string `json:"title"`
 
-	// State is the state of the checklist item: "closed" if it's checked, the empty string
-	// otherwise.
+	// State is the state of the checklist item: "closed" if it's checked, "skipped" if it has
+	// been skipped, the empty string otherwise.
 	State string `json:"state"`
 
 	// StateModified is the timestamp, in milliseconds since epoch, of the last time the item's
@@ -175,6 +175,10 @@ type ChecklistItem struct {
 
 	// Description is a string with the markdown content of the long description of the item.
 	Description string `json:"description"`
+
+	// LastSkipped is the timestamp, in milliseconds since epoch, of the last time the item
+	// was skipped. 0 if it was never skipped.
+	LastSkipped int64 `json:"delete_at"`
 }
 
 type GetPlaybooksResults struct {
@@ -226,14 +230,26 @@ type PlaybookService interface {
 	// Update updates a playbook
 	Update(playbook Playbook, userID string) error
 
-	// Delete deletes a playbook
-	Delete(playbook Playbook, userID string) error
+	// Archive archives a playbook
+	Archive(playbook Playbook, userID string) error
 
 	// MessageHasBeenPosted suggests playbooks to the user if triggered
 	MessageHasBeenPosted(sessionID string, post *model.Post)
 
-	// Restores a deleted playbook
+	// Restores an archived playbook
 	Restore(playbook Playbook, userID string) error
+
+	// AutoFollow method lets user auto-follow all runs of a specific playbook
+	AutoFollow(playbookID, userID string) error
+
+	// AutoUnfollow method lets user to not auto-follow the newly created playbook runs
+	AutoUnfollow(playbookID, userID string) error
+
+	// GetAutoFollows returns list of users who auto-follows a playbook
+	GetAutoFollows(playbookID string) ([]string, error)
+
+	// IsAutoFollowing returns weather user is auto-following a playbook
+	IsAutoFollowing(playbookID, userID string) (bool, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
@@ -266,11 +282,23 @@ type PlaybookStore interface {
 	// Update updates a playbook
 	Update(playbook Playbook) error
 
-	// Delete deletes a playbook
-	Delete(id string) error
+	// Archive archives a playbook
+	Archive(id string) error
 
 	// Restore restores a deleted playbook
 	Restore(id string) error
+
+	// AutoFollow method lets user auto-follow all runs of a specific playbook
+	AutoFollow(playbookID, userID string) error
+
+	// AutoUnfollow method lets user to not auto-follow the newly created playbook runs
+	AutoUnfollow(playbookID, userID string) error
+
+	// GetAutoFollows returns list of users who auto-follows a playbook
+	GetAutoFollows(playbookID string) ([]string, error)
+
+	// IsAutoFollowing returns weather user is auto-following a playbook
+	IsAutoFollowing(playbookID, userID string) (bool, error)
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.
@@ -299,12 +327,14 @@ const (
 	ChecklistItemStateOpen       = ""
 	ChecklistItemStateInProgress = "in_progress"
 	ChecklistItemStateClosed     = "closed"
+	CheckListItemStateSkipped    = "skipped"
 )
 
 func IsValidChecklistItemState(state string) bool {
 	return state == ChecklistItemStateClosed ||
 		state == ChecklistItemStateInProgress ||
-		state == ChecklistItemStateOpen
+		state == ChecklistItemStateOpen ||
+		state == CheckListItemStateSkipped
 }
 
 func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int) bool {
