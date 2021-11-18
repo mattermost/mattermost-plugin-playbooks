@@ -162,13 +162,14 @@ const tasksCompletedTotal = (checklists: Checklist[]) => {
 
     for (const cl of checklists) {
         for (const item of cl.items) {
-            total++;
+            if (item.state !== ChecklistItemState.Skip) {
+                total++;
+            }
             if (item.state === ChecklistItemState.Closed) {
                 completed++;
             }
         }
     }
-
     return [completed, total];
 };
 

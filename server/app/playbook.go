@@ -143,8 +143,8 @@ type ChecklistItem struct {
 	// Title is the content of the checklist item.
 	Title string `json:"title"`
 
-	// State is the state of the checklist item: "closed" if it's checked, the empty string
-	// otherwise.
+	// State is the state of the checklist item: "closed" if it's checked, "skipped" if it has
+	// been skipped, the empty string otherwise.
 	State string `json:"state"`
 
 	// StateModified is the timestamp, in milliseconds since epoch, of the last time the item's
@@ -175,6 +175,10 @@ type ChecklistItem struct {
 
 	// Description is a string with the markdown content of the long description of the item.
 	Description string `json:"description"`
+
+	// LastSkipped is the timestamp, in milliseconds since epoch, of the last time the item
+	// was skipped. 0 if it was never skipped.
+	LastSkipped int64 `json:"delete_at"`
 }
 
 type GetPlaybooksResults struct {
@@ -323,12 +327,14 @@ const (
 	ChecklistItemStateOpen       = ""
 	ChecklistItemStateInProgress = "in_progress"
 	ChecklistItemStateClosed     = "closed"
+	CheckListItemStateSkipped    = "skipped"
 )
 
 func IsValidChecklistItemState(state string) bool {
 	return state == ChecklistItemStateClosed ||
 		state == ChecklistItemStateInProgress ||
-		state == ChecklistItemStateOpen
+		state == ChecklistItemStateOpen ||
+		state == CheckListItemStateSkipped
 }
 
 func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int) bool {
