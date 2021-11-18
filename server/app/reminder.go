@@ -108,10 +108,37 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 		return
 	}
 
+	// broadcast to followers
+	message, err := s.buildOverdueStatusUpdateMessage(playbookRunToModify, owner.Username)
+	if err != nil {
+		s.pluginAPI.Log.Warn("failed to build overdue status update message", "PlaybookRunID", playbookRunToModify.ID, "error", err)
+	} else {
+		if err := s.broadcastPostToRunFollowers(&model.Post{Message: message}, playbookRunToModify.ID, ""); err != nil {
+			s.pluginAPI.Log.Warn("error broadcasting overdue status update to run followers", "PlaybookRunID", playbookRunToModify.ID, "error", err)
+		}
+	}
+
 	playbookRunToModify.ReminderPostID = post.Id
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		s.logger.Errorf(errors.Wrapf(err, "error updating with reminder post id, playbook run id: %s", playbookRunToModify.ID).Error())
 	}
+}
+
+func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *PlaybookRun, ownerUserName string) (string, error) {
+	channel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+	if err != nil {
+		return "", errors.Wrapf(err, "can't get channel - %s", playbookRun.ChannelID)
+	}
+
+	team, err := s.pluginAPI.Team.Get(channel.TeamId)
+	if err != nil {
+		return "", errors.Wrapf(err, "can't get team - %s", channel.TeamId)
+	}
+
+	message := fmt.Sprintf("Status update is overdue for [%s](/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen) (Owner: @%s)\n",
+		channel.DisplayName, team.Name, channel.Name, ownerUserName)
+
+	return message, nil
 }
 
 // SetReminder sets a reminder. After timeInMinutes in the future, the owner will be
