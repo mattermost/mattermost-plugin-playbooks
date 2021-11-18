@@ -10,6 +10,7 @@ const Component = styled.label`
     margin-bottom: 0;
     cursor: pointer;
     user-select: none;
+    width: fit-content;
 
     transition: background-color 0.2s;
 

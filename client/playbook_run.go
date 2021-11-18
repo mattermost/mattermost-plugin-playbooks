@@ -152,6 +152,9 @@ type PlaybookRunListOptions struct {
 	// ParticipantID filters playbook runs that have this user as a participant. Defaults to blank (no filter). Specify "me" for current user.
 	ParticipantID string `url:"participant_id,omitempty"`
 
+	// ParticipantOrFollowerID filters playbook runs that have this user as member or as follower. Defaults to blank (no filter). Specify "me" for current user.
+	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
+
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
 	// not returned in relevance order).

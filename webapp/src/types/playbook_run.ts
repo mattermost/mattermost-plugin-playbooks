@@ -139,6 +139,7 @@ export interface FetchPlaybookRunsParams {
     statuses?: string[];
     owner_user_id?: string;
     participant_id?: string;
+    participant_or_follower_id?: string;
     search_term?: string;
     playbook_id?: string;
     active_gte?: number;
