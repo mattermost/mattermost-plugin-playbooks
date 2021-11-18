@@ -107,11 +107,6 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 }
 
 func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessage(playbookTitle, playbookID string, playbookRun *PlaybookRun, owner *model.User) (string, error) {
-	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	if siteURL == nil {
-		return "", errors.New("SiteURL not set")
-	}
-
 	playbookRunChannel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get playbook run channel")
@@ -369,22 +364,22 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	if pb != nil {
 		message, err := s.buildPlaybookRunCreationMessage(pb.Title, pb.ID, playbookRun, owner)
 		if err != nil {
-			s.pluginAPI.Log.Warn("failed to build the playbook run creation message", "error", err)
-		} else {
-			for _, broadcastChannelID := range pb.BroadcastChannelIDs {
-				if err = s.broadcastPlaybookRunCreation(broadcastChannelID, message, playbookRun); err != nil {
-					s.pluginAPI.Log.Warn("failed to broadcast the playbook run creation to channel", "ChannelID", playbookRun.BroadcastChannelIDs, "error", err)
+			return nil, errors.Wrapf(err, "failed to build the playbook run creation message")
+		}
 
-					if _, err = s.poster.PostMessage(channel.Id, "Failed to announce the creation of this playbook run in the configured channel."); err != nil {
-						return nil, errors.Wrapf(err, "failed to post to channel")
-					}
+		for _, broadcastChannelID := range pb.BroadcastChannelIDs {
+			if err = s.broadcastPlaybookRunCreation(broadcastChannelID, message, playbookRun); err != nil {
+				s.pluginAPI.Log.Warn("failed to broadcast the playbook run creation to channel", "ChannelID", playbookRun.BroadcastChannelIDs, "error", err)
+
+				if _, err = s.poster.PostMessage(channel.Id, "Failed to announce the creation of this playbook run in the configured channel."); err != nil {
+					return nil, errors.Wrapf(err, "failed to post to channel")
 				}
 			}
+		}
 
-			// broadcast to users who are auto-following the playbook
-			if err := s.broadcastPostToAutoFollows(&model.Post{Message: message}, pb.ID, playbookRun.ID, userID); err != nil {
-				s.pluginAPI.Log.Warn("failed to broadcast run creation to auto-follows for the playbook", "PlaybookID", pb.ID, "error", err)
-			}
+		// broadcast to users who are auto-following the playbook
+		if err := s.broadcastPostToAutoFollows(&model.Post{Message: message}, pb.ID, playbookRun.ID, userID); err != nil {
+			s.pluginAPI.Log.Warn("failed to broadcast run creation to auto-follows for the playbook", "PlaybookID", pb.ID, "error", err)
 		}
 	}
 
@@ -693,7 +688,8 @@ func (s *PlaybookRunServiceImpl) broadcastPostToRunFollowers(post *model.Post, p
 		return errors.Wrapf(err, "failed to get followers for the playbook run `%s`", playbookRunID)
 	}
 
-	return s.broadcastPostToUsersWithPermission(followers, post, playbookRunID, authorID)
+	s.broadcastPostToUsersWithPermission(followers, post, playbookRunID, authorID)
+	return nil
 }
 
 func (s *PlaybookRunServiceImpl) broadcastPostToAutoFollows(post *model.Post, playbookID, playbookRunID, authorID string) error {
@@ -702,12 +698,11 @@ func (s *PlaybookRunServiceImpl) broadcastPostToAutoFollows(post *model.Post, pl
 		return errors.Wrapf(err, "failed to get auto-follows for the playbook - %s", playbookID)
 	}
 
-	return s.broadcastPostToUsersWithPermission(autoFollows, post, playbookRunID, authorID)
+	s.broadcastPostToUsersWithPermission(autoFollows, post, playbookRunID, authorID)
+	return nil
 }
 
-func (s *PlaybookRunServiceImpl) broadcastPostToUsersWithPermission(users []string, post *model.Post, playbookRunID, authorID string) error {
-	post.Id = "" // Reset the ID so we avoid cloning the whole object
-
+func (s *PlaybookRunServiceImpl) broadcastPostToUsersWithPermission(users []string, post *model.Post, playbookRunID, authorID string) {
 	for _, user := range users {
 		// Do not send update to the author
 		if user == authorID {
@@ -718,12 +713,13 @@ func (s *PlaybookRunServiceImpl) broadcastPostToUsersWithPermission(users []stri
 			continue
 		}
 
+		post.Id = "" // Reset the ID so we avoid cloning the whole object
+		post.RootId = ""
 		if err := s.poster.DM(user, post); err != nil {
 			s.pluginAPI.Log.Warn("failed to broadcast post to the user",
 				"user", user, "error", err.Error())
 		}
 	}
-	return nil
 }
 
 func (s *PlaybookRunServiceImpl) broadcastPlaybookRunMessage(message, broadcastChannelID string, playbookRun *PlaybookRun) error {
@@ -889,24 +885,20 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, trig
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRun, userName string) (string, error) {
-	siteURL := s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	if siteURL == nil {
-		return "", errors.New("SiteURL not set")
-	}
+func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRun, userName string) string {
 	announcementMsg := fmt.Sprintf(
 		"### Run finished: [%s](%s)\n",
 		playbookRun.Name,
-		getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID),
+		getRunDetailsRelativeURL(playbookRun.ID),
 	)
 	announcementMsg += fmt.Sprintf(
 		"@%s just marked [%s](%s) as finished. Visit the link above for more information.",
 		userName,
 		playbookRun.Name,
-		getRunDetailsURL(*siteURL, s.configService.GetManifest().Id, playbookRun.ID),
+		getRunDetailsRelativeURL(playbookRun.ID),
 	)
 
-	return announcementMsg, nil
+	return announcementMsg
 }
 
 // FinishPlaybookRun changes a run's state to Finished. If run is already in Finished state, the call is a noop.
@@ -945,13 +937,9 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		}
 	}
 
-	runFinishedmessage, err := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
-	if err != nil {
-		s.pluginAPI.Log.Warn("failed to build run finished message", "PlaybookRunID", playbookRunToModify.ID)
-	} else {
-		if err := s.broadcastPostToRunFollowers(&model.Post{Message: runFinishedmessage}, playbookRunToModify.ID, userID); err != nil {
-			s.pluginAPI.Log.Warn("failed to broadcast run finish to run followers")
-		}
+	runFinishedmessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
+	if err := s.broadcastPostToRunFollowers(&model.Post{Message: runFinishedmessage}, playbookRunToModify.ID, userID); err != nil {
+		s.pluginAPI.Log.Warn("failed to broadcast run finish to run followers")
 	}
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)

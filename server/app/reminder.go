@@ -129,18 +129,14 @@ func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *Pl
 	if err != nil {
 		return "", errors.Wrapf(err, "can't get channel - %s", playbookRun.ChannelID)
 	}
-	siteURL := model.ServiceSettingsDefaultSiteURL
-	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	}
 
 	team, err := s.pluginAPI.Team.Get(channel.TeamId)
 	if err != nil {
 		return "", errors.Wrapf(err, "can't get team - %s", channel.TeamId)
 	}
 
-	message := fmt.Sprintf("Status update is overdue for [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen) (Owner: @%s)\n",
-		channel.DisplayName, siteURL, team.Name, channel.Name, ownerUserName)
+	message := fmt.Sprintf("Status update is overdue for [%s](/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen) (Owner: @%s)\n",
+		channel.DisplayName, team.Name, channel.Name, ownerUserName)
 
 	return message, nil
 }
