@@ -10,6 +10,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/utils"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/pkg/errors"
@@ -58,6 +59,10 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
+	if err2 := utils.TranslationsPreInit(); err2 != nil {
+		return errors.Wrapf(err2, "unable to load Mattermost translation files")
+	}
+
 	pluginAPIClient := pluginapi.NewClient(p.API, p.Driver)
 	p.pluginAPI = pluginAPIClient
 
