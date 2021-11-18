@@ -234,17 +234,16 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 
 	if options.ParticipantOrFollowerID != "" {
 		userIDFilter := strings.ToLower(options.ParticipantOrFollowerID)
-		followerFilter := `EXISTS(SELECT 1
+		followerFilterExpr := sq.Expr(`EXISTS(SELECT 1
 			FROM IR_Run_Participants as rp
 			WHERE rp.IncidentID = i.ID
 			AND rp.UserID = ?
-			AND rp.IsFollower = TRUE)`
-		participantFilter := `EXISTS(SELECT 1
+			AND rp.IsFollower = TRUE)`, userIDFilter)
+		participantFilterExpr := sq.Expr(`EXISTS(SELECT 1
 			FROM ChannelMembers AS cm
 			WHERE cm.ChannelId = i.ChannelID
-			AND cm.UserId = ?)`
-		query := fmt.Sprintf("(%s OR %s)", followerFilter, participantFilter)
-		myRunsClause := sq.Expr(query, userIDFilter, userIDFilter)
+			AND cm.UserId = ?)`, userIDFilter)
+		myRunsClause := sq.Or{followerFilterExpr, participantFilterExpr}
 
 		queryForResults = queryForResults.Where(myRunsClause)
 		queryForTotal = queryForTotal.Where(myRunsClause)
