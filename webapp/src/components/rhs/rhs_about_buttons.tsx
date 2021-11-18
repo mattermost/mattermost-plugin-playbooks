@@ -12,7 +12,7 @@ import {PlaybookRun} from 'src/types/playbook_run';
 
 import {navigateToPluginUrl} from 'src/browser_routing';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import {ClosableDotMenu, DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
+import DotMenu, {DotMenuButton, DropdownMenuItem} from 'src/components/dot_menu';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import {usePlaybookName} from 'src/hooks';
 
@@ -30,8 +30,6 @@ const RHSAboutButtons = (props: Props) => {
     const overviewURL = `/runs/${props.playbookRun.id}`;
     const playbookURL = `/playbooks/${props.playbookRun.playbook_id}`;
 
-    const [isDotMenuOpen, setDotMenuOpen] = useState(false);
-
     return (
         <>
             <ExpandCollapseButton
@@ -47,17 +45,14 @@ const RHSAboutButtons = (props: Props) => {
                     }
                 }}
             />
-            <ClosableDotMenu
+            <DotMenu
                 icon={<ThreeDotsIcon/>}
-                isOpen={isDotMenuOpen}
-                setOpen={setDotMenuOpen}
                 left={true}
                 dotMenuButton={StyledDotMenuButton}
                 data-testid='run-dot-menu'
             >
                 <StyledDropdownMenuItem
                     onClick={() => {
-                        setDotMenuOpen(false);
                         props.editSummary();
                     }}
                 >
@@ -85,7 +80,7 @@ const RHSAboutButtons = (props: Props) => {
                         {(playbookName !== '') && <PlaybookName>{playbookName}</PlaybookName>}
                     </PlaybookInfo>
                 </StyledDropdownMenuItem>
-            </ClosableDotMenu>
+            </DotMenu>
         </>
     );
 };

@@ -68,23 +68,28 @@ const DropdownMenu = styled.div<DropdownMenuProps>`
     z-index: 1;
 `;
 
-interface ClosableDotMenuProps extends DotMenuProps {
-    isOpen: boolean;
-    setOpen: (open: boolean) => void;
+interface DotMenuProps {
+    children: JSX.Element[] | JSX.Element;
+    icon: JSX.Element;
+    top?: boolean;
+    left?: boolean;
+    wide?: boolean;
+    dotMenuButton?: StyledComponentBase<'div', any>;
 }
 
-export const ClosableDotMenu = (props: ClosableDotMenuProps) => {
+const DotMenu = (props: DotMenuProps) => {
+    const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
-        props.setOpen(!props.isOpen);
+        setOpen(true);
     };
 
     const rootRef = useRef<HTMLDivElement>(null);
     useClickOutsideRef(rootRef, () => {
-        props.setOpen(false);
+        setOpen(false);
     });
 
     useKeyPress('Escape', () => {
-        props.setOpen(false);
+        setOpen(false);
     });
 
     const MenuButton = props.dotMenuButton ?? DotMenuButton;
@@ -109,39 +114,22 @@ export const ClosableDotMenu = (props: ClosableDotMenuProps) => {
             {props.icon}
             <DropdownMenuWrapper>
                 {
-                    props.isOpen &&
+                    isOpen &&
                     <DropdownMenu
                         data-testid='dropdownmenu'
                         top={props.top}
                         left={props.left}
                         wide={props.wide}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setOpen(false);
+                        }}
                     >
                         {props.children}
                     </DropdownMenu>
                 }
             </DropdownMenuWrapper>
         </MenuButton>
-    );
-};
-
-interface DotMenuProps {
-    children: JSX.Element[] | JSX.Element;
-    icon: JSX.Element;
-    top?: boolean;
-    left?: boolean;
-    wide?: boolean;
-    dotMenuButton?: StyledComponentBase<'div', any>;
-}
-
-const DotMenu = (props: DotMenuProps) => {
-    const [isOpen, setOpen] = useState(false);
-
-    return (
-        <ClosableDotMenu
-            {...props}
-            isOpen={isOpen}
-            setOpen={setOpen}
-        >{props.children}</ClosableDotMenu>
     );
 };
 
