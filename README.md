@@ -38,7 +38,7 @@ To quickly test Mattermost Playbooks, use the following test commands to create 
 
   * An example command looks like: `/playbook test bulk-data 10 3 342 2`
 
-## Running E2E Tests
+## Running E2E tests
 
 When running E2E tests, local `mattermost-server` configuration may be unexpectedly modified if values are different than a corresponding key default in either `on_prem_default_config.json` or `cloud_default_default_config.json`. This can be avoided by setting `CYPRESS_developerMode=true` when calling Cypress scripts. For example: `CYPRESS_developerMode=true npm run cypress:open`.
 
