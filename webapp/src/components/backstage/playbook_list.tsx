@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {useSelector} from 'react-redux';
 import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
@@ -66,10 +66,11 @@ const PlaybookList = () => {
     const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
     const allowPlaybookCreationInTeams = useAllowPlaybookCreationInTeams();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
+    const prevBottomHalf = useRef<JSX.Element | null>(null);
 
     const [
         playbooks,
-        {totalCount, params, selectedPlaybook},
+        {isLoading, totalCount, params, selectedPlaybook},
         {setPage, sortBy, setSelectedPlaybook, archivePlaybook, setSearchTerm, isFiltering},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
@@ -117,16 +118,15 @@ const PlaybookList = () => {
     );
 
     const hasPlaybooks = playbooks?.length !== 0;
-
-    let listBody;
+    let listBody: JSX.Element | JSX.Element[] | null = null;
     if (!hasPlaybooks && isFiltering) {
         listBody = (
             <div className='text-center pt-8'>
                 <FormattedMessage defaultMessage='There are no playbooks matching those filters.'/>
             </div>
         );
-    } else {
-        listBody = playbooks?.map((p: Playbook) => (
+    } else if (playbooks) {
+        listBody = playbooks.map((p: Playbook) => (
             <PlaybookListRow
                 key={p.id}
                 playbook={p}
@@ -138,21 +138,22 @@ const PlaybookList = () => {
         ));
     }
 
-    let bottomHalf;
-    if (!hasPlaybooks && !isFiltering) {
-        bottomHalf = (
-            <>
-                <NoContentPage
-                    onNewPlaybook={newPlaybook}
-                    canCreatePlaybooks={canCreatePlaybooks}
-                    teams={teams}
-                    allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
-                />
-                <NoContentPlaybookSvg/>
-            </>
-        );
-    } else {
-        bottomHalf = (
+    const makeBottomHalf = () => {
+        if (!hasPlaybooks && !isFiltering) {
+            return (
+                <>
+                    <NoContentPage
+                        onNewPlaybook={newPlaybook}
+                        canCreatePlaybooks={canCreatePlaybooks}
+                        teams={teams}
+                        allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
+                    />
+                    <NoContentPlaybookSvg/>
+                </>
+            );
+        }
+
+        return (
             <>
                 <RightDots/>
                 <RightFade/>
@@ -229,6 +230,16 @@ const PlaybookList = () => {
                 </ContainerMedium>
             </>
         );
+    };
+
+    let bottomHalf;
+
+    // If we're loading new playbooks, use the previous body
+    if (isLoading && prevBottomHalf) {
+        bottomHalf = prevBottomHalf.current;
+    } else {
+        bottomHalf = makeBottomHalf();
+        prevBottomHalf.current = bottomHalf;
     }
 
     return (
@@ -264,7 +275,9 @@ const PlaybookList = () => {
     );
 };
 
-type CreatePlaybookButtonProps = UpgradeButtonProps & {teams: Team[], allowPlaybookCreationInTeams:Map<string, boolean>, showUpgradeModal?: () => void};
+type CreatePlaybookButtonProps =
+    UpgradeButtonProps
+    & { teams: Team[], allowPlaybookCreationInTeams: Map<string, boolean>, showUpgradeModal?: () => void };
 
 const TeamSelectorButton = (props: CreatePlaybookButtonProps) => {
     const {formatMessage} = useIntl();

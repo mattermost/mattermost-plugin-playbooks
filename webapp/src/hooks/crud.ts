@@ -113,6 +113,7 @@ export function usePlaybooksCrud(
     };
 
     const setSearchTerm = (term: string) => {
+        setLoading(true);
         setParams({search_term: term});
     };
     const setSearchTermDebounced = debounce(setSearchTerm, searchDebounceDelayMilliseconds);
