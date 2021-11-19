@@ -9,7 +9,6 @@ interface Props {
     default: string | undefined;
     onSearch: (term: string) => void;
     placeholder: string;
-    maxWidthRem?: number;
 }
 
 export default function SearchInput(props: Props) {
@@ -21,10 +20,7 @@ export default function SearchInput(props: Props) {
     const [term, setTerm] = useState(props.default ? props.default : '');
 
     return (
-        <Search
-            data-testid={props.testId}
-            maxWidth={props.maxWidthRem}
-        >
+        <Search data-testid={props.testId}>
             <input
                 type='text'
                 placeholder={props.placeholder}
@@ -35,9 +31,8 @@ export default function SearchInput(props: Props) {
     );
 }
 
-const Search = styled.div<{maxWidth?: number}>`
+const Search = styled.div`
     position: relative;
-    max-width: ${(props) => (props.maxWidth || 56)}rem;
     font-weight: 400;
 
     input {

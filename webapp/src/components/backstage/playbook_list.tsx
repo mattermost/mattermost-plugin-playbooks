@@ -167,7 +167,6 @@ const PlaybookList = () => {
                             default={params.search_term}
                             onSearch={setSearchTerm}
                             placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
-                            maxWidthRem={36}
                         />
                         {canCreatePlaybooks &&
                         <>
