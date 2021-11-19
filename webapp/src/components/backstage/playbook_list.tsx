@@ -66,7 +66,7 @@ const PlaybookList = () => {
     const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
     const allowPlaybookCreationInTeams = useAllowPlaybookCreationInTeams();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
-    const prevBottomHalf = useRef<JSX.Element | null>(null);
+    const bottomHalf = useRef<JSX.Element | null>(null);
 
     const [
         playbooks,
@@ -232,14 +232,9 @@ const PlaybookList = () => {
         );
     };
 
-    let bottomHalf;
-
-    // If we're loading new playbooks, use the previous body
-    if (isLoading && prevBottomHalf) {
-        bottomHalf = prevBottomHalf.current;
-    } else {
-        bottomHalf = makeBottomHalf();
-        prevBottomHalf.current = bottomHalf;
+    // If we don't have a bottomHalf, create it. Or if we're loading new playbooks, use the previous body.
+    if (!bottomHalf.current || !isLoading) {
+        bottomHalf.current = makeBottomHalf();
     }
 
     return (
@@ -257,7 +252,7 @@ const PlaybookList = () => {
                     showUpgradeModal={showUpgradeModal}
                 />
             }
-            {bottomHalf}
+            {bottomHalf.current}
             <UpgradeModal
                 messageType={AdminNotificationType.PLAYBOOK}
                 show={isUpgradeModalShown}
