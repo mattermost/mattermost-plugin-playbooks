@@ -47,6 +47,34 @@ func (mr *MockPlaybookStoreMockRecorder) Archive(arg0 interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Archive", reflect.TypeOf((*MockPlaybookStore)(nil).Archive), arg0)
 }
 
+// AutoFollow mocks base method
+func (m *MockPlaybookStore) AutoFollow(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AutoFollow", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AutoFollow indicates an expected call of AutoFollow
+func (mr *MockPlaybookStoreMockRecorder) AutoFollow(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AutoFollow", reflect.TypeOf((*MockPlaybookStore)(nil).AutoFollow), arg0, arg1)
+}
+
+// AutoUnfollow mocks base method
+func (m *MockPlaybookStore) AutoUnfollow(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AutoUnfollow", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AutoUnfollow indicates an expected call of AutoUnfollow
+func (mr *MockPlaybookStoreMockRecorder) AutoUnfollow(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AutoUnfollow", reflect.TypeOf((*MockPlaybookStore)(nil).AutoUnfollow), arg0, arg1)
+}
+
 // Create mocks base method
 func (m *MockPlaybookStore) Create(arg0 app.Playbook) (string, error) {
 	m.ctrl.T.Helper()
@@ -75,6 +103,21 @@ func (m *MockPlaybookStore) Get(arg0 string) (app.Playbook, error) {
 func (mr *MockPlaybookStoreMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPlaybookStore)(nil).Get), arg0)
+}
+
+// GetAutoFollows mocks base method
+func (m *MockPlaybookStore) GetAutoFollows(arg0 string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAutoFollows", arg0)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAutoFollows indicates an expected call of GetAutoFollows
+func (mr *MockPlaybookStoreMockRecorder) GetAutoFollows(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAutoFollows", reflect.TypeOf((*MockPlaybookStore)(nil).GetAutoFollows), arg0)
 }
 
 // GetNumPlaybooksForTeam mocks base method
@@ -165,6 +208,21 @@ func (m *MockPlaybookStore) GetTimeLastUpdated(arg0 bool) (int64, error) {
 func (mr *MockPlaybookStoreMockRecorder) GetTimeLastUpdated(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeLastUpdated", reflect.TypeOf((*MockPlaybookStore)(nil).GetTimeLastUpdated), arg0)
+}
+
+// IsAutoFollowing mocks base method
+func (m *MockPlaybookStore) IsAutoFollowing(arg0, arg1 string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsAutoFollowing", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsAutoFollowing indicates an expected call of IsAutoFollowing
+func (mr *MockPlaybookStoreMockRecorder) IsAutoFollowing(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAutoFollowing", reflect.TypeOf((*MockPlaybookStore)(nil).IsAutoFollowing), arg0, arg1)
 }
 
 // Restore mocks base method

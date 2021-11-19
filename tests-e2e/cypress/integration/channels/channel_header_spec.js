@@ -10,6 +10,7 @@ describe('channels > channel header', () => {
     let testTeam;
     let testUser;
     let testPlaybook;
+    let testPlaybookRun;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
@@ -33,6 +34,8 @@ describe('channels > channel header', () => {
                     playbookId: testPlaybook.id,
                     playbookRunName: 'Playbook Run',
                     ownerUserId: testUser.id,
+                }).then((run) => {
+                    testPlaybookRun = run;
                 });
             });
         });
@@ -71,6 +74,27 @@ describe('channels > channel header', () => {
 
             // # Verify tooltip text
             cy.get('#pluginTooltip').contains('Toggle Run Details');
+        });
+    });
+
+    describe('description text', () => {
+        it('should contain a link to the playbook', () => {
+            // # Navigate directly to a playbook run channel
+            cy.visit(`/${testTeam.name}/channels/playbook-run`);
+
+            // * Verify link to playbook
+            cy.get('.header-description__text').findByText('Playbook').should('have.attr', 'href').then((href) => {
+                expect(href).to.equals(`/playbooks/playbooks/${testPlaybook.id}`);
+            });
+        });
+        it('should contain a link to the overview page', () => {
+            // # Navigate directly to a playbook run channel
+            cy.visit(`/${testTeam.name}/channels/playbook-run`);
+
+            // * Verify link to overview page
+            cy.get('.header-description__text').findByText('the overview page').should('have.attr', 'href').then((href) => {
+                expect(href).to.equals(`/playbooks/runs/${testPlaybookRun.id}`);
+            });
         });
     });
 });

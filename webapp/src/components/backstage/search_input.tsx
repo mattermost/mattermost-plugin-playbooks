@@ -38,7 +38,6 @@ export default function SearchInput(props: Props) {
 const Search = styled.div<{maxWidth?: number}>`
     position: relative;
     max-width: ${(props) => (props.maxWidth || 56)}rem;
-    width: 100%;
     font-weight: 400;
 
     input {
@@ -50,7 +49,7 @@ const Search = styled.div<{maxWidth?: number}>`
         background-color: transparent;
         border-radius: 4px;
         border: 1px solid var(--center-channel-color-16);
-        width: 100%;
+        width: 360px;
         height: 4rem;
         font-size: 14px;
         padding-left: 4rem;

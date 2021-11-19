@@ -91,6 +91,8 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
 	checklistItem.HandleFunc("", handler.itemDelete).Methods(http.MethodDelete)
 	checklistItem.HandleFunc("", handler.itemEdit).Methods(http.MethodPut)
+	checklistItem.HandleFunc("/skip", handler.itemSkip).Methods(http.MethodPut)
+	checklistItem.HandleFunc("/restore", handler.itemRestore).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/state", handler.itemSetState).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/assignee", handler.itemSetAssignee).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/run", handler.itemRun).Methods(http.MethodPost)
@@ -1293,6 +1295,52 @@ func (h *PlaybookRunHandler) itemDelete(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *PlaybookRunHandler) itemSkip(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	itemNum, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.SkipChecklistItem(id, userID, checklistNum, itemNum); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *PlaybookRunHandler) itemRestore(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	itemNum, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.RestoreChecklistItem(id, userID, checklistNum, itemNum); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *PlaybookRunHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -1499,6 +1547,11 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 		participantID = currentUserID
 	}
 
+	participantOrFollowerID := u.Query().Get("participant_or_follower_id")
+	if participantOrFollowerID == client.Me {
+		participantOrFollowerID = currentUserID
+	}
+
 	playbookID := u.Query().Get("playbook_id")
 
 	activeGTEParam := u.Query().Get("active_gte")
@@ -1526,20 +1579,21 @@ func parsePlaybookRunsFilterOptions(u *url.URL, currentUserID string) (*app.Play
 	startedLT, _ := strconv.ParseInt(startedLTParam, 10, 64)
 
 	options := app.PlaybookRunFilterOptions{
-		TeamID:        teamID,
-		Page:          page,
-		PerPage:       perPage,
-		Sort:          app.SortField(sort),
-		Direction:     app.SortDirection(direction),
-		Statuses:      statuses,
-		OwnerID:       ownerID,
-		SearchTerm:    searchTerm,
-		ParticipantID: participantID,
-		PlaybookID:    playbookID,
-		ActiveGTE:     activeGTE,
-		ActiveLT:      activeLT,
-		StartedGTE:    startedGTE,
-		StartedLT:     startedLT,
+		TeamID:                  teamID,
+		Page:                    page,
+		PerPage:                 perPage,
+		Sort:                    app.SortField(sort),
+		Direction:               app.SortDirection(direction),
+		Statuses:                statuses,
+		OwnerID:                 ownerID,
+		SearchTerm:              searchTerm,
+		ParticipantID:           participantID,
+		ParticipantOrFollowerID: participantOrFollowerID,
+		PlaybookID:              playbookID,
+		ActiveGTE:               activeGTE,
+		ActiveLT:                activeLT,
+		StartedGTE:              startedGTE,
+		StartedLT:               startedLT,
 	}
 
 	options, err = options.Validate()

@@ -155,12 +155,11 @@ func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Pos
 		return
 	}
 
-	pluginID := s.configService.GetManifest().Id
 	siteURL := model.ServiceSettingsDefaultSiteURL
 	if s.api.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
 		siteURL = *s.api.Configuration.GetConfig().ServiceSettings.SiteURL
 	}
-	playbooksURL := getPlaybooksURL(siteURL, pluginID)
+	playbooksURL := getPlaybooksURL(siteURL)
 
 	message := s.getPlaybookSuggestionsMessage(suggestedPlaybooks, triggers, playbooksURL)
 	attachment := s.getPlaybookSuggestionsSlackAttachment(suggestedPlaybooks, post.Id, playbooksURL, session.IsMobileApp())
@@ -316,6 +315,44 @@ func (s *playbookService) getPlaybooksAndTriggersByAccess(triggeredPlaybooks []c
 	}
 
 	return resultPlaybooks, removeDuplicates(resultTriggers)
+}
+
+// AutoFollow method lets user to auto-follow all runs of a specific playbook
+func (s *playbookService) AutoFollow(playbookID, userID string) error {
+	if err := s.store.AutoFollow(playbookID, userID); err != nil {
+		return errors.Wrapf(err, "user `%s` failed to auto-follow the playbook `%s`", userID, playbookID)
+	}
+
+	return nil
+}
+
+// AutoUnfollow method lets user to not auto-follow the newly created playbook runs
+func (s *playbookService) AutoUnfollow(playbookID, userID string) error {
+	if err := s.store.AutoUnfollow(playbookID, userID); err != nil {
+		return errors.Wrapf(err, "user `%s` failed to auto-unfollow the playbook `%s`", userID, playbookID)
+	}
+
+	return nil
+}
+
+// GetAutoFollows returns list of users who auto-follow a playbook
+func (s *playbookService) GetAutoFollows(playbookID string) ([]string, error) {
+	autoFollows, err := s.store.GetAutoFollows(playbookID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get auto-follows for the playbook `%s`", playbookID)
+	}
+
+	return autoFollows, nil
+}
+
+// IsAutoFollowing returns weather user is auto-following a playbook
+func (s *playbookService) IsAutoFollowing(playbookID, userID string) (bool, error) {
+	isAutoFollowing, err := s.store.IsAutoFollowing(playbookID, userID)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to get if user follows for the playbook `%s`", playbookID)
+	}
+
+	return isAutoFollowing, nil
 }
 
 func getPlaybookTriggersForAMessage(playbook *CachedPlaybook, message string) []string {

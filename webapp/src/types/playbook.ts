@@ -73,6 +73,7 @@ export enum ChecklistItemState {
     Open = '',
     InProgress = 'in_progress',
     Closed = 'closed',
+    Skip = 'skipped',
 }
 
 export interface ChecklistItem {

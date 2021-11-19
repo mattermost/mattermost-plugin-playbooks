@@ -293,6 +293,20 @@ export async function clientRemoveChecklistItem(playbookRunID: string, checklist
     });
 }
 
+export async function clientSkipChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/skip`, {
+        method: 'put',
+        body: '',
+    });
+}
+
+export async function clientRestoreChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/restore`, {
+        method: 'put',
+        body: '',
+    });
+}
+
 interface ChecklistItemUpdate {
     title: string
     command: string
@@ -489,6 +503,27 @@ export const unfollowPlaybookRun = async (playbookRunId: string) => {
         method: 'DELETE',
     });
 };
+
+export const autoFollowPlaybook = async (playbookId: string, userId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`, {
+        method: 'PUT',
+    });
+};
+
+export const autoUnfollowPlaybook = async (playbookId: string, userId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`, {
+        method: 'DELETE',
+    });
+};
+
+export async function clientFetchIsPlaybookFollower(playbookId: string, userId: string): Promise<boolean> {
+    const data = await doGet(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`);
+    if (!data) {
+        return false;
+    }
+
+    return data as boolean;
+}
 
 export const resetReminder = async (playbookRunId: string, newReminderSeconds: number) => {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/reminder`, {

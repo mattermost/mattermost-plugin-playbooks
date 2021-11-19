@@ -1455,14 +1455,13 @@ var migrations = []Migration{
 				}
 
 				if _, err := e.Exec(createPGIndex("IR_Run_Participants_UserID", "IR_Run_Participants", "UserID")); err != nil {
-					return errors.Wrapf(err, "failed creating index IR_StatusPosts_IncidentID")
+					return errors.Wrapf(err, "failed creating index IR_Run_Participants_UserID")
 				}
 
 				if _, err := e.Exec(createPGIndex("IR_Run_Participants_IncidentID", "IR_Run_Participants", "IncidentID")); err != nil {
-					return errors.Wrapf(err, "failed creating index IR_StatusPosts_PostID ")
+					return errors.Wrapf(err, "failed creating index IR_Run_Participants_IncidentID")
 				}
 			}
-
 			return nil
 		},
 	},
@@ -1486,6 +1485,40 @@ var migrations = []Migration{
 			// Copy the values from the Description column, historically used for the run summary template, into the new RunSummaryTemplate column
 			if _, err := e.Exec("UPDATE IR_Playbook SET RunSummaryTemplate = Description, Description = '' WHERE Description <> ''"); err != nil {
 				return errors.Wrapf(err, "failed updating default value of column RunSummaryTemplate from table IR_Playbook")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.39.0"),
+		toVersion:   semver.MustParse("0.40.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_PlaybookAutoFollow (
+						PlaybookID VARCHAR(26) NULL REFERENCES IR_Playbook(ID),
+						UserID VARCHAR(26) NOT NULL
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_PlaybookAutoFollow")
+				}
+				if err := addPrimaryKey(e, sqlStore, "IR_PlaybookAutoFollow", "(PlaybookID, UserID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_PlaybookAutoFollow")
+				}
+			} else {
+				if _, err := e.Exec(`
+				CREATE TABLE IF NOT EXISTS IR_PlaybookAutoFollow (
+					PlaybookID TEXT NULL REFERENCES IR_Playbook(ID),
+					UserID TEXT NOT NULL
+				);
+			`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_PlaybookAutoFollow")
+				}
+
+				if err := addPrimaryKey(e, sqlStore, "ir_playbookautofollow", "(PlaybookID, UserID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_PlaybookAutoFollow")
+				}
 			}
 
 			return nil

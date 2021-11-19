@@ -54,6 +54,12 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("", handler.archivePlaybook).Methods(http.MethodDelete)
 	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPost)
 
+	autoFollowsRouter := playbookRouter.PathPrefix("/autofollows").Subrouter()
+	autoFollowRouter := autoFollowsRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
+	autoFollowRouter.HandleFunc("", handler.autoFollow).Methods(http.MethodPut)
+	autoFollowRouter.HandleFunc("", handler.autoUnfollow).Methods(http.MethodDelete)
+	autoFollowRouter.HandleFunc("", handler.isAutoFollowing).Methods(http.MethodGet)
+
 	return handler
 }
 
@@ -538,4 +544,74 @@ func (h *PlaybookHandler) validateCategoryName(categoryName string) error {
 		return errors.Errorf(msg)
 	}
 	return nil
+}
+
+func (h *PlaybookHandler) autoFollow(w http.ResponseWriter, r *http.Request) {
+	playbookID := mux.Vars(r)["id"]
+	currentUserID := r.Header.Get("Mattermost-User-ID")
+	userID := mux.Vars(r)["userID"]
+
+	if currentUserID != userID && !app.IsAdmin(currentUserID, h.pluginAPI) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
+		return
+	}
+
+	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook.", err)
+		return
+	}
+
+	if err := h.playbookService.AutoFollow(playbookID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookHandler) autoUnfollow(w http.ResponseWriter, r *http.Request) {
+	playbookID := mux.Vars(r)["id"]
+	currentUserID := r.Header.Get("Mattermost-User-ID")
+	userID := mux.Vars(r)["userID"]
+
+	if currentUserID != userID && !app.IsAdmin(currentUserID, h.pluginAPI) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
+		return
+	}
+
+	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook.", err)
+		return
+	}
+
+	if err := h.playbookService.AutoUnfollow(playbookID, userID); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookHandler) isAutoFollowing(w http.ResponseWriter, r *http.Request) {
+	playbookID := mux.Vars(r)["id"]
+	currentUserID := r.Header.Get("Mattermost-User-ID")
+	userID := mux.Vars(r)["userID"]
+
+	if currentUserID != userID && !app.IsAdmin(currentUserID, h.pluginAPI) {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Current user doesn't have permissions to check whether user is autofollowing or not.", nil)
+		return
+	}
+
+	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook.", err)
+		return
+	}
+
+	isAutoFollowing, err := h.playbookService.IsAutoFollowing(playbookID, userID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	ReturnJSON(w, isAutoFollowing, http.StatusOK)
 }

@@ -459,6 +459,12 @@ type PlaybookRunService interface {
 	// RemoveChecklistItem removes an item from the specified checklist
 	RemoveChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
 
+	// SkipChecklistItem removes an item from the specified checklist
+	SkipChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
+
+	// RestoreChecklistItem restores a skipped item from the specified checklist
+	RestoreChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
+
 	// EditChecklistItem changes the title, command and description of a specified checklist item.
 	EditChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int, newTitle, newCommand, newDescription string) error
 
@@ -673,6 +679,12 @@ type PlaybookRunTelemetry interface {
 	// RemoveTask tracks the removal of a checklist item.
 	RemoveTask(playbookRunID, userID string, task ChecklistItem)
 
+	// SkipTask tracks the skipping of a checklist item.
+	SkipTask(playbookRunID, userID string, task ChecklistItem)
+
+	// RestoreTask tracks the restoring of a checklist item.
+	RestoreTask(playbookRunID, userID string, task ChecklistItem)
+
 	// RenameTask tracks the update of a checklist item.
 	RenameTask(playbookRunID, userID string, task ChecklistItem)
 
@@ -724,6 +736,9 @@ type PlaybookRunFilterOptions struct {
 
 	// ParticipantID filters playbook runs that have this member. Defaults to blank (no filter).
 	ParticipantID string `url:"participant_id,omitempty"`
+
+	// ParticipantOrFollowerID filters playbook runs that have this user as member or as follower. Defaults to blank (no filter).
+	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
@@ -805,6 +820,10 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 
 	if options.ParticipantID != "" && !model.IsValidId(options.ParticipantID) {
 		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'participant_id': must be 26 characters or blank")
+	}
+
+	if options.ParticipantOrFollowerID != "" && !model.IsValidId(options.ParticipantOrFollowerID) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'participant_or_follower_id': must be 26 characters or blank")
 	}
 
 	if options.PlaybookID != "" && !model.IsValidId(options.PlaybookID) {

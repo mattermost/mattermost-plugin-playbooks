@@ -17,7 +17,7 @@ const defaultPlaybookFetchParams = {
     per_page: BACKSTAGE_LIST_PER_PAGE,
     sort: 'last_status_update_at',
     direction: 'desc',
-    statuses: [PlaybookRunStatus.InProgress],
+    statuses: [PlaybookRunStatus.InProgress, PlaybookRunStatus.Finished],
 };
 
 const RunListContainer = styled.div`

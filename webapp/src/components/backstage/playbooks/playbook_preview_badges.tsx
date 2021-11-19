@@ -38,6 +38,12 @@ export const TextBadge = styled(Badge)`
     padding: 0 6px;
 `;
 
+export const EllipsizedText = styled.span`
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+
 export const ChannelBadge = ({channelId} : { channelId: string }) => {
     const channel = useChannel(channelId);
 

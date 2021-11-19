@@ -13,3 +13,4 @@ report.xml
 
 webapp/src/manifest.js
 server/manifest.go
+server/data/

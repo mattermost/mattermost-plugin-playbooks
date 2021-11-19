@@ -118,6 +118,7 @@ export const HoverMenuButton = styled.i`
     width: 28px;
     height: 28px;
     padding: 1px 0 0 1px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 export const SmallerProfile = styled(Profile)`
