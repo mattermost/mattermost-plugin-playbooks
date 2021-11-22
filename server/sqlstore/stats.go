@@ -145,26 +145,26 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 	for i := 0; i < x; i++ {
 		if s.store.db.DriverName() == model.DatabaseDriverMysql {
 			q = q.Column(`
-                CAST(
-					COALESCE(
-						 SUM(
-							 CASE
-								 WHEN i.CreateAt >= ? AND i.CreateAt < ?
-									 THEN 1
-								 ELSE 0
-							 END)
-					, 0)
-                     AS UNSIGNED)
-                 `, startOfWeek, endOfWeek)
+			CAST(
+				COALESCE(
+					 SUM(
+						 CASE
+							 WHEN i.CreateAt >= ? AND i.CreateAt < ?
+								 THEN 1
+							 ELSE 0
+						 END)
+				, 0)
+				 AS UNSIGNED)
+				 `, startOfWeek, endOfWeek)
 		} else {
 			q = q.Column(`
-                COALESCE(
-                     SUM(CASE
-                        WHEN i.CreateAt >= ? AND i.CreateAt < ?
-                            THEN 1
-                        ELSE 0
-                    END)
-                , 0)
+			COALESCE(
+				 SUM(CASE
+					WHEN i.CreateAt >= ? AND i.CreateAt < ?
+						THEN 1
+					ELSE 0
+				END)
+			, 0)
                  `, startOfWeek, endOfWeek)
 		}
 
@@ -203,26 +203,26 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 		// start of the day (or still active)
 		if s.store.db.DriverName() == model.DatabaseDriverMysql {
 			q = q.Column(`
-                CAST(
-					COALESCE(
-						 SUM(
-							 CASE
-								 WHEN (i.EndAt >= ? OR i.EndAt = 0) AND i.CreateAt < ?
-									 THEN 1
-								 ELSE 0
-							 END)
-					, 0)
-                     AS UNSIGNED)
+			CAST(
+				COALESCE(
+					 SUM(
+						 CASE
+							 WHEN (i.EndAt >= ? OR i.EndAt = 0) AND i.CreateAt < ?
+								 THEN 1
+							 ELSE 0
+						 END)
+				, 0)
+				 AS UNSIGNED)
                 `, startOfDay, endOfDay)
 		} else {
 			q = q.Column(`
-                COALESCE(
-                    SUM(CASE
-                        WHEN (i.EndAt >= ? OR i.EndAt = 0) AND i.CreateAt < ?
-                            THEN 1
-                        ELSE 0
-                    END)
-                , 0)
+			COALESCE(
+				SUM(CASE
+					WHEN (i.EndAt >= ? OR i.EndAt = 0) AND i.CreateAt < ?
+						THEN 1
+					ELSE 0
+				END)
+			, 0)
                 `, startOfDay, endOfDay)
 		}
 
@@ -266,7 +266,7 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 		// second two lines: a user was active in the same way--if they left after the start of
 		// the day (or are still in the channel) and joined before the end of the day
 		q = q.Column(`
-                COALESCE(
+				COALESCE(
 					COUNT(DISTINCT
 						  (CASE
 							   WHEN (i.EndAt >= ? OR i.EndAt = 0) AND
@@ -275,7 +275,7 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 									cmh.JoinTime < ?
 								   THEN cmh.UserId
 						  END))
-                , 0)
+				, 0)
                 `, startOfDay, endOfDay, startOfDay, endOfDay)
 
 		daysAsTimes = append(daysAsTimes, []int64{startOfDay, endOfDay})
