@@ -25,7 +25,7 @@ const Circle = styled.div`
     color: var(--button-bg);
     background: #EFF1F5;
     border-radius: 50%;
-    left: 86px;
+    left: 21px;
     top: 5px;
 
     > .icon {
@@ -36,7 +36,7 @@ const Circle = styled.div`
 
 const TimelineItem = styled.li`
     position: relative;
-    margin: 32px 0 0 0;
+    margin: 27px 0 0 0;
 `;
 
 const TimeContainer = styled.div`
@@ -58,26 +58,21 @@ const TimeSinceStart = styled.span`
     font-size: 11px;
     display: inline-block;
     white-space: nowrap;
-    background: transparent none repeat scroll 0% 0%;
-    border: 1px solid rgb(239, 241, 245);
-    border-radius: 50px;
-    height: 24px;
-    top: 5px;
-    position: absolute;
-    right: -31px;
-    padding: .25rem .5rem;
-    padding-right: calc(24px + 0.5rem);
+    border: 1px solid #EFF1F5;
+    padding: 0.1rem .25rem;
+    border-radius: 5px;
+    margin-left: .5rem;
 `;
 
 const TimeBetween = styled.div`
     font-size: 10px;
     position: absolute;
-    top: -30px;
-    left: 0rem;
+    top: -23px;
+    left: -10px;
     white-space: nowrap;
     text-align: right;
-    width: 8.5rem;
-    font-weight: 500;
+    width: 3rem;
+
 
     &::after {
         content: '';
@@ -93,7 +88,7 @@ const TimeBetween = styled.div`
 
 const SummaryContainer = styled.div`
     position: relative;
-    margin: 0 0 0 120px;
+    margin: 0 0 0 55px;
     padding: 0 5px 0 0;
     line-height: 16px;
     min-height: 36px;
@@ -180,10 +175,15 @@ const TimelineEventItem = (props: Props) => {
             <FormattedDuration
                 from={props.prevEventAt}
                 to={props.event.event_at}
+                truncate={'truncate'}
             />
         </TimeBetween>
     );
-    let timeSinceStart: ReactNode = <TimeSinceStart>{sinceStart}</TimeSinceStart>;
+    let timeSinceStart: ReactNode = (
+        <TimeSinceStart>
+            {sinceStart}
+        </TimeSinceStart>
+    );
 
     switch (props.event.event_type) {
     case TimelineEventType.RunCreated:
@@ -275,7 +275,6 @@ const TimelineEventItem = (props: Props) => {
             }
             <TimeContainer>
                 {timeSincePrevEvent}
-                {timeSinceStart}
             </TimeContainer>
             <Circle>
                 <i className={iconClass}/>
@@ -285,6 +284,7 @@ const TimelineEventItem = (props: Props) => {
                     {DateTime.fromMillis(props.event.event_at)
                         .setZone('Etc/UTC')
                         .toLocaleString(DATETIME_FORMAT)}
+                    {timeSinceStart}
                 </TimeStamp>
                 <SummaryTitle
                     onClick={(e) => !statusPostDeleted && goToPost(e, props.event.post_id)}

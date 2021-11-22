@@ -29,7 +29,7 @@ const TimelineLine = styled.ul`
         position: absolute;
         top: 5px;
         bottom: -10px;
-        left: 97px;
+        left: 32px;
         width: 1px;
         background: #EFF1F5;
     }
