@@ -124,9 +124,9 @@ const HorizontalBG = styled.div`
 `;
 
 const Horizontal = styled.div`
-    background-color: var(--center-channel-color-04);
+    background-color: rgba(var(--center-channel-color-rgb, 0.04));
     border-radius: 4px 4px 0 0;
-    border: 1px solid var(--center-channel-color-08);
+    border: 1px solid rgba(var(--center-channel-color-rgb, 0.08));
     display: flex;
     flex-direction: row;
     align-items: baseline;
