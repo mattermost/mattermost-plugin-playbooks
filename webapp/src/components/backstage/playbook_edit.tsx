@@ -41,7 +41,10 @@ import {
     TabContainer,
     StyledMarkdownTextbox,
     StyledSelect,
+    BackstageGroupToggleHeader,
 } from './styles';
+import { Toggle } from './automation/toggle';
+
 
 const Container = styled.div`
     display: flex;
@@ -664,6 +667,24 @@ const PlaybookEdit = (props: Props) => {
                                 {retrospectiveAccess &&
                                 <>
                                     <SidebarBlock>
+                                    <BackstageGroupToggleHeader>
+                                        <Toggle
+                                            isChecked={playbook.retrospective_enabled}
+                                            onChange={() => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    retrospective_enabled: !playbook.retrospective_enabled,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                            
+                                        />
+                                        {formatMessage({defaultMessage: 'Enable retrospective'})}
+                                        {/* <div><FormattedMessage defaultMessage='Enable retrospective'/></div> */}
+                                        </BackstageGroupToggleHeader>
+                                    </SidebarBlock>
+                                    
+                                    <SidebarBlock>
                                         <BackstageSubheader>
                                             {formatMessage({defaultMessage: 'Retrospective reminder interval'})}
                                             <BackstageSubheaderDescription>
@@ -681,6 +702,7 @@ const PlaybookEdit = (props: Props) => {
                                             }}
                                             options={retrospectiveReminderOptions}
                                             isClearable={false}
+                                            isDisabled={!playbook.retrospective_enabled}
                                         />
                                     </SidebarBlock>
                                     <SidebarBlock>
@@ -702,6 +724,7 @@ const PlaybookEdit = (props: Props) => {
                                                 });
                                                 setChangesMade(true);
                                             }}
+                                            disabled={!playbook.retrospective_enabled}
                                         />
                                     </SidebarBlock>
                                 </>
