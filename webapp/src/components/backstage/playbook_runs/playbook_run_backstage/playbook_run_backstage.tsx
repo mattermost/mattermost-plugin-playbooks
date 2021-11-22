@@ -111,7 +111,8 @@ const VerticalBlock = styled.div`
 `;
 
 const Title = styled.div`
-    ${RegularHeading}
+    ${RegularHeading} {
+    }
 
     font-size: 20px;
     color: var(--center-channel-color);
@@ -232,6 +233,13 @@ const PlaybookRunBackstage = () => {
         });
     };
 
+    const setRetrospective = (retrospective: string) => {
+        setPlaybookRun((run) => ({
+            ...run,
+            retrospective,
+        } as PlaybookRun));
+    };
+
     if (fetchingState === FetchingStateType.loading) {
         return null;
     }
@@ -278,7 +286,8 @@ const PlaybookRunBackstage = () => {
                     />
                     <VerticalBlock>
                         <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
-                        {playbook &&
+                        {
+                            playbook &&
                             <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
                                 <SmallPlaybookIcon/>
                                 <SubTitle>{playbook?.title}</SubTitle>
@@ -325,6 +334,7 @@ const PlaybookRunBackstage = () => {
                             <Retrospective
                                 playbookRun={playbookRun}
                                 deleteTimelineEvent={deleteTimelineEvent}
+                                setRetrospective={setRetrospective}
                             />
                         </Route>
                         <Redirect to={`${match.url}/overview`}/>

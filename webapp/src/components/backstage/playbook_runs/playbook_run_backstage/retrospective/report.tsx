@@ -72,22 +72,22 @@ const SecondaryButtonSmaller = styled(SecondaryButton)`
 
 interface ReportProps {
     playbookRun: PlaybookRun;
+    setRetrospective: (report: string) => void;
 }
 
 const Report = (props: ReportProps) => {
-    const [report, setReport] = useState(props.playbookRun.retrospective);
     const [editing, setEditing] = useState(false);
     const [publishedThisSession, setPublishedThisSession] = useState(false);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
     const {formatMessage} = useIntl();
 
     const savePressed = () => {
-        updateRetrospective(props.playbookRun.id, report);
+        updateRetrospective(props.playbookRun.id, props.playbookRun.retrospective);
         setEditing(false);
     };
 
     const publishPressed = () => {
-        publishRetrospective(props.playbookRun.id, report);
+        publishRetrospective(props.playbookRun.id, props.playbookRun.retrospective);
         setEditing(false);
         setPublishedThisSession(true);
     };
@@ -124,16 +124,16 @@ const Report = (props: ReportProps) => {
             {editing &&
                 <ReportTextarea
                     autoFocus={true}
-                    value={report}
+                    value={props.playbookRun.retrospective}
                     onChange={(e) => {
-                        setReport(e.target.value);
+                        props.setRetrospective(e.target.value);
                     }}
                 />
             }
             {!editing &&
                 <PostTextContainer>
                     <PostText
-                        text={report}
+                        text={props.playbookRun.retrospective}
                         team={team}
                     />
                 </PostTextContainer>
