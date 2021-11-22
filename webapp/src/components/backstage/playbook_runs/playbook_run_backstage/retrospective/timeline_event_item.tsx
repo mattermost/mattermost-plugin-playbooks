@@ -90,6 +90,11 @@ const SummaryDetail = styled.div`
     color: var(--center-channel-color-64)
 `;
 
+const DATETIME_FORMAT = {
+    ...DateTime.DATE_MED,
+    ...DateTime.TIME_24_WITH_SHORT_OFFSET,
+};
+
 interface Props {
     event: TimelineEvent;
     reportedAt: DateTime;
@@ -226,10 +231,9 @@ const TimelineEventItem = (props: Props) => {
             }
             <TimeContainer>
                 <TimeHours>
-                    <Timestamp
-                        value={props.event.event_at}
-                        month='short'
-                    />
+                    {DateTime.fromMillis(props.event.event_at)
+                        .setZone('Etc/UTC')
+                        .toLocaleString(DATETIME_FORMAT)}
                 </TimeHours>
                 {timeSince}
             </TimeContainer>
@@ -245,13 +249,11 @@ const TimelineEventItem = (props: Props) => {
                 </SummaryTitle>
                 {statusPostDeleted && (
                     <SummaryDeleted>
-                        {formatMessage({defaultMessage: 'Status post deleted: '})}
-                        <Timestamp
-                            value={props.event.status_delete_at}
-                            // eslint-disable-next-line no-undefined
-                            useDate={{...DateTime.DATE_MED, year: undefined}}
-                            useTime={DateTime.TIME_24_SIMPLE}
-                        />
+                        {formatMessage({defaultMessage: 'Status post deleted: {timestamp}'}, {
+                            timestamp: DateTime.fromMillis(props.event.event_at)
+                                .setZone('Etc/UTC')
+                                .toLocaleString(DATETIME_FORMAT),
+                        })}
                     </SummaryDeleted>
                 )}
                 <SummaryDetail>{messageHtmlToComponent(formatText(summary, markdownOptions), true, {})}</SummaryDetail>
