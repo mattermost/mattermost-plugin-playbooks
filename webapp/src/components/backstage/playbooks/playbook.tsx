@@ -32,6 +32,9 @@ import CheckboxInput from '../runs_list/checkbox_input';
 import {SecondaryButtonLargerRight} from '../playbook_runs/shared';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
+import {copyToClipboard, getSiteURL} from '../../../utils';
+import {CopyIcon} from '../playbook_runs/playbook_run_backstage/playbook_run_backstage';
+
 interface MatchParams {
     playbookId: string
 }
@@ -51,6 +54,7 @@ const Playbook = () => {
     const stats = useStats(match.params.playbookId);
     const [isFollowed, setIsFollowed] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
+    const [playbookLinkCopied, setPlaybookLinkCopied] = useState(false);
 
     const changeFollowing = (check: boolean) => {
         if (playbook?.id) {
@@ -137,6 +141,36 @@ const Playbook = () => {
         </Tooltip>
     );
 
+    const copyPlaybookLink = () => {
+        const siteUrl = getSiteURL() + '/playbooks/playbooks/' + playbook.id;
+        copyToClipboard(siteUrl);
+        setPlaybookLinkCopied(true);
+    };
+
+    let copyPlaybookLinkTooltipMessage = formatMessage({defaultMessage: 'Copy link to playbook'});
+    if (playbookLinkCopied) {
+        copyPlaybookLinkTooltipMessage = formatMessage({defaultMessage: 'Copied!'});
+    }
+
+    const playbookLink = (
+        <OverlayTrigger
+            placement='bottom'
+            delay={OVERLAY_DELAY}
+            onExit={() => setPlaybookLinkCopied(false)}
+            shouldUpdatePosition={true}
+            overlay={
+                <Tooltip id='copy-run-link-tooltip'>
+                    {copyPlaybookLinkTooltipMessage}
+                </Tooltip>
+            }
+        >
+            <CopyIcon
+                className='icon-link-variant'
+                onClick={copyPlaybookLink}
+            />
+        </OverlayTrigger>
+    );
+
     return (
         <>
             <TopContainer>
@@ -159,6 +193,7 @@ const Playbook = () => {
                             status={BadgeType.Archived}
                         />
                     }
+                    {playbookLink}
                     <SecondaryButtonLargerRightStyled
                         checked={isFollowed}
                         disabled={archived}
