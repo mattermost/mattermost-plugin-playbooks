@@ -47,7 +47,7 @@ const TimeContainer = styled.div`
     left: 4px;
 `;
 
-const TimeStamp = styled.span`
+const TimeStamp = styled.time`
     font-size: 11px;
     margin: 0px;
     line-height: 1;
@@ -61,7 +61,7 @@ const TimeSinceStart = styled.span`
     border: 1px solid #EFF1F5;
     padding: 0.1rem .25rem;
     border-radius: 5px;
-    margin-left: .5rem;
+    margin-left: 1rem;
 `;
 
 const TimeBetween = styled.div`
@@ -165,6 +165,8 @@ const TimelineEventItem = (props: Props) => {
     let summaryTitle = '';
     let summary = '';
     let testid = '';
+
+    const eventTime = DateTime.fromMillis(props.event.event_at).setZone('Etc/UTC');
     const diff = DateTime.fromMillis(props.event.event_at).diff(props.runCreateAt);
     let sinceStart = formatDuration(diff);
     if (diff.toMillis() < 0) {
@@ -180,7 +182,7 @@ const TimelineEventItem = (props: Props) => {
         </TimeBetween>
     );
     let timeSinceStart: ReactNode = (
-        <TimeSinceStart>
+        <TimeSinceStart aria-label={formatMessage({defaultMessage: '{duration} since run started'}, {duration: formatDuration(diff, 'long')})}>
             {sinceStart}
         </TimeSinceStart>
     );
@@ -280,10 +282,8 @@ const TimelineEventItem = (props: Props) => {
                 <i className={iconClass}/>
             </Circle>
             <SummaryContainer>
-                <TimeStamp>
-                    {DateTime.fromMillis(props.event.event_at)
-                        .setZone('Etc/UTC')
-                        .toLocaleString(DATETIME_FORMAT)}
+                <TimeStamp dateTime={eventTime.toISO()}>
+                    {eventTime.toLocaleString(DATETIME_FORMAT)}
                     {timeSinceStart}
                 </TimeStamp>
                 <SummaryTitle
