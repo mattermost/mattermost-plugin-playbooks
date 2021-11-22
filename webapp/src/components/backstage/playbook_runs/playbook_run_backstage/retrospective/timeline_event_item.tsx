@@ -266,7 +266,7 @@ const TimelineEventItem = (props: Props) => {
                 {statusPostDeleted && (
                     <SummaryDeleted>
                         {formatMessage({defaultMessage: 'Status post deleted: {timestamp}'}, {
-                            timestamp: DateTime.fromMillis(props.event.event_at)
+                            timestamp: DateTime.fromMillis(props.event.delete_at)
                                 .setZone('Etc/UTC')
                                 .toLocaleString(DATETIME_FORMAT),
                         })}
