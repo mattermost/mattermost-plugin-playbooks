@@ -35,7 +35,7 @@ const Circle = styled.div`
 
 const TimelineItem = styled.li`
     position: relative;
-    margin: 20px 0 0 0;
+    margin: 32px 0 0 0;
 `;
 
 const TimeContainer = styled.div`
@@ -47,13 +47,29 @@ const TimeContainer = styled.div`
 `;
 
 const TimeHours = styled.div`
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     margin: 0 0 4px 0;
 `;
 
-const TimeDay = styled.div`
+const TimeBetween = styled.div`
     font-size: 10px;
+    position: absolute;
+    top: -30px;
+    left: 0.5rem;
+    white-space: nowrap;
+    font-weight: 600;
+    width: 8rem;
+    &::after {
+        content: '';
+        background: #EFF1F5;
+        width: 7px;
+        height: 7px;
+        position: absolute;
+        top: 5px;
+        right: -12px;
+        border-radius: 50%;
+    }
 `;
 
 const SummaryContainer = styled.div`
@@ -139,7 +155,7 @@ const TimelineEventItem = (props: Props) => {
     if (diff.toMillis() < 0) {
         stamp = '-' + formatDuration(diff.negate());
     }
-    let timeSince: JSX.Element | null = <TimeDay>{formatMessage({defaultMessage: '{time}'}, {time: stamp})}</TimeDay>;
+    let timeSince: JSX.Element | null = <TimeBetween>{stamp}</TimeBetween>;
 
     switch (props.event.event_type) {
     case TimelineEventType.RunCreated:
@@ -230,12 +246,12 @@ const TimelineEventItem = (props: Props) => {
             </HoverMenu>
             }
             <TimeContainer>
+                {timeSince}
                 <TimeHours>
                     {DateTime.fromMillis(props.event.event_at)
                         .setZone('Etc/UTC')
                         .toLocaleString(DATETIME_FORMAT)}
                 </TimeHours>
-                {timeSince}
             </TimeContainer>
             <Circle>
                 <i className={iconClass}/>
