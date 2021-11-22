@@ -6,11 +6,10 @@ import debounce from 'debounce';
 import {components, ControlProps} from 'react-select';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
 
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {UserProfile} from 'mattermost-redux/types/users';
-
-import {useIntl} from 'react-intl';
 
 import {FetchPlaybookRunsParams, PlaybookRunStatus} from 'src/types/playbook_run';
 import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
@@ -18,9 +17,8 @@ import PlaybookSelector, {Option as PlaybookOption} from 'src/components/backsta
 import TeamSelector, {Option as TeamOption} from 'src/components/team/team_selector';
 import {fetchOwnersInTeam, clientFetchPlaybooks} from 'src/client';
 import {Playbook} from '../../../types/playbook';
-
-import SearchInput from './search_input';
-import CheckboxInput from './checkbox_input';
+import SearchInput from 'src/components/backstage/search_input';
+import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 
 interface Props {
     fetchParams: FetchPlaybookRunsParams
@@ -152,6 +150,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam, fixedPlaybook}: Props)
                 testId={'search-filter'}
                 default={fetchParams.search_term}
                 onSearch={debounce(setSearchTerm, searchDebounceDelayMilliseconds)}
+                placeholder={formatMessage({defaultMessage: 'Search by run name'})}
             />
             <CheckboxInput
                 testId={'my-runs-only'}

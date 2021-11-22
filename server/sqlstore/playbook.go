@@ -384,6 +384,28 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to apply sort options")
 	}
 
+	queryForTotal := p.store.builder.
+		Select("COUNT(*)").
+		From("IR_Playbook AS p").
+		Where(sq.Eq{"DeleteAt": 0}).
+		Where(permissionsAndFilter).
+		Where(teamLimitExpr)
+
+	if opts.SearchTerm != "" {
+		column := "p.Title"
+		searchString := opts.SearchTerm
+
+		// Postgres performs a case-sensitive search, so we need to lowercase
+		// both the column contents and the search string
+		if p.store.db.DriverName() == model.DatabaseDriverPostgres {
+			column = "LOWER(p.Title)"
+			searchString = strings.ToLower(opts.SearchTerm)
+		}
+
+		queryForResults = queryForResults.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
+		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
+	}
+
 	var playbooks []app.Playbook
 	err = p.store.selectBuilder(p.store.db, &playbooks, queryForResults)
 	if err == sql.ErrNoRows {
@@ -391,13 +413,6 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 	} else if err != nil {
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbooks")
 	}
-
-	queryForTotal := p.store.builder.
-		Select("COUNT(*)").
-		From("IR_Playbook AS p").
-		Where(sq.Eq{"DeleteAt": 0}).
-		Where(permissionsAndFilter).
-		Where(teamLimitExpr)
 
 	var total int
 	if err = p.store.getBuilder(p.store.db, &total, queryForTotal); err != nil {

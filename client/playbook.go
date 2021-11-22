@@ -69,8 +69,9 @@ type PlaybookCreateOptions struct {
 // PlaybookListOptions specifies the optional parameters to the
 // PlaybooksService.List method.
 type PlaybookListOptions struct {
-	Sort      Sort          `url:"sort,omitempty"`
-	Direction SortDirection `url:"direction,omitempty"`
+	Sort       Sort          `url:"sort,omitempty"`
+	Direction  SortDirection `url:"direction,omitempty"`
+	SearchTeam string        `url:"search_term,omitempty"`
 }
 
 type GetPlaybooksResults struct {
