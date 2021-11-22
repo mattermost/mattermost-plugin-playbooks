@@ -134,7 +134,7 @@ const TimelineEventItem = (props: Props) => {
     if (diff.toMillis() < 0) {
         stamp = '-' + formatDuration(diff.negate());
     }
-    let timeSince: JSX.Element | null = <TimeDay>{formatMessage({defaultMessage: 'Time: {time}'}, {time: stamp})}</TimeDay>;
+    let timeSince: JSX.Element | null = <TimeDay>{formatMessage({defaultMessage: '{time}'}, {time: stamp})}</TimeDay>;
 
     switch (props.event.event_type) {
     case TimelineEventType.RunCreated:
