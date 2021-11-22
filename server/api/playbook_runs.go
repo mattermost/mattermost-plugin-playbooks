@@ -437,8 +437,11 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.CategoryName = pb.CategoryName
 		}
 
-		playbookRun.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
-		playbookRun.Retrospective = pb.RetrospectiveTemplate
+		if pb.RetrospectiveEnabled {
+			playbookRun.RetrospectiveEnabled = pb.RetrospectiveEnabled
+			playbookRun.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
+			playbookRun.Retrospective = pb.RetrospectiveTemplate
+		}
 
 		playbook = &pb
 	}

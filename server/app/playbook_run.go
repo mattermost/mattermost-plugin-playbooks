@@ -136,6 +136,9 @@ type PlaybookRun struct {
 	// to fill the retrospective.
 	RetrospectiveReminderIntervalSeconds int64 `json:"retrospective_reminder_interval_seconds"`
 
+	// Defines if retrospective functionality is enabled
+	RetrospectiveEnabled bool `json:"retrospective_enabled"`
+
 	// MessageOnJoin, if not empty, is the message shown to every user that joins the channel of
 	// the playbook run.
 	MessageOnJoin string `json:"message_on_join"`

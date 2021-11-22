@@ -32,6 +32,7 @@ export interface PlaybookRun {
     retrospective_published_at: number;
     retrospective_was_canceled: boolean;
     retrospective_reminder_interval_seconds: number;
+    retrospective_enabled: boolean;
     participant_ids: string[];
 }
 

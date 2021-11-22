@@ -41,6 +41,7 @@ type Playbook struct {
 	MessageOnJoinEnabled                 bool        `json:"message_on_join_enabled"`
 	RetrospectiveReminderIntervalSeconds int64       `json:"retrospective_reminder_interval_seconds"`
 	RetrospectiveTemplate                string      `json:"retrospective_template"`
+	RetrospectiveEnabled                 bool        `json:"retrospective_enabled"`
 	WebhookOnStatusUpdateURLs            []string    `json:"webhook_on_status_update_urls"`
 	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
 	SignalAnyKeywords                    []string    `json:"signal_any_keywords"`
