@@ -9,7 +9,7 @@ import {useNow} from 'src/hooks';
 /** See {@link Intl.RelativeTimeFormatStyle} */
 type FormatStyle = 'long' | 'narrow';
 
-type TruncateBehavior = 'none' | 'truncate'; // TODO | 'round'
+type TruncateBehavior = 'none' | 'truncate'; // | 'round'
 
 interface DurationProps {
     from: number | DateTime;
@@ -20,7 +20,7 @@ interface DurationProps {
     to?: 0 | number | DateTime;
     ago?: boolean;
     style?: FormatStyle;
-    truncate: TruncateBehavior;
+    truncate?: TruncateBehavior;
 }
 
 const label = (num: number, style: FormatStyle, narrow: string, singular: string, plural: string) => {
