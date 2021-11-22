@@ -239,7 +239,6 @@ const InnerContainer = styled.div`
     flex-direction: column;
     padding: 0 12px 24px 12px;
 
-    //background-color: var(--center-channel-bg);
     &:hover {
         background-color: var(--center-channel-color-04);
     }
