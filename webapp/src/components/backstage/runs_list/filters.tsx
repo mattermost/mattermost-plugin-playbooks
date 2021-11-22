@@ -14,8 +14,10 @@ import {useIntl} from 'react-intl';
 
 import {FetchPlaybookRunsParams, PlaybookRunStatus} from 'src/types/playbook_run';
 import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
+import PlaybookSelector, {Option as PlaybookOption} from 'src/components/backstage/runs_list/playbook_selector';
 import TeamSelector, {Option as TeamOption} from 'src/components/team/team_selector';
-import {fetchOwnersInTeam} from 'src/client';
+import {fetchOwnersInTeam, clientFetchPlaybooks} from 'src/client';
+import {Playbook} from '../../../types/playbook';
 
 import SearchInput from './search_input';
 import CheckboxInput from './checkbox_input';
@@ -24,6 +26,7 @@ interface Props {
     fetchParams: FetchPlaybookRunsParams
     setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>
     fixedTeam?: boolean
+    fixedPlaybook?: boolean
 }
 
 const searchDebounceDelayMilliseconds = 300;
@@ -47,7 +50,7 @@ const PlaybookRunListFilters = styled.div`
     }
 `;
 
-const controlComponent = (ownProps: ControlProps<TeamOption, boolean> | ControlProps<ProfileOption, boolean>, filterName: string) => (
+const controlComponent = (ownProps: ControlProps<TeamOption, boolean> | ControlProps<ProfileOption, boolean> | ControlProps<PlaybookOption, boolean>, filterName: string) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
@@ -66,11 +69,16 @@ const TeamControlComponent = (ownProps: ControlProps<TeamOption, boolean>) => {
     return controlComponent(ownProps, 'teams');
 };
 
-const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
+const PlaybookControlComponent = (ownProps: ControlProps<PlaybookOption, boolean>) => {
+    return controlComponent(ownProps, 'playbooks');
+};
+
+const Filters = ({fetchParams, setFetchParams, fixedTeam, fixedPlaybook}: Props) => {
     const {formatMessage} = useIntl();
     const teams = useSelector(getMyTeams);
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
     const [teamSelectorToggle, setTeamSelectorToggle] = useState(false);
+    const [playbookSelectorToggle, setPlaybookSelectorToggle] = useState(false);
 
     const myRunsOnly = fetchParams.participant_or_follower_id === 'me';
     const setMyRunsOnly = (checked?: boolean) => {
@@ -88,6 +96,12 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
     const setTeamId = (teamId?: string) => {
         setFetchParams((oldParams) => {
             return {...oldParams, team_id: teamId, page: 0};
+        });
+    };
+
+    const setPlaybookId = (playbookId?: string) => {
+        setFetchParams((oldParams) => {
+            return {...oldParams, playbook_id: playbookId, page: 0};
         });
     };
 
@@ -114,12 +128,22 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
         setTeamSelectorToggle(!teamSelectorToggle);
     };
 
+    const resetPlaybook = () => {
+        setPlaybookId();
+        setPlaybookSelectorToggle(!playbookSelectorToggle);
+    };
+
     async function fetchOwners() {
         const owners = await fetchOwnersInTeam(fetchParams.team_id || '');
         return owners.map((c) => {
             //@ts-ignore TODO Fix this strangeness
             return {...c, id: c.user_id} as UserProfile;
         });
+    }
+
+    async function fetchPlaybooks() {
+        const playbooks = await clientFetchPlaybooks(fetchParams.team_id || '', {team_id: fetchParams.team_id || '', sort: 'title'});
+        return playbooks ? playbooks.items : {} as Playbook[];
     }
 
     return (
@@ -156,6 +180,23 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                 getUsers={fetchOwners}
                 onSelectedChange={setOwnerId}
             />
+            {!fixedPlaybook &&
+                <PlaybookSelector
+                    testId={'playbook-filter'}
+                    selectedPlaybookId={fetchParams.playbook_id}
+                    placeholder={formatMessage({defaultMessage: 'Playbook'})}
+                    enableEdit={true}
+                    isClearable={true}
+                    customControl={PlaybookControlComponent}
+                    customControlProps={{
+                        showCustomReset: Boolean(fetchParams.playbook_id),
+                        onCustomReset: resetPlaybook,
+                    }}
+                    controlledOpenToggle={playbookSelectorToggle}
+                    getPlaybooks={fetchPlaybooks}
+                    onSelectedChange={setPlaybookId}
+                />
+            }
             {teams.length > 1 && !fixedTeam &&
                 <TeamSelector
                     testId={'team-filter'}
