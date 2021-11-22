@@ -18,6 +18,10 @@ import {StyledTextarea} from 'src/components/backstage/styles';
 import {publishRetrospective, updateRetrospective} from 'src/client';
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import PostText from 'src/components/post_text';
+import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
+
+// @ts-ignore
+const WebappUtils = window.WebappUtils;
 
 const Header = styled.div`
     display: flex;
@@ -134,6 +138,10 @@ const Report = (props: ReportProps) => {
                     />
                 </PostTextContainer>
             }
+            <RouteLeavingGuard
+                navigate={(path) => WebappUtils.browserHistory.push(path)}
+                shouldBlockNavigation={() => editing}
+            />
         </ReportContainer>
     );
 };
