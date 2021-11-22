@@ -952,7 +952,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	// We are resolving the playbook run. Send the reminder to fill out the retrospective
 	// Also start the recurring reminder if enabled.
-	if playbookRunToModify.RetrospectivePublishedAt == 0 && s.configService.IsAtLeastE10Licensed() {
+	if playbookRunToModify.RetrospectiveEnabled && playbookRunToModify.RetrospectivePublishedAt == 0 && s.configService.IsAtLeastE10Licensed() {
 		if err = s.postRetrospectiveReminder(playbookRunToModify, true); err != nil {
 			return errors.Wrap(err, "couldn't post retrospective reminder")
 		}
