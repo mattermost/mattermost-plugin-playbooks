@@ -10,12 +10,12 @@ import {useNow} from 'src/hooks';
 type FormatStyle = 'long' | 'narrow';
 
 interface DurationProps {
-    from: number;
+    from: number | DateTime;
 
     /**
      * @default 0 - refers to now
      */
-    to?: 0 | number;
+    to?: 0 | number | DateTime;
     ago?: boolean;
     style?: FormatStyle;
 }
@@ -59,8 +59,8 @@ const FormattedDuration = ({from, to = 0, ago, style}: DurationProps) => {
         return <div className='time'>{'-'}</div>;
     }
 
-    const start = DateTime.fromMillis(from);
-    const end = DateTime.fromMillis(to || now.valueOf());
+    const start = typeof from === 'number' ? DateTime.fromMillis(from) : from;
+    const end = typeof to === 'number' ? DateTime.fromMillis(to || now.valueOf()) : to;
     const duration = Interval.fromDateTimes(start, end).toDuration(['years', 'days', 'hours', 'minutes']);
     const postfix = ago ? ' ago' : '';
     return (

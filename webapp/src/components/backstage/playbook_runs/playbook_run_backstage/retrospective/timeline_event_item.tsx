@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {ReactNode, useState} from 'react';
 import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {Team} from 'mattermost-redux/types/teams';
@@ -13,8 +13,8 @@ import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
-import {messageHtmlToComponent, formatText, browserHistory, Timestamp} from 'src/webapp_globals';
-import {formatDuration} from 'src/components/formatted_duration';
+import {messageHtmlToComponent, formatText, browserHistory} from 'src/webapp_globals';
+import FormattedDuration, {formatDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
@@ -26,6 +26,7 @@ const Circle = styled.div`
     background: #EFF1F5;
     border-radius: 50%;
     left: 86px;
+    top: 5px;
 
     > .icon {
         font-size: 14px;
@@ -42,24 +43,42 @@ const TimeContainer = styled.div`
     position: absolute;
     width: 75px;
     line-height: 16px;
-    text-align: right;
+    text-align: left;
     left: 4px;
 `;
 
-const TimeHours = styled.div`
+const TimeStamp = styled.span`
     font-size: 11px;
-    font-weight: 600;
-    margin: 0 0 4px 0;
+    margin: 0px;
+    line-height: 1;
+    font-weight: 500;
+`;
+
+const TimeSinceStart = styled.span`
+    font-size: 11px;
+    display: inline-block;
+    white-space: nowrap;
+    background: transparent none repeat scroll 0% 0%;
+    border: 1px solid rgb(239, 241, 245);
+    border-radius: 50px;
+    height: 24px;
+    top: 5px;
+    position: absolute;
+    right: -31px;
+    padding: .25rem .5rem;
+    padding-right: calc(24px + 0.5rem);
 `;
 
 const TimeBetween = styled.div`
     font-size: 10px;
     position: absolute;
     top: -30px;
-    left: 0.5rem;
+    left: 0rem;
     white-space: nowrap;
-    font-weight: 600;
-    width: 8rem;
+    text-align: right;
+    width: 8.5rem;
+    font-weight: 500;
+
     &::after {
         content: '';
         background: #EFF1F5;
@@ -113,7 +132,8 @@ const DATETIME_FORMAT = {
 
 interface Props {
     event: TimelineEvent;
-    reportedAt: DateTime;
+    prevEventAt?: DateTime;
+    runCreateAt: DateTime;
     channelNames: ChannelNamesMap;
     team: Team;
     deleteEvent: () => void;
@@ -150,18 +170,26 @@ const TimelineEventItem = (props: Props) => {
     let summaryTitle = '';
     let summary = '';
     let testid = '';
-    const diff = DateTime.fromMillis(props.event.event_at).diff(props.reportedAt);
-    let stamp = formatDuration(diff);
+    const diff = DateTime.fromMillis(props.event.event_at).diff(props.runCreateAt);
+    let sinceStart = formatDuration(diff);
     if (diff.toMillis() < 0) {
-        stamp = '-' + formatDuration(diff.negate());
+        sinceStart = '- ' + formatDuration(diff.negate());
     }
-    let timeSince: JSX.Element | null = <TimeBetween>{stamp}</TimeBetween>;
+    const timeSincePrevEvent: ReactNode = props.prevEventAt && (
+        <TimeBetween>
+            <FormattedDuration
+                from={props.prevEventAt}
+                to={props.event.event_at}
+            />
+        </TimeBetween>
+    );
+    let timeSinceStart: ReactNode = <TimeSinceStart>{sinceStart}</TimeSinceStart>;
 
     switch (props.event.event_type) {
     case TimelineEventType.RunCreated:
         iconClass = 'icon icon-shield-alert-outline';
         summaryTitle = formatMessage({defaultMessage: 'Run started by {name}'}, {name: props.event.subject_display_name});
-        timeSince = null;
+        timeSinceStart = null;
         testid = TimelineEventType.RunCreated;
         break;
     case TimelineEventType.RunFinished:
@@ -246,17 +274,18 @@ const TimelineEventItem = (props: Props) => {
             </HoverMenu>
             }
             <TimeContainer>
-                {timeSince}
-                <TimeHours>
-                    {DateTime.fromMillis(props.event.event_at)
-                        .setZone('Etc/UTC')
-                        .toLocaleString(DATETIME_FORMAT)}
-                </TimeHours>
+                {timeSincePrevEvent}
+                {timeSinceStart}
             </TimeContainer>
             <Circle>
                 <i className={iconClass}/>
             </Circle>
             <SummaryContainer>
+                <TimeStamp>
+                    {DateTime.fromMillis(props.event.event_at)
+                        .setZone('Etc/UTC')
+                        .toLocaleString(DATETIME_FORMAT)}
+                </TimeStamp>
                 <SummaryTitle
                     onClick={(e) => !statusPostDeleted && goToPost(e, props.event.post_id)}
                     deleted={statusPostDeleted}
@@ -265,8 +294,8 @@ const TimelineEventItem = (props: Props) => {
                 </SummaryTitle>
                 {statusPostDeleted && (
                     <SummaryDeleted>
-                        {formatMessage({defaultMessage: 'Status post deleted: {timestamp}'}, {
-                            timestamp: DateTime.fromMillis(props.event.delete_at)
+                        {formatMessage({defaultMessage: 'Deleted: {timestamp}'}, {
+                            timestamp: DateTime.fromMillis(props.event.status_delete_at!)
                                 .setZone('Etc/UTC')
                                 .toLocaleString(DATETIME_FORMAT),
                         })}

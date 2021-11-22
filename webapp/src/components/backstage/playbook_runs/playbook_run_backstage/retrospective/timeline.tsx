@@ -70,16 +70,23 @@ const Timeline = (props: Props) => {
 
     return (
         <TimelineLine data-testid='timeline-view'>
-            {props.filteredEvents.map((event) => (
-                <TimelineEventItem
-                    key={event.id}
-                    event={event}
-                    reportedAt={DateTime.fromMillis(props.playbookRun.create_at)}
-                    channelNames={channelNamesMap}
-                    team={team}
-                    deleteEvent={() => props.deleteTimelineEvent(event.id)}
-                />
-            ))}
+            {props.filteredEvents.map((event, i, events) => {
+                let prevEventAt;
+                if (i !== 0) {
+                    prevEventAt = DateTime.fromMillis(events[i - 1].event_at);
+                }
+                return (
+                    <TimelineEventItem
+                        key={event.id}
+                        event={event}
+                        prevEventAt={prevEventAt}
+                        runCreateAt={DateTime.fromMillis(props.playbookRun.create_at)}
+                        channelNames={channelNamesMap}
+                        team={team}
+                        deleteEvent={() => props.deleteTimelineEvent(event.id)}
+                    />
+                );
+            })}
         </TimelineLine>
     );
 };
