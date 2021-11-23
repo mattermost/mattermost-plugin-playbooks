@@ -36,6 +36,10 @@ const Updates = (props: Props) => {
 
     let updates: ReactNode =
         <EmptyBody>{formatMessage({defaultMessage: 'There are no updates available.'})}</EmptyBody>;
+
+    if (!props.playbookRun.status_update_enabled) {
+        updates = <EmptyBody>{formatMessage({defaultMessage: 'Status updates were disabled for this playbook run.'})}</EmptyBody>;
+    }
     if (statusPosts.length) {
         updates = statusPosts.reduce((result, sp) => {
             if (sp.delete_at === 0) {
