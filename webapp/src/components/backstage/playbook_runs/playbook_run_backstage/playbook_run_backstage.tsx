@@ -202,7 +202,6 @@ const PlaybookRunBackstage = () => {
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
-        console.log(currentRun);
         
         if(!currentRun)
         Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
@@ -214,7 +213,6 @@ const PlaybookRunBackstage = () => {
             setFetchingState(FetchingStateType.notFound);
         });
         else{
-            console.log("fetching the current run")
             setPlaybookRun(currentRun);
         }
     }, [match.params.playbookRunId, currentRun]);

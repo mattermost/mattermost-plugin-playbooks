@@ -30,7 +30,8 @@ interface Props {
 }
 
 const Updates = (props: Props) => {
-    const statusPosts = props.playbookRun.status_posts.sort((a, b) => b.create_at - a.create_at);
+    // sorting somehow breakes the application
+    const statusPosts = props.playbookRun.status_posts;
     const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
