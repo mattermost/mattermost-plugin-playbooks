@@ -473,7 +473,7 @@ const PlaybookEdit = (props: Props) => {
     const handleToggleBroadcastChannels = () => {
         setPlaybook({
             ...playbook,
-            broadcast_enabled: !playbook.broadcast_enabled,
+            broadcast_enabled: !playbook.broadcast_enabled && playbook.status_update_enabled,
         });
         setChangesMade(true);
     };
@@ -505,7 +505,7 @@ const PlaybookEdit = (props: Props) => {
     const handleToggleWebhookOnStatusUpdate = () => {
         setPlaybook({
             ...playbook,
-            webhook_on_status_update_enabled: !playbook.webhook_on_status_update_enabled,
+            webhook_on_status_update_enabled: !playbook.webhook_on_status_update_enabled && playbook.status_update_enabled,
         });
         setChangesMade(true);
     };
@@ -637,6 +637,8 @@ const PlaybookEdit = (props: Props) => {
                                                     setPlaybook({
                                                         ...playbook,
                                                         status_update_enabled: !playbook.status_update_enabled,
+                                                        webhook_on_status_update_enabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
+                                                        broadcast_enabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
                                                     });
                                                     setChangesMade(true);
                                                 }}
@@ -765,6 +767,7 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleCategorizePlaybookRun={handleToggleCategorizePlaybookRun}
                                     categoryName={playbook.category_name}
                                     categoryNameChange={handleCategoryNameChange}
+                                    statusUpdatesEnabled={playbook.status_update_enabled}
                                 />
                             </TabContainer>
                             <TabContainer>
