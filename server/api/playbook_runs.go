@@ -401,7 +401,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 		playbookRun.Summary = pb.RunSummaryTemplate
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
-		playbookRun.ReminderEnabled = pb.ReminderEnabled
+		playbookRun.StatusUpdatesEnabled = pb.StatusUpdatesEnabled
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
 		playbookRun.ReminderTimerDefaultSeconds = pb.ReminderTimerDefaultSeconds
 
