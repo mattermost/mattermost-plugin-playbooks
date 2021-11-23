@@ -29,11 +29,12 @@ interface CardEntryProps {
     className?: string;
     onClick?: () => void;
     enabled: boolean;
+    disabledText?: string;
 }
 
 export const CardEntry = (props: CardEntryProps) => {
     if (!props.enabled) {
-        return null;
+        return (<Title>{props.disabledText}</Title>);
     }
 
     return (
