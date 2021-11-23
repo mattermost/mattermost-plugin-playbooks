@@ -9,6 +9,10 @@ import {useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';
 
+import Icon from '@mdi/react';
+
+import {mdiClockOutline} from '@mdi/js';
+
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
@@ -17,6 +21,7 @@ import {messageHtmlToComponent, formatText, browserHistory} from 'src/webapp_glo
 import FormattedDuration, {formatDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
+import Tooltip from 'src/components/widgets/tooltip';
 
 const Circle = styled.div`
     position: absolute;
@@ -52,6 +57,12 @@ const TimeStamp = styled.time`
     margin: 0px;
     line-height: 1;
     font-weight: 500;
+    svg {
+        vertical-align: middle;
+        margin: 0px 3px;
+        position: relative;
+        top: -1px;
+    }
 `;
 
 const TimeSinceStart = styled.span`
@@ -88,8 +99,7 @@ const TimeBetween = styled.div`
 
 const SummaryContainer = styled.div`
     position: relative;
-    margin: 0 0 0 55px;
-    padding: 0 5px 0 0;
+    padding: 0 5px 0 55px;
     line-height: 16px;
     min-height: 36px;
 `;
@@ -166,11 +176,11 @@ const TimelineEventItem = (props: Props) => {
     let summary = '';
     let testid = '';
 
-    const eventTime = DateTime.fromMillis(props.event.event_at).setZone('Etc/UTC');
+    const eventTime = DateTime.fromMillis(props.event.event_at);
     const diff = DateTime.fromMillis(props.event.event_at).diff(props.runCreateAt);
-    let sinceStart = formatDuration(diff);
+    let timeSinceStart: ReactNode = formatMessage({defaultMessage: '{duration} after run started'}, {duration: formatDuration(diff)});
     if (diff.toMillis() < 0) {
-        sinceStart = '- ' + formatDuration(diff.negate());
+        timeSinceStart = formatMessage({defaultMessage: '{duration} before run started'}, {duration: formatDuration(diff.negate())});
     }
     const timeSincePrevEvent: ReactNode = props.prevEventAt && (
         <TimeBetween>
@@ -180,11 +190,6 @@ const TimelineEventItem = (props: Props) => {
                 truncate={'truncate'}
             />
         </TimeBetween>
-    );
-    let timeSinceStart: ReactNode = (
-        <TimeSinceStart aria-label={formatMessage({defaultMessage: '{duration} since run started'}, {duration: formatDuration(diff, 'long')})}>
-            {sinceStart}
-        </TimeSinceStart>
     );
 
     switch (props.event.event_type) {
@@ -281,10 +286,25 @@ const TimelineEventItem = (props: Props) => {
             <Circle>
                 <i className={iconClass}/>
             </Circle>
+
             <SummaryContainer>
-                <TimeStamp dateTime={eventTime.toISO()}>
-                    {eventTime.toLocaleString(DATETIME_FORMAT)}
-                    {timeSinceStart}
+                <TimeStamp dateTime={eventTime.setZone('Etc/UTC').toISO()}>
+                    {eventTime.setZone('Etc/UTC').toLocaleString(DATETIME_FORMAT)}
+                    <Tooltip
+                        id={`timeline-${props.event.id}`}
+                        content={(
+                            <>
+                                {eventTime.toLocaleString(DATETIME_FORMAT)}
+                                <br/>
+                                {timeSinceStart}
+                            </>
+                        )}
+                    >
+                        <Icon
+                            path={mdiClockOutline}
+                            size={0.85}
+                        />
+                    </Tooltip>
                 </TimeStamp>
                 <SummaryTitle
                     onClick={(e) => !statusPostDeleted && goToPost(e, props.event.post_id)}
@@ -303,6 +323,7 @@ const TimelineEventItem = (props: Props) => {
                 )}
                 <SummaryDetail>{messageHtmlToComponent(formatText(summary, markdownOptions), true, {})}</SummaryDetail>
             </SummaryContainer>
+
             <ConfirmModal
                 show={showDeleteConfirm}
                 title={formatMessage({defaultMessage: 'Confirm Entry Delete'})}
