@@ -31,14 +31,16 @@ interface Props {
 
 const Updates = (props: Props) => {
     // sorting somehow breakes the application
-    const statusPosts = props.playbookRun.status_posts;
+    let statusPosts = props.playbookRun.status_posts;
+    let sortedStatusPosts = [...statusPosts].sort((a, b) => b.create_at - a.create_at);
+
     const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
     let updates: ReactNode =
         <EmptyBody>{formatMessage({defaultMessage: 'There are no updates available.'})}</EmptyBody>;
-    if (statusPosts.length) {
-        updates = statusPosts.reduce((result, sp) => {
+    if (sortedStatusPosts.length) {
+        updates = sortedStatusPosts.reduce((result, sp) => {
             if (sp.delete_at === 0) {
                 result.push(
                     <PostContent
