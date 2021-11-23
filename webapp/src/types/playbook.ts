@@ -22,6 +22,7 @@ export interface PlaybookWithChecklist extends Playbook {
     checklists: Checklist[];
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
+    reminder_enabled: boolean;
     invited_user_ids: string[];
     invited_group_ids: string[];
     invite_users_enabled: boolean;
@@ -108,6 +109,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         member_ids: [],
         reminder_message_template: '',
         reminder_timer_default_seconds: 7 * 24 * 60 * 60, // 7 days
+        reminder_enabled: true,
         invited_user_ids: [],
         invited_group_ids: [],
         invite_users_enabled: false,

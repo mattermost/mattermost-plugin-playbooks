@@ -94,6 +94,9 @@ type PlaybookRun struct {
 	// between every status update
 	ReminderTimerDefaultSeconds int64 `json:"reminder_timer_default_seconds"`
 
+	//Defines if status update functionality is enabled
+	ReminderEnabled bool `json:"reminder_enabled"`
+
 	// InvitedUserIDs, if not empty, is an array containing the identifiers of the users that were
 	// automatically invited to the playbook run when it was created.
 	InvitedUserIDs []string `json:"invited_user_ids"`
