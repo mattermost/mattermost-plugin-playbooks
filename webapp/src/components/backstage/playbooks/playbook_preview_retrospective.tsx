@@ -49,7 +49,8 @@ const PlaybookPreviewRetrospective = (props: Props) => {
                             {props.playbook.retrospective_reminder_interval_seconds === 0 ? 'ONCE' : formatDuration(Duration.fromObject({seconds: props.playbook.retrospective_reminder_interval_seconds}), 'long')}
                         </TextBadge>
                     )}
-                    enabled={true}
+                    enabled={props.playbook.retrospective_enabled}
+                    disabledText={'Retrospectives were disabled for this playbook.'}
                 >
                     <CardSubEntry
                         title={formatMessage({

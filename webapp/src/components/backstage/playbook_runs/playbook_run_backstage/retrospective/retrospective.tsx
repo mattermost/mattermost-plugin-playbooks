@@ -11,9 +11,11 @@ import {AdminNotificationType} from 'src/constants';
 
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookRun} from 'src/types/playbook_run';
+import styled from 'styled-components';
 
 import Report from './report';
 import TimelineRetro from './timeline_retro';
+import {FormattedMessage} from 'react-intl';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -36,10 +38,15 @@ export const Retrospective = (props: Props) => {
         );
     }
 
+    let leftSection = <Report playbookRun={props.playbookRun}/>
+    if (!props.playbookRun.retrospective_enabled) {
+        leftSection = <RetrospectiveDisabledText><FormattedMessage defaultMessage='Retrospectives were disabled for this playbook run.'/></RetrospectiveDisabledText>
+    }
+
     return (
         <Container>
             <Left>
-                <Report playbookRun={props.playbookRun}/>
+                {leftSection}
             </Left>
             <Right>
                 <TimelineRetro
@@ -50,3 +57,13 @@ export const Retrospective = (props: Props) => {
         </Container>
     );
 };
+
+
+const RetrospectiveDisabledText = styled.h2`
+    font-family: Open Sans;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 20px;
+    color: var(--center-channel-color);
+    text-align: left;
+`;
