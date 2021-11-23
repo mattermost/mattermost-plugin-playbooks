@@ -25,6 +25,7 @@ import {
 interface Props {
     seconds: number;
     setSeconds: (seconds: number) => void;
+    disabled?: boolean;
 }
 
 const optionFromSeconds = (seconds: number) => {
@@ -70,8 +71,9 @@ const DefaultUpdateTimer = (props: Props) => {
         isClearable: false,
         placeholder: formatMessage({defaultMessage: 'Select an option or specify a custom duration'}),
         id: 'update_timer_duration',
+        disabled: props.disabled,
     });
-
+    
     if (value?.value) {
         props.setSeconds(Math.floor(ms(value.value) / 1000));
     }

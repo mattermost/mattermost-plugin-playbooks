@@ -41,7 +41,10 @@ import {
     TabContainer,
     StyledMarkdownTextbox,
     StyledSelect,
+    BackstageGroupToggleHeader,
 } from './styles';
+import { Toggle } from './automation/toggle';
+
 
 const Container = styled.div`
     display: flex;
@@ -606,20 +609,6 @@ const PlaybookEdit = (props: Props) => {
                             />
                             <TabContainer>
                                 <SidebarBlock>
-                                    <DefaultUpdateTimer
-                                        seconds={playbook.reminder_timer_default_seconds}
-                                        setSeconds={(seconds: number) => {
-                                            if (seconds !== playbook.reminder_timer_default_seconds &&
-                                                seconds > 0) {
-                                                setPlaybook({
-                                                    ...playbook,
-                                                    reminder_timer_default_seconds: seconds,
-                                                });
-                                            }
-                                        }}
-                                    />
-                                </SidebarBlock>
-                                <SidebarBlock>
                                     <BackstageSubheader>
                                         {formatMessage({defaultMessage: 'Run Summary'})}
                                         <BackstageSubheaderDescription>
@@ -641,6 +630,37 @@ const PlaybookEdit = (props: Props) => {
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>
+                                        <BackstageGroupToggleHeader>
+                                            <Toggle
+                                                isChecked={playbook.status_update_enabled}
+                                                onChange={() => {
+                                                    setPlaybook({
+                                                        ...playbook,
+                                                        status_update_enabled: !playbook.status_update_enabled,
+                                                    });
+                                                    setChangesMade(true);
+                                                }}
+                                                
+                                            />
+                                            {formatMessage({defaultMessage: 'Enable status updates'})}
+                                            </BackstageGroupToggleHeader>
+                                    </SidebarBlock>
+                                <SidebarBlock>
+                                    <DefaultUpdateTimer
+                                        seconds={playbook.reminder_timer_default_seconds}
+                                        setSeconds={(seconds: number) => {
+                                            if (seconds !== playbook.reminder_timer_default_seconds &&
+                                                seconds > 0) {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    reminder_timer_default_seconds: seconds,
+                                                });
+                                            }
+                                        }}
+                                        disabled={!playbook.status_update_enabled}
+                                    />
+                                </SidebarBlock>
+                                <SidebarBlock>
                                     <BackstageSubheader>
                                         {formatMessage({defaultMessage: 'Status updates'})}
                                         <BackstageSubheaderDescription>
@@ -659,6 +679,7 @@ const PlaybookEdit = (props: Props) => {
                                             });
                                             setChangesMade(true);
                                         }}
+                                        disabled={!playbook.status_update_enabled}
                                     />
                                 </SidebarBlock>
                                 {retrospectiveAccess &&

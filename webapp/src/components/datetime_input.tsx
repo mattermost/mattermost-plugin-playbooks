@@ -107,6 +107,7 @@ type Props = {
         durationResults: Duration[],
         mode: Mode,
     ) => Option[] | null;
+    disabled?:boolean;
 } & Partial<ComponentProps<typeof StyledSelect>>;
 
 const DateTimeInput = ({
@@ -116,6 +117,7 @@ const DateTimeInput = ({
     makeOptions = defaultMakeOptions,
     isClearable = true,
     placeholder,
+    disabled,
     ...selectProps
 }: Props) => {
     const [options, setOptions] = useState<Option[] | null>(null);
@@ -149,6 +151,7 @@ const DateTimeInput = ({
             maxMenuHeight={380}
             styles={customStyles}
             formatOptionLabel={OptionLabel}
+            isDisabled={disabled ?? false}
         />
     );
 };
