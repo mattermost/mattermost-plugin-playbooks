@@ -267,7 +267,7 @@ const MainTitle = styled.div`
 const ChecklistContainer = styled.div`
     background-color: var(--center-channel-bg);
     border-radius: 0 0 4px 4px;
-    border:  1px solid rgba(var(--center-channel-color-rgb, 0.08));
+    border:  1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-top: 0;
     padding: 16px 12px;
 `;
