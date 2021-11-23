@@ -6,6 +6,7 @@ import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 import {useIntl} from 'react-intl';
+import {useRun} from 'src/hooks';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
@@ -189,6 +190,8 @@ const PlaybookRunBackstage = () => {
     const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
     const currentUserID = useSelector(getCurrentUserId);
+    const currentRun = useRun(match.params.playbookRunId);
+
     const [followers, setFollowers] = useState<string[]>([]);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
@@ -199,7 +202,9 @@ const PlaybookRunBackstage = () => {
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
-
+        console.log(currentRun);
+        
+        if(!currentRun)
         Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
             setPlaybookRun(playbookRunResult);
             setPlaybookRunMetadata(playbookRunMetadataResult);
@@ -208,9 +213,15 @@ const PlaybookRunBackstage = () => {
         }).catch(() => {
             setFetchingState(FetchingStateType.notFound);
         });
-    }, [match.params.playbookRunId]);
+        else{
+            console.log("fetching the current run")
+            setPlaybookRun(currentRun);
+        }
+    }, [match.params.playbookRunId, currentRun]);
 
     useEffect(() => {
+        console.log(currentRun);
+
         const fetchData = async () => {
             if (playbookRun?.playbook_id) {
                 const fetchedPlaybook = await clientFetchPlaybook(playbookRun.playbook_id);
@@ -218,8 +229,12 @@ const PlaybookRunBackstage = () => {
             }
         };
 
+        if(!currentRun)
         fetchData();
-    }, [playbookRun?.playbook_id]);
+        else{
+            setPlaybookRun(currentRun);
+        }
+    }, [playbookRun?.playbook_id, currentRun]);
 
     const deleteTimelineEvent = async (id: string) => {
         if (!playbookRun) {
