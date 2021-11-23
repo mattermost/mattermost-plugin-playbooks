@@ -15,7 +15,6 @@ import styled from 'styled-components';
 
 import Report from './report';
 import TimelineRetro from './timeline_retro';
-import {FormattedMessage} from 'react-intl';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -40,7 +39,7 @@ export const Retrospective = (props: Props) => {
 
     let leftSection = <Report playbookRun={props.playbookRun}/>
     if (!props.playbookRun.retrospective_enabled) {
-        leftSection = <RetrospectiveDisabledText><FormattedMessage defaultMessage='Retrospectives were disabled for this playbook run.'/></RetrospectiveDisabledText>
+        leftSection = <RetrospectiveDisabledText>{formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}</RetrospectiveDisabledText>
     }
 
     return (

@@ -667,21 +667,20 @@ const PlaybookEdit = (props: Props) => {
                                 {retrospectiveAccess &&
                                 <>
                                     <SidebarBlock>
-                                    <BackstageGroupToggleHeader>
-                                        <Toggle
-                                            isChecked={playbook.retrospective_enabled}
-                                            onChange={() => {
-                                                setPlaybook({
-                                                    ...playbook,
-                                                    retrospective_enabled: !playbook.retrospective_enabled,
-                                                });
-                                                setChangesMade(true);
-                                            }}
-                                            
-                                        />
-                                        {formatMessage({defaultMessage: 'Enable retrospective'})}
-                                        {/* <div><FormattedMessage defaultMessage='Enable retrospective'/></div> */}
-                                        </BackstageGroupToggleHeader>
+                                        <BackstageGroupToggleHeader>
+                                            <Toggle
+                                                isChecked={playbook.retrospective_enabled}
+                                                onChange={() => {
+                                                    setPlaybook({
+                                                        ...playbook,
+                                                        retrospective_enabled: !playbook.retrospective_enabled,
+                                                    });
+                                                    setChangesMade(true);
+                                                }}
+                                                
+                                            />
+                                            {formatMessage({defaultMessage: 'Enable retrospective'})}
+                                            </BackstageGroupToggleHeader>
                                     </SidebarBlock>
                                     
                                     <SidebarBlock>

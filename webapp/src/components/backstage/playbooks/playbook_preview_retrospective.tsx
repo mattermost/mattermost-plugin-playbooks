@@ -50,7 +50,7 @@ const PlaybookPreviewRetrospective = (props: Props) => {
                         </TextBadge>
                     )}
                     enabled={props.playbook.retrospective_enabled}
-                    disabledText={'Retrospectives were disabled for this playbook.'}
+                    disabledText={formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook.'})}
                 >
                     <CardSubEntry
                         title={formatMessage({

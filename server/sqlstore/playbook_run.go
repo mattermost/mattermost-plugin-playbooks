@@ -442,7 +442,6 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 			"ConcatenatedWebhookOnCreationURLs":     rawPlaybookRun.ConcatenatedWebhookOnCreationURLs,
 			"Retrospective":                         rawPlaybookRun.Retrospective,
 			"RetrospectivePublishedAt":              rawPlaybookRun.RetrospectivePublishedAt,
-			"RetrospectiveEnabled":                  rawPlaybookRun.RetrospectiveEnabled,
 			"MessageOnJoin":                         rawPlaybookRun.MessageOnJoin,
 			"RetrospectiveReminderIntervalSeconds":  rawPlaybookRun.RetrospectiveReminderIntervalSeconds,
 			"RetrospectiveWasCanceled":              rawPlaybookRun.RetrospectiveWasCanceled,
