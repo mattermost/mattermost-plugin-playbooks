@@ -23,7 +23,7 @@ export interface PlaybookRun {
     reminder_post_id: string;
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
-    reminder_enabled: boolean;
+    status_update_enabled: boolean;
 
     /** Previous reminder timer as nanoseconds */
     previous_reminder: number;
