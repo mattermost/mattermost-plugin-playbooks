@@ -204,7 +204,7 @@ const RHSChecklists = (props: Props) => {
                                                                 draggableProvided={draggableProvided}
                                                                 dragging={snapshot.isDragging}
                                                                 disabled={finished}
-                                                                inlineDescription={false}
+                                                                collapsibleDescription={true}
                                                             />
                                                         )}
                                                     </Draggable>

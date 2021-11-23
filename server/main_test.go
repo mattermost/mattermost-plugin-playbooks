@@ -68,10 +68,12 @@ type TestEnvironment struct {
 	PlaybooksAdminClient *client.Client
 	ServerClient         *model.Client4
 	PlaybooksClient      *client.Client
+	PlaybooksClient2     *client.Client
 
 	UnauthenticatedPlaybooksClient *client.Client
 
 	BasicTeam               *model.Team
+	BasicTeam2              *model.Team
 	BasicPublicChannel      *model.Channel
 	BasicPublicChannelPost  *model.Post
 	BasicPrivateChannel     *model.Channel
@@ -79,6 +81,7 @@ type TestEnvironment struct {
 	BasicPlaybook           *client.Playbook
 	AdminUser               *model.User
 	RegularUser             *model.User
+	RegularUser2            *model.User
 }
 
 func getEnvWithDefault(name, defaultValue string) string {
@@ -89,7 +92,7 @@ func getEnvWithDefault(name, defaultValue string) string {
 }
 
 func Setup(t *testing.T) *TestEnvironment {
-	// Enviroment Settings
+	// Environment Settings
 	driverName := getEnvWithDefault("TEST_DATABASE_DRIVERNAME", "postgres")
 
 	sqlSettings := storetest.MakeSqlSettings(driverName, false)
@@ -189,6 +192,13 @@ func (e *TestEnvironment) CreateClients() {
 	})
 	e.RegularUser = user
 
+	user2, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
+		Email:    "playbooksuser2@test.com",
+		Username: "playbooksuser2",
+		Password: userPassword,
+	})
+	e.RegularUser2 = user2
+
 	siteURL := "http://localhost:9056"
 
 	serverAdminClient := model.NewAPIv4Client(siteURL)
@@ -212,8 +222,16 @@ func (e *TestEnvironment) CreateClients() {
 	unauthClient, err := client.New(unauthServerClient)
 	require.NoError(e.T, err)
 
+	serverClient2 := model.NewAPIv4Client(siteURL)
+	_, _, err = serverClient2.Login(user2.Email, userPassword)
+	require.NoError(e.T, err)
+
+	playbooksClient2, err := client.New(serverClient2)
+	require.NoError(e.T, err)
+
 	e.ServerClient = serverClient
 	e.PlaybooksClient = playbooksClient
+	e.PlaybooksClient2 = playbooksClient2
 	e.UnauthenticatedPlaybooksClient = unauthClient
 }
 
@@ -229,6 +247,8 @@ func (e *TestEnvironment) CreateBasicServer() {
 	require.NoError(e.T, err)
 
 	_, _, err = e.ServerAdminClient.AddTeamMember(team.Id, e.RegularUser.Id)
+	require.NoError(e.T, err)
+	_, _, err = e.ServerAdminClient.AddTeamMember(team.Id, e.RegularUser2.Id)
 	require.NoError(e.T, err)
 
 	pubChannel, _, err := e.ServerAdminClient.CreateChannel(&model.Channel{
@@ -269,6 +289,20 @@ func (e *TestEnvironment) CreateBasicServer() {
 	e.BasicPublicChannelPost = pubPost
 	e.BasicPrivateChannel = privateChannel
 	e.BasicPrivateChannelPost = privatePost
+
+	// Add a second team to test cross-team features
+	team2, _, err := e.ServerAdminClient.CreateTeam(&model.Team{
+		DisplayName: "second team",
+		Name:        "second-team",
+		Email:       "success+playbooks@simulator.amazonses.com",
+		Type:        model.TeamOpen,
+	})
+	require.NoError(e.T, err)
+
+	_, _, err = e.ServerAdminClient.AddTeamMember(team2.Id, e.RegularUser.Id)
+	require.NoError(e.T, err)
+
+	e.BasicTeam2 = team2
 }
 
 func (e *TestEnvironment) CreateBasicPlaybooks() {

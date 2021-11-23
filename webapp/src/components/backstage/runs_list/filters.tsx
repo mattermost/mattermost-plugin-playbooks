@@ -6,19 +6,17 @@ import debounce from 'debounce';
 import {components, ControlProps} from 'react-select';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
 
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {UserProfile} from 'mattermost-redux/types/users';
-
-import {useIntl} from 'react-intl';
 
 import {FetchPlaybookRunsParams, PlaybookRunStatus} from 'src/types/playbook_run';
 import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
 import TeamSelector, {Option as TeamOption} from 'src/components/team/team_selector';
 import {fetchOwnersInTeam} from 'src/client';
-
-import SearchInput from './search_input';
-import CheckboxInput from './checkbox_input';
+import SearchInput from 'src/components/backstage/search_input';
+import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 
 interface Props {
     fetchParams: FetchPlaybookRunsParams
@@ -72,10 +70,10 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
     const [teamSelectorToggle, setTeamSelectorToggle] = useState(false);
 
-    const myRunsOnly = fetchParams.participant_id === 'me';
+    const myRunsOnly = fetchParams.participant_or_follower_id === 'me';
     const setMyRunsOnly = (checked?: boolean) => {
         setFetchParams((oldParams) => {
-            return {...oldParams, participant_id: checked ? 'me' : ''};
+            return {...oldParams, participant_or_follower_id: checked ? 'me' : ''};
         });
     };
 
@@ -128,6 +126,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                 testId={'search-filter'}
                 default={fetchParams.search_term}
                 onSearch={debounce(setSearchTerm, searchDebounceDelayMilliseconds)}
+                placeholder={formatMessage({defaultMessage: 'Search by run name'})}
             />
             <CheckboxInput
                 testId={'my-runs-only'}

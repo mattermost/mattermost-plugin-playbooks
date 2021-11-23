@@ -33,7 +33,8 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
         (fetchParams?.search_term?.length ?? 0) > 0 ||
         (fetchParams?.statuses?.length ?? 0) > 1 ||
         (fetchParams?.owner_user_id?.length ?? 0) > 0 ||
-        (fetchParams?.participant_id?.length ?? 0) > 0
+        (fetchParams?.participant_id?.length ?? 0) > 0 ||
+        (fetchParams?.participant_or_follower_id?.length ?? 0) > 0
     );
 
     const setPage = (page: number) => {

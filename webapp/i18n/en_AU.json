@@ -320,5 +320,22 @@
     "+hddg7": "Add to run timeline",
     "+ZIXOR": "Channel access",
     "+QgvjN": "Assign the owner role to",
-    "+8G9qr": "Default text for the retrospective."
+    "+8G9qr": "Default text for the retrospective.",
+    "xvBDOH": "Are you sure you want to archive the playbook {title}?",
+    "sDKojV": "Archive playbook",
+    "hrgo+E": "Archive",
+    "EQpfkS": "Finished",
+    "36GNZj": "Successfully archived playbook {title}.",
+    "0HT+Ib": "Archived",
+    "zz6ObK": "Restore",
+    "ypIsVG": "Restore task",
+    "wO6NOM": "Are you sure you want to Restore this task? This Task will be added to this run.",
+    "kDcpd/": "{numKeywords, plural, other {# keywords}}",
+    "h+e7G+": "Prompt to run this playbook when a message contains {numKeywords, select, 1 {the keyword} other {one or more of these}}",
+    "dSC1YD": "Skip task",
+    "XXbWAU": "Select this to automatically receive updates when this playbook is run.",
+    "Vhnd2J": "Toggle description",
+    "7VTSeD": "Are you sure you want to skip this task? This will be crossed from this run but will not affect the playbook.",
+    "/4tOwT": "Skip",
+    "+Tmpup": "You'll automatically receive updates when this playbook is run."
 }
