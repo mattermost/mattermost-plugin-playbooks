@@ -28,7 +28,7 @@ type Playbook struct {
 	MemberIDs                            []string    `json:"member_ids"`
 	ReminderMessageTemplate              string      `json:"reminder_message_template"`
 	ReminderTimerDefaultSeconds          int64       `json:"reminder_timer_default_seconds"`
-	StatusUpdatesEnabled                 bool        `json:"status_update_enabled"`
+	StatusUpdateEnabled                  bool        `json:"status_update_enabled"`
 	InvitedUserIDs                       []string    `json:"invited_user_ids"`
 	InvitedGroupIDs                      []string    `json:"invited_group_ids"`
 	InviteUsersEnabled                   bool        `json:"invite_users_enabled"`

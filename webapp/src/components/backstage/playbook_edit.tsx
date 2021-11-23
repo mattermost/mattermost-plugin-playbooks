@@ -767,7 +767,7 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleCategorizePlaybookRun={handleToggleCategorizePlaybookRun}
                                     categoryName={playbook.category_name}
                                     categoryNameChange={handleCategoryNameChange}
-                                    statusUpdatesEnabled={playbook.status_update_enabled}
+                                    statusUpdateEnabled={playbook.status_update_enabled}
                                 />
                             </TabContainer>
                             <TabContainer>

@@ -1529,18 +1529,18 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.41.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
-				if err := addColumnToMySQLTable(e, "IR_Playbook", "StatusUpdatesEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
-					return errors.Wrapf(err, "failed adding column StatusUpdatesEnabled to table IR_Playbook")
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Playbook")
 				}
-				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdatesEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
-					return errors.Wrapf(err, "failed adding column StatusUpdatesEnabled to table IR_Incident")
+				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Incident")
 				}
 			} else {
-				if err := addColumnToPGTable(e, "IR_Playbook", "StatusUpdatesEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
-					return errors.Wrapf(err, "failed adding column StatusUpdatesEnabled to table IR_Playbook")
+				if err := addColumnToPGTable(e, "IR_Playbook", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Playbook")
 				}
-				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdatesEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
-					return errors.Wrapf(err, "failed adding column StatusUpdatesEnabled to table IR_Incident")
+				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Incident")
 				}
 			}
 
