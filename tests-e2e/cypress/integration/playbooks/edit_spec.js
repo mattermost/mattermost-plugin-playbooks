@@ -6,8 +6,9 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('playooks > edit', () => {
+describe('playbooks > edit', () => {
     let testTeam;
+    let testSysadmin;
     let testUser;
     let testUser2;
     let testUser3;
@@ -16,6 +17,10 @@ describe('playooks > edit', () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
+                testSysadmin = sysadmin;
+            });
 
             // # Create a second test user in this team
             cy.apiCreateUser().then((payload) => {
@@ -162,6 +167,45 @@ describe('playooks > edit', () => {
         });
 
         describe('when a playbook run starts', () => {
+            describe('create channel setting', () => {
+                it('is enabled in a new playbook', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('#create-channel label input').should(
+                        'be.checked'
+                    );
+
+                    // * Verify that the toggle is disabled
+                    cy.get('#create-channel label input').should(
+                        'be.disabled'
+                    );
+                });
+
+                it('can not be disabled', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    cy.get('#create-channel').within(() => {
+                        // * Verify that the toggle checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle remains checked
+                        cy.get('label input').should('be.checked');
+                    });
+                });
+            });
+
             describe('invite members setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
@@ -430,7 +474,7 @@ describe('playooks > edit', () => {
                     let playbookId;
 
                     // # Create a playbook with a user that is later removed from the team
-                    cy.apiAdminLogin()
+                    cy.apiLogin(testSysadmin)
                         .then(() => {
                             cy.apiCreateUser().then((result) => {
                                 userToRemove = result.user;
@@ -444,7 +488,7 @@ describe('playooks > edit', () => {
                                     teamId: testTeam.id,
                                     title: 'Playbook (' + Date.now() + ')',
                                     createPublicPlaybookRun: true,
-                                    memberIDs: [testUser.id],
+                                    memberIDs: [testUser.id, testSysadmin.id],
                                     invitedUserIds: [userToRemove.id],
                                     inviteUsersEnabled: true,
                                 }).then((playbook) => {
@@ -692,7 +736,7 @@ describe('playooks > edit', () => {
                     let playbookId;
 
                     // # Create a playbook with a user that is later removed from the team
-                    cy.apiAdminLogin()
+                    cy.apiLogin(testSysadmin)
                         .then(() => {
                             // # We need to increase the maximum number of users per team; otherwise,
                             // adding a new member to the team fails in CI
@@ -710,7 +754,7 @@ describe('playooks > edit', () => {
                                     teamId: testTeam.id,
                                     title: 'Playbook (' + Date.now() + ')',
                                     createPublicPlaybookRun: true,
-                                    memberIDs: [testUser.id],
+                                    memberIDs: [testUser.id, testSysadmin.id],
                                     defaultOwnerId: userToRemove.id,
                                     defaultOwnerEnabled: true,
                                 }).then((playbook) => {
@@ -960,7 +1004,7 @@ describe('playooks > edit', () => {
                     let playbookId;
 
                     // # Create a playbook with a user that is later removed from the team
-                    cy.apiAdminLogin()
+                    cy.apiLogin(testSysadmin)
                         .then(() => {
                             const channelDisplayName = String(
                                 'Channel to delete ' + Date.now()
@@ -978,7 +1022,7 @@ describe('playooks > edit', () => {
                                     teamId: testTeam.id,
                                     title: 'Playbook (' + Date.now() + ')',
                                     createPublicPlaybookRun: true,
-                                    memberIDs: [testUser.id],
+                                    memberIDs: [testUser.id, testSysadmin.id],
                                     announcementChannelId: channel.id,
                                     announcementChannelEnabled: true,
                                 }).then((playbook) => {
