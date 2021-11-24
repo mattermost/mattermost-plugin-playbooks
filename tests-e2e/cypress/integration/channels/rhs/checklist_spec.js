@@ -182,8 +182,10 @@ describe('channels > rhs > checklist', () => {
             cy.get('.icon-close-circle-outline').click();
             cy.findByText('Skip').click();
 
-            // * Verify the skip message
-            cy.verifyPostedMessage('skipped checklist item Step 1');
+            // * Verify the item has been skipped
+            cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
+                cy.get('text').should('have.class', 'skipped');
+            });
 
             // # Hover over the checklist item
             cy.findAllByTestId('checkbox-item-container').eq(0).trigger('mouseover');
@@ -192,8 +194,11 @@ describe('channels > rhs > checklist', () => {
             cy.get('.icon-refresh').click();
             cy.findByText('Restore').click();
 
-            // * Verify the restore message
-            cy.verifyPostedMessage('restored checklist item Step 1');
+            // * Verify the item has been restored
+            cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
+                cy.get('text').should('not.exist');
+                cy.get('label').should('not.have.class', 'skipped');
+            });
         });
 
         it('add new task', () => {
