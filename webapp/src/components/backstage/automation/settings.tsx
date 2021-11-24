@@ -90,10 +90,10 @@ export const AutomationSettings = (props: Props) => {
                         input={props.channelNameTemplate}
                         onChange={props.onChannelNameTemplateChange}
                         pattern={'[\\s\\S]{2,}'} // at least two characters
-                        placeholderText={'Enter optional channel name template'}
-                        textOnToggle={'Create channel'}
+                        placeholderText={formatMessage({defaultMessage: 'Channel name template (optional)'})}
+                        textOnToggle={formatMessage({defaultMessage: 'Create a channel'})}
                         type={'text'}
-                        errorText={'Name is not valid.'}
+                        errorText={formatMessage({defaultMessage: 'Channel name is not valid.'})}
                     />
                 </Setting>
                 <Setting id={'invite-users'}>
