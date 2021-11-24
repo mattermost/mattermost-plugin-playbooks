@@ -2,19 +2,38 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useIntl} from 'react-intl';
-
 import styled from 'styled-components';
 
 interface Props {
     testId: string;
     default: string | undefined;
     onSearch: (term: string) => void;
+    placeholder: string;
 }
 
-const RunListSearch = styled.div`
+export default function SearchInput(props: Props) {
+    const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setTerm(event.target.value);
+        props.onSearch(event.target.value);
+    };
+
+    const [term, setTerm] = useState(props.default ? props.default : '');
+
+    return (
+        <Search data-testid={props.testId}>
+            <input
+                type='text'
+                placeholder={props.placeholder}
+                onChange={onChange}
+                value={term}
+            />
+        </Search>
+    );
+}
+
+const Search = styled.div`
     position: relative;
-    max-width: 56rem;
+    font-weight: 400;
 
     input {
         -webkit-transition: all 0.15s ease;
@@ -48,26 +67,3 @@ const RunListSearch = styled.div`
         -moz-osx-font-smoothing: grayscale;
     }
 `;
-
-export default function SearchInput(props: Props) {
-    const {formatMessage} = useIntl();
-    const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setTerm(event.target.value);
-        props.onSearch(event.target.value);
-    };
-
-    const [term, setTerm] = useState(props.default ? props.default : '');
-
-    return (
-        <RunListSearch
-            data-testid={props.testId}
-        >
-            <input
-                type='text'
-                placeholder={formatMessage({defaultMessage: 'Search by run name'})}
-                onChange={onChange}
-                value={term}
-            />
-        </RunListSearch>
-    );
-}

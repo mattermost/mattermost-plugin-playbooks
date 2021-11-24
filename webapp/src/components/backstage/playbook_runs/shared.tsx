@@ -74,6 +74,10 @@ export const ExpandRight = styled.div`
     margin-left: auto;
 `;
 
+export const Spacer = styled.div<{size: number}>`
+    margin-left: ${(props) => props.size}px;
+`;
+
 export const PrimaryButtonRight = styled(PrimaryButton)`
     height: 26px;
     padding: 0 14px;

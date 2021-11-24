@@ -630,8 +630,8 @@ const PlaybookEdit = (props: Props) => {
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>
-                                        <BackstageGroupToggleHeader>
-                                            <Toggle
+                                        <BackstageGroupToggleHeader id={'status-updates'}>
+                                            <Toggle 
                                                 isChecked={playbook.status_update_enabled}
                                                 onChange={() => {
                                                     setPlaybook({
@@ -647,8 +647,8 @@ const PlaybookEdit = (props: Props) => {
                                             {formatMessage({defaultMessage: 'Enable status updates'})}
                                             </BackstageGroupToggleHeader>
                                     </SidebarBlock>
-                                <SidebarBlock>
-                                    <DefaultUpdateTimer
+                                <SidebarBlock id={'default-update-timer'}>
+                                    <DefaultUpdateTimer 
                                         seconds={playbook.reminder_timer_default_seconds}
                                         setSeconds={(seconds: number) => {
                                             if (seconds !== playbook.reminder_timer_default_seconds &&
@@ -662,7 +662,7 @@ const PlaybookEdit = (props: Props) => {
                                         disabled={!playbook.status_update_enabled}
                                     />
                                 </SidebarBlock>
-                                <SidebarBlock>
+                                <SidebarBlock id={'status-update-text'}>
                                     <BackstageSubheader>
                                         {formatMessage({defaultMessage: 'Status updates'})}
                                         <BackstageSubheaderDescription>
