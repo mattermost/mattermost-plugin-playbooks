@@ -48,7 +48,8 @@ const PlaybookRunListFilters = styled.div`
     }
 `;
 
-const controlComponent = (ownProps: ControlProps<TeamOption, boolean> | ControlProps<ProfileOption, boolean> | ControlProps<PlaybookOption, boolean>, filterName: string) => (
+type ControlComponentProps = ControlProps<TeamOption, boolean> | ControlProps<ProfileOption, boolean> | ControlProps<PlaybookOption, boolean>;
+const controlComponent = (ownProps: ControlComponentProps, filterName: string) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
@@ -141,7 +142,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam, fixedPlaybook}: Props)
 
     async function fetchPlaybooks() {
         const playbooks = await clientFetchPlaybooks(fetchParams.team_id || '', {team_id: fetchParams.team_id || '', sort: 'title'});
-        return playbooks ? playbooks.items : {} as Playbook[];
+        return playbooks ? playbooks.items : [] as Playbook[];
     }
 
     return (

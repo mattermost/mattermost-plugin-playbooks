@@ -39,9 +39,6 @@ interface Props {
 export default function PlaybookSelector(props: Props) {
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
-        if (!isOpen) {
-            fetchPlaybooks();
-        }
         setOpen(!isOpen);
     };
 
@@ -203,7 +200,7 @@ const selectStyles: StylesConfig<Option, boolean> = {
     control: (provided) => ({...provided, minWidth: 240, margin: 8}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {
-        const hoverColor = 'rgba(20, 93, 191, 0.08)';
+        const hoverColor = 'rgba(var(--sys-mention-color-rgb), 0.08)';
         const bgHover = state.isFocused ? hoverColor : 'transparent';
         return {
             ...provided,
