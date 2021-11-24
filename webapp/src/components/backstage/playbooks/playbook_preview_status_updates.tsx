@@ -43,7 +43,11 @@ const PlaybookPreviewStatusUpdates = (props: Props) => {
         broadcastEnabled ||
         webhookOnStatusUpdateEnabled;
 
-    if (!props.playbook.status_update_enabled) {
+    const allEmpty =
+        !showReminderCardEntry &&
+        !showUpdatePostCardEntryemptyUpdatePostedEntry;
+
+    if (allEmpty || !props.playbook.status_update_enabled) {
         return null;
     }
 

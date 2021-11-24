@@ -41,10 +41,8 @@ import {
     TabContainer,
     StyledMarkdownTextbox,
     StyledSelect,
-    BackstageGroupToggleHeader,
 } from './styles';
-import { Toggle } from './automation/toggle';
-
+import {Toggle} from './automation/toggle';
 
 const Container = styled.div`
     display: flex;
@@ -163,6 +161,16 @@ const OuterContainer = styled.div`
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+`;
+
+const BackstageGroupToggleHeader = styled.div`
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--center-channel-color);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 `;
 
 interface Props {
@@ -630,25 +638,24 @@ const PlaybookEdit = (props: Props) => {
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>
-                                        <BackstageGroupToggleHeader id={'status-updates'}>
-                                            <Toggle 
-                                                isChecked={playbook.status_update_enabled}
-                                                onChange={() => {
-                                                    setPlaybook({
-                                                        ...playbook,
-                                                        status_update_enabled: !playbook.status_update_enabled,
-                                                        webhook_on_status_update_enabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
-                                                        broadcast_enabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
-                                                    });
-                                                    setChangesMade(true);
-                                                }}
-                                                
-                                            />
-                                            {formatMessage({defaultMessage: 'Enable status updates'})}
-                                            </BackstageGroupToggleHeader>
-                                    </SidebarBlock>
+                                    <BackstageGroupToggleHeader id={'status-updates'}>
+                                        <Toggle
+                                            isChecked={playbook.status_update_enabled}
+                                            onChange={() => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    status_update_enabled: !playbook.status_update_enabled,
+                                                    webhook_on_status_update_enabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
+                                                    broadcast_enabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                        />
+                                        {formatMessage({defaultMessage: 'Enable status updates'})}
+                                    </BackstageGroupToggleHeader>
+                                </SidebarBlock>
                                 <SidebarBlock id={'default-update-timer'}>
-                                    <DefaultUpdateTimer 
+                                    <DefaultUpdateTimer
                                         seconds={playbook.reminder_timer_default_seconds}
                                         setSeconds={(seconds: number) => {
                                             if (seconds !== playbook.reminder_timer_default_seconds &&

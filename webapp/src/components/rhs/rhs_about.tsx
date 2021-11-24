@@ -63,15 +63,6 @@ const RHSAbout = (props: Props) => {
 
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
 
-    let rhsPostUpdateSection =  <></>
-    if (props.playbookRun.status_update_enabled) {
-        rhsPostUpdateSection = <RHSPostUpdate
-                                    collapsed={collapsed}
-                                    playbookRun={props.playbookRun}
-                                    updatesExist={props.playbookRun.status_posts.length !== 0}
-                                />
-    }
-
     return (
         <Container tabIndex={0}>
             <ButtonsRow>
@@ -114,7 +105,13 @@ const RHSAbout = (props: Props) => {
                 </Row>
             </>
             }
-            {rhsPostUpdateSection}
+            {props.playbookRun.status_update_enabled && (
+                <RHSPostUpdate
+                    collapsed={collapsed}
+                    playbookRun={props.playbookRun}
+                    updatesExist={props.playbookRun.status_posts.length !== 0}
+                />
+            )}
         </Container>
     );
 };

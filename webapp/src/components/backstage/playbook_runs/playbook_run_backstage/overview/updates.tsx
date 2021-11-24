@@ -34,9 +34,9 @@ const Updates = (props: Props) => {
     const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
-    let noUpdatesText = props.playbookRun.status_update_enabled ?   formatMessage({defaultMessage: 'There are no updates available.'}) : 
-                                                                    formatMessage({defaultMessage: 'Status updates were disabled for this playbook run.'})
-    
+    const noUpdatesText = props.playbookRun.status_update_enabled ? formatMessage({defaultMessage: 'There are no updates available.'}) :
+        formatMessage({defaultMessage: 'Status updates were disabled for this playbook run.'});
+
     let updates: ReactNode = <EmptyBody>{noUpdatesText}</EmptyBody>;
 
     if (statusPosts.length) {

@@ -73,7 +73,7 @@ const DefaultUpdateTimer = (props: Props) => {
         id: 'update_timer_duration',
         disabled: props.disabled,
     });
-    
+
     if (value?.value) {
         props.setSeconds(Math.floor(ms(value.value) / 1000));
     }
