@@ -151,7 +151,7 @@ const DateTimeInput = ({
             maxMenuHeight={380}
             styles={customStyles}
             formatOptionLabel={OptionLabel}
-            isDisabled={disabled ?? false}
+            isDisabled={disabled}
         />
     );
 };
