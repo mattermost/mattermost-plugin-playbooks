@@ -214,16 +214,6 @@ const TimelineEventItem = (props: Props) => {
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
-            {showMenu &&
-            <HoverMenu>
-                <HoverMenuButton
-                    className={'icon-trash-can-outline icon-16 btn-icon'}
-                    onClick={() => {
-                        setShowDeleteConfirm(true);
-                    }}
-                />
-            </HoverMenu>
-            }
             <TimeContainer>
                 <TimeHours>
                     <Timestamp
@@ -256,6 +246,16 @@ const TimelineEventItem = (props: Props) => {
                 )}
                 <SummaryDetail>{messageHtmlToComponent(formatText(summary, markdownOptions), true, {})}</SummaryDetail>
             </SummaryContainer>
+            {showMenu &&
+            <HoverMenu>
+                <HoverMenuButton
+                    className={'icon-trash-can-outline icon-16 btn-icon'}
+                    onClick={() => {
+                        setShowDeleteConfirm(true);
+                    }}
+                />
+            </HoverMenu>
+            }
             <ConfirmModal
                 show={showDeleteConfirm}
                 title={formatMessage({defaultMessage: 'Confirm Entry Delete'})}
