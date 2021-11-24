@@ -64,7 +64,10 @@ const RHSAbout = (props: Props) => {
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
 
     return (
-        <Container tabIndex={0}>
+        <Container
+            tabIndex={0}
+            id={'rhs-about'}
+        >
             <ButtonsRow>
                 <RHSAboutButtons
                     playbookRun={props.playbookRun}
