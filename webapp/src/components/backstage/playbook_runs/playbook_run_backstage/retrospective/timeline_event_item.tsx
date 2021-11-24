@@ -64,17 +64,17 @@ const SummaryContainer = styled.div`
     min-height: 36px;
 `;
 
-const SummaryTitle = styled.div<{deleted: boolean}>`
+const SummaryTitle = styled.div<{deleted: boolean, postIdExists: boolean}>`
     font-size: 12px;
     font-weight: 600;
 
-    ${({deleted}) => (deleted ? css`
+    ${({deleted, postIdExists}) => (deleted ? css`
         text-decoration: line-through;
-    ` : css`
+    ` : (postIdExists && css`
         :hover {
             cursor: pointer;
         }
-    `)}
+    `))}
 
 `;
 
@@ -240,6 +240,7 @@ const TimelineEventItem = (props: Props) => {
                 <SummaryTitle
                     onClick={(e) => !statusPostDeleted && goToPost(e, props.event.post_id)}
                     deleted={statusPostDeleted}
+                    postIdExists={props.event.post_id !== ''}
                 >
                     {summaryTitle}
                 </SummaryTitle>

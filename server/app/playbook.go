@@ -151,20 +151,12 @@ type ChecklistItem struct {
 	// state was modified. 0 if it was never modified.
 	StateModified int64 `json:"state_modified"`
 
-	// StateModifiedPostID is the identifier of the post that announced the last time the item's
-	// state was modified. The empty string if it was never modified.
-	StateModifiedPostID string `json:"state_modified_post_id"`
-
 	// AssigneeID is the identifier of the user to whom this item is assigned.
 	AssigneeID string `json:"assignee_id"`
 
 	// AssigneeModified is the timestamp, in milliseconds since epoch, of the last time the item's
 	// assignee was modified. 0 if it was never modified.
 	AssigneeModified int64 `json:"assignee_modified"`
-
-	// AssigneeModifiedPostID is the identifier of the post that announced the last time the item's
-	// assignee was modified. The empty string if it was never modified.
-	AssigneeModifiedPostID string `json:"assignee_modified_post_id"`
 
 	// Command, if not empty, is the slash command that can be run as part of this item.
 	Command string `json:"command"`

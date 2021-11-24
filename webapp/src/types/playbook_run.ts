@@ -117,7 +117,6 @@ export function isTimelineEvent(arg: any): arg is TimelineEvent {
         typeof arg.event_type === 'string' && Object.values(TimelineEventType).includes(arg.event_type) &&
         typeof arg.summary === 'string' &&
         typeof arg.details === 'string' &&
-        typeof arg.post_id === 'string' &&
         typeof arg.subject_user_id === 'string' &&
         typeof arg.creator_user_id === 'string');
 }
