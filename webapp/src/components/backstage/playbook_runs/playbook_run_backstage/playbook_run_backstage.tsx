@@ -10,7 +10,7 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
-import {copyToClipboard, getSiteURL} from '../../../../utils';
+import {copyToClipboard} from 'src/utils';
 
 import {
     Badge,
@@ -31,6 +31,7 @@ import {
     fetchPlaybookRunMetadata,
     followPlaybookRun,
     unfollowPlaybookRun,
+    getSiteUrl,
 } from 'src/client';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
@@ -286,8 +287,7 @@ const PlaybookRunBackstage = () => {
     }
 
     const copyRunLink = () => {
-        const siteUrl = getSiteURL() + '/playbooks/runs/' + playbookRun.id;
-        copyToClipboard(siteUrl);
+        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun.id);
         setRunLinkCopied(true);
     };
 

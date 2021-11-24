@@ -23,7 +23,14 @@ import {useForceDocumentTitle, useStats} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
 
-import {clientFetchPlaybook, clientFetchIsPlaybookFollower, autoFollowPlaybook, autoUnfollowPlaybook, telemetryEventForPlaybook} from 'src/client';
+import {
+    clientFetchPlaybook,
+    clientFetchIsPlaybookFollower,
+    autoFollowPlaybook,
+    autoUnfollowPlaybook,
+    telemetryEventForPlaybook,
+    getSiteUrl,
+} from 'src/client';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -32,7 +39,8 @@ import CheckboxInput from '../runs_list/checkbox_input';
 import {SecondaryButtonLargerRight} from '../playbook_runs/shared';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
-import {copyToClipboard, getSiteURL} from '../../../utils';
+import {copyToClipboard} from 'src/utils';
+
 import {CopyIcon} from '../playbook_runs/playbook_run_backstage/playbook_run_backstage';
 
 interface MatchParams {
@@ -142,8 +150,7 @@ const Playbook = () => {
     );
 
     const copyPlaybookLink = () => {
-        const siteUrl = getSiteURL() + '/playbooks/playbooks/' + playbook.id;
-        copyToClipboard(siteUrl);
+        copyToClipboard(getSiteUrl() + '/playbooks/playbooks/' + playbook.id);
         setPlaybookLinkCopied(true);
     };
 
@@ -159,7 +166,7 @@ const Playbook = () => {
             onExit={() => setPlaybookLinkCopied(false)}
             shouldUpdatePosition={true}
             overlay={
-                <Tooltip id='copy-run-link-tooltip'>
+                <Tooltip id='copy-playbook-link-tooltip'>
                     {copyPlaybookLinkTooltipMessage}
                 </Tooltip>
             }
