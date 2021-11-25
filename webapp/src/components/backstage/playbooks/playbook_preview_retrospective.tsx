@@ -28,7 +28,7 @@ const PlaybookPreviewRetrospective = (props: Props) => {
     const markdownOptions = useDefaultMarkdownOptionsByTeamId(props.playbook.team_id);
     const renderMarkdown = (msg: string) => messageHtmlToComponent(formatText(msg, markdownOptions), true, {});
 
-    if (!retrospectiveAccess) {
+    if (!retrospectiveAccess || !props.playbook.retrospective_enabled) {
         return null;
     }
 
@@ -50,7 +50,6 @@ const PlaybookPreviewRetrospective = (props: Props) => {
                         </TextBadge>
                     )}
                     enabled={props.playbook.retrospective_enabled}
-                    disabledText={formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook.'})}
                 >
                     <CardSubEntry
                         title={formatMessage({
