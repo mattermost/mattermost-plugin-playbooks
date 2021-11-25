@@ -6,7 +6,6 @@ import React from 'react';
 import styled from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 import {useSelector} from 'react-redux';
-import {useRun} from 'src/hooks';
 
 import {Team} from 'mattermost-redux/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -37,7 +36,6 @@ interface MatchParams {
 const Description = (props: { playbookRun: PlaybookRun }) => {
     const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
-    console.log(props.playbookRun.summary)
     let summary: JSX.Element = <EmptyBody>{formatMessage({defaultMessage: 'There is no run summary available.'})}</EmptyBody>;
     if (props.playbookRun.status_posts.length >= 0 && props.playbookRun.summary) {
         summary = (

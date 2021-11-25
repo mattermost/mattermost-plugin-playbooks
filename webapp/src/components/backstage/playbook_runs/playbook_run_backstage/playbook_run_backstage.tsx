@@ -6,7 +6,6 @@ import {useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 import {useIntl} from 'react-intl';
-import {useRun} from 'src/hooks';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
@@ -32,7 +31,7 @@ import {
 } from 'src/client';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes} from 'src/constants';
-import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useForceDocumentTitle, useRun} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
@@ -202,24 +201,22 @@ const PlaybookRunBackstage = () => {
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
-        
-        if(!currentRun)
-        Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
-            setPlaybookRun(playbookRunResult);
-            setPlaybookRunMetadata(playbookRunMetadataResult);
-            setFetchingState(FetchingStateType.fetched);
-            setFollowers(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
-        }).catch(() => {
-            setFetchingState(FetchingStateType.notFound);
-        });
-        else{
+
+        if (currentRun) {
             setPlaybookRun(currentRun);
+        } else {
+            Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
+                setPlaybookRun(playbookRunResult);
+                setPlaybookRunMetadata(playbookRunMetadataResult);
+                setFetchingState(FetchingStateType.fetched);
+                setFollowers(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
+            }).catch(() => {
+                setFetchingState(FetchingStateType.notFound);
+            });
         }
     }, [match.params.playbookRunId, currentRun]);
 
     useEffect(() => {
-        console.log(currentRun);
-
         const fetchData = async () => {
             if (playbookRun?.playbook_id) {
                 const fetchedPlaybook = await clientFetchPlaybook(playbookRun.playbook_id);
@@ -227,10 +224,10 @@ const PlaybookRunBackstage = () => {
             }
         };
 
-        if(!currentRun)
-        fetchData();
-        else{
+        if (currentRun) {
             setPlaybookRun(currentRun);
+        } else {
+            fetchData();
         }
     }, [playbookRun?.playbook_id, currentRun]);
 
@@ -238,6 +235,7 @@ const PlaybookRunBackstage = () => {
         if (!playbookRun) {
             return;
         }
+
         await clientRemoveTimelineEvent(playbookRun.id, id);
         setPlaybookRun({
             ...playbookRun,

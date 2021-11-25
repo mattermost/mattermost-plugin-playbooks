@@ -68,9 +68,6 @@ export function handleWebsocketPlaybookRunUpdated(getState: GetStateFunc, dispat
 
         dispatch(playbookRunUpdated(playbookRun));
 
-        // eslint-disable-next-line no-console
-        console.log('got data', playbookRun);
-
         websocketSubscribersToPlaybookRunUpdate.forEach((fn) => fn(playbookRun));
     };
 }

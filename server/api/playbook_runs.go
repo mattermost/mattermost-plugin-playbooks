@@ -1045,10 +1045,6 @@ func (h *PlaybookRunHandler) updateDescription(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	h.poster.PublishWebsocketEventToUser("playbook_run_updated", map[string]interface{}{
-		"playbook_run": playbookRun,
-	}, userID)
-
 	ReturnJSON(w, nil, http.StatusOK)
 }
 

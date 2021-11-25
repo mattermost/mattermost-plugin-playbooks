@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
@@ -76,6 +76,12 @@ const Report = (props: ReportProps) => {
     const [publishedThisSession, setPublishedThisSession] = useState(false);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
     const {formatMessage} = useIntl();
+
+    useEffect(() => {
+        if (!editing) {
+            setReport(props.playbookRun.retrospective);
+        }
+    }, [props.playbookRun.retrospective]);
 
     const savePressed = () => {
         updateRetrospective(props.playbookRun.id, report);
