@@ -62,7 +62,7 @@ const RoundSwitch = styled.span<RoundSwitchProps>`
     }
 
     input:checked + && {
-        background-color: ${(props) => (props.disabled ? 'var(--button-bg-30)' : 'var(--button-bg)')}
+        background-color: ${({disabled}) => (disabled ? 'var(--button-bg-30)' : 'var(--button-bg)')}
     }
 
     input:checked + &&::before {
