@@ -10,19 +10,19 @@ interface Props {
     userIds: string[];
 }
 
-const Followers = (props: Props) => {
+const Following = (props: Props) => {
     if (props.userIds.length === 0) {
         return (
-            <FollowersWrapper>
-                {'No followers yet. '}
-            </FollowersWrapper>
+            <FollowingWrapper>
+                {'No one following. '}
+            </FollowingWrapper>
         );
     }
     return (
         <>
-            <FollowersWrapper>
-                {props.userIds.length + ' follower' + (props.userIds.length > 1 ? 's' : '')}
-            </FollowersWrapper>
+            <FollowingWrapper>
+                {props.userIds.length + ' following'}
+            </FollowingWrapper>
             <UserRow
                 tabIndex={0}
                 role={'button'}
@@ -42,7 +42,7 @@ const Followers = (props: Props) => {
     );
 };
 
-const FollowersWrapper = styled.div`
+const FollowingWrapper = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
     font-size: 11px;
     line-height: 16px;
@@ -64,4 +64,4 @@ const UserRow = styled.div`
     }
 `;
 
-export default Followers;
+export default Following;

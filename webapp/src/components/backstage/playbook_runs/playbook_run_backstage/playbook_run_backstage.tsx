@@ -9,6 +9,8 @@ import {useIntl} from 'react-intl';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
+import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
+
 import {
     Badge,
     ExpandRight,
@@ -20,7 +22,6 @@ import {
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
-import Followers from 'src/components/backstage/playbook_runs/playbook_run_backstage/followers';
 import {
     clientFetchPlaybook,
     clientRemoveTimelineEvent,
@@ -189,7 +190,7 @@ const PlaybookRunBackstage = () => {
     const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
     const currentUserID = useSelector(getCurrentUserId);
-    const [followers, setFollowers] = useState<string[]>([]);
+    const [following, setFollowing] = useState<string[]>([]);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -204,7 +205,7 @@ const PlaybookRunBackstage = () => {
             setPlaybookRun(playbookRunResult);
             setPlaybookRunMetadata(playbookRunMetadataResult);
             setFetchingState(FetchingStateType.fetched);
-            setFollowers(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
+            setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
         }).catch(() => {
             setFetchingState(FetchingStateType.notFound);
         });
@@ -245,18 +246,18 @@ const PlaybookRunBackstage = () => {
     };
 
     const onFollow = () => {
-        if (followers.includes(currentUserID)) {
+        if (following.includes(currentUserID)) {
             return;
         }
         followPlaybookRun(playbookRun.id);
-        const followersCopy = [...followers, currentUserID];
-        setFollowers(followersCopy);
+        const followingCopy = [...following, currentUserID];
+        setFollowing(followingCopy);
     };
 
     const onUnfollow = () => {
         unfollowPlaybookRun(playbookRun.id);
-        const followersCopy = followers.filter((item) => item !== currentUserID);
-        setFollowers(followersCopy);
+        const followingCopy = following.filter((item) => item !== currentUserID);
+        setFollowing(followingCopy);
     };
 
     const closePlaybookRunDetails = () => {
@@ -264,8 +265,8 @@ const PlaybookRunBackstage = () => {
     };
 
     let followButton = (<Button onClick={onFollow}>{formatMessage({defaultMessage: 'Follow'})}</Button>);
-    if (followers.includes(currentUserID)) {
-        followButton = (<Button onClick={onUnfollow}>{formatMessage({defaultMessage: 'Unfollow'})}</Button>);
+    if (following.includes(currentUserID)) {
+        followButton = (<Button onClick={onUnfollow}>{formatMessage({defaultMessage: 'Following'})}</Button>);
     }
 
     return (
@@ -287,7 +288,7 @@ const PlaybookRunBackstage = () => {
                     </VerticalBlock>
                     <Badge status={BadgeType[playbookRun.current_status]}/>
                     <ExpandRight/>
-                    <Followers userIds={followers}/>
+                    <Following userIds={following}/>
                     {followButton}
                     <Line/>
                     <ExportLink playbookRun={playbookRun}/>
