@@ -326,5 +326,20 @@
     "YMrTRm": "Durchlauf-Zusammenfassung",
     "Oo5sdB": "Playbook Name",
     "E0LnBo": "Sie können eine Option auswählen oder eine individuelle Dauer (\"2 Wochen\", \"3 Tage 12 Stunden\", \"45 Minuten\",...) angeben",
-    "ZWtlyd": "Durchlauf wiederhergestellt durch {name}"
+    "ZWtlyd": "Durchlauf wiederhergestellt durch {name}",
+    "zz6ObK": "Wiederherstellen",
+    "z3B83t": "Suche nach einem Playbook",
+    "ypIsVG": "Aufgabe wiederherstellen",
+    "wO6NOM": "Sind Sie sicher, dass Sie diese Aufgabe wiederherstellen möchten? Diese Aufgabe wird zu diesem Lauf hinzugefügt",
+    "vjzpnC": "Es gibt keine Playbooks, die diesen Filtern entsprechen.",
+    "hrgo+E": "Archivieren",
+    "dSC1YD": "Aufgabe überspringen",
+    "XXbWAU": "Wählen Sie diese Option aus, um automatisch Aktualisierungen zu erhalten, wenn dieses Playbook ausgeführt wird.",
+    "Vhnd2J": "Beschreibung umschalten",
+    "EQpfkS": "Beendet",
+    "7VTSeD": "Sind Sie sicher, dass Sie diese Aufgabe auslassen wollen? Dies wird aus diesem Lauf gestrichen, hat aber keine Auswirkungen auf das Playbook.",
+    "36GNZj": "Das Playbook {title} wurde erfolgreich archiviert.",
+    "0HT+Ib": "Archiviert",
+    "/4tOwT": "Überspringen",
+    "+Tmpup": "Sie erhalten automatisch Updates, wenn dieses Playbook ausgeführt wird."
 }
