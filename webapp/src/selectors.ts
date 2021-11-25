@@ -82,14 +82,6 @@ export const currentPlaybookRun = createSelector(
     },
 );
 
-export const currentPlaybookRunById = createSelector(
-    'currentPlaybookRun',
-    myPlaybookRunsByTeam,
-    (playbookRunMapByTeam) => {
-        return playbookRunMapByTeam;
-    },
-);
-
 const emptyChecklistState = {} as Record<number, boolean>;
 
 export const currentChecklistCollapsedState = createSelector(
