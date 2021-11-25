@@ -119,6 +119,14 @@ const LeftArrow = styled(Icon)`
 export const CopyIcon = styled(Icon)<{clicked: boolean}>`
     font-size: 18px;
     margin-left: 8px;
+    border-radius: 4px;
+
+    ${({clicked}) => !clicked && css`
+        &:hover {
+            background: var(--center-channel-color-08);
+            color: var(--center-channel-color-72);
+        }
+    `}
 
     ${({clicked}) => clicked && css`
         background: var(--button-bg-08);
