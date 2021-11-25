@@ -78,7 +78,7 @@ const ReminderCommon = (props: ReminderCommonProps) => {
     }
 
     return (
-        <CustomPostContainer>
+        <CustomPostContainer data-testid={'retrospective-reminder'}>
             <CustomPostContent>
                 <CustomPostHeader>
                     {props.header}
