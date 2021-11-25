@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
@@ -105,6 +105,10 @@ const Icon = styled.button`
     line-height: 24px;
     cursor: pointer;
     color: var(--center-channel-color-56);
+`;
+
+const LeftArrow = styled(Icon)`
+    font-size: 24px;
 
     &:hover {
         background: var(--button-bg-08);
@@ -112,12 +116,14 @@ const Icon = styled.button`
     }
 `;
 
-const LeftArrow = styled(Icon)`
-    font-size: 24px;
-`;
-
-export const CopyIcon = styled(Icon)`
+export const CopyIcon = styled(Icon)<{clicked: boolean}>`
     font-size: 18px;
+    margin-left: 8px;
+
+    ${({clicked}) => clicked && css`
+        background: var(--button-bg-08);
+        color: var(--button-bg);
+    `}
 `;
 
 const VerticalBlock = styled.div`
@@ -172,6 +178,15 @@ const TabItem = styled(NavLink)`
             color: var(--button-bg);
         }
     }
+`;
+
+const TitleWithBadgeAndLink = styled.div`
+    display: flex;
+    flex-direction: row;
+`;
+
+const StyledBadge = styled(Badge)`
+    margin-left: 8px;
 `;
 
 interface MatchParams {
@@ -311,6 +326,7 @@ const PlaybookRunBackstage = () => {
             <CopyIcon
                 className='icon-link-variant'
                 onClick={copyRunLink}
+                clicked={runLinkCopied}
             />
         </OverlayTrigger>
     );
@@ -324,7 +340,11 @@ const PlaybookRunBackstage = () => {
                         onClick={closePlaybookRunDetails}
                     />
                     <VerticalBlock>
-                        <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
+                        <TitleWithBadgeAndLink>
+                            <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
+                            <StyledBadge status={BadgeType[playbookRun.current_status]}/>
+                            {runLink}
+                        </TitleWithBadgeAndLink>
                         {playbook &&
                             <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
                                 <SmallPlaybookIcon/>
@@ -332,8 +352,6 @@ const PlaybookRunBackstage = () => {
                             </PlaybookDiv>
                         }
                     </VerticalBlock>
-                    <Badge status={BadgeType[playbookRun.current_status]}/>
-                    {runLink}
                     <ExpandRight/>
                     <Followers userIds={followers}/>
                     {followButton}

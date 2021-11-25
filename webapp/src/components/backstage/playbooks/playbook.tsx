@@ -174,6 +174,7 @@ const Playbook = () => {
             <CopyIcon
                 className='icon-link-variant'
                 onClick={copyPlaybookLink}
+                clicked={playbookLinkCopied}
             />
         </OverlayTrigger>
     );
