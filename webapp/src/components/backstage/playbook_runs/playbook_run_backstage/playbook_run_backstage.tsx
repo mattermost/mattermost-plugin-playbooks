@@ -3,11 +3,14 @@
 
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
 import {useIntl} from 'react-intl';
+import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
+import {copyToClipboard} from 'src/utils';
 
 import {
     Badge,
@@ -28,9 +31,10 @@ import {
     fetchPlaybookRunMetadata,
     followPlaybookRun,
     unfollowPlaybookRun,
+    getSiteUrl,
 } from 'src/client';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
-import {ErrorPageTypes} from 'src/constants';
+import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
@@ -38,6 +42,12 @@ import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import ExportLink from '../playbook_run_details/export_link';
 import {BadgeType} from 'src/components/backstage/status_badge';
+
+declare module 'react-bootstrap/esm/OverlayTrigger' {
+    interface OverlayTriggerProps {
+        shouldUpdatePosition?: boolean;
+    }
+}
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
@@ -87,20 +97,41 @@ const InnerContainer = styled.div`
     font-weight: 600;
 `;
 
-const LeftArrow = styled.button`
+const Icon = styled.button`
     display: block;
     padding: 0;
     border: none;
     background: transparent;
-    font-size: 24px;
     line-height: 24px;
     cursor: pointer;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const LeftArrow = styled(Icon)`
+    font-size: 24px;
 
     &:hover {
         background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     }
+`;
+
+export const CopyIcon = styled(Icon)<{clicked: boolean}>`
+    font-size: 18px;
+    margin-left: 8px;
+    border-radius: 4px;
+
+    ${({clicked}) => !clicked && css`
+        &:hover {
+            background: var(--center-channel-color-08);
+            color: var(--center-channel-color-72);
+        }
+    `}
+
+    ${({clicked}) => clicked && css`
+        background: var(--button-bg-08);
+        color: var(--button-bg);
+    `}
 `;
 
 const VerticalBlock = styled.div`
@@ -157,6 +188,15 @@ const TabItem = styled(NavLink)`
     }
 `;
 
+const TitleWithBadgeAndLink = styled.div`
+    display: flex;
+    flex-direction: row;
+`;
+
+const StyledBadge = styled(Badge)`
+    margin-left: 8px;
+`;
+
 interface MatchParams {
     playbookRunId: string
 }
@@ -190,6 +230,7 @@ const PlaybookRunBackstage = () => {
     const match = useRouteMatch<MatchParams>();
     const currentUserID = useSelector(getCurrentUserId);
     const [followers, setFollowers] = useState<string[]>([]);
+    const [runLinkCopied, setRunLinkCopied] = useState(false);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -268,6 +309,36 @@ const PlaybookRunBackstage = () => {
         followButton = (<Button onClick={onUnfollow}>{formatMessage({defaultMessage: 'Unfollow'})}</Button>);
     }
 
+    const copyRunLink = () => {
+        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun.id);
+        setRunLinkCopied(true);
+    };
+
+    let copyRunLinkTooltipMessage = formatMessage({defaultMessage: 'Copy link to run'});
+    if (runLinkCopied) {
+        copyRunLinkTooltipMessage = formatMessage({defaultMessage: 'Copied!'});
+    }
+
+    const runLink = (
+        <OverlayTrigger
+            placement='bottom'
+            delay={OVERLAY_DELAY}
+            onExit={() => setRunLinkCopied(false)}
+            shouldUpdatePosition={true}
+            overlay={
+                <Tooltip id='copy-run-link-tooltip'>
+                    {copyRunLinkTooltipMessage}
+                </Tooltip>
+            }
+        >
+            <CopyIcon
+                className='icon-link-variant'
+                onClick={copyRunLink}
+                clicked={runLinkCopied}
+            />
+        </OverlayTrigger>
+    );
+
     return (
         <OuterContainer>
             <TopContainer>
@@ -277,7 +348,11 @@ const PlaybookRunBackstage = () => {
                         onClick={closePlaybookRunDetails}
                     />
                     <VerticalBlock>
-                        <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
+                        <TitleWithBadgeAndLink>
+                            <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
+                            <StyledBadge status={BadgeType[playbookRun.current_status]}/>
+                            {runLink}
+                        </TitleWithBadgeAndLink>
                         {playbook &&
                             <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
                                 <SmallPlaybookIcon/>
@@ -285,7 +360,6 @@ const PlaybookRunBackstage = () => {
                             </PlaybookDiv>
                         }
                     </VerticalBlock>
-                    <Badge status={BadgeType[playbookRun.current_status]}/>
                     <ExpandRight/>
                     <Followers userIds={followers}/>
                     {followButton}

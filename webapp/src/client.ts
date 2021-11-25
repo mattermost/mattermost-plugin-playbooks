@@ -53,6 +53,10 @@ export const setSiteUrl = (siteUrl?: string): void => {
     apiUrl = `${basePath}/plugins/${pluginId}/api/v0`;
 };
 
+export const getSiteUrl = (): string => {
+    return basePath;
+};
+
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
     const queryParams = qs.stringify(params, {addQueryPrefix: true, indices: false});
 
