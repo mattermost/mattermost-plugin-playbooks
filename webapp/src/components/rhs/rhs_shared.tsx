@@ -109,7 +109,6 @@ export const HoverMenu = styled.div`
     background-color: var(--center-channel-bg);
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
-    z-index: 2;
 `;
 
 export const HoverMenuButton = styled.i`
