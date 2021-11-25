@@ -56,7 +56,6 @@ const Button = styled.button`
 
     border: none;
     background-color: unset;
-    cursor: unset;
 
     &:hover {
         background: var(--center-channel-color-08);

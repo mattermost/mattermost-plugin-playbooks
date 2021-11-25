@@ -325,7 +325,6 @@ export const SelectedButton = styled.button`
 
     border: none;
     background-color: unset;
-    cursor: unset;
     display: flex;
     align-items: center;
     text-align: center;
