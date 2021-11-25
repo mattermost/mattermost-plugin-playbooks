@@ -1151,5 +1151,72 @@ describe('playooks > edit', () => {
                 });
             });
         });
+
+        describe('retrospective enable / disable', () => {
+            it('is enabled in a new playbook', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // * Verify that the toggle is checked
+                cy.get('#retrospective-enabled label input').should('be.checked');
+            });
+
+            it('can be disabled', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // * Verify that toggle can be disabled
+                cy.get('#retrospective-enabled').within(() => {
+                    // * Verify that the toggle is checked
+                    cy.get('label input').should('be.checked');
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+
+                // * Verify that select box is disabled
+                cy.get('#retrospective-reminder-interval').within(() => {
+                    cy.getStyledComponent('StyledSelect').should(
+                        'have.class',
+                        'playbooks-rselect--is-disabled'
+                    );
+                });       
+
+                // * Verify that the text box is disabled
+                cy.get('#playbook_retrospective_template_edit').should('be.disabled');
+            });
+
+            it('can be saved', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // # Uncheck toggle
+                cy.get('#retrospective-enabled label input').click({force: true});
+
+                // # Save the playbook
+                cy.findByTestId('save_playbook').click();
+
+                // # Navigate again to the playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // * Verify that the toggle is unchecked
+                cy.get('#retrospective-enabled label input').should('not.be.checked');
+            });        
+        });
     });
 });

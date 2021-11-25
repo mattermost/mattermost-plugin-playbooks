@@ -674,7 +674,7 @@ const PlaybookEdit = (props: Props) => {
                                 {retrospectiveAccess &&
                                 <>
                                     <SidebarBlock>
-                                        <BackstageGroupToggleHeader>
+                                        <BackstageGroupToggleHeader id={'retrospective-enabled'}>
                                             <Toggle
                                                 isChecked={playbook.retrospective_enabled}
                                                 onChange={() => {
@@ -689,7 +689,7 @@ const PlaybookEdit = (props: Props) => {
                                         </BackstageGroupToggleHeader>
                                     </SidebarBlock>
 
-                                    <SidebarBlock>
+                                    <SidebarBlock id={'retrospective-reminder-interval'}>
                                         <BackstageSubheader>
                                             {formatMessage({defaultMessage: 'Retrospective reminder interval'})}
                                             <BackstageSubheaderDescription>
