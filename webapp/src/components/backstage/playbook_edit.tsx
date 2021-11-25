@@ -41,10 +41,8 @@ import {
     TabContainer,
     StyledMarkdownTextbox,
     StyledSelect,
-    BackstageGroupToggleHeader,
 } from './styles';
-import { Toggle } from './automation/toggle';
-
+import {Toggle} from './automation/toggle';
 
 const Container = styled.div`
     display: flex;
@@ -165,6 +163,15 @@ const OuterContainer = styled.div`
     min-height: 100vh;
 `;
 
+const BackstageGroupToggleHeader = styled.div`
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--center-channel-color);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+`;
 interface Props {
     isNew: boolean;
     teamId?: string;
@@ -677,12 +684,11 @@ const PlaybookEdit = (props: Props) => {
                                                     });
                                                     setChangesMade(true);
                                                 }}
-                                                
                                             />
                                             {formatMessage({defaultMessage: 'Enable retrospective'})}
-                                            </BackstageGroupToggleHeader>
+                                        </BackstageGroupToggleHeader>
                                     </SidebarBlock>
-                                    
+
                                     <SidebarBlock>
                                         <BackstageSubheader>
                                             {formatMessage({defaultMessage: 'Retrospective reminder interval'})}

@@ -4,6 +4,8 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
+import styled from 'styled-components';
+
 import UpgradeRetrospectiveSvg from 'src/components/assets/upgrade_retrospective_svg';
 import {Container, Left, Right} from 'src/components/backstage/playbook_runs/shared';
 import UpgradeBanner from 'src/components/upgrade_banner';
@@ -11,7 +13,6 @@ import {AdminNotificationType} from 'src/constants';
 
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookRun} from 'src/types/playbook_run';
-import styled from 'styled-components';
 
 import Report from './report';
 import TimelineRetro from './timeline_retro';
@@ -37,15 +38,10 @@ export const Retrospective = (props: Props) => {
         );
     }
 
-    let leftSection = <Report playbookRun={props.playbookRun}/>
-    if (!props.playbookRun.retrospective_enabled) {
-        leftSection = <RetrospectiveDisabledText>{formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}</RetrospectiveDisabledText>
-    }
-
     return (
         <Container>
             <Left>
-                {leftSection}
+                {props.playbookRun.retrospective_enabled ? <Report playbookRun={props.playbookRun}/> : <RetrospectiveDisabledText>{formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}</RetrospectiveDisabledText>}
             </Left>
             <Right>
                 <TimelineRetro
@@ -56,7 +52,6 @@ export const Retrospective = (props: Props) => {
         </Container>
     );
 };
-
 
 const RetrospectiveDisabledText = styled.h2`
     font-family: Open Sans;

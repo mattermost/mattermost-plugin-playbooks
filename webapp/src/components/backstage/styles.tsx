@@ -44,16 +44,6 @@ export const BackstageSubheader = styled.div`
     color: var(--center-channel-color);
 `;
 
-export const BackstageGroupToggleHeader = styled.div`
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
-    color: var(--center-channel-color);
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-`;
-
 export const BackstageSubheaderDescription = styled.div`
     font-weight: normal;
     font-size: 12px;
