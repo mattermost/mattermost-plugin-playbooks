@@ -64,12 +64,12 @@ const Participants = (
                 <Participant
                     userId={playbookRun.owner_user_id}
                     isOwner={true}
-                    teamName={team.name}
+                    teamName={team?.name}
                 />
                 <Heading>{formatMessage({defaultMessage: 'Reporter'})}</Heading>
                 <Participant
                     userId={playbookRun.reporter_user_id}
-                    teamName={team.name}
+                    teamName={team?.name}
                 />
                 {
                     profilesExceptTwoMains.length > 0 &&
@@ -79,7 +79,7 @@ const Participants = (
                             <Participant
                                 key={id}
                                 userId={id}
-                                teamName={team.name}
+                                teamName={team?.name}
                             />
                         ))}
                     </>
