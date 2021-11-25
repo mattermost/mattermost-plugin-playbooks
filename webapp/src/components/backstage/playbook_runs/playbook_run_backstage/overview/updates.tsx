@@ -37,7 +37,7 @@ const Updates = (props: Props) => {
     const noUpdatesText = props.playbookRun.status_update_enabled ? formatMessage({defaultMessage: 'There are no updates available.'}) :
         formatMessage({defaultMessage: 'Status updates were disabled for this playbook run.'});
 
-    let updates: ReactNode = <EmptyBody>{noUpdatesText}</EmptyBody>;
+    let updates: ReactNode = <EmptyBody id={'status-update-msg'}>{noUpdatesText}</EmptyBody>;
 
     if (statusPosts.length) {
         updates = statusPosts.reduce((result, sp) => {
