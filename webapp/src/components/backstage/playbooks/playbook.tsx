@@ -23,7 +23,14 @@ import {useForceDocumentTitle, useStats} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
 
-import {clientFetchPlaybook, clientFetchIsPlaybookFollower, autoFollowPlaybook, autoUnfollowPlaybook, telemetryEventForPlaybook} from 'src/client';
+import {
+    clientFetchPlaybook,
+    clientFetchIsPlaybookFollower,
+    autoFollowPlaybook,
+    autoUnfollowPlaybook,
+    telemetryEventForPlaybook,
+    getSiteUrl,
+} from 'src/client';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -31,6 +38,10 @@ import {RegularHeading} from 'src/styles/headings';
 import CheckboxInput from '../runs_list/checkbox_input';
 import {SecondaryButtonLargerRight} from '../playbook_runs/shared';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
+
+import {copyToClipboard} from 'src/utils';
+
+import {CopyIcon} from '../playbook_runs/playbook_run_backstage/playbook_run_backstage';
 
 interface MatchParams {
     playbookId: string
@@ -51,6 +62,7 @@ const Playbook = () => {
     const stats = useStats(match.params.playbookId);
     const [isFollowed, setIsFollowed] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
+    const [playbookLinkCopied, setPlaybookLinkCopied] = useState(false);
 
     const changeFollowing = (check: boolean) => {
         if (playbook?.id) {
@@ -137,6 +149,36 @@ const Playbook = () => {
         </Tooltip>
     );
 
+    const copyPlaybookLink = () => {
+        copyToClipboard(getSiteUrl() + '/playbooks/playbooks/' + playbook.id);
+        setPlaybookLinkCopied(true);
+    };
+
+    let copyPlaybookLinkTooltipMessage = formatMessage({defaultMessage: 'Copy link to playbook'});
+    if (playbookLinkCopied) {
+        copyPlaybookLinkTooltipMessage = formatMessage({defaultMessage: 'Copied!'});
+    }
+
+    const playbookLink = (
+        <OverlayTrigger
+            placement='bottom'
+            delay={OVERLAY_DELAY}
+            onExit={() => setPlaybookLinkCopied(false)}
+            shouldUpdatePosition={true}
+            overlay={
+                <Tooltip id='copy-playbook-link-tooltip'>
+                    {copyPlaybookLinkTooltipMessage}
+                </Tooltip>
+            }
+        >
+            <CopyIcon
+                className='icon-link-variant'
+                onClick={copyPlaybookLink}
+                clicked={playbookLinkCopied}
+            />
+        </OverlayTrigger>
+    );
+
     return (
         <>
             <TopContainer>
@@ -159,6 +201,7 @@ const Playbook = () => {
                             status={BadgeType.Archived}
                         />
                     }
+                    {playbookLink}
                     <SecondaryButtonLargerRightStyled
                         checked={isFollowed}
                         disabled={archived}
