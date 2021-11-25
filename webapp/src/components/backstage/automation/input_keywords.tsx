@@ -107,7 +107,7 @@ const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
     control: (provided, {isDisabled}) => ({
         ...provided,
         backgroundColor: isDisabled ? 'rgba(var(--center-channel-bg-rgb),0.16)' : 'var(--center-channel-bg)',
-        border: '1px solid var(--center-channel-color-16)',
+        border: '1px solid rgba(var(--center-channel-color-rgb), 0.16)',
     }),
     placeholder: (provided) => ({
         ...provided,
@@ -120,7 +120,7 @@ const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
     }),
     multiValue: (provided) => ({
         ...provided,
-        backgroundColor: 'var(--center-channel-color-08)',
+        backgroundColor: 'rgba(var(--center-channel-color-rgb), 0.08)',
         borderRadius: '10px',
         paddingLeft: '8px',
         overflow: 'hidden',
@@ -134,7 +134,7 @@ const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
     }),
     multiValueRemove: (provided) => ({
         ...provided,
-        color: 'var(--center-channel-bg-80)',
+        color: 'rgba(var(--center-channel-bg-rgb), 0.80)',
         backgroundColor: 'rgba(var(--center-channel-color-rgb),0.32)',
         borderRadius: '50%',
         margin: '4px',

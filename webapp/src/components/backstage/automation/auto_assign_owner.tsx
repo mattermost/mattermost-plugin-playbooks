@@ -111,7 +111,7 @@ const UserPic = styled.div`
     && img {
         // We need both background-color and border color to imitate the color in the background
         background-color: var(--center-channel-bg);
-        border: 2px solid var(--center-channel-color-04);
+        border: 2px solid rgba(var(--center-channel-color-rgb), 0.04);
     }
 
 `;

@@ -33,7 +33,7 @@ const CloseIcon = styled(ClearIcon)`
     height: 18px;
     width: auto;
     margin-left: 7px;
-    color: var(--center-channel-color-32);
+    color: rgba(var(--center-channel-color-rgb), 0.32);
 
     &:hover {
         cursor: pointer;

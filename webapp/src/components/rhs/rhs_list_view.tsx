@@ -40,7 +40,7 @@ const Header = styled.div`
     height: 47px;
     letter-spacing: 0;
     text-align: center;
-    box-shadow: inset 0px -1px 0px var(--center-channel-color-24);
+    box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.24);
 `;
 
 const CenterCell = styled.div`

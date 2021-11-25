@@ -190,7 +190,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
         padding: 2px;
         padding-right: 6px;
         margin-top: 0;
-        background: var(--center-channel-color-08);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
 
         :hover {
             background: rgba(var(--center-channel-color-rgb), 0.16);

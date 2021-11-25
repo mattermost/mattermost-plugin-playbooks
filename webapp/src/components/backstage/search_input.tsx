@@ -43,7 +43,7 @@ const Search = styled.div`
         transition: all 0.15s ease;
         background-color: transparent;
         border-radius: 4px;
-        border: 1px solid var(--center-channel-color-16);
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
         width: 360px;
         height: 4rem;
         font-size: 14px;
@@ -59,7 +59,7 @@ const Search = styled.div`
         left: 18px;
         top: 9px;
         position: absolute;
-        color: var(--center-channel-color-56);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
         content: '\\f349';
         font-size: 20px;
         font-family: 'compass-icons', mattermosticons;

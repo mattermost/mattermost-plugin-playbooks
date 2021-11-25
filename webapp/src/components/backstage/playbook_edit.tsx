@@ -63,12 +63,12 @@ const TabsHeader = styled.div`
     min-height: 72px;
     display: flex;
     padding: 0 32px;
-    border-bottom: 1px solid var(--center-channel-color-16);
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     white-space: nowrap;
 `;
 
 const EditContent = styled.div`
-    background: var(--center-channel-color-04);
+    background: rgba(var(--center-channel-color-rgb), 0.04);
     flex-grow: 1;
 `;
 
