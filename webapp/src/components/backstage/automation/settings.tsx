@@ -89,7 +89,7 @@ export const AutomationSettings = (props: Props) => {
                         onToggle={() => null}
                         input={props.channelNameTemplate}
                         onChange={props.onChannelNameTemplateChange}
-                        pattern={'[\\s\\S]{2,}'} // at least two characters
+                        pattern={'[\\S][\\s\\S]*[\\S]'} // at least two non-whitespace characters
                         placeholderText={formatMessage({defaultMessage: 'Channel name template (optional)'})}
                         textOnToggle={formatMessage({defaultMessage: 'Create a channel'})}
                         type={'text'}
