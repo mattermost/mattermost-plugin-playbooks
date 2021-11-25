@@ -13,8 +13,8 @@ const PlaybookRunListHeader = styled.div`
     font-weight: 600;
     font-size: 11px;
     line-height: 36px;
-    color: var(--center-channel-color-72);
-    background-color: var(--center-channel-color-04);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    background-color: rgba(var(--center-channel-color-rgb), 0.04);
     border-radius: 4px;
     padding: 0 1.6rem;
 `;

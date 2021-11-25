@@ -331,13 +331,13 @@ const TeamButton = styled.button`
     text-align: center;
 
     &:hover {
-        background: var(--center-channel-color-08);
-        color: var(--center-channel-color-72);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
     .PlaybookRunProfile {
         &:active {
-            background: var(--button-bg-08);
+            background: rgba(var(--button-bg-rgb), 0.08);
             color: var(--button-bg);
         }
 
@@ -354,7 +354,7 @@ const TeamButton = styled.button`
         padding: 4px;
         margin-top: 4px;
         border-radius: 100px;
-        color: var(--center-channel-color-64);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
         cursor: pointer;
         font-weight: normal;
         font-size: 12px;
@@ -366,12 +366,12 @@ const TeamButton = styled.button`
         transition: all 0.15s ease;
 
         &:hover {
-            background: var(--center-channel-color-08);
-            color: var(--center-channel-color-72);
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+            color: rgba(var(--center-channel-color-rgb), 0.72);
         }
 
         &:active {
-            background: var(--button-bg-08);
+            background: rgba(var(--button-bg-rgb), 0.08);
             color: var(--button-bg);
         }
 

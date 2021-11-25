@@ -38,7 +38,7 @@ const Badge = styled.div<BadgeProps>`
             `;
         case BadgeType.Finished:
             return css`
-                background-color: var(--center-channel-color-64);
+                background-color: rgba(var(--center-channel-color-rgb), 0.64);
             `;
         case BadgeType.Archived:
             return css`

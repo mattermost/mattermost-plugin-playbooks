@@ -16,7 +16,7 @@ const Container = styled.span`
 
     i {
         padding: 0 8px;
-        color: var(--center-channel-color-56);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
 
         &.icon-check {
             padding: 0 8px;

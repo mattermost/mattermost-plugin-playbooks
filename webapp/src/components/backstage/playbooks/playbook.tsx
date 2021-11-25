@@ -281,7 +281,7 @@ const TopContainer = styled.div`
     top: 0;
     background: var(--center-channel-bg);
     width: 100%;
-    box-shadow: inset 0px -1px 0px var(--center-channel-color-16);
+    box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
 `;
 
 const TitleRow = styled.div`
@@ -299,10 +299,10 @@ const LeftArrow = styled.button`
     font-size: 24px;
     line-height: 24px;
     cursor: pointer;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 
     &:hover {
-        background: var(--button-bg-08);
+        background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     }
 `;
@@ -317,7 +317,7 @@ const VerticalBlock = styled.div`
 const HorizontalBlock = styled.div`
     display: flex;
     flex-direction: row;
-    color: var(--center-channel-color-64);
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 
     > i {
         font-size: 12px;
@@ -358,11 +358,11 @@ interface CheckedProps {
     checked: boolean;
 }
 const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <CheckedProps>`
-    border: 1px solid var(--center-channel-color-24);
-    color: var(--center-channel-color-56);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 
     &:hover:enabled {
-        background-color: var(--center-channel-color-08);
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     ${(props: CheckedProps) => props.checked && css`

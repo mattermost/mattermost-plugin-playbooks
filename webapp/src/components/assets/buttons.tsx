@@ -52,7 +52,7 @@ export const PrimaryButton = styled(Button)`
         height: 100%;
         transition: all 0.15s ease-out;
         position: absolute;
-        background: var(--center-channel-color-16);
+        background: rgba(var(--center-channel-color-rgb), 0.16);
         opacity: 0;
         border-radius: 4px;
     }
@@ -192,14 +192,14 @@ export const ButtonIcon = styled.button`
     border: none;
     background: transparent;
     border-radius: 4px;
-    color: var(--center-channel-color-56);
-    fill: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    fill: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: 1.6rem;
 
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
-        color: var(--center-channel-color-72);
-        fill: var(--center-channel-color-72);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+        fill: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
     &:active,

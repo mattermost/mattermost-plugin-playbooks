@@ -87,7 +87,7 @@ const SummaryDeleted = styled.span`
 const SummaryDetail = styled.div`
     font-size: 11px;
     margin: 4px 0 0 0;
-    color: var(--center-channel-color-64)
+    color: rgba(var(--center-channel-color-rgb), 0.64)
 `;
 
 interface Props {
