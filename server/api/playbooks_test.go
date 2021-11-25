@@ -156,6 +156,8 @@ func TestPlaybooks(t *testing.T) {
 
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
+		pluginAPI.On("GetConfig").Return(&model.Config{})
+
 		configService.EXPECT().
 			IsAtLeastE20Licensed().
 			Return(true).
@@ -181,6 +183,8 @@ func TestPlaybooks(t *testing.T) {
 		poster = mock_poster.NewMockPoster(mockCtrl)
 
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
+
+		pluginAPI.On("GetConfig").Return(&model.Config{})
 
 		configService.EXPECT().
 			GetConfiguration().
@@ -231,6 +235,8 @@ func TestPlaybooks(t *testing.T) {
 		poster = mock_poster.NewMockPoster(mockCtrl)
 
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
+
+		pluginAPI.On("GetConfig").Return(&model.Config{})
 
 		configService.EXPECT().
 			GetConfiguration().
@@ -284,6 +290,8 @@ func TestPlaybooks(t *testing.T) {
 		handler = NewHandler(client, configService, logger)
 
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
+
+		pluginAPI.On("GetConfig").Return(&model.Config{})
 
 		configService.EXPECT().
 			IsAtLeastE20Licensed().
@@ -343,6 +351,8 @@ func TestPlaybooks(t *testing.T) {
 
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
 
+		pluginAPI.On("GetConfig").Return(&model.Config{})
+
 		configService.EXPECT().
 			IsAtLeastE20Licensed().
 			Return(false).
@@ -400,6 +410,8 @@ func TestPlaybooks(t *testing.T) {
 		handler = NewHandler(client, configService, logger)
 
 		NewPlaybookHandler(handler.APIRouter, playbookService, client, logger, configService)
+
+		pluginAPI.On("GetConfig").Return(&model.Config{})
 
 		configService.EXPECT().
 			IsAtLeastE20Licensed().
