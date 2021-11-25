@@ -194,7 +194,7 @@ describe('playbooks > edit', () => {
                     cy.get('#root').findByText('Actions').click();
 
                     cy.get('#create-channel').within(() => {
-                        // * Verify that the toggle checked
+                        // * Verify that the toggle is checked
                         cy.get('label input').should('be.checked');
 
                         // # Click on the toggle to enable the setting
