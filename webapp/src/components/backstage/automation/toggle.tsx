@@ -43,7 +43,7 @@ const RoundSwitch = styled.span<RoundSwitchProps>`
     width: 40px;
     height: 24px;
     border-radius: 14px;
-    background: rgba(var(--center-channel-color-rgb), ${(props) => (props.disabled ? '0.08' : '0.24')});
+    background: rgba(var(--center-channel-color-rgb), ${({disabled}) => (disabled ? '0.08' : '0.24')});
 
     // Inner circle
     ::before {
