@@ -41,7 +41,11 @@ export const Retrospective = (props: Props) => {
     return (
         <Container>
             <Left>
-                {props.playbookRun.retrospective_enabled ? <Report playbookRun={props.playbookRun}/> : <RetrospectiveDisabledText>{formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}</RetrospectiveDisabledText>}
+                {props.playbookRun.retrospective_enabled ?
+                    <Report playbookRun={props.playbookRun}/> :
+                    <RetrospectiveDisabledText id={'retrospective-disabled-msg'}>
+                        {formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}
+                    </RetrospectiveDisabledText>}
             </Left>
             <Right>
                 <TimelineRetro
