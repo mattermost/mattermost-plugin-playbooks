@@ -42,54 +42,54 @@ const CollapsibleChecklist = ({
 
     return (
         <Border>
-            <Horizontal
-                data-testid={'checklistHeader'}
-                onClick={() => setCollapsed(!collapsed)}
-                onMouseEnter={() => setShowMenu(true)}
-                onMouseLeave={() => setShowMenu(false)}
-            >
-                <Icon className={icon}/>
-                <Title ref={titleRef}>
-                    <TextWithTooltipWhenEllipsis
-                        id={index.toString(10)}
-                        text={title}
-                        parentRef={titleRef}
-                    />
-                </Title>
-                {titleHelpText || (
-                    <TitleHelpTextWrapper>
-                        <FormattedMessage
-                            defaultMessage='{completed, number} / {total, number} done'
-                            values={{completed, total}}
+            <HorizontalBG>
+                <Horizontal
+                    data-testid={'checklistHeader'}
+                    onClick={() => setCollapsed(!collapsed)}
+                    onMouseEnter={() => setShowMenu(true)}
+                    onMouseLeave={() => setShowMenu(false)}
+                >
+                    <Icon className={icon}/>
+                    <Title ref={titleRef}>
+                        <TextWithTooltipWhenEllipsis
+                            id={index.toString(10)}
+                            text={title}
+                            parentRef={titleRef}
                         />
-                    </TitleHelpTextWrapper>
-                )}
-                {
-                    showMenu && !disabled &&
-                    <AddNewTask
-                        data-testid={'addNewTask'}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            dispatch(addNewTask(index));
-                        }}
-                    >
-                        <i className='icon-18 icon-plus'/>
-                        <FormattedMessage defaultMessage='Task'/>
-                    </AddNewTask>
-                }
-            </Horizontal>
-            <ProgressBackground>
-                <ProgressLine width={percentage}/>
-            </ProgressBackground>
+                    </Title>
+                    {titleHelpText || (
+                        <TitleHelpTextWrapper>
+                            <FormattedMessage
+                                defaultMessage='{completed, number} / {total, number} done'
+                                values={{completed, total}}
+                            />
+                        </TitleHelpTextWrapper>
+                    )}
+                    {
+                        showMenu && !disabled &&
+                        <AddNewTask
+                            data-testid={'addNewTask'}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                dispatch(addNewTask(index));
+                            }}
+                        >
+                            <i className='icon-18 icon-plus'/>
+                            <FormattedMessage defaultMessage='Task'/>
+                        </AddNewTask>
+                    }
+                </Horizontal>
+                <ProgressBackground>
+                    <ProgressLine width={percentage}/>
+                </ProgressBackground>
+            </HorizontalBG>
             {!collapsed && children}
         </Border>
     );
 };
 
 const Border = styled.div`
-    margin-top: 12px;
-    border-radius: 4px;
-    border: 1px solid var(--center-channel-color-08);
+    margin-bottom: 12px;
     background-color: var(--center-channel-color-04);
 `;
 
@@ -116,7 +116,17 @@ const ProgressLine = styled.div<{ width: number }>`
     }
 `;
 
+const HorizontalBG = styled.div`
+    background-color: var(--center-channel-bg);
+    z-index: 1;
+    position: sticky;
+    top: 48px; // height of rhs_checklists MainTitle
+`;
+
 const Horizontal = styled.div`
+    background-color: rgba(var(--center-channel-color-rgb), 0.04);
+    border-radius: 4px 4px 0 0;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     display: flex;
     flex-direction: row;
     align-items: baseline;
