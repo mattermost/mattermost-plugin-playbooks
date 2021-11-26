@@ -220,9 +220,16 @@ const Line = styled.hr`
 
 const Button = styled(SecondaryButtonLarger)`
     margin-left: 12px;
+    border: unset;
+    color: var(--center-channel-color-72);
+    background: var(--center-channel-color-16);
+    &:hover {
+        color: var(--button-bg);
+    }  
 `;
 
 const FollowingButton = styled(Button)`
+    color: var(--button-bg);
     background: rgba(var(--button-bg-rgb), 0.12);
     &&:hover {
         background: rgba(var(--button-bg-rgb), 0.24);
