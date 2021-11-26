@@ -341,5 +341,15 @@
     "36GNZj": "Das Playbook {title} wurde erfolgreich archiviert.",
     "0HT+Ib": "Archiviert",
     "/4tOwT": "Überspringen",
-    "+Tmpup": "Sie erhalten automatisch Updates, wenn dieses Playbook ausgeführt wird."
+    "+Tmpup": "Sie erhalten automatisch Updates, wenn dieses Playbook ausgeführt wird.",
+    "h+e7G+": "Aufforderung zur Ausführung dieses Playbooks, wenn eine Nachricht {numKeywords, select, 1 {das Schlüsselwort} andere {eines oder mehrere davon}} enthält",
+    "fuDLDJ": "Kanal erstellen",
+    "cp7KUI": "Playbook",
+    "cPIKU2": "Gefolgen",
+    "UMoxP9": "Vorlage für den Kanalnamen (optional)",
+    "RO+BaS": "Link zum Lauf kopieren",
+    "NA7Cw1": "Link zum Playbook kopieren",
+    "C6Oghd": "Zusammenfassung bearbeiten",
+    "3MSGcL": "Der Kanalname ist nicht gültig.",
+    "0oL1zz": "Kopiert!"
 }
