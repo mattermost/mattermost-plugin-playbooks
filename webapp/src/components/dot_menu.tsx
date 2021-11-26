@@ -120,6 +120,10 @@ const DotMenu = (props: DotMenuProps) => {
                         top={props.top}
                         left={props.left}
                         wide={props.wide}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setOpen(false);
+                        }}
                     >
                         {props.children}
                     </DropdownMenu>
