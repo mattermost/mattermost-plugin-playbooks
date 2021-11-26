@@ -12,11 +12,7 @@ interface Props {
 
 const Following = (props: Props) => {
     if (props.userIds.length === 0) {
-        return (
-            <FollowingWrapper>
-                {'No one following. '}
-            </FollowingWrapper>
-        );
+        return null;
     }
     return (
         <>

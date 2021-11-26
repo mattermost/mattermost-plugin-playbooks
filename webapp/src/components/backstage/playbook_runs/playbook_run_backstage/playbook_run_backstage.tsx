@@ -222,6 +222,13 @@ const Button = styled(SecondaryButtonLarger)`
     margin-left: 12px;
 `;
 
+const FollowingButton = styled(Button)`
+    background: rgba(var(--button-bg-rgb), 0.12);
+    &&:hover {
+        background: rgba(var(--button-bg-rgb), 0.24);
+    }    
+`;
+
 const PlaybookRunBackstage = () => {
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
@@ -306,7 +313,7 @@ const PlaybookRunBackstage = () => {
 
     let followButton = (<Button onClick={onFollow}>{formatMessage({defaultMessage: 'Follow'})}</Button>);
     if (following.includes(currentUserID)) {
-        followButton = (<Button onClick={onUnfollow}>{formatMessage({defaultMessage: 'Following'})}</Button>);
+        followButton = (<FollowingButton onClick={onUnfollow}>{formatMessage({defaultMessage: 'Following'})}</FollowingButton>);
     }
 
     const copyRunLink = () => {
