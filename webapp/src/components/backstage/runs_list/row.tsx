@@ -32,7 +32,7 @@ const SmallText = styled.div`
     font-weight: 400;
     font-size: 11px;
     line-height: 16px;
-    color: var(--center-channel-color-64);
+    color: rgba(var(--center-channel-color-rgb), 0.64);
     margin: 5px 0;
 `;
 
@@ -72,11 +72,11 @@ const PlaybookRunItem = styled.div`
     padding-bottom: 8px;
     align-items: center;
     margin: 0;
-    border-bottom: 1px solid var(--center-channel-color-16);
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     cursor: pointer;
 
     &:hover {
-        background: var(--center-channel-color-04);
+        background: rgba(var(--center-channel-color-rgb), 0.04);
     }
 `;
 

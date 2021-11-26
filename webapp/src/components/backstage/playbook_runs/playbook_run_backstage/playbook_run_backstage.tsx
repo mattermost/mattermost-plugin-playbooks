@@ -77,7 +77,7 @@ const SecondRow = styled.div`
     height: 60px;
     margin: 0;
     padding: 10px 0 0 80px;
-    box-shadow: inset 0px -1px 0px var(--center-channel-color-16);
+    box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
 `;
 
 const BottomContainer = styled.div`
@@ -104,14 +104,14 @@ const Icon = styled.button`
     background: transparent;
     line-height: 24px;
     cursor: pointer;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 const LeftArrow = styled(Icon)`
     font-size: 24px;
 
     &:hover {
-        background: var(--button-bg-08);
+        background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     }
 `;
@@ -151,7 +151,7 @@ const Title = styled.div`
 const PlaybookDiv = styled.div`
     display: flex;
     flex-direction: row;
-    color: var(--center-channel-color-64);
+    color: rgba(var(--center-channel-color-rgb), 0.64);
     cursor: pointer;
 
     &:hover {
