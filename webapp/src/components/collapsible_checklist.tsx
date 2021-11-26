@@ -90,14 +90,14 @@ const CollapsibleChecklist = ({
 
 const Border = styled.div`
     margin-bottom: 12px;
-    background-color: var(--center-channel-color-04);
+    background-color: rgba(var(--center-channel-color-rgb), 0.04);
 `;
 
 const ProgressBackground = styled.div`
     position: relative;
 
     &:after {
-        border-bottom: 2px solid var(--center-channel-color-08);
+        border-bottom: 2px solid rgba(var(--center-channel-color-rgb), 0.08);
         content: '';
         display: block;
         width: 100%;
@@ -139,10 +139,10 @@ const Icon = styled.i`
     margin: 0 0 0 6px;
 
     font-size: 18px;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 
     ${Horizontal}:hover & {
-        color: var(--center-channel-color-64);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
     }
 `;
 
@@ -155,10 +155,10 @@ const Title = styled.div`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--center-channel-color-72);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
 
     ${Horizontal}:hover & {
-        color: var(--center-channel-color-80);
+        color: rgba(var(--center-channel-color-rgb), 0.80);
     }
 `;
 
@@ -168,10 +168,10 @@ export const TitleHelpTextWrapper = styled.div`
     font-weight: 600;
     font-size: 12px;
     white-space: nowrap;
-    color: var(--center-channel-color-48);
+    color: rgba(var(--center-channel-color-rgb), 0.48);
 
     ${Horizontal}:hover & {
-        color: var(--center-channel-color-56);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 `;
 
@@ -185,17 +185,17 @@ const AddNewTask = styled.button`
     font-size: 14px;
     line-height: 32px;
     white-space: nowrap;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     background: transparent;
 
     transition: all 0.15s ease-out;
 
     &:hover {
-        background: var(--center-channel-color-08)
+        background: rgba(var(--center-channel-color-rgb), 0.08)
     }
 
     &:active {
-        background: var(--center-channel-color-16);
+        background: rgba(var(--center-channel-color-rgb), 0.16);
     }
 `;
 

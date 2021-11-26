@@ -77,7 +77,7 @@ const FooterContainer = styled.div`
     font-weight: 400;
     font-size: 11px;
     line-height: 16px;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 const StyledUpgradeIllustration = styled(UpgradeIllustrationSvg)`

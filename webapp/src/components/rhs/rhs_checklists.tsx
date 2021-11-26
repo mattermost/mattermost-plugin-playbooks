@@ -240,7 +240,7 @@ const InnerContainer = styled.div`
     padding: 0 12px 24px 12px;
 
     &:hover {
-        background-color: var(--center-channel-color-04);
+        background-color: rgba(var(--center-channel-color-rgb), 0.04);
     }
 `;
 
@@ -287,7 +287,7 @@ const StyledDotMenuButton = styled(DotMenuButton)`
     height: 28px;
 
     &:hover {
-        background: var(--button-bg-08);
+        background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     }
 `;

@@ -173,7 +173,7 @@ export const RHSHomePlaybook = ({
     const linkRef = useRef(null);
 
     return (
-        <Item>
+        <Item data-testid='rhs-home-item'>
             <div>
                 <Title>
                     <Link
@@ -238,7 +238,10 @@ export const RHSHomePlaybook = ({
                     </MetaItem>
                 </Meta>
             </div>
-            <RunButton onClick={() => dispatch(startPlaybookRunById(team_id, id))}>
+            <RunButton
+                data-testid={'run-playbook'}
+                onClick={() => dispatch(startPlaybookRunById(team_id, id))}
+            >
                 <Icon
                     path={mdiClipboardPlayOutline}
                     size={1.5}

@@ -5,6 +5,7 @@
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
+import {stubClipboard} from '../../utils';
 
 describe('playbooks > overview', () => {
     let testTeam;
@@ -123,6 +124,28 @@ describe('playbooks > overview', () => {
         // * Verify the playbook run creation dialog has opened
         cy.get('#interactiveDialogModal').should('exist').within(() => {
             cy.findByText('Start run').should('exist');
+        });
+    });
+
+    it('should copy playbook link', () => {
+        // # Navigate directly to the playbook
+        cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
+
+        // # trigger the tooltip
+        cy.get('.icon-link-variant').trigger('mouseover');
+
+        // * Verify tooltip text
+        cy.get('#copy-playbook-link-tooltip').should('contain', 'Copy link to playbook');
+
+        stubClipboard().as('clipboard');
+
+        // # click on copy button
+        cy.get('.icon-link-variant').click().then(() => {
+            // * Verify that tooltip text changed
+            cy.get('#copy-playbook-link-tooltip').should('contain', 'Copied!');
+
+            // * Verify clipboard content
+            cy.get('@clipboard').its('contents').should('contain', `/playbooks/playbooks/${testPublicPlaybook.id}`);
         });
     });
 

@@ -95,7 +95,7 @@ export const GlobalSelectStyle = createGlobalStyle`
         background-color: transparent;
         border-radius: 4px;
         border: none;
-        box-shadow: inset 0 0 0 1px var(--center-channel-color-16);
+        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
         width: 100%;
         font-size: 14px;
 
@@ -116,17 +116,17 @@ export const GlobalSelectStyle = createGlobalStyle`
         }
 
         .playbooks-rselect__option--is-selected {
-            background-color: var(--center-channel-color-08);
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
             color: inherit;
         }
 
         .playbooks-rselect__option--is-focused {
-            background-color: var(--center-channel-color-16);
+            background-color: rgba(var(--center-channel-color-rgb), 0.16);
         }
 
         .playbooks-rselect__option {
             &:active {
-                background-color: var(--center-channel-color-08);
+                background-color: rgba(var(--center-channel-color-rgb), 0.08);
             }
         }
 
@@ -137,7 +137,7 @@ export const GlobalSelectStyle = createGlobalStyle`
         .playbooks-rselect__multi-value {
             height: 20px;
             line-height: 19px;
-            background-color: var(--center-channel-color-08);
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
             border-radius: 10px;
             padding-left: 8px;
 
@@ -146,7 +146,7 @@ export const GlobalSelectStyle = createGlobalStyle`
                 color: var(--center-channel-color);
             }
             .playbooks-rselect__multi-value__remove {
-                color: var(--center-channel-bg-80);
+                color: rgba(var(--center-channel-bg-rgb), 0.80);
             }
         }
     }
@@ -218,7 +218,7 @@ export const InfoLine = styled.div`
     font-weight: normal;
     font-size: 11px;
     line-height: 16px;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 interface PlaybookRunFilterButtonProps {
@@ -230,7 +230,7 @@ export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProp
     align-items: center;
     border: none;
     border-radius: 4px;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     background: transparent;
     cursor: pointer;
     font-weight: 600;
@@ -245,12 +245,12 @@ export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProp
     height: 4rem;
 
     :hover {
-        background: var(--center-channel-color-08);
-        color: var(--center-channel-color-72);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
     :active {
-        background: var(--button-bg-08);
+        background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     }
 
@@ -262,7 +262,7 @@ export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProp
 
     ${(props) => props.active && css`
         cursor: pointer;
-        background: var(--button-bg-08);
+        background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     `}
 `;

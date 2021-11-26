@@ -25,7 +25,7 @@ interface Props {
 
 const PlaybookRunList = styled.div`
     font-family: 'Open Sans', sans-serif;
-    color: var(--center-channel-color-90);
+    color: rgba(var(--center-channel-color-rgb), 0.90);
 `;
 
 const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterPill, fixedTeam}: Props) => {

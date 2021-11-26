@@ -153,7 +153,8 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}{
 		ID: id,
 	}
-	w.Header().Add("Location", fmt.Sprintf("/api/v0/playbooks/%s", playbook.ID))
+	w.Header().Add("Location", makeAPIURL(h.pluginAPI, "playbooks/%s", id))
+
 	ReturnJSON(w, &result, http.StatusCreated)
 }
 
