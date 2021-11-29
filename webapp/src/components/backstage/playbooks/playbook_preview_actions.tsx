@@ -9,11 +9,12 @@ import {useDefaultMarkdownOptionsByTeamId} from 'src/hooks/general';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
-import {TextBadge, ChannelBadge} from 'src/components/backstage/playbooks/playbook_preview_badges';
+import {EllipsizedText, TextBadge, ChannelBadge} from 'src/components/backstage/playbooks/playbook_preview_badges';
 import {Card, CardEntry, CardSubEntry} from 'src/components/backstage/playbooks/playbook_preview_cards';
 import Section from 'src/components/backstage/playbooks/playbook_preview_section';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {UserList} from 'src/components/rhs/rhs_participants';
+import Tooltip from 'src/components/widgets/tooltip';
 
 interface Props {
     id: string;
@@ -31,6 +32,7 @@ const PlaybookPreviewActions = (props: Props) => {
 
     const showPromptCardEntry = props.playbook.signal_any_keywords_enabled && props.playbook.signal_any_keywords.length !== 0;
 
+    const createChannelEnabled = true;
     const inviteUsersEnabled = props.playbook.invite_users_enabled && props.playbook.invited_user_ids.length !== 0;
     const defaultOwnerEnabled = props.playbook.default_owner_enabled && props.playbook.default_owner_id !== '';
     const broadcastEnabled = props.playbook.broadcast_enabled && props.playbook.broadcast_channel_ids.length !== 0;
@@ -38,6 +40,7 @@ const PlaybookPreviewActions = (props: Props) => {
     const webhookOnCreationEnabled = props.playbook.webhook_on_creation_enabled && props.playbook.webhook_on_creation_urls.length !== 0;
 
     const showRunStartCardEntry =
+        createChannelEnabled ||
         inviteUsersEnabled ||
         broadcastEnabled ||
         defaultOwnerEnabled ||
@@ -67,13 +70,12 @@ const PlaybookPreviewActions = (props: Props) => {
         >
             <Card>
                 <CardEntry
-                    title={formatMessage({
-                        defaultMessage: 'Prompt to run this playbook when a user posts a message containing the keywords',
-                    })}
+                    title={formatMessage(
+                        {defaultMessage: 'Prompt to run this playbook when a message contains {numKeywords, select, 1 {the keyword} other {one or more of these}}'},
+                        {numKeywords: props.playbook.signal_any_keywords.length},
+                    )}
                     iconName={'message-text-outline'}
-                    extraInfo={props.playbook.signal_any_keywords.map((keyword) => (
-                        <TextBadge key={keyword}>{keyword}</TextBadge>
-                    ))}
+                    extraInfo={<KeywordsExtraInfo keywords={props.playbook.signal_any_keywords}/>}
                     enabled={showPromptCardEntry}
                 />
                 <CardEntry
@@ -89,6 +91,11 @@ const PlaybookPreviewActions = (props: Props) => {
                             {isPublic: props.playbook.create_public_playbook_run},
                         )}
                         enabled={true}
+                        extraInfo={props.playbook.channel_name_template && (
+                            <TextBadge>
+                                {props.playbook.channel_name_template}
+                            </TextBadge>
+                        )}
                     />
                     <CardSubEntry
                         title={formatMessage(
@@ -190,7 +197,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
         padding: 2px;
         padding-right: 6px;
         margin-top: 0;
-        background: var(--center-channel-color-08);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
 
         :hover {
             background: rgba(var(--center-channel-color-rgb), 0.16);
@@ -218,6 +225,41 @@ const StyledProfileSelector = styled(ProfileSelector)`
 const UserRow = styled.div`
     display: flex;
     flex-direction: row;
+`;
+
+const KeywordsExtraInfo = ({keywords}: {keywords: string[]}) => {
+    const {formatMessage} = useIntl();
+
+    if (keywords.length === 1) {
+        return (
+            <Tooltip
+                id={'playbook-preview-actions-keywords-extra-info'}
+                content={keywords[0]}
+            >
+                <ShortTextBadge>
+                    <EllipsizedText>{keywords[0]}</EllipsizedText>
+                </ShortTextBadge>
+            </Tooltip>
+        );
+    }
+
+    return (
+        <Tooltip
+            id={'playbook-preview-actions-keywords-extra-info'}
+            content={keywords.join(', ')}
+        >
+            <TextBadge>
+                {formatMessage(
+                    {defaultMessage: '{numKeywords, plural, other {# keywords}}'},
+                    {numKeywords: keywords.length},
+                )}
+            </TextBadge>
+        </Tooltip>
+    );
+};
+
+const ShortTextBadge = styled(TextBadge)`
+    max-width: 150px;
 `;
 
 export default PlaybookPreviewActions;

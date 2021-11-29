@@ -27,7 +27,7 @@ export const Footer = styled.div`
     }
 
     background: var(--center-channel-bg);
-    border-top: 1px solid var(--center-channel-color-16);
+    border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     position: absolute;
     bottom: 0;
     left: 0;
@@ -109,7 +109,6 @@ export const HoverMenu = styled.div`
     background-color: var(--center-channel-bg);
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
-    z-index: 2;
 `;
 
 export const HoverMenuButton = styled.i`
@@ -118,6 +117,7 @@ export const HoverMenuButton = styled.i`
     width: 28px;
     height: 28px;
     padding: 1px 0 0 1px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 export const SmallerProfile = styled(Profile)`

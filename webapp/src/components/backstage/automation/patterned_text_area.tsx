@@ -61,7 +61,7 @@ export const PatternedTextArea = (props: Props) => {
             </AutomationTitle>
             <SelectorWrapper>
                 <TextArea
-                    enabled={props.enabled}
+                    disabled={!props.enabled}
                     required={true}
                     rows={props.rows}
                     value={props.enabled ? props.input : ''}
@@ -93,7 +93,7 @@ const ErrorMessage = styled.div`
 `;
 
 interface TextAreaProps {
-    enabled: boolean;
+    disabled: boolean;
     invalid: boolean;
 }
 
@@ -106,17 +106,17 @@ const TextArea = styled.textarea<TextAreaProps>`
     height: auto;
     width: 100%;
 
-    background-color: ${(props) => (props.enabled ? 'var(--center-channel-bg)' : 'rgba(var(--center-channel-bg-rgb), 0.16)')};
+    background-color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
     color: var(--center-channel-color);
     border-radius: 4px;
     border: none;
-    box-shadow: inset 0 0 0 1px var(--center-channel-color-16);
+    box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
     font-size: 14px;
     padding-left: 16px;
     padding-right: 16px;
-    resize: ${(props) => !props.enabled && 'none'};
+    resize: ${(props) => props.disabled && 'none'};
 
-    ${(props) => props.invalid && props.enabled && props.value && css`
+    ${(props) => props.invalid && !props.disabled && props.value && css`
         :not(:focus) {
             box-shadow: inset 0 0 0 1px var(--error-text);
             & + ${ErrorMessage} {

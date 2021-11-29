@@ -2,20 +2,38 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import {useIntl} from 'react-intl';
-
 import styled from 'styled-components';
 
 interface Props {
     testId: string;
     default: string | undefined;
     onSearch: (term: string) => void;
+    placeholder: string;
 }
 
-const RunListSearch = styled.div`
+export default function SearchInput(props: Props) {
+    const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setTerm(event.target.value);
+        props.onSearch(event.target.value);
+    };
+
+    const [term, setTerm] = useState(props.default ? props.default : '');
+
+    return (
+        <Search data-testid={props.testId}>
+            <input
+                type='text'
+                placeholder={props.placeholder}
+                onChange={onChange}
+                value={term}
+            />
+        </Search>
+    );
+}
+
+const Search = styled.div`
     position: relative;
-    max-width: 56rem;
-    width: 100%;
+    font-weight: 400;
 
     input {
         -webkit-transition: all 0.15s ease;
@@ -25,8 +43,8 @@ const RunListSearch = styled.div`
         transition: all 0.15s ease;
         background-color: transparent;
         border-radius: 4px;
-        border: 1px solid var(--center-channel-color-16);
-        width: 100%;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+        width: 360px;
         height: 4rem;
         font-size: 14px;
         padding-left: 4rem;
@@ -41,7 +59,7 @@ const RunListSearch = styled.div`
         left: 18px;
         top: 9px;
         position: absolute;
-        color: var(--center-channel-color-56);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
         content: '\\f349';
         font-size: 20px;
         font-family: 'compass-icons', mattermosticons;
@@ -49,26 +67,3 @@ const RunListSearch = styled.div`
         -moz-osx-font-smoothing: grayscale;
     }
 `;
-
-export default function SearchInput(props: Props) {
-    const {formatMessage} = useIntl();
-    const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setTerm(event.target.value);
-        props.onSearch(event.target.value);
-    };
-
-    const [term, setTerm] = useState(props.default ? props.default : '');
-
-    return (
-        <RunListSearch
-            data-testid={props.testId}
-        >
-            <input
-                type='text'
-                placeholder={formatMessage({defaultMessage: 'Search by run name'})}
-                onChange={onChange}
-                value={term}
-            />
-        </RunListSearch>
-    );
-}

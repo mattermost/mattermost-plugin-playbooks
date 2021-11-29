@@ -153,7 +153,8 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 	}{
 		ID: id,
 	}
-	w.Header().Add("Location", fmt.Sprintf("/api/v0/playbooks/%s", playbook.ID))
+	w.Header().Add("Location", makeAPIURL(h.pluginAPI, "playbooks/%s", id))
+
 	ReturnJSON(w, &result, http.StatusCreated)
 }
 
@@ -512,11 +513,14 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 		return app.PlaybookFilterOptions{}, errors.Errorf("bad parameter 'per_page': it should be a positive number")
 	}
 
+	searchTerm := u.Query().Get("search_term")
+
 	return app.PlaybookFilterOptions{
-		Sort:      sortField,
-		Direction: sortDirection,
-		Page:      page,
-		PerPage:   perPage,
+		Sort:       sortField,
+		Direction:  sortDirection,
+		Page:       page,
+		PerPage:    perPage,
+		SearchTerm: searchTerm,
 	}, nil
 }
 

@@ -53,6 +53,10 @@ export const setSiteUrl = (siteUrl?: string): void => {
     apiUrl = `${basePath}/plugins/${pluginId}/api/v0`;
 };
 
+export const getSiteUrl = (): string => {
+    return basePath;
+};
+
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
     const queryParams = qs.stringify(params, {addQueryPrefix: true, indices: false});
 
@@ -289,6 +293,20 @@ export async function clientAddChecklistItem(playbookRunID: string, checklistNum
 export async function clientRemoveChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}`, {
         method: 'delete',
+        body: '',
+    });
+}
+
+export async function clientSkipChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/skip`, {
+        method: 'put',
+        body: '',
+    });
+}
+
+export async function clientRestoreChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/restore`, {
+        method: 'put',
         body: '',
     });
 }

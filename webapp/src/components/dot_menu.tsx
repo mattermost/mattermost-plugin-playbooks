@@ -14,8 +14,8 @@ export const DotMenuButton = styled.div`
     border-radius: 4px;
     width: 3.2rem;
     height: 3.2rem;
-    fill: var(--center-channel-color-56);
-    color: var(--center-channel-color-56);
+    fill: rgba(var(--center-channel-color-rgb), 0.56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     cursor: pointer;
 
     &:hover {
@@ -120,6 +120,10 @@ const DotMenu = (props: DotMenuProps) => {
                         top={props.top}
                         left={props.left}
                         wide={props.wide}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setOpen(false);
+                        }}
                     >
                         {props.children}
                     </DropdownMenu>
@@ -141,7 +145,7 @@ const DropdownMenuItemStyled = styled.a`
 
 
     &:hover {
-        background: var(--center-channel-color-08);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--center-channel-color);
     }
 }

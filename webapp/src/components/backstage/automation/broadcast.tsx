@@ -60,7 +60,7 @@ const StyledChannelSelector = styled(ChannelSelector)`
             left: 16px;
             top: 8px;
             position: absolute;
-            color: var(--center-channel-color-56);
+            color: rgba(var(--center-channel-color-rgb), 0.56);
             content: '\f349';
             font-size: 18px;
             font-family: 'compass-icons', mattermosticons;

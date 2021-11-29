@@ -12,12 +12,14 @@ import {Overlay, Popover, PopoverProps} from 'react-bootstrap';
 import Scrollbars from 'react-custom-scrollbars';
 import {useDispatch, useSelector} from 'react-redux';
 import {components, ControlProps} from 'react-select';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {
-    clientRemoveChecklistItem, clientRunChecklistItemSlashCommand,
+    clientSkipChecklistItem,
+    clientRestoreChecklistItem,
+    clientRunChecklistItemSlashCommand,
     setAssignee,
     clientEditChecklistItem,
 } from 'src/client';
@@ -50,7 +52,7 @@ interface ChecklistItemDetailsProps {
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     disabled: boolean;
-    inlineDescription: boolean;
+    collapsibleDescription: boolean;
 }
 
 const RunningTimeout = 1000;
@@ -134,7 +136,7 @@ export const CheckboxContainer = styled.div`
     button:disabled {
         border: 0px;
         color: var(--button-color);
-        background: var(--center-channel-color-56);
+        background: rgba(var(--center-channel-color-rgb), 0.56);
         cursor: default;
     }
 
@@ -156,7 +158,7 @@ export const CheckboxContainer = styled.div`
         min-width: 20px;
         height: 20px;
         background: #ffffff;
-        border: 2px solid var(--center-channel-color-24);
+        border: 2px solid rgba(var(--center-channel-color-rgb), 0.24);
         border-radius: 4px;
         margin: 0;
         cursor: pointer;
@@ -204,12 +206,23 @@ export const CheckboxContainer = styled.div`
     }
 `;
 
-const ChecklistItemLabel = styled.div`
+const ChecklistItemLabel = styled.div<{clickable: boolean}>`
     display: flex;
     flex-direction: column;
+    width: 100%;
+
+    ${({clickable}) => clickable && css`
+        cursor: pointer;
+
+        // This is somehow needed to override the
+        // cursor style in the item title
+        label {
+            cursor: pointer;
+        }
+    `}
 `;
 
-const ChecklistItemDescription = styled.div`
+const ChecklistItemDescription = styled.div<{height: string}>`
     font-size: 12px;
     color: rgba(var(--center-channel-color-rgb), 0.72);
 
@@ -224,6 +237,10 @@ const ChecklistItemDescription = styled.div`
 
         white-space: pre-wrap;
     }
+    height: ${({height}) => height};
+
+    transition: height 0.2s ease-in-out;
+    overflow: hidden;
 `;
 
 const Command = styled.div`
@@ -254,7 +271,7 @@ const Run = styled.div<RunProps>`
     }
 
     ${({running}) => running && `
-        color: var(--center-channel-color-64);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
         cursor: default;
 
         &:hover {
@@ -353,6 +370,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
     const profilesInChannel = useProfilesInCurrentChannel();
+    const [showDescription, setShowDescription] = useState(true);
 
     const markdownOptions = {
         singleline: true,
@@ -365,7 +383,8 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const [running, setRunning] = useState(false);
     const [lastRun, setLastRun] = useState(props.checklistItem.command_last_run);
     const [showMenu, setShowMenu] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showSkipConfirm, setShowSkipConfirm] = useState(false);
+    const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
 
     // Immediately stop the running indicator when we get notified of a more recent execution.
@@ -396,11 +415,14 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const assignee_id = props.checklistItem.assignee_id; // to make typescript happy
 
     const title = props.checklistItem.title;
+    const labelText = messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions), true, {});
 
     const resetAssignee = () => {
         onAssigneeChange();
         setProfileSelectorToggle(!profileSelectorToggle);
     };
+
+    const toggleDescription = () => setShowDescription(!showDescription);
 
     const content = (
         <>
@@ -412,21 +434,22 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 data-testid='checkbox-item-container'
             >
                 <CheckboxContainer>
-                    {showMenu && (!props.disabled || props.checklistItem.description !== '') && !props.inlineDescription &&
+                    {showMenu && (!props.disabled || props.checklistItem.description !== '') &&
                     <HoverMenu>
+                        {props.collapsibleDescription && props.checklistItem.description !== '' &&
+                            <ToggleDescriptionButton
+                                title={formatMessage({defaultMessage: 'Toggle description'})}
+                                className={'icon icon-chevron-up'}
+                                showDescription={showDescription}
+                                onClick={toggleDescription}
+                            />
+                        }
                         {!props.disabled &&
                             <HoverMenuButton
                                 title={formatMessage({defaultMessage: 'Drag me to reorder'})}
                                 className={'icon icon-menu'}
                                 {...props.draggableProvided?.dragHandleProps}
                             />
-                        }
-                        {props.checklistItem.description !== '' &&
-                        <StepDescription
-                            text={props.checklistItem.description}
-                            channelNames={channelNamesMap}
-                            team={team}
-                        />
                         }
                         {!props.disabled &&
                             <>
@@ -459,10 +482,14 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                     }}
                                 />
                                 <HoverMenuButton
-                                    title={formatMessage({defaultMessage: 'Delete'})}
-                                    className={'icon-trash-can-outline icon-16 btn-icon'}
+                                    title={(props.checklistItem.state === ChecklistItemState.Skip) ? formatMessage({defaultMessage: 'Restore'}) : formatMessage({defaultMessage: 'Skip'})}
+                                    className={(props.checklistItem.state === ChecklistItemState.Skip) ? 'icon-refresh icon-16 btn-icon' : 'icon-close-circle-outline icon-16 btn-icon'}
                                     onClick={() => {
-                                        setShowDeleteConfirm(true);
+                                        if (props.checklistItem.state === ChecklistItemState.Skip) {
+                                            setShowRestoreConfirm(true);
+                                        } else {
+                                            setShowSkipConfirm(true);
+                                        }
                                     }}
                                 />
                             </>
@@ -470,7 +497,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     </HoverMenu>
                     }
                     <ChecklistItemButton
-                        disabled={props.disabled}
+                        disabled={props.disabled || props.checklistItem.state === ChecklistItemState.Skip}
                         item={props.checklistItem}
                         onChange={(item: ChecklistItemState) => {
                             if (props.onChange) {
@@ -478,19 +505,20 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             }
                         }}
                     />
-                    <ChecklistItemLabel>
+                    <ChecklistItemLabel
+                        onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
+                        clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
+                    >
                         <label title={title}>
                             <div
                                 onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
                             >
-                                {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
+                                {(props.checklistItem.state === ChecklistItemState.Skip) ? <StrikeThrough>{labelText}</StrikeThrough> : labelText}
                             </div>
                         </label>
-                        {props.inlineDescription && (
-                            <ChecklistItemDescription>
-                                {messageHtmlToComponent(formatText(props.checklistItem.description, {...markdownOptions, singleline: false}), true, {})}
-                            </ChecklistItemDescription>
-                        )}
+                        <CollapsibleChecklistItemDescription expanded={showDescription}>
+                            {messageHtmlToComponent(formatText(props.checklistItem.description, {...markdownOptions, singleline: false}), true, {})}
+                        </CollapsibleChecklistItemDescription>
                     </ChecklistItemLabel>
                 </CheckboxContainer>
                 <ExtrasRow>
@@ -529,14 +557,34 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 </ExtrasRow>
             </ItemContainer>
             <ConfirmModal
-                show={showDeleteConfirm}
-                title={formatMessage({defaultMessage: 'Delete task'})}
-                message={formatMessage({defaultMessage: 'Are you sure you want to delete this task? This will be removed from this run but will not affect the playbook.'})}
-                confirmButtonText={formatMessage({defaultMessage: 'Delete'})}
-                onConfirm={() =>
-                    clientRemoveChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum)
+                show={showSkipConfirm}
+                title={formatMessage({defaultMessage: 'Skip task'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to skip this task? This will be crossed from this run but will not affect the playbook.'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Skip'})}
+                onConfirm={() => {
+                    clientSkipChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
+                    if (props.onChange) {
+                        props.onChange(ChecklistItemState.Skip);
+                    }
+                    setShowSkipConfirm(false);
                 }
-                onCancel={() => setShowDeleteConfirm(false)}
+                }
+                onCancel={() => setShowSkipConfirm(false)}
+            />
+            <ConfirmModal
+                show={showRestoreConfirm}
+                title={formatMessage({defaultMessage: 'Restore task'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to Restore this task? This Task will be added to this run'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Restore'})}
+                onConfirm={() => {
+                    clientRestoreChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
+                    if (props.onChange) {
+                        props.onChange(ChecklistItemState.Open);
+                    }
+                    setShowRestoreConfirm(false);
+                }
+                }
+                onCancel={() => setShowRestoreConfirm(false)}
             />
             <ChecklistItemEditModal
                 show={showEditDialog}
@@ -557,6 +605,29 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     }
 
     return content;
+};
+
+const ToggleDescriptionButton = styled(HoverMenuButton)<{showDescription: boolean}>`
+    transition: all 0.2s linear;
+    transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
+`;
+
+const CollapsibleChecklistItemDescription = (props: {expanded: boolean, children: React.ReactNode}) => {
+    const ref = useRef<HTMLDivElement|null>(null);
+
+    let computedHeight = 'auto';
+    if (ref?.current) {
+        computedHeight = ref.current.scrollHeight + 'px';
+    }
+
+    return (
+        <ChecklistItemDescription
+            ref={ref}
+            height={props.expanded ? computedHeight : '0'}
+        >
+            {props.children}
+        </ChecklistItemDescription>
+    );
 };
 
 interface ChecklistItemEditModalProps {
@@ -583,6 +654,10 @@ const FormContainer = styled.div`
     > * {
         margin-bottom: 10px;
     }
+`;
+
+const StrikeThrough = styled.text`
+    text-decoration: line-through;
 `;
 
 const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {

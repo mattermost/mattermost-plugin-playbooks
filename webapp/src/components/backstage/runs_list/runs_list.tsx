@@ -21,19 +21,21 @@ interface Props {
     setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>
     filterPill: React.ReactNode | null
     fixedTeam?: boolean
+    fixedPlaybook?: boolean
 }
 
 const PlaybookRunList = styled.div`
     font-family: 'Open Sans', sans-serif;
-    color: var(--center-channel-color-90);
+    color: rgba(var(--center-channel-color-rgb), 0.90);
 `;
 
-const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterPill, fixedTeam}: Props) => {
+const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterPill, fixedTeam, fixedPlaybook}: Props) => {
     const isFiltering = (
         (fetchParams?.search_term?.length ?? 0) > 0 ||
         (fetchParams?.statuses?.length ?? 0) > 1 ||
         (fetchParams?.owner_user_id?.length ?? 0) > 0 ||
-        (fetchParams?.participant_id?.length ?? 0) > 0
+        (fetchParams?.participant_id?.length ?? 0) > 0 ||
+        (fetchParams?.participant_or_follower_id?.length ?? 0) > 0
     );
 
     const setPage = (page: number) => {
@@ -50,6 +52,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
                     fetchParams={fetchParams}
                     setFetchParams={setFetchParams}
                     fixedTeam={fixedTeam}
+                    fixedPlaybook={fixedPlaybook}
                 />
                 {filterPill}
                 <RunListHeader

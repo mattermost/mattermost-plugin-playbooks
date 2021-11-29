@@ -65,7 +65,7 @@ const PlaybookPreviewChecklists = (props: Props) => {
                                     playbookRunId={''}
                                     dragging={false}
                                     disabled={true}
-                                    inlineDescription={true}
+                                    collapsibleDescription={false}
                                 />
                             );
                         })}

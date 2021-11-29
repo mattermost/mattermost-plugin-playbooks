@@ -56,6 +56,8 @@ interface Props {
     onToggleCategorizePlaybookRun: () => void;
     categoryName: string;
     categoryNameChange: (categoryName: string) => void;
+    channelNameTemplate: string;
+    onChannelNameTemplateChange: (channelNameTemplate: string) => void;
 }
 
 export const AutomationSettings = (props: Props) => {
@@ -81,6 +83,20 @@ export const AutomationSettings = (props: Props) => {
                 <SectionTitle>
                     {formatMessage({defaultMessage: 'When a run starts'})}
                 </SectionTitle>
+                <Setting id={'create-channel'}>
+                    <PatternedInput
+                        enabled={true}
+                        disableToggle={true}
+                        onToggle={() => null}
+                        input={props.channelNameTemplate}
+                        onChange={props.onChannelNameTemplateChange}
+                        pattern={'[\\S][\\s\\S]*[\\S]'} // at least two non-whitespace characters
+                        placeholderText={formatMessage({defaultMessage: 'Channel name template (optional)'})}
+                        textOnToggle={formatMessage({defaultMessage: 'Create a channel'})}
+                        type={'text'}
+                        errorText={formatMessage({defaultMessage: 'Channel name is not valid.'})}
+                    />
+                </Setting>
                 <Setting id={'invite-users'}>
                     <InviteUsers
                         enabled={props.inviteUsersEnabled}
