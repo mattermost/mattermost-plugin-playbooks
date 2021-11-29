@@ -44,7 +44,7 @@ const PostTextContainer = styled.div`
     background: var(--center-channel-bg);
     margin: 8px 0 0 0;
     padding: 10px 25px 0 16px;
-    border: 1px solid var(--center-channel-color-08);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 8px;
     flex-grow: 1;
 `;

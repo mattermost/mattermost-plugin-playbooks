@@ -55,7 +55,7 @@ const ContainerMedium = styled.div`
 
 const PlaybookContainer = styled.div`
     font-family: $font-family;
-    color: var(--center-channel-color-90);
+    color: rgba(var(--center-channel-color-rgb), 0.90);
 `;
 
 const PlaybookList = () => {

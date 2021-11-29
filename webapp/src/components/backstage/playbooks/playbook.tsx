@@ -23,7 +23,14 @@ import {useForceDocumentTitle, useStats} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
 
-import {clientFetchPlaybook, clientFetchIsPlaybookFollower, autoFollowPlaybook, autoUnfollowPlaybook, telemetryEventForPlaybook} from 'src/client';
+import {
+    clientFetchPlaybook,
+    clientFetchIsPlaybookFollower,
+    autoFollowPlaybook,
+    autoUnfollowPlaybook,
+    telemetryEventForPlaybook,
+    getSiteUrl,
+} from 'src/client';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -31,6 +38,10 @@ import {RegularHeading} from 'src/styles/headings';
 import CheckboxInput from '../runs_list/checkbox_input';
 import {SecondaryButtonLargerRight} from '../playbook_runs/shared';
 import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
+
+import {copyToClipboard} from 'src/utils';
+
+import {CopyIcon} from '../playbook_runs/playbook_run_backstage/playbook_run_backstage';
 
 interface MatchParams {
     playbookId: string
@@ -51,6 +62,7 @@ const Playbook = () => {
     const stats = useStats(match.params.playbookId);
     const [isFollowed, setIsFollowed] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
+    const [playbookLinkCopied, setPlaybookLinkCopied] = useState(false);
 
     const changeFollowing = (check: boolean) => {
         if (playbook?.id) {
@@ -137,6 +149,36 @@ const Playbook = () => {
         </Tooltip>
     );
 
+    const copyPlaybookLink = () => {
+        copyToClipboard(getSiteUrl() + '/playbooks/playbooks/' + playbook.id);
+        setPlaybookLinkCopied(true);
+    };
+
+    let copyPlaybookLinkTooltipMessage = formatMessage({defaultMessage: 'Copy link to playbook'});
+    if (playbookLinkCopied) {
+        copyPlaybookLinkTooltipMessage = formatMessage({defaultMessage: 'Copied!'});
+    }
+
+    const playbookLink = (
+        <OverlayTrigger
+            placement='bottom'
+            delay={OVERLAY_DELAY}
+            onExit={() => setPlaybookLinkCopied(false)}
+            shouldUpdatePosition={true}
+            overlay={
+                <Tooltip id='copy-playbook-link-tooltip'>
+                    {copyPlaybookLinkTooltipMessage}
+                </Tooltip>
+            }
+        >
+            <CopyIcon
+                className='icon-link-variant'
+                onClick={copyPlaybookLink}
+                clicked={playbookLinkCopied}
+            />
+        </OverlayTrigger>
+    );
+
     return (
         <>
             <TopContainer>
@@ -159,6 +201,7 @@ const Playbook = () => {
                             status={BadgeType.Archived}
                         />
                     }
+                    {playbookLink}
                     <SecondaryButtonLargerRightStyled
                         checked={isFollowed}
                         disabled={archived}
@@ -238,7 +281,7 @@ const TopContainer = styled.div`
     top: 0;
     background: var(--center-channel-bg);
     width: 100%;
-    box-shadow: inset 0px -1px 0px var(--center-channel-color-16);
+    box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
 `;
 
 const TitleRow = styled.div`
@@ -256,10 +299,10 @@ const LeftArrow = styled.button`
     font-size: 24px;
     line-height: 24px;
     cursor: pointer;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 
     &:hover {
-        background: var(--button-bg-08);
+        background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     }
 `;
@@ -274,7 +317,7 @@ const VerticalBlock = styled.div`
 const HorizontalBlock = styled.div`
     display: flex;
     flex-direction: row;
-    color: var(--center-channel-color-64);
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 
     > i {
         font-size: 12px;
@@ -315,11 +358,11 @@ interface CheckedProps {
     checked: boolean;
 }
 const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <CheckedProps>`
-    border: 1px solid var(--center-channel-color-24);
-    color: var(--center-channel-color-56);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 
     &:hover:enabled {
-        background-color: var(--center-channel-color-08);
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     ${(props: CheckedProps) => props.checked && css`

@@ -15,7 +15,7 @@ const Component = styled.label`
     transition: background-color 0.2s;
 
     &:hover {
-        background-color: var(--button-bg-08);
+        background-color: rgba(var(--button-bg-rgb), 0.08);
     }
 
     input {
@@ -32,7 +32,7 @@ const Component = styled.label`
         margin-right: 10px;
 
         border-radius: 2px;
-        border: 1px solid var(--center-channel-color-24);
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
         background-color: var(--center-channel-bg);
         color: var(--center-channel-bg);
 

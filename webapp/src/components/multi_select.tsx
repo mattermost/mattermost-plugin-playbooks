@@ -24,13 +24,13 @@ const FilterCheckboxContainer = styled(CheckboxContainer)`
         width: 16px;
         min-width: 16px;
         height: 16px;
-        border: 1px solid var(--center-channel-color-24);
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
         border-radius: 2px;
     }
 
     input[type="checkbox"]:checked:disabled {
-        background: var(--button-bg-24);
-        border: 1px solid var(--button-bg-24);
+        background: rgba(var(--button-bg-rgb), 0.24);
+        border: 1px solid rgba(var(--button-bg-rgb), 0.24);
     }
 
 `;
@@ -66,7 +66,7 @@ const Dropdown = styled.div`
 `;
 
 const Divider = styled.div`
-    background: var(--center-channel-color-16);
+    background: rgba(var(--center-channel-color-rgb), 0.16);
     height: 1px;
     margin: 8px 0;
 `;

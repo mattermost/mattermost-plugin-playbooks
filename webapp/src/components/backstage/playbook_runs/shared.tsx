@@ -41,7 +41,7 @@ export const Content = styled.div`
     color: var(--center-channel-color);
     margin: 8px 0 0 0;
     padding: 0 8px 4px;
-    border: 1px solid var(--center-channel-color-08);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 8px;
 `;
 

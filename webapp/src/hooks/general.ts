@@ -567,3 +567,16 @@ export const useStats = (playbookId: string) => {
 
     return stats;
 };
+
+/**
+ * Hook that returns the previous value of the prop passed as argument
+ */
+export const usePrevious = (value: any) => {
+    const ref = useRef();
+
+    useEffect(() => {
+        ref.current = value;
+    });
+
+    return ref.current;
+};

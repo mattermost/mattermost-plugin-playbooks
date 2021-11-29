@@ -32,6 +32,7 @@ const PlaybookPreviewActions = (props: Props) => {
 
     const showPromptCardEntry = props.playbook.signal_any_keywords_enabled && props.playbook.signal_any_keywords.length !== 0;
 
+    const createChannelEnabled = true;
     const inviteUsersEnabled = props.playbook.invite_users_enabled && props.playbook.invited_user_ids.length !== 0;
     const defaultOwnerEnabled = props.playbook.default_owner_enabled && props.playbook.default_owner_id !== '';
     const broadcastEnabled = props.playbook.broadcast_enabled && props.playbook.broadcast_channel_ids.length !== 0;
@@ -39,6 +40,7 @@ const PlaybookPreviewActions = (props: Props) => {
     const webhookOnCreationEnabled = props.playbook.webhook_on_creation_enabled && props.playbook.webhook_on_creation_urls.length !== 0;
 
     const showRunStartCardEntry =
+        createChannelEnabled ||
         inviteUsersEnabled ||
         broadcastEnabled ||
         defaultOwnerEnabled ||
@@ -89,6 +91,11 @@ const PlaybookPreviewActions = (props: Props) => {
                             {isPublic: props.playbook.create_public_playbook_run},
                         )}
                         enabled={true}
+                        extraInfo={props.playbook.channel_name_template && (
+                            <TextBadge>
+                                {props.playbook.channel_name_template}
+                            </TextBadge>
+                        )}
                     />
                     <CardSubEntry
                         title={formatMessage(
@@ -190,7 +197,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
         padding: 2px;
         padding-right: 6px;
         margin-top: 0;
-        background: var(--center-channel-color-08);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
 
         :hover {
             background: rgba(var(--center-channel-color-rgb), 0.16);

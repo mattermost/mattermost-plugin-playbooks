@@ -6,8 +6,8 @@ const BackstageListHeader = styled.div`
     font-size: 14px;
     line-height: 4rem;
     color: var(--center-channel-color);
-    border: 1px solid var(--center-channel-color-08);
-    background-color: var(--center-channel-color-04);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    background-color: rgba(var(--center-channel-color-rgb), 0.04);
     border-radius: 4px;
 `;
 
