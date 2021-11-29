@@ -1195,5 +1195,240 @@ describe('playbooks > edit', () => {
                 });
             });
         });
+
+        describe.only('when a new member joins the channel', () => {
+            describe('add the channel to sidebary category', () => {
+                it('is disabled in a new playbook', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('#user-joins-channel-categorize label input').should(
+                        'not.be.checked'
+                    );
+                });
+
+                it('can be enabled', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('be.checked');
+                    });
+                });
+
+                it('does not let select a category when disabled', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('#user-joins-channel-categorize label input').should(
+                        'not.be.checked'
+                    );
+
+                    // * Verify that the category selector is disabled
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        cy.getStyledComponent('StyledCreatable').should(
+                            'have.class',
+                            'channel-selector--is-disabled'
+                        );
+                    });
+                });
+
+                it('allows selecting a category when enabled', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Open the category selector
+                        cy.openCategorySelector();
+
+                        // # Select a category
+                        cy.selectCategory('Favorites');
+
+                        // * Verify that the control shows the selected category
+                        cy.get('.channel-selector__control').contains(
+                            'Favorites'
+                        );
+                    });
+                });
+
+                it('allows changing the category', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Open the channel selector
+                        cy.openCategorySelector();
+
+                        // # Select a channel
+                        cy.selectCategory('Favorites');
+
+                        // * Verify that the control shows the selected category
+                        cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(
+                            'Favorites'
+                        );
+
+                        // # Open the channel selector
+                        cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').click({
+                            force: true,
+                        });
+
+                        // # Select a new channel
+                        cy.selectCategory('Channels');
+
+                        // * Verify that the control shows the selected channel
+                        cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(
+                            'Channels',
+                        );
+                    });
+                });
+
+                it('persists the category even if the toggle is off', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Open the channel selector
+                        cy.openCategorySelector();
+
+                        // # Select a channel
+                        cy.selectCategory('Favorites');
+
+                        // * Verify that the control shows the selected category
+                        cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(
+                            'Favorites'
+                        );
+
+                        // # Click on the toggle to disable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+                    });
+
+                    // # Save the playbook
+                    cy.findByTestId('save_playbook').click();
+
+                    // # Navigate again to the playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // * Verify that the control still shows the selected category
+                        cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(
+                            'Favorites'
+                        );
+                    });
+                });
+
+                it('shows new category name when category was created', () => {
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+                    });
+
+                    // # Type name to use new custom category
+                    cy.get('#playbook-automation-categorize-playbook-run')
+                    .click()
+                    .type('Custom category' + '{enter}', {delay: 200});
+
+                    // # Save the playbook
+                    cy.findByTestId('save_playbook').click();
+
+                    // # Visit the selected playbook
+                    cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+                    });
+
+                    // * Verify that the control still shows the new category 
+                    cy.get('#playbook-automation-categorize-playbook-run').should(
+                        'have.text',
+                        'Custom category',
+                    );
+                });
+            })
+        });
     });
 });
