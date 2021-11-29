@@ -36,7 +36,7 @@ const ThumbVertical = styled.div`
     margin-top: 6px;
 `;
 
-const MenuList = <T extends OptionTypeBase>(props: MenuListComponentProps<T>) => {
+const MenuList = <T extends OptionTypeBase>(props: MenuListComponentProps<T, false>) => {
     return (
         <MenuListWrapper>
             {props.selectProps.placeholder && <MenuHeader>{props.selectProps.placeholder}</MenuHeader>}

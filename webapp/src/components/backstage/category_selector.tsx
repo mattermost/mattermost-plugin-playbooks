@@ -15,7 +15,7 @@ export interface Props {
     onCategorySelected: (categoryName: string) => void;
     categoryName?: string;
     isClearable?: boolean;
-    selectComponents?: SelectComponentsConfig<ChannelCategory>;
+    selectComponents?: SelectComponentsConfig<ChannelCategory, false>;
     isDisabled: boolean;
     captureMenuScroll: boolean;
     shouldRenderValue: boolean;
