@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
-import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
+import ReactSelect, {ActionTypes, ControlProps, StylesConfig, components, GroupHeadingProps} from 'react-select';
 import classNames from 'classnames';
 import styled, {css} from 'styled-components';
 
@@ -359,3 +359,19 @@ const getUserDescription = (firstName: string, lastName: string, nickName: strin
 
     return '';
 };
+
+// test menu selector for react-select
+const groupStyles = {
+    border: `2px dotted`,
+    color: 'white',
+    padding: '5px 0px',
+    display: 'flex',
+  };
+
+const GroupHeading = (
+    props: GroupHeadingProps<"Channel Members" | "Not in Channel">
+  ) => (
+    <div style={groupStyles}>
+      <components.GroupHeading {...props} />
+    </div>
+  );
