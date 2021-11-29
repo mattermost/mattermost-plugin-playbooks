@@ -3,6 +3,8 @@
 
 const playbookRunsEndpoint = '/plugins/playbooks/api/v0/runs';
 
+const StatusOK = 200;
+
 /**
  * Get all playbook runs directly via API
  */
@@ -13,7 +15,7 @@ Cypress.Commands.add('apiGetAllPlaybookRuns', (teamId) => {
         qs: {team_id: teamId, per_page: 10000},
         method: 'GET',
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response);
     });
 });
@@ -28,7 +30,7 @@ Cypress.Commands.add('apiGetAllInProgressPlaybookRuns', (teamId, userId = '') =>
         qs: {team_id: teamId, status: 'InProgress', participant_id: userId},
         method: 'GET',
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response);
     });
 });
@@ -43,7 +45,7 @@ Cypress.Commands.add('apiGetPlaybookRunByName', (teamId, name) => {
         qs: {team_id: teamId, search_term: name},
         method: 'GET',
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response);
     });
 });
@@ -59,7 +61,7 @@ Cypress.Commands.add('apiGetPlaybookRun', (playbookRunId) => {
         url: `${playbookRunsEndpoint}/${playbookRunId}`,
         method: 'GET',
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response);
     });
 });
@@ -100,7 +102,7 @@ Cypress.Commands.add('apiFinishRun', (playbookRunId) => {
         url: `${playbookRunsEndpoint}/${playbookRunId}/finish`,
         method: 'PUT',
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response.body);
     });
 });
@@ -121,7 +123,7 @@ Cypress.Commands.add('apiUpdateStatus', (
             reminder,
         },
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response.body);
     });
 });
@@ -141,7 +143,7 @@ Cypress.Commands.add('apiChangePlaybookRunOwner', (playbookRunId, userId) => {
             owner_id: userId,
         },
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response);
     });
 });
@@ -163,7 +165,7 @@ Cypress.Commands.add('apiChangeChecklistItemAssignee', (playbookRunId, checklist
             assignee_id: userId,
         },
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response);
     });
 });
@@ -184,7 +186,7 @@ Cypress.Commands.add('apiSetChecklistItemState', (playbookRunId, checklistId, it
             new_state: state,
         },
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response);
     });
 });
@@ -336,7 +338,7 @@ Cypress.Commands.add('verifyPlaybookCreated', (teamId, playbookTitle) => (
         qs: {team_id: teamId, sort: 'title', direction: 'asc'},
         method: 'GET'
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         const playbookResults = response.body;
         const playbook = playbookResults.items.find((p) => p.title === playbookTitle);
         assert.isDefined(playbook);
@@ -350,13 +352,13 @@ Cypress.Commands.add('apiGetPlaybook', (playbookId) => {
         url: `/plugins/playbooks/api/v0/playbooks/${playbookId}`,
         method: 'GET',
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response.body);
     });
 });
 
 // Update a playbook
-Cypress.Commands.add('apiUpdatePlaybook', (playbook, expectedHttpCode = 200) => {
+Cypress.Commands.add('apiUpdatePlaybook', (playbook, expectedHttpCode = StatusOK) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: `/plugins/playbooks/api/v0/playbooks/${playbook.id}`,
@@ -377,5 +379,29 @@ Cypress.Commands.add('apiArchivePlaybook', (playbookId) => {
         method: 'DELETE',
     }).then((response) => {
         expect(response.status).to.equal(204);
+    });
+});
+
+// Follow a playbook run
+Cypress.Commands.add('apiFollowPlaybookRun', (playbookRunId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/runs/${playbookRunId}/followers`,
+        method: 'PUT',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
+// Unfollow a playbook run
+Cypress.Commands.add('apiUnfollowPlaybookRun', (playbookRunId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/runs/${playbookRunId}/followers`,
+        method: 'DELETE',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
     });
 });
