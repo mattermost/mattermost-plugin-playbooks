@@ -1,19 +1,40 @@
 import React from 'react';
-import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
-
 import {FormattedMessage} from 'react-intl';
+import styled from 'styled-components';
+
+import {getCurrentUserId, getUsers} from 'mattermost-redux/selectors/entities/common';
+
+import {useSelector} from 'react-redux';
+
+import {getTeammateNameDisplaySetting} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/preferences';
+
+import {displayUsername} from 'mattermost-webapp/packages/mattermost-redux/src/utils/user_utils';
 
 import Profile from '../profile/profile';
+
+import {Playbook, PlaybookMember} from 'src/types/playbook';
+
+import DotMenu, {DropdownMenuItem} from '../dot_menu';
+
+import {useHasPlaybookPermission} from 'src/hooks';
+
+import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
 
 import ProfileAutocomplete from './profile_autocomplete';
 
 const ProfileAutocompleteContainer = styled.div`
+	border-bottom: 1px solid rgba(var(--sys-center-channel-color-rgb), 0.08);
+	padding-top: 24px;
+	padding-bottom: 24px;
+`;
+
+const Container = styled.div`
     display: flex;
     flex-direction: column;
 `;
 
-const UserLine = styled.div`
+const UserLineContainer = styled.div`
     display: flex;
     align-items: center;
     margin: 12px 0;
@@ -23,53 +44,150 @@ const UserList = styled.div`
     margin: 12px 0;
 `;
 
-const RemoveLink = styled.a`
-    flex-shrink: 0;
-    font-weight: normal;
-    font-size: 14px;
-    line-height: 20px;
-    color: rgba(var(--center-channel-color), 0.56);
-`;
-
 const BelowLineProfile = styled(Profile)`
     flex-grow: 1;
     overflow: hidden;
 `;
 
+const IconWrapper = styled.div`
+    display: inline-flex;
+    padding: 10px 5px 10px 8px;
+`;
+
 export interface SelectUsersBelowProps {
-    userIds: string[];
-    onAddUser: (userid: string) => void;
+    playbook: Playbook
+    members: PlaybookMember[];
+    onAddMember: (member: PlaybookMember) => void;
     onRemoveUser: (userid: string) => void;
+    onMakeAdmin: (userid: string) => void;
+    onMakeMember: (userid: string) => void;
     searchProfiles: (term: string) => ActionFunc;
     getProfiles: () => ActionFunc;
 }
 
+function roleDisplayText(roles: string[]) {
+    if (roles.includes(PlaybookRole.Admin)) {
+        return <FormattedMessage defaultMessage='Playbook Admin'/>;
+    }
+
+    return <FormattedMessage defaultMessage='Playbook Member'/>;
+}
+
 const SelectUsersBelow = (props: SelectUsersBelowProps) => {
+    const permissionToEditMembers = useHasPlaybookPermission(PlaybookPermissionGeneral.ManageMembers, props.playbook);
+    const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
+    const users = useSelector(getUsers);
+
+    const handleAddUser = (userId: string) => {
+        props.onAddMember({user_id: userId, roles: [PlaybookRole.Member]});
+    };
+
+    const sortedMembers = props.members.slice().sort((a: PlaybookMember, b:PlaybookMember) => {
+        return displayUsername(users[a.user_id], teamnameNameDisplaySetting).localeCompare(displayUsername(users[b.user_id], teamnameNameDisplaySetting));
+    });
+
     return (
-        <ProfileAutocompleteContainer>
-            <ProfileAutocomplete
-                onAddUser={props.onAddUser}
-                userIds={props.userIds}
-                searchProfiles={props.searchProfiles}
-                getProfiles={props.getProfiles}
-            />
+        <Container>
+            {permissionToEditMembers &&
+            <ProfileAutocompleteContainer>
+                <ProfileAutocomplete
+                    onAddUser={handleAddUser}
+                    userIds={props.members.map((val: PlaybookMember) => val.user_id)}
+                    searchProfiles={props.searchProfiles}
+                    getProfiles={props.getProfiles}
+                />
+            </ProfileAutocompleteContainer>
+            }
             <UserList>
-                {props.userIds.map((userId) => (
+                {sortedMembers.map((member: PlaybookMember) => (
                     <UserLine
                         data-testid='user-line'
-                        key={userId}
-                    >
-                        <BelowLineProfile userId={userId}/>
-                        {
-                            props.userIds.length > 1 &&
-                            <RemoveLink onClick={() => props.onRemoveUser(userId)}>
-                                <FormattedMessage defaultMessage='Remove'/>
-                            </RemoveLink>
-                        }
-                    </UserLine>
+                        key={member.user_id}
+                        hasPermissionsToEditMembers={permissionToEditMembers}
+                        member={member}
+                        onRemoveUser={props.onRemoveUser}
+                        onMakeAdmin={props.onMakeAdmin}
+                        onMakeMember={props.onMakeMember}
+                    />
                 ))}
             </UserList>
-        </ProfileAutocompleteContainer>
+        </Container>
+    );
+};
+
+interface UserLineProps {
+    hasPermissionsToEditMembers: boolean
+    member: PlaybookMember
+    onRemoveUser: (userid: string) => void;
+    onMakeAdmin: (userid: string) => void;
+    onMakeMember: (userid: string) => void;
+}
+
+const MemberButton = styled.div`
+    display: inline-flex;
+    border-radius: 4px;
+    fill: rgb(var(--link-color-rgb));
+    color: rgb(var(--link-color-rgb));
+    &:hover {
+       background: rgba(var(--center-channel-color-rgb), 0.08);
+       color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
+`;
+
+const UserLine = (props: UserLineProps) => {
+    const memberIsPlaybookAdmin = props.member.roles.includes(PlaybookRole.Admin);
+
+    let text = (
+        <IconWrapper>
+            {roleDisplayText(props.member.roles)}
+        </IconWrapper>
+    );
+
+    if (props.hasPermissionsToEditMembers) {
+        let permissionsChangeOption = (
+            <DropdownMenuItem
+                onClick={() => props.onMakeAdmin(props.member.user_id)}
+            >
+                <FormattedMessage defaultMessage='Make Playbook Admin'/>
+            </DropdownMenuItem>
+        );
+
+        if (memberIsPlaybookAdmin) {
+            permissionsChangeOption = (
+                <DropdownMenuItem
+                    onClick={() => props.onMakeMember(props.member.user_id)}
+                >
+                    <FormattedMessage defaultMessage='Make Playbook Member'/>
+                </DropdownMenuItem>
+            );
+        }
+
+        text = (
+            <DotMenu
+                left={true}
+                dotMenuButton={MemberButton}
+                icon={
+                    <IconWrapper>
+                        {roleDisplayText(props.member.roles)}
+                        <i className={'icon-chevron-down'}/>
+                    </IconWrapper>
+                }
+            >
+                {permissionsChangeOption}
+                <DropdownMenuItem
+                    onClick={() => props.onRemoveUser(props.member.user_id)}
+                >
+                    <FormattedMessage defaultMessage='Remove'/>
+                </DropdownMenuItem>
+            </DotMenu>
+        );
+    }
+
+    return (
+        <UserLineContainer>
+            <BelowLineProfile userId={props.member.user_id}/>
+            {text}
+        </UserLineContainer>
     );
 };
 

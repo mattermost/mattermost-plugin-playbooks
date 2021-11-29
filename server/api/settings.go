@@ -1,12 +1,10 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 
@@ -32,7 +30,7 @@ func NewSettingsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logge
 
 	settingsRouter := router.PathPrefix("/settings").Subrouter()
 	settingsRouter.HandleFunc("", handler.getSettings).Methods(http.MethodGet)
-	settingsRouter.HandleFunc("", handler.setSettings).Methods(http.MethodPut)
+	//settingsRouter.HandleFunc("", handler.setSettings).Methods(http.MethodPut)
 
 	return handler
 }
@@ -40,13 +38,13 @@ func NewSettingsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logge
 func (h *SettingsHandler) getSettings(w http.ResponseWriter, r *http.Request) {
 	cfg := h.config.GetConfiguration()
 	settings := client.GlobalSettings{
-		PlaybookCreatorsUserIds:    cfg.PlaybookCreatorsUserIds,
 		EnableExperimentalFeatures: cfg.EnableExperimentalFeatures,
 	}
 
 	ReturnJSON(w, &settings, http.StatusOK)
 }
 
+/*
 func (h *SettingsHandler) setSettings(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
@@ -56,24 +54,10 @@ func (h *SettingsHandler) setSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isAdmin := app.IsAdmin(userID, h.pluginAPI)
-	if err := app.ModifyPlaybookCreators(userID, isAdmin, h.config); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
-		return
-	}
-
-	if !h.config.IsAtLeastE20Licensed() {
-		if len(settings.PlaybookCreatorsUserIds) > 0 {
-			h.HandleErrorWithCode(w, http.StatusForbidden, "unlicensed servers cannot configure specific users to access playbooks", nil)
-			return
-		}
-	}
-
 	pluginConfig := h.pluginAPI.Configuration.GetPluginConfig()
-	pluginConfig["PlaybookCreatorsUserIds"] = settings.PlaybookCreatorsUserIds
 	if err := h.pluginAPI.Configuration.SavePluginConfig(pluginConfig); err != nil {
 		h.HandleError(w, err)
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
+}*/

@@ -19,6 +19,14 @@ type PlaybooksRoutingOptions<T> = {
     onGo?: (arg: T) => void
 }
 
+export type PlaybookCreateQueryParameters = {
+    teamId?: string,
+    name?: string,
+    template?: string,
+    description?: string,
+    public?: boolean
+}
+
 function id(p: Playbook | Playbook['id']) {
     return p && typeof p !== 'string' ? p.id : p;
 }
@@ -58,8 +66,8 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
             view: (p: TParam) => {
                 return go(`/playbooks/${id(p)}`, p);
             },
-            create: (team: Team, templateTitle?: string) => {
-                const queryParams = qs.stringify({teamId: team.id, [TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
+            create: (params: PlaybookCreateQueryParameters) => {
+                const queryParams = qs.stringify(params, {addQueryPrefix: true});
                 return go(`/playbooks/new${queryParams}`);
             },
         };

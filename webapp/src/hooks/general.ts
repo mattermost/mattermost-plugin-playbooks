@@ -26,6 +26,8 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
+import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
+
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 
@@ -173,21 +175,14 @@ export function useProfilesInCurrentChannel() {
     return profilesInChannel;
 }
 
-export function useCanCreatePlaybooks() {
-    const settings = useSelector(globalSettings);
-    const currentUserID = useSelector(getCurrentUserId);
-
-    // This is really a loading state so just assume yes
-    if (!settings) {
-        return true;
-    }
-
-    // No restrictions if length is zero
-    if (settings.playbook_creators_user_ids.length === 0) {
-        return true;
-    }
-
-    return settings.playbook_creators_user_ids.includes(currentUserID);
+export function useCanCreatePlaybooksOnAnyTeam() {
+    const teams = useSelector(getMyTeams);
+    return useSelector((state: GlobalState) => (
+        teams.some((team: Team) => (
+            haveITeamPermission(state, team.id, 'playbook_public_create') ||
+			haveITeamPermission(state, team.id, 'playbook_private_create')
+        ))
+    ));
 }
 
 export function useCanRestrictPlaybookCreation() {
