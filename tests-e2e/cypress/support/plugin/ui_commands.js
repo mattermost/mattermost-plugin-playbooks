@@ -141,7 +141,7 @@ Cypress.Commands.add('openSelector', () => {
 });
 
 Cypress.Commands.add('openChannelSelector', () => {
-    cy.get('Select a channel').click({force: true});
+    cy.findByText('Select a channel').click({force: true});
 });
 
 Cypress.Commands.add('openCategorySelector', () => {
