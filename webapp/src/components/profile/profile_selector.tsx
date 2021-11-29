@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
-import ReactSelect, {ActionTypes, ControlProps, StylesConfig, components, GroupHeadingProps} from 'react-select';
+import ReactSelect, {ActionTypes, ControlProps, StylesConfig, components, GroupProps} from 'react-select';
 import classNames from 'classnames';
 import styled, {css} from 'styled-components';
 
@@ -114,7 +114,10 @@ export default function ProfileSelector(props: Props) {
                 optionList.unshift(currentUser[0]);
             }
         }
-
+        
+        // const optionGroups = [
+        //     {label: 'Group 1', options: optionList}
+        // ]
         setUserOptions(optionList);
     }
 
@@ -234,10 +237,10 @@ export default function ProfileSelector(props: Props) {
     );
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
-    const components = props.customControl ? {
-        ...noDropdown,
-        Control: props.customControl,
-    } : noDropdown;
+    // const components = props.customControl ? {
+    //     ...noDropdown,
+    //     Control: props.customControl,
+    // } : noDropdown;
 
     return (
         <Dropdown
@@ -255,7 +258,8 @@ export default function ProfileSelector(props: Props) {
                 hideSelectedOptions={false}
                 isClearable={props.isClearable}
                 menuIsOpen={true}
-                options={userOptions}
+                options={[{label: 'CHANNEL MEMBERS', options: userOptions},
+                    {label: 'NOT IN CHANNEL', options: userOptions}]}
                 placeholder={'Search'}
                 styles={selectStyles}
                 tabSelectsValue={false}
@@ -361,17 +365,14 @@ const getUserDescription = (firstName: string, lastName: string, nickName: strin
 };
 
 // test menu selector for react-select
-const groupStyles = {
-    border: `2px dotted`,
-    color: 'white',
-    padding: '5px 0px',
-    display: 'flex',
-  };
-
-const GroupHeading = (
-    props: GroupHeadingProps<"Channel Members" | "Not in Channel">
-  ) => (
-    <div style={groupStyles}>
-      <components.GroupHeading {...props} />
-    </div>
-  );
+// const groupStyles = {
+//     border: `2px dotted`,
+//     borderRadius: '5px',
+//     background: '#f2fcff',
+//   };
+  
+//   const Group = (props: GroupProps<ColourOption | FlavourOption, false>) => (
+//     <div style={groupStyles}>
+//       <components.Group {...props} />
+//     </div>
+//   );
