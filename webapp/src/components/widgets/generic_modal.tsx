@@ -27,6 +27,7 @@ type Props = {
     enforceFocus?: boolean;
     footer?: React.ReactNode;
     components?: Partial<{
+        Header: typeof Modal.Header;
         FooterContainer: typeof DefaultFooterContainer;
     }>;
 };
@@ -108,6 +109,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
             );
         }
 
+        const Header = this.props.components?.Header || Modal.Header;
         const FooterContainer = this.props.components?.FooterContainer || DefaultFooterContainer;
 
         return (
@@ -122,14 +124,14 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 aria-labelledby={`${this.props.id}_heading`}
                 id={this.props.id}
             >
-                <Modal.Header
+                <Header
                     className='GenericModal__header'
                     closeButton={true}
                 >
                     <ModalHeading id={`${this.props.id}_heading`}>
                         {this.props.modalHeaderText}
                     </ModalHeading>
-                </Modal.Header>
+                </Header>
                 <form>
                     <Modal.Body>
                         {this.props.children}
