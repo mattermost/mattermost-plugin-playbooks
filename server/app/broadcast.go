@@ -41,7 +41,7 @@ func (s *PlaybookRunServiceImpl) broadcastStatusUpdateToChannels(channelIDs []st
 	}
 }
 
-func (s *PlaybookRunServiceImpl) broadcastPlaybookRunMessage(message, messageType, broadcastChannelID string, playbookRun *PlaybookRun) error {
+func (s *PlaybookRunServiceImpl) broadcastPlaybookRunMessage(broadcastChannelID, message, messageType string, playbookRun *PlaybookRun) error {
 	post := &model.Post{Message: message, ChannelId: broadcastChannelID}
 
 	if err := IsChannelActiveInTeam(post.ChannelId, playbookRun.TeamID, s.pluginAPI); err != nil {
