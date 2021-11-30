@@ -4,7 +4,7 @@
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {
     DragDropContext,
     Draggable,
@@ -53,6 +53,7 @@ import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';
+import AddChecklistDialog from 'src/components/rhs/rhs_checklists_add_dialog';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -73,6 +74,7 @@ const RHSChecklists = (props: Props) => {
     const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
+    const [showAddChecklistDialog, setShowAddChecklistDialog] = useState(false);
 
     const checklists = props.playbookRun.checklists || [];
     const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
@@ -111,6 +113,11 @@ const RHSChecklists = (props: Props) => {
                                 title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
                                 className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
                                 onClick={() => dispatch(setAllChecklistsCollapsedState(channelId, !allCollapsed, checklists.length))}
+                            />
+                            <HoverMenuButton
+                                title={formatMessage({defaultMessage: 'Add checklist'})}
+                                className={'icon-plus icon-16 btn-icon'}
+                                onClick={() => setShowAddChecklistDialog(true)}
                             />
                             <MultiCheckbox
                                 options={filterOptions}
@@ -229,6 +236,11 @@ const RHSChecklists = (props: Props) => {
                     {formatMessage({defaultMessage: 'Finish run'})}
                 </FinishButton>
             }
+            <AddChecklistDialog
+                playbookRunID={props.playbookRun.id}
+                show={showAddChecklistDialog}
+                onHide={() => setShowAddChecklistDialog(false)}
+            />
         </InnerContainer>
     );
 };
