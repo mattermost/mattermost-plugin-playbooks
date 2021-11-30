@@ -103,6 +103,10 @@ func (t *NoopTelemetry) ChangeOwner(*app.PlaybookRun, string) {
 func (t *NoopTelemetry) RunTaskSlashCommand(string, string, app.ChecklistItem) {
 }
 
+// AddChecklist does nothing
+func (t *NoopTelemetry) AddChecklist(playbookRunID, userID string, checklist app.Checklist) {
+}
+
 func (t *NoopTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, userID string) {
 }
 

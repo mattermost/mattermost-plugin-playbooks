@@ -1442,6 +1442,32 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	return cmdResponse.TriggerId, nil
 }
 
+// AddChecklist adds a checklist to the specified run
+func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, checklist Checklist) error {
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve playbook run")
+	}
+
+	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
+		return errors.New("user does not have permission to modify playbook run")
+	}
+
+	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
+		return errors.New("user does not have permission to modify playbook run")
+	}
+
+	playbookRunToModify.Checklists = append([]Checklist{checklist}, playbookRunToModify.Checklists...)
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.AddChecklist(playbookRunID, userID, checklist)
+
+	return nil
+}
+
 // AddChecklistItem adds an item to the specified checklist
 func (s *PlaybookRunServiceImpl) AddChecklistItem(playbookRunID, userID string, checklistNumber int, checklistItem ChecklistItem) error {
 	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)

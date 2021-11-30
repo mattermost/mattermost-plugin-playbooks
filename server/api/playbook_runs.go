@@ -82,6 +82,7 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
 
 	checklistsRouter := playbookRunRouterAuthorized.PathPrefix("/checklists").Subrouter()
+	checklistsRouter.HandleFunc("", handler.addChecklist).Methods(http.MethodPut)
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
@@ -1187,6 +1188,32 @@ func (h *PlaybookRunHandler) itemRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ReturnJSON(w, map[string]interface{}{"trigger_id": triggerID}, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) addChecklist(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var checklist app.Checklist
+	if err := json.NewDecoder(r.Body).Decode(&checklist); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode Checklist", err)
+		return
+	}
+
+	checklist.Title = strings.TrimSpace(checklist.Title)
+	if checklist.Title == "" {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter: checklist title",
+			errors.New("checklist title must not be blank"))
+		return
+	}
+
+	if err := h.playbookRunService.AddChecklist(id, userID, checklist); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *PlaybookRunHandler) addChecklistItem(w http.ResponseWriter, r *http.Request) {
