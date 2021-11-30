@@ -1197,14 +1197,16 @@ describe('playbooks > edit', () => {
         });
 
         describe('when a new member joins the channel', () => {
-            describe('add the channel to sidebary category', () => {
+            beforeEach(() => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Actions tab
+                cy.findByText('Actions').click();
+            });
+
+            describe('add the channel to a sidebar category', () => {
                 it('is disabled in a new playbook', () => {
-                    // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                    // # Switch to Actions tab
-                    cy.get('#root').findByText('Actions').click();
-
                     // * Verify that the toggle is unchecked
                     cy.get('#user-joins-channel-categorize label input').should(
                         'not.be.checked'
@@ -1212,12 +1214,6 @@ describe('playbooks > edit', () => {
                 });
 
                 it('can be enabled', () => {
-                    // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                    // # Switch to Actions tab
-                    cy.get('#root').findByText('Actions').click();
-
                     cy.get('#user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
@@ -1230,13 +1226,7 @@ describe('playbooks > edit', () => {
                     });
                 });
 
-                it('does not let select a category when disabled', () => {
-                    // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                    // # Switch to Actions tab
-                    cy.get('#root').findByText('Actions').click();
-
+                it('prevents category selection when disabled', () => {
                     // * Verify that the toggle is unchecked
                     cy.get('#user-joins-channel-categorize label input').should(
                         'not.be.checked'
@@ -1252,12 +1242,6 @@ describe('playbooks > edit', () => {
                 });
 
                 it('allows selecting a category when enabled', () => {
-                    // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                    // # Switch to Actions tab
-                    cy.get('#root').findByText('Actions').click();
-
                     cy.get('#user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
@@ -1282,12 +1266,6 @@ describe('playbooks > edit', () => {
                 });
 
                 it('allows changing the category', () => {
-                    // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                    // # Switch to Actions tab
-                    cy.get('#root').findByText('Actions').click();
-
                     cy.get('#user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
@@ -1325,12 +1303,6 @@ describe('playbooks > edit', () => {
                 });
 
                 it('persists the category even if the toggle is off', () => {
-                    // # Visit the selected playbook
-                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-                    // # Switch to Actions tab
-                    cy.get('#root').findByText('Actions').click();
-
                     cy.get('#user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
@@ -1366,7 +1338,7 @@ describe('playbooks > edit', () => {
                     cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
 
                     // # Switch to Actions tab
-                    cy.get('#root').findByText('Actions').click();
+                    cy.findByText('Actions').click();
 
                     cy.get('#user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
@@ -1386,12 +1358,6 @@ describe('playbooks > edit', () => {
                 });
 
                 it('shows new category name when category was created', () => {
-                    // # Visit the selected playbook
-                    cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
-
-                    // # Switch to Actions tab
-                    cy.get('#root').findByText('Actions').click();
-
                     cy.get('#user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is unchecked
                         cy.get('label input').should('not.be.checked');
@@ -1412,10 +1378,10 @@ describe('playbooks > edit', () => {
                     cy.findByTestId('save_playbook').click();
 
                     // # Visit the selected playbook
-                    cy.visit('/playbooks/playbooks/' + testPlaybook.id + '/edit');
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
 
                     // # Switch to Actions tab
-                    cy.get('#root').findByText('Actions').click();
+                    cy.findByText('Actions').click();
 
                     cy.get('#user-joins-channel-categorize').within(() => {
                         // * Verify that the toggle is checked
