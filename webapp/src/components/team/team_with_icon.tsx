@@ -76,7 +76,7 @@ const NameWrapper = styled.div`
     text-overflow: ellipsis;
 
     .description {
-        color: var(--center-channel-color-56);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
         margin-left: 4px;
     }
 `;

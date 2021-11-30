@@ -233,6 +233,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			pb.Title, playbookURL, overviewURL)
 	}
 
+	if playbookRun.Name == "" {
+		playbookRun.Name = pb.ChannelNameTemplate
+	}
+
 	// Try to create the channel first
 	channel, err := s.createPlaybookRunChannel(playbookRun, header, public)
 	if err != nil {
@@ -2114,10 +2118,11 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 
 	introText := fmt.Sprintf("**Owner:** %v\n\n%s", getUserDisplayName(user), newPlaybookMarkdown)
 
-	defaultOption := ""
-
-	if len(options) == 1 {
-		defaultOption = options[0].Value
+	defaultPlaybookID := ""
+	defaultChannelNameTemplate := ""
+	if len(playbooks) == 1 {
+		defaultPlaybookID = playbooks[0].ID
+		defaultChannelNameTemplate = playbooks[0].ChannelNameTemplate
 	}
 
 	return &model.Dialog{
@@ -2129,7 +2134,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 				Name:        DialogFieldPlaybookIDKey,
 				Type:        "select",
 				Options:     options,
-				Default:     defaultOption,
+				Default:     defaultPlaybookID,
 			},
 			{
 				DisplayName: "Run name",
@@ -2137,6 +2142,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 				Type:        "text",
 				MinLength:   2,
 				MaxLength:   64,
+				Default:     defaultChannelNameTemplate,
 			},
 		},
 		SubmitLabel:    "Start run",

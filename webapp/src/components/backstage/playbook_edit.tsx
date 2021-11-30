@@ -63,12 +63,12 @@ const TabsHeader = styled.div`
     min-height: 72px;
     display: flex;
     padding: 0 32px;
-    border-bottom: 1px solid var(--center-channel-color-16);
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     white-space: nowrap;
 `;
 
 const EditContent = styled.div`
-    background: var(--center-channel-color-04);
+    background: rgba(var(--center-channel-color-rgb), 0.04);
     flex-grow: 1;
 `;
 
@@ -525,6 +525,14 @@ const PlaybookEdit = (props: Props) => {
         }
     };
 
+    const handleChannelNameTemplateChange = (channelNameTemplate: string) => {
+        setPlaybook({
+            ...playbook,
+            channel_name_template: channelNameTemplate,
+        });
+        setChangesMade(true);
+    };
+
     const searchUsers = (term: string) => {
         return dispatch(searchProfiles(term, {team_id: props.teamId || playbook.team_id}));
     };
@@ -744,6 +752,8 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleCategorizePlaybookRun={handleToggleCategorizePlaybookRun}
                                     categoryName={playbook.category_name}
                                     categoryNameChange={handleCategoryNameChange}
+                                    channelNameTemplate={playbook.channel_name_template}
+                                    onChannelNameTemplateChange={handleChannelNameTemplateChange}
                                 />
                             </TabContainer>
                             <TabContainer>

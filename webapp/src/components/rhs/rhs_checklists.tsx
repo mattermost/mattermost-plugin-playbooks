@@ -101,27 +101,31 @@ const RHSChecklists = (props: Props) => {
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
-            {
-                showMenu &&
-                <HoverRow>
-                    <HoverMenuButton
-                        title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
-                        className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
-                        onClick={() => dispatch(setAllChecklistsCollapsedState(channelId, !allCollapsed, checklists.length))}
-                    />
-                    <MultiCheckbox
-                        options={filterOptions}
-                        onselect={selectOption}
-                        dotMenuButton={StyledDotMenuButton}
-                        icon={
-                            <IconWrapper>
-                                <i className='icon icon-filter-variant'/>
-                            </IconWrapper>
-                        }
-                    />
-                </HoverRow>
-            }
-            <MainTitle>{formatMessage({defaultMessage: 'Checklists'})}</MainTitle>
+            <MainTitleBG>
+                <MainTitle>
+                    {formatMessage({defaultMessage: 'Checklists'})}
+                    {
+                        showMenu &&
+                        <HoverRow>
+                            <ExpandHoverButton
+                                title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
+                                className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
+                                onClick={() => dispatch(setAllChecklistsCollapsedState(channelId, !allCollapsed, checklists.length))}
+                            />
+                            <MultiCheckbox
+                                options={filterOptions}
+                                onselect={selectOption}
+                                dotMenuButton={StyledDotMenuButton}
+                                icon={
+                                    <IconWrapper>
+                                        <i className='icon icon-filter-variant'/>
+                                    </IconWrapper>
+                                }
+                            />
+                        </HoverRow>
+                    }
+                </MainTitle>
+            </MainTitleBG>
             {checklists.map((checklist: Checklist, checklistIndex: number) => (
                 <CollapsibleChecklist
                     key={checklist.title + checklistIndex}
@@ -233,23 +237,38 @@ const InnerContainer = styled.div`
     position: relative;
     display: flex;
     flex-direction: column;
-    padding: 12px 12px 24px 12px;
+    padding: 0 12px 24px 12px;
 
     &:hover {
-        background-color: var(--center-channel-color-04);
+        background-color: rgba(var(--center-channel-color-rgb), 0.04);
     }
 `;
 
+const MainTitleBG = styled.div`
+    background-color: var(--center-channel-bg);
+    z-index: 2;
+    position: sticky;
+    top: 0;
+`;
+
 const MainTitle = styled.div`
-    ${SemiBoldHeading}
+    ${SemiBoldHeading} {
+    }
+
+    ${InnerContainer}:hover & {
+        background-color: rgba(var(--center-channel-color-rgb), .04);
+    }
 
     font-size: 16px;
     line-height: 24px;
-    margin: 0 0 0 8px;
+    padding: 12px 0 12px 8px;
 `;
 
 const ChecklistContainer = styled.div`
     background-color: var(--center-channel-bg);
+    border-radius: 0 0 4px 4px;
+    border:  1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-top: 0;
     padding: 16px 12px;
 `;
 
@@ -258,19 +277,23 @@ const HoverRow = styled(HoverMenu)`
     right: 15px;
 `;
 
+const ExpandHoverButton = styled(HoverMenuButton)`
+    padding: 3px 0 0 1px;
+`;
+
 const StyledDotMenuButton = styled(DotMenuButton)`
     display: inline-block;
     width: 28px;
     height: 28px;
 
     &:hover {
-        background: var(--button-bg-08);
+        background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     }
 `;
 
 const IconWrapper = styled.div`
-    padding: 6px 0 0 2px;
+    padding: 3px 0 0 1px;
     margin: 0;
 `;
 
