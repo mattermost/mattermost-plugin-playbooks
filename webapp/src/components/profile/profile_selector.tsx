@@ -16,12 +16,12 @@ import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
 import {useClientRect} from 'src/hooks';
 import {PlaybookRunFilterButton} from '../backstage/styles';
-import { fetchUsersInTeam } from 'src/client';
 
 export interface Option {
     value: string;
     label: JSX.Element | string;
     userId: string;
+    userType: string;
 }
 
 interface ActionObj {
@@ -44,7 +44,7 @@ interface Props {
     selfIsFirstOption?: boolean;
     getUsers: () => Promise<UserProfile[]>;
     getUsersInTeam: () => Promise<UserProfile[]>;
-    onSelectedChange?: (userId?: string) => void;
+    onSelectedChange?: (userId?: string, userType?: string) => void;
     customControlProps?: any;
     showOnRight?: boolean;
     className?: string;
@@ -72,7 +72,7 @@ export default function ProfileSelector(props: Props) {
     }, [props.controlledOpenToggle]);
 
     const [userOptions, setUserOptions] = useState<Option[]>([]);
-    const [userInTeamOptions, setUserInTeamOptions] = useState<Option[]>([]);
+    const [userNotInChannelOptions, setUserNotInChannelOptions] = useState<Option[]>([]);
 
     async function fetchUsers() {
         const formatName = (descriptionSuffix: string) => {
@@ -98,8 +98,9 @@ export default function ProfileSelector(props: Props) {
 
         const users = await props.getUsers();
         const usersInTeam = await props.getUsersInTeam();
+        const usersNotInChannel =  usersInTeam.filter( (user) => !users.includes(user) );
 
-        const optionTeamList = usersInTeam.map((user: UserProfile) => {
+        const optionNotInTeamList = usersNotInChannel.map((user: UserProfile) => {
             return ({
                 value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
                 label: (
@@ -109,11 +110,10 @@ export default function ProfileSelector(props: Props) {
                     />
                 ),
                 userId: user.id,
+                userType: "NonMember"
             } as Option);
         });
 
-        console.log("got in profile selector", usersInTeam)
-        
         const optionList = users.map((user: UserProfile) => {
             return ({
                 value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
@@ -124,6 +124,7 @@ export default function ProfileSelector(props: Props) {
                     />
                 ),
                 userId: user.id,
+                userType: "Member"
             } as Option);
         });
 
@@ -134,11 +135,8 @@ export default function ProfileSelector(props: Props) {
                 optionList.unshift(currentUser[0]);
             }
         }
-        
-        // const optionGroups = [
-        //     {label: 'Group 1', options: optionList}
-        // ]
-        setUserInTeamOptions(optionTeamList);
+    
+        setUserNotInChannelOptions(optionNotInTeamList);
         setUserOptions(optionList);
     }
 
@@ -173,8 +171,9 @@ export default function ProfileSelector(props: Props) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.userId);
-        }
+            props.onSelectedChange(value?.userId, value?.userType);
+        }   
+        
     };
 
     // Decide where to open the profile selector
@@ -258,10 +257,10 @@ export default function ProfileSelector(props: Props) {
     );
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
-    // const components = props.customControl ? {
-    //     ...noDropdown,
-    //     Control: props.customControl,
-    // } : noDropdown;
+    const components = props.customControl ? {
+        ...noDropdown,
+        Control: props.customControl,
+    } : noDropdown;
 
     return (
         <Dropdown
@@ -280,7 +279,7 @@ export default function ProfileSelector(props: Props) {
                 isClearable={props.isClearable}
                 menuIsOpen={true}
                 options={[{label: 'CHANNEL MEMBERS', options: userOptions},
-                    {label: 'NOT IN CHANNEL', options: userInTeamOptions}]}
+                    {label: 'NOT IN CHANNEL', options: userNotInChannelOptions}]}
                 placeholder={'Search'}
                 styles={selectStyles}
                 tabSelectsValue={false}
@@ -384,16 +383,3 @@ const getUserDescription = (firstName: string, lastName: string, nickName: strin
 
     return '';
 };
-
-// test menu selector for react-select
-// const groupStyles = {
-//     border: `2px dotted`,
-//     borderRadius: '5px',
-//     background: '#f2fcff',
-//   };
-  
-//   const Group = (props: GroupProps<ColourOption | FlavourOption, false>) => (
-//     <div style={groupStyles}>
-//       <components.Group {...props} />
-//     </div>
-//   );

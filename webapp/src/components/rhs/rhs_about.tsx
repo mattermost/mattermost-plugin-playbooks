@@ -43,14 +43,21 @@ const RHSAbout = (props: Props) => {
         return profilesInTeam;
     }
 
-    const onSelectedProfileChange = async (userId?: string) => {
-        if (!userId) {
+    const onSelectedProfileChange = async (userId?: string, userType?: string) => {
+        if (!userId || !userType) {
             return;
         }
-        const response = await setOwner(props.playbookRun.id, userId);
-        if (response.error) {
-            // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
-            console.log(response.error); // eslint-disable-line no-console
+        
+        // i think we need to add the logic here for modal opening and adding that user to channel
+        if(userType === "Member"){
+            const response = await setOwner(props.playbookRun.id, userId);
+            if (response.error) {
+                // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
+                console.log(response.error); // eslint-disable-line no-console
+            }
+        }
+        else{
+            console.log("lets insert a modal over here")
         }
     };
 
