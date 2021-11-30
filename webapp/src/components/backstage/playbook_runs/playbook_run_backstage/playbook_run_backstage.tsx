@@ -142,7 +142,8 @@ const VerticalBlock = styled.div`
 `;
 
 const Title = styled.div`
-    ${RegularHeading}
+    ${RegularHeading} {
+    }
 
     font-size: 20px;
     color: var(--center-channel-color);
@@ -226,7 +227,7 @@ const FollowingButton = styled(Button)`
     background: rgba(var(--button-bg-rgb), 0.12);
     &&:hover {
         background: rgba(var(--button-bg-rgb), 0.24);
-    }    
+    }
 `;
 
 const PlaybookRunBackstage = () => {
@@ -278,6 +279,13 @@ const PlaybookRunBackstage = () => {
             ...playbookRun,
             timeline_events: playbookRun.timeline_events.filter((event) => event.id !== id),
         });
+    };
+
+    const setRetrospective = (retrospective: string) => {
+        setPlaybookRun((run) => ({
+            ...run,
+            retrospective,
+        } as PlaybookRun));
     };
 
     if (fetchingState === FetchingStateType.loading) {
@@ -360,7 +368,8 @@ const PlaybookRunBackstage = () => {
                             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
                             {runLink}
                         </TitleWithBadgeAndLink>
-                        {playbook &&
+                        {
+                            playbook &&
                             <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
                                 <SmallPlaybookIcon/>
                                 <SubTitle>{playbook?.title}</SubTitle>
@@ -406,6 +415,7 @@ const PlaybookRunBackstage = () => {
                             <Retrospective
                                 playbookRun={playbookRun}
                                 deleteTimelineEvent={deleteTimelineEvent}
+                                setRetrospective={setRetrospective}
                             />
                         </Route>
                         <Redirect to={`${match.url}/overview`}/>
