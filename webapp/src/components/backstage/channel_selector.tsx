@@ -24,16 +24,26 @@ export interface Props {
 }
 
 const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(state).filter((channel) =>
-    channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL,
+    channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL &&
+    channel.type !== General.ARCHIVED_CHANNEL && channel.delete_at === 0,
 );
 
 type GetChannelType = (channelID: string) => Channel
 
-const ChannelSelector = (props: Props & { className?: string }) => {
+const getChannelWrapper = (state: GlobalState, channelID: string): Channel => {
+    const channel = getChannel(state, channelID);
+
+    if (channel && channel.type !== General.ARCHIVED_CHANNEL && channel.delete_at === 0) {
+        return channel;
+    }
+    return {display_name: 'Unknown Channel', id: channelID} as Channel;
+};
+
+const ChannelSelector = (props: Props & {className?: string}) => {
     const {formatMessage} = useIntl();
     const selectableChannels = useSelector(getMyPublicAndPrivateChannels);
 
-    const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID) || {display_name: 'Unknown Channel', id: channelID});
+    const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannelWrapper(state, channelID));
 
     const onChange = (channels: Channel[], {action}: {action: string}) => {
         if (action === 'clear') {

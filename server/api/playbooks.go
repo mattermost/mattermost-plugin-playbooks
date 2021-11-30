@@ -142,6 +142,21 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		playbook.SignalAnyKeywords = removeDuplicates(playbook.SignalAnyKeywords)
 	}
 
+	if playbook.BroadcastEnabled {
+		for _, channelID := range playbook.BroadcastChannelIDs {
+			channel, err := h.pluginAPI.Channel.Get(channelID)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "broadcasting to invalid channel ID", err)
+				return
+			}
+			// check if channel is archived
+			if channel.DeleteAt != 0 {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "broadcasting to archived channel", err)
+				return
+			}
+		}
+	}
+
 	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
