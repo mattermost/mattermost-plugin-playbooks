@@ -12,7 +12,7 @@ import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
-import {useProfilesInCurrentChannel} from 'src/hooks';
+import {useProfilesInCurrentChannel, useProfilesInTeam} from 'src/hooks';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import {HoverMenu} from 'src/components/rhs/rhs_shared';
 import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';
@@ -30,6 +30,7 @@ const RHSAbout = (props: Props) => {
     const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
     const profilesInChannel = useProfilesInCurrentChannel();
+    const profilesInTeam = useProfilesInTeam();
     const collapsed = useSelector(currentRHSAboutCollapsedState);
 
     const toggleCollapsed = () => dispatch(setRHSAboutCollapsedState(channelId, !collapsed));
@@ -37,6 +38,10 @@ const RHSAbout = (props: Props) => {
     const fetchUsers = async () => {
         return profilesInChannel;
     };
+
+    const fetchUsersInTeam = async () => {
+        return profilesInTeam;
+    }
 
     const onSelectedProfileChange = async (userId?: string) => {
         if (!userId) {
@@ -94,6 +99,7 @@ const RHSAbout = (props: Props) => {
                             profileButtonClass={'Assigned-button'}
                             enableEdit={!isFinished}
                             getUsers={fetchUsers}
+                            getUsersInTeam={fetchUsersInTeam}
                             onSelectedChange={onSelectedProfileChange}
                             selfIsFirstOption={true}
                         />

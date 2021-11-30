@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
-import ReactSelect, {ActionTypes, ControlProps, StylesConfig, components, GroupProps} from 'react-select';
+import ReactSelect, {ActionTypes, ControlProps, StylesConfig, components} from 'react-select';
 import classNames from 'classnames';
 import styled, {css} from 'styled-components';
 
@@ -16,6 +16,7 @@ import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
 import {useClientRect} from 'src/hooks';
 import {PlaybookRunFilterButton} from '../backstage/styles';
+import { fetchUsersInTeam } from 'src/client';
 
 export interface Option {
     value: string;
@@ -42,6 +43,7 @@ interface Props {
     defaultValue?: string;
     selfIsFirstOption?: boolean;
     getUsers: () => Promise<UserProfile[]>;
+    getUsersInTeam: () => Promise<UserProfile[]>;
     onSelectedChange?: (userId?: string) => void;
     customControlProps?: any;
     showOnRight?: boolean;
@@ -70,6 +72,7 @@ export default function ProfileSelector(props: Props) {
     }, [props.controlledOpenToggle]);
 
     const [userOptions, setUserOptions] = useState<Option[]>([]);
+    const [userInTeamOptions, setUserInTeamOptions] = useState<Option[]>([]);
 
     async function fetchUsers() {
         const formatName = (descriptionSuffix: string) => {
@@ -94,6 +97,23 @@ export default function ProfileSelector(props: Props) {
         };
 
         const users = await props.getUsers();
+        const usersInTeam = await props.getUsersInTeam();
+
+        const optionTeamList = usersInTeam.map((user: UserProfile) => {
+            return ({
+                value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
+                label: (
+                    <Profile
+                        userId={user.id}
+                        nameFormatter={needsSuffix(user.id) ? formatName(' (assign to me)') : formatName('')}
+                    />
+                ),
+                userId: user.id,
+            } as Option);
+        });
+
+        console.log("got in profile selector", usersInTeam)
+        
         const optionList = users.map((user: UserProfile) => {
             return ({
                 value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
@@ -118,6 +138,7 @@ export default function ProfileSelector(props: Props) {
         // const optionGroups = [
         //     {label: 'Group 1', options: optionList}
         // ]
+        setUserInTeamOptions(optionTeamList);
         setUserOptions(optionList);
     }
 
@@ -259,7 +280,7 @@ export default function ProfileSelector(props: Props) {
                 isClearable={props.isClearable}
                 menuIsOpen={true}
                 options={[{label: 'CHANNEL MEMBERS', options: userOptions},
-                    {label: 'NOT IN CHANNEL', options: userOptions}]}
+                    {label: 'NOT IN CHANNEL', options: userInTeamOptions}]}
                 placeholder={'Search'}
                 styles={selectStyles}
                 tabSelectsValue={false}
