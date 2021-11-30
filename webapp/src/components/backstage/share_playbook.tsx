@@ -77,7 +77,7 @@ const SharePlaybook = (props: SharePlaybookProps) => {
                         checked={!enabled}
                         onChange={handleDisable}
                     />
-                    {formatMessage({defaultMessage: 'Everyone on team(<b>{team}</b>) can access.'}, {
+                    {formatMessage({defaultMessage: 'Everyone on team (<b>{team}</b>) can access.'}, {
                         b: (chunks) => <b>{chunks}</b>,
                         team: team.display_name,
                     })}
