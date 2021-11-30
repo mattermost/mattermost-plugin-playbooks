@@ -1196,7 +1196,7 @@ describe('playbooks > edit', () => {
             });
         });
 
-        describe.only('when a new member joins the channel', () => {
+        describe('when a new member joins the channel', () => {
             describe('add the channel to sidebary category', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
