@@ -18,7 +18,7 @@ export interface Props {
     setCollapsed: (newState: boolean) => void;
     items: ChecklistItem[];
     children: React.ReactNode;
-    disabled: boolean;
+    disabledOrRunID: true | string;
     titleHelpText?: React.ReactNode;
 }
 
@@ -29,7 +29,7 @@ const CollapsibleChecklist = ({
     setCollapsed,
     items,
     children,
-    disabled,
+    disabledOrRunID,
     titleHelpText,
 }: Props) => {
     const dispatch = useDispatch();
@@ -39,6 +39,9 @@ const CollapsibleChecklist = ({
     const icon = collapsed ? 'icon-chevron-right' : 'icon-chevron-down';
     const [completed, total] = tasksCompleted(items);
     const percentage = total === 0 ? 0 : (completed / total) * 100;
+
+    const disabled = typeof disabledOrRunID !== 'string';
+    const playbookRunID = typeof disabledOrRunID === 'string' ? disabledOrRunID : '';
 
     return (
         <Border>

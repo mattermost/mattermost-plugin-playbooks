@@ -142,7 +142,7 @@ const RHSChecklists = (props: Props) => {
                     index={checklistIndex}
                     collapsed={Boolean(checklistsState[checklistIndex])}
                     setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
-                    disabled={finished}
+                    disabledOrRunID={finished || props.playbookRun.id}
                 >
                     {checklist.items.length === 0 &&
                     <EmptyChecklistContainer className='checklist'>

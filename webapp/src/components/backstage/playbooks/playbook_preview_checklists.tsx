@@ -43,7 +43,6 @@ const PlaybookPreviewChecklists = (props: Props) => {
                         newArr[checklistIndex] = newState;
                         setChecklistsCollapsed(newArr);
                     }}
-                    disabled={true}
                     titleHelpText={(
                         <TitleHelpTextWrapper>
                             {formatMessage(
@@ -52,6 +51,7 @@ const PlaybookPreviewChecklists = (props: Props) => {
                             )}
                         </TitleHelpTextWrapper>
                     )}
+                    disabledOrRunID={true}
                 >
                     <ChecklistContainer className='checklist'>
                         {checklist.items.map((checklistItem: ChecklistItem, index: number) => {
