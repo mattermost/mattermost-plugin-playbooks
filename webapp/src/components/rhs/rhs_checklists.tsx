@@ -104,7 +104,7 @@ const RHSChecklists = (props: Props) => {
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
-            <MainTitleBG>
+            <MainTitleBG numChecklists={checklists.length}>
                 <MainTitle>
                     {formatMessage({defaultMessage: 'Checklists'})}
                     {
@@ -140,6 +140,7 @@ const RHSChecklists = (props: Props) => {
                     title={checklist.title}
                     items={checklist.items}
                     index={checklistIndex}
+                    numChecklists={checklists.length}
                     collapsed={Boolean(checklistsState[checklistIndex])}
                     setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
                     disabledOrRunID={finished || props.playbookRun.id}
@@ -260,6 +261,8 @@ const RHSChecklists = (props: Props) => {
 
 const InnerContainer = styled.div`
     position: relative;
+    z-index: 1;
+
     display: flex;
     flex-direction: column;
     padding: 0 12px 24px 12px;
@@ -269,9 +272,9 @@ const InnerContainer = styled.div`
     }
 `;
 
-const MainTitleBG = styled.div`
+const MainTitleBG = styled.div<{numChecklists: number}>`
     background-color: var(--center-channel-bg);
-    z-index: 2;
+    z-index: ${({numChecklists}) => numChecklists + 2};
     position: sticky;
     top: 0;
 `;

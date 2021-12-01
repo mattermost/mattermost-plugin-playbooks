@@ -37,6 +37,7 @@ const PlaybookPreviewChecklists = (props: Props) => {
                     title={checklist.title}
                     items={checklist.items}
                     index={checklistIndex}
+                    numChecklists={props.playbook.checklists.length}
                     collapsed={checklistsCollapsed[checklistIndex]}
                     setCollapsed={(newState) => {
                         const newArr = {...checklistsCollapsed};

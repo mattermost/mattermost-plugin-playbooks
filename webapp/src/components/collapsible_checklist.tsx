@@ -13,6 +13,7 @@ import HoverMenu from 'src/components/collapsible_checklist_hover_menu';
 export interface Props {
     title: string;
     index: number;
+    numChecklists: number;
     collapsed: boolean;
     setCollapsed: (newState: boolean) => void;
     items: ChecklistItem[];
@@ -24,6 +25,7 @@ export interface Props {
 const CollapsibleChecklist = ({
     title,
     index,
+    numChecklists,
     collapsed,
     setCollapsed,
     items,
@@ -43,7 +45,10 @@ const CollapsibleChecklist = ({
 
     return (
         <Border>
-            <HorizontalBG>
+            <HorizontalBG
+                checklistIndex={index}
+                numChecklists={numChecklists}
+            >
                 <Horizontal
                     data-testid={'checklistHeader'}
                     onClick={() => setCollapsed(!collapsed)}
@@ -112,9 +117,9 @@ const ProgressLine = styled.div<{ width: number }>`
     }
 `;
 
-const HorizontalBG = styled.div`
+const HorizontalBG = styled.div<{checklistIndex: number, numChecklists: number}>`
     background-color: var(--center-channel-bg);
-    z-index: 1;
+    z-index: ${({checklistIndex, numChecklists}) => 1 + (numChecklists - checklistIndex)};
     position: sticky;
     top: 48px; // height of rhs_checklists MainTitle
 `;
