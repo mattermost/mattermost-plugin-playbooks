@@ -2,14 +2,13 @@
 // See LICENSE.txt for license information.
 
 import React, {useRef, useState} from 'react';
-import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 
 import {FormattedMessage} from 'react-intl';
 
-import {addNewTask} from 'src/actions';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
+import HoverMenu from 'src/components/collapsible_checklist_hover_menu';
 
 export interface Props {
     title: string;
@@ -32,7 +31,6 @@ const CollapsibleChecklist = ({
     disabledOrRunID,
     titleHelpText,
 }: Props) => {
-    const dispatch = useDispatch();
     const titleRef = useRef(null);
     const [showMenu, setShowMenu] = useState(false);
 
@@ -70,16 +68,11 @@ const CollapsibleChecklist = ({
                     )}
                     {
                         showMenu && !disabled &&
-                        <AddNewTask
-                            data-testid={'addNewTask'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                dispatch(addNewTask(index));
-                            }}
-                        >
-                            <i className='icon-18 icon-plus'/>
-                            <FormattedMessage defaultMessage='Task'/>
-                        </AddNewTask>
+                        <HoverMenu
+                            playbookRunID={playbookRunID}
+                            checklistIndex={index}
+                            checklistTitle={title}
+                        />
                     }
                 </Horizontal>
                 <ProgressBackground>
@@ -175,30 +168,6 @@ export const TitleHelpTextWrapper = styled.div`
 
     ${Horizontal}:hover & {
         color: rgba(var(--center-channel-color-rgb), 0.56);
-    }
-`;
-
-const AddNewTask = styled.button`
-    margin: 0 8px 0 auto;
-    padding: 0 8px 0 0;
-    border-radius: 4px;
-    border: 0;
-
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 32px;
-    white-space: nowrap;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    background: transparent;
-
-    transition: all 0.15s ease-out;
-
-    &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08)
-    }
-
-    &:active {
-        background: rgba(var(--center-channel-color-rgb), 0.16);
     }
 `;
 
