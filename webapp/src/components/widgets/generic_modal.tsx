@@ -1,14 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled, {StyledComponentBase} from 'styled-components';
+import styled from 'styled-components';
 import classNames from 'classnames';
 import React from 'react';
 import {Modal} from 'react-bootstrap';
 
 import {FormattedMessage} from 'react-intl';
 
-import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton, DestructiveButton} from 'src/components/assets/buttons';
 
 type Props = {
     className?: string;
@@ -21,6 +21,7 @@ type Props = {
     confirmButtonClassName?: string;
     cancelButtonText?: React.ReactNode;
     isConfirmDisabled?: boolean;
+    isConfirmDestructive?: boolean;
     id: string;
     autoCloseOnCancelButton?: boolean;
     autoCloseOnConfirmButton?: boolean;
@@ -77,8 +78,10 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 confirmButtonText = this.props.confirmButtonText;
             }
 
+            const ButtonComponent = this.props.isConfirmDestructive ? DestructiveButton : PrimaryButton;
+
             confirmButton = (
-                <PrimaryButton
+                <ButtonComponent
                     type='submit'
                     className={classNames('confirm', this.props.confirmButtonClassName, {
                         disabled: this.props.isConfirmDisabled,
@@ -87,7 +90,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                     disabled={this.props.isConfirmDisabled}
                 >
                     {confirmButtonText}
-                </PrimaryButton>
+                </ButtonComponent>
             );
         }
 
