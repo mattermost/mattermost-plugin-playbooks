@@ -30,7 +30,7 @@ import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/p
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {useClickOutsideRef, useProfilesInCurrentChannel, useTimeout} from 'src/hooks';
+import {useClickOutsideRef, useProfilesInCurrentChannel, useTimeout, useProfilesInTeam} from 'src/hooks';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
@@ -370,6 +370,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
     const profilesInChannel = useProfilesInCurrentChannel();
+    const profilesInTeam = useProfilesInTeam();
     const [showDescription, setShowDescription] = useState(true);
 
     const markdownOptions = {
@@ -399,6 +400,10 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const fetchUsers = async () => {
         return profilesInChannel;
     };
+
+    const fetchUsersInTeam = async () => {
+        return profilesInTeam;
+    }
 
     const onAssigneeChange = async (userId?: string) => {
         if (!props.playbookRunId) {
@@ -464,6 +469,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                     }
                                     enableEdit={true}
                                     getUsers={fetchUsers}
+                                    getUsersInTeam={fetchUsersInTeam}
                                     onSelectedChange={onAssigneeChange}
                                     selfIsFirstOption={true}
                                     customControl={ControlComponent}

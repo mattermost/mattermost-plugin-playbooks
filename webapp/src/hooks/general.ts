@@ -186,7 +186,6 @@ export function useProfilesInTeam() {
 
         dispatch(getProfilesInTeam(currentTeamId, 0, PROFILE_CHUNK_SIZE));
     }, [currentTeamId, profilesInTeam]);
-    console.log(currentTeamId, profilesInTeam);
 
     return profilesInTeam;
 }

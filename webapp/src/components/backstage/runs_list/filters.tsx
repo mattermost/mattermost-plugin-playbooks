@@ -153,6 +153,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam}: Props) => {
                 }}
                 controlledOpenToggle={profileSelectorToggle}
                 getUsers={fetchOwners}
+                getUsersInTeam={fetchOwners}
                 onSelectedChange={setOwnerId}
             />
             {teams.length > 1 && !fixedTeam &&

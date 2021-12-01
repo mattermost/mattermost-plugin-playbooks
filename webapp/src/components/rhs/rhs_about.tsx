@@ -84,6 +84,7 @@ const RHSAbout = (props: Props) => {
     };
 
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
+    console.log("Is this updated on user remove?")
 
     return (
         <>
