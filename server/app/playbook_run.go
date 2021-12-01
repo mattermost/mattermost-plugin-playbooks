@@ -480,6 +480,9 @@ type PlaybookRunService interface {
 	// AddChecklist prepends a new checklist to the specified run
 	AddChecklist(playbookRunID, userID string, checklist Checklist) error
 
+	// RemoveChecklist removes the specified checklist.
+	RemoveChecklist(playbookRunID, userID string, checklistNumber int) error
+
 	// RenameChecklist renames the specified checklist
 	RenameChecklist(playbookRunID, userID string, checklistNumber int, newTitle string) error
 
@@ -703,6 +706,9 @@ type PlaybookRunTelemetry interface {
 
 	// AddChecklsit tracks the creation of a new checklist.
 	AddChecklist(playbookRunID, userID string, checklist Checklist)
+
+	// RemoveChecklist tracks the removal of a checklist.
+	RemoveChecklist(playbookRunID, userID string, checklist Checklist)
 
 	// RenameChecklsit tracks the creation of a new checklist.
 	RenameChecklist(playbookRunID, userID string, checklist Checklist)

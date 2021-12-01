@@ -337,6 +337,12 @@ export async function clientAddChecklist(playbookRunID: string, checklist: Check
     return data;
 }
 
+export async function clientRemoveChecklist(playbookRunID: string, checklistNum: number) {
+    const data = await doDelete(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}`);
+
+    return data;
+}
+
 export async function clientRenameChecklist(playbookRunID: string, checklistNum: number, newTitle: string) {
     const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/rename`,
         JSON.stringify({

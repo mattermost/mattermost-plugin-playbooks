@@ -85,6 +85,7 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	checklistsRouter.HandleFunc("", handler.addChecklist).Methods(http.MethodPut)
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
+	checklistRouter.HandleFunc("", handler.removeChecklist).Methods(http.MethodDelete)
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/rename", handler.renameChecklist).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/reorder", handler.reorderChecklist).Methods(http.MethodPut)
@@ -1210,6 +1211,24 @@ func (h *PlaybookRunHandler) addChecklist(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := h.playbookRunService.AddChecklist(id, userID, checklist); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *PlaybookRunHandler) removeChecklist(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.RemoveChecklist(id, userID, checklistNum); err != nil {
 		h.HandleError(w, err)
 		return
 	}
