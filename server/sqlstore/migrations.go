@@ -1529,6 +1529,22 @@ var migrations = []Migration{
 		toVersion:   semver.MustParse("0.41.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ChannelNameTemplate", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelNameTemplate to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "ChannelNameTemplate", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelNameTemplate to table IR_Playbook")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.41.0"),
+		toVersion:   semver.MustParse("0.42.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
 					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Playbook")
 				}
@@ -1543,7 +1559,6 @@ var migrations = []Migration{
 					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Incident")
 				}
 			}
-
 			return nil
 		},
 	},

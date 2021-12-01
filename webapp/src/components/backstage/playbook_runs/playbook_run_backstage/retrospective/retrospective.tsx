@@ -18,6 +18,7 @@ import TimelineRetro from './timeline_retro';
 interface Props {
     playbookRun: PlaybookRun;
     deleteTimelineEvent: (id: string) => void;
+    setRetrospective: (retrospective: string) => void;
 }
 
 export const Retrospective = (props: Props) => {
@@ -39,7 +40,10 @@ export const Retrospective = (props: Props) => {
     return (
         <Container>
             <Left>
-                <Report playbookRun={props.playbookRun}/>
+                <Report
+                    playbookRun={props.playbookRun}
+                    setRetrospective={props.setRetrospective}
+                />
             </Left>
             <Right>
                 <TimelineRetro

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
@@ -61,6 +61,11 @@ const RHSAbout = (props: Props) => {
         updatePlaybookRunDescription(props.playbookRun.id, value);
     };
 
+    const [editingSummary, setEditingSummary] = useState(false);
+    const editSummary = () => {
+        setEditingSummary(true);
+    };
+
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
 
     return (
@@ -68,11 +73,12 @@ const RHSAbout = (props: Props) => {
             tabIndex={0}
             id={'rhs-about'}
         >
-            <ButtonsRow>
+            <ButtonsRow data-testid='buttons-row'>
                 <RHSAboutButtons
                     playbookRun={props.playbookRun}
                     collapsed={collapsed}
                     toggleCollapsed={toggleCollapsed}
+                    editSummary={editSummary}
                 />
             </ButtonsRow>
             <RHSAboutTitle
@@ -86,6 +92,8 @@ const RHSAbout = (props: Props) => {
                 <RHSAboutDescription
                     value={props.playbookRun.summary}
                     onEdit={onDescriptionEdit}
+                    editing={editingSummary}
+                    setEditing={setEditingSummary}
                 />
                 <Row>
                     <OwnerSection>
@@ -136,7 +144,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
         height: 28px;
         padding: 2px;
         margin-top: 0;
-        background: var(--center-channel-color-08);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--center-channel-color);
 
         :hover {

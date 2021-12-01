@@ -5,6 +5,7 @@
 // - [#] indicates a test step (e.g. # Go to a page)
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
+import {stubClipboard} from '../../utils';
 
 describe('runs > details', () => {
     let testTeam;
@@ -48,6 +49,7 @@ describe('runs > details', () => {
 
     describe('updates', () => {
         const message = 'This is a status update';
+        let playbookRunId;
         beforeEach(() => {
             cy.apiRunPlaybook({
                 teamId: testTeam.id,
@@ -59,6 +61,7 @@ describe('runs > details', () => {
                     playbookRunId: playbookRun.id,
                     message,
                 });
+                playbookRunId = playbookRun.id;
 
                 // # Visit the playbook run
                 cy.visit(`/playbooks/runs/${playbookRun.id}`);
@@ -84,6 +87,25 @@ describe('runs > details', () => {
 
             // * Verify post message
             cy.get('.post').contains(message);
+        });
+
+        it('should copy run link', () => {
+            // # trigger the tooltip
+            cy.get('.icon-link-variant').trigger('mouseover');
+
+            // * Verify tooltip text
+            cy.get('#copy-run-link-tooltip').should('contain', 'Copy link to run');
+
+            stubClipboard().as('clipboard');
+
+            // # click on copy button
+            cy.get('.icon-link-variant').click().then(() => {
+                // * Verify that tooltip text changed
+                cy.get('#copy-run-link-tooltip').should('contain', 'Copied!');
+
+                // * Verify clipboard content
+                cy.get('@clipboard').its('contents').should('contain', `/playbooks/runs/${playbookRunId}`);
+            });
         });
     });
 

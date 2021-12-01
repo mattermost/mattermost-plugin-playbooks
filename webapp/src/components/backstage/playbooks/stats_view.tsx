@@ -228,7 +228,7 @@ const StatText = styled.div`
     font-weight: 600;
     font-size: 14px;
     line-height: 20px;
-    color: var(--center-channel-color-72);
+    color: rgba(var(--center-channel-color-rgb), 0.72);
     padding-top: 10px;
 `;
 

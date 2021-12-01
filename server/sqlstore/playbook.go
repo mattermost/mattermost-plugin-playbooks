@@ -109,6 +109,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"NumStages",
 			"NumSteps",
 			`(
+				1 + -- Channel creation is hard-coded
 				CASE WHEN InviteUsersEnabled THEN 1 ELSE 0 END +
 				CASE WHEN DefaultCommanderEnabled THEN 1 ELSE 0 END +
 				CASE WHEN BroadcastEnabled THEN 1 ELSE 0 END +
@@ -141,6 +142,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"CategorizeChannelEnabled",
 			"COALESCE(CategoryName, '') CategoryName",
 			"COALESCE(RunSummaryTemplate, '') RunSummaryTemplate",
+			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
 		).
 		From("IR_Playbook")
 
@@ -215,6 +217,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
 			"CategoryName":                          rawPlaybook.CategoryName,
 			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
+			"ChannelNameTemplate":                   rawPlaybook.ChannelNameTemplate,
 		}))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to store new playbook")
@@ -300,6 +303,7 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 			"COUNT(i.ID) AS NumRuns",
 			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
 			`(
+				1 + -- Channel creation is hard-coded
 				CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.BroadcastEnabled THEN 1 ELSE 0 END +
@@ -309,6 +313,7 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
+			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
 		).
 		From("IR_Playbook AS p").
 		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
@@ -364,6 +369,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 			"COUNT(i.ID) AS NumRuns",
 			"COALESCE(MAX(i.CreateAt), 0) AS LastRunAt",
 			`(
+				1 + -- Channel creation is hard-coded
 				CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.BroadcastEnabled THEN 1 ELSE 0 END +
@@ -373,6 +379,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
 				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
+			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
 		).
 		From("IR_Playbook AS p").
 		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
@@ -585,6 +592,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
 			"CategoryName":                          rawPlaybook.CategoryName,
 			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
+			"ChannelNameTemplate":                   rawPlaybook.ChannelNameTemplate,
 		}).
 		Where(sq.Eq{"ID": rawPlaybook.ID}))
 

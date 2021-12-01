@@ -103,7 +103,7 @@ const RHSTitleText = styled.div<{ clickable?: boolean }>`
     ${(props) => props.clickable && css`
         &:hover {
             background: rgba(var(--center-channel-color-rgb), 0.08);
-            fill: var(--center-channel-color-72);
+            fill: rgba(var(--center-channel-color-rgb), 0.72);
         }
 
         &:active,

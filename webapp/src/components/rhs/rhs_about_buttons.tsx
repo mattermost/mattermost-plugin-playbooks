@@ -6,7 +6,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import Icon from '@mdi/react';
-import {mdiClipboardPlayOutline, mdiNotebookOutline} from '@mdi/js';
+import {mdiClipboardPlayOutline, mdiNotebookOutline, mdiPencil} from '@mdi/js';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -20,6 +20,7 @@ interface Props {
     playbookRun: PlaybookRun;
     collapsed: boolean;
     toggleCollapsed: () => void;
+    editSummary: () => void;
 }
 
 const RHSAboutButtons = (props: Props) => {
@@ -48,7 +49,20 @@ const RHSAboutButtons = (props: Props) => {
                 icon={<ThreeDotsIcon/>}
                 left={true}
                 dotMenuButton={StyledDotMenuButton}
+                data-testid='run-dot-menu'
             >
+                <StyledDropdownMenuItem
+                    onClick={() => {
+                        props.editSummary();
+                    }}
+                >
+                    <DropdownIcon
+                        path={mdiPencil}
+                        size={1.25}
+                    />
+                    <FormattedMessage defaultMessage='Edit run summary'/>
+                </StyledDropdownMenuItem>
+                <Separator/>
                 <StyledDropdownMenuItem onClick={() => navigateToPluginUrl(overviewURL)}>
                     <DropdownIcon
                         path={mdiClipboardPlayOutline}
@@ -98,6 +112,14 @@ const DropdownIcon = styled(Icon)`
 const StyledDropdownMenuItem = styled(DropdownMenuItem)`
     display: flex;
     align-content: center;
+`;
+
+const Separator = styled.hr`
+    display: flex;
+    align-content: center;
+    border-top: 1px solid var(--center-channel-color-08);
+    margin: 5px auto;
+    width: 100%;
 `;
 
 const PlaybookInfo = styled.div`

@@ -18,6 +18,10 @@ import {StyledTextarea} from 'src/components/backstage/styles';
 import {publishRetrospective, updateRetrospective} from 'src/client';
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import PostText from 'src/components/post_text';
+import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
+
+// @ts-ignore
+const WebappUtils = window.WebappUtils;
 
 const Header = styled.div`
     display: flex;
@@ -44,7 +48,7 @@ const PostTextContainer = styled.div`
     background: var(--center-channel-bg);
     margin: 8px 0 0 0;
     padding: 10px 25px 0 16px;
-    border: 1px solid var(--center-channel-color-08);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 8px;
     flex-grow: 1;
 `;
@@ -68,22 +72,22 @@ const SecondaryButtonSmaller = styled(SecondaryButton)`
 
 interface ReportProps {
     playbookRun: PlaybookRun;
+    setRetrospective: (report: string) => void;
 }
 
 const Report = (props: ReportProps) => {
-    const [report, setReport] = useState(props.playbookRun.retrospective);
     const [editing, setEditing] = useState(false);
     const [publishedThisSession, setPublishedThisSession] = useState(false);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
     const {formatMessage} = useIntl();
 
     const savePressed = () => {
-        updateRetrospective(props.playbookRun.id, report);
+        updateRetrospective(props.playbookRun.id, props.playbookRun.retrospective);
         setEditing(false);
     };
 
     const publishPressed = () => {
-        publishRetrospective(props.playbookRun.id, report);
+        publishRetrospective(props.playbookRun.id, props.playbookRun.retrospective);
         setEditing(false);
         setPublishedThisSession(true);
     };
@@ -120,20 +124,24 @@ const Report = (props: ReportProps) => {
             {editing &&
                 <ReportTextarea
                     autoFocus={true}
-                    value={report}
+                    value={props.playbookRun.retrospective}
                     onChange={(e) => {
-                        setReport(e.target.value);
+                        props.setRetrospective(e.target.value);
                     }}
                 />
             }
             {!editing &&
                 <PostTextContainer>
                     <PostText
-                        text={report}
+                        text={props.playbookRun.retrospective}
                         team={team}
                     />
                 </PostTextContainer>
             }
+            <RouteLeavingGuard
+                navigate={(path) => WebappUtils.browserHistory.push(path)}
+                shouldBlockNavigation={() => editing}
+            />
         </ReportContainer>
     );
 };
