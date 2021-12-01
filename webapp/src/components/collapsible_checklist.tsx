@@ -4,11 +4,13 @@
 import React, {useRef, useState} from 'react';
 import styled from 'styled-components';
 
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 import HoverMenu from 'src/components/collapsible_checklist_hover_menu';
+import RenameChecklistDialog from 'src/components/rhs/rhs_checklists_rename_dialog';
+import DeleteChecklistDialog from 'src/components/rhs/rhs_checklists_delete_dialog';
 
 export interface Props {
     title: string;
@@ -35,6 +37,8 @@ const CollapsibleChecklist = ({
 }: Props) => {
     const titleRef = useRef(null);
     const [showMenu, setShowMenu] = useState(false);
+    const [showRenameDialog, setShowRenameDialog] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const icon = collapsed ? 'icon-chevron-right' : 'icon-chevron-down';
     const [completed, total] = tasksCompleted(items);
@@ -77,6 +81,8 @@ const CollapsibleChecklist = ({
                             playbookRunID={playbookRunID}
                             checklistIndex={index}
                             checklistTitle={title}
+                            onRenameChecklist={() => setShowRenameDialog(true)}
+                            onDeleteChecklist={() => setShowDeleteDialog(true)}
                         />
                     }
                 </Horizontal>
@@ -85,6 +91,13 @@ const CollapsibleChecklist = ({
                 </ProgressBackground>
             </HorizontalBG>
             {!collapsed && children}
+            <RenameChecklistDialog
+                playbookRunID={playbookRunID}
+                checklistNumber={index}
+                show={showRenameDialog}
+                onHide={() => setShowRenameDialog(false)}
+                initialTitle={title}
+            />
         </Border>
     );
 };

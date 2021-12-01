@@ -10,17 +10,17 @@ import {useIntl} from 'react-intl';
 import {addNewTask} from 'src/actions';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import DotMenu, {DotMenuButton, DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
-import RenameChecklistDialog from 'src/components/rhs/rhs_checklists_rename_dialog';
 
 export interface Props {
     playbookRunID: string;
     checklistIndex: number;
     checklistTitle: string;
+    onRenameChecklist: () => void;
+    onDeleteChecklist: () => void;
 }
 
 const CollapsibleChecklistHoverMenu = (props: Props) => {
     const dispatch = useDispatch();
-    const [showRenameDialog, setShowRenameDialog] = useState(false);
     const {formatMessage} = useIntl();
 
     return (
@@ -44,22 +44,15 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
                 leftPx={-189}
                 title={formatMessage({defaultMessage: 'More'})}
             >
-                <StyledDropdownMenuItem onClick={() => setShowRenameDialog(true)}>
+                <StyledDropdownMenuItem onClick={props.onRenameChecklist}>
                     <DropdownIcon className='icon-pencil-outline icon-16'/>
                     {formatMessage({defaultMessage: 'Rename checklist'})}
                 </StyledDropdownMenuItem>
-                <StyledDropdownMenuItem onClick={() => {}}>
+                <StyledDropdownMenuItem onClick={props.onDeleteChecklist}>
                     <DropdownIcon className='icon-trash-can-outline icon-16'/>
                     {formatMessage({defaultMessage: 'Delete checklist'})}
                 </StyledDropdownMenuItem>
             </DotMenu>
-            <RenameChecklistDialog
-                playbookRunID={props.playbookRunID}
-                checklistNumber={props.checklistIndex}
-                show={showRenameDialog}
-                onHide={() => setShowRenameDialog(false)}
-                initialTitle={props.checklistTitle}
-            />
         </ButtonRow>
     );
 };
