@@ -124,7 +124,7 @@ export const UpdateRequestPost = (props: Props) => {
                         }),
                         menuPortal: (base: CSSProperties) => ({
                             ...base,
-                            zIndex: 9999,
+                            zIndex: 22,
                         }),
                     }}
                 />
