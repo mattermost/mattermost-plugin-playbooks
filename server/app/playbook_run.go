@@ -480,6 +480,9 @@ type PlaybookRunService interface {
 	// AddChecklist prepends a new checklist to the specified run
 	AddChecklist(playbookRunID, userID string, checklist Checklist) error
 
+	// RenameChecklist renames the specified checklist
+	RenameChecklist(playbookRunID, userID string, checklistNumber int, newTitle string) error
+
 	// NukeDB removes all playbook run related data.
 	NukeDB() error
 
@@ -700,6 +703,9 @@ type PlaybookRunTelemetry interface {
 
 	// AddChecklsit tracks the creation of a new checklist.
 	AddChecklist(playbookRunID, userID string, checklist Checklist)
+
+	// RenameChecklsit tracks the creation of a new checklist.
+	RenameChecklist(playbookRunID, userID string, checklist Checklist)
 
 	// UpdateRetrospective event
 	UpdateRetrospective(playbookRun *PlaybookRun, userID string)

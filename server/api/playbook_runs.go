@@ -86,6 +86,7 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
+	checklistRouter.HandleFunc("/rename", handler.renameChecklist).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/reorder", handler.reorderChecklist).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/add-dialog", handler.addChecklistItemDialog).Methods(http.MethodPost)
 
@@ -1394,6 +1395,38 @@ func (h *PlaybookRunHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.playbookRunService.EditChecklistItem(id, userID, checklistNum, itemNum, params.Title, params.Command, params.Description); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) renameChecklist(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var modificationParams struct {
+		NewTitle string `json:"title"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&modificationParams); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal new title", err)
+		return
+	}
+
+	if modificationParams.NewTitle == "" {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter: checklist title",
+			errors.New("checklist title must not be blank"))
+		return
+	}
+
+	if err := h.playbookRunService.RenameChecklist(id, userID, checklistNum, modificationParams.NewTitle); err != nil {
 		h.HandleError(w, err)
 		return
 	}

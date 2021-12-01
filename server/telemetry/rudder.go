@@ -45,8 +45,9 @@ const (
 	actionSetAssigneeForTask  = "set_assignee_for_task"
 	actionRunTaskSlashCommand = "run_task_slash_command"
 
-	eventChecklists    = "checklists"
-	actionAddChecklist = "add_checklist"
+	eventChecklists       = "checklists"
+	actionAddChecklist    = "add_checklist"
+	actionRenameChecklist = "rename_checklist"
 
 	eventPlaybook = "playbook"
 	actionUpdate  = "update"
@@ -308,6 +309,13 @@ func checklistProperties(playbookRunID, userID string, checklist app.Checklist) 
 func (t *RudderTelemetry) AddChecklist(playbookRunID, userID string, checklist app.Checklist) {
 	properties := checklistProperties(playbookRunID, userID, checklist)
 	properties["Action"] = actionAddChecklist
+	t.track(eventChecklists, properties)
+}
+
+// RenameChecklist tracks the renaming of a checklist
+func (t *RudderTelemetry) RenameChecklist(playbookRunID, userID string, checklist app.Checklist) {
+	properties := checklistProperties(playbookRunID, userID, checklist)
+	properties["Action"] = actionRenameChecklist
 	t.track(eventChecklists, properties)
 }
 

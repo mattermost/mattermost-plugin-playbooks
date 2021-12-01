@@ -107,6 +107,10 @@ func (t *NoopTelemetry) RunTaskSlashCommand(string, string, app.ChecklistItem) {
 func (t *NoopTelemetry) AddChecklist(playbookRunID, userID string, checklist app.Checklist) {
 }
 
+// RenameChecklist does nothing
+func (t *NoopTelemetry) RenameChecklist(playbookRunID, userID string, checklist app.Checklist) {
+}
+
 func (t *NoopTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, userID string) {
 }
 
