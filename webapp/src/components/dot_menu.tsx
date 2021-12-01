@@ -32,22 +32,25 @@ interface DropdownMenuProps {
     top?: boolean;
     left?: boolean;
     wide?: boolean;
+    topPx?: number;
+    leftPx?: number;
 }
 
-const DropdownMenu = styled.div<DropdownMenuProps>`
+export const DropdownMenu = styled.div<DropdownMenuProps>`
     display: flex;
     flex-direction: column;
 
     position: absolute;
     ${(props) => (props.top ? 'bottom: 35px;' : 'top: 100%;')};
     ${(props) => (props.left && css`
-        left: -197px;
-        top: 35px;
+        left: ${props.leftPx || -197}px;
+        top: ${props.topPx || 35}px;
     `)};
     ${(props) => (props.wide && css`
         left: -236px;
     `)};
 
+    width: max-content;
     min-width: 160px;
     text-align: left;
     list-style: none;
@@ -73,8 +76,11 @@ interface DotMenuProps {
     icon: JSX.Element;
     top?: boolean;
     left?: boolean;
+    topPx?: number;
+    leftPx?: number;
     wide?: boolean;
-    dotMenuButton?: StyledComponentBase<'div', any>;
+    dotMenuButton?: typeof DotMenuButton;
+    dropdownMenu?: typeof DropdownMenu;
 }
 
 const DotMenu = (props: DotMenuProps) => {
@@ -93,6 +99,7 @@ const DotMenu = (props: DotMenuProps) => {
     });
 
     const MenuButton = props.dotMenuButton ?? DotMenuButton;
+    const Menu = props.dropdownMenu ?? DropdownMenu;
 
     return (
         <MenuButton
@@ -115,10 +122,12 @@ const DotMenu = (props: DotMenuProps) => {
             <DropdownMenuWrapper>
                 {
                     isOpen &&
-                    <DropdownMenu
+                    <Menu
                         data-testid='dropdownmenu'
                         top={props.top}
                         left={props.left}
+                        topPx={props.topPx}
+                        leftPx={props.leftPx}
                         wide={props.wide}
                         onClick={(e) => {
                             e.stopPropagation();
@@ -126,7 +135,7 @@ const DotMenu = (props: DotMenuProps) => {
                         }}
                     >
                         {props.children}
-                    </DropdownMenu>
+                    </Menu>
                 }
             </DropdownMenuWrapper>
         </MenuButton>
