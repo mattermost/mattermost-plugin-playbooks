@@ -4,10 +4,10 @@
 import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
-import {GetStateFunc} from 'mattermost-redux/types/actions';
+import {GetStateFunc, ActionFunc, DispatchFunc, batchActions} from 'mattermost-redux/types/actions';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {Channel} from 'mattermost-redux/types/channels';
-import {IntegrationTypes} from 'mattermost-redux/action_types';
+import {IntegrationTypes, UserTypes, ChannelTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
@@ -150,6 +150,33 @@ export async function fetchCheckAndSendMessageOnJoin(playbookRunID: string, chan
 
 export function fetchPlaybookRunChannels(teamID: string, userID: string) {
     return doGet(`${apiUrl}/runs/channels?team_id=${teamID}&participant_id=${userID}`);
+}
+
+export async function clientAddChannelMember(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, channelId: string, userId: string, postRootId = '') {
+        let member;
+        try {
+            member = await Client4.addToChannel(userId, channelId, postRootId);
+        } catch (error) {
+            console.error(error)
+        }
+
+        Client4.trackEvent('action', 'action_channels_add_member', {channel_id: channelId});
+        console.log("Reached client lib")
+        // not sure if this is needed. But I have kept it due to webapp
+        dispatch(batchActions([
+            {
+                type: UserTypes.RECEIVED_PROFILE_IN_CHANNEL,
+                data: {id: channelId, user_id: userId},
+            },
+            {
+                type: ChannelTypes.RECEIVED_CHANNEL_MEMBER,
+                data: member,
+            },
+            {
+                type: ChannelTypes.ADD_CHANNEL_MEMBER_SUCCESS,
+                id: channelId,
+            },
+        ], 'ADD_CHANNEL_MEMBER.BATCH'));
 }
 
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string, teamId: string) {

@@ -14,7 +14,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import './profile_selector.scss';
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
-import {useClientRect} from 'src/hooks';
+import {useClientRect, useProfilesInCurrentChannel} from 'src/hooks';
 import {PlaybookRunFilterButton} from '../backstage/styles';
 
 export interface Option {
@@ -52,6 +52,7 @@ interface Props {
 
 export default function ProfileSelector(props: Props) {
     const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
+    // const profilesInChannel = useProfilesInCurrentChannel();
 
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
@@ -142,6 +143,7 @@ export default function ProfileSelector(props: Props) {
 
     // Fill in the userOptions on mount.
     useEffect(() => {
+        console.log("some rerender for profile_selector")
         fetchUsers();
     }, []);
 
@@ -154,6 +156,7 @@ export default function ProfileSelector(props: Props) {
             return;
         }
 
+        fetchUsers();
         const user = userOptions.find((option: Option) => option.userId === props.selectedUserId);
         if (user) {
             setSelected(user);

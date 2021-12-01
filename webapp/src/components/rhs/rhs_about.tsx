@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
@@ -20,7 +20,7 @@ import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';
 import RHSAboutTitle, {DefaultRenderedTitle} from 'src/components/rhs/rhs_about_title';
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
-import {setRHSAboutCollapsedState} from 'src/actions';
+import {setRHSAboutCollapsedState, addToChannel} from 'src/actions';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -46,18 +46,24 @@ const RHSAbout = (props: Props) => {
         return profilesInTeam;
     }
 
-    const onSelectedProfileChange = async (userId?: string, userType?: string) => {
+    const setOwnerUtil = async (userId?: string) => {
+        if(!userId){
+            return
+        }
+        const response = await setOwner(props.playbookRun.id, userId);
+        if (response.error) {
+            // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
+            console.log(response.error); // eslint-disable-line no-console
+        }
+    }
+
+    const onSelectedProfileChange = (userId?: string, userType?: string) => {
         if (!userId || !userType) {
             return;
         }
         
-        // i think we need to add the logic here for modal opening and adding that user to channel
         if(userType === "Member"){
-            const response = await setOwner(props.playbookRun.id, userId);
-            if (response.error) {
-                // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
-                console.log(response.error); // eslint-disable-line no-console
-            }
+            setOwnerUtil(userId)
         }
         else{
             setCurrentUserSelect(userId)
@@ -134,8 +140,13 @@ const RHSAbout = (props: Props) => {
                 title={formatMessage({defaultMessage: 'Add To Channel'})}
                 message={formatMessage({defaultMessage: 'The following user is not in the current Channel. We need to add the user to the channel first.'})}
                 confirmButtonText={formatMessage({defaultMessage: 'Add To Channel'})}
-                onConfirm={() => {
-                    console.log("current user selected is", currentUserSelect)
+                onConfirm={async () => {
+                    if(currentUserSelect){
+                        dispatch(addToChannel(currentUserSelect))
+                        setShowAddToChannelConfirm(false)
+                        // lets set the added user now
+                        setOwnerUtil(currentUserSelect)
+                    }
                 }
                 }
                 onCancel={() => setShowAddToChannelConfirm(false)}

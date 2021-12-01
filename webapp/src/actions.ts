@@ -55,11 +55,12 @@ import {
     SET_CHECKLIST_ITEMS_FILTER,
     SetChecklistItemsFilter,
 } from 'src/types/actions';
-import {clientExecuteCommand} from 'src/client';
+import {clientAddChannelMember, clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 import {modals} from 'src/webapp_globals';
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
+import { getCurrentChannelId } from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -128,6 +129,14 @@ export function addNewTask(checklist: number) {
         const currentTeamId = getCurrentTeamId(getState());
 
         await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, currentTeamId);
+    };
+}
+
+export function addToChannel(userId: string) {
+    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+        const currentChannelId = getCurrentChannelId(getState());
+
+        await clientAddChannelMember(dispatch, getState, currentChannelId, userId);
     };
 }
 
