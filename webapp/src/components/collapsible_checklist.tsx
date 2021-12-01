@@ -98,6 +98,12 @@ const CollapsibleChecklist = ({
                 onHide={() => setShowRenameDialog(false)}
                 initialTitle={title}
             />
+            <DeleteChecklistDialog
+                playbookRunID={playbookRunID}
+                checklistIndex={index}
+                show={showDeleteDialog}
+                onHide={() => setShowDeleteDialog(false)}
+            />
         </Border>
     );
 };
