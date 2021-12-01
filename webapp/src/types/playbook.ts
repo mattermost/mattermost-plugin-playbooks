@@ -43,6 +43,7 @@ export interface PlaybookWithChecklist extends Playbook {
     category_name: string;
     categorize_channel_enabled: boolean;
     run_summary_template: string;
+    channel_name_template: string;
 }
 
 export interface FetchPlaybooksParams {
@@ -131,6 +132,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         category_name: '',
         categorize_channel_enabled: false,
         run_summary_template: '',
+        channel_name_template: '',
     };
 }
 
@@ -203,7 +205,8 @@ export function isPlaybook(arg: any): arg is PlaybookWithChecklist {
         typeof arg.message_on_join === 'string' &&
         typeof arg.message_on_join_enabled === 'boolean' &&
         typeof arg.signal_any_keywords && Array.isArray(arg.signal_any_keywords) && arg.signal_any_keywords.every((id: any) => typeof id === 'string') &&
-        typeof arg.signal_any_keywords_enabled === 'boolean'
+        typeof arg.signal_any_keywords_enabled === 'boolean' &&
+        typeof arg.channel_name_template === 'string'
     );
 }
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {ReactNode, useState} from 'react';
 import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {Team} from 'mattermost-redux/types/teams';
@@ -9,14 +9,19 @@ import {useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';
 
+import Icon from '@mdi/react';
+
+import {mdiClockOutline} from '@mdi/js';
+
 import {TimelineEvent, TimelineEventType} from 'src/types/rhs';
 import {isMobile} from 'src/mobile';
 import {toggleRHS} from 'src/actions';
 import {ChannelNamesMap} from 'src/types/backstage';
-import {messageHtmlToComponent, formatText, browserHistory, Timestamp} from 'src/webapp_globals';
-import {formatDuration} from 'src/components/formatted_duration';
+import {messageHtmlToComponent, formatText, browserHistory} from 'src/webapp_globals';
+import FormattedDuration, {formatDuration} from 'src/components/formatted_duration';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
+import Tooltip from 'src/components/widgets/tooltip';
 
 const Circle = styled.div`
     position: absolute;
@@ -25,7 +30,8 @@ const Circle = styled.div`
     color: var(--button-bg);
     background: #EFF1F5;
     border-radius: 50%;
-    left: 86px;
+    left: 21px;
+    top: 5px;
 
     > .icon {
         font-size: 14px;
@@ -35,31 +41,65 @@ const Circle = styled.div`
 
 const TimelineItem = styled.li`
     position: relative;
-    margin: 20px 0 0 0;
+    margin: 27px 0 0 0;
 `;
 
 const TimeContainer = styled.div`
     position: absolute;
     width: 75px;
     line-height: 16px;
-    text-align: right;
+    text-align: left;
     left: 4px;
 `;
 
-const TimeHours = styled.div`
-    font-size: 12px;
-    font-weight: 600;
-    margin: 0 0 4px 0;
+const TimeStamp = styled.time`
+    font-size: 11px;
+    margin: 0px;
+    line-height: 1;
+    font-weight: 500;
+    svg {
+        vertical-align: middle;
+        margin: 0px 3px;
+        position: relative;
+        top: -1px;
+    }
 `;
 
-const TimeDay = styled.div`
+const TimeSinceStart = styled.span`
+    font-size: 11px;
+    display: inline-block;
+    white-space: nowrap;
+    border: 1px solid #EFF1F5;
+    padding: 0.1rem .25rem;
+    border-radius: 5px;
+    margin-left: 1rem;
+`;
+
+const TimeBetween = styled.div`
     font-size: 10px;
+    position: absolute;
+    top: -23px;
+    left: -10px;
+    white-space: nowrap;
+    text-align: right;
+    width: 3rem;
+
+
+    &::after {
+        content: '';
+        background: #EFF1F5;
+        width: 7px;
+        height: 7px;
+        position: absolute;
+        top: 5px;
+        right: -12px;
+        border-radius: 50%;
+    }
 `;
 
 const SummaryContainer = styled.div`
     position: relative;
-    margin: 0 0 0 120px;
-    padding: 0 5px 0 0;
+    padding: 0 5px 0 55px;
     line-height: 16px;
     min-height: 36px;
 `;
@@ -87,12 +127,18 @@ const SummaryDeleted = styled.span`
 const SummaryDetail = styled.div`
     font-size: 11px;
     margin: 4px 0 0 0;
-    color: var(--center-channel-color-64)
+    color: rgba(var(--center-channel-color-rgb), 0.64)
 `;
+
+const DATETIME_FORMAT = {
+    ...DateTime.DATE_MED,
+    ...DateTime.TIME_24_WITH_SHORT_OFFSET,
+};
 
 interface Props {
     event: TimelineEvent;
-    reportedAt: DateTime;
+    prevEventAt?: DateTime;
+    runCreateAt: DateTime;
     channelNames: ChannelNamesMap;
     team: Team;
     deleteEvent: () => void;
@@ -129,18 +175,28 @@ const TimelineEventItem = (props: Props) => {
     let summaryTitle = '';
     let summary = '';
     let testid = '';
-    const diff = DateTime.fromMillis(props.event.event_at).diff(props.reportedAt);
-    let stamp = formatDuration(diff);
+
+    const eventTime = DateTime.fromMillis(props.event.event_at);
+    const diff = DateTime.fromMillis(props.event.event_at).diff(props.runCreateAt);
+    let timeSinceStart: ReactNode = formatMessage({defaultMessage: '{duration} after run started'}, {duration: formatDuration(diff)});
     if (diff.toMillis() < 0) {
-        stamp = '-' + formatDuration(diff.negate());
+        timeSinceStart = formatMessage({defaultMessage: '{duration} before run started'}, {duration: formatDuration(diff.negate())});
     }
-    let timeSince: JSX.Element | null = <TimeDay>{formatMessage({defaultMessage: 'Time: {time}'}, {time: stamp})}</TimeDay>;
+    const timeSincePrevEvent: ReactNode = props.prevEventAt && (
+        <TimeBetween>
+            <FormattedDuration
+                from={props.prevEventAt}
+                to={props.event.event_at}
+                truncate={'truncate'}
+            />
+        </TimeBetween>
+    );
 
     switch (props.event.event_type) {
     case TimelineEventType.RunCreated:
         iconClass = 'icon icon-shield-alert-outline';
         summaryTitle = formatMessage({defaultMessage: 'Run started by {name}'}, {name: props.event.subject_display_name});
-        timeSince = null;
+        timeSinceStart = null;
         testid = TimelineEventType.RunCreated;
         break;
     case TimelineEventType.RunFinished:
@@ -215,18 +271,31 @@ const TimelineEventItem = (props: Props) => {
             onMouseLeave={() => setShowMenu(false)}
         >
             <TimeContainer>
-                <TimeHours>
-                    <Timestamp
-                        value={props.event.event_at}
-                        month='short'
-                    />
-                </TimeHours>
-                {timeSince}
+                {timeSincePrevEvent}
             </TimeContainer>
             <Circle>
                 <i className={iconClass}/>
             </Circle>
+
             <SummaryContainer>
+                <TimeStamp dateTime={eventTime.setZone('Etc/UTC').toISO()}>
+                    {eventTime.setZone('Etc/UTC').toLocaleString(DATETIME_FORMAT)}
+                    <Tooltip
+                        id={`timeline-${props.event.id}`}
+                        content={(
+                            <>
+                                {eventTime.toLocaleString(DATETIME_FORMAT)}
+                                <br/>
+                                {timeSinceStart}
+                            </>
+                        )}
+                    >
+                        <Icon
+                            path={mdiClockOutline}
+                            size={0.85}
+                        />
+                    </Tooltip>
+                </TimeStamp>
                 <SummaryTitle
                     onClick={(e) => !statusPostDeleted && goToPost(e, props.event.post_id)}
                     deleted={statusPostDeleted}
@@ -235,26 +304,24 @@ const TimelineEventItem = (props: Props) => {
                 </SummaryTitle>
                 {statusPostDeleted && (
                     <SummaryDeleted>
-                        {formatMessage({defaultMessage: 'Status post deleted: '})}
-                        <Timestamp
-                            value={props.event.status_delete_at}
-                            // eslint-disable-next-line no-undefined
-                            useDate={{...DateTime.DATE_MED, year: undefined}}
-                            useTime={DateTime.TIME_24_SIMPLE}
-                        />
+                        {formatMessage({defaultMessage: 'Deleted: {timestamp}'}, {
+                            timestamp: DateTime.fromMillis(props.event.status_delete_at!)
+                                .setZone('Etc/UTC')
+                                .toLocaleString(DATETIME_FORMAT),
+                        })}
                     </SummaryDeleted>
                 )}
                 <SummaryDetail>{messageHtmlToComponent(formatText(summary, markdownOptions), true, {})}</SummaryDetail>
             </SummaryContainer>
             {showMenu &&
-            <HoverMenu>
-                <HoverMenuButton
-                    className={'icon-trash-can-outline icon-16 btn-icon'}
-                    onClick={() => {
-                        setShowDeleteConfirm(true);
-                    }}
-                />
-            </HoverMenu>
+                <HoverMenu>
+                    <HoverMenuButton
+                        className={'icon-trash-can-outline icon-16 btn-icon'}
+                        onClick={() => {
+                            setShowDeleteConfirm(true);
+                        }}
+                    />
+                </HoverMenu>
             }
             <ConfirmModal
                 show={showDeleteConfirm}

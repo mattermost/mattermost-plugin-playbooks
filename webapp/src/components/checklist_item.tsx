@@ -136,7 +136,7 @@ export const CheckboxContainer = styled.div`
     button:disabled {
         border: 0px;
         color: var(--button-color);
-        background: var(--center-channel-color-56);
+        background: rgba(var(--center-channel-color-rgb), 0.56);
         cursor: default;
     }
 
@@ -158,7 +158,7 @@ export const CheckboxContainer = styled.div`
         min-width: 20px;
         height: 20px;
         background: #ffffff;
-        border: 2px solid var(--center-channel-color-24);
+        border: 2px solid rgba(var(--center-channel-color-rgb), 0.24);
         border-radius: 4px;
         margin: 0;
         cursor: pointer;
@@ -271,7 +271,7 @@ const Run = styled.div<RunProps>`
     }
 
     ${({running}) => running && `
-        color: var(--center-channel-color-64);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
         cursor: default;
 
         &:hover {

@@ -231,7 +231,7 @@ const StyledReactSelect = styled(ReactSelect)`
         background-color: transparent;
         border-radius: 4px;
         border: none;
-        box-shadow: inset 0 0 0 1px var(--center-channel-color-16);
+        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
         width: 100%;
         height: 4rem;
         font-size: 14px;
@@ -246,7 +246,7 @@ const StyledReactSelect = styled(ReactSelect)`
             left: 16px;
             top: 8px;
             position: absolute;
-            color: var(--center-channel-color-56);
+            color: rgba(var(--center-channel-color-rgb), 0.56);
             content: '\f349';
             font-size: 18px;
             font-family: 'compass-icons', mattermosticons;
@@ -272,7 +272,7 @@ const StyledReactSelect = styled(ReactSelect)`
 
     .invite-users-selector__option {
         &:active {
-            background-color: var(--center-channel-color-08);
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
         }
     }
 

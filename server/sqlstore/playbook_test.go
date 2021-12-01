@@ -117,6 +117,7 @@ func TestGetPlaybook(t *testing.T) {
 		WithCreateAt(1200).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{andrew}).
+		WithChannelNameTemplate("playbook XX").
 		ToPlaybook()
 
 	pb08 := NewPBBuilder().
@@ -126,6 +127,7 @@ func TestGetPlaybook(t *testing.T) {
 		WithChecklists([]int{1}).
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
 		WithKeywords([]string{"keyword"}).
+		WithChannelNameTemplate("playbook YY").
 		ToPlaybook()
 
 	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
@@ -295,6 +297,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{andrew}).
+		WithChannelNameTemplate("playbook XX").
 		ToPlaybook()
 
 	pb08 := NewPBBuilder().
@@ -305,6 +308,7 @@ func TestGetPlaybooks(t *testing.T) {
 		WithChecklists([]int{1}).
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
 		WithKeywords([]string{"keyword"}).
+		WithChannelNameTemplate("playbook YY").
 		ToPlaybook()
 
 	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
@@ -509,6 +513,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
+		WithChannelNameTemplate("playbook YY").
 		ToPlaybook()
 
 	pb09 := NewPBBuilder().
@@ -518,6 +523,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithUpdateAt(0).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{}).
+		WithChannelNameTemplate("playbook XX").
 		ToPlaybook()
 
 	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09}
@@ -983,7 +989,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 					testCase.expected.Items[i].MemberIDs = nil
 				}
 
-				require.ElementsMatch(t, testCase.expected.Items, actual.Items)
+				require.Equal(t, testCase.expected.Items, actual.Items)
 				require.Equal(t, testCase.expected.HasMore, actual.HasMore)
 				require.Equal(t, testCase.expected.PageCount, actual.PageCount)
 				require.Equal(t, testCase.expected.TotalCount, actual.TotalCount)
@@ -1655,6 +1661,7 @@ func NewPBBuilder() *PlaybookBuilder {
 			MemberIDs:               []string(nil),
 			InvitedUserIDs:          []string(nil),
 			InvitedGroupIDs:         []string(nil),
+			NumActions:              1, // Channel creation is always on
 		},
 	}
 }
@@ -1722,6 +1729,12 @@ func (p *PlaybookBuilder) WithChecklists(itemsPerChecklist []int) *PlaybookBuild
 
 	p.NumStages = int64(len(itemsPerChecklist))
 	p.NumSteps = sum(itemsPerChecklist)
+
+	return p
+}
+
+func (p *PlaybookBuilder) WithChannelNameTemplate(channelNameTemplate string) *PlaybookBuilder {
+	p.ChannelNameTemplate = channelNameTemplate
 
 	return p
 }

@@ -10,6 +10,7 @@ import {Toggle} from 'src/components/backstage/automation/toggle';
 
 interface Props {
     enabled: boolean;
+    disableToggle?: boolean;
     onToggle: () => void;
     textOnToggle: string;
     placeholderText: string;
@@ -26,6 +27,7 @@ export const PatternedInput = (props: Props) => (
         <AutomationTitle>
             <Toggle
                 isChecked={props.enabled}
+                disabled={props.disableToggle}
                 onChange={props.onToggle}
             />
             <div>{props.textOnToggle}</div>
@@ -71,7 +73,7 @@ const TextBox = styled.input<TextBoxProps>`
     color: var(--center-channel-color);
     border-radius: 4px;
     border: none;
-    box-shadow: inset 0 0 0 1px var(--center-channel-color-16);
+    box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
     font-size: 14px;
     padding-left: 16px;
     padding-right: 16px;

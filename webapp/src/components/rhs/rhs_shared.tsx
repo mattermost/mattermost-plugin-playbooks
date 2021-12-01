@@ -27,7 +27,7 @@ export const Footer = styled.div`
     }
 
     background: var(--center-channel-bg);
-    border-top: 1px solid var(--center-channel-color-16);
+    border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     position: absolute;
     bottom: 0;
     left: 0;

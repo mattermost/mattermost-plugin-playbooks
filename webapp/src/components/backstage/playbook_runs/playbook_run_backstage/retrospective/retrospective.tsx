@@ -20,6 +20,7 @@ import TimelineRetro from './timeline_retro';
 interface Props {
     playbookRun: PlaybookRun;
     deleteTimelineEvent: (id: string) => void;
+    setRetrospective: (retrospective: string) => void;
 }
 
 export const Retrospective = (props: Props) => {
@@ -37,12 +38,14 @@ export const Retrospective = (props: Props) => {
             />
         );
     }
-
     return (
         <Container>
             <Left>
                 {props.playbookRun.retrospective_enabled ?
-                    <Report playbookRun={props.playbookRun}/> :
+                    <Report
+                        playbookRun={props.playbookRun}
+                        setRetrospective={props.setRetrospective}
+                    /> :
                     <RetrospectiveDisabledText id={'retrospective-disabled-msg'}>
                         {formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}
                     </RetrospectiveDisabledText>}

@@ -15,10 +15,10 @@ const PlaybookRunContainer = styled.div<PlaybookRunContainerProps>`
     display: flex;
     flex-direction: column;
     padding: 20px;
-    box-shadow: inset 0px -1px 0px var(--center-channel-color-24);
+    box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.24);
 
     ${(props) => props.active && css`
-        box-shadow: inset 0px -1px 0px var(--center-channel-color-24), inset 4px 0px 0px var(--button-bg);
+        box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.24), inset 4px 0px 0px var(--button-bg);
     `}
 `;
 
