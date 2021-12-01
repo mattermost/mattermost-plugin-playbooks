@@ -10,6 +10,7 @@ import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users'
 import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
 import {useIntl, FormattedMessage} from 'react-intl';
+import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
 import {PresetTemplates} from 'src/components/backstage/template_selector';
@@ -296,6 +297,7 @@ const PlaybookEdit = (props: Props) => {
 
         dispatch(selectTeam(teamId));
         dispatch(fetchMyChannelsAndMembers(teamId));
+        dispatch(fetchMyCategories(teamId));
     }, [dispatch, props.teamId, playbook.team_id]);
 
     const updateChecklist = (newChecklist: Checklist[]) => {

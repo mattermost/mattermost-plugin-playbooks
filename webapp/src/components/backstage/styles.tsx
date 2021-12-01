@@ -4,6 +4,7 @@
 import styled, {css, createGlobalStyle} from 'styled-components';
 import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
+import Creatable from 'react-select/creatable';
 
 import {RegularHeading} from 'src/styles/headings';
 import MarkdownTextbox from 'src/components/markdown_textbox';
@@ -172,6 +173,10 @@ export const StyledSelect = styled(Select).attrs((props) => {
         ...props,
     };
 })`
+    ${commonSelectStyle}
+`;
+
+export const StyledCreatable = styled(Creatable)`
     ${commonSelectStyle}
 `;
 
