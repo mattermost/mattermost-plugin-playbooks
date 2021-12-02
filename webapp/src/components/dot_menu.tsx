@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useRef} from 'react';
-import styled, {css, StyledComponentBase} from 'styled-components';
+import {useIntl} from 'react-intl';
+import styled, {css} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
@@ -81,9 +82,11 @@ interface DotMenuProps {
     wide?: boolean;
     dotMenuButton?: typeof DotMenuButton;
     dropdownMenu?: typeof DropdownMenu;
+    title?: string;
 }
 
 const DotMenu = (props: DotMenuProps) => {
+    const {formatMessage} = useIntl();
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         setOpen(true);
@@ -103,6 +106,7 @@ const DotMenu = (props: DotMenuProps) => {
 
     return (
         <MenuButton
+            title={props.title}
             ref={rootRef}
             onClick={(e) => {
                 e.stopPropagation();
@@ -166,6 +170,7 @@ export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: ()
             href='#'
             onClick={props.onClick}
             className={props.className}
+            role={'button'}
         >
             {props.children}
         </DropdownMenuItemStyled>
