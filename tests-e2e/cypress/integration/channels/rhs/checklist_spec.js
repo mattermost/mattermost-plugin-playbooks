@@ -223,5 +223,71 @@ describe('channels > rhs > checklist', () => {
                 cy.isInViewport('.playbook-run-user-select');
             });
         });
+
+        it('creates a new checklist', () => {
+            // # Click on the button to add a checklist
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText('Checklists').trigger('mouseover').within(() => {
+                    cy.findByTitle('Add checklist').click();
+                });
+            });
+
+            // # Type a title and click on the Add button
+            const title = 'Checklist - ' + Date.now();
+            cy.findByLabelText('Checklist name').type(title);
+            cy.findByRole('button', {name: 'Add'}).click();
+
+            // # Click on the button to add a checklist
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText(title).should('exist');
+            });
+        });
+
+        it('renames a checklist', () => {
+            const oldTitle = 'Stage 1';
+            const newTitle = 'New title - ' + Date.now();
+
+            // # Open the dot menu and click on the rename button
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText(oldTitle).trigger('mouseover');
+                cy.findByTitle('More').click();
+                cy.findByRole('button', {name: 'Rename checklist'}).click();
+            });
+
+            // # Clear the text in the input
+            cy.findByLabelText('Checklist name').clear();
+
+            // * Verify that the confirm button is disabled
+            cy.findByRole('button', {name: 'Rename'}).should('be.disabled');
+
+            // # Type the new title and click the confirm button
+            cy.findByLabelText('Checklist name').type(newTitle);
+            cy.findByRole('button', {name: 'Rename'}).click();
+
+            // * Verify that the checklist changed its name
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText(oldTitle).should('not.exist');
+                cy.findByText(newTitle).should('exist');
+            });
+        });
+
+        it('deletes a checklist', () => {
+            const title = 'Stage 1';
+
+            // # Open the dot menu and click on the delete button
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText(title).trigger('mouseover');
+                cy.findByTitle('More').click();
+                cy.findByRole('button', {name: 'Delete checklist'}).click();
+            });
+
+            // # Click the confirm button
+            cy.findByRole('button', {name: 'Delete'}).click();
+
+            // * Verify that the checklist is no longer there
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText(title).should('not.exist');
+            });
+        });
     });
 });
