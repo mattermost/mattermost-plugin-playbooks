@@ -99,11 +99,9 @@ export const UpdateRequestPost = (props: Props) => {
                 >
                     {formatMessage({defaultMessage: 'Post update'})}
                 </PostUpdatePrimaryButton>
-                <Spacer/>
                 <PostUpdateTertiaryButton onClick={() => doDelete(dismissUrl, dismissBody)}>
                     {formatMessage({defaultMessage: 'Dismiss'})}
                 </PostUpdateTertiaryButton>
-                <Spacer/>
                 <SelectWrapper
                     filterOption={null}
                     isMulti={false}
@@ -150,12 +148,6 @@ const PostUpdatePrimaryButton = styled(PrimaryButton)`
 
 const PostUpdateTertiaryButton = styled(TertiaryButton)`
     ${PostUpdateButtonCommon}
-`;
-
-const Spacer = styled.div`
-    flex-grow: 0;
-    flex-shrink: 0;
-    width: 4px;
 `;
 
 const Container = styled(CustomPostContainer)`
