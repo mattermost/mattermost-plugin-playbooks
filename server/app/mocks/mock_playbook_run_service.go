@@ -575,6 +575,20 @@ func (mr *MockPlaybookRunServiceMockRecorder) ResetReminderTimer(arg0 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetReminderTimer", reflect.TypeOf((*MockPlaybookRunService)(nil).ResetReminderTimer), arg0)
 }
 
+// RestoreChecklistItem mocks base method
+func (m *MockPlaybookRunService) RestoreChecklistItem(arg0, arg1 string, arg2, arg3 int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RestoreChecklistItem", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RestoreChecklistItem indicates an expected call of RestoreChecklistItem
+func (mr *MockPlaybookRunServiceMockRecorder) RestoreChecklistItem(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreChecklistItem", reflect.TypeOf((*MockPlaybookRunService)(nil).RestoreChecklistItem), arg0, arg1, arg2, arg3)
+}
+
 // RestorePlaybookRun mocks base method
 func (m *MockPlaybookRunService) RestorePlaybookRun(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
@@ -654,24 +668,10 @@ func (m *MockPlaybookRunService) SkipChecklistItem(arg0, arg1 string, arg2, arg3
 	return ret0
 }
 
-// SkipChecklistItem indicates an expected call of RemoveChecklistItem
+// SkipChecklistItem indicates an expected call of SkipChecklistItem
 func (mr *MockPlaybookRunServiceMockRecorder) SkipChecklistItem(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SkipChecklistItem", reflect.TypeOf((*MockPlaybookRunService)(nil).SkipChecklistItem), arg0, arg1, arg2, arg3)
-}
-
-// SkipChecklistItem mocks base method
-func (m *MockPlaybookRunService) RestoreChecklistItem(arg0, arg1 string, arg2, arg3 int) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RestoreChecklistItem", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SkipChecklistItem indicates an expected call of RemoveChecklistItem
-func (mr *MockPlaybookRunServiceMockRecorder) RestoreChecklistItem(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreChecklistItem", reflect.TypeOf((*MockPlaybookRunService)(nil).SkipChecklistItem), arg0, arg1, arg2, arg3)
 }
 
 // ToggleCheckedState mocks base method
