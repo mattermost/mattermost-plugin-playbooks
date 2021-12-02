@@ -22,6 +22,7 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
+    addNewTask,
     finishRun,
     playbookRunUpdated,
     setAllChecklistsCollapsedState,
@@ -143,6 +144,18 @@ const RHSChecklists = (props: Props) => {
                     setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
                     disabled={finished}
                 >
+                    {checklist.items.length === 0 &&
+                    <EmptyChecklistContainer className='checklist'>
+                        <AddTaskLink
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                dispatch(addNewTask(checklistIndex));
+                            }}
+                        >
+                            {formatMessage({defaultMessage: '+ Add task'})}
+                        </AddTaskLink>
+                    </EmptyChecklistContainer>
+                    }
                     {visibleTasks(checklist, checklistItemsFilter, myUser.id) &&
                     <ChecklistContainer className='checklist'>
                         <DragDropContext
@@ -282,6 +295,20 @@ const ChecklistContainer = styled.div`
     border:  1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-top: 0;
     padding: 16px 12px;
+`;
+
+const EmptyChecklistContainer = styled(ChecklistContainer)`
+    padding: 12px;
+`;
+
+const AddTaskLink = styled.button`
+    font-size: 12px;
+    font-weight: 600;
+
+    color: var(--button-bg);
+
+    background: none;
+    border: none;
 `;
 
 const HoverRow = styled(HoverMenu)`
