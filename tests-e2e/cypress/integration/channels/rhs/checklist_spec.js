@@ -160,7 +160,21 @@ describe('channels > rhs > checklist', () => {
         });
 
         it('still shows slash commands as having been run after reload', () => {
-            // # Navigate directly to the application and the playbook run channel
+            cy.get('#rhsContainer').should('exist').within(() => {
+                // * Verify the command has not yet been run.
+                cy.findAllByTestId('run').eq(1).should('have.text', 'Run');
+
+                // * Run the /invalid slash command
+                cy.findAllByTestId('run').eq(1).click();
+
+                // * Verify the command has now been run.
+                cy.findAllByTestId('run').eq(1).should('have.text', 'Rerun');
+            });
+
+            // # Verify the expected output.
+            cy.verifyPostedMessage('VALID');
+
+            // # Reload the page
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
             cy.get('#rhsContainer').should('exist').within(() => {
