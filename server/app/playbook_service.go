@@ -323,6 +323,11 @@ func (s *playbookService) AutoFollow(playbookID, userID string) error {
 		return errors.Wrapf(err, "user `%s` failed to auto-follow the playbook `%s`", userID, playbookID)
 	}
 
+	playbook, err := s.store.Get(playbookID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+	s.telemetry.AutoFollowPlaybook(playbook, userID)
 	return nil
 }
 
@@ -332,6 +337,11 @@ func (s *playbookService) AutoUnfollow(playbookID, userID string) error {
 		return errors.Wrapf(err, "user `%s` failed to auto-unfollow the playbook `%s`", userID, playbookID)
 	}
 
+	playbook, err := s.store.Get(playbookID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+	s.telemetry.AutoUnfollowPlaybook(playbook, userID)
 	return nil
 }
 

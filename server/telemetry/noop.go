@@ -140,3 +140,19 @@ func (t *NoopTelemetry) FrontendTelemetryForPlaybookTemplate(templateName string
 // ChangeDigestSettings does nothing
 func (t *NoopTelemetry) ChangeDigestSettings(userID string, old app.DigestNotificationSettings, new app.DigestNotificationSettings) {
 }
+
+// Follow tracks userID following a playbook run.
+func (t *NoopTelemetry) Follow(playbookRun *app.PlaybookRun, userID string) {
+}
+
+// Unfollow tracks userID following a playbook run.
+func (t *NoopTelemetry) Unfollow(playbookRun *app.PlaybookRun, userID string) {
+}
+
+// AutoFollowPlaybook tracks the auto-follow of a playbook.
+func (t *NoopTelemetry) AutoFollowPlaybook(playbook app.Playbook, userID string) {
+}
+
+// AutoUnfollowPlaybook tracks the auto-unfollow of a playbook.
+func (t *NoopTelemetry) AutoUnfollowPlaybook(playbook app.Playbook, userID string) {
+}
