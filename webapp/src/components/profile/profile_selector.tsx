@@ -22,6 +22,7 @@ export interface Option {
     label: JSX.Element | string;
     userId: string;
     userType: string;
+    userObj: UserProfile;
 }
 
 interface ActionObj {
@@ -44,7 +45,7 @@ interface Props {
     selfIsFirstOption?: boolean;
     getUsers: () => Promise<UserProfile[]>;
     getUsersInTeam: () => Promise<UserProfile[]>;
-    onSelectedChange?: (userId?: string, userType?: string) => void;
+    onSelectedChange?: (userId?: string, userType?: string, userObj?: UserProfile) => void;
     customControlProps?: any;
     showOnRight?: boolean;
     className?: string;
@@ -111,7 +112,8 @@ export default function ProfileSelector(props: Props) {
                     />
                 ),
                 userId: user.id,
-                userType: "NonMember"
+                userType: "NonMember",
+                userObj: user,
             } as Option);
         });
 
@@ -125,7 +127,8 @@ export default function ProfileSelector(props: Props) {
                     />
                 ),
                 userId: user.id,
-                userType: "Member"
+                userType: "Member",
+                userObj: user,
             } as Option);
         });
 
@@ -171,7 +174,7 @@ export default function ProfileSelector(props: Props) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.userId, value?.userType);
+            props.onSelectedChange(value?.userId, value?.userType, value?.userObj);
         }   
         
     };

@@ -7,6 +7,8 @@ import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {UserProfile} from 'mattermost-redux/types/users';
+import { getChannelByName } from 'mattermost-webapp/packages/mattermost-redux/src/utils/channel_utils';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
@@ -34,7 +36,7 @@ const RHSAbout = (props: Props) => {
     const profilesInTeam = useProfilesInTeam();
     const collapsed = useSelector(currentRHSAboutCollapsedState);
     const [showAddToChannel, setShowAddToChannelConfirm] = useState(false);
-    const [currentUserSelect, setCurrentUserSelect] = useState<string | null>();
+    const [currentUserSelect, setCurrentUserSelect] = useState<UserProfile | null>();
 
     const toggleCollapsed = () => dispatch(setRHSAboutCollapsedState(channelId, !collapsed));
 
@@ -57,7 +59,7 @@ const RHSAbout = (props: Props) => {
         }
     }
 
-    const onSelectedProfileChange = (userId?: string, userType?: string) => {
+    const onSelectedProfileChange = (userId?: string, userType?: string, userObj?: UserProfile) => {
         if (!userId || !userType) {
             return;
         }
@@ -66,7 +68,8 @@ const RHSAbout = (props: Props) => {
             setOwnerUtil(userId)
         }
         else{
-            setCurrentUserSelect(userId)
+            console.log(userObj)
+            setCurrentUserSelect(userObj)
             setShowAddToChannelConfirm(true);
         }
     };
@@ -84,7 +87,6 @@ const RHSAbout = (props: Props) => {
     };
 
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
-    console.log("Is this updated on user remove?")
 
     return (
         <>
@@ -138,15 +140,15 @@ const RHSAbout = (props: Props) => {
             </Container>
             <ConfirmModal
                 show={showAddToChannel}
-                title={formatMessage({defaultMessage: 'Add To Channel'})}
-                message={formatMessage({defaultMessage: 'The following user is not in the current Channel. We need to add the user to the channel first.'})}
-                confirmButtonText={formatMessage({defaultMessage: 'Add To Channel'})}
-                onConfirm={async () => {
+                title={formatMessage({defaultMessage: 'Add {fname} {lname} to Channel'}, {fname: currentUserSelect?.first_name, lname: currentUserSelect?.last_name})}
+                message={formatMessage({defaultMessage: '@{fname} {lname} is not a member of the ? channel. Would you like to add them to this channel? They will have access to all message history.'}, {fname: currentUserSelect?.first_name, lname: currentUserSelect?.last_name})}
+                confirmButtonText={formatMessage({defaultMessage: 'Add'})}
+                onConfirm={() => {
                     if(currentUserSelect){
-                        dispatch(addToChannel(currentUserSelect))
+                        dispatch(addToChannel(currentUserSelect.id))
                         setShowAddToChannelConfirm(false)
                         // lets set the added user now
-                        setOwnerUtil(currentUserSelect)
+                        setOwnerUtil(currentUserSelect.id)
                     }
                 }
                 }
