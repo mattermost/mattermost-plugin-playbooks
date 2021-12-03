@@ -1339,29 +1339,29 @@ describe('playbooks > edit', () => {
                     cy.get('label input').should('not.be.checked');
                 });
             });
+            
+            it('can be saved', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+    
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+    
+                // # Uncheck toggle
+                cy.get('#status-updates label input').click({force: true});
+    
+                // # Save the playbook
+                cy.findByTestId('save_playbook').click();
+    
+                // # Navigate again to the playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+    
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+    
+                // * Verify that the toggle is unchecked
+                cy.get('#status-updates label input').should('not.be.checked');
+            });        
         });
-
-        it('can be saved', () => {
-            // # Visit the selected playbook
-            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-            // # Switch to Templates tab
-            cy.get('#root').findByText('Templates').click();
-
-            // # Uncheck toggle
-            cy.get('#status-updates label input').click({force: true});
-
-            // # Save the playbook
-            cy.findByTestId('save_playbook').click();
-
-            // # Navigate again to the playbook
-            cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-
-            // # Switch to Templates tab
-            cy.get('#root').findByText('Templates').click();
-
-            // * Verify that the toggle is unchecked
-            cy.get('#status-updates label input').should('not.be.checked');
-        });        
     });
 });
