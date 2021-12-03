@@ -98,7 +98,7 @@ describe('channels > rhs > checklist', () => {
         let playbookRunName;
         let playbookRunChannelName;
 
-        before(() => {
+        beforeEach(() => {
             // # Run the playbook
             const now = Date.now();
             playbookRunName = 'Playbook Run (' + now + ')';
@@ -117,9 +117,7 @@ describe('channels > rhs > checklist', () => {
                 cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[4].id);
                 cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[5].id);
             });
-        });
 
-        beforeEach(() => {
             // # Navigate directly to the application and the playbook run channel
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
