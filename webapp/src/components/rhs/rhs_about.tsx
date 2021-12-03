@@ -68,7 +68,6 @@ const RHSAbout = (props: Props) => {
             setOwnerUtil(userId)
         }
         else{
-            console.log(userObj)
             setCurrentUserSelect(userObj)
             setShowAddToChannelConfirm(true);
         }
@@ -140,7 +139,7 @@ const RHSAbout = (props: Props) => {
             </Container>
             <ConfirmModal
                 show={showAddToChannel}
-                title={formatMessage({defaultMessage: 'Add {fname} {lname} to Channel'}, {fname: currentUserSelect?.first_name, lname: currentUserSelect?.last_name})}
+                title={formatMessage({defaultMessage: 'Add **@{username}** to Channel'}, {username:currentUserSelect?.username, fname: currentUserSelect?.first_name, lname: currentUserSelect?.last_name})}
                 message={formatMessage({defaultMessage: '@{fname} {lname} is not a member of the ? channel. Would you like to add them to this channel? They will have access to all message history.'}, {fname: currentUserSelect?.first_name, lname: currentUserSelect?.last_name})}
                 confirmButtonText={formatMessage({defaultMessage: 'Add'})}
                 onConfirm={() => {
