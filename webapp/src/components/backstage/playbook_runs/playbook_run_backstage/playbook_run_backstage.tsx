@@ -265,12 +265,8 @@ const PlaybookRunBackstage = () => {
             }
         };
 
-        if (currentRun) {
-            setPlaybookRun(currentRun);
-        } else {
-            fetchData();
-        }
-    }, [playbookRun?.playbook_id, currentRun]);
+        fetchData();
+    }, [playbookRun?.playbook_id]);
 
     const deleteTimelineEvent = async (id: string) => {
         if (!playbookRun) {
