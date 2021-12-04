@@ -323,6 +323,12 @@ type PlaybookTelemetry interface {
 
 	// FrontendTelemetryForPlaybookTemplate tracks an event originating from the frontend
 	FrontendTelemetryForPlaybookTemplate(templateName string, userID, action string)
+
+	// AutoFollowPlaybook tracks the auto-follow of a playbook.
+	AutoFollowPlaybook(playbook Playbook, userID string)
+
+	// AutoUnfollowPlaybook tracks the auto-unfollow of a playbook.
+	AutoUnfollowPlaybook(playbook Playbook, userID string)
 }
 
 const (

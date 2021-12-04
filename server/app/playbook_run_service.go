@@ -2439,6 +2439,12 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 		return errors.Wrapf(err, "user `%s` failed to follow the run `%s`", userID, playbookRunID)
 	}
 
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+	s.telemetry.Follow(playbookRun, userID)
+
 	return nil
 }
 
@@ -2447,6 +2453,12 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	if err := s.store.Unfollow(playbookRunID, userID); err != nil {
 		return errors.Wrapf(err, "user `%s` failed to unfollow the run `%s`", userID, playbookRunID)
 	}
+
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+	s.telemetry.Unfollow(playbookRun, userID)
 
 	return nil
 }

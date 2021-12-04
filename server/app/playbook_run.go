@@ -703,6 +703,12 @@ type PlaybookRunTelemetry interface {
 
 	// PublishRetrospective event
 	PublishRetrospective(playbookRun *PlaybookRun, userID string)
+
+	// Follow tracks userID following a playbook run.
+	Follow(playbookRun *PlaybookRun, userID string)
+
+	// Unfollow tracks userID following a playbook run.
+	Unfollow(playbookRun *PlaybookRun, userID string)
 }
 
 type JobOnceScheduler interface {

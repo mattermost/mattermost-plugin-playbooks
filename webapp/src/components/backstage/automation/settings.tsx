@@ -18,6 +18,7 @@ import {AutoAssignOwner} from 'src/components/backstage/automation/auto_assign_o
 import {Broadcast} from 'src/components/backstage/automation/broadcast';
 
 import {MessageOnJoin} from 'src/components/backstage/automation/message_on_join';
+import {CategorizePlaybookRun} from 'src/components/backstage/automation/categorize_playbook_run';
 
 interface Props {
     searchProfiles: (term: string) => ActionFunc;
@@ -178,17 +179,11 @@ export const AutomationSettings = (props: Props) => {
                     />
                 </Setting>
                 <Setting id={'user-joins-channel-categorize'}>
-                    <PatternedInput
+                    <CategorizePlaybookRun
                         enabled={props.categorizePlaybookRun}
                         onToggle={props.onToggleCategorizePlaybookRun}
-                        input={props.categoryName}
-                        onChange={props.categoryNameChange}
-                        pattern={'[\\s\\S]*'}
-                        placeholderText={'Enter category name'}
-                        textOnToggle={formatMessage({defaultMessage: 'Add the channel to a sidebar category'})}
-                        type={'text'}
-                        errorText={formatMessage({defaultMessage: 'Invalid category name.'})} // this should not happen
-                        maxLength={22}
+                        categoryName={props.categoryName}
+                        onCategorySelected={props.categoryNameChange}
                     />
                 </Setting>
             </Section>

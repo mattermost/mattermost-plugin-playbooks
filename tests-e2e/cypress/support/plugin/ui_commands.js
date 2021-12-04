@@ -144,6 +144,10 @@ Cypress.Commands.add('openChannelSelector', () => {
     cy.findByText('Select a channel').click({force: true});
 });
 
+Cypress.Commands.add('openCategorySelector', () => {
+    cy.get('#playbook-automation-categorize-playbook-run input').click({force: true});
+});
+
 Cypress.Commands.add('addInvitedUser', (userName) => {
     cy.get('.invite-users-selector__menu').within(() => {
         cy.findByText(userName).click({force: true});
@@ -159,6 +163,12 @@ Cypress.Commands.add('selectOwner', (userName) => {
 Cypress.Commands.add('selectChannel', (channelName) => {
     cy.get('#playbook-automation-broadcast .playbooks-rselect__menu').within(() => {
         cy.findByText(channelName).click({force: true});
+    });
+});
+
+Cypress.Commands.add('selectCategory', (categoryName) => {
+    cy.get('#playbook-automation-categorize-playbook-run .channel-selector__menu').within(() => {
+        cy.findByText(categoryName).click({force: true});
     });
 });
 
