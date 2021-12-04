@@ -24,5 +24,13 @@
     "1I48bs": "Modèle de rétrospective",
     "/1FEJW": "PARTICIPANTS ACTIFS par jour sur les 14 derniers jours",
     "+ZIXOR": "Accès au canal",
-    "+8G9qr": "Texte par défaut pour la rétrospective."
+    "+8G9qr": "Texte par défaut pour la rétrospective.",
+    "/4tOwT": "Passer",
+    "+Tmpup": "Vous recevrez automatiquement des mises à jour quand ce playbook sera lancé.",
+    "zINlao": "Propriétaire",
+    "lxfpbh": "Le propriétaire {reminderEnabled, select, true {recevra un rappel pour envoyer une mise à jour de statut tous les} other {ne recevra pas de rappel pour envoyer une mise à jour de statut}}",
+    "jIgqRa": "Propriétaire / Participants",
+    "fXGjhC": "Propriétaire changé depuis {summary}",
+    "fV6578": "Assigner le rôle de propriétaire",
+    "+QgvjN": "Assigner le rôle de propriétaire à"
 }
