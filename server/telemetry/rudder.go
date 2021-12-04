@@ -33,6 +33,8 @@ const (
 	actionUpdateRetrospective      = "update_retrospective"
 	actionPublishRetrospective     = "publish_retrospective"
 	actionRemoveTimelineEvent      = "remove_timeline_event"
+	actionFollow                   = "follow"
+	actionUnfollow                 = "unfollow"
 
 	eventTasks                = "tasks"
 	actionAddTask             = "add_task"
@@ -45,10 +47,12 @@ const (
 	actionSetAssigneeForTask  = "set_assignee_for_task"
 	actionRunTaskSlashCommand = "run_task_slash_command"
 
-	eventPlaybook = "playbook"
-	actionUpdate  = "update"
-	actionDelete  = "delete"
-	actionRestore = "restore"
+	eventPlaybook      = "playbook"
+	actionUpdate       = "update"
+	actionDelete       = "delete"
+	actionRestore      = "restore"
+	actionAutoFollow   = "auto_follow"
+	actionAutoUnfollow = "auto_unfollow"
 
 	eventFrontend = "frontend"
 
@@ -202,6 +206,20 @@ func (t *RudderTelemetry) AddPostToTimeline(playbookRun *app.PlaybookRun, userID
 func (t *RudderTelemetry) RemoveTimelineEvent(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionRemoveTimelineEvent
+	t.track(eventPlaybookRun, properties)
+}
+
+// Follow tracks userID following a playbook run.
+func (t *RudderTelemetry) Follow(playbookRun *app.PlaybookRun, userID string) {
+	properties := playbookRunProperties(playbookRun, userID)
+	properties["Action"] = actionFollow
+	t.track(eventPlaybookRun, properties)
+}
+
+// Unfollow tracks userID following a playbook run.
+func (t *RudderTelemetry) Unfollow(playbookRun *app.PlaybookRun, userID string) {
+	properties := playbookRunProperties(playbookRun, userID)
+	properties["Action"] = actionUnfollow
 	t.track(eventPlaybookRun, properties)
 }
 
@@ -377,6 +395,20 @@ func (t *RudderTelemetry) DeletePlaybook(playbook app.Playbook, userID string) {
 func (t *RudderTelemetry) RestorePlaybook(playbook app.Playbook, userID string) {
 	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionRestore
+	t.track(eventPlaybook, properties)
+}
+
+// AutoFollowPlaybook tracks the auto-follow of a playbook.
+func (t *RudderTelemetry) AutoFollowPlaybook(playbook app.Playbook, userID string) {
+	properties := playbookProperties(playbook, userID)
+	properties["Action"] = actionAutoFollow
+	t.track(eventPlaybook, properties)
+}
+
+// AutoUnfollowPlaybook tracks the auto-unfollow of a playbook.
+func (t *RudderTelemetry) AutoUnfollowPlaybook(playbook app.Playbook, userID string) {
+	properties := playbookProperties(playbook, userID)
+	properties["Action"] = actionAutoUnfollow
 	t.track(eventPlaybook, properties)
 }
 

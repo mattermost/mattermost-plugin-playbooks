@@ -906,7 +906,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{})).Return(nil, nil)
 		store.EXPECT().GetPlaybookRunIDForChannel(gomock.Any()).Return("playbook_run_id", nil)
-		store.EXPECT().GetPlaybookRun("playbook_run_id").Return(playbookRun, nil).Times(2)
+		store.EXPECT().GetPlaybookRun("playbook_run_id").Return(playbookRun, nil).Times(3)
 		store.EXPECT().Follow("playbook_run_id", "user_id").Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel(gomock.Any(), gomock.Any(), gomock.Any())
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
@@ -1017,7 +1017,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 
 		store.EXPECT().CreateTimelineEvent(gomock.AssignableToTypeOf(&app.TimelineEvent{})).Return(nil, nil)
 		store.EXPECT().GetPlaybookRunIDForChannel(gomock.Any()).Return("playbook_run_id", nil)
-		store.EXPECT().GetPlaybookRun("playbook_run_id").Return(playbookRun, nil).Times(2)
+		store.EXPECT().GetPlaybookRun("playbook_run_id").Return(playbookRun, nil).Times(3)
 		store.EXPECT().Follow("playbook_run_id", "user_id").Return(nil)
 		poster.EXPECT().PublishWebsocketEventToChannel(gomock.Any(), gomock.Any(), gomock.Any())
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
