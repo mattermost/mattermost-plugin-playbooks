@@ -234,6 +234,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
         reminderTimerDefaultSeconds = 24 * 60 * 60, // 24 hours
         statusUpdateEnabled = true,
         retrospectiveTemplate,
+        retrospectiveEnabled = true,
         invitedUserIds,
         inviteUsersEnabled,
         defaultOwnerId,
@@ -266,6 +267,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
             reminder_timer_default_seconds: reminderTimerDefaultSeconds,
             status_update_enabled: statusUpdateEnabled,
             retrospective_template: retrospectiveTemplate,
+            retrospective_enabled: retrospectiveEnabled,
             invited_user_ids: invitedUserIds,
             invite_users_enabled: inviteUsersEnabled,
             default_owner_id: defaultOwnerId,

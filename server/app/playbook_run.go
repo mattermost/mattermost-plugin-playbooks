@@ -18,7 +18,7 @@ const (
 
 // PlaybookRun holds the detailed information of a playbook run.
 //
-// NOTE: When adding a column to the db, search for "When adding a Playbook Run column" to see where
+// NOTE: When adding a column to the db, search for "When adding a PlaybookRun column" to see where
 // that column needs to be added in the sqlstore code.
 type PlaybookRun struct {
 	// ID is the unique identifier of the playbook run.
@@ -138,6 +138,9 @@ type PlaybookRun struct {
 	// RetrospectiveReminderIntervalSeconds is the interval, in seconds, between subsequent reminders
 	// to fill the retrospective.
 	RetrospectiveReminderIntervalSeconds int64 `json:"retrospective_reminder_interval_seconds"`
+
+	// Defines if retrospective functionality is enabled
+	RetrospectiveEnabled bool `json:"retrospective_enabled"`
 
 	// MessageOnJoin, if not empty, is the message shown to every user that joins the channel of
 	// the playbook run.
