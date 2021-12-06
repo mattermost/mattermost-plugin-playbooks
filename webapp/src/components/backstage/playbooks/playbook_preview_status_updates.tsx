@@ -47,7 +47,7 @@ const PlaybookPreviewStatusUpdates = (props: Props) => {
         !showReminderCardEntry &&
         !showUpdatePostCardEntryemptyUpdatePostedEntry;
 
-    if (allEmpty) {
+    if (allEmpty || !props.playbook.status_update_enabled) {
         return null;
     }
 

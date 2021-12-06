@@ -232,6 +232,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
         broadcastChannelIds,
         reminderMessageTemplate,
         reminderTimerDefaultSeconds = 24 * 60 * 60, // 24 hours
+        statusUpdateEnabled = true,
         retrospectiveTemplate,
         invitedUserIds,
         inviteUsersEnabled,
@@ -263,6 +264,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
             broadcast_channel_ids: broadcastChannelIds,
             reminder_message_template: reminderMessageTemplate,
             reminder_timer_default_seconds: reminderTimerDefaultSeconds,
+            status_update_enabled: statusUpdateEnabled,
             retrospective_template: retrospectiveTemplate,
             invited_user_ids: invitedUserIds,
             invite_users_enabled: inviteUsersEnabled,

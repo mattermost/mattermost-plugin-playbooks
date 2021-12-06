@@ -43,6 +43,7 @@ import {
     StyledMarkdownTextbox,
     StyledSelect,
 } from './styles';
+import {Toggle} from './automation/toggle';
 
 const Container = styled.div`
     display: flex;
@@ -161,6 +162,16 @@ const OuterContainer = styled.div`
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+`;
+
+const BackstageGroupToggleHeader = styled.div`
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--center-channel-color);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 `;
 
 interface Props {
@@ -472,7 +483,7 @@ const PlaybookEdit = (props: Props) => {
     const handleToggleBroadcastChannels = () => {
         setPlaybook({
             ...playbook,
-            broadcast_enabled: !playbook.broadcast_enabled,
+            broadcast_enabled: !playbook.broadcast_enabled && playbook.status_update_enabled,
         });
         setChangesMade(true);
     };
@@ -504,7 +515,7 @@ const PlaybookEdit = (props: Props) => {
     const handleToggleWebhookOnStatusUpdate = () => {
         setPlaybook({
             ...playbook,
-            webhook_on_status_update_enabled: !playbook.webhook_on_status_update_enabled,
+            webhook_on_status_update_enabled: !playbook.webhook_on_status_update_enabled && playbook.status_update_enabled,
         });
         setChangesMade(true);
     };
@@ -616,20 +627,6 @@ const PlaybookEdit = (props: Props) => {
                             />
                             <TabContainer>
                                 <SidebarBlock>
-                                    <DefaultUpdateTimer
-                                        seconds={playbook.reminder_timer_default_seconds}
-                                        setSeconds={(seconds: number) => {
-                                            if (seconds !== playbook.reminder_timer_default_seconds &&
-                                                seconds > 0) {
-                                                setPlaybook({
-                                                    ...playbook,
-                                                    reminder_timer_default_seconds: seconds,
-                                                });
-                                            }
-                                        }}
-                                    />
-                                </SidebarBlock>
-                                <SidebarBlock>
                                     <BackstageSubheader>
                                         {formatMessage({defaultMessage: 'Run Summary'})}
                                         <BackstageSubheaderDescription>
@@ -651,6 +648,38 @@ const PlaybookEdit = (props: Props) => {
                                     />
                                 </SidebarBlock>
                                 <SidebarBlock>
+                                    <BackstageGroupToggleHeader id={'status-updates'}>
+                                        <Toggle
+                                            isChecked={playbook.status_update_enabled}
+                                            onChange={() => {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    status_update_enabled: !playbook.status_update_enabled,
+                                                    webhook_on_status_update_enabled: playbook.webhook_on_status_update_enabled && !playbook.status_update_enabled,
+                                                    broadcast_enabled: playbook.broadcast_enabled && !playbook.status_update_enabled,
+                                                });
+                                                setChangesMade(true);
+                                            }}
+                                        />
+                                        {formatMessage({defaultMessage: 'Enable status updates'})}
+                                    </BackstageGroupToggleHeader>
+                                </SidebarBlock>
+                                <SidebarBlock id={'default-update-timer'}>
+                                    <DefaultUpdateTimer
+                                        seconds={playbook.reminder_timer_default_seconds}
+                                        setSeconds={(seconds: number) => {
+                                            if (seconds !== playbook.reminder_timer_default_seconds &&
+                                                seconds > 0) {
+                                                setPlaybook({
+                                                    ...playbook,
+                                                    reminder_timer_default_seconds: seconds,
+                                                });
+                                            }
+                                        }}
+                                        disabled={!playbook.status_update_enabled}
+                                    />
+                                </SidebarBlock>
+                                <SidebarBlock id={'status-update-text'}>
                                     <BackstageSubheader>
                                         {formatMessage({defaultMessage: 'Status updates'})}
                                         <BackstageSubheaderDescription>
@@ -669,6 +698,7 @@ const PlaybookEdit = (props: Props) => {
                                             });
                                             setChangesMade(true);
                                         }}
+                                        disabled={!playbook.status_update_enabled}
                                     />
                                 </SidebarBlock>
                                 {retrospectiveAccess &&
@@ -754,6 +784,7 @@ const PlaybookEdit = (props: Props) => {
                                     onToggleCategorizePlaybookRun={handleToggleCategorizePlaybookRun}
                                     categoryName={playbook.category_name}
                                     categoryNameChange={handleCategoryNameChange}
+                                    statusUpdateEnabled={playbook.status_update_enabled}
                                     channelNameTemplate={playbook.channel_name_template}
                                     onChannelNameTemplateChange={handleChannelNameTemplateChange}
                                 />
