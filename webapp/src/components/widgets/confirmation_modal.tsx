@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
 
@@ -76,6 +76,32 @@ type Props = {
 type State = {
     checked: boolean;
 }
+
+export const makeUncontrolledConfirmModalDefinition = (props: Props) => ({
+    modalId: 'confirm',
+    dialogType: uncontrolledConfirmModal,
+    dialogProps: props,
+});
+
+const uncontrolledConfirmModal = (props: Props) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [show, setShow] = useState(true);
+
+    return (
+        <ConfirmModal
+            {...props}
+            show={show}
+            onConfirm={(checked) => {
+                setShow(false);
+                props.onConfirm(checked);
+            }}
+            onCancel={(checked) => {
+                setShow(false);
+                props.onCancel(checked);
+            }}
+        />
+    );
+};
 
 export default class ConfirmModal extends React.Component<Props, State> {
     static defaultProps = {

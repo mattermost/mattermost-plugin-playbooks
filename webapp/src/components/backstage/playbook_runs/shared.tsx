@@ -29,7 +29,8 @@ export const TabPageContainer = styled.div`
 `;
 
 export const Title = styled.div`
-    ${SemiBoldHeading}
+    ${SemiBoldHeading} {
+    }
 
     color: var(--button-bg);
     font-size: 18px;
@@ -74,8 +75,12 @@ export const ExpandRight = styled.div`
     margin-left: auto;
 `;
 
-export const Spacer = styled.div<{size: number}>`
+export const HorizontalSpacer = styled.div<{ size: number }>`
     margin-left: ${(props) => props.size}px;
+`;
+
+export const VerticalSpacer = styled.div<{ size: number }>`
+    margin-top: ${(props) => props.size}px;
 `;
 
 export const PrimaryButtonRight = styled(PrimaryButton)`

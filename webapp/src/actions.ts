@@ -105,7 +105,18 @@ export function promptUpdateStatus(
         const state = getState();
         const hasPermission = canIPostUpdateForRun(state, channelId, teamId);
 
-        dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookRunId, channelId, hasPermission})));
+        const openUpdateRunStatusModal = (message?: string, reminderInSeconds?: number, finishRunChecked?: boolean) => {
+            dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({
+                playbookRunId,
+                channelId,
+                hasPermission,
+                reopenWithState: openUpdateRunStatusModal,
+                message,
+                reminderInSeconds,
+                finishRunChecked,
+            })));
+        };
+        openUpdateRunStatusModal();
     };
 }
 

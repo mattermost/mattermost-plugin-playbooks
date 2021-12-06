@@ -355,7 +355,7 @@ const allComplete = (checklists: Checklist[]) => {
     return outstandingTasks(checklists) === 0;
 };
 
-const outstandingTasks = (checklists: Checklist[]) => {
+export const outstandingTasks = (checklists: Checklist[]) => {
     let count = 0;
     for (const list of checklists) {
         for (const item of list.items) {
