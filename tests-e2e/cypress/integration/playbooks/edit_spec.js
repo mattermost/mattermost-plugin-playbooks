@@ -1396,6 +1396,173 @@ describe('playbooks > edit', () => {
                 });
             })
         });
+        describe('status updates enable / disabled', () => {
+            it('is enabled in a new playbook', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // * Verify that the toggle is checked
+                cy.get('#status-updates label input').should('be.checked');
+            });
+
+            it('can be disabled', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // * Verify that toggle can be disabled
+                cy.get('#status-updates').within(() => {
+                    // * Verify that the toggle is checked
+                    cy.get('label input').should('be.checked');
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+
+                // * Verify that the update timer is disabled
+                cy.get('#default-update-timer').within(() => {
+                    cy.getStyledComponent('StyledSelect').should(
+                        'have.class',
+                        'playbooks-rselect--is-disabled'
+                    );
+                });                
+                
+                // * Verify that the update text is disabled
+                cy.get('#playbook_reminder_message_edit').should('be.disabled');
+
+                // # Switch to Actions tab
+                cy.get('#root').findByText('Actions').click();
+
+                // * Verify that the toggle can't be checked 
+                cy.get('#broadcast-channels').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+
+                    // # Click on the toggle
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+
+                // * Verify that the toggle can't be checked 
+                cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+
+                    // # Click on the toggle
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+            });
+
+            it('disabling status should disable actions(when an update is posted)', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Actions tab
+                cy.get('#root').findByText('Actions').click();
+
+                // * Verify that the toggle is checked 
+                cy.get('#broadcast-channels').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is checked
+                    cy.get('label input').should('be.checked');
+                });
+
+                // * Verify that the toggle is checked 
+                cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is checked
+                    cy.get('label input').should('be.checked');
+                });
+                
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // * Verify that toggle can be selected
+                cy.get('#status-updates').within(() => {
+                    // * Verify that the toggle is checked
+                    cy.get('label input').should('be.checked');
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+                
+                // # Switch to Actions tab
+                cy.get('#root').findByText('Actions').click();
+                
+                // * Verify that the toggle can't be checked 
+                cy.get('#broadcast-channels').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+
+                    // # Click on the toggle
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+
+                // * Verify that the toggle can't be checked 
+                cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+
+                    // # Click on the toggle
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+            });
+            
+            it('can be saved', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+    
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+    
+                // # Uncheck toggle
+                cy.get('#status-updates label input').click({force: true});
+    
+                // # Save the playbook
+                cy.findByTestId('save_playbook').click();
+    
+                // # Navigate again to the playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+    
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+    
+                // * Verify that the toggle is unchecked
+                cy.get('#status-updates label input').should('not.be.checked');
+            });
+        });
 
         describe('retrospective enable / disable', () => {
             it('is enabled in a new playbook', () => {
@@ -1462,6 +1629,6 @@ describe('playbooks > edit', () => {
                 // * Verify that the toggle is unchecked
                 cy.get('#retrospective-enabled label input').should('not.be.checked');
             });
-        });        
+        });
     });
 });

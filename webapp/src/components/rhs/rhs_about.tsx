@@ -69,7 +69,10 @@ const RHSAbout = (props: Props) => {
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
 
     return (
-        <Container tabIndex={0}>
+        <Container
+            tabIndex={0}
+            id={'rhs-about'}
+        >
             <ButtonsRow data-testid='buttons-row'>
                 <RHSAboutButtons
                     playbookRun={props.playbookRun}
@@ -113,16 +116,21 @@ const RHSAbout = (props: Props) => {
                 </Row>
             </>
             }
-            <RHSPostUpdate
-                collapsed={collapsed}
-                playbookRun={props.playbookRun}
-                updatesExist={props.playbookRun.status_posts.length !== 0}
-            />
+            {props.playbookRun.status_update_enabled && (
+                <RHSPostUpdate
+                    collapsed={collapsed}
+                    playbookRun={props.playbookRun}
+                    updatesExist={props.playbookRun.status_posts.length !== 0}
+                />
+            )}
         </Container>
     );
 };
 
 const Container = styled.div`
+    position: relative;
+    z-index: 2;
+
     margin-top: 3px;
     padding: 16px 12px;
 

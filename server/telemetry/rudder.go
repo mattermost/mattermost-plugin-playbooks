@@ -47,6 +47,11 @@ const (
 	actionSetAssigneeForTask  = "set_assignee_for_task"
 	actionRunTaskSlashCommand = "run_task_slash_command"
 
+	eventChecklists       = "checklists"
+	actionAddChecklist    = "add_checklist"
+	actionRemoveChecklist = "remove_checklist"
+	actionRenameChecklist = "rename_checklist"
+
 	eventPlaybook      = "playbook"
 	actionUpdate       = "update"
 	actionDelete       = "delete"
@@ -308,6 +313,36 @@ func (t *RudderTelemetry) RunTaskSlashCommand(playbookRunID, userID string, task
 	properties := taskProperties(playbookRunID, userID, task)
 	properties["Action"] = actionRunTaskSlashCommand
 	t.track(eventTasks, properties)
+}
+
+func checklistProperties(playbookRunID, userID string, checklist app.Checklist) map[string]interface{} {
+	return map[string]interface{}{
+		telemetryKeyPlaybookRunID: playbookRunID,
+		"UserActualID":            userID,
+		"ChecklistID":             checklist.ID,
+		"ChecklistNumItems":       len(checklist.Items),
+	}
+}
+
+// AddChecklist tracks the creation of a new checklist.
+func (t *RudderTelemetry) AddChecklist(playbookRunID, userID string, checklist app.Checklist) {
+	properties := checklistProperties(playbookRunID, userID, checklist)
+	properties["Action"] = actionAddChecklist
+	t.track(eventChecklists, properties)
+}
+
+// RemoveChecklist tracks the removal of a checklist.
+func (t *RudderTelemetry) RemoveChecklist(playbookRunID, userID string, checklist app.Checklist) {
+	properties := checklistProperties(playbookRunID, userID, checklist)
+	properties["Action"] = actionRemoveChecklist
+	t.track(eventChecklists, properties)
+}
+
+// RenameChecklist tracks the renaming of a checklist
+func (t *RudderTelemetry) RenameChecklist(playbookRunID, userID string, checklist app.Checklist) {
+	properties := checklistProperties(playbookRunID, userID, checklist)
+	properties["Action"] = actionRenameChecklist
+	t.track(eventChecklists, properties)
 }
 
 func (t *RudderTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, userID string) {

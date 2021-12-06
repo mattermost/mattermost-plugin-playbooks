@@ -242,4 +242,30 @@ describe('channels > rhs > status update', () => {
             });
         });
     });
+
+    describe('playbook with disabled status updates', () => {
+        before(() => {
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                userId: testUser,
+                broadcastChannelId: testChannel.id,
+                statusUpdateEnabled: false,
+            }).then((playbook) => {
+                testPlaybook = playbook;
+            });
+        });
+
+        describe('omit status update dialog when status updates are disabled', () => {
+            it('shows the default when we have not made an update before', () => {
+                // * Check if RHS section is loaded
+                cy.get('#rhs-about').should('exist');
+
+                // * Check if Post Update section is omitted
+                cy.get('#rhs-post-update').should('not.exist');
+            });
+        });    
+    
+    });
 });

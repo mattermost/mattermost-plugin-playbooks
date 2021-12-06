@@ -56,6 +56,7 @@ interface Props {
     onToggleCategorizePlaybookRun: () => void;
     categoryName: string;
     categoryNameChange: (categoryName: string) => void;
+    statusUpdateEnabled: boolean;
     channelNameTemplate: string;
     onChannelNameTemplateChange: (channelNameTemplate: string) => void;
 }
@@ -142,7 +143,7 @@ export const AutomationSettings = (props: Props) => {
                 </SectionTitle>
                 <Setting id={'broadcast-channels'}>
                     <Broadcast
-                        enabled={props.broadcastEnabled}
+                        enabled={props.broadcastEnabled && props.statusUpdateEnabled}
                         onToggle={props.onToggleBroadcastChannel}
                         channelIds={props.broadcastChannelIds}
                         onChannelsSelected={props.onBroadcastChannelsSelected}
@@ -150,7 +151,7 @@ export const AutomationSettings = (props: Props) => {
                 </Setting>
                 <Setting id={'playbook-run-status-update__outgoing-webhook'}>
                     <PatternedTextArea
-                        enabled={props.webhookOnStatusUpdateEnabled}
+                        enabled={props.webhookOnStatusUpdateEnabled && props.statusUpdateEnabled}
                         onToggle={props.onToggleWebhookOnStatusUpdate}
                         input={props.webhookOnStatusUpdateURLs.join('\n')}
                         onChange={props.webhookOnStatusUpdateChange}

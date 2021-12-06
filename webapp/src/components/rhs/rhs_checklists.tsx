@@ -4,7 +4,7 @@
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {
     DragDropContext,
     Draggable,
@@ -22,6 +22,7 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
+    addNewTask,
     finishRun,
     playbookRunUpdated,
     setAllChecklistsCollapsedState,
@@ -53,6 +54,7 @@ import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';
+import AddChecklistDialog from 'src/components/rhs/rhs_checklists_add_dialog';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -73,6 +75,7 @@ const RHSChecklists = (props: Props) => {
     const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
+    const [showAddChecklistDialog, setShowAddChecklistDialog] = useState(false);
 
     const checklists = props.playbookRun.checklists || [];
     const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
@@ -101,7 +104,7 @@ const RHSChecklists = (props: Props) => {
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
-            <MainTitleBG>
+            <MainTitleBG numChecklists={checklists.length}>
                 <MainTitle>
                     {formatMessage({defaultMessage: 'Checklists'})}
                     {
@@ -111,6 +114,11 @@ const RHSChecklists = (props: Props) => {
                                 title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
                                 className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
                                 onClick={() => dispatch(setAllChecklistsCollapsedState(channelId, !allCollapsed, checklists.length))}
+                            />
+                            <HoverMenuButton
+                                title={formatMessage({defaultMessage: 'Add checklist'})}
+                                className={'icon-plus icon-16 btn-icon'}
+                                onClick={() => setShowAddChecklistDialog(true)}
                             />
                             <MultiCheckbox
                                 options={filterOptions}
@@ -132,10 +140,23 @@ const RHSChecklists = (props: Props) => {
                     title={checklist.title}
                     items={checklist.items}
                     index={checklistIndex}
+                    numChecklists={checklists.length}
                     collapsed={Boolean(checklistsState[checklistIndex])}
                     setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
-                    disabled={finished}
+                    disabledOrRunID={finished || props.playbookRun.id}
                 >
+                    {checklist.items.length === 0 &&
+                    <EmptyChecklistContainer className='checklist'>
+                        <AddTaskLink
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                dispatch(addNewTask(checklistIndex));
+                            }}
+                        >
+                            {formatMessage({defaultMessage: '+ Add task'})}
+                        </AddTaskLink>
+                    </EmptyChecklistContainer>
+                    }
                     {visibleTasks(checklist, checklistItemsFilter, myUser.id) &&
                     <ChecklistContainer className='checklist'>
                         <DragDropContext
@@ -229,12 +250,19 @@ const RHSChecklists = (props: Props) => {
                     {formatMessage({defaultMessage: 'Finish run'})}
                 </FinishButton>
             }
+            <AddChecklistDialog
+                playbookRunID={props.playbookRun.id}
+                show={showAddChecklistDialog}
+                onHide={() => setShowAddChecklistDialog(false)}
+            />
         </InnerContainer>
     );
 };
 
 const InnerContainer = styled.div`
     position: relative;
+    z-index: 1;
+
     display: flex;
     flex-direction: column;
     padding: 0 12px 24px 12px;
@@ -244,9 +272,9 @@ const InnerContainer = styled.div`
     }
 `;
 
-const MainTitleBG = styled.div`
+const MainTitleBG = styled.div<{numChecklists: number}>`
     background-color: var(--center-channel-bg);
-    z-index: 2;
+    z-index: ${({numChecklists}) => numChecklists + 2};
     position: sticky;
     top: 0;
 `;
@@ -270,6 +298,20 @@ const ChecklistContainer = styled.div`
     border:  1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-top: 0;
     padding: 16px 12px;
+`;
+
+const EmptyChecklistContainer = styled(ChecklistContainer)`
+    padding: 12px;
+`;
+
+const AddTaskLink = styled.button`
+    font-size: 12px;
+    font-weight: 600;
+
+    color: var(--button-bg);
+
+    background: none;
+    border: none;
 `;
 
 const HoverRow = styled(HoverMenu)`
