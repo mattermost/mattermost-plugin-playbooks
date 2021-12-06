@@ -257,12 +257,12 @@ describe('channels > rhs > status update', () => {
             });
         });
 
-        describe('Omit status update dialog when status updates ar disabled', () => {
+        describe('omit status update dialog when status updates are disabled', () => {
             it('shows the default when we have not made an update before', () => {
-                // # Check if RHS section is loaded
+                // * Check if RHS section is loaded
                 cy.get('#rhs-about').should('exist');
 
-                // # Check if Post Update section is omitted
+                // * Check if Post Update section is omitted
                 cy.get('#rhs-post-update').should('not.exist');
             });
         });    

@@ -136,7 +136,7 @@ describe('runs > details', () => {
         });
 
 
-        it('should shows, that status updates were disabled', () => {
+        it('should show that status updates were disabled', () => {
             // # Visit the playbook run preview
             cy.visit(`/playbooks/runs/${playbookRun.id}/overview`);
 
