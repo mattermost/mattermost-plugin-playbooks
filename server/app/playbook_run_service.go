@@ -1343,15 +1343,33 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 
 	// Do we send a DM to the new assignee?
 	if itemToCheck.AssigneeID != "" && itemToCheck.AssigneeID != userID {
+		siteURL := model.ServiceSettingsDefaultSiteURL
+		if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+			siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+		}
+
 		var subjectUser *model.User
 		subjectUser, err = s.pluginAPI.User.Get(userID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
 
-		modifyMessage := fmt.Sprintf("@%s changed assignee of checklist item **%s** from **%s** to **%s**  for the run: [%s](%s)",
-			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, newAssigneeUserAtMention,
-			playbookRunToModify.Name, getRunDetailsRelativeURL(playbookRunToModify.ID))
+		var channel *model.Channel
+		channel, err = s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get channel")
+		}
+
+		var team *model.Team
+		team, err = s.pluginAPI.Team.Get(playbookRunToModify.TeamID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get team")
+		}
+
+		channelURL := fmt.Sprintf("[%s](%s/%s/channels/%s?telem=dm_assignedtask_clicked&forceRHSOpen)",
+			channel.DisplayName, siteURL, team.Name, channel.Name)
+		modifyMessage := fmt.Sprintf("#taskassigned @%s assigned you the task **%s** (previously assigned to %s) for the run: %s",
+			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, channelURL)
 
 		if err = s.poster.DM(itemToCheck.AssigneeID, &model.Post{Message: modifyMessage}); err != nil {
 			return errors.Wrapf(err, "failed to send DM in SetAssignee")
