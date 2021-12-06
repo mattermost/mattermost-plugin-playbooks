@@ -477,6 +477,15 @@ type PlaybookRunService interface {
 	// GetChecklistAutocomplete returns the list of checklists for playbookRunID to be used in autocomplete
 	GetChecklistAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error)
 
+	// AddChecklist prepends a new checklist to the specified run
+	AddChecklist(playbookRunID, userID string, checklist Checklist) error
+
+	// RemoveChecklist removes the specified checklist.
+	RemoveChecklist(playbookRunID, userID string, checklistNumber int) error
+
+	// RenameChecklist renames the specified checklist
+	RenameChecklist(playbookRunID, userID string, checklistNumber int, newTitle string) error
+
 	// NukeDB removes all playbook run related data.
 	NukeDB() error
 
@@ -694,6 +703,15 @@ type PlaybookRunTelemetry interface {
 	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
 	RunTaskSlashCommand(playbookRunID, userID string, task ChecklistItem)
+
+	// AddChecklsit tracks the creation of a new checklist.
+	AddChecklist(playbookRunID, userID string, checklist Checklist)
+
+	// RemoveChecklist tracks the removal of a checklist.
+	RemoveChecklist(playbookRunID, userID string, checklist Checklist)
+
+	// RenameChecklsit tracks the creation of a new checklist.
+	RenameChecklist(playbookRunID, userID string, checklist Checklist)
 
 	// UpdateRetrospective event
 	UpdateRetrospective(playbookRun *PlaybookRun, userID string)

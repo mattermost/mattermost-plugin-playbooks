@@ -2,47 +2,57 @@
 // See LICENSE.txt for license information.
 
 import React, {useRef, useState} from 'react';
-import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
 
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
-import {addNewTask} from 'src/actions';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
+import HoverMenu from 'src/components/collapsible_checklist_hover_menu';
+import RenameChecklistDialog from 'src/components/rhs/rhs_checklists_rename_dialog';
+import DeleteChecklistDialog from 'src/components/rhs/rhs_checklists_delete_dialog';
 
 export interface Props {
     title: string;
     index: number;
+    numChecklists: number;
     collapsed: boolean;
     setCollapsed: (newState: boolean) => void;
     items: ChecklistItem[];
     children: React.ReactNode;
-    disabled: boolean;
+    disabledOrRunID: true | string;
     titleHelpText?: React.ReactNode;
 }
 
 const CollapsibleChecklist = ({
     title,
     index,
+    numChecklists,
     collapsed,
     setCollapsed,
     items,
     children,
-    disabled,
+    disabledOrRunID,
     titleHelpText,
 }: Props) => {
-    const dispatch = useDispatch();
     const titleRef = useRef(null);
     const [showMenu, setShowMenu] = useState(false);
+    const [showRenameDialog, setShowRenameDialog] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const icon = collapsed ? 'icon-chevron-right' : 'icon-chevron-down';
     const [completed, total] = tasksCompleted(items);
     const percentage = total === 0 ? 0 : (completed / total) * 100;
 
+    const disabled = typeof disabledOrRunID !== 'string';
+    const playbookRunID = typeof disabledOrRunID === 'string' ? disabledOrRunID : '';
+
     return (
         <Border>
-            <HorizontalBG>
+            <HorizontalBG
+                checklistIndex={index}
+                numChecklists={numChecklists}
+            >
                 <Horizontal
                     data-testid={'checklistHeader'}
                     onClick={() => setCollapsed(!collapsed)}
@@ -67,16 +77,13 @@ const CollapsibleChecklist = ({
                     )}
                     {
                         showMenu && !disabled &&
-                        <AddNewTask
-                            data-testid={'addNewTask'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                dispatch(addNewTask(index));
-                            }}
-                        >
-                            <i className='icon-18 icon-plus'/>
-                            <FormattedMessage defaultMessage='Task'/>
-                        </AddNewTask>
+                        <HoverMenu
+                            playbookRunID={playbookRunID}
+                            checklistIndex={index}
+                            checklistTitle={title}
+                            onRenameChecklist={() => setShowRenameDialog(true)}
+                            onDeleteChecklist={() => setShowDeleteDialog(true)}
+                        />
                     }
                 </Horizontal>
                 <ProgressBackground>
@@ -84,6 +91,19 @@ const CollapsibleChecklist = ({
                 </ProgressBackground>
             </HorizontalBG>
             {!collapsed && children}
+            <RenameChecklistDialog
+                playbookRunID={playbookRunID}
+                checklistNumber={index}
+                show={showRenameDialog}
+                onHide={() => setShowRenameDialog(false)}
+                initialTitle={title}
+            />
+            <DeleteChecklistDialog
+                playbookRunID={playbookRunID}
+                checklistIndex={index}
+                show={showDeleteDialog}
+                onHide={() => setShowDeleteDialog(false)}
+            />
         </Border>
     );
 };
@@ -116,9 +136,9 @@ const ProgressLine = styled.div<{ width: number }>`
     }
 `;
 
-const HorizontalBG = styled.div`
+const HorizontalBG = styled.div<{checklistIndex: number, numChecklists: number}>`
     background-color: var(--center-channel-bg);
-    z-index: 1;
+    z-index: ${({checklistIndex, numChecklists}) => 1 + (numChecklists - checklistIndex)};
     position: sticky;
     top: 48px; // height of rhs_checklists MainTitle
 `;
@@ -172,30 +192,6 @@ export const TitleHelpTextWrapper = styled.div`
 
     ${Horizontal}:hover & {
         color: rgba(var(--center-channel-color-rgb), 0.56);
-    }
-`;
-
-const AddNewTask = styled.button`
-    margin: 0 8px 0 auto;
-    padding: 0 8px 0 0;
-    border-radius: 4px;
-    border: 0;
-
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 32px;
-    white-space: nowrap;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    background: transparent;
-
-    transition: all 0.15s ease-out;
-
-    &:hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08)
-    }
-
-    &:active {
-        background: rgba(var(--center-channel-color-rgb), 0.16);
     }
 `;
 

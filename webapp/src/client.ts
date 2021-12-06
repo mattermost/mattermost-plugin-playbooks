@@ -24,6 +24,7 @@ import {
 import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
 import {
+    Checklist,
     ChecklistItem,
     ChecklistItemState,
     FetchPlaybooksParams,
@@ -324,6 +325,30 @@ export async function clientEditChecklistItem(playbookRunID: string, checklistNu
             command: itemUpdate.command,
             description: itemUpdate.description,
         }));
+
+    return data;
+}
+
+export async function clientAddChecklist(playbookRunID: string, checklist: Checklist) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists`,
+        JSON.stringify(checklist),
+    );
+
+    return data;
+}
+
+export async function clientRemoveChecklist(playbookRunID: string, checklistNum: number) {
+    const data = await doDelete(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}`);
+
+    return data;
+}
+
+export async function clientRenameChecklist(playbookRunID: string, checklistNum: number, newTitle: string) {
+    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/rename`,
+        JSON.stringify({
+            title: newTitle,
+        }),
+    );
 
     return data;
 }

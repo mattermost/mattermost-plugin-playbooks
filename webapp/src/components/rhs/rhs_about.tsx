@@ -123,6 +123,9 @@ const RHSAbout = (props: Props) => {
 };
 
 const Container = styled.div`
+    position: relative;
+    z-index: 2;
+
     margin-top: 3px;
     padding: 16px 12px;
 

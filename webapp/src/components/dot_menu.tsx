@@ -2,7 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useRef} from 'react';
-import styled, {css, StyledComponentBase} from 'styled-components';
+import {useIntl} from 'react-intl';
+import styled, {css} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
@@ -32,22 +33,25 @@ interface DropdownMenuProps {
     top?: boolean;
     left?: boolean;
     wide?: boolean;
+    topPx?: number;
+    leftPx?: number;
 }
 
-const DropdownMenu = styled.div<DropdownMenuProps>`
+export const DropdownMenu = styled.div<DropdownMenuProps>`
     display: flex;
     flex-direction: column;
 
     position: absolute;
     ${(props) => (props.top ? 'bottom: 35px;' : 'top: 100%;')};
     ${(props) => (props.left && css`
-        left: -197px;
-        top: 35px;
+        left: ${props.leftPx || -197}px;
+        top: ${props.topPx || 35}px;
     `)};
     ${(props) => (props.wide && css`
         left: -236px;
     `)};
 
+    width: max-content;
     min-width: 160px;
     text-align: left;
     list-style: none;
@@ -73,11 +77,16 @@ interface DotMenuProps {
     icon: JSX.Element;
     top?: boolean;
     left?: boolean;
+    topPx?: number;
+    leftPx?: number;
     wide?: boolean;
-    dotMenuButton?: StyledComponentBase<'div', any>;
+    dotMenuButton?: typeof DotMenuButton;
+    dropdownMenu?: typeof DropdownMenu;
+    title?: string;
 }
 
 const DotMenu = (props: DotMenuProps) => {
+    const {formatMessage} = useIntl();
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         setOpen(true);
@@ -93,9 +102,11 @@ const DotMenu = (props: DotMenuProps) => {
     });
 
     const MenuButton = props.dotMenuButton ?? DotMenuButton;
+    const Menu = props.dropdownMenu ?? DropdownMenu;
 
     return (
         <MenuButton
+            title={props.title}
             ref={rootRef}
             onClick={(e) => {
                 e.stopPropagation();
@@ -115,10 +126,12 @@ const DotMenu = (props: DotMenuProps) => {
             <DropdownMenuWrapper>
                 {
                     isOpen &&
-                    <DropdownMenu
+                    <Menu
                         data-testid='dropdownmenu'
                         top={props.top}
                         left={props.left}
+                        topPx={props.topPx}
+                        leftPx={props.leftPx}
                         wide={props.wide}
                         onClick={(e) => {
                             e.stopPropagation();
@@ -126,7 +139,7 @@ const DotMenu = (props: DotMenuProps) => {
                         }}
                     >
                         {props.children}
-                    </DropdownMenu>
+                    </Menu>
                 }
             </DropdownMenuWrapper>
         </MenuButton>
@@ -157,6 +170,7 @@ export const DropdownMenuItem = (props: { children: React.ReactNode, onClick: ()
             href='#'
             onClick={props.onClick}
             className={props.className}
+            role={'button'}
         >
             {props.children}
         </DropdownMenuItemStyled>
