@@ -1,7 +1,7 @@
 import React from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
 import {useSelector} from 'react-redux';
-import {getMyChannels, getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getMyChannels, getChannel as getChannelFromRedux} from 'mattermost-redux/selectors/entities/channels';
 import General from 'mattermost-redux/constants/general';
 
 import {Channel} from 'mattermost-redux/types/channels';
@@ -30,8 +30,8 @@ const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(stat
 
 type GetChannelType = (channelID: string) => Channel
 
-const getChannelWrapper = (state: GlobalState, channelID: string): Channel => {
-    const channel = getChannel(state, channelID);
+const getChannel = (state: GlobalState, channelID: string): Channel => {
+    const channel = getChannelFromRedux(state, channelID);
 
     if (channel && channel.type !== General.ARCHIVED_CHANNEL && channel.delete_at === 0) {
         return channel;
@@ -43,7 +43,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
     const {formatMessage} = useIntl();
     const selectableChannels = useSelector(getMyPublicAndPrivateChannels);
 
-    const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannelWrapper(state, channelID));
+    const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID));
 
     const onChange = (channels: Channel[], {action}: {action: string}) => {
         if (action === 'clear') {
