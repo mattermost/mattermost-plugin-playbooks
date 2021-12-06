@@ -32,8 +32,8 @@ import WarningIcon from '../assets/icons/warning_icon';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 import {VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
-import {outstandingTasks} from 'src/components/rhs/rhs_checklists';
 import {modals} from 'src/webapp_globals';
+import {Checklist, ChecklistItemState} from 'src/types/playbook';
 
 const ID = 'playbooks_update_run_status_dialog';
 
@@ -300,6 +300,18 @@ export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disa
     }
 
     return {input, reminder};
+};
+
+const outstandingTasks = (checklists: Checklist[]) => {
+    let count = 0;
+    for (const list of checklists) {
+        for (const item of list.items) {
+            if (item.state !== ChecklistItemState.Closed) {
+                count++;
+            }
+        }
+    }
+    return count;
 };
 
 const FormContainer = styled.div`
