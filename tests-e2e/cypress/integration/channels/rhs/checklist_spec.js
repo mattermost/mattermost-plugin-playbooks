@@ -184,7 +184,7 @@ describe('channels > rhs > checklist', () => {
 
             // * Verify the item has been skipped
             cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
-                cy.get('text').should('have.class', 'skipped');
+                cy.get('[data-cy=skipped]').should('exist');
             });
 
             // # Hover over the checklist item
@@ -196,8 +196,7 @@ describe('channels > rhs > checklist', () => {
 
             // * Verify the item has been restored
             cy.findAllByTestId('checkbox-item-container').eq(0).within(() => {
-                cy.get('text').should('not.exist');
-                cy.get('label').should('not.have.class', 'skipped');
+                cy.get('[data-cy=skipped]').should('not.exist');
             });
         });
 
