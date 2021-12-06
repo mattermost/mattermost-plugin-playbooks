@@ -60,9 +60,7 @@ export const Retrospective = (props: Props) => {
     );
 };
 
-const RetrospectiveDisabledText = styled.h2`
-    font-family: Open Sans;
-    font-style: normal;
+const RetrospectiveDisabledText = styled.div`
     font-weight: normal;
     font-size: 20px;
     color: var(--center-channel-color);
