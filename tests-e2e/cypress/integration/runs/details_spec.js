@@ -136,7 +136,7 @@ describe('runs > details', () => {
         });
 
 
-        it('should shows, that retrospectives were disabled message', () => {
+        it('should show the retrospectives were disabled message', () => {
             // # Visit the playbook run preview
             cy.visit(`/playbooks/runs/${playbookRun.id}/overview`);
 
