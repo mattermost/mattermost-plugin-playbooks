@@ -40,21 +40,24 @@ import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 
+let siteURL = '';
 let basePath = '';
 let apiUrl = `${basePath}/plugins/${pluginId}/api/v0`;
 
-export const setSiteUrl = (siteUrl?: string): void => {
-    if (siteUrl) {
-        basePath = new URL(siteUrl).pathname.replace(/\/+$/, '');
+export const setSiteUrl = (url?: string): void => {
+    if (url) {
+        basePath = new URL(url).pathname.replace(/\/+$/, '');
+        siteURL = url;
     } else {
         basePath = '';
+        siteURL = '';
     }
 
     apiUrl = `${basePath}/plugins/${pluginId}/api/v0`;
 };
 
 export const getSiteUrl = (): string => {
-    return basePath;
+    return siteURL;
 };
 
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
