@@ -330,7 +330,7 @@ export async function clientEditChecklistItem(playbookRunID: string, checklistNu
 }
 
 export async function clientAddChecklist(playbookRunID: string, checklist: Checklist) {
-    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists`,
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists`,
         JSON.stringify(checklist),
     );
 

@@ -82,7 +82,7 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
 
 	checklistsRouter := playbookRunRouterAuthorized.PathPrefix("/checklists").Subrouter()
-	checklistsRouter.HandleFunc("", handler.addChecklist).Methods(http.MethodPut)
+	checklistsRouter.HandleFunc("", handler.addChecklist).Methods(http.MethodPost)
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("", handler.removeChecklist).Methods(http.MethodDelete)

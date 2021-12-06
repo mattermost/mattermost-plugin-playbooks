@@ -154,7 +154,7 @@ func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) e
 
 func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID string, checklist Checklist) error {
 	createURL := fmt.Sprintf("runs/%s/checklists", playbookRunID)
-	req, err := s.client.newRequest(http.MethodPut, createURL, checklist)
+	req, err := s.client.newRequest(http.MethodPost, createURL, checklist)
 	if err != nil {
 		return err
 	}
