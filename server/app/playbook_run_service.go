@@ -1368,7 +1368,7 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 
 		channelURL := fmt.Sprintf("[%s](%s/%s/channels/%s?telem=dm_assignedtask_clicked&forceRHSOpen)",
 			channel.DisplayName, siteURL, team.Name, channel.Name)
-		modifyMessage := fmt.Sprintf("#taskassigned @%s assigned you the task **%s** (previously assigned to %s) for the run: %s",
+		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
 			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, channelURL)
 
 		if err = s.poster.DM(itemToCheck.AssigneeID, &model.Post{Message: modifyMessage}); err != nil {
