@@ -19,6 +19,7 @@ import {publishRetrospective, updateRetrospective} from 'src/client';
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import PostText from 'src/components/post_text';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
 // @ts-ignore
 const WebappUtils = window.WebappUtils;
@@ -86,10 +87,10 @@ const Report = (props: ReportProps) => {
         setEditing(false);
     };
 
-    const publishPressed = () => {
+    const confirmedPublish = () => {
         publishRetrospective(props.playbookRun.id, props.playbookRun.retrospective);
-        setEditing(false);
         setPublishedThisSession(true);
+        setShowConfirmation(false);
     };
 
     let publishButtonText: React.ReactNode = formatMessage({defaultMessage: 'Publish'});
@@ -110,7 +111,7 @@ const Report = (props: ReportProps) => {
                 <Title>{formatMessage({defaultMessage: 'Report'})}</Title>
                 <HeaderButtonsRight>
                     <PrimaryButtonSmaller
-                        onClick={publishPressed}
+                        onClick={() => setShowConfirmation(true)}
                     >
                         <TextContainer>{publishButtonText}</TextContainer>
                     </PrimaryButtonSmaller>
@@ -141,6 +142,14 @@ const Report = (props: ReportProps) => {
             <RouteLeavingGuard
                 navigate={(path) => WebappUtils.browserHistory.push(path)}
                 shouldBlockNavigation={() => editing}
+            />
+            <ConfirmModal
+                show={showConfirmation}
+                title={formatMessage({defaultMessage: 'Publish Retro'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to publish the retrospective?'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Publish'})}
+                onConfirm={confirmedPublish}
+                onCancel={() => setShowConfirmation(false)}
             />
         </ReportContainer>
     );
