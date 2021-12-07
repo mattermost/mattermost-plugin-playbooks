@@ -819,9 +819,9 @@ func (h *PlaybookRunHandler) updateStatusDialog(w http.ResponseWriter, r *http.R
 		options.Reminder = time.Duration(reminder)
 	}
 
-	if finishI, ok := request.Submission[app.DialogFieldFinishRun]; ok {
+	if finishB, ok := request.Submission[app.DialogFieldFinishRun]; ok {
 		var finish bool
-		if finish, ok = finishI.(bool); ok {
+		if finish, ok = finishB.(bool); ok {
 			options.FinishRun = finish
 		}
 	}
