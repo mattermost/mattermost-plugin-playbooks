@@ -403,7 +403,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
 
     const fetchUsersInTeam = async () => {
         return profilesInTeam;
-    }
+    };
 
     const onAssigneeChange = async (userId?: string) => {
         if (!props.playbookRunId) {

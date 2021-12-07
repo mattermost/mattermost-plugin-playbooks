@@ -153,30 +153,30 @@ export function fetchPlaybookRunChannels(teamID: string, userID: string) {
 }
 
 export async function clientAddChannelMember(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, channelId: string, userId: string, postRootId = '') {
-        let member;
-        try {
-            member = await Client4.addToChannel(userId, channelId, postRootId);
-        } catch (error) {
-            console.error(error)
-        }
+    let member;
+    try {
+        member = await Client4.addToChannel(userId, channelId, postRootId);
+    } catch (error) {
+        console.error(error); //eslint-disable-line no-console
+    }
 
-        Client4.trackEvent('action', 'action_channels_add_member', {channel_id: channelId});
-        console.log("Reached client lib")
-        // not sure if this is needed. But I have kept it due to webapp
-        dispatch(batchActions([
-            {
-                type: UserTypes.RECEIVED_PROFILE_IN_CHANNEL,
-                data: {id: channelId, user_id: userId},
-            },
-            {
-                type: ChannelTypes.RECEIVED_CHANNEL_MEMBER,
-                data: member,
-            },
-            {
-                type: ChannelTypes.ADD_CHANNEL_MEMBER_SUCCESS,
-                id: channelId,
-            },
-        ], 'ADD_CHANNEL_MEMBER.BATCH'));
+    Client4.trackEvent('action', 'action_channels_add_member', {channel_id: channelId});
+
+    // not sure if this is needed. But I have kept it due to webapp
+    dispatch(batchActions([
+        {
+            type: UserTypes.RECEIVED_PROFILE_IN_CHANNEL,
+            data: {id: channelId, user_id: userId},
+        },
+        {
+            type: ChannelTypes.RECEIVED_CHANNEL_MEMBER,
+            data: member,
+        },
+        {
+            type: ChannelTypes.ADD_CHANNEL_MEMBER_SUCCESS,
+            id: channelId,
+        },
+    ], 'ADD_CHANNEL_MEMBER.BATCH'));
 }
 
 export async function clientExecuteCommand(dispatch: Dispatch<AnyAction>, getState: GetStateFunc, command: string, teamId: string) {

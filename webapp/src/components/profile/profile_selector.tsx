@@ -3,7 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
-import ReactSelect, {ActionTypes, ControlProps, StylesConfig, components} from 'react-select';
+import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import classNames from 'classnames';
 import styled, {css} from 'styled-components';
 
@@ -53,7 +53,6 @@ interface Props {
 
 export default function ProfileSelector(props: Props) {
     const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
-    // const profilesInChannel = useProfilesInCurrentChannel();
 
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
@@ -100,7 +99,7 @@ export default function ProfileSelector(props: Props) {
 
         const users = await props.getUsers();
         const usersInTeam = await props.getUsersInTeam();
-        const usersNotInChannel =  usersInTeam.filter( (user) => !users.includes(user) );
+        const usersNotInChannel = usersInTeam.filter((user) => !users.includes(user));
 
         const optionNotInTeamList = usersNotInChannel.map((user: UserProfile) => {
             return ({
@@ -112,7 +111,7 @@ export default function ProfileSelector(props: Props) {
                     />
                 ),
                 userId: user.id,
-                userType: "NonMember",
+                userType: 'NonMember',
                 userObj: user,
             } as Option);
         });
@@ -127,7 +126,7 @@ export default function ProfileSelector(props: Props) {
                     />
                 ),
                 userId: user.id,
-                userType: "Member",
+                userType: 'Member',
                 userObj: user,
             } as Option);
         });
@@ -139,7 +138,7 @@ export default function ProfileSelector(props: Props) {
                 optionList.unshift(currentUser[0]);
             }
         }
-    
+
         setUserNotInChannelOptions(optionNotInTeamList);
         setUserOptions(optionList);
     }
@@ -175,8 +174,7 @@ export default function ProfileSelector(props: Props) {
         }
         if (props.onSelectedChange) {
             props.onSelectedChange(value?.userId, value?.userType, value?.userObj);
-        }   
-        
+        }
     };
 
     // Decide where to open the profile selector

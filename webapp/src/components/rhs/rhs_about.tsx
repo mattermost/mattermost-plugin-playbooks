@@ -8,7 +8,7 @@ import styled from 'styled-components';
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {UserProfile} from 'mattermost-redux/types/users';
-import { getChannelByName } from 'mattermost-webapp/packages/mattermost-redux/src/utils/channel_utils';
+import {getChannelByName} from 'mattermost-webapp/packages/mattermost-redux/src/utils/channel_utils';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
@@ -46,29 +46,28 @@ const RHSAbout = (props: Props) => {
 
     const fetchUsersInTeam = async () => {
         return profilesInTeam;
-    }
+    };
 
     const setOwnerUtil = async (userId?: string) => {
-        if(!userId){
-            return
+        if (!userId) {
+            return;
         }
         const response = await setOwner(props.playbookRun.id, userId);
         if (response.error) {
             // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console
         }
-    }
+    };
 
     const onSelectedProfileChange = (userId?: string, userType?: string, userObj?: UserProfile) => {
         if (!userId || !userType) {
             return;
         }
-        
-        if(userType === "Member"){
-            setOwnerUtil(userId)
-        }
-        else{
-            setCurrentUserSelect(userObj)
+
+        if (userType === 'Member') {
+            setOwnerUtil(userId);
+        } else {
+            setCurrentUserSelect(userObj);
             setShowAddToChannelConfirm(true);
         }
     };
@@ -139,15 +138,14 @@ const RHSAbout = (props: Props) => {
             </Container>
             <ConfirmModal
                 show={showAddToChannel}
-                title={formatMessage({defaultMessage: 'Add **@{username}** to Channel'}, {username:currentUserSelect?.username, fname: currentUserSelect?.first_name, lname: currentUserSelect?.last_name})}
+                title={formatMessage({defaultMessage: 'Add **@{username}** to Channel'}, {username: currentUserSelect?.username, fname: currentUserSelect?.first_name, lname: currentUserSelect?.last_name})}
                 message={formatMessage({defaultMessage: '@{fname} {lname} is not a member of the ? channel. Would you like to add them to this channel? They will have access to all message history.'}, {fname: currentUserSelect?.first_name, lname: currentUserSelect?.last_name})}
                 confirmButtonText={formatMessage({defaultMessage: 'Add'})}
                 onConfirm={() => {
-                    if(currentUserSelect){
-                        dispatch(addToChannel(currentUserSelect.id))
-                        setShowAddToChannelConfirm(false)
-                        // lets set the added user now
-                        setOwnerUtil(currentUserSelect.id)
+                    if (currentUserSelect) {
+                        dispatch(addToChannel(currentUserSelect.id));
+                        setShowAddToChannelConfirm(false);
+                        setOwnerUtil(currentUserSelect.id);
                     }
                 }
                 }
