@@ -91,7 +91,10 @@ const Report = (props: ReportProps) => {
             }
             {
                 !editing &&
-                <PostTextContainer onClick={() => setEditing(true)}>
+                <PostTextContainer
+                    data-testid={'retro-report-text'}
+                    onClick={() => setEditing(true)}
+                >
                     <PostText
                         text={props.playbookRun.retrospective}
                         team={team}
@@ -104,7 +107,7 @@ const Report = (props: ReportProps) => {
             />
             <ConfirmModal
                 show={showConfirmation}
-                title={formatMessage({defaultMessage: 'Publish Retro'})}
+                title={formatMessage({defaultMessage: 'Publish retrospective'})}
                 message={formatMessage({defaultMessage: 'Are you sure you want to publish the retrospective?'})}
                 confirmButtonText={formatMessage({defaultMessage: 'Publish'})}
                 onConfirm={confirmedPublish}
