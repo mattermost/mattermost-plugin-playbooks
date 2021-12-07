@@ -286,14 +286,6 @@ export async function setChecklistItemState(playbookRunID: string, checklistNum:
     );
 }
 
-export async function clientAddChecklistItem(playbookRunID: string, checklistNum: number, checklistItem: ChecklistItem) {
-    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/add`,
-        JSON.stringify(checklistItem),
-    );
-
-    return data;
-}
-
 export async function clientRemoveChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}`, {
         method: 'delete',
