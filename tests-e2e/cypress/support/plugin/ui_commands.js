@@ -172,6 +172,16 @@ Cypress.Commands.add('selectCategory', (categoryName) => {
     });
 });
 
+Cypress.Commands.add('openReminderSelector', () => {
+    cy.get('#reminder_timer_datetime input').click({force: true});
+});
+
+Cypress.Commands.add('selectReminderTime', (timeText) => {
+    cy.get('#reminder_timer_datetime .playbooks-rselect__menu').within(() => {
+        cy.findByText(timeText).click({force: true});
+    });
+});
+
 /**
  * Update the status of the current playbook run through the slash command.
  */
