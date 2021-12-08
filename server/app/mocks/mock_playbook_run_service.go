@@ -410,17 +410,17 @@ func (mr *MockPlaybookRunServiceMockRecorder) ModifyCheckedState(arg0, arg1, arg
 }
 
 // MoveChecklistItem mocks base method
-func (m *MockPlaybookRunService) MoveChecklistItem(arg0, arg1 string, arg2, arg3, arg4 int) error {
+func (m *MockPlaybookRunService) MoveChecklistItem(arg0, arg1 string, arg2, arg3, arg4, arg5 int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MoveChecklistItem", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "MoveChecklistItem", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MoveChecklistItem indicates an expected call of MoveChecklistItem
-func (mr *MockPlaybookRunServiceMockRecorder) MoveChecklistItem(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockPlaybookRunServiceMockRecorder) MoveChecklistItem(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveChecklistItem", reflect.TypeOf((*MockPlaybookRunService)(nil).MoveChecklistItem), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveChecklistItem", reflect.TypeOf((*MockPlaybookRunService)(nil).MoveChecklistItem), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // NukeDB mocks base method
