@@ -30,7 +30,7 @@ import {
     ChecklistItemState,
 } from 'src/types/playbook';
 import {
-    clientReorderChecklist,
+    clientMoveChecklistItem,
     telemetryEventForPlaybookRun,
 } from 'src/client';
 import CollapsibleChecklist from 'src/components/collapsible_checklist';
@@ -125,37 +125,66 @@ const RHSChecklistList = (props: Props) => {
                     }
                 </MainTitle>
             </MainTitleBG>
-            {checklists.map((checklist: Checklist, checklistIndex: number) => (
-                <DragDropContext
-                    key={checklist.title + checklistIndex}
-                    onDragEnd={(result: DropResult) => {
-                        if (!result.destination) {
-                            return;
-                        }
+            <DragDropContext
+                onDragEnd={(result: DropResult) => {
+                    if (!result.destination) {
+                        return;
+                    }
 
-                        if (result.destination.droppableId === result.source.droppableId &&
-                            result.destination.index === result.source.index) {
-                            return;
-                        }
+                    if (result.destination.droppableId === result.source.droppableId &&
+                        result.destination.index === result.source.index) {
+                        return;
+                    }
 
-                        const newChecklists = Array.from(checklists);
-                        const newChecklistItems = Array.from(checklists[checklistIndex].items);
+                    const sourceChecklistIdx = parseInt(result.source.droppableId, 10);
+                    const destChecklistIdx = parseInt(result.destination.droppableId, 10);
+                    const newChecklists = Array.from(checklists);
+
+                    if (sourceChecklistIdx === destChecklistIdx) {
+                        // Remove the dragged item from the checklist
+                        const newChecklistItems = Array.from(checklists[sourceChecklistIdx].items);
                         const [removed] = newChecklistItems.splice(result.source.index, 1);
+
+                        // Add the dragged item to the checklist
                         newChecklistItems.splice(result.destination.index, 0, removed);
-                        newChecklists[checklistIndex] = {
-                            ...newChecklists[checklistIndex],
+                        newChecklists[sourceChecklistIdx] = {
+                            ...newChecklists[sourceChecklistIdx],
                             items: newChecklistItems,
                         };
+                    } else {
+                        const sourceChecklist = checklists[sourceChecklistIdx];
+                        const destChecklist = checklists[destChecklistIdx];
 
-                        dispatch(playbookRunUpdated({
-                            ...props.playbookRun,
-                            checklists: newChecklists,
-                        }));
+                        // Remove the dragged item from the source checklist
+                        const newSourceChecklistItems = Array.from(sourceChecklist.items);
+                        const [moved] = newSourceChecklistItems.splice(result.source.index, 1);
 
-                        clientReorderChecklist(props.playbookRun.id, checklistIndex, result.source.index, result.destination.index);
-                    }}
-                >
+                        // Add the dragged item to the destination checklist
+                        const newDestChecklistItems = Array.from(destChecklist.items);
+                        newDestChecklistItems.splice(result.destination.index, 0, moved);
+
+                        // Modify the new checklists array with the new source and destination checklists
+                        newChecklists[sourceChecklistIdx] = {
+                            ...sourceChecklist,
+                            items: newSourceChecklistItems,
+                        };
+                        newChecklists[destChecklistIdx] = {
+                            ...destChecklist,
+                            items: newDestChecklistItems,
+                        };
+                    }
+
+                    dispatch(playbookRunUpdated({
+                        ...props.playbookRun,
+                        checklists: newChecklists,
+                    }));
+
+                    clientMoveChecklistItem(props.playbookRun.id, sourceChecklistIdx, result.source.index, destChecklistIdx, result.destination.index);
+                }}
+            >
+                {checklists.map((checklist: Checklist, checklistIndex: number) => (
                     <CollapsibleChecklist
+                        key={checklist.title}
                         title={checklist.title}
                         items={checklist.items}
                         index={checklistIndex}
@@ -170,8 +199,8 @@ const RHSChecklistList = (props: Props) => {
                             checklistIndex={checklistIndex}
                         />
                     </CollapsibleChecklist>
-                </DragDropContext>
-            ))}
+                ))}
+            </DragDropContext>
             {
                 active &&
                 <FinishButton onClick={() => dispatch(finishRun(props.playbookRun.team_id))}>
