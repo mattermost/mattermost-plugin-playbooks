@@ -48,7 +48,6 @@ interface ChecklistItemDetailsProps {
     channelId: string;
     playbookRunId: string;
     onChange?: (item: ChecklistItemState) => void;
-    onRedirect?: () => void;
     draggableProvided?: DraggableProvided;
     dragging: boolean;
     disabled: boolean;

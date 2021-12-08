@@ -2,13 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useDispatch} from 'react-redux';
 import {Draggable, DraggableProvided, DraggableStateSnapshot} from 'react-beautiful-dnd';
 
-import {toggleRHS} from 'src/actions';
 import {setChecklistItemState} from 'src/client';
 import {ChecklistItemDetails} from 'src/components/checklist_item';
-import {isMobile} from 'src/mobile';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 
@@ -20,7 +17,6 @@ interface Props {
 }
 
 const RHSChecklistItem = (props: Props) => {
-    const dispatch = useDispatch();
     const finished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
 
     return (
@@ -37,11 +33,6 @@ const RHSChecklistItem = (props: Props) => {
                     playbookRunId={props.playbookRun.id}
                     onChange={(newState: ChecklistItemState) => {
                         setChecklistItemState(props.playbookRun.id, props.checklistIndex, props.itemIndex, newState);
-                    }}
-                    onRedirect={() => {
-                        if (isMobile()) {
-                            dispatch(toggleRHS());
-                        }
                     }}
                     draggableProvided={draggableProvided}
                     dragging={snapshot.isDragging}
