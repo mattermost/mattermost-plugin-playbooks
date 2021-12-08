@@ -40,18 +40,28 @@ const RHSChecklist = (props: Props) => {
         if (filter.all) {
             return true;
         }
+
+        // "Show checked tasks" is not checked, so if item is checked (closed), don't show it.
         if (!filter.checked && checklistItem.state === ChecklistItemState.Closed) {
             return false;
         }
+
+        // "Me" is not checked, so if assignee_id is me, don't show it.
         if (!filter.me && checklistItem.assignee_id === myId) {
             return false;
         }
+
+        // "Unassigned" is not checked, so if assignee_id is blank (unassigned), don't show it.
         if (!filter.unassigned && checklistItem.assignee_id === '') {
             return false;
         }
-        if (!filter.others && checklistItem.assignee_id !== myId) {
+
+        // "Others" is not checked, so if item has someone else as the assignee, don't show it.
+        if (!filter.others && checklistItem.assignee_id !== '' && checklistItem.assignee_id !== myId) {
             return false;
         }
+
+        // We should show it!
         return true;
     };
 
