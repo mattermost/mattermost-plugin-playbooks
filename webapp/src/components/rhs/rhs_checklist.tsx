@@ -71,22 +71,34 @@ const RHSChecklist = (props: Props) => {
 
     if (!visibleTasks(props.checklist, checklistItemsFilter, myUser.id)) {
         return (
-            <EmptyChecklistContainer className='checklist'>
-                <AddTaskLink
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        dispatch(addNewTask(props.checklistIndex));
-                    }}
-                >
-                    {formatMessage({defaultMessage: '+ Add task'})}
-                </AddTaskLink>
-            </EmptyChecklistContainer>
+            <Droppable
+                droppableId={props.checklistIndex.toString()}
+                direction='vertical'
+                type='checklist'
+            >
+                {(droppableProvided: DroppableProvided) => (
+                    <EmptyChecklistContainer
+                        ref={droppableProvided.innerRef}
+                        {...droppableProvided.droppableProps}
+                        className='checklist'
+                    >
+                        <AddTaskLink
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                dispatch(addNewTask(props.checklistIndex));
+                            }}
+                        >
+                            {formatMessage({defaultMessage: '+ Add task'})}
+                        </AddTaskLink>
+                    </EmptyChecklistContainer>
+                )}
+            </Droppable>
         );
     }
 
     return (
         <Droppable
-            droppableId='columns'
+            droppableId={props.checklistIndex.toString()}
             direction='vertical'
             type='checklist'
         >
