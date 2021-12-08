@@ -512,7 +512,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             <div
                                 onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
                             >
-                                {(props.checklistItem.state === ChecklistItemState.Skip) ? <StrikeThrough>{labelText}</StrikeThrough> : labelText}
+                                {(props.checklistItem.state === ChecklistItemState.Skip) ? <StrikeThrough data-cy={'skipped'}>{labelText}</StrikeThrough> : labelText}
                             </div>
                         </label>
                         <CollapsibleChecklistItemDescription expanded={showDescription}>

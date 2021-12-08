@@ -883,10 +883,6 @@ paths:
                   format: int64
                   description: The timestamp for the latest modification of the item's state, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item was never modified.
                   example: 1607774621321
-                state_modified_post_id:
-                  type: string
-                  description: The identifier of the message posted by the PlaybookRun Response bot that informs of the latest modification of the item's state.
-                  example: 8nmjfgrkwvokrg13urvo10bx9j
                 assignee_id:
                   type: string
                   description: The identifier of the user that has been assigned to complete this item. If the item has no assignee, this is an empty string.
@@ -896,10 +892,6 @@ paths:
                   format: int64
                   description: The timestamp for the latest modification of the item's assignee, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item never got an assignee.
                   example: 1608897821125
-                assignee_modified_post_id:
-                  type: string
-                  description: The identifier of the message posted by the PlaybookRun Response bot that informs of the latest modification of the item's assignee.
-                  example: ol7h83caow11xfbydhqvyg16b4
                 command:
                   type: string
                   description: The slash command associated with this item. If the item has no slash command associated, this is an empty string
@@ -1936,10 +1928,6 @@ components:
           format: int64
           description: The timestamp for the latest modification of the item's state, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item was never modified.
           example: 1607774621321
-        state_modified_post_id:
-          type: string
-          description: The identifier of the message posted by the PlaybookRun Response bot that informs of the latest modification of the item's state.
-          example: 8nmjfgrkwvokrg13urvo10bx9j
         assignee_id:
           type: string
           description: The identifier of the user that has been assigned to complete this item. If the item has no assignee, this is an empty string.
@@ -1949,10 +1937,6 @@ components:
           format: int64
           description: The timestamp for the latest modification of the item's assignee, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item never got an assignee.
           example: 1608897821125
-        assignee_modified_post_id:
-          type: string
-          description: The identifier of the message posted by the PlaybookRun Response bot that informs of the latest modification of the item's assignee.
-          example: ol7h83caow11xfbydhqvyg16b4
         command:
           type: string
           description: The slash command associated with this item. If the item has no slash command associated, this is an empty string
