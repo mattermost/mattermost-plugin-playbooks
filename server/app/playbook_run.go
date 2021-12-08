@@ -474,8 +474,8 @@ type PlaybookRunService interface {
 	// EditChecklistItem changes the title, command and description of a specified checklist item.
 	EditChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int, newTitle, newCommand, newDescription string) error
 
-	// MoveChecklistItem moves a checklist item from one position to anouther
-	MoveChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int, newLocation int) error
+	// MoveChecklistItem moves a checklist item from one position to another.
+	MoveChecklistItem(playbookRunID, userID string, sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx int) error
 
 	// GetChecklistItemAutocomplete returns the list of checklist items for playbookRunID to be used in autocomplete
 	GetChecklistItemAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error)

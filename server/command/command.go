@@ -1125,7 +1125,7 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	if err := r.playbookRunService.MoveChecklistItem(playbookRun.ID, r.args.UserId, 0, 0, 1); err != nil {
+	if err := r.playbookRunService.MoveChecklistItem(playbookRun.ID, r.args.UserId, 0, 0, 0, 1); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}

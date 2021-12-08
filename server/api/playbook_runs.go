@@ -83,12 +83,12 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 
 	checklistsRouter := playbookRunRouterAuthorized.PathPrefix("/checklists").Subrouter()
 	checklistsRouter.HandleFunc("", handler.addChecklist).Methods(http.MethodPost)
+	checklistsRouter.HandleFunc("/move", handler.moveChecklistItem).Methods(http.MethodPost)
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("", handler.removeChecklist).Methods(http.MethodDelete)
 	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPost)
 	checklistRouter.HandleFunc("/rename", handler.renameChecklist).Methods(http.MethodPut)
-	checklistRouter.HandleFunc("/reorder", handler.reorderChecklist).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/add-dialog", handler.addChecklistItemDialog).Methods(http.MethodPost)
 
 	checklistItem := checklistRouter.PathPrefix("/item/{item:[0-9]+}").Subrouter()
@@ -1457,26 +1457,23 @@ func (h *PlaybookRunHandler) renameChecklist(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PlaybookRunHandler) reorderChecklist(w http.ResponseWriter, r *http.Request) {
+func (h *PlaybookRunHandler) moveChecklistItem(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	checklistNum, err := strconv.Atoi(vars["checklist"])
-	if err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
-		return
-	}
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	var modificationParams struct {
-		ItemNum     int `json:"item_num"`
-		NewLocation int `json:"new_location"`
+	var params struct {
+		SourceChecklistIdx int `json:"source_checklist_idx"`
+		SourceItemIdx      int `json:"source_item_idx"`
+		DestChecklistIdx   int `json:"dest_checklist_idx"`
+		DestItemIdx        int `json:"dest_item_idx"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&modificationParams); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal edit params", err)
 		return
 	}
 
-	if err := h.playbookRunService.MoveChecklistItem(id, userID, checklistNum, modificationParams.ItemNum, modificationParams.NewLocation); err != nil {
+	if err := h.playbookRunService.MoveChecklistItem(id, userID, params.SourceChecklistIdx, params.SourceItemIdx, params.DestChecklistIdx, params.DestItemIdx); err != nil {
 		h.HandleError(w, err)
 		return
 	}

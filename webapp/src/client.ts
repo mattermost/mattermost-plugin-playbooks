@@ -348,11 +348,13 @@ export async function clientRenameChecklist(playbookRunID: string, checklistNum:
     return data;
 }
 
-export async function clientReorderChecklist(playbookRunID: string, checklistNum: number, itemNum: number, newLocation: number) {
-    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/reorder`,
+export async function clientMoveChecklistItem(playbookRunID: string, sourceChecklistIdx: number, sourceItemIdx: number, destChecklistIdx: number, destItemIdx: number) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists/move`,
         JSON.stringify({
-            item_num: itemNum,
-            new_location: newLocation,
+            source_checklist_idx: sourceChecklistIdx,
+            source_item_idx: sourceItemIdx,
+            dest_checklist_idx: destChecklistIdx,
+            dest_item_idx: destItemIdx,
         }),
     );
 
