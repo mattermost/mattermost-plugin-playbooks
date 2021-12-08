@@ -144,4 +144,43 @@ describe('runs > details', () => {
             cy.get('#status-update-msg').contains('Status updates were disabled for this playbook run.');
         });
     });
+
+    describe('retrospective disabled', () => {
+        let playbookRun;
+
+        before(() => {
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Public Playbook',
+                retrospectiveEnabled: false,
+            }).then((playbook) => {
+                testPublicPlaybook = playbook;
+            }).then((playbook) => {
+                // # Create a new playbook run
+                const now = Date.now();
+                const name = 'Playbook Run (' + now + ')';
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: playbook.id,
+                    playbookRunName: name,
+                    ownerUserId: testUser.id,
+                });
+            }).then((run) => {
+                playbookRun = run
+            })
+        });
+
+
+        it('should show the retrospectives were disabled message', () => {
+            // # Visit the playbook run preview
+            cy.visit(`/playbooks/runs/${playbookRun.id}/overview`);
+
+            // # Switch to Retrospective tab
+            cy.get('#root').findByText('Retrospective').click();
+
+            // * Verify the status message is correct
+            cy.get('#retrospective-disabled-msg').should('exist');
+        });
+    });
 });

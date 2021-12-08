@@ -200,7 +200,7 @@ const InnerContainer = styled.div`
     }
 `;
 
-const MainTitleBG = styled.div<{numChecklists: number}>`
+const MainTitleBG = styled.div<{ numChecklists: number }>`
     background-color: var(--center-channel-bg);
     z-index: ${({numChecklists}) => numChecklists + 2};
     position: sticky;
@@ -223,7 +223,7 @@ const MainTitle = styled.div`
 const ChecklistContainer = styled.div`
     background-color: var(--center-channel-bg);
     border-radius: 0 0 4px 4px;
-    border:  1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-top: 0;
     padding: 16px 12px;
 `;
@@ -350,18 +350,28 @@ const showItem = (checklistItem: ChecklistItem, filter: ChecklistItemsFilter, my
     if (filter.all) {
         return true;
     }
+
+    // "Show checked tasks" is not checked, so if item is checked (closed), don't show it.
     if (!filter.checked && checklistItem.state === ChecklistItemState.Closed) {
         return false;
     }
+
+    // "Me" is not checked, so if assignee_id is me, don't show it.
     if (!filter.me && checklistItem.assignee_id === myId) {
         return false;
     }
+
+    // "Unassigned" is not checked, so if assignee_id is blank (unassigned), don't show it.
     if (!filter.unassigned && checklistItem.assignee_id === '') {
         return false;
     }
-    if (!filter.others && checklistItem.assignee_id !== myId) {
+
+    // "Others" is not checked, so if item has someone else as the assignee, don't show it.
+    if (!filter.others && checklistItem.assignee_id !== '' && checklistItem.assignee_id !== myId) {
         return false;
     }
+
+    // We should show it!
     return true;
 };
 
