@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
@@ -15,7 +15,6 @@ import {getChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/sele
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
-import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
@@ -23,8 +22,8 @@ import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
 import {useProfilesInCurrentChannel, useProfilesInTeam} from 'src/hooks';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {HoverMenu} from 'src/components/rhs/rhs_shared';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';
 import RHSAboutTitle, {DefaultRenderedTitle} from 'src/components/rhs/rhs_about_title';
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
@@ -41,11 +40,12 @@ const RHSAbout = (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
+    const profilesInChannel = useProfilesInCurrentChannel();
+    const collapsed = useSelector(currentRHSAboutCollapsedState);
     const channelName = useSelector(getCurrentChannelNameForSearchShortcut);
     const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, channelId));
-    const profilesInChannel = useProfilesInCurrentChannel();
     const profilesInTeam = useProfilesInTeam();
-    const collapsed = useSelector(currentRHSAboutCollapsedState);
+
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel?.team_id));
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const [showAddToChannel, setShowAddToChannelConfirm] = useState(false);
@@ -109,16 +109,25 @@ const RHSAbout = (props: Props) => {
         updatePlaybookRunDescription(props.playbookRun.id, value);
     };
 
+    const [editingSummary, setEditingSummary] = useState(false);
+    const editSummary = () => {
+        setEditingSummary(true);
+    };
+
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
 
     return (
         <>
-            <Container tabIndex={0}>
-                <ButtonsRow>
+            <Container
+                tabIndex={0}
+                id={'rhs-about'}
+            >
+                <ButtonsRow data-testid='buttons-row'>
                     <RHSAboutButtons
                         playbookRun={props.playbookRun}
                         collapsed={collapsed}
                         toggleCollapsed={toggleCollapsed}
+                        editSummary={editSummary}
                     />
                 </ButtonsRow>
                 <RHSAboutTitle
@@ -132,6 +141,8 @@ const RHSAbout = (props: Props) => {
                     <RHSAboutDescription
                         value={props.playbookRun.summary}
                         onEdit={onDescriptionEdit}
+                        editing={editingSummary}
+                        setEditing={setEditingSummary}
                     />
                     <Row>
                         <OwnerSection>
@@ -155,11 +166,13 @@ const RHSAbout = (props: Props) => {
                     </Row>
                 </>
                 }
-                <RHSPostUpdate
+                {props.playbookRun.status_update_enabled && (
+                    <RHSPostUpdate
                     collapsed={collapsed}
                     playbookRun={props.playbookRun}
                     updatesExist={props.playbookRun.status_posts.length !== 0}
-                />
+                    />
+                )}
             </Container>
             {(currentUserSelect?.id)?
                 <ConfirmModal
@@ -183,6 +196,9 @@ const RHSAbout = (props: Props) => {
 };
 
 const Container = styled.div`
+    position: relative;
+    z-index: 2;
+
     margin-top: 3px;
     padding: 16px 12px;
 

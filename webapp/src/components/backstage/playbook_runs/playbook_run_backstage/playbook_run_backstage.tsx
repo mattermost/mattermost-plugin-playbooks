@@ -10,6 +10,7 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
+import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
 import {copyToClipboard} from 'src/utils';
 
 import {
@@ -23,7 +24,6 @@ import {
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
-import Followers from 'src/components/backstage/playbook_runs/playbook_run_backstage/followers';
 import {
     clientFetchPlaybook,
     clientRemoveTimelineEvent,
@@ -35,7 +35,7 @@ import {
 } from 'src/client';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
-import {useAllowRetrospectiveAccess, useForceDocumentTitle, useRun} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
@@ -142,7 +142,8 @@ const VerticalBlock = styled.div`
 `;
 
 const Title = styled.div`
-    ${RegularHeading}
+    ${RegularHeading} {
+    }
 
     font-size: 20px;
     color: var(--center-channel-color);
@@ -222,6 +223,13 @@ const Button = styled(SecondaryButtonLarger)`
     margin-left: 12px;
 `;
 
+const FollowingButton = styled(Button)`
+    background: rgba(var(--button-bg-rgb), 0.12);
+    &&:hover {
+        background: rgba(var(--button-bg-rgb), 0.24);
+    }
+`;
+
 const PlaybookRunBackstage = () => {
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
@@ -229,9 +237,7 @@ const PlaybookRunBackstage = () => {
     const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
     const currentUserID = useSelector(getCurrentUserId);
-    const currentRun = useRun(match.params.playbookRunId);
-
-    const [followers, setFollowers] = useState<string[]>([]);
+    const [following, setFollowing] = useState<string[]>([]);
     const [runLinkCopied, setRunLinkCopied] = useState(false);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
@@ -243,19 +249,15 @@ const PlaybookRunBackstage = () => {
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
 
-        if (currentRun) {
-            setPlaybookRun(currentRun);
-        } else {
-            Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
-                setPlaybookRun(playbookRunResult);
-                setPlaybookRunMetadata(playbookRunMetadataResult);
-                setFetchingState(FetchingStateType.fetched);
-                setFollowers(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
-            }).catch(() => {
-                setFetchingState(FetchingStateType.notFound);
-            });
-        }
-    }, [match.params.playbookRunId, currentRun]);
+        Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
+            setPlaybookRun(playbookRunResult);
+            setPlaybookRunMetadata(playbookRunMetadataResult);
+            setFetchingState(FetchingStateType.fetched);
+            setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
+        }).catch(() => {
+            setFetchingState(FetchingStateType.notFound);
+        });
+    }, [match.params.playbookRunId]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -265,23 +267,25 @@ const PlaybookRunBackstage = () => {
             }
         };
 
-        if (currentRun) {
-            setPlaybookRun(currentRun);
-        } else {
-            fetchData();
-        }
-    }, [playbookRun?.playbook_id, currentRun]);
+        fetchData();
+    }, [playbookRun?.playbook_id]);
 
     const deleteTimelineEvent = async (id: string) => {
         if (!playbookRun) {
             return;
         }
-
         await clientRemoveTimelineEvent(playbookRun.id, id);
         setPlaybookRun({
             ...playbookRun,
             timeline_events: playbookRun.timeline_events.filter((event) => event.id !== id),
         });
+    };
+
+    const setRetrospective = (retrospective: string) => {
+        setPlaybookRun((run) => ({
+            ...run,
+            retrospective,
+        } as PlaybookRun));
     };
 
     if (fetchingState === FetchingStateType.loading) {
@@ -297,18 +301,18 @@ const PlaybookRunBackstage = () => {
     };
 
     const onFollow = () => {
-        if (followers.includes(currentUserID)) {
+        if (following.includes(currentUserID)) {
             return;
         }
         followPlaybookRun(playbookRun.id);
-        const followersCopy = [...followers, currentUserID];
-        setFollowers(followersCopy);
+        const followingCopy = [...following, currentUserID];
+        setFollowing(followingCopy);
     };
 
     const onUnfollow = () => {
         unfollowPlaybookRun(playbookRun.id);
-        const followersCopy = followers.filter((item) => item !== currentUserID);
-        setFollowers(followersCopy);
+        const followingCopy = following.filter((item) => item !== currentUserID);
+        setFollowing(followingCopy);
     };
 
     const closePlaybookRunDetails = () => {
@@ -316,8 +320,8 @@ const PlaybookRunBackstage = () => {
     };
 
     let followButton = (<Button onClick={onFollow}>{formatMessage({defaultMessage: 'Follow'})}</Button>);
-    if (followers.includes(currentUserID)) {
-        followButton = (<Button onClick={onUnfollow}>{formatMessage({defaultMessage: 'Unfollow'})}</Button>);
+    if (following.includes(currentUserID)) {
+        followButton = (<FollowingButton onClick={onUnfollow}>{formatMessage({defaultMessage: 'Following'})}</FollowingButton>);
     }
 
     const copyRunLink = () => {
@@ -364,7 +368,8 @@ const PlaybookRunBackstage = () => {
                             <StyledBadge status={BadgeType[playbookRun.current_status]}/>
                             {runLink}
                         </TitleWithBadgeAndLink>
-                        {playbook &&
+                        {
+                            playbook &&
                             <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
                                 <SmallPlaybookIcon/>
                                 <SubTitle>{playbook?.title}</SubTitle>
@@ -372,7 +377,7 @@ const PlaybookRunBackstage = () => {
                         }
                     </VerticalBlock>
                     <ExpandRight/>
-                    <Followers userIds={followers}/>
+                    <Following userIds={following}/>
                     {followButton}
                     <Line/>
                     <ExportLink playbookRun={playbookRun}/>
@@ -410,6 +415,7 @@ const PlaybookRunBackstage = () => {
                             <Retrospective
                                 playbookRun={playbookRun}
                                 deleteTimelineEvent={deleteTimelineEvent}
+                                setRetrospective={setRetrospective}
                             />
                         </Route>
                         <Redirect to={`${match.url}/overview`}/>

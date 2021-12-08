@@ -1540,4 +1540,48 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.41.0"),
+		toVersion:   semver.MustParse("0.42.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Incident")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.42.0"),
+		toVersion:   semver.MustParse("0.43.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "RetrospectiveEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveEnabled to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "RetrospectiveEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveEnabled to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "RetrospectiveEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveEnabled to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "RetrospectiveEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveEnabled to table IR_Incident")
+				}
+			}
+			return nil
+		},
+	},
 }

@@ -30,17 +30,17 @@ interface Props {
 }
 
 const Updates = (props: Props) => {
-    // sorting somehow breakes the application
-    const statusPosts = props.playbookRun.status_posts;
-    const sortedStatusPosts = [...statusPosts].sort((a, b) => b.create_at - a.create_at);
-
+    const statusPosts = props.playbookRun.status_posts.sort((a, b) => b.create_at - a.create_at);
     const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
-    let updates: ReactNode =
-        <EmptyBody>{formatMessage({defaultMessage: 'There are no updates available.'})}</EmptyBody>;
-    if (sortedStatusPosts.length) {
-        updates = sortedStatusPosts.reduce((result, sp) => {
+    const noUpdatesText = props.playbookRun.status_update_enabled ? formatMessage({defaultMessage: 'There are no updates available.'}) :
+        formatMessage({defaultMessage: 'Status updates were disabled for this playbook run.'});
+
+    let updates: ReactNode = <EmptyBody id={'status-update-msg'}>{noUpdatesText}</EmptyBody>;
+
+    if (statusPosts.length) {
+        updates = statusPosts.reduce((result, sp) => {
             if (sp.delete_at === 0) {
                 result.push(
                     <PostContent

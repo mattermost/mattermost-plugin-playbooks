@@ -28,6 +28,7 @@ type Playbook struct {
 	MemberIDs                            []string    `json:"member_ids"`
 	ReminderMessageTemplate              string      `json:"reminder_message_template"`
 	ReminderTimerDefaultSeconds          int64       `json:"reminder_timer_default_seconds"`
+	StatusUpdateEnabled                  bool        `json:"status_update_enabled"`
 	InvitedUserIDs                       []string    `json:"invited_user_ids"`
 	InvitedGroupIDs                      []string    `json:"invited_group_ids"`
 	InviteUsersEnabled                   bool        `json:"invite_users_enabled"`
@@ -41,6 +42,7 @@ type Playbook struct {
 	MessageOnJoinEnabled                 bool        `json:"message_on_join_enabled"`
 	RetrospectiveReminderIntervalSeconds int64       `json:"retrospective_reminder_interval_seconds"`
 	RetrospectiveTemplate                string      `json:"retrospective_template"`
+	RetrospectiveEnabled                 bool        `json:"retrospective_enabled"`
 	WebhookOnStatusUpdateURLs            []string    `json:"webhook_on_status_update_urls"`
 	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
 	SignalAnyKeywords                    []string    `json:"signal_any_keywords"`
@@ -322,6 +324,12 @@ type PlaybookTelemetry interface {
 
 	// FrontendTelemetryForPlaybookTemplate tracks an event originating from the frontend
 	FrontendTelemetryForPlaybookTemplate(templateName string, userID, action string)
+
+	// AutoFollowPlaybook tracks the auto-follow of a playbook.
+	AutoFollowPlaybook(playbook Playbook, userID string)
+
+	// AutoUnfollowPlaybook tracks the auto-unfollow of a playbook.
+	AutoUnfollowPlaybook(playbook Playbook, userID string)
 }
 
 const (
