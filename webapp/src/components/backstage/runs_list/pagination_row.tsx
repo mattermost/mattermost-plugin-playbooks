@@ -12,7 +12,7 @@ const PaginationRowDiv = styled.div`
 
 const CountDiv = styled.div`
     padding-top: 8px;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 const Button = styled.button`

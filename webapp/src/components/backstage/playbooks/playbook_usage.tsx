@@ -58,6 +58,7 @@ const PlaybookUsage = (props: Props) => {
                         setFetchParams={setFetchParams}
                         filterPill={filterPill}
                         fixedTeam={true}
+                        fixedPlaybook={true}
                     />
                 </RunListContainer>
             </InnerContainer>

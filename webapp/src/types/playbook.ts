@@ -22,6 +22,7 @@ export interface PlaybookWithChecklist extends Playbook {
     checklists: Checklist[];
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
+    status_update_enabled: boolean;
     invited_user_ids: string[];
     invited_group_ids: string[];
     invite_users_enabled: boolean;
@@ -37,11 +38,13 @@ export interface PlaybookWithChecklist extends Playbook {
     message_on_join_enabled: boolean;
     retrospective_reminder_interval_seconds: number;
     retrospective_template: string;
+    retrospective_enabled: boolean
     signal_any_keywords_enabled: boolean;
     signal_any_keywords: string[];
     category_name: string;
     categorize_channel_enabled: boolean;
     run_summary_template: string;
+    channel_name_template: string;
 }
 
 export interface FetchPlaybooksParams {
@@ -109,6 +112,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         member_ids: [],
         reminder_message_template: '',
         reminder_timer_default_seconds: 7 * 24 * 60 * 60, // 7 days
+        status_update_enabled: true,
         invited_user_ids: [],
         invited_group_ids: [],
         invite_users_enabled: false,
@@ -124,11 +128,13 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         message_on_join_enabled: false,
         retrospective_reminder_interval_seconds: 0,
         retrospective_template: defaultRetrospectiveTemplate,
+        retrospective_enabled: true,
         signal_any_keywords: [],
         signal_any_keywords_enabled: false,
         category_name: '',
         categorize_channel_enabled: false,
         run_summary_template: '',
+        channel_name_template: '',
     };
 }
 
@@ -201,7 +207,8 @@ export function isPlaybook(arg: any): arg is PlaybookWithChecklist {
         typeof arg.message_on_join === 'string' &&
         typeof arg.message_on_join_enabled === 'boolean' &&
         typeof arg.signal_any_keywords && Array.isArray(arg.signal_any_keywords) && arg.signal_any_keywords.every((id: any) => typeof id === 'string') &&
-        typeof arg.signal_any_keywords_enabled === 'boolean'
+        typeof arg.signal_any_keywords_enabled === 'boolean' &&
+        typeof arg.channel_name_template === 'string'
     );
 }
 

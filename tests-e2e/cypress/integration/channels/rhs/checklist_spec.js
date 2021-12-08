@@ -98,7 +98,7 @@ describe('channels > rhs > checklist', () => {
         let playbookRunName;
         let playbookRunChannelName;
 
-        before(() => {
+        beforeEach(() => {
             // # Run the playbook
             const now = Date.now();
             playbookRunName = 'Playbook Run (' + now + ')';
@@ -117,9 +117,7 @@ describe('channels > rhs > checklist', () => {
                 cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[4].id);
                 cy.apiAddUserToChannel(playbookRun.channel_id, testUsers[5].id);
             });
-        });
 
-        beforeEach(() => {
             // # Navigate directly to the application and the playbook run channel
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
@@ -162,7 +160,21 @@ describe('channels > rhs > checklist', () => {
         });
 
         it('still shows slash commands as having been run after reload', () => {
-            // # Navigate directly to the application and the playbook run channel
+            cy.get('#rhsContainer').should('exist').within(() => {
+                // * Verify the command has not yet been run.
+                cy.findAllByTestId('run').eq(1).should('have.text', 'Run');
+
+                // * Run the /invalid slash command
+                cy.findAllByTestId('run').eq(1).click();
+
+                // * Verify the command has now been run.
+                cy.findAllByTestId('run').eq(1).should('have.text', 'Rerun');
+            });
+
+            // # Verify the expected output.
+            cy.verifyPostedMessage('VALID');
+
+            // # Reload the page
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
             cy.get('#rhsContainer').should('exist').within(() => {
@@ -221,6 +233,72 @@ describe('channels > rhs > checklist', () => {
                 cy.get('.icon-account-plus-outline').click().wait(HALF_SEC);
 
                 cy.isInViewport('.playbook-run-user-select');
+            });
+        });
+
+        it('creates a new checklist', () => {
+            // # Click on the button to add a checklist
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText('Checklists').trigger('mouseover').within(() => {
+                    cy.findByTitle('Add checklist').click();
+                });
+            });
+
+            // # Type a title and click on the Add button
+            const title = 'Checklist - ' + Date.now();
+            cy.findByLabelText('Checklist name').type(title);
+            cy.findByRole('button', {name: 'Add'}).click();
+
+            // # Click on the button to add a checklist
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText(title).should('exist');
+            });
+        });
+
+        it('renames a checklist', () => {
+            const oldTitle = 'Stage 1';
+            const newTitle = 'New title - ' + Date.now();
+
+            // # Open the dot menu and click on the rename button
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText(oldTitle).trigger('mouseover');
+                cy.findByTitle('More').click();
+                cy.findByRole('button', {name: 'Rename checklist'}).click();
+            });
+
+            // # Clear the text in the input
+            cy.findByLabelText('Checklist name').clear();
+
+            // * Verify that the confirm button is disabled
+            cy.findByRole('button', {name: 'Rename'}).should('be.disabled');
+
+            // # Type the new title and click the confirm button
+            cy.findByLabelText('Checklist name').type(newTitle);
+            cy.findByRole('button', {name: 'Rename'}).click();
+
+            // * Verify that the checklist changed its name
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText(oldTitle).should('not.exist');
+                cy.findByText(newTitle).should('exist');
+            });
+        });
+
+        it('deletes a checklist', () => {
+            const title = 'Stage 1';
+
+            // # Open the dot menu and click on the delete button
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText(title).trigger('mouseover');
+                cy.findByTitle('More').click();
+                cy.findByRole('button', {name: 'Delete checklist'}).click();
+            });
+
+            // # Click the confirm button
+            cy.findByRole('button', {name: 'Delete'}).click();
+
+            // * Verify that the checklist is no longer there
+            cy.get('#rhsContainer').within(() => {
+                cy.findByText(title).should('not.exist');
             });
         });
     });

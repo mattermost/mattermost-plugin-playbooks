@@ -103,6 +103,18 @@ func (t *NoopTelemetry) ChangeOwner(*app.PlaybookRun, string) {
 func (t *NoopTelemetry) RunTaskSlashCommand(string, string, app.ChecklistItem) {
 }
 
+// AddChecklist does nothing
+func (t *NoopTelemetry) AddChecklist(playbookRunID, userID string, checklist app.Checklist) {
+}
+
+// RemoveChecklist does nothing
+func (t *NoopTelemetry) RemoveChecklist(playbookRunID, userID string, checklist app.Checklist) {
+}
+
+// RenameChecklist does nothing
+func (t *NoopTelemetry) RenameChecklist(playbookRunID, userID string, checklist app.Checklist) {
+}
+
 func (t *NoopTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, userID string) {
 }
 
@@ -127,4 +139,20 @@ func (t *NoopTelemetry) FrontendTelemetryForPlaybookTemplate(templateName string
 
 // ChangeDigestSettings does nothing
 func (t *NoopTelemetry) ChangeDigestSettings(userID string, old app.DigestNotificationSettings, new app.DigestNotificationSettings) {
+}
+
+// Follow tracks userID following a playbook run.
+func (t *NoopTelemetry) Follow(playbookRun *app.PlaybookRun, userID string) {
+}
+
+// Unfollow tracks userID following a playbook run.
+func (t *NoopTelemetry) Unfollow(playbookRun *app.PlaybookRun, userID string) {
+}
+
+// AutoFollowPlaybook tracks the auto-follow of a playbook.
+func (t *NoopTelemetry) AutoFollowPlaybook(playbook app.Playbook, userID string) {
+}
+
+// AutoUnfollowPlaybook tracks the auto-unfollow of a playbook.
+func (t *NoopTelemetry) AutoUnfollowPlaybook(playbook app.Playbook, userID string) {
 }

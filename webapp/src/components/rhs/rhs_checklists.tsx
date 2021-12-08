@@ -4,7 +4,7 @@
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {
     DragDropContext,
     Draggable,
@@ -22,6 +22,7 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
+    addNewTask,
     finishRun,
     playbookRunUpdated,
     setAllChecklistsCollapsedState,
@@ -53,6 +54,7 @@ import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';
+import AddChecklistDialog from 'src/components/rhs/rhs_checklists_add_dialog';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -73,6 +75,7 @@ const RHSChecklists = (props: Props) => {
     const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
+    const [showAddChecklistDialog, setShowAddChecklistDialog] = useState(false);
 
     const checklists = props.playbookRun.checklists || [];
     const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
@@ -101,37 +104,59 @@ const RHSChecklists = (props: Props) => {
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
-            {
-                showMenu &&
-                <HoverRow>
-                    <HoverMenuButton
-                        title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
-                        className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
-                        onClick={() => dispatch(setAllChecklistsCollapsedState(channelId, !allCollapsed, checklists.length))}
-                    />
-                    <MultiCheckbox
-                        options={filterOptions}
-                        onselect={selectOption}
-                        dotMenuButton={StyledDotMenuButton}
-                        icon={
-                            <IconWrapper>
-                                <i className='icon icon-filter-variant'/>
-                            </IconWrapper>
-                        }
-                    />
-                </HoverRow>
-            }
-            <MainTitle>{formatMessage({defaultMessage: 'Checklists'})}</MainTitle>
+            <MainTitleBG numChecklists={checklists.length}>
+                <MainTitle>
+                    {formatMessage({defaultMessage: 'Checklists'})}
+                    {
+                        showMenu &&
+                        <HoverRow>
+                            <ExpandHoverButton
+                                title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
+                                className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
+                                onClick={() => dispatch(setAllChecklistsCollapsedState(channelId, !allCollapsed, checklists.length))}
+                            />
+                            <HoverMenuButton
+                                title={formatMessage({defaultMessage: 'Add checklist'})}
+                                className={'icon-plus icon-16 btn-icon'}
+                                onClick={() => setShowAddChecklistDialog(true)}
+                            />
+                            <MultiCheckbox
+                                options={filterOptions}
+                                onselect={selectOption}
+                                dotMenuButton={StyledDotMenuButton}
+                                icon={
+                                    <IconWrapper>
+                                        <i className='icon icon-filter-variant'/>
+                                    </IconWrapper>
+                                }
+                            />
+                        </HoverRow>
+                    }
+                </MainTitle>
+            </MainTitleBG>
             {checklists.map((checklist: Checklist, checklistIndex: number) => (
                 <CollapsibleChecklist
                     key={checklist.title + checklistIndex}
                     title={checklist.title}
                     items={checklist.items}
                     index={checklistIndex}
+                    numChecklists={checklists.length}
                     collapsed={Boolean(checklistsState[checklistIndex])}
                     setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
-                    disabled={finished}
+                    disabledOrRunID={finished || props.playbookRun.id}
                 >
+                    {checklist.items.length === 0 &&
+                    <EmptyChecklistContainer className='checklist'>
+                        <AddTaskLink
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                dispatch(addNewTask(checklistIndex));
+                            }}
+                        >
+                            {formatMessage({defaultMessage: '+ Add task'})}
+                        </AddTaskLink>
+                    </EmptyChecklistContainer>
+                    }
                     {visibleTasks(checklist, checklistItemsFilter, myUser.id) &&
                     <ChecklistContainer className='checklist'>
                         <DragDropContext
@@ -225,37 +250,77 @@ const RHSChecklists = (props: Props) => {
                     {formatMessage({defaultMessage: 'Finish run'})}
                 </FinishButton>
             }
+            <AddChecklistDialog
+                playbookRunID={props.playbookRun.id}
+                show={showAddChecklistDialog}
+                onHide={() => setShowAddChecklistDialog(false)}
+            />
         </InnerContainer>
     );
 };
 
 const InnerContainer = styled.div`
     position: relative;
+    z-index: 1;
+
     display: flex;
     flex-direction: column;
-    padding: 12px 12px 24px 12px;
+    padding: 0 12px 24px 12px;
 
     &:hover {
-        background-color: var(--center-channel-color-04);
+        background-color: rgba(var(--center-channel-color-rgb), 0.04);
     }
 `;
 
+const MainTitleBG = styled.div<{ numChecklists: number }>`
+    background-color: var(--center-channel-bg);
+    z-index: ${({numChecklists}) => numChecklists + 2};
+    position: sticky;
+    top: 0;
+`;
+
 const MainTitle = styled.div`
-    ${SemiBoldHeading}
+    ${SemiBoldHeading} {
+    }
+
+    ${InnerContainer}:hover & {
+        background-color: rgba(var(--center-channel-color-rgb), .04);
+    }
 
     font-size: 16px;
     line-height: 24px;
-    margin: 0 0 0 8px;
+    padding: 12px 0 12px 8px;
 `;
 
 const ChecklistContainer = styled.div`
     background-color: var(--center-channel-bg);
+    border-radius: 0 0 4px 4px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-top: 0;
     padding: 16px 12px;
+`;
+
+const EmptyChecklistContainer = styled(ChecklistContainer)`
+    padding: 12px;
+`;
+
+const AddTaskLink = styled.button`
+    font-size: 12px;
+    font-weight: 600;
+
+    color: var(--button-bg);
+
+    background: none;
+    border: none;
 `;
 
 const HoverRow = styled(HoverMenu)`
     top: 6px;
     right: 15px;
+`;
+
+const ExpandHoverButton = styled(HoverMenuButton)`
+    padding: 3px 0 0 1px;
 `;
 
 const StyledDotMenuButton = styled(DotMenuButton)`
@@ -264,13 +329,13 @@ const StyledDotMenuButton = styled(DotMenuButton)`
     height: 28px;
 
     &:hover {
-        background: var(--button-bg-08);
+        background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     }
 `;
 
 const IconWrapper = styled.div`
-    padding: 6px 0 0 2px;
+    padding: 3px 0 0 1px;
     margin: 0;
 `;
 
@@ -357,18 +422,28 @@ const showItem = (checklistItem: ChecklistItem, filter: ChecklistItemsFilter, my
     if (filter.all) {
         return true;
     }
+
+    // "Show checked tasks" is not checked, so if item is checked (closed), don't show it.
     if (!filter.checked && checklistItem.state === ChecklistItemState.Closed) {
         return false;
     }
+
+    // "Me" is not checked, so if assignee_id is me, don't show it.
     if (!filter.me && checklistItem.assignee_id === myId) {
         return false;
     }
+
+    // "Unassigned" is not checked, so if assignee_id is blank (unassigned), don't show it.
     if (!filter.unassigned && checklistItem.assignee_id === '') {
         return false;
     }
-    if (!filter.others && checklistItem.assignee_id !== myId) {
+
+    // "Others" is not checked, so if item has someone else as the assignee, don't show it.
+    if (!filter.others && checklistItem.assignee_id !== '' && checklistItem.assignee_id !== myId) {
         return false;
     }
+
+    // We should show it!
     return true;
 };
 

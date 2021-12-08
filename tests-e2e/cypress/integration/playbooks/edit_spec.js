@@ -6,8 +6,9 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-describe('playooks > edit', () => {
+describe('playbooks > edit', () => {
     let testTeam;
+    let testSysadmin;
     let testUser;
     let testUser2;
     let testUser3;
@@ -16,6 +17,10 @@ describe('playooks > edit', () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
+                testSysadmin = sysadmin;
+            });
 
             // # Create a second test user in this team
             cy.apiCreateUser().then((payload) => {
@@ -162,6 +167,45 @@ describe('playooks > edit', () => {
         });
 
         describe('when a playbook run starts', () => {
+            describe('create channel setting', () => {
+                it('is enabled in a new playbook', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    // * Verify that the toggle is checked
+                    cy.get('#create-channel label input').should(
+                        'be.checked'
+                    );
+
+                    // * Verify that the toggle is disabled
+                    cy.get('#create-channel label input').should(
+                        'be.disabled'
+                    );
+                });
+
+                it('can not be disabled', () => {
+                    // # Visit the selected playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.get('#root').findByText('Actions').click();
+
+                    cy.get('#create-channel').within(() => {
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle remains checked
+                        cy.get('label input').should('be.checked');
+                    });
+                });
+            });
+
             describe('invite members setting', () => {
                 it('is disabled in a new playbook', () => {
                     // # Visit the selected playbook
@@ -430,7 +474,7 @@ describe('playooks > edit', () => {
                     let playbookId;
 
                     // # Create a playbook with a user that is later removed from the team
-                    cy.apiAdminLogin()
+                    cy.apiLogin(testSysadmin)
                         .then(() => {
                             cy.apiCreateUser().then((result) => {
                                 userToRemove = result.user;
@@ -444,7 +488,7 @@ describe('playooks > edit', () => {
                                     teamId: testTeam.id,
                                     title: 'Playbook (' + Date.now() + ')',
                                     createPublicPlaybookRun: true,
-                                    memberIDs: [testUser.id],
+                                    memberIDs: [testUser.id, testSysadmin.id],
                                     invitedUserIds: [userToRemove.id],
                                     inviteUsersEnabled: true,
                                 }).then((playbook) => {
@@ -692,7 +736,7 @@ describe('playooks > edit', () => {
                     let playbookId;
 
                     // # Create a playbook with a user that is later removed from the team
-                    cy.apiAdminLogin()
+                    cy.apiLogin(testSysadmin)
                         .then(() => {
                             // # We need to increase the maximum number of users per team; otherwise,
                             // adding a new member to the team fails in CI
@@ -710,7 +754,7 @@ describe('playooks > edit', () => {
                                     teamId: testTeam.id,
                                     title: 'Playbook (' + Date.now() + ')',
                                     createPublicPlaybookRun: true,
-                                    memberIDs: [testUser.id],
+                                    memberIDs: [testUser.id, testSysadmin.id],
                                     defaultOwnerId: userToRemove.id,
                                     defaultOwnerEnabled: true,
                                 }).then((playbook) => {
@@ -960,7 +1004,7 @@ describe('playooks > edit', () => {
                     let playbookId;
 
                     // # Create a playbook with a user that is later removed from the team
-                    cy.apiAdminLogin()
+                    cy.apiLogin(testSysadmin)
                         .then(() => {
                             const channelDisplayName = String(
                                 'Channel to delete ' + Date.now()
@@ -978,7 +1022,7 @@ describe('playooks > edit', () => {
                                     teamId: testTeam.id,
                                     title: 'Playbook (' + Date.now() + ')',
                                     createPublicPlaybookRun: true,
-                                    memberIDs: [testUser.id],
+                                    memberIDs: [testUser.id, testSysadmin.id],
                                     announcementChannelId: channel.id,
                                     announcementChannelEnabled: true,
                                 }).then((playbook) => {
@@ -1149,6 +1193,441 @@ describe('playooks > edit', () => {
                         'Unknown Channel'
                     );
                 });
+            });
+        });
+
+        describe('when a new member joins the channel', () => {
+            beforeEach(() => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Actions tab
+                cy.findByText('Actions').click();
+            });
+
+            describe('add the channel to a sidebar category', () => {
+                it('is disabled in a new playbook', () => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('#user-joins-channel-categorize label input').should(
+                        'not.be.checked'
+                    );
+                });
+
+                it('can be enabled', () => {
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('be.checked');
+                    });
+                });
+
+                it('prevents category selection when disabled', () => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('#user-joins-channel-categorize label input').should(
+                        'not.be.checked'
+                    );
+
+                    // * Verify that the category selector is disabled
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        cy.getStyledComponent('StyledCreatable').should(
+                            'have.class',
+                            'channel-selector--is-disabled'
+                        );
+                    });
+                });
+
+                it('allows selecting a category when enabled', () => {
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Open the category selector
+                        cy.openCategorySelector();
+
+                        // # Select a category
+                        cy.selectCategory('Favorites');
+
+                        // * Verify that the control shows the selected category
+                        cy.get('.channel-selector__control').contains(
+                            'Favorites'
+                        );
+                    });
+                });
+
+                it('allows changing the category', () => {
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Open the channel selector
+                        cy.openCategorySelector();
+
+                        // # Select a channel
+                        cy.selectCategory('Favorites');
+
+                        // * Verify that the control shows the selected category
+                        cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(
+                            'Favorites'
+                        );
+
+                        // # Open the channel selector
+                        cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').click({
+                            force: true,
+                        });
+
+                        // # Select a new channel
+                        cy.selectCategory('Channels');
+
+                        // * Verify that the control shows the selected channel
+                        cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(
+                            'Channels',
+                        );
+                    });
+                });
+
+                it('persists the category even if the toggle is off', () => {
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // # Open the channel selector
+                        cy.openCategorySelector();
+
+                        // # Select a channel
+                        cy.selectCategory('Favorites');
+
+                        // * Verify that the control shows the selected category
+                        cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(
+                            'Favorites'
+                        );
+
+                        // # Click on the toggle to disable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+                    });
+
+                    // # Save the playbook
+                    cy.findByTestId('save_playbook').click();
+
+                    // # Navigate again to the playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.findByText('Actions').click();
+
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+
+                        // * Verify that the control still shows the selected category
+                        cy.get('#playbook-automation-categorize-playbook-run .channel-selector__control').contains(
+                            'Favorites'
+                        );
+                    });
+                });
+
+                it('shows new category name when category was created', () => {
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is unchecked
+                        cy.get('label input').should('not.be.checked');
+
+                        // # Click on the toggle to enable the setting
+                        cy.get('label input').click({force: true});
+
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+                    });
+
+                    // # Type name to use new custom category
+                    cy.get('#playbook-automation-categorize-playbook-run')
+                    .click()
+                    .type('Custom category' + '{enter}', {delay: 200});
+
+                    // # Save the playbook
+                    cy.findByTestId('save_playbook').click();
+
+                    // # Visit the selected playbook
+                    cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                    // # Switch to Actions tab
+                    cy.findByText('Actions').click();
+
+                    cy.get('#user-joins-channel-categorize').within(() => {
+                        // * Verify that the toggle is checked
+                        cy.get('label input').should('be.checked');
+                    });
+
+                    // * Verify that the control still shows the new category 
+                    cy.get('#playbook-automation-categorize-playbook-run').should(
+                        'have.text',
+                        'Custom category',
+                    );
+                });
+            })
+        });
+        describe('status updates enable / disabled', () => {
+            it('is enabled in a new playbook', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // * Verify that the toggle is checked
+                cy.get('#status-updates label input').should('be.checked');
+            });
+
+            it('can be disabled', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // * Verify that toggle can be disabled
+                cy.get('#status-updates').within(() => {
+                    // * Verify that the toggle is checked
+                    cy.get('label input').should('be.checked');
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+
+                // * Verify that the update timer is disabled
+                cy.get('#default-update-timer').within(() => {
+                    cy.getStyledComponent('StyledSelect').should(
+                        'have.class',
+                        'playbooks-rselect--is-disabled'
+                    );
+                });                
+                
+                // * Verify that the update text is disabled
+                cy.get('#playbook_reminder_message_edit').should('be.disabled');
+
+                // # Switch to Actions tab
+                cy.get('#root').findByText('Actions').click();
+
+                // * Verify that the toggle can't be checked 
+                cy.get('#broadcast-channels').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+
+                    // # Click on the toggle
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+
+                // * Verify that the toggle can't be checked 
+                cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+
+                    // # Click on the toggle
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+            });
+
+            it('disabling status should disable actions(when an update is posted)', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Actions tab
+                cy.get('#root').findByText('Actions').click();
+
+                // * Verify that the toggle is checked 
+                cy.get('#broadcast-channels').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is checked
+                    cy.get('label input').should('be.checked');
+                });
+
+                // * Verify that the toggle is checked 
+                cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is checked
+                    cy.get('label input').should('be.checked');
+                });
+                
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // * Verify that toggle can be selected
+                cy.get('#status-updates').within(() => {
+                    // * Verify that the toggle is checked
+                    cy.get('label input').should('be.checked');
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+                
+                // # Switch to Actions tab
+                cy.get('#root').findByText('Actions').click();
+                
+                // * Verify that the toggle can't be checked 
+                cy.get('#broadcast-channels').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+
+                    // # Click on the toggle
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+
+                // * Verify that the toggle can't be checked 
+                cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+
+                    // # Click on the toggle
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+            });
+            
+            it('can be saved', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+    
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+    
+                // # Uncheck toggle
+                cy.get('#status-updates label input').click({force: true});
+    
+                // # Save the playbook
+                cy.findByTestId('save_playbook').click();
+    
+                // # Navigate again to the playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+    
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+    
+                // * Verify that the toggle is unchecked
+                cy.get('#status-updates label input').should('not.be.checked');
+            });
+        });
+
+        describe('retrospective enable / disable', () => {
+            it('is enabled in a new playbook', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // * Verify that the toggle is checked
+                cy.get('#retrospective-enabled label input').should('be.checked');
+            });
+
+            it('can be disabled', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // * Verify that toggle can be disabled
+                cy.get('#retrospective-enabled').within(() => {
+                    // * Verify that the toggle is checked
+                    cy.get('label input').should('be.checked');
+
+                    // # Click on the toggle to enable the setting
+                    cy.get('label input').click({force: true});
+
+                    // * Verify that the toggle is unchecked
+                    cy.get('label input').should('not.be.checked');
+                });
+
+                // * Verify that select box is disabled
+                cy.get('#retrospective-reminder-interval').within(() => {
+                    cy.getStyledComponent('StyledSelect').should(
+                        'have.class',
+                        'playbooks-rselect--is-disabled'
+                    );
+                });       
+
+                // * Verify that the text box is disabled
+                cy.get('#playbook_retrospective_template_edit').should('be.disabled');
+            });
+
+            it('can be saved', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // # Uncheck toggle
+                cy.get('#retrospective-enabled label input').click({force: true});
+
+                // # Save the playbook
+                cy.findByTestId('save_playbook').click();
+
+                // # Navigate again to the playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Templates tab
+                cy.get('#root').findByText('Templates').click();
+
+                // * Verify that the toggle is unchecked
+                cy.get('#retrospective-enabled label input').should('not.be.checked');
             });
         });
     });

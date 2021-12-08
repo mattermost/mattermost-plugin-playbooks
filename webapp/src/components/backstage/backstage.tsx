@@ -46,8 +46,8 @@ const BackstageTitlebarItem = styled(NavLink)`
     && {
         font-size: 16px;
         cursor: pointer;
-        color: var(--center-channel-color-80);
-        fill: var(--center-channel-color-80);
+        color: rgba(var(--center-channel-color-rgb), 0.80);
+        fill: rgba(var(--center-channel-color-rgb), 0.80);
         padding: 0 12px;
         margin-right: 20px;
         display: flex;
@@ -58,16 +58,16 @@ const BackstageTitlebarItem = styled(NavLink)`
 
         &:hover {
             text-decoration: unset;
-            color: var(--center-channel-color-80);
-            fill: var(--center-channel-color-80);
-            background: var(--center-channel-color-08);
+            color: rgba(var(--center-channel-color-rgb), 0.80);
+            fill: rgba(var(--center-channel-color-rgb), 0.80);
+            background: rgba(var(--center-channel-color-rgb), 0.08);
         }
 
         &.active {
             color: var(--button-bg);
             fill: var(--button-bg);
             text-decoration: unset;
-            background: var(--button-bg-08);
+            background: rgba(var(--button-bg-rgb), 0.08);
         }
 
         & > :first-child {
@@ -79,6 +79,8 @@ const BackstageTitlebarItem = styled(NavLink)`
 const BackstageBody = styled.div`
     z-index: 1;
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 `;
 
 const Backstage = () => {

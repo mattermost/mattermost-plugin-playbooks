@@ -8,6 +8,7 @@
 
 describe('channels > actions', () => {
     let testTeam;
+    let testSysadmin;
     let testUser;
     let testPublicChannel;
     const testUsers = [];
@@ -16,6 +17,10 @@ describe('channels > actions', () => {
         cy.apiInitSetup({userPrefix: 'u'}).then(({team, user}) => {
             testTeam = team;
             testUser = user;
+
+            cy.apiCreateCustomAdmin().then(({sysadmin}) => {
+                testSysadmin = sysadmin;
+            });
 
             // # Create extra test users in this team
             cy.apiCreateUser({prefix: 'u'}).then((payload) => {
@@ -173,7 +178,7 @@ describe('channels > actions', () => {
                 let playbook;
 
                 // # Create a playbook with a user that is later removed from the team
-                cy.apiAdminLogin().then(() => {
+                cy.apiLogin(testSysadmin).then(() => {
                     cy.apiCreateUser().then((result) => {
                         userToRemove = result.user;
                         cy.apiAddUserToTeam(testTeam.id, userToRemove.id);
@@ -185,7 +190,7 @@ describe('channels > actions', () => {
                             teamId: testTeam.id,
                             title: playbookName,
                             createPublicPlaybookRun: true,
-                            memberIDs: [testUser.id],
+                            memberIDs: [testUser.id, testSysadmin.id],
                             invitedUserIds: [userToRemove.id],
                             inviteUsersEnabled: true,
                         }).then((res) => {
@@ -508,7 +513,7 @@ describe('channels > actions', () => {
                 let playbookId;
 
                 // # Create a playbook with a channel that is later deleted
-                cy.apiAdminLogin().then(() => {
+                cy.apiLogin(testSysadmin).then(() => {
                     const channelDisplayName = String('Channel to delete ' + Date.now());
                     const channelName = channelDisplayName.replace(/ /g, '-').toLowerCase();
                     cy.apiCreateChannel(testTeam.id, channelName, channelDisplayName).then(({channel}) => {
@@ -517,7 +522,7 @@ describe('channels > actions', () => {
                             teamId: testTeam.id,
                             title: 'Playbook (' + Date.now() + ')',
                             createPublicPlaybookRun: true,
-                            memberIDs: [testUser.id],
+                            memberIDs: [testUser.id, testSysadmin.id],
                             broadcastChannelIds: [channel.id],
                             broadcastEnabled: true,
                         }).then((playbook) => {
@@ -592,4 +597,44 @@ describe('channels > actions', () => {
             });
         });
     });
+
+    describe('when a playbook run is finished', () => {
+        it('retrospective is disabled', () => {
+            const playbookName = 'Playbook (' + Date.now() + ')';
+
+            // # Create a new playbook run with that playbook
+            const now = Date.now();
+            const playbookRunName = `Run (${now})`;
+            const playbookRunChannelName = `run-${now}`;
+
+            // # Create a playbook with the disabled retrospective functionality
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: playbookName,
+                createPublicPlaybookRun: true,
+                memberIDs: [testUser.id],
+                retrospectiveEnabled: false,
+            }).then((playbook) => {
+                // # Run playbook
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: playbook.id,
+                    playbookRunName: playbookRunName,
+                    ownerUserId: testUser.id,
+                });
+            }).then((playbookRun) => {
+                // # End the playbook run
+                cy.apiFinishRun(playbookRun.id);
+            });
+
+            // # Navigate to the playbook run channel
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+        
+            // * Verify that playbook run finished message was posted
+            cy.findAllByTestId('postView').contains('marked this run as finished');
+
+            // * Verify that retrospective dialog was not posted
+            cy.findAllByTestId('retrospective-reminder').should('not.exist');
+        });
+    });    
 });

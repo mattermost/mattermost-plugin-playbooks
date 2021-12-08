@@ -1,9 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 
-import ReactSelect, {ControlProps, MenuListComponentProps} from 'react-select';
-
-import {Scrollbars} from 'react-custom-scrollbars';
+import ReactSelect, {ControlProps} from 'react-select';
 
 import styled from 'styled-components';
 import {ActionFunc} from 'mattermost-redux/types/actions';
@@ -14,7 +12,8 @@ import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {useIntl} from 'react-intl';
 
 import Profile from 'src/components/profile/profile';
-import ClearIcon from 'src/components/assets/icons/clear_icon';
+import ClearIndicator from 'src/components/backstage/automation/clear_indicator';
+import MenuList from 'src/components/backstage/automation/menu_list';
 
 interface Props {
     ownerID: string;
@@ -145,7 +144,7 @@ const StyledReactSelect = styled(ReactSelect)`
         background-color: transparent;
         border-radius: 4px;
         border: none;
-        box-shadow: inset 0 0 0 1px var(--center-channel-color-16);
+        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
         width: 100%;
         height: 4rem;
         font-size: 14px;
@@ -160,7 +159,7 @@ const StyledReactSelect = styled(ReactSelect)`
             left: 16px;
             top: 8px;
             position: absolute;
-            color: var(--center-channel-color-56);
+            color: rgba(var(--center-channel-color-rgb), 0.56);
             content: '\f349';
             font-size: 18px;
             font-family: 'compass-icons', mattermosticons;
@@ -171,7 +170,7 @@ const StyledReactSelect = styled(ReactSelect)`
 
     .assign-owner-selector__option {
         &:active {
-            background-color: var(--center-channel-color-08);
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
         }
     }
 
@@ -184,58 +183,3 @@ const StyledReactSelect = styled(ReactSelect)`
         color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 `;
-
-const MenuListWrapper = styled.div`
-    background-color: var(--center-channel-bg);
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    border-radius: 4px;
-
-    max-height: 280px;
-`;
-
-const MenuHeaderHeight = 44;
-
-const MenuHeader = styled.div`
-    height: ${MenuHeaderHeight}px;
-    padding: 16px 0 12px 14px;
-    font-size: 14px;
-    font-weight: 600;
-    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    line-height: 16px;
-`;
-
-const StyledScrollbars = styled(Scrollbars)`
-    height: ${300 - MenuHeaderHeight}px;
-`;
-
-const ThumbVertical = styled.div`
-    background-color: rgba(var(--center-channel-color-rgb), 0.24);
-    border-radius: 2px;
-    width: 4px;
-    min-height: 45px;
-    margin-left: -2px;
-    margin-top: 6px;
-`;
-
-const MenuList = (props: MenuListComponentProps<UserProfile, boolean>) => {
-    const {formatMessage} = useIntl();
-    return (
-        <MenuListWrapper>
-            <MenuHeader>{formatMessage({defaultMessage: 'Assign Owner'})}</MenuHeader>
-            <StyledScrollbars
-                autoHeight={true}
-                renderThumbVertical={({style, ...thumbProps}) => <ThumbVertical {...thumbProps}/>}
-            >
-                {props.children}
-            </StyledScrollbars>
-        </MenuListWrapper>
-    );
-};
-
-const ClearIndicator = ({clearValue}: {clearValue: () => void}) => {
-    return (
-        <div onClick={clearValue}>
-            <ClearIcon/>
-        </div>
-    );
-};

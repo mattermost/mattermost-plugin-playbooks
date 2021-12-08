@@ -233,6 +233,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			pb.Title, playbookURL, overviewURL)
 	}
 
+	if playbookRun.Name == "" {
+		playbookRun.Name = pb.ChannelNameTemplate
+	}
+
 	// Try to create the channel first
 	channel, err := s.createPlaybookRunChannel(playbookRun, header, public)
 	if err != nil {
@@ -952,7 +956,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 
 	// We are resolving the playbook run. Send the reminder to fill out the retrospective
 	// Also start the recurring reminder if enabled.
-	if playbookRunToModify.RetrospectivePublishedAt == 0 && s.configService.IsAtLeastE10Licensed() {
+	if playbookRunToModify.RetrospectiveEnabled && playbookRunToModify.RetrospectivePublishedAt == 0 && s.configService.IsAtLeastE10Licensed() {
 		if err = s.postRetrospectiveReminder(playbookRunToModify, true); err != nil {
 			return errors.Wrap(err, "couldn't post retrospective reminder")
 		}
@@ -1436,6 +1440,70 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	}
 
 	return cmdResponse.TriggerId, nil
+}
+
+// AddChecklist adds a checklist to the specified run
+func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, checklist Checklist) error {
+	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to retrieve playbook run")
+	}
+
+	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
+		return errors.New("user does not have permission to modify playbook run")
+	}
+
+	if !s.hasPermissionToModifyPlaybookRun(playbookRunToModify, userID) {
+		return errors.New("user does not have permission to modify playbook run")
+	}
+
+	playbookRunToModify.Checklists = append([]Checklist{checklist}, playbookRunToModify.Checklists...)
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.AddChecklist(playbookRunID, userID, checklist)
+
+	return nil
+}
+
+// RemoveChecklist removes the specified checklist
+func (s *PlaybookRunServiceImpl) RemoveChecklist(playbookRunID, userID string, checklistNumber int) error {
+	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
+	if err != nil {
+		return err
+	}
+
+	oldChecklist := playbookRunToModify.Checklists[checklistNumber]
+
+	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists[:checklistNumber], playbookRunToModify.Checklists[checklistNumber+1:]...)
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.RemoveChecklist(playbookRunID, userID, oldChecklist)
+
+	return nil
+}
+
+// RenameChecklist adds a checklist to the specified run
+func (s *PlaybookRunServiceImpl) RenameChecklist(playbookRunID, userID string, checklistNumber int, newTitle string) error {
+	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
+	if err != nil {
+		return err
+	}
+
+	playbookRunToModify.Checklists[checklistNumber].Title = newTitle
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.RenameChecklist(playbookRunID, userID, playbookRunToModify.Checklists[checklistNumber])
+
+	return nil
 }
 
 // AddChecklistItem adds an item to the specified checklist
@@ -2114,10 +2182,11 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 
 	introText := fmt.Sprintf("**Owner:** %v\n\n%s", getUserDisplayName(user), newPlaybookMarkdown)
 
-	defaultOption := ""
-
-	if len(options) == 1 {
-		defaultOption = options[0].Value
+	defaultPlaybookID := ""
+	defaultChannelNameTemplate := ""
+	if len(playbooks) == 1 {
+		defaultPlaybookID = playbooks[0].ID
+		defaultChannelNameTemplate = playbooks[0].ChannelNameTemplate
 	}
 
 	return &model.Dialog{
@@ -2129,7 +2198,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 				Name:        DialogFieldPlaybookIDKey,
 				Type:        "select",
 				Options:     options,
-				Default:     defaultOption,
+				Default:     defaultPlaybookID,
 			},
 			{
 				DisplayName: "Run name",
@@ -2137,6 +2206,7 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 				Type:        "text",
 				MinLength:   2,
 				MaxLength:   64,
+				Default:     defaultChannelNameTemplate,
 			},
 		},
 		SubmitLabel:    "Start run",
@@ -2433,6 +2503,12 @@ func (s *PlaybookRunServiceImpl) Follow(playbookRunID, userID string) error {
 		return errors.Wrapf(err, "user `%s` failed to follow the run `%s`", userID, playbookRunID)
 	}
 
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+	s.telemetry.Follow(playbookRun, userID)
+
 	return nil
 }
 
@@ -2441,6 +2517,12 @@ func (s *PlaybookRunServiceImpl) Unfollow(playbookRunID, userID string) error {
 	if err := s.store.Unfollow(playbookRunID, userID); err != nil {
 		return errors.Wrapf(err, "user `%s` failed to unfollow the run `%s`", userID, playbookRunID)
 	}
+
+	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+	s.telemetry.Unfollow(playbookRun, userID)
 
 	return nil
 }

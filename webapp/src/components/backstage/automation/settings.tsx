@@ -18,6 +18,7 @@ import {AutoAssignOwner} from 'src/components/backstage/automation/auto_assign_o
 import {Broadcast} from 'src/components/backstage/automation/broadcast';
 
 import {MessageOnJoin} from 'src/components/backstage/automation/message_on_join';
+import {CategorizePlaybookRun} from 'src/components/backstage/automation/categorize_playbook_run';
 
 interface Props {
     searchProfiles: (term: string) => ActionFunc;
@@ -55,6 +56,9 @@ interface Props {
     onToggleCategorizePlaybookRun: () => void;
     categoryName: string;
     categoryNameChange: (categoryName: string) => void;
+    statusUpdateEnabled: boolean;
+    channelNameTemplate: string;
+    onChannelNameTemplateChange: (channelNameTemplate: string) => void;
 }
 
 export const AutomationSettings = (props: Props) => {
@@ -80,6 +84,20 @@ export const AutomationSettings = (props: Props) => {
                 <SectionTitle>
                     {formatMessage({defaultMessage: 'When a run starts'})}
                 </SectionTitle>
+                <Setting id={'create-channel'}>
+                    <PatternedInput
+                        enabled={true}
+                        disableToggle={true}
+                        onToggle={() => null}
+                        input={props.channelNameTemplate}
+                        onChange={props.onChannelNameTemplateChange}
+                        pattern={'[\\S][\\s\\S]*[\\S]'} // at least two non-whitespace characters
+                        placeholderText={formatMessage({defaultMessage: 'Channel name template (optional)'})}
+                        textOnToggle={formatMessage({defaultMessage: 'Create a channel'})}
+                        type={'text'}
+                        errorText={formatMessage({defaultMessage: 'Channel name is not valid.'})}
+                    />
+                </Setting>
                 <Setting id={'invite-users'}>
                     <InviteUsers
                         enabled={props.inviteUsersEnabled}
@@ -125,7 +143,7 @@ export const AutomationSettings = (props: Props) => {
                 </SectionTitle>
                 <Setting id={'broadcast-channels'}>
                     <Broadcast
-                        enabled={props.broadcastEnabled}
+                        enabled={props.broadcastEnabled && props.statusUpdateEnabled}
                         onToggle={props.onToggleBroadcastChannel}
                         channelIds={props.broadcastChannelIds}
                         onChannelsSelected={props.onBroadcastChannelsSelected}
@@ -133,7 +151,7 @@ export const AutomationSettings = (props: Props) => {
                 </Setting>
                 <Setting id={'playbook-run-status-update__outgoing-webhook'}>
                     <PatternedTextArea
-                        enabled={props.webhookOnStatusUpdateEnabled}
+                        enabled={props.webhookOnStatusUpdateEnabled && props.statusUpdateEnabled}
                         onToggle={props.onToggleWebhookOnStatusUpdate}
                         input={props.webhookOnStatusUpdateURLs.join('\n')}
                         onChange={props.webhookOnStatusUpdateChange}
@@ -162,17 +180,11 @@ export const AutomationSettings = (props: Props) => {
                     />
                 </Setting>
                 <Setting id={'user-joins-channel-categorize'}>
-                    <PatternedInput
+                    <CategorizePlaybookRun
                         enabled={props.categorizePlaybookRun}
                         onToggle={props.onToggleCategorizePlaybookRun}
-                        input={props.categoryName}
-                        onChange={props.categoryNameChange}
-                        pattern={'[\\s\\S]*'}
-                        placeholderText={'Enter category name'}
-                        textOnToggle={formatMessage({defaultMessage: 'Add the channel to a sidebar category'})}
-                        type={'text'}
-                        errorText={formatMessage({defaultMessage: 'Invalid category name.'})} // this should not happen
-                        maxLength={22}
+                        categoryName={props.categoryName}
+                        onCategorySelected={props.categoryNameChange}
                     />
                 </Setting>
             </Section>

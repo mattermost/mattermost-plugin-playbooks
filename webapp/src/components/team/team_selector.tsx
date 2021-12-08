@@ -141,7 +141,7 @@ export default function TeamSelector(props: Props) {
     let target;
     if (props.selectedTeamId) {
         target = (
-            <TeamButton
+            <SelectedButton
                 onClick={() => {
                     if (props.enableEdit) {
                         toggleOpen();
@@ -154,7 +154,7 @@ export default function TeamSelector(props: Props) {
                 />
 
                 {<i className='icon-chevron-down ml-1 mr-2'/>}
-            </TeamButton>
+            </SelectedButton>
         );
     } else if (props.placeholderButtonClass) {
         target = (
@@ -310,7 +310,7 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
     );
 };
 
-const TeamButton = styled.button`
+export const SelectedButton = styled.button`
     font-weight: 600;
     height: 40px;
     padding: 0 4px 0 12px;
@@ -325,19 +325,18 @@ const TeamButton = styled.button`
 
     border: none;
     background-color: unset;
-    cursor: unset;
     display: flex;
     align-items: center;
     text-align: center;
 
     &:hover {
-        background: var(--center-channel-color-08);
-        color: var(--center-channel-color-72);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
     .PlaybookRunProfile {
         &:active {
-            background: var(--button-bg-08);
+            background: rgba(var(--button-bg-rgb), 0.08);
             color: var(--button-bg);
         }
 
@@ -354,7 +353,7 @@ const TeamButton = styled.button`
         padding: 4px;
         margin-top: 4px;
         border-radius: 100px;
-        color: var(--center-channel-color-64);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
         cursor: pointer;
         font-weight: normal;
         font-size: 12px;
@@ -366,12 +365,12 @@ const TeamButton = styled.button`
         transition: all 0.15s ease;
 
         &:hover {
-            background: var(--center-channel-color-08);
-            color: var(--center-channel-color-72);
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+            color: rgba(var(--center-channel-color-rgb), 0.72);
         }
 
         &:active {
-            background: var(--button-bg-08);
+            background: rgba(var(--button-bg-rgb), 0.08);
             color: var(--button-bg);
         }
 
