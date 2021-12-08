@@ -1767,7 +1767,7 @@ func (s *PlaybookRunServiceImpl) modificationMessage(userID, channelID, message 
 		return nil, errors.Wrapf(err, "failed to to resolve user %s", userID)
 	}
 
-	post, err := s.poster.PostMessage(channelID, user.Username+" "+message)
+	post, err := s.poster.PostMessage(channelID, fmt.Sprintf("@%s %s", user.Username, message))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to post modification messsage")
 	}
