@@ -6,12 +6,11 @@ import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import {getCurrentChannelId, getCurrentChannelNameForSearchShortcut} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentChannelId, getChannel, getChannelsNameMapInCurrentTeam, getCurrentChannelNameForSearchShortcut} from 'mattermost-redux/selectors/entities/channels';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Channel} from 'mattermost-redux/types/channels';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
-import {getChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
@@ -51,7 +50,7 @@ const RHSAbout = (props: Props) => {
     const [showAddToChannel, setShowAddToChannelConfirm] = useState(false);
     const [currentUserSelect, setCurrentUserSelect] = useState<UserProfile | null>();
     const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
-    const overviewURL = `/playbooks/runs/${props.playbookRun.id}`
+    const overviewURL = `/playbooks/runs/${props.playbookRun.id}`;
 
     const markdownOptions = {
         singleline: false,
@@ -168,28 +167,28 @@ const RHSAbout = (props: Props) => {
                 }
                 {props.playbookRun.status_update_enabled && (
                     <RHSPostUpdate
-                    collapsed={collapsed}
-                    playbookRun={props.playbookRun}
-                    updatesExist={props.playbookRun.status_posts.length !== 0}
+                        collapsed={collapsed}
+                        playbookRun={props.playbookRun}
+                        updatesExist={props.playbookRun.status_posts.length !== 0}
                     />
                 )}
             </Container>
-            {(currentUserSelect?.id)?
+            {(currentUserSelect?.id) ?
                 <ConfirmModal
-                show={showAddToChannel}
-                title={mdText(formatMessage({defaultMessage: 'Add @{displayName} to Channel'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting)}))}
-                message={mdText(formatMessage({defaultMessage: '@{displayName} is not a member of the [{runName}]({overviewURL}) channel. Would you like to add them to this channel? They will have access to all message history.'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting), runName: channelName, overviewURL: overviewURL}))}
-                confirmButtonText={formatMessage({defaultMessage: 'Add'})}
-                onConfirm={() => {
-                    if (currentUserSelect) {
-                        dispatch(addToChannel(currentUserSelect.id));
-                        setShowAddToChannelConfirm(false);
-                        setOwnerUtil(currentUserSelect.id);
+                    show={showAddToChannel}
+                    title={mdText(formatMessage({defaultMessage: 'Add @{displayName} to Channel'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting)}))}
+                    message={mdText(formatMessage({defaultMessage: '@{displayName} is not a member of the [{runName}]({overviewUrl}) channel. Would you like to add them to this channel? They will have access to all message history.'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting), runName: channelName, overviewUrl: overviewURL}))}
+                    confirmButtonText={formatMessage({defaultMessage: 'Add'})}
+                    onConfirm={() => {
+                        if (currentUserSelect) {
+                            dispatch(addToChannel(currentUserSelect.id));
+                            setShowAddToChannelConfirm(false);
+                            setOwnerUtil(currentUserSelect.id);
+                        }
                     }
-                }
-                }
-                onCancel={() => setShowAddToChannelConfirm(false)}
-                />:null
+                    }
+                    onCancel={() => setShowAddToChannelConfirm(false)}
+                /> : null
             }
         </>
     );
