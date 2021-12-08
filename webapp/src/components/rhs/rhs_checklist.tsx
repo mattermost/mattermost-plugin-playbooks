@@ -59,7 +59,7 @@ const RHSChecklist = (props: Props) => {
         return list.items.some((item) => showItem(item, filter, myId));
     };
 
-    if (props.checklist.items.length === 0) {
+    if (!visibleTasks(props.checklist, checklistItemsFilter, myUser.id)) {
         return (
             <EmptyChecklistContainer className='checklist'>
                 <AddTaskLink
@@ -72,10 +72,6 @@ const RHSChecklist = (props: Props) => {
                 </AddTaskLink>
             </EmptyChecklistContainer>
         );
-    }
-
-    if (!visibleTasks(props.checklist, checklistItemsFilter, myUser.id)) {
-        return null;
     }
 
     return (
