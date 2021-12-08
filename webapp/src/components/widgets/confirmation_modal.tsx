@@ -79,12 +79,11 @@ type State = {
 
 export const makeUncontrolledConfirmModalDefinition = (props: Props) => ({
     modalId: 'confirm',
-    dialogType: uncontrolledConfirmModal,
+    dialogType: UncontrolledConfirmModal,
     dialogProps: props,
 });
 
-const uncontrolledConfirmModal = (props: Props) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+const UncontrolledConfirmModal = (props: Props) => {
     const [show, setShow] = useState(true);
 
     return (

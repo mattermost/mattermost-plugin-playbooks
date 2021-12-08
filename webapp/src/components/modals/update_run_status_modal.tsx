@@ -34,6 +34,7 @@ import {VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 import {modals} from 'src/webapp_globals';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
+import {openUpdateRunStatusModal} from 'src/actions';
 
 const ID = 'playbooks_update_run_status_dialog';
 
@@ -41,7 +42,6 @@ type Props = {
     playbookRunId: string;
     channelId: string;
     hasPermission: boolean;
-    reopenWithState: (message?: string, reminderInSeconds?: number, finishRunChecked?: boolean) => void;
     message?: string,
     reminderInSeconds?: number,
     finishRunChecked?: boolean,
@@ -57,7 +57,6 @@ const UpdateRunStatusModal = ({
     playbookRunId,
     channelId,
     hasPermission,
-    reopenWithState,
     message: providedMessage,
     reminderInSeconds: providedReminder,
     finishRunChecked: providedFinishRunChecked,
@@ -125,7 +124,7 @@ const UpdateRunStatusModal = ({
                 confirmButtonText: formatMessage({defaultMessage: 'Finish run'}),
                 onConfirm,
                 onCancel: () => {
-                    reopenWithState(message, reminder, finishRun);
+                    dispatch(openUpdateRunStatusModal(playbookRunId, channelId, hasPermission, message, reminder, finishRun));
                     setShowModal(true);
                 },
             })));
@@ -175,18 +174,21 @@ const UpdateRunStatusModal = ({
             </Label>
             {reminderInput}
             {!isReminderValid &&
-            <WarningLine>
-                <WarningIcon/> {warningMessage}
-            </WarningLine>
+                <WarningLine>
+                    <WarningIcon/> {warningMessage}
+                </WarningLine>
             }
-            <VerticalSpacer size={24}/>
-            <StyledCheckboxInput
-                testId={'mark-run-as-finished'}
-                text={formatMessage({defaultMessage: 'Also mark the run as finished'})}
-                checked={finishRun}
-                onChange={(checked) => setFinishRun(checked)}
-            />
+            <VerticalSpacer size={8}/>
         </FormContainer>
+    );
+
+    const footer = (
+        <StyledCheckboxInput
+            testId={'mark-run-as-finished'}
+            text={formatMessage({defaultMessage: 'Also mark the run as finished'})}
+            checked={finishRun}
+            onChange={(checked) => setFinishRun(checked)}
+        />
     );
 
     const warning = (
@@ -209,6 +211,8 @@ const UpdateRunStatusModal = ({
             isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
             {...modalProps}
             id={ID}
+            footer={footer}
+            components={{FooterContainer}}
         >
             {hasPermission ? form : warning}
         </GenericModal>
@@ -342,8 +346,15 @@ const WarningLine = styled.p`
     margin-top: 0.6rem;
 `;
 
+const FooterContainer = styled.div`
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: flex-end;
+`;
+
 const StyledCheckboxInput = styled(CheckboxInput)`
     padding: 10px 16px 10px 0;
+    margin-right: auto;
 
     &:hover {
         background-color: transparent;
