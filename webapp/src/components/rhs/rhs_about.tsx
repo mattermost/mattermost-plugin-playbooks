@@ -6,9 +6,16 @@ import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentChannelId, getCurrentChannelNameForSearchShortcut} from 'mattermost-redux/selectors/entities/channels';
 import {UserProfile} from 'mattermost-redux/types/users';
-import {getChannelByName} from 'mattermost-webapp/packages/mattermost-redux/src/utils/channel_utils';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {Channel} from 'mattermost-redux/types/channels';
+import {displayUsername} from 'mattermost-redux/utils/user_utils';
+import {getChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
+import {getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {Team} from 'mattermost-redux/types/teams';
+import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
+import {getUser} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
@@ -23,6 +30,8 @@ import RHSAboutTitle, {DefaultRenderedTitle} from 'src/components/rhs/rhs_about_
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
 import {setRHSAboutCollapsedState, addToChannel} from 'src/actions';
+import {ChannelNamesMap} from 'src/types/backstage';
+import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -32,11 +41,27 @@ const RHSAbout = (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
+    const channelName = useSelector(getCurrentChannelNameForSearchShortcut);
+    const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, channelId));
     const profilesInChannel = useProfilesInCurrentChannel();
     const profilesInTeam = useProfilesInTeam();
     const collapsed = useSelector(currentRHSAboutCollapsedState);
+    const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel?.team_id));
+    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const [showAddToChannel, setShowAddToChannelConfirm] = useState(false);
     const [currentUserSelect, setCurrentUserSelect] = useState<UserProfile | null>();
+    const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
+    const overviewURL = `/playbooks/runs/${props.playbookRun.id}`
+
+    const markdownOptions = {
+        singleline: false,
+        mentionHighlight: true,
+        atMentions: true,
+        team,
+        channelNamesMap,
+    };
+
+    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, {});
 
     const toggleCollapsed = () => dispatch(setRHSAboutCollapsedState(channelId, !collapsed));
 
@@ -136,10 +161,11 @@ const RHSAbout = (props: Props) => {
                     updatesExist={props.playbookRun.status_posts.length !== 0}
                 />
             </Container>
-            <ConfirmModal
+            {(currentUserSelect?.id)?
+                <ConfirmModal
                 show={showAddToChannel}
-                title={formatMessage({defaultMessage: 'Add **@{username}** to Channel'}, {username: currentUserSelect?.username, fname: currentUserSelect?.first_name, lname: currentUserSelect?.last_name})}
-                message={formatMessage({defaultMessage: '@{fname} {lname} is not a member of the ? channel. Would you like to add them to this channel? They will have access to all message history.'}, {fname: currentUserSelect?.first_name, lname: currentUserSelect?.last_name})}
+                title={mdText(formatMessage({defaultMessage: 'Add @{displayName} to Channel'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting)}))}
+                message={mdText(formatMessage({defaultMessage: '@{displayName} is not a member of the [{runName}]({overviewURL}) channel. Would you like to add them to this channel? They will have access to all message history.'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting), runName: channelName, overviewURL: overviewURL}))}
                 confirmButtonText={formatMessage({defaultMessage: 'Add'})}
                 onConfirm={() => {
                     if (currentUserSelect) {
@@ -150,7 +176,8 @@ const RHSAbout = (props: Props) => {
                 }
                 }
                 onCancel={() => setShowAddToChannelConfirm(false)}
-            />
+                />:null
+            }
         </>
     );
 };
