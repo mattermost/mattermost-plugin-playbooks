@@ -18,6 +18,10 @@ import {StyledTextarea} from 'src/components/backstage/styles';
 import {publishRetrospective, updateRetrospective} from 'src/client';
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import PostText from 'src/components/post_text';
+import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
+
+// @ts-ignore
+const WebappUtils = window.WebappUtils;
 
 const Header = styled.div`
     display: flex;
@@ -68,6 +72,7 @@ const SecondaryButtonSmaller = styled(SecondaryButton)`
 
 interface ReportProps {
     playbookRun: PlaybookRun;
+    setRetrospective: (report: string) => void;
 }
 
 const Report = (props: ReportProps) => {
@@ -129,6 +134,7 @@ const Report = (props: ReportProps) => {
                     value={report}
                     onChange={(e) => {
                         setReport(e.target.value);
+                        props.setRetrospective(e.target.value);
                     }}
                 />
             }
@@ -140,6 +146,10 @@ const Report = (props: ReportProps) => {
                     />
                 </PostTextContainer>
             }
+            <RouteLeavingGuard
+                navigate={(path) => WebappUtils.browserHistory.push(path)}
+                shouldBlockNavigation={() => editing}
+            />
         </ReportContainer>
     );
 };

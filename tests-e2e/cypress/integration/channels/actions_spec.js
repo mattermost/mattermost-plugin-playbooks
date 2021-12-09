@@ -597,4 +597,44 @@ describe('channels > actions', () => {
             });
         });
     });
+
+    describe('when a playbook run is finished', () => {
+        it('retrospective is disabled', () => {
+            const playbookName = 'Playbook (' + Date.now() + ')';
+
+            // # Create a new playbook run with that playbook
+            const now = Date.now();
+            const playbookRunName = `Run (${now})`;
+            const playbookRunChannelName = `run-${now}`;
+
+            // # Create a playbook with the disabled retrospective functionality
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: playbookName,
+                createPublicPlaybookRun: true,
+                memberIDs: [testUser.id],
+                retrospectiveEnabled: false,
+            }).then((playbook) => {
+                // # Run playbook
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: playbook.id,
+                    playbookRunName: playbookRunName,
+                    ownerUserId: testUser.id,
+                });
+            }).then((playbookRun) => {
+                // # End the playbook run
+                cy.apiFinishRun(playbookRun.id);
+            });
+
+            // # Navigate to the playbook run channel
+            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+        
+            // * Verify that playbook run finished message was posted
+            cy.findAllByTestId('postView').contains('marked this run as finished');
+
+            // * Verify that retrospective dialog was not posted
+            cy.findAllByTestId('retrospective-reminder').should('not.exist');
+        });
+    });    
 });

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import styled, {StyledComponentBase} from 'styled-components';
+import styled from 'styled-components';
 
 import DotMenu, {DotMenuButton} from 'src/components/dot_menu';
 import {CheckboxContainer} from 'src/components/checklist_item';
@@ -59,7 +59,7 @@ export interface CheckboxOption {
 interface Props {
     options: CheckboxOption[];
     onselect: (value: string, checked: boolean) => void;
-    dotMenuButton?: StyledComponentBase<'div', any>;
+    dotMenuButton?: typeof DotMenuButton;
     icon?: JSX.Element;
 }
 

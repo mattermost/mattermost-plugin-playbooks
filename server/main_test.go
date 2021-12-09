@@ -338,7 +338,7 @@ func (e *TestEnvironment) CreateBasic() {
 	e.CreateBasicPlaybooks()
 }
 
-// TestTestFramework If this is failing you know the break is not exclusivly in your test.
+// TestTestFramework If this is failing you know the break is not exclusively in your test.
 func TestTestFramework(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()

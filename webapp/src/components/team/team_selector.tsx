@@ -141,7 +141,7 @@ export default function TeamSelector(props: Props) {
     let target;
     if (props.selectedTeamId) {
         target = (
-            <TeamButton
+            <SelectedButton
                 onClick={() => {
                     if (props.enableEdit) {
                         toggleOpen();
@@ -154,7 +154,7 @@ export default function TeamSelector(props: Props) {
                 />
 
                 {<i className='icon-chevron-down ml-1 mr-2'/>}
-            </TeamButton>
+            </SelectedButton>
         );
     } else if (props.placeholderButtonClass) {
         target = (
@@ -310,7 +310,7 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
     );
 };
 
-const TeamButton = styled.button`
+export const SelectedButton = styled.button`
     font-weight: 600;
     height: 40px;
     padding: 0 4px 0 12px;
@@ -325,7 +325,6 @@ const TeamButton = styled.button`
 
     border: none;
     background-color: unset;
-    cursor: unset;
     display: flex;
     align-items: center;
     text-align: center;

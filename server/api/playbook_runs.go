@@ -82,9 +82,12 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 	channelRouter.HandleFunc("/{channel_id:[A-Za-z0-9]+}", handler.getPlaybookRunByChannel).Methods(http.MethodGet)
 
 	checklistsRouter := playbookRunRouterAuthorized.PathPrefix("/checklists").Subrouter()
+	checklistsRouter.HandleFunc("", handler.addChecklist).Methods(http.MethodPost)
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
-	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
+	checklistRouter.HandleFunc("", handler.removeChecklist).Methods(http.MethodDelete)
+	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPost)
+	checklistRouter.HandleFunc("/rename", handler.renameChecklist).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/reorder", handler.reorderChecklist).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/add-dialog", handler.addChecklistItemDialog).Methods(http.MethodPost)
 
@@ -401,6 +404,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 
 		playbookRun.Summary = pb.RunSummaryTemplate
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
+		playbookRun.StatusUpdateEnabled = pb.StatusUpdateEnabled
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
 		playbookRun.ReminderTimerDefaultSeconds = pb.ReminderTimerDefaultSeconds
 
@@ -437,8 +441,11 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.CategoryName = pb.CategoryName
 		}
 
-		playbookRun.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
-		playbookRun.Retrospective = pb.RetrospectiveTemplate
+		playbookRun.RetrospectiveEnabled = pb.RetrospectiveEnabled
+		if pb.RetrospectiveEnabled {
+			playbookRun.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds
+			playbookRun.Retrospective = pb.RetrospectiveTemplate
+		}
 
 		playbook = &pb
 	}
@@ -1189,6 +1196,50 @@ func (h *PlaybookRunHandler) itemRun(w http.ResponseWriter, r *http.Request) {
 	ReturnJSON(w, map[string]interface{}{"trigger_id": triggerID}, http.StatusOK)
 }
 
+func (h *PlaybookRunHandler) addChecklist(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var checklist app.Checklist
+	if err := json.NewDecoder(r.Body).Decode(&checklist); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to decode Checklist", err)
+		return
+	}
+
+	checklist.Title = strings.TrimSpace(checklist.Title)
+	if checklist.Title == "" {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter: checklist title",
+			errors.New("checklist title must not be blank"))
+		return
+	}
+
+	if err := h.playbookRunService.AddChecklist(id, userID, checklist); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *PlaybookRunHandler) removeChecklist(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	if err := h.playbookRunService.RemoveChecklist(id, userID, checklistNum); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
 func (h *PlaybookRunHandler) addChecklistItem(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -1367,6 +1418,38 @@ func (h *PlaybookRunHandler) itemEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.playbookRunService.EditChecklistItem(id, userID, checklistNum, itemNum, params.Title, params.Command, params.Description); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) renameChecklist(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var modificationParams struct {
+		NewTitle string `json:"title"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&modificationParams); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal new title", err)
+		return
+	}
+
+	if modificationParams.NewTitle == "" {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "bad parameter: checklist title",
+			errors.New("checklist title must not be blank"))
+		return
+	}
+
+	if err := h.playbookRunService.RenameChecklist(id, userID, checklistNum, modificationParams.NewTitle); err != nil {
 		h.HandleError(w, err)
 		return
 	}
