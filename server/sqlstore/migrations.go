@@ -1584,4 +1584,49 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.43.0"),
+		toVersion:   semver.MustParse("0.44.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Existing runs without a reminder need to have a reminder set; use 1 week from now.
+			oneWeek := 7 * 24 * time.Hour
+
+			// Get runs whose reminder was dismissed (PreviousReminder was set to 0)
+			dimissedQuery := sqlStore.builder.
+				Select("ID").
+				From("IR_Incident").
+				Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+				Where(sq.Eq{"PreviousReminder": 0})
+
+			var runIDs []string
+			if err := sqlStore.selectBuilder(sqlStore.db, &runIDs, dimissedQuery); err != nil {
+				return errors.Wrap(err, "failed to query for overdue runs")
+			}
+
+			// Set the new reminders
+			for _, ID := range runIDs {
+				// Just in case (so we don't crash out during the migration) remove any old reminders
+				sqlStore.scheduler.Cancel(ID)
+
+				if _, err := sqlStore.scheduler.ScheduleOnce(ID, time.Now().Add(oneWeek)); err != nil {
+					return errors.Wrapf(err, "failed to set new schedule for run id: %s", ID)
+				}
+
+				// Set the PreviousReminder, and pretend that this was a LastStatusUpdateAt so that
+				// the reminder timers will show the correct time for when a status update is due.
+				updatePrevReminderAndLastUpdateAt := sqlStore.builder.
+					Update("IR_Incident").
+					SetMap(map[string]interface{}{
+						"PreviousReminder":   oneWeek,
+						"LastStatusUpdateAt": model.GetMillis(),
+					}).
+					Where(sq.Eq{"ID": ID})
+				if _, err := sqlStore.execBuilder(sqlStore.db, updatePrevReminderAndLastUpdateAt); err != nil {
+					return errors.Wrap(err, "failed to update new PreviousReminder and LastStatusUpdateAt")
+				}
+			}
+
+			return nil
+		},
+	},
 }
