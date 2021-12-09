@@ -137,7 +137,10 @@ const SelectWrapper = styled(StyledSelect)`
 `;
 
 const PostUpdatePrimaryButton = styled(PrimaryButton)`
-    ${PostUpdateButtonCommon}
+    ${PostUpdateButtonCommon}{
+    }
+
+    white-space: nowrap;
 `;
 
 const Container = styled(CustomPostContainer)`
