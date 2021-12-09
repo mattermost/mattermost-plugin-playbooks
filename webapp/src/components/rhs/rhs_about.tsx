@@ -135,27 +135,44 @@ const RHSAbout = (props: Props) => {
                     renderedTitle={RenderedTitle}
                     status={props.playbookRun.current_status}
                 />
-                <Row>
-                    <OwnerSection>
-                        <MemberSectionTitle>{formatMessage({defaultMessage: 'Owner'})}</MemberSectionTitle>
-                        <StyledProfileSelector
-                            testId={'owner-profile-selector'}
-                            selectedUserId={props.playbookRun.owner_user_id}
-                            placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
-                            placeholderButtonClass={'NoAssignee-button'}
-                            profileButtonClass={'Assigned-button'}
-                            enableEdit={!isFinished}
-                            getUsers={fetchUsers}
-                            getUsersInTeam={fetchUsersInTeam}
-                            onSelectedChange={onSelectedProfileChange}
-                            selfIsFirstOption={true}
+                {!collapsed &&
+                    <>
+                        <RHSAboutDescription
+                            value={props.playbookRun.summary}
+                            onEdit={onDescriptionEdit}
+                            editing={editingSummary}
+                            setEditing={setEditingSummary}
                         />
-                    </OwnerSection>
-                    <ParticipantsSection>
-                        <MemberSectionTitle>{formatMessage({defaultMessage: 'Participants'})}</MemberSectionTitle>
-                        <RHSParticipants userIds={participantsIds}/>
-                    </ParticipantsSection>
-                </Row>
+                        <Row>
+                            <OwnerSection>
+                                <MemberSectionTitle>{formatMessage({defaultMessage: 'Owner'})}</MemberSectionTitle>
+                                <StyledProfileSelector
+                                    testId={'owner-profile-selector'}
+                                    selectedUserId={props.playbookRun.owner_user_id}
+                                    placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
+                                    placeholderButtonClass={'NoAssignee-button'}
+                                    profileButtonClass={'Assigned-button'}
+                                    enableEdit={!isFinished}
+                                    getUsers={fetchUsers}
+                                    getUsersInTeam={fetchUsersInTeam}
+                                    onSelectedChange={onSelectedProfileChange}
+                                    selfIsFirstOption={true}
+                                />
+                            </OwnerSection>
+                            <ParticipantsSection>
+                                <MemberSectionTitle>{formatMessage({defaultMessage: 'Participants'})}</MemberSectionTitle>
+                                <RHSParticipants userIds={participantsIds}/>
+                            </ParticipantsSection>
+                        </Row>
+                    </>
+                }
+                {props.playbookRun.status_update_enabled && (
+                    <RHSPostUpdate
+                        collapsed={collapsed}
+                        playbookRun={props.playbookRun}
+                        updatesExist={props.playbookRun.status_posts.length !== 0}
+                    />
+                )}
             </Container>
             {(currentUserSelect?.id) ?
                 <ConfirmModal
