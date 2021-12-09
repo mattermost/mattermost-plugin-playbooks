@@ -86,7 +86,7 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("", handler.removeChecklist).Methods(http.MethodDelete)
-	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPut)
+	checklistRouter.HandleFunc("/add", handler.addChecklistItem).Methods(http.MethodPost)
 	checklistRouter.HandleFunc("/rename", handler.renameChecklist).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/reorder", handler.reorderChecklist).Methods(http.MethodPut)
 	checklistRouter.HandleFunc("/add-dialog", handler.addChecklistItemDialog).Methods(http.MethodPost)

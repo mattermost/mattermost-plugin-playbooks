@@ -193,7 +193,7 @@ describe('channels > slash command > owner', () => {
                 cy.executeSlashCommand(`/playbook owner ${testUser2.username}`);
 
                 // # Verify the owner has changed.
-                cy.verifyPostedMessage(`${testUser.username} changed the owner from @${testUser.username} to @${testUser2.username}.`);
+                cy.findByTestId('owner-profile-selector').contains(testUser2.username);
             });
 
             it('when the username has an @-prefix', () => {
@@ -201,7 +201,7 @@ describe('channels > slash command > owner', () => {
                 cy.executeSlashCommand(`/playbook owner @${testUser2.username}`);
 
                 // # Verify the owner has changed.
-                cy.verifyPostedMessage(`${testUser.username} changed the owner from @${testUser.username} to @${testUser2.username}.`);
+                cy.findByTestId('owner-profile-selector').contains(testUser2.username);
             });
         });
 
