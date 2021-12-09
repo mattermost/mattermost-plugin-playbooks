@@ -5,6 +5,7 @@ import {
     clientFetchPlaybook,
     clientFetchPlaybooks,
     archivePlaybook as clientArchivePlaybook,
+    restorePlaybook as clientRestorePlaybook,
 } from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
 
@@ -102,6 +103,11 @@ export function usePlaybooksCrud(
         }
     };
 
+    const restorePlaybook = async (playbookId: Playbook['id']) => {
+        await clientRestorePlaybook(playbookId);
+        await fetchPlaybooks();
+    };
+
     const sortBy = (colName: FetchPlaybooksParams['sort']) => {
         if (params.sort === colName) {
             // we're already sorting on this column; reverse the direction
@@ -135,6 +141,7 @@ export function usePlaybooksCrud(
             sortBy,
             setSelectedPlaybook,
             archivePlaybook,
+            restorePlaybook,
             setSearchTerm: setSearchTermDebounced,
             setWithArchived,
             isFiltering,

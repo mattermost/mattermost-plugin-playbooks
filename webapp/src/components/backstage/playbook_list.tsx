@@ -43,6 +43,7 @@ import {ExpandRight, Spacer} from 'src/components/backstage/playbook_runs/shared
 import CheckboxInput from './runs_list/checkbox_input';
 
 const ArchiveBannerTimeout = 5000;
+const RestoreBannerTimeout = 5000;
 
 const PlaybooksHeader = styled(BackstageSubheader)`
     display: flex;
@@ -62,7 +63,8 @@ const PlaybookContainer = styled.div`
 
 const PlaybookList = () => {
     const {formatMessage} = useIntl();
-    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [showArchiveConfirmation, setShowArchiveConfirmation] = useState(false);
+    const [showRestoreConfirmation, setShowRestoreConfirmation] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
     const canCreatePlaybooks = useCanCreatePlaybooks();
     const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
@@ -73,7 +75,7 @@ const PlaybookList = () => {
     const [
         playbooks,
         {isLoading, totalCount, params, selectedPlaybook},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, setSearchTerm, isFiltering, setWithArchived},
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, setSearchTerm, isFiltering, setWithArchived},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const {view, edit, create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
@@ -86,26 +88,49 @@ const PlaybookList = () => {
         }
     };
 
-    const hideConfirmModal = () => {
-        setShowConfirmation(false);
+    const hideConfirmArchiveModal = () => {
+        setShowArchiveConfirmation(false);
+    };
+
+    const hideConfirmRestoreModal = () => {
+        setShowRestoreConfirmation(false);
     };
 
     const onConfirmArchive = (playbook: Playbook) => {
         setSelectedPlaybook(playbook);
-        setShowConfirmation(true);
+        setShowArchiveConfirmation(true);
+    };
+
+    const onConfirmRestore = (playbook: Playbook) => {
+        setSelectedPlaybook(playbook);
+        setShowRestoreConfirmation(true);
     };
 
     const onArchive = async () => {
         if (selectedPlaybook) {
             await archivePlaybook(selectedPlaybook.id);
 
-            hideConfirmModal();
+            hideConfirmArchiveModal();
             setShowBanner(true);
 
             window.setTimeout(() => {
                 setShowBanner(false);
                 setSelectedPlaybook(null);
             }, ArchiveBannerTimeout);
+        }
+    };
+
+    const onRestore = async () => {
+        if (selectedPlaybook) {
+            await restorePlaybook(selectedPlaybook.id);
+
+            hideConfirmRestoreModal();
+            setShowBanner(true);
+
+            window.setTimeout(() => {
+                setShowBanner(false);
+                setSelectedPlaybook(null);
+            }, RestoreBannerTimeout);
         }
     };
 
@@ -136,6 +161,7 @@ const PlaybookList = () => {
                 onClick={() => view(p)}
                 onEdit={() => edit(p)}
                 onArchive={() => onConfirmArchive(p)}
+                onRestore={() => onConfirmRestore(p)}
             />
         ));
     }
@@ -267,12 +293,20 @@ const PlaybookList = () => {
                 onHide={hideUpgradeModal}
             />
             <ConfirmModal
-                show={showConfirmation}
+                show={showArchiveConfirmation}
                 title={formatMessage({defaultMessage: 'Delete playbook'})}
                 message={formatMessage({defaultMessage: 'Are you sure you want to delete the playbook {title}?'}, {title: selectedPlaybook?.title})}
                 confirmButtonText={formatMessage({defaultMessage: 'Delete'})}
                 onConfirm={onArchive}
-                onCancel={hideConfirmModal}
+                onCancel={hideConfirmArchiveModal}
+            />
+            <ConfirmModal
+                show={showRestoreConfirmation}
+                title={formatMessage({defaultMessage: 'Restore playbook'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to restore the playbook {title}?'}, {title: selectedPlaybook?.title})}
+                confirmButtonText={formatMessage({defaultMessage: 'Restore'})}
+                onConfirm={onRestore}
+                onCancel={hideConfirmArchiveModal}
             />
         </PlaybookContainer>
     );

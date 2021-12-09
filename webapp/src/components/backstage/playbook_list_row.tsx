@@ -1,22 +1,21 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {Fragment} from 'react';
 import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-
 import {useSelector} from 'react-redux';
-
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from '../widgets/text_with_tooltip';
 
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
+
+import Tooltip from '../widgets/tooltip';
 
 import {InfoLine} from './styles';
 
@@ -26,6 +25,7 @@ interface Props {
     onClick: () => void
     onEdit: () => void
     onArchive: () => void
+    onRestore: () => void
 }
 
 const ActionCol = styled.div`
@@ -70,10 +70,33 @@ const PlaybookItemRow = styled.div`
 	padding-right: 15px;
 `;
 
+export const ArchiveIcon = styled.i`
+    font-size: 11px;
+`;
+
 const teamNameSelector = (teamId: string) => (state: GlobalState): string => getTeam(state, teamId).display_name;
 
 const PlaybookListRow = (props: Props) => {
     const teamName = useSelector(teamNameSelector(props.playbook.team_id));
+    const {formatMessage} = useIntl();
+
+    const infos: JSX.Element[] = [];
+    if (props.playbook.delete_at > 0) {
+        infos.push((
+            <Tooltip
+                delay={{show: 0, hide: 1000}}
+                id={`archive-${props.playbook.id}`}
+                content={formatMessage({defaultMessage: 'This playbook is archived.'})}
+            >
+                <ArchiveIcon className='icon icon-archive-outline'/>
+            </Tooltip>
+        ));
+    }
+
+    if (props.displayTeam) {
+        infos.push((<>{teamName}</>));
+    }
+
     return (
         <PlaybookItem
             key={props.playbook.id}
@@ -84,15 +107,24 @@ const PlaybookListRow = (props: Props) => {
                     id={props.playbook.title}
                     text={props.playbook.title}
                 />
-                {props.displayTeam && <InfoLine>{teamName}</InfoLine>}
+                {infos.length > 0 &&
+                    <InfoLine>
+                        {infos.map((info, i) => (<Fragment key={props.playbook.id + '-infoline' + i}>
+                            {i > 0 && ' - '}
+                            {info}
+                        </Fragment>))}
+                    </InfoLine>
+                }
             </PlaybookItemTitle>
             <PlaybookItemRow>{props.playbook.num_stages}</PlaybookItemRow>
             <PlaybookItemRow>{props.playbook.num_steps}</PlaybookItemRow>
             <PlaybookItemRow>{props.playbook.num_runs}</PlaybookItemRow>
             <ActionCol>
                 <PlaybookActionMenu
+                    playbookIsArchived={props.playbook.delete_at > 0}
                     onEdit={props.onEdit}
                     onArchive={props.onArchive}
+                    onRestore={props.onRestore}
                 />
             </ActionCol>
         </PlaybookItem>
@@ -100,8 +132,10 @@ const PlaybookListRow = (props: Props) => {
 };
 
 interface PlaybookActionMenuProps {
+    playbookIsArchived: boolean;
     onEdit: () => void;
     onArchive: () => void;
+    onRestore: () => void;
 }
 
 const IconWrapper = styled.div`
@@ -123,11 +157,16 @@ const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
             >
                 <FormattedMessage defaultMessage='Edit'/>
             </DropdownMenuItem>
-            <DropdownMenuItem
-                onClick={props.onArchive}
-            >
-                <FormattedMessage defaultMessage='Archive'/>
-            </DropdownMenuItem>
+            {props.playbookIsArchived ? (
+                <DropdownMenuItem onClick={props.onRestore}>
+                    <FormattedMessage defaultMessage='Restore'/>
+                </DropdownMenuItem>
+            ) : (
+                <DropdownMenuItem onClick={props.onArchive}>
+                    <FormattedMessage defaultMessage='Archive'/>
+                </DropdownMenuItem>
+            )}
+
         </DotMenu>
     );
 };
