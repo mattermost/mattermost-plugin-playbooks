@@ -91,7 +91,7 @@ describe('playbooks > overview', () => {
 
         // # trigger the tooltip
         cy.scrollTo(0, 0);
-        cy.get('.icon-link-variant').scroll().trigger('mouseover');
+        cy.get('.icon-link-variant').trigger('mouseover');
 
         // * Verify tooltip text
         cy.get('#copy-playbook-link-tooltip').should('contain', 'Copy link to playbook');
