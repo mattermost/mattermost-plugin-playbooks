@@ -15,16 +15,15 @@ import PostText from 'src/components/post_text';
 
 interface Props {
     teamId: string;
-    initialText: string;
+    text: string;
     onEdit: (text: string) => void;
     flushChanges: () => void;
 }
 
-const ReportTextArea = ({initialText, onEdit, flushChanges, teamId}: Props) => {
+const ReportTextArea = ({text, onEdit, flushChanges, teamId}: Props) => {
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, teamId));
     const textareaRef = useRef(null);
     const [editing, setEditing] = useState(false);
-    const [text, setText] = useState(initialText);
     useClickOutsideRef(textareaRef, () => {
         flushChanges();
         setEditing(false);
@@ -41,11 +40,10 @@ const ReportTextArea = ({initialText, onEdit, flushChanges, teamId}: Props) => {
                     e.target.value = '';
                     e.target.value = val;
                 }}
-                value={text}
                 onChange={(e) => {
-                    setText(e.target.value);
                     onEdit(e.target.value);
                 }}
+                defaultValue={text}
             />
         );
     }

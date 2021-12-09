@@ -64,7 +64,7 @@ const Report = (props: ReportProps) => {
             </Header>
             <ReportTextArea
                 teamId={props.playbookRun.team_id}
-                initialText={props.playbookRun.retrospective}
+                text={props.playbookRun.retrospective}
                 onEdit={debouncedPersistEditEvent}
                 flushChanges={() => debouncedPersistEditEvent.flush()}
             />
