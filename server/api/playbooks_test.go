@@ -54,6 +54,8 @@ func TestPlaybooks(t *testing.T) {
 		BroadcastChannelIDs:         []string{},
 		ReminderTimerDefaultSeconds: 60,
 	}
+	deletedPlaybooktest := playbooktest
+	deletedPlaybooktest.DeleteAt = 1000
 	withid := app.Playbook{
 		ID:     "testplaybookid",
 		Title:  "My Playbook",
@@ -924,6 +926,50 @@ func TestPlaybooks(t *testing.T) {
 			PageCount:  1,
 			HasMore:    false,
 			Items:      []icClient.Playbook{toAPIPlaybook(playbooktest), toAPIPlaybook(playbooktest)},
+		}
+		assert.Equal(t, expectedList, actualList)
+	})
+
+	t.Run("get playbooks with archived", func(t *testing.T) {
+		reset(t)
+
+		playbookResult := struct {
+			TotalCount int            `json:"total_count"`
+			PageCount  int            `json:"page_count"`
+			HasMore    bool           `json:"has_more"`
+			Items      []app.Playbook `json:"items"`
+		}{
+			TotalCount: 3,
+			PageCount:  1,
+			HasMore:    false,
+			Items:      []app.Playbook{playbooktest, playbooktest, deletedPlaybooktest},
+		}
+
+		playbookService.EXPECT().
+			GetPlaybooksForTeam(
+				app.RequesterInfo{
+					UserID:  "testuserid",
+					TeamID:  "testteamid",
+					IsAdmin: true,
+				},
+				"testteamid",
+				gomock.Any(),
+			).
+			Return(playbookResult, nil).
+			Times(1)
+
+		pluginAPI.On("HasPermissionToTeam", "testuserid", "testteamid", model.PermissionViewTeam).Return(true)
+		pluginAPI.On("HasPermissionTo", "testuserid", model.PermissionManageSystem).Return(true)
+		pluginAPI.On("GetUser", "testuserid").Return(&model.User{}, nil)
+
+		actualList, err := c.Playbooks.List(context.TODO(), "testteamid", 0, 100, icClient.PlaybookListOptions{WithArchived: true})
+		require.NoError(t, err)
+
+		expectedList := &icClient.GetPlaybooksResults{
+			TotalCount: 3,
+			PageCount:  1,
+			HasMore:    false,
+			Items:      []icClient.Playbook{toAPIPlaybook(playbooktest), toAPIPlaybook(playbooktest), toAPIPlaybook(deletedPlaybooktest)},
 		}
 		assert.Equal(t, expectedList, actualList)
 	})
