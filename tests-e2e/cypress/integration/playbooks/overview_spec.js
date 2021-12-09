@@ -90,7 +90,7 @@ describe('playbooks > overview', () => {
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
 
         // # trigger the tooltip
-        cy.scrollTo(0, 0);
+        cy.scrollTo('top');
         cy.get('.icon-link-variant').trigger('mouseover');
 
         // * Verify tooltip text
