@@ -40,6 +40,8 @@ import PlaybookListRow from 'src/components/backstage/playbook_list_row';
 import SearchInput from 'src/components/backstage/search_input';
 import {ExpandRight, Spacer} from 'src/components/backstage/playbook_runs/shared';
 
+import CheckboxInput from './runs_list/checkbox_input';
+
 const ArchiveBannerTimeout = 5000;
 
 const PlaybooksHeader = styled(BackstageSubheader)`
@@ -71,7 +73,7 @@ const PlaybookList = () => {
     const [
         playbooks,
         {isLoading, totalCount, params, selectedPlaybook},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, setSearchTerm, isFiltering},
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, setSearchTerm, isFiltering, setWithArchived},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const {view, edit, create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
@@ -168,6 +170,12 @@ const PlaybookList = () => {
                             default={params.search_term}
                             onSearch={setSearchTerm}
                             placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
+                        />
+                        <CheckboxInput
+                            testId={'with-archived'}
+                            text={formatMessage({defaultMessage: 'With archived'})}
+                            checked={params.with_archived}
+                            onChange={setWithArchived}
                         />
                         {canCreatePlaybooks &&
                         <>

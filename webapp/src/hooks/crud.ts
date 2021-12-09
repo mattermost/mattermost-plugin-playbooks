@@ -46,6 +46,7 @@ export function usePlaybooksCrud(
         page: 0,
         per_page: 10,
         search_term: '',
+        with_archived: false,
         ...defaultParams,
     });
 
@@ -118,6 +119,11 @@ export function usePlaybooksCrud(
     };
     const setSearchTermDebounced = debounce(setSearchTerm, searchDebounceDelayMilliseconds);
 
+    const setWithArchived = (with_archived: boolean) => {
+        setLoading(true);
+        setParams({with_archived});
+    };
+
     const isFiltering = (params?.search_term?.length ?? 0) > 0;
 
     return [
@@ -130,6 +136,7 @@ export function usePlaybooksCrud(
             setSelectedPlaybook,
             archivePlaybook,
             setSearchTerm: setSearchTermDebounced,
+            setWithArchived,
             isFiltering,
         },
     ] as const;

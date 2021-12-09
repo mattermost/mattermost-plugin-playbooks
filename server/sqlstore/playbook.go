@@ -386,7 +386,6 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		From("IR_Playbook AS p").
 		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
 		GroupBy("p.ID").
-		Where(sq.Eq{"p.DeleteAt": 0}).
 		Where(permissionsAndFilter).
 		Where(teamLimitExpr)
 
@@ -398,7 +397,6 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 	queryForTotal := p.store.builder.
 		Select("COUNT(*)").
 		From("IR_Playbook AS p").
-		Where(sq.Eq{"DeleteAt": 0}).
 		Where(permissionsAndFilter).
 		Where(teamLimitExpr)
 
@@ -415,6 +413,11 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 
 		queryForResults = queryForResults.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
+	}
+
+	if !opts.WithArchived {
+		queryForResults = queryForResults.Where(sq.Eq{"p.DeleteAt": 0})
+		queryForTotal = queryForTotal.Where(sq.Eq{"DeleteAt": 0})
 	}
 
 	var playbooks []app.Playbook
@@ -466,7 +469,6 @@ func (p *playbookStore) GetPlaybooksWithKeywords(opts app.PlaybookFilterOptions)
 	queryForResults := p.store.builder.
 		Select("ID", "Title", "UpdateAt", "TeamID", "ConcatenatedSignalAnyKeywords").
 		From("IR_Playbook AS p").
-		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"SignalAnyKeywordsEnabled": true}).
 		Offset(uint64(opts.Page * opts.PerPage)).
 		Limit(uint64(opts.PerPage))
