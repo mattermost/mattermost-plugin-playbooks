@@ -11,8 +11,8 @@ import {StyledMarkdownTextbox} from 'src/components/backstage/styles';
 import {
     AutomationHeader,
     AutomationTitle,
-} from 'src/components/backstage/automation/styles';
-import {Toggle} from 'src/components/backstage/automation/toggle';
+} from 'src/components/backstage/playbook_edit/automation/styles';
+import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
 const TextboxWrapper = styled.div`
     margin-top: 2rem;

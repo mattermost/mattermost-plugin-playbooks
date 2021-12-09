@@ -1,7 +1,7 @@
 import React from 'react';
 import {Redirect} from 'react-router-dom';
 
-import PlaybookEdit from 'src/components/backstage/playbook_edit';
+import PlaybookEdit from 'src/components/backstage/playbook_edit/playbook_edit';
 import {useAllowPlaybookCreationInTeams} from 'src/hooks';
 import {pluginUrl} from 'src/browser_routing';
 

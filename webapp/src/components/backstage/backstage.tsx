@@ -20,7 +20,7 @@ import {promptForFeedback} from 'src/client';
 import PlaybookRunBackstage
     from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
 import PlaybookList from 'src/components/backstage/playbook_list';
-import PlaybookEdit from 'src/components/backstage/playbook_edit';
+import PlaybookEdit from 'src/components/backstage/playbook_edit/playbook_edit';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
 import {ErrorPageTypes} from 'src/constants';
 import {pluginErrorUrl} from 'src/browser_routing';
