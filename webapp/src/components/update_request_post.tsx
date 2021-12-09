@@ -16,10 +16,9 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
 import {currentPlaybookRun} from 'src/selectors';
 import PostText from 'src/components/post_text';
-import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
-import {doDelete, resetReminder} from 'src/client';
-import {pluginId} from 'src/manifest';
+import {resetReminder} from 'src/client';
 import {CustomPostContainer} from 'src/components/custom_post_styles';
 import {makeOption, Mode, ms, Option} from 'src/components/datetime_input';
 import {nearest} from 'src/utils';
@@ -37,8 +36,6 @@ export const UpdateRequestPost = (props: Props) => {
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel.team_id));
     const currentRun = useSelector(currentPlaybookRun);
     const targetUsername = props.post.props.targetUsername ?? '';
-    const dismissUrl = `/plugins/${pluginId}/api/v0/runs/${currentRun?.id}/reminder`;
-    const dismissBody = JSON.stringify({channel_id: channel.id});
 
     if (!currentRun) {
         return null;
@@ -99,9 +96,6 @@ export const UpdateRequestPost = (props: Props) => {
                 >
                     {formatMessage({defaultMessage: 'Post update'})}
                 </PostUpdatePrimaryButton>
-                <PostUpdateTertiaryButton onClick={() => doDelete(dismissUrl, dismissBody)}>
-                    {formatMessage({defaultMessage: 'Dismiss'})}
-                </PostUpdateTertiaryButton>
                 <SelectWrapper
                     filterOption={null}
                     isMulti={false}
@@ -146,15 +140,12 @@ const PostUpdatePrimaryButton = styled(PrimaryButton)`
     ${PostUpdateButtonCommon}
 `;
 
-const PostUpdateTertiaryButton = styled(TertiaryButton)`
-    ${PostUpdateButtonCommon}
-`;
-
 const Container = styled(CustomPostContainer)`
     display: flex;
     flex-direction: row;
     padding: 12px;
     flex-wrap: wrap;
+    max-width: 440px;
 `;
 
 const StyledPostText = styled(PostText)`
