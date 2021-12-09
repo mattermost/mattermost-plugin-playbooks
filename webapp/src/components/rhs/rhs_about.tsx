@@ -178,7 +178,7 @@ const RHSAbout = (props: Props) => {
                 <ConfirmModal
                     show={showAddToChannel}
                     title={mdText(formatMessage({defaultMessage: 'Add @{displayName} to Channel'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting)}))}
-                    message={mdText(formatMessage({defaultMessage: '@{displayName} is not a member of the [{runName}]({overviewUrl}) channel. Would you like to add them to this channel? They will have access to all message history.'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting), runName: channelName, overviewUrl: overviewURL}))}
+                    message={mdText(formatMessage({defaultMessage: '@{displayName} is not a member of the [{runName}]({overviewUrl}) channel. Would you like to add them to this channel? They will have access to all of the message history.'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting), runName: channelName, overviewUrl: overviewURL}))}
                     confirmButtonText={formatMessage({defaultMessage: 'Add'})}
                     onConfirm={() => {
                         if (currentUserSelect) {
