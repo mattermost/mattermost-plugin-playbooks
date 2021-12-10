@@ -38,7 +38,7 @@ import {
 import {Playbook} from 'src/types/playbook';
 import PlaybookListRow from 'src/components/backstage/playbook_list_row';
 import SearchInput from 'src/components/backstage/search_input';
-import {ExpandRight, Spacer} from 'src/components/backstage/playbook_runs/shared';
+import {ExpandRight, HorizontalSpacer} from 'src/components/backstage/playbook_runs/shared';
 
 const ArchiveBannerTimeout = 5000;
 
@@ -171,7 +171,7 @@ const PlaybookList = () => {
                         />
                         {canCreatePlaybooks &&
                         <>
-                            <Spacer size={12}/>
+                            <HorizontalSpacer size={12}/>
                             <TeamSelectorButton
                                 onClick={(team: Team) => newPlaybook(team)}
                                 teams={teams}

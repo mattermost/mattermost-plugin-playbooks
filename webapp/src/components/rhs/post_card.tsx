@@ -20,7 +20,7 @@ import {browserHistory, Timestamp} from 'src/webapp_globals';
 
 import {isMobile} from 'src/mobile';
 import {ChannelNamesMap} from 'src/types/backstage';
-import {promptUpdateStatus, toggleRHS} from 'src/actions';
+import {toggleRHS} from 'src/actions';
 import ShowMore from 'src/components/rhs/show_more';
 import PostText from 'src/components/post_text';
 import {useEnsureProfiles} from 'src/hooks';

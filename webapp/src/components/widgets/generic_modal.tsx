@@ -172,6 +172,9 @@ const StyledModal = styled(Modal)`
         .close {
             margin: 12px 12px 0 0;
         }
+        .modal-dialog {
+            margin-top: calc(50vh - 260px);
+        }
     }
 
     &&&& {
