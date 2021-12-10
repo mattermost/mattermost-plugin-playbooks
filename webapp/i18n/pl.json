@@ -368,5 +368,11 @@
     "D9IV7i": "Retrospektywy zostały wyłączone dla tego uruchomienia playbooka.",
     "5Ofkag": "Rozpocznij retrospektywę",
     "2/2yg+": "Dodaj",
-    "/ZsEUy": "Czy na pewno chcesz usunąć tę listę kontrolną? Zostanie ona usunięta z tego uruchomienia, ale nie będzie miała wpływu na playbook."
+    "/ZsEUy": "Czy na pewno chcesz usunąć tę listę kontrolną? Zostanie ona usunięta z tego uruchomienia, ale nie będzie miała wpływu na playbook.",
+    "vaYTD+": "Jest {outstanding, plural, =1 {# zaległe zadanie} other {# zaległe zadania}}. Czy jesteś pewien, że chcesz zakończyć uruchomienie?",
+    "WbsomC": "Opublikuj retrospektywę",
+    "TxCTXQ": "Czy na pewno chcesz zakończyć uruchomienie?",
+    "QywYDe": "Oznacz również uruchomienie jako zakończone",
+    "D/wCS9": "Czy jesteś pewien, że chcesz opublikować retrospektywę?",
+    "2563nT": "Potwierdź zakończenie uruchomienia"
 }
