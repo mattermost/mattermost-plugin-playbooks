@@ -49,15 +49,25 @@ describe('runs > retrospective', () => {
         cy.visit(`/playbooks/runs/${runId}/retrospective`);
 
         // # Start editing
-        cy.findByText('Edit').click();
+        cy.findByTestId('retro-report-text').click();
 
         // * Verify the provided template text is pre-filled
         cy.focused().should('include.text', 'This is a retrospective template.');
 
-        // # Change the retro text, save it, and publish
+        // # Change the retro text
         cy.focused().clear().type('Edited retrospective.');
-        cy.findByText('Save').click();
+
+        // # Save it by clicking outside the text area
+        cy.findByText('Report').click();
+
+        // # Publish
         cy.findByText('Publish').click({force: true});
+
+        // * Verify we're showing the publish retro confirmation modal
+        cy.get('#confirmModalLabel').contains('Publish retrospective');
+
+        // # Publish
+        cy.get('#confirmModalButton').click({force: true});
 
         // # Switch to the run channel
         cy.findByText('Go to channel').click();
