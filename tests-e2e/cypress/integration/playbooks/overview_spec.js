@@ -90,8 +90,7 @@ describe('playbooks > overview', () => {
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
 
         // # trigger the tooltip
-        cy.scrollTo('top', {ensureScrollable: false});
-        cy.get('.icon-link-variant').trigger('mouseover');
+        cy.get('.icon-link-variant').trigger('mouseover', {force: true});
 
         // * Verify tooltip text
         cy.get('#copy-playbook-link-tooltip').should('contain', 'Copy link to playbook');
@@ -99,7 +98,7 @@ describe('playbooks > overview', () => {
         stubClipboard().as('clipboard');
 
         // # click on copy button
-        cy.get('.icon-link-variant').click().then(() => {
+        cy.get('.icon-link-variant').click({force: true}).then(() => {
             // * Verify that tooltip text changed
             cy.get('#copy-playbook-link-tooltip').should('contain', 'Copied!');
 
