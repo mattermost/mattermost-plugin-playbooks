@@ -328,4 +328,75 @@ func TestChecklistManagement(t *testing.T) {
 		err = e.PlaybooksClient.PlaybookRuns.RemoveChecklist(context.Background(), run.ID, 1)
 		require.Error(t, err)
 	})
+
+	t.Run("checklist adding - success", func(t *testing.T) {
+		run := createNewRunWithNoChecklists(t)
+
+		// Create a new checklist with a known title
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "Checklist Title",
+			Items: []client.ChecklistItem{},
+		})
+		require.NoError(t, err)
+
+		// Add the new checklistItem
+		itemTitle := "New echo item"
+		command := "/echo hi!"
+		description := "A very complicated checklist item."
+		err = e.PlaybooksClient.PlaybookRuns.AddChecklistItem(context.Background(), run.ID, 0, client.ChecklistItem{
+			Title:       itemTitle,
+			Command:     command,
+			Description: description,
+		})
+		require.NoError(t, err)
+
+		// Retrieve the run again and make sure that the checklistItem is there
+		editedRun, err := e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+		require.NoError(t, err)
+		require.Len(t, editedRun.Checklists, 1)
+		require.Len(t, editedRun.Checklists[0].Items, 1)
+		require.Equal(t, itemTitle, editedRun.Checklists[0].Items[0].Title)
+		require.Equal(t, command, editedRun.Checklists[0].Items[0].Command)
+		require.Equal(t, description, editedRun.Checklists[0].Items[0].Description)
+	})
+
+	t.Run("checklist adding - failure: no title", func(t *testing.T) {
+		run := createNewRunWithNoChecklists(t)
+
+		// Create a new checklist with a known title
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "Checklist Title",
+			Items: []client.ChecklistItem{},
+		})
+		require.NoError(t, err)
+
+		// Add the new checklistItem with an invalid title
+		err = e.PlaybooksClient.PlaybookRuns.AddChecklistItem(context.Background(), run.ID, 0, client.ChecklistItem{
+			Title: "",
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("checklist adding - failure: wrong checklist number", func(t *testing.T) {
+		run := createNewRunWithNoChecklists(t)
+
+		// Create a new checklist with a known title
+		err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+			Title: "Checklist Title",
+			Items: []client.ChecklistItem{},
+		})
+		require.NoError(t, err)
+
+		// Add the new checklistItem -- to an invalid checklist number (negative)
+		err = e.PlaybooksClient.PlaybookRuns.AddChecklistItem(context.Background(), run.ID, -1, client.ChecklistItem{
+			Title: "New echo item",
+		})
+		require.Error(t, err)
+
+		// Add the new checklistItem -- to an invalid checklist number (non-existent)
+		err = e.PlaybooksClient.PlaybookRuns.AddChecklistItem(context.Background(), run.ID, len(run.Checklists)+1, client.ChecklistItem{
+			Title: "New echo item",
+		})
+		require.Error(t, err)
+	})
 }

@@ -99,6 +99,7 @@ const RHSAbout = (props: Props) => {
                     <OwnerSection>
                         <MemberSectionTitle>{formatMessage({defaultMessage: 'Owner'})}</MemberSectionTitle>
                         <StyledProfileSelector
+                            testId={'owner-profile-selector'}
                             selectedUserId={props.playbookRun.owner_user_id}
                             placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
                             placeholderButtonClass={'NoAssignee-button'}

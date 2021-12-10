@@ -33,17 +33,15 @@ type Checklist struct {
 
 // ChecklistItem represents an item in a checklist
 type ChecklistItem struct {
-	ID                     string `json:"id"`
-	Title                  string `json:"title"`
-	State                  string `json:"state"`
-	StateModified          int64  `json:"state_modified"`
-	StateModifiedPostID    string `json:"state_modified_post_id"`
-	AssigneeID             string `json:"assignee_id"`
-	AssigneeModified       int64  `json:"assignee_modified"`
-	AssigneeModifiedPostID string `json:"assignee_modified_post_id"`
-	Command                string `json:"command"`
-	CommandLastRun         int64  `json:"command_last_run"`
-	Description            string `json:"description"`
+	ID               string `json:"id"`
+	Title            string `json:"title"`
+	State            string `json:"state"`
+	StateModified    int64  `json:"state_modified"`
+	AssigneeID       string `json:"assignee_id"`
+	AssigneeModified int64  `json:"assignee_modified"`
+	Command          string `json:"command"`
+	CommandLastRun   int64  `json:"command_last_run"`
+	Description      string `json:"description"`
 }
 
 // PlaybookCreateOptions specifies the parameters for PlaybooksService.Create method.
