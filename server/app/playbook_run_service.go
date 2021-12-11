@@ -18,6 +18,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/httptools"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/shared/i18n"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -79,8 +80,17 @@ const DialogFieldItemDescriptionKey = "description"
 const DialogFieldItemCommandKey = "command"
 
 // NewPlaybookRunService creates a new PlaybookRunServiceImpl.
-func NewPlaybookRunService(pluginAPI *pluginapi.Client, store PlaybookRunStore, poster bot.Poster, logger bot.Logger,
-	configService config.Service, scheduler JobOnceScheduler, telemetry PlaybookRunTelemetry, api plugin.API, playbookService PlaybookService) *PlaybookRunServiceImpl {
+func NewPlaybookRunService(
+	pluginAPI *pluginapi.Client,
+	store PlaybookRunStore,
+	poster bot.Poster,
+	logger bot.Logger,
+	configService config.Service,
+	scheduler JobOnceScheduler,
+	telemetry PlaybookRunTelemetry,
+	api plugin.API,
+	playbookService PlaybookService,
+) *PlaybookRunServiceImpl {
 	return &PlaybookRunServiceImpl{
 		pluginAPI:       pluginAPI,
 		store:           store,
@@ -1725,7 +1735,16 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 	if err != nil {
 		return err
 	}
-	part1 := buildRunsOverdueMessage(runsOverdue, siteURL)
+
+	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+	}
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return err
+	}
+	part1 := buildRunsOverdueMessage(runsOverdue, siteURL, user.Locale)
 
 	runsAssigned, err := s.GetRunsWithAssignedTasks(userID)
 	if err != nil {
@@ -2716,11 +2735,13 @@ func buildRunsInProgressMessage(runs []RunLink, siteURL string) string {
 	return message
 }
 
-func buildRunsOverdueMessage(runs []RunLink, siteURL string) string {
+func buildRunsOverdueMessage(runs []RunLink, siteURL string, locale string) string {
+	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 
+	msg := "\n##### " + T("app.user.digest.heading.overdue_status_updates") + "\n"
 	if total == 0 {
-		return "\n##### Overdue Status Updates\nYou have 0 runs overdue.\n"
+		return msg
 	}
 
 	runPlural := "run"
@@ -2728,12 +2749,12 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string) string {
 		runPlural += "s"
 	}
 
-	message := fmt.Sprintf("\n##### Overdue Status Updates\nYou have %d %s overdue for a status update:\n", total, runPlural)
+	msg = fmt.Sprintf("You have %d %s overdue for a status update:\n", total, runPlural)
 
 	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen) (Owner: @%s)\n",
+		msg += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen) (Owner: @%s)\n",
 			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName, run.OwnerUserName)
 	}
 
-	return message
+	return msg
 }

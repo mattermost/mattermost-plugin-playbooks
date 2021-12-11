@@ -13,6 +13,7 @@ require (
 	github.com/mattermost/mattermost-plugin-api v0.0.22-0.20211021091845-cb40b72e60b4
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.6.0
 	github.com/mattermost/mattermost-server/v6 v6.0.0-20211102134502-5ede63badcc1
+	github.com/mattermost/mattermost-utilities/mmgotool v0.0.0-20211006080735-07b1b58b8b09 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rudderlabs/analytics-go v3.3.1+incompatible
 	github.com/sirupsen/logrus v1.8.1

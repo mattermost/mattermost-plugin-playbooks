@@ -59,8 +59,8 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
-	if err2 := utils.TranslationsPreInit(); err2 != nil {
-		return errors.Wrapf(err2, "unable to load Mattermost translation files")
+	if err := utils.TranslationsPreInit(); err != nil {
+		return errors.Wrapf(err, "unable to load Mattermost translation files")
 	}
 
 	pluginAPIClient := pluginapi.NewClient(p.API, p.Driver)

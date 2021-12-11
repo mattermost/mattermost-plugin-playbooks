@@ -238,10 +238,22 @@ endif
 
 ## Extract strings for translation from the source code.
 .PHONY: i18n-extract
-i18n-extract:
-ifneq ($(HAS_WEBAPP),)
-	cd webapp && $(NPM) run extract;
-endif
+i18n-extract: i18n-extract-server
+	cd webapp && $(NPM) run extract
+
+i18n-extract-server: ## Extract strings for translation from the source code
+	mkdir -p i18n
+	mv assets/i18n/en.json i18n/en.json
+	$(GOBIN)/mmgotool i18n extract --portal-dir=""
+	mv i18n/en.json assets/i18n/en.json
+	rmdir i18n
+
+i18n-check-server: ## Exit on empty translation strings and translation source strings
+	mkdir -p i18n
+	mv assets/i18n/en.json i18n/en.json
+	$(GOBIN)/mmgotool i18n clean-empty --portal-dir="" --check
+	$(GOBIN)/mmgotool i18n check-empty-src --portal-dir=""
+	rmdir i18n
 
 ## Disable the plugin.
 .PHONY: disable
