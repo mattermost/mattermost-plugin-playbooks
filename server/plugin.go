@@ -225,7 +225,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 		p.playbookRunService, p.playbookService, p.config, p.userInfoStore, p.telemetryClient)
 
 	if err := runner.Execute(); err != nil {
-		return nil, model.NewAppError("Playbooks.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("Playbooks.ExecuteCommand", "app.command.execute.error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	return &model.CommandResponse{}, nil

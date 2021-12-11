@@ -1,57 +1,5 @@
 [
   {
-    "id": "April",
-    "translation": "April"
-  },
-  {
-    "id": "August",
-    "translation": "August"
-  },
-  {
-    "id": "December",
-    "translation": "December"
-  },
-  {
-    "id": "February",
-    "translation": "February"
-  },
-  {
-    "id": "January",
-    "translation": "January"
-  },
-  {
-    "id": "July",
-    "translation": "July"
-  },
-  {
-    "id": "June",
-    "translation": "June"
-  },
-  {
-    "id": "March",
-    "translation": "March"
-  },
-  {
-    "id": "May",
-    "translation": "May"
-  },
-  {
-    "id": "November",
-    "translation": "November"
-  },
-  {
-    "id": "October",
-    "translation": "October"
-  },
-  {
-    "id": "September",
-    "translation": "September"
-  },
-  {
-    "id": "Unable to execute command.",
-    "translation": ""
-  },
-  {
     "id": "api.file.list_directory.app_error",
     "translation": ""
   },
@@ -70,6 +18,10 @@
   {
     "id": "api.push_notification.title.collapsed_threads_dm",
     "translation": ""
+  },
+  {
+    "id": "app.command.execute.error",
+    "translation": "Unable to execute command."
   },
   {
     "id": "app.job.get.app_error",
@@ -757,126 +709,6 @@
   },
   {
     "id": "ent.user.complete_switch_with_oauth.blank_email.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.auth_data.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.auth_data_pwd.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.auth_data_type.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.create_at.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.email.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.first_name.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.id.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.last_name.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.locale.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.nickname.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.password_limit.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.position.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_lowercase.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_lowercase_number.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_lowercase_number_symbol.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_lowercase_symbol.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_lowercase_uppercase.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_lowercase_uppercase_number.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_lowercase_uppercase_number_symbol.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_lowercase_uppercase_symbol.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_number.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_number_symbol.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_symbol.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_uppercase.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_uppercase_number.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_uppercase_number_symbol.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.pwd_uppercase_symbol.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.update_at.app_error",
-    "translation": ""
-  },
-  {
-    "id": "model.user.is_valid.username.app_error",
     "translation": ""
   }
 ]
