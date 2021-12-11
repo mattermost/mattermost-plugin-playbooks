@@ -32,8 +32,23 @@
     "translation": ""
   },
   {
-    "id": "app.user.digest.heading.overdue_status_updates",
-    "translation": ""
+    "id": "app.user.digest.overdue_status_updates.heading",
+    "translation": "Overdue Status Updates"
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.num_overdue",
+    "translation": {
+      "one": "You have {{.Count}} run overdue for a status update:",
+      "other": "You have {{.Count}} runs overdue for a status update:"
+    }
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.overdue_link_item",
+    "translation": "- [{{.LinkName}}]({{.LinkUrl}}) (Owner: @{{.Username}})"
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.zero_overdue",
+    "translation": "You have 0 runs overdue."
   },
   {
     "id": "app.user.get_profile_by_group_channel_ids_for_user.app_error",

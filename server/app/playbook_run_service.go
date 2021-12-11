@@ -2738,22 +2738,22 @@ func buildRunsInProgressMessage(runs []RunLink, siteURL string) string {
 func buildRunsOverdueMessage(runs []RunLink, siteURL string, locale string) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
-
-	msg := "\n##### " + T("app.user.digest.heading.overdue_status_updates") + "\n"
+	msg := "\n"
+	msg += "##### " + T("app.user.digest.overdue_status_updates.heading") + "\n"
 	if total == 0 {
-		return msg
+		return msg + T("app.user.digest.overdue_status_updates.zero_overdue") + "\n"
 	}
 
-	runPlural := "run"
-	if total > 1 {
-		runPlural += "s"
-	}
-
-	msg = fmt.Sprintf("You have %d %s overdue for a status update:\n", total, runPlural)
+	msg += T("app.user.digest.overdue_status_updates.num_overdue", total) + "\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen) (Owner: @%s)\n",
-			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName, run.OwnerUserName)
+		props := map[string]interface{}{
+			"LinkName": run.ChannelDisplayName,
+			"LinkUrl": fmt.Sprintf("%s/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen",
+				siteURL, run.TeamName, run.ChannelName),
+			"Username": run.OwnerUserName,
+		}
+		msg += T("app.user.digest.overdue_status_updates.overdue_link_item", props) + "\n"
 	}
 
 	return msg
