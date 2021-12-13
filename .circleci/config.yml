@@ -467,6 +467,7 @@ jobs:
       MM_SERVICESETTINGS_SITEURL: http://localhost:8065
       MM_ADMIN_USERNAME: sysadmin
       MM_ADMIN_PASSWORD: Sys@dmin-sample1
+    parallelism: 4
     steps:
       - run-e2e-tests
 
