@@ -98,15 +98,31 @@ export function startPlaybookRunById(teamId: string, playbookId: string, timeout
 export function promptUpdateStatus(
     teamId: string,
     playbookRunId: string,
-    playbookId: string,
     channelId: string,
 ) {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+    return async (dispatch: Dispatch, getState: GetStateFunc) => {
         const state = getState();
         const hasPermission = canIPostUpdateForRun(state, channelId, teamId);
-
-        dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookRunId, channelId, hasPermission})));
+        dispatch(openUpdateRunStatusModal(playbookRunId, channelId, hasPermission));
     };
+}
+
+export function openUpdateRunStatusModal(
+    playbookRunId: string,
+    channelId: string,
+    hasPermission: boolean,
+    message?: string,
+    reminderInSeconds?: number,
+    finishRunChecked?: boolean
+) {
+    return modals.openModal(makeUpdateRunStatusModalDefinition({
+        playbookRunId,
+        channelId,
+        hasPermission,
+        message,
+        reminderInSeconds,
+        finishRunChecked,
+    }));
 }
 
 export function finishRun(teamId: string) {
