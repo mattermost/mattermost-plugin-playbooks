@@ -140,10 +140,8 @@ commands:
           name: Run Cypress Tests
           no_output_timeout: 30m
           command: |
-            export FAILURE_MESSAGE="At least one test has failed."
-            export RESULTS_OUTPUT="results-output.txt"
             cd tests-e2e
-            circleci tests glob "cypress/integration/**/*.js" | circleci tests split > ./tests-to-run
+            circleci tests glob "cypress/integration/**/*.js" | circleci tests split --split-by=timings > ./tests-to-run
             npm run test -- --spec "$(cat ./tests-to-run | tr '\n' ',')"
 
       - *save_cypress_cache
