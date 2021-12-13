@@ -24,8 +24,7 @@ export interface Props {
 }
 
 const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(state).filter((channel) =>
-    channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL &&
-    channel.type !== General.ARCHIVED_CHANNEL && channel.delete_at === 0,
+    channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL && channel.delete_at === 0,
 );
 
 type GetChannelType = (channelID: string) => Channel
@@ -33,7 +32,7 @@ type GetChannelType = (channelID: string) => Channel
 const getChannel = (state: GlobalState, channelID: string): Channel => {
     const channel = getChannelFromRedux(state, channelID);
 
-    if (channel && channel.type !== General.ARCHIVED_CHANNEL && channel.delete_at === 0) {
+    if (channel && channel.delete_at === 0) {
         return channel;
     }
     return {display_name: 'Unknown Channel', id: channelID} as Channel;
