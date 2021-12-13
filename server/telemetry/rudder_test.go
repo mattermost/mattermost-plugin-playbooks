@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/app"
 
 	rudder "github.com/rudderlabs/analytics-go"
 	"github.com/stretchr/testify/require"

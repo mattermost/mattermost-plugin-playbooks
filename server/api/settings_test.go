@@ -9,9 +9,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	icClient "github.com/mattermost/mattermost-plugin-playbooks/client"
-	mock_poster "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	mock_config "github.com/mattermost/mattermost-plugin-playbooks/server/config/mocks"
+	mock_poster "github.com/mattermost/mattermost-plugin-playbooks/v2/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/config"
+	mock_config "github.com/mattermost/mattermost-plugin-playbooks/v2/server/config/mocks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/stretchr/testify/require"

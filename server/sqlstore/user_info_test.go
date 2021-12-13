@@ -7,16 +7,16 @@ import (
 	"reflect"
 	"testing"
 
-	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
+	mock_app "github.com/mattermost/mattermost-plugin-playbooks/v2/server/app/mocks"
 
 	"github.com/pkg/errors"
 
-	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
+	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/v2/server/bot/mocks"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/require"
 )

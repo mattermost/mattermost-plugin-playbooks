@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/require"
 	"gotest.tools/assert"

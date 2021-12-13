@@ -8,8 +8,8 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/config"
 )
 
 const (

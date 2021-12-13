@@ -1,4 +1,4 @@
-module github.com/mattermost/mattermost-plugin-playbooks
+module github.com/mattermost/mattermost-plugin-playbooks/v2
 
 go 1.14
 

@@ -4,14 +4,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/app"
 
-	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
+	mock_app "github.com/mattermost/mattermost-plugin-playbooks/v2/server/app/mocks"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
 	"github.com/golang/mock/gomock"
-	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
+	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/v2/server/bot/mocks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/require"
 )

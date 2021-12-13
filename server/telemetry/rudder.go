@@ -3,7 +3,7 @@ package telemetry
 import (
 	"sync"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/app"
 
 	"github.com/pkg/errors"
 	rudder "github.com/rudderlabs/analytics-go"

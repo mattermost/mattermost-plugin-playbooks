@@ -10,9 +10,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
-	mock_poster "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
-	mock_config "github.com/mattermost/mattermost-plugin-playbooks/server/config/mocks"
+	mock_app "github.com/mattermost/mattermost-plugin-playbooks/v2/server/app/mocks"
+	mock_poster "github.com/mattermost/mattermost-plugin-playbooks/v2/server/bot/mocks"
+	mock_config "github.com/mattermost/mattermost-plugin-playbooks/v2/server/config/mocks"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/stretchr/testify/assert"

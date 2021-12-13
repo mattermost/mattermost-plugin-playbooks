@@ -10,7 +10,7 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/app"
 	"github.com/pkg/errors"
 )
 

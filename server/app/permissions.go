@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/config"
 	"github.com/mattermost/mattermost-server/v6/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"

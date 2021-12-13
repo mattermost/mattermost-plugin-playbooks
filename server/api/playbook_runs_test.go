@@ -21,11 +21,11 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
-	mock_poster "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	mock_config "github.com/mattermost/mattermost-plugin-playbooks/server/config/mocks"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/app"
+	mock_app "github.com/mattermost/mattermost-plugin-playbooks/v2/server/app/mocks"
+	mock_poster "github.com/mattermost/mattermost-plugin-playbooks/v2/server/bot/mocks"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/config"
+	mock_config "github.com/mattermost/mattermost-plugin-playbooks/v2/server/config/mocks"
 )
 
 func TestPlaybookRuns(t *testing.T) {

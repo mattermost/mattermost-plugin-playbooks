@@ -10,18 +10,18 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
-	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
-	mock_config "github.com/mattermost/mattermost-plugin-playbooks/server/config/mocks"
+	mock_app "github.com/mattermost/mattermost-plugin-playbooks/v2/server/app/mocks"
+	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/v2/server/bot/mocks"
+	mock_config "github.com/mattermost/mattermost-plugin-playbooks/v2/server/config/mocks"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )

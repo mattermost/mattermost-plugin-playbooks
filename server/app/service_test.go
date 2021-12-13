@@ -6,17 +6,17 @@ import (
 
 	"github.com/golang/mock/gomock"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	mock_playbook "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
-	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/server/bot/mocks"
-	mock_config "github.com/mattermost/mattermost-plugin-playbooks/server/config/mocks"
+	mock_playbook "github.com/mattermost/mattermost-plugin-playbooks/v2/server/app/mocks"
+	mock_bot "github.com/mattermost/mattermost-plugin-playbooks/v2/server/bot/mocks"
+	mock_config "github.com/mattermost/mattermost-plugin-playbooks/v2/server/config/mocks"
 )
 
 func TestGetSuggestedPlaybooks(t *testing.T) {

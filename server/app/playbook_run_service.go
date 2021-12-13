@@ -13,9 +13,9 @@ import (
 	"github.com/pkg/errors"
 	stripmd "github.com/writeas/go-strip-markdown"
 
-	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/httptools"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/v2/server/httptools"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 

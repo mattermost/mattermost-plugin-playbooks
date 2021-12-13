@@ -1,6 +1,6 @@
 package telemetry
 
-import "github.com/mattermost/mattermost-plugin-playbooks/server/app"
+import "github.com/mattermost/mattermost-plugin-playbooks/v2/server/app"
 
 // NoopTelemetry satisfies the Telemetry interface with no-op implementations.
 type NoopTelemetry struct{}
