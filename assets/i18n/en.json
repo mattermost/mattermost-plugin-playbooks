@@ -36,15 +36,15 @@
     "translation": "Overdue Status Updates"
   },
   {
+    "id": "app.user.digest.overdue_status_updates.link_item",
+    "translation": "- [{{.LinkName}}]({{.LinkUrl}}) (Owner: @{{.Username}})"
+  },
+  {
     "id": "app.user.digest.overdue_status_updates.num_overdue",
     "translation": {
       "one": "You have {{.Count}} run overdue for a status update:",
       "other": "You have {{.Count}} runs overdue for a status update:"
     }
-  },
-  {
-    "id": "app.user.digest.overdue_status_updates.overdue_link_item",
-    "translation": "- [{{.LinkName}}]({{.LinkUrl}}) (Owner: @{{.Username}})"
   },
   {
     "id": "app.user.digest.overdue_status_updates.zero_overdue",
