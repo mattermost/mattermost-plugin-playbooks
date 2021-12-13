@@ -4,6 +4,7 @@
 import styled, {css, createGlobalStyle} from 'styled-components';
 import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
+import Creatable from 'react-select/creatable';
 
 import {RegularHeading} from 'src/styles/headings';
 import MarkdownTextbox from 'src/components/markdown_textbox';
@@ -23,7 +24,8 @@ export const Banner = styled.div`
 `;
 
 export const BackstageHeader = styled.div`
-    ${RegularHeading}
+    ${RegularHeading} {
+    }
 
     display: flex;
     font-size: 2.8rem;
@@ -83,6 +85,7 @@ export const StyledMarkdownTextbox = styled(MarkdownTextbox)`
         font-size: 14px;
         line-height: 20px;
     }
+
     .textbox-preview-area {
         z-index: auto;
     }
@@ -102,6 +105,10 @@ export const GlobalSelectStyle = createGlobalStyle`
         &--is-focused {
             box-shadow: inset 0 0 0px 2px var(--button-bg);
         }
+    }
+
+    .playbooks-rselect--is-disabled {
+        opacity: 0.56;
     }
 
     .playbooks-rselect__control,
@@ -145,6 +152,7 @@ export const GlobalSelectStyle = createGlobalStyle`
                 padding: 0;
                 color: var(--center-channel-color);
             }
+
             .playbooks-rselect__multi-value__remove {
                 color: rgba(var(--center-channel-bg-rgb), 0.80);
             }
@@ -172,6 +180,10 @@ export const StyledSelect = styled(Select).attrs((props) => {
         ...props,
     };
 })`
+    ${commonSelectStyle}
+`;
+
+export const StyledCreatable = styled(Creatable)`
     ${commonSelectStyle}
 `;
 

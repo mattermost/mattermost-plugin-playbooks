@@ -23,6 +23,7 @@ export interface PlaybookRun {
     reminder_post_id: string;
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
+    status_update_enabled: boolean;
 
     /** Previous reminder timer as nanoseconds */
     previous_reminder: number;
@@ -32,6 +33,7 @@ export interface PlaybookRun {
     retrospective_published_at: number;
     retrospective_was_canceled: boolean;
     retrospective_reminder_interval_seconds: number;
+    retrospective_enabled: boolean;
     participant_ids: string[];
 }
 
@@ -117,7 +119,6 @@ export function isTimelineEvent(arg: any): arg is TimelineEvent {
         typeof arg.event_type === 'string' && Object.values(TimelineEventType).includes(arg.event_type) &&
         typeof arg.summary === 'string' &&
         typeof arg.details === 'string' &&
-        typeof arg.post_id === 'string' &&
         typeof arg.subject_user_id === 'string' &&
         typeof arg.creator_user_id === 'string');
 }

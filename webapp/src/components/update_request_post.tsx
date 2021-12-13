@@ -92,19 +92,16 @@ export const UpdateRequestPost = (props: Props) => {
                         dispatch(promptUpdateStatus(
                             team.id,
                             currentRun?.id,
-                            currentRun?.playbook_id,
                             props.post.channel_id,
                         ));
                     }}
                 >
                     {formatMessage({defaultMessage: 'Post update'})}
                 </PostUpdatePrimaryButton>
-                <Spacer/>
                 <PostUpdateTertiaryButton onClick={() => doDelete(dismissUrl, dismissBody)}>
                     {formatMessage({defaultMessage: 'Dismiss'})}
                 </PostUpdateTertiaryButton>
-                <Spacer/>
-                <StyledSelect
+                <SelectWrapper
                     filterOption={null}
                     isMulti={false}
                     menuPlacement={'top'}
@@ -120,6 +117,11 @@ export const UpdateRequestPost = (props: Props) => {
                         control: (base: CSSProperties) => ({
                             ...base,
                             height: '40px',
+                            minWidth: '100px',
+                        }),
+                        menuPortal: (base: CSSProperties) => ({
+                            ...base,
+                            zIndex: 22,
                         }),
                     }}
                 />
@@ -132,6 +134,11 @@ const PostUpdateButtonCommon = css`
     justify-content: center;
     flex: 1;
     max-width: 135px;
+    margin: 4px;
+`;
+
+const SelectWrapper = styled(StyledSelect)`
+    margin: 4px;
 `;
 
 const PostUpdatePrimaryButton = styled(PrimaryButton)`
@@ -142,16 +149,11 @@ const PostUpdateTertiaryButton = styled(TertiaryButton)`
     ${PostUpdateButtonCommon}
 `;
 
-const Spacer = styled.div`
-    flex-grow: 0;
-    flex-shrink: 0;
-    width: 12px;
-`;
-
 const Container = styled(CustomPostContainer)`
     display: flex;
     flex-direction: row;
     padding: 12px;
+    flex-wrap: wrap;
 `;
 
 const StyledPostText = styled(PostText)`

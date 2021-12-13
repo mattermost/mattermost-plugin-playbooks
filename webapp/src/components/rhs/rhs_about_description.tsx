@@ -128,7 +128,8 @@ const RenderedDescription = styled.div`
 `;
 
 const DescriptionTextArea = styled.textarea`
-    ${commonDescriptionStyle}
+    ${commonDescriptionStyle} {
+    }
 
     display: block;
     resize: none;

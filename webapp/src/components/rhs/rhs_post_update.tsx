@@ -64,7 +64,10 @@ const RHSPostUpdate = (props: Props) => {
     }
 
     return (
-        <PostUpdate collapsed={props.collapsed}>
+        <PostUpdate
+            collapsed={props.collapsed}
+            id={'rhs-post-update'}
+        >
             {(props.updatesExist || isNextUpdateScheduled || isFinished) &&
             <>
                 <Timer>
@@ -99,7 +102,6 @@ const RHSPostUpdate = (props: Props) => {
                     dispatch(promptUpdateStatus(
                         props.playbookRun.team_id,
                         props.playbookRun.id,
-                        props.playbookRun.playbook_id,
                         props.playbookRun.channel_id,
                     ));
                 }}

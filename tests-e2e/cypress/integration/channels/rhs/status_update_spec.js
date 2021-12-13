@@ -135,6 +135,76 @@ describe('channels > rhs > status update', () => {
                 });
             });
         });
+
+        it('confirms finishing the run, and remembers changes and reminder when canceled', () => {
+            const updateMessage = 'This is the update text to test with.';
+            const reminderTime = 'in 24 hours';
+
+            // # Run the `/playbook update` slash command.
+            cy.executeSlashCommand('/playbook update');
+
+            // # Get the dialog modal.
+            cy.get('.GenericModal').within(() => {
+                // * Verify the first message is there.
+                cy.findByTestId('update_run_status_textbox').within(() => {
+                    cy.findByText(defaultReminderMessage).should('exist');
+                });
+
+                // # Type text to test for later
+                cy.findByTestId('update_run_status_textbox').clear().type(updateMessage);
+
+                // # Set a new reminder to test for later
+                cy.openReminderSelector();
+                cy.selectReminderTime(reminderTime);
+
+                // # Mark the run as finished
+                cy.findByTestId('mark-run-as-finished').click({force: true});
+
+                // # Submit the dialog.
+                cy.get('button.confirm').click();
+            });
+
+            // * Confirmation should appear
+            cy.get('.modal-header').should('be.visible').contains('Confirm finish run');
+
+            // # Cancel
+            cy.get('#cancelModalButton').click({force: true});
+
+            // * Verify post update has the same information
+            cy.get('.GenericModal').within(() => {
+                // * Verify the message was remembered
+                cy.findByTestId('update_run_status_textbox').within(() => {
+                    cy.findByText(updateMessage).should('exist');
+                });
+
+                // * Verify the reminder was remembered
+                cy.get('#reminder_timer_datetime').contains(reminderTime);
+
+                // * Marked run is still checked
+                cy.findByTestId('mark-run-as-finished').within(() => {
+                    cy.get('[type="checkbox"]').should('be.checked');
+                });
+
+                // # Submit the dialog.
+                cy.get('button.confirm').click();
+            });
+
+            // * Confirmation should appear
+            cy.get('.modal-header').should('be.visible').contains('Confirm finish run');
+
+            // # Submit
+            cy.get('#confirmModalButton').click({force: true});
+
+            // * Verify the status update was posted.
+            cy.uiGetNthPost(-3).within(() => {
+                cy.findByText(updateMessage).should('exist');
+            });
+
+            // * Verify the run was finished.
+            cy.uiGetNthPost(-2).within(() => {
+                cy.findByText('marked this run as finished.').should('exist');
+            });
+        });
     });
 
     describe('shows the last update in update message', () => {
@@ -239,6 +309,31 @@ describe('channels > rhs > status update', () => {
                 cy.get('#reminder_timer_datetime').within(() => {
                     cy.get('[class$=singleValue]').should('have.text', 'in 7 days');
                 });
+            });
+        });
+    });
+
+    describe('playbook with disabled status updates', () => {
+        before(() => {
+            // # Create a public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook',
+                userId: testUser,
+                broadcastChannelId: testChannel.id,
+                statusUpdateEnabled: false,
+            }).then((playbook) => {
+                testPlaybook = playbook;
+            });
+        });
+
+        describe('omit status update dialog when status updates are disabled', () => {
+            it('shows the default when we have not made an update before', () => {
+                // * Check if RHS section is loaded
+                cy.get('#rhs-about').should('exist');
+
+                // * Check if Post Update section is omitted
+                cy.get('#rhs-post-update').should('not.exist');
             });
         });
     });

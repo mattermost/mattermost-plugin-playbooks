@@ -24,6 +24,7 @@ import {
 import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
 import {
+    Checklist,
     ChecklistItem,
     ChecklistItemState,
     FetchPlaybooksParams,
@@ -40,21 +41,24 @@ import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 
+let siteURL = '';
 let basePath = '';
 let apiUrl = `${basePath}/plugins/${pluginId}/api/v0`;
 
-export const setSiteUrl = (siteUrl?: string): void => {
-    if (siteUrl) {
-        basePath = new URL(siteUrl).pathname.replace(/\/+$/, '');
+export const setSiteUrl = (url?: string): void => {
+    if (url) {
+        basePath = new URL(url).pathname.replace(/\/+$/, '');
+        siteURL = url;
     } else {
         basePath = '';
+        siteURL = '';
     }
 
     apiUrl = `${basePath}/plugins/${pluginId}/api/v0`;
 };
 
 export const getSiteUrl = (): string => {
-    return basePath;
+    return siteURL;
 };
 
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
@@ -85,12 +89,13 @@ export async function postStatusUpdate(
     playbookRunId: string,
     payload: {
         message: string,
-        reminder?: number
+        reminder?: number,
+        finishRun: boolean,
     },
     ids: {
-        user_id: string;
-        channel_id: string;
-        team_id: string;
+        user_id: string,
+        channel_id: string,
+        team_id: string,
     },
 ) {
     const base = {
@@ -106,6 +111,7 @@ export async function postStatusUpdate(
         submission: {
             ...payload,
             reminder: payload.reminder?.toFixed() ?? '',
+            finish_run: payload.finishRun,
         },
     });
 
@@ -282,14 +288,6 @@ export async function setChecklistItemState(playbookRunID: string, checklistNum:
     );
 }
 
-export async function clientAddChecklistItem(playbookRunID: string, checklistNum: number, checklistItem: ChecklistItem) {
-    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/add`,
-        JSON.stringify(checklistItem),
-    );
-
-    return data;
-}
-
 export async function clientRemoveChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}`, {
         method: 'delete',
@@ -324,6 +322,30 @@ export async function clientEditChecklistItem(playbookRunID: string, checklistNu
             command: itemUpdate.command,
             description: itemUpdate.description,
         }));
+
+    return data;
+}
+
+export async function clientAddChecklist(playbookRunID: string, checklist: Checklist) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists`,
+        JSON.stringify(checklist),
+    );
+
+    return data;
+}
+
+export async function clientRemoveChecklist(playbookRunID: string, checklistNum: number) {
+    const data = await doDelete(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}`);
+
+    return data;
+}
+
+export async function clientRenameChecklist(playbookRunID: string, checklistNum: number, newTitle: string) {
+    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/rename`,
+        JSON.stringify({
+            title: newTitle,
+        }),
+    );
 
     return data;
 }

@@ -4,14 +4,9 @@
 import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {
     DragDropContext,
-    Draggable,
-    DraggableProvided,
-    DraggableStateSnapshot,
-    Droppable,
-    DroppableProvided,
     DropResult,
 } from 'react-beautiful-dnd';
 
@@ -27,7 +22,6 @@ import {
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
     setChecklistItemsFilter,
-    toggleRHS,
 } from 'src/actions';
 import {
     Checklist,
@@ -37,11 +31,8 @@ import {
 } from 'src/types/playbook';
 import {
     clientReorderChecklist,
-    setChecklistItemState,
     telemetryEventForPlaybookRun,
 } from 'src/client';
-import {ChecklistItemDetails} from 'src/components/checklist_item';
-import {isMobile} from 'src/mobile';
 import CollapsibleChecklist from 'src/components/collapsible_checklist';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {
@@ -53,6 +44,8 @@ import MultiCheckbox, {CheckboxOption} from 'src/components/multi_checkbox';
 import {DotMenuButton} from 'src/components/dot_menu';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';
+import AddChecklistDialog from 'src/components/rhs/rhs_checklists_add_dialog';
+import RHSChecklist from 'src/components/rhs/rhs_checklist';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -62,7 +55,7 @@ interface Props {
     playbookRun: PlaybookRun;
 }
 
-const RHSChecklists = (props: Props) => {
+const RHSChecklistList = (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const channelId = useSelector(getCurrentChannelId);
@@ -73,6 +66,7 @@ const RHSChecklists = (props: Props) => {
     const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
+    const [showAddChecklistDialog, setShowAddChecklistDialog] = useState(false);
 
     const checklists = props.playbookRun.checklists || [];
     const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
@@ -101,7 +95,7 @@ const RHSChecklists = (props: Props) => {
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
-            <MainTitleBG>
+            <MainTitleBG numChecklists={checklists.length}>
                 <MainTitle>
                     {formatMessage({defaultMessage: 'Checklists'})}
                     {
@@ -111,6 +105,11 @@ const RHSChecklists = (props: Props) => {
                                 title={allCollapsed ? formatMessage({defaultMessage: 'Expand'}) : formatMessage({defaultMessage: 'Collapse'})}
                                 className={(allCollapsed ? 'icon-arrow-expand' : 'icon-arrow-collapse') + ' icon-16 btn-icon'}
                                 onClick={() => dispatch(setAllChecklistsCollapsedState(channelId, !allCollapsed, checklists.length))}
+                            />
+                            <HoverMenuButton
+                                title={formatMessage({defaultMessage: 'Add checklist'})}
+                                className={'icon-plus icon-16 btn-icon'}
+                                onClick={() => setShowAddChecklistDialog(true)}
                             />
                             <MultiCheckbox
                                 options={filterOptions}
@@ -127,101 +126,51 @@ const RHSChecklists = (props: Props) => {
                 </MainTitle>
             </MainTitleBG>
             {checklists.map((checklist: Checklist, checklistIndex: number) => (
-                <CollapsibleChecklist
+                <DragDropContext
                     key={checklist.title + checklistIndex}
-                    title={checklist.title}
-                    items={checklist.items}
-                    index={checklistIndex}
-                    collapsed={Boolean(checklistsState[checklistIndex])}
-                    setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
-                    disabled={finished}
+                    onDragEnd={(result: DropResult) => {
+                        if (!result.destination) {
+                            return;
+                        }
+
+                        if (result.destination.droppableId === result.source.droppableId &&
+                            result.destination.index === result.source.index) {
+                            return;
+                        }
+
+                        const newChecklists = Array.from(checklists);
+                        const newChecklistItems = Array.from(checklists[checklistIndex].items);
+                        const [removed] = newChecklistItems.splice(result.source.index, 1);
+                        newChecklistItems.splice(result.destination.index, 0, removed);
+                        newChecklists[checklistIndex] = {
+                            ...newChecklists[checklistIndex],
+                            items: newChecklistItems,
+                        };
+
+                        dispatch(playbookRunUpdated({
+                            ...props.playbookRun,
+                            checklists: newChecklists,
+                        }));
+
+                        clientReorderChecklist(props.playbookRun.id, checklistIndex, result.source.index, result.destination.index);
+                    }}
                 >
-                    {visibleTasks(checklist, checklistItemsFilter, myUser.id) &&
-                    <ChecklistContainer className='checklist'>
-                        <DragDropContext
-                            onDragEnd={(result: DropResult) => {
-                                if (!result.destination) {
-                                    return;
-                                }
-
-                                if (result.destination.droppableId === result.source.droppableId &&
-                                    result.destination.index === result.source.index) {
-                                    return;
-                                }
-
-                                const newChecklists = Array.from(checklists);
-                                const newChecklistItems = Array.from(checklists[checklistIndex].items);
-                                const [removed] = newChecklistItems.splice(result.source.index, 1);
-                                newChecklistItems.splice(result.destination.index, 0, removed);
-                                newChecklists[checklistIndex] = {
-                                    ...newChecklists[checklistIndex],
-                                    items: newChecklistItems,
-                                };
-
-                                dispatch(playbookRunUpdated({
-                                    ...props.playbookRun,
-                                    checklists: newChecklists,
-                                }));
-
-                                clientReorderChecklist(props.playbookRun.id, checklistIndex, result.source.index, result.destination.index);
-                            }}
-                        >
-                            <Droppable
-                                droppableId='columns'
-                                direction='vertical'
-                                type='checklist'
-                            >
-                                {(droppableProvided: DroppableProvided) => (
-                                    <div
-                                        ref={droppableProvided.innerRef}
-                                        {...droppableProvided.droppableProps}
-                                    >
-                                        {checklist.items
-                                            .map((checklistItem: ChecklistItem, index: number) => {
-                                                // filtering here because we need to maintain the index values
-                                                // because we refer to checklist items by their index
-                                                if (!showItem(checklistItem, checklistItemsFilter, myUser.id)) {
-                                                    return null;
-                                                }
-
-                                                return (
-                                                    <Draggable
-                                                        key={checklistItem.title + index}
-                                                        draggableId={checklistItem.title + index}
-                                                        index={index}
-                                                    >
-                                                        {(draggableProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
-                                                            <ChecklistItemDetails
-                                                                checklistItem={checklistItem}
-                                                                checklistNum={checklistIndex}
-                                                                itemNum={index}
-                                                                channelId={props.playbookRun.channel_id}
-                                                                playbookRunId={props.playbookRun.id}
-                                                                onChange={(newState: ChecklistItemState) => {
-                                                                    setChecklistItemState(props.playbookRun.id, checklistIndex, index, newState);
-                                                                }}
-                                                                onRedirect={() => {
-                                                                    if (isMobile()) {
-                                                                        dispatch(toggleRHS());
-                                                                    }
-                                                                }}
-                                                                draggableProvided={draggableProvided}
-                                                                dragging={snapshot.isDragging}
-                                                                disabled={finished}
-                                                                collapsibleDescription={true}
-                                                            />
-                                                        )}
-                                                    </Draggable>
-                                                );
-                                            })}
-                                        {droppableProvided.placeholder}
-                                    </div>
-                                )}
-                            </Droppable>
-                        </DragDropContext>
-                    </ChecklistContainer>
-                    }
-                </CollapsibleChecklist>
+                    <CollapsibleChecklist
+                        title={checklist.title}
+                        items={checklist.items}
+                        index={checklistIndex}
+                        numChecklists={checklists.length}
+                        collapsed={Boolean(checklistsState[checklistIndex])}
+                        setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
+                        disabledOrRunID={finished || props.playbookRun.id}
+                    >
+                        <RHSChecklist
+                            playbookRun={props.playbookRun}
+                            checklist={checklist}
+                            checklistIndex={checklistIndex}
+                        />
+                    </CollapsibleChecklist>
+                </DragDropContext>
             ))}
             {
                 active &&
@@ -229,12 +178,19 @@ const RHSChecklists = (props: Props) => {
                     {formatMessage({defaultMessage: 'Finish run'})}
                 </FinishButton>
             }
+            <AddChecklistDialog
+                playbookRunID={props.playbookRun.id}
+                show={showAddChecklistDialog}
+                onHide={() => setShowAddChecklistDialog(false)}
+            />
         </InnerContainer>
     );
 };
 
 const InnerContainer = styled.div`
     position: relative;
+    z-index: 1;
+
     display: flex;
     flex-direction: column;
     padding: 0 12px 24px 12px;
@@ -244,9 +200,9 @@ const InnerContainer = styled.div`
     }
 `;
 
-const MainTitleBG = styled.div`
+const MainTitleBG = styled.div<{ numChecklists: number }>`
     background-color: var(--center-channel-bg);
-    z-index: 2;
+    z-index: ${({numChecklists}) => numChecklists + 2};
     position: sticky;
     top: 0;
 `;
@@ -267,9 +223,23 @@ const MainTitle = styled.div`
 const ChecklistContainer = styled.div`
     background-color: var(--center-channel-bg);
     border-radius: 0 0 4px 4px;
-    border:  1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-top: 0;
     padding: 16px 12px;
+`;
+
+const EmptyChecklistContainer = styled(ChecklistContainer)`
+    padding: 12px;
+`;
+
+const AddTaskLink = styled.button`
+    font-size: 12px;
+    font-weight: 600;
+
+    color: var(--button-bg);
+
+    background: none;
+    border: none;
 `;
 
 const HoverRow = styled(HoverMenu)`
@@ -307,7 +277,7 @@ const StyledPrimaryButton = styled(PrimaryButton)`
     margin: 12px 0;
 `;
 
-export default RHSChecklists;
+export default RHSChecklistList;
 
 const allComplete = (checklists: Checklist[]) => {
     return outstandingTasks(checklists) === 0;
@@ -380,18 +350,28 @@ const showItem = (checklistItem: ChecklistItem, filter: ChecklistItemsFilter, my
     if (filter.all) {
         return true;
     }
+
+    // "Show checked tasks" is not checked, so if item is checked (closed), don't show it.
     if (!filter.checked && checklistItem.state === ChecklistItemState.Closed) {
         return false;
     }
+
+    // "Me" is not checked, so if assignee_id is me, don't show it.
     if (!filter.me && checklistItem.assignee_id === myId) {
         return false;
     }
+
+    // "Unassigned" is not checked, so if assignee_id is blank (unassigned), don't show it.
     if (!filter.unassigned && checklistItem.assignee_id === '') {
         return false;
     }
-    if (!filter.others && checklistItem.assignee_id !== myId) {
+
+    // "Others" is not checked, so if item has someone else as the assignee, don't show it.
+    if (!filter.others && checklistItem.assignee_id !== '' && checklistItem.assignee_id !== myId) {
         return false;
     }
+
+    // We should show it!
     return true;
 };
 

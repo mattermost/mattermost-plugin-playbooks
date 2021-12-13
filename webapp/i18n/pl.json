@@ -341,5 +341,19 @@
     "vjzpnC": "Nie ma playbooków pasujących do tych filtrów.",
     "fpuWL1": "Usuń playbook",
     "Y+U8La": "Czy na pewno chcesz usunąć playbook {title}?",
-    "K3r6DQ": "Usuń"
+    "K3r6DQ": "Usuń",
+    "RO+BaS": "Kopiuj link do przebiegu",
+    "NA7Cw1": "Skopiuj link do playbooka",
+    "0oL1zz": "Skopiowane!",
+    "fuDLDJ": "Utwórz kanał",
+    "UMoxP9": "Szablon nazwy kanału (opcjonalnie)",
+    "3MSGcL": "Nazwa kanału jest nieprawidłowa.",
+    "cp7KUI": "Playbook",
+    "C6Oghd": "Edytuj podsumowanie przebiegu",
+    "cPIKU2": "Obserwowane",
+    "d4g2r8": "Usunięto: {timestamp}",
+    "4vuNrq": "{duration} po rozpoczęciu uruchomienia",
+    "/gbqA6": "{duration} przed rozpoczęciem uruchomienia",
+    "O8o2lE": "Dodaj kanał do kategorii",
+    "Mu2aDs": "Każdy w zespole(<b>{team}</b>) ma dostęp."
 }

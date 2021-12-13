@@ -18,7 +18,7 @@ const (
 
 // PlaybookRun holds the detailed information of a playbook run.
 //
-// NOTE: When adding a column to the db, search for "When adding a Playbook Run column" to see where
+// NOTE: When adding a column to the db, search for "When adding a PlaybookRun column" to see where
 // that column needs to be added in the sqlstore code.
 type PlaybookRun struct {
 	// ID is the unique identifier of the playbook run.
@@ -94,6 +94,9 @@ type PlaybookRun struct {
 	// between every status update
 	ReminderTimerDefaultSeconds int64 `json:"reminder_timer_default_seconds"`
 
+	//Defines if status update functionality is enabled
+	StatusUpdateEnabled bool `json:"status_update_enabled"`
+
 	// InvitedUserIDs, if not empty, is an array containing the identifiers of the users that were
 	// automatically invited to the playbook run when it was created.
 	InvitedUserIDs []string `json:"invited_user_ids"`
@@ -135,6 +138,9 @@ type PlaybookRun struct {
 	// RetrospectiveReminderIntervalSeconds is the interval, in seconds, between subsequent reminders
 	// to fill the retrospective.
 	RetrospectiveReminderIntervalSeconds int64 `json:"retrospective_reminder_interval_seconds"`
+
+	// Defines if retrospective functionality is enabled
+	RetrospectiveEnabled bool `json:"retrospective_enabled"`
 
 	// MessageOnJoin, if not empty, is the message shown to every user that joins the channel of
 	// the playbook run.
@@ -227,8 +233,9 @@ type UpdateOptions struct {
 // StatusUpdateOptions encapsulates the fields that can be set when updating a playbook run's status
 // NOTE: changes made to this should be reflected in the client package.
 type StatusUpdateOptions struct {
-	Message  string        `json:"message"`
-	Reminder time.Duration `json:"reminder"`
+	Message   string        `json:"message"`
+	Reminder  time.Duration `json:"reminder"`
+	FinishRun bool          `json:"finish_run"`
 }
 
 // Metadata tracks ancillary metadata about a playbook run.
@@ -477,6 +484,15 @@ type PlaybookRunService interface {
 	// GetChecklistAutocomplete returns the list of checklists for playbookRunID to be used in autocomplete
 	GetChecklistAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error)
 
+	// AddChecklist prepends a new checklist to the specified run
+	AddChecklist(playbookRunID, userID string, checklist Checklist) error
+
+	// RemoveChecklist removes the specified checklist.
+	RemoveChecklist(playbookRunID, userID string, checklistNumber int) error
+
+	// RenameChecklist renames the specified checklist
+	RenameChecklist(playbookRunID, userID string, checklistNumber int, newTitle string) error
+
 	// NukeDB removes all playbook run related data.
 	NukeDB() error
 
@@ -695,11 +711,26 @@ type PlaybookRunTelemetry interface {
 	// a checklist item.
 	RunTaskSlashCommand(playbookRunID, userID string, task ChecklistItem)
 
+	// AddChecklsit tracks the creation of a new checklist.
+	AddChecklist(playbookRunID, userID string, checklist Checklist)
+
+	// RemoveChecklist tracks the removal of a checklist.
+	RemoveChecklist(playbookRunID, userID string, checklist Checklist)
+
+	// RenameChecklsit tracks the creation of a new checklist.
+	RenameChecklist(playbookRunID, userID string, checklist Checklist)
+
 	// UpdateRetrospective event
 	UpdateRetrospective(playbookRun *PlaybookRun, userID string)
 
 	// PublishRetrospective event
 	PublishRetrospective(playbookRun *PlaybookRun, userID string)
+
+	// Follow tracks userID following a playbook run.
+	Follow(playbookRun *PlaybookRun, userID string)
+
+	// Unfollow tracks userID following a playbook run.
+	Unfollow(playbookRun *PlaybookRun, userID string)
 }
 
 type JobOnceScheduler interface {
