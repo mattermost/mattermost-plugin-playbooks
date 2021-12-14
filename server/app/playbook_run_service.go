@@ -2742,7 +2742,7 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string, locale string) stri
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 	msg := "\n"
-	msg += "#### #" + T("app.user.digest.overdue_status_updates.heading") + "\n"
+	msg += "##### " + T("app.user.digest.overdue_status_updates.heading") + "\n"
 	if total == 0 {
 		return msg + T("app.user.digest.overdue_status_updates.zero_overdue") + "\n"
 	}
