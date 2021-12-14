@@ -10,6 +10,7 @@ import {Team} from 'mattermost-redux/types/teams';
 import {useIntl} from 'react-intl';
 
 import {useDropdownPosition} from 'src/hooks';
+import {DropdownSelectorStyle} from 'src/components/profile/dropdown_selector_style';
 
 import GenericModal from '../widgets/generic_modal';
 
@@ -170,17 +171,19 @@ const Dropdown = ({children, showOnRight, moveUp, target, onClose, dependsOnMous
         'PlaybookRunFilter--active', 'profile-dropdown--active', {'show-on-right': showOnRight});
 
     return (
-        <ProfileDropdown className={classes}>
-            {target}
-            <ChildContainer
-                moveUp={moveUp}
-                position={position}
-                dependsOnPosition={dependsOnMousePosition}
-            >
-                {children}
-            </ChildContainer>
-            <Blanket onClick={onClose}/>
-        </ProfileDropdown>
+        <DropdownSelectorStyle>
+            <ProfileDropdown className={classes}>
+                {target}
+                <ChildContainer
+                    moveUp={moveUp}
+                    position={position}
+                    dependsOnPosition={dependsOnMousePosition}
+                >
+                    {children}
+                </ChildContainer>
+                <Blanket onClick={onClose}/>
+            </ProfileDropdown>
+        </DropdownSelectorStyle>
     );
 };
 

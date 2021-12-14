@@ -225,6 +225,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
     {
         teamId,
         title,
+        description,
         createPublicPlaybookRun,
         checklists,
         memberIDs,
@@ -234,6 +235,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
         reminderMessageTemplate,
         reminderTimerDefaultSeconds = 24 * 60 * 60, // 24 hours
         statusUpdateEnabled = true,
+        retrospectiveReminderIntervalSeconds,
         retrospectiveTemplate,
         retrospectiveEnabled = true,
         invitedUserIds,
@@ -258,6 +260,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
         method: 'POST',
         body: {
             title,
+            description,
             team_id: teamId,
             create_public_playbook_run: createPublicPlaybookRun,
             checklists,
@@ -268,6 +271,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
             reminder_message_template: reminderMessageTemplate,
             reminder_timer_default_seconds: reminderTimerDefaultSeconds,
             status_update_enabled: statusUpdateEnabled,
+            retrospective_reminder_interval_seconds: retrospectiveReminderIntervalSeconds,
             retrospective_template: retrospectiveTemplate,
             retrospective_enabled: retrospectiveEnabled,
             invited_user_ids: invitedUserIds,
