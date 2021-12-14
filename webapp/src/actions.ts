@@ -5,7 +5,8 @@ import {AnyAction, Dispatch} from 'redux';
 import {generateId} from 'mattermost-redux/utils/helpers';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import {GetStateFunc} from 'mattermost-redux/types/actions';
+import {addChannelMember} from 'mattermost-redux/actions/channels';
+import {DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
 
 import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
@@ -57,7 +58,7 @@ import {
     SET_CHECKLIST_ITEMS_FILTER,
     SetChecklistItemsFilter,
 } from 'src/types/actions';
-import {clientAddChannelMember, clientExecuteCommand} from 'src/client';
+import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 import {modals} from 'src/webapp_globals';
@@ -133,11 +134,11 @@ export function addNewTask(checklist: number) {
     };
 }
 
-export function addToChannel(userId: string) {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+export function addToCurrentChannel(userId: string) {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
         const currentChannelId = getCurrentChannelId(getState());
 
-        await clientAddChannelMember(dispatch, getState, currentChannelId, userId);
+        dispatch(addChannelMember(currentChannelId, userId));
     };
 }
 

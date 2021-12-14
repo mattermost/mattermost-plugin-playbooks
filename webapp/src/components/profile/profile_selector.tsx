@@ -3,6 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import classNames from 'classnames';
 import styled, {css} from 'styled-components';
@@ -20,9 +21,8 @@ import {PlaybookRunFilterButton} from '../backstage/styles';
 export interface Option {
     value: string;
     label: JSX.Element | string;
-    userId: string;
     userType: string;
-    userObj: UserProfile;
+    user: UserProfile;
 }
 
 interface ActionObj {
@@ -45,7 +45,7 @@ interface Props {
     selfIsFirstOption?: boolean;
     getUsers: () => Promise<UserProfile[]>;
     getUsersInTeam: () => Promise<UserProfile[]>;
-    onSelectedChange?: (userId?: string, userType?: string, userObj?: UserProfile) => void;
+    onSelectedChange?: (userType?: string, user?: UserProfile) => void;
     customControlProps?: any;
     showOnRight?: boolean;
     className?: string;
@@ -53,6 +53,7 @@ interface Props {
 
 export default function ProfileSelector(props: Props) {
     const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
+    const {formatMessage} = useIntl();
 
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
@@ -97,8 +98,7 @@ export default function ProfileSelector(props: Props) {
             return props.selfIsFirstOption && userId === currentUserId;
         };
 
-        const users = await props.getUsers();
-        const usersInTeam = await props.getUsersInTeam();
+        const [users, usersInTeam] = await Promise.all([props.getUsers(), props.getUsersInTeam()]);
         const usersNotInChannel = usersInTeam.filter((user) => !users.includes(user));
 
         const optionNotInTeamList = usersNotInChannel.map((user: UserProfile) => {
@@ -110,9 +110,8 @@ export default function ProfileSelector(props: Props) {
                         nameFormatter={needsSuffix(user.id) ? formatName(' (assign to me)') : formatName('')}
                     />
                 ),
-                userId: user.id,
                 userType: 'NonMember',
-                userObj: user,
+                user,
             } as Option);
         });
 
@@ -125,14 +124,13 @@ export default function ProfileSelector(props: Props) {
                         nameFormatter={needsSuffix(user.id) ? formatName(' (assign to me)') : formatName('')}
                     />
                 ),
-                userId: user.id,
                 userType: 'Member',
-                userObj: user,
+                user,
             } as Option);
         });
 
         if (props.selfIsFirstOption) {
-            const idx = optionList.findIndex((elem) => elem.userId === currentUserId);
+            const idx = optionList.findIndex((elem) => elem.user.id === currentUserId);
             if (idx > 0) {
                 const currentUser = optionList.splice(idx, 1);
                 optionList.unshift(currentUser[0]);
@@ -156,7 +154,7 @@ export default function ProfileSelector(props: Props) {
         if (userOptions === []) {
             return;
         }
-        const user = userOptions.find((option: Option) => option.userId === props.selectedUserId);
+        const user = userOptions.find((option: Option) => option.user.id === props.selectedUserId);
         if (user) {
             setSelected(user);
         } else {
@@ -169,11 +167,11 @@ export default function ProfileSelector(props: Props) {
             return;
         }
         toggleOpen();
-        if (value?.userId === selected?.userId) {
+        if (value?.user.id === selected?.user.id) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.userId, value?.userType, value?.userObj);
+            props.onSelectedChange(value?.userType, value?.user);
         }
     };
 
@@ -279,8 +277,8 @@ export default function ProfileSelector(props: Props) {
                 hideSelectedOptions={false}
                 isClearable={props.isClearable}
                 menuIsOpen={true}
-                options={[{label: 'CHANNEL MEMBERS', options: userOptions},
-                    {label: 'NOT IN CHANNEL', options: userNotInChannelOptions}]}
+                options={[{label: formatMessage({defaultMessage: 'CHANNEL MEMBERS'}), options: userOptions},
+                    {label: formatMessage({defaultMessage: 'NOT IN CHANNEL'}), options: userNotInChannelOptions}]}
                 placeholder={'Search'}
                 styles={selectStyles}
                 tabSelectsValue={false}

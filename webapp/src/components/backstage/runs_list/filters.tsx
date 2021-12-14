@@ -178,7 +178,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam, fixedPlaybook}: Props)
                 }}
                 controlledOpenToggle={profileSelectorToggle}
                 getUsers={fetchOwners}
-                getUsersInTeam={fetchOwners}
+                getUsersInTeam={() => Promise.resolve([])}
                 onSelectedChange={setOwnerId}
             />
             {!fixedPlaybook &&
