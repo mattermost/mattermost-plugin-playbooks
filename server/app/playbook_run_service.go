@@ -1757,7 +1757,7 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 		if err != nil {
 			return err
 		}
-		part3 := buildRunsInProgressMessage(runsInProgress, siteURL)
+		part3 := buildRunsInProgressMessage(runsInProgress, siteURL, user.Locale)
 
 		return s.poster.DM(userID, &model.Post{Message: part1 + part2 + part3})
 	}
@@ -2713,33 +2713,36 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) string
 	return message
 }
 
-func buildRunsInProgressMessage(runs []RunLink, siteURL string) string {
+func buildRunsInProgressMessage(runs []RunLink, siteURL string, locale string) string {
+	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 
+	msg := "\n"
+
+	msg += "##### " + T("app.user.digest.runs_in_progress.heading") + "\n"
 	if total == 0 {
-		return "\n##### Runs in Progress\nYou have 0 runs currently in progress.\n"
+		return msg + T("app.user.digest.runs_in_progress.zero_in_progress") + "\n"
 	}
 
-	runPlural := "run"
-	if total > 1 {
-		runPlural += "s"
-	}
-
-	message := fmt.Sprintf("\n##### Runs in Progress\nYou have %d %s currently in progress:\n", total, runPlural)
+	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
 	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_runsinprogress_clicked&forceRHSOpen)\n",
-			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+		values := map[string]interface{}{
+			"LinkName": run.ChannelDisplayName,
+			"LinkUrl": fmt.Sprintf("%s/%s/channels/%s?telem=todo_runsinprogress_clicked&forceRHSOpen",
+				siteURL, run.TeamName, run.ChannelName),
+		}
+		msg += T("app.user.digest.runs_in_progress.md_link_item", values) + "\n"
 	}
 
-	return message
+	return msg
 }
 
 func buildRunsOverdueMessage(runs []RunLink, siteURL string, locale string) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 	msg := "\n"
-	msg += "##### " + T("app.user.digest.overdue_status_updates.heading") + "\n"
+	msg += "#### #" + T("app.user.digest.overdue_status_updates.heading") + "\n"
 	if total == 0 {
 		return msg + T("app.user.digest.overdue_status_updates.zero_overdue") + "\n"
 	}
@@ -2753,7 +2756,7 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string, locale string) stri
 				siteURL, run.TeamName, run.ChannelName),
 			"Username": run.OwnerUserName,
 		}
-		msg += T("app.user.digest.overdue_status_updates.link_item", values) + "\n"
+		msg += T("app.user.digest.overdue_status_updates.md_link_item", values) + "\n"
 	}
 
 	return msg

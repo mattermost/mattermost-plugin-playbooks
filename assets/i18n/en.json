@@ -36,7 +36,7 @@
     "translation": "Overdue Status Updates"
   },
   {
-    "id": "app.user.digest.overdue_status_updates.link_item",
+    "id": "app.user.digest.overdue_status_updates.md_link_item",
     "translation": "- [{{.LinkName}}]({{.LinkUrl}}) (Owner: @{{.Username}})"
   },
   {
@@ -49,6 +49,25 @@
   {
     "id": "app.user.digest.overdue_status_updates.zero_overdue",
     "translation": "You have 0 runs overdue."
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.heading",
+    "translation": "Runs in Progress"
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.md_link_item",
+    "translation": "- [{{.LinkName}}]({{.LinkUrl}})"
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.num_in_progress",
+    "translation": {
+        "one": "You have {{.Count}} run currently in progress:",
+        "other": "You have {{.Count}} runs currently in progress:"
+    }
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.zero_in_progress",
+    "translation": "You have 0 runs currently in progress."
   },
   {
     "id": "app.user.get_profile_by_group_channel_ids_for_user.app_error",
