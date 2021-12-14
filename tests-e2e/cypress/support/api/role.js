@@ -625,6 +625,10 @@ Cypress.Commands.add('apiResetRoles', () => {
             const diff = xor(role.permissions, defaultPermissions);
 
             if (diff.length > 0) {
+                cy.log({
+                    name: 'patchRole',
+                    message: `name: ${role.name}, diff: ${diff}`,
+                });
                 cy.apiPatchRole(role.id, {permissions: defaultPermissions});
             }
         });
