@@ -70,6 +70,21 @@
     "translation": "You have 0 runs currently in progress."
   },
   {
+    "id": "app.user.digest.tasks.heading",
+    "translation": "Your Outstanding Tasks"
+  },
+  {
+    "id": "app.user.digest.tasks.num_outstanding",
+    "translation": {
+        "one": "You have {{.Count}} outstanding task:",
+        "other": "You have {{.Count}} total outstanding tasks:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.zero_outstanding",
+    "translation": "You have 0 outstanding tasks."
+  },
+  {
     "id": "app.user.get_profile_by_group_channel_ids_for_user.app_error",
     "translation": ""
   },

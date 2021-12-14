@@ -1750,7 +1750,7 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 	if err != nil {
 		return err
 	}
-	part2 := buildAssignedTaskMessageAndTotal(runsAssigned, siteURL)
+	part2 := buildAssignedTaskMessageAndTotal(runsAssigned, siteURL, user.Locale)
 
 	if force {
 		runsInProgress, err := s.GetParticipatingRuns(userID)
@@ -2680,37 +2680,31 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 }
 
-func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) string {
+func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string, locale string) string {
+	T := i18n.GetUserTranslations(locale)
 	total := 0
 	for _, run := range runs {
 		total += len(run.Tasks)
 	}
 
+	msg := "##### " + T("app.user.digest.tasks.heading") + "\n"
+
 	if total == 0 {
-		return "##### Your Outstanding Tasks\nYou have 0 outstanding tasks.\n"
+		return msg + T("app.user.digest.tasks.zero_outstanding") + "\n"
 	}
 
-	taskPlural := "1 outstanding task"
-	if total > 1 {
-		taskPlural = fmt.Sprintf("%d total outstanding tasks", total)
-	}
-	runPlural := "1 run"
-	if len(runs) > 1 {
-		runPlural = fmt.Sprintf("%d runs", len(runs))
-	}
-
-	message := fmt.Sprintf("##### Your Outstanding Tasks\nYou have %s in %s:\n\n", taskPlural, runPlural)
+	msg += T("app.user.digest.tasks.num_outstanding", total) + "\n"
 
 	for _, run := range runs {
-		message += fmt.Sprintf("[%s](%s/%s/channels/%s?telem=todo_assignedtask_clicked&forceRHSOpen)\n",
+		msg += fmt.Sprintf("[%s](%s/%s/channels/%s?telem=todo_assignedtask_clicked&forceRHSOpen)\n",
 			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
 
 		for _, task := range run.Tasks {
-			message += fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
+			msg += fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
 		}
 	}
 
-	return message
+	return msg
 }
 
 func buildRunsInProgressMessage(runs []RunLink, siteURL string, locale string) string {
