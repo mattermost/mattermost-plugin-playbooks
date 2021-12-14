@@ -89,12 +89,13 @@ export async function postStatusUpdate(
     playbookRunId: string,
     payload: {
         message: string,
-        reminder?: number
+        reminder?: number,
+        finishRun: boolean,
     },
     ids: {
-        user_id: string;
-        channel_id: string;
-        team_id: string;
+        user_id: string,
+        channel_id: string,
+        team_id: string,
     },
 ) {
     const base = {
@@ -110,6 +111,7 @@ export async function postStatusUpdate(
         submission: {
             ...payload,
             reminder: payload.reminder?.toFixed() ?? '',
+            finish_run: payload.finishRun,
         },
     });
 

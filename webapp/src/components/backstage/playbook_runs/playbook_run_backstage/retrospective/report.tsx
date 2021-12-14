@@ -4,53 +4,95 @@
 import React, {useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-
-import {useSelector} from 'react-redux';
-import {Team} from 'mattermost-redux/types/teams';
-import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-import {GlobalState} from 'mattermost-redux/types/store';
+import debounce from 'debounce';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
 import {Title} from 'src/components/backstage/playbook_runs/shared';
-
-import {StyledTextarea} from 'src/components/backstage/styles';
 import {publishRetrospective, updateRetrospective} from 'src/client';
-import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
-import PostText from 'src/components/post_text';
-import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
+import {PrimaryButton} from 'src/components/assets/buttons';
+import ReportTextArea
+    from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/report_text_area';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
-// @ts-ignore
-const WebappUtils = window.WebappUtils;
+const editDebounceDelayMilliseconds = 2000;
+
+interface ReportProps {
+    playbookRun: PlaybookRun;
+    setRetrospective: (report: string) => void;
+}
+
+const Report = (props: ReportProps) => {
+    const [publishedThisSession, setPublishedThisSession] = useState(false);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const {formatMessage} = useIntl();
+
+    const confirmedPublish = () => {
+        publishRetrospective(props.playbookRun.id, props.playbookRun.retrospective);
+        setPublishedThisSession(true);
+        setShowConfirmation(false);
+    };
+
+    let publishButtonText: React.ReactNode = formatMessage({defaultMessage: 'Publish'});
+    if (publishedThisSession) {
+        publishButtonText = (
+            <>
+                <i className={'icon icon-check'}/>
+                {formatMessage({defaultMessage: 'Published'})}
+            </>
+        );
+    } else if (props.playbookRun.retrospective_published_at && !props.playbookRun.retrospective_was_canceled) {
+        publishButtonText = formatMessage({defaultMessage: 'Republish'});
+    }
+
+    const persistEditEvent = (text: string) => {
+        updateRetrospective(props.playbookRun.id, text);
+        props.setRetrospective(text);
+    };
+    const debouncedPersistEditEvent = debounce(persistEditEvent, editDebounceDelayMilliseconds);
+
+    return (
+        <ReportContainer>
+            <Header>
+                <Title>{formatMessage({defaultMessage: 'Report'})}</Title>
+                <HeaderButtonsRight>
+                    <PrimaryButtonSmaller
+                        onClick={() => setShowConfirmation(true)}
+                    >
+                        <TextContainer>{publishButtonText}</TextContainer>
+                    </PrimaryButtonSmaller>
+                </HeaderButtonsRight>
+            </Header>
+            <ReportTextArea
+                teamId={props.playbookRun.team_id}
+                text={props.playbookRun.retrospective}
+                onEdit={debouncedPersistEditEvent}
+                flushChanges={() => debouncedPersistEditEvent.flush()}
+            />
+            <ConfirmModal
+                show={showConfirmation}
+                title={formatMessage({defaultMessage: 'Publish retrospective'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to publish the retrospective?'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Publish'})}
+                onConfirm={confirmedPublish}
+                onCancel={() => setShowConfirmation(false)}
+            />
+        </ReportContainer>
+    );
+};
 
 const Header = styled.div`
     display: flex;
     align-items: center;
 `;
 
-const ReportTextarea = styled(StyledTextarea)`
-    margin: 8px 0 0 0;
-    min-height: 200px;
-    font-size: 12px;
-    flex-grow: 1;
-`;
-
 const HeaderButtonsRight = styled.div`
     flex-grow: 1;
     display: flex;
     flex-direction: row-reverse;
+
     > * {
         margin-left: 10px;
     }
-`;
-
-const PostTextContainer = styled.div`
-    background: var(--center-channel-bg);
-    margin: 8px 0 0 0;
-    padding: 10px 25px 0 16px;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 8px;
-    flex-grow: 1;
 `;
 
 const ReportContainer = styled.div`
@@ -66,121 +108,8 @@ const PrimaryButtonSmaller = styled(PrimaryButton)`
     height: 32px;
 `;
 
-const SecondaryButtonSmaller = styled(SecondaryButton)`
-    height: 32px;
-`;
-
-interface ReportProps {
-    playbookRun: PlaybookRun;
-    setRetrospective: (report: string) => void;
-}
-
-const Report = (props: ReportProps) => {
-    const [editing, setEditing] = useState(false);
-    const [publishedThisSession, setPublishedThisSession] = useState(false);
-    const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
-    const {formatMessage} = useIntl();
-
-    const savePressed = () => {
-        updateRetrospective(props.playbookRun.id, props.playbookRun.retrospective);
-        setEditing(false);
-    };
-
-    const publishPressed = () => {
-        publishRetrospective(props.playbookRun.id, props.playbookRun.retrospective);
-        setEditing(false);
-        setPublishedThisSession(true);
-    };
-
-    let publishButtonText: React.ReactNode = formatMessage({defaultMessage: 'Publish'});
-    if (publishedThisSession) {
-        publishButtonText = (
-            <>
-                <i className={'icon icon-check'}/>
-                {formatMessage({defaultMessage: 'Published'})}
-            </>
-        );
-    } else if (props.playbookRun.retrospective_published_at && !props.playbookRun.retrospective_was_canceled) {
-        publishButtonText = formatMessage({defaultMessage: 'Republish'});
-    }
-
-    return (
-        <ReportContainer>
-            <Header>
-                <Title>{formatMessage({defaultMessage: 'Report'})}</Title>
-                <HeaderButtonsRight>
-                    <PrimaryButtonSmaller
-                        onClick={publishPressed}
-                    >
-                        <TextContainer>{publishButtonText}</TextContainer>
-                    </PrimaryButtonSmaller>
-                    <EditButton
-                        editing={editing}
-                        onSave={savePressed}
-                        onEdit={() => setEditing(true)}
-                    />
-                </HeaderButtonsRight>
-            </Header>
-            {editing &&
-                <ReportTextarea
-                    autoFocus={true}
-                    value={props.playbookRun.retrospective}
-                    onChange={(e) => {
-                        props.setRetrospective(e.target.value);
-                    }}
-                />
-            }
-            {!editing &&
-                <PostTextContainer>
-                    <PostText
-                        text={props.playbookRun.retrospective}
-                        team={team}
-                    />
-                </PostTextContainer>
-            }
-            <RouteLeavingGuard
-                navigate={(path) => WebappUtils.browserHistory.push(path)}
-                shouldBlockNavigation={() => editing}
-            />
-        </ReportContainer>
-    );
-};
-
-interface SaveButtonProps {
-    editing: boolean;
-    onEdit: () => void
-    onSave: () => void
-}
-
 const TextContainer = styled.span`
     display: flex;
 `;
-
-const EditButton = (props: SaveButtonProps) => {
-    const {formatMessage} = useIntl();
-    if (props.editing) {
-        return (
-            <SecondaryButtonSmaller
-                onClick={props.onSave}
-            >
-                <TextContainer>
-                    <i className={'fa fa-floppy-o'}/>
-                    {formatMessage({defaultMessage: 'Save'})}
-                </TextContainer>
-            </SecondaryButtonSmaller>
-        );
-    }
-
-    return (
-        <SecondaryButtonSmaller
-            onClick={props.onEdit}
-        >
-            <TextContainer>
-                <i className={'icon icon-pencil-outline'}/>
-                {formatMessage({defaultMessage: 'Edit'})}
-            </TextContainer>
-        </SecondaryButtonSmaller>
-    );
-};
 
 export default Report;
