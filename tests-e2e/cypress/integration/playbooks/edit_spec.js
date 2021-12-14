@@ -1374,8 +1374,8 @@ describe('playbooks > edit', () => {
 
                     // # Type name to use new custom category
                     cy.get('#playbook-automation-categorize-playbook-run')
-                    .click()
-                    .type('Custom category' + '{enter}', {delay: 200});
+                        .click()
+                        .type('Custom category' + '{enter}', {delay: 200});
 
                     // # Save the playbook
                     cy.findByTestId('save_playbook').click();
@@ -1391,13 +1391,13 @@ describe('playbooks > edit', () => {
                         cy.get('label input').should('be.checked');
                     });
 
-                    // * Verify that the control still shows the new category 
+                    // * Verify that the control still shows the new category
                     cy.get('#playbook-automation-categorize-playbook-run').should(
                         'have.text',
                         'Custom category',
                     );
                 });
-            })
+            });
         });
         describe('status updates enable / disabled', () => {
             it('is enabled in a new playbook', () => {
@@ -1436,15 +1436,15 @@ describe('playbooks > edit', () => {
                         'have.class',
                         'playbooks-rselect--is-disabled'
                     );
-                });                
-                
+                });
+
                 // * Verify that the update text is disabled
                 cy.get('#playbook_reminder_message_edit').should('be.disabled');
 
                 // # Switch to Actions tab
                 cy.get('#root').findByText('Actions').click();
 
-                // * Verify that the toggle can't be checked 
+                // * Verify that the toggle can't be checked
                 cy.get('#broadcast-channels').within(() => {
                     // * Verify that the toggle is unchecked
                     cy.get('label input').should('not.be.checked');
@@ -1456,7 +1456,7 @@ describe('playbooks > edit', () => {
                     cy.get('label input').should('not.be.checked');
                 });
 
-                // * Verify that the toggle can't be checked 
+                // * Verify that the toggle can't be checked
                 cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
                     // * Verify that the toggle is unchecked
                     cy.get('label input').should('not.be.checked');
@@ -1476,7 +1476,7 @@ describe('playbooks > edit', () => {
                 // # Switch to Actions tab
                 cy.get('#root').findByText('Actions').click();
 
-                // * Verify that the toggle is checked 
+                // * Verify that the toggle is checked
                 cy.get('#broadcast-channels').within(() => {
                     // * Verify that the toggle is unchecked
                     cy.get('label input').should('not.be.checked');
@@ -1488,7 +1488,7 @@ describe('playbooks > edit', () => {
                     cy.get('label input').should('be.checked');
                 });
 
-                // * Verify that the toggle is checked 
+                // * Verify that the toggle is checked
                 cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
                     // * Verify that the toggle is unchecked
                     cy.get('label input').should('not.be.checked');
@@ -1499,7 +1499,7 @@ describe('playbooks > edit', () => {
                     // * Verify that the toggle is checked
                     cy.get('label input').should('be.checked');
                 });
-                
+
                 // # Switch to Templates tab
                 cy.get('#root').findByText('Templates').click();
 
@@ -1514,11 +1514,11 @@ describe('playbooks > edit', () => {
                     // * Verify that the toggle is unchecked
                     cy.get('label input').should('not.be.checked');
                 });
-                
+
                 // # Switch to Actions tab
                 cy.get('#root').findByText('Actions').click();
-                
-                // * Verify that the toggle can't be checked 
+
+                // * Verify that the toggle can't be checked
                 cy.get('#broadcast-channels').within(() => {
                     // * Verify that the toggle is unchecked
                     cy.get('label input').should('not.be.checked');
@@ -1530,7 +1530,7 @@ describe('playbooks > edit', () => {
                     cy.get('label input').should('not.be.checked');
                 });
 
-                // * Verify that the toggle can't be checked 
+                // * Verify that the toggle can't be checked
                 cy.get('#playbook-run-status-update__outgoing-webhook').within(() => {
                     // * Verify that the toggle is unchecked
                     cy.get('label input').should('not.be.checked');
@@ -1542,26 +1542,26 @@ describe('playbooks > edit', () => {
                     cy.get('label input').should('not.be.checked');
                 });
             });
-            
+
             it('can be saved', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-    
+
                 // # Switch to Templates tab
                 cy.get('#root').findByText('Templates').click();
-    
+
                 // # Uncheck toggle
                 cy.get('#status-updates label input').click({force: true});
-    
+
                 // # Save the playbook
                 cy.findByTestId('save_playbook').click();
-    
+
                 // # Navigate again to the playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
-    
+
                 // # Switch to Templates tab
                 cy.get('#root').findByText('Templates').click();
-    
+
                 // * Verify that the toggle is unchecked
                 cy.get('#status-updates label input').should('not.be.checked');
             });
@@ -1604,7 +1604,7 @@ describe('playbooks > edit', () => {
                         'have.class',
                         'playbooks-rselect--is-disabled'
                     );
-                });       
+                });
 
                 // * Verify that the text box is disabled
                 cy.get('#playbook_retrospective_template_edit').should('be.disabled');

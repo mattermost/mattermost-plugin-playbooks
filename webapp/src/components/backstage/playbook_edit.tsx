@@ -310,12 +310,6 @@ const PlaybookEdit = (props: Props) => {
         dispatch(fetchMyCategories(teamId));
     }, [dispatch, props.teamId, playbook.team_id]);
 
-    const hasEditPermissions = useHasPlaybookPermissionById(PlaybookPermissionGeneral.ManageProperties, urlParams.playbookId || '');
-
-    if (!hasEditPermissions && !props.isNew) {
-        navigateToPluginUrl('/playbooks/' + urlParams.playbookId + '/preview');
-    }
-
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
             ...playbook,
