@@ -243,13 +243,23 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run extract
 endif
 ifneq ($(HAS_SERVER),)
-	$(GO) get -d github.com/mattermost/mattermost-utilities/mmgotool
+	$(GO) get -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
 	mkdir -p i18n
 	cp assets/i18n/en.json i18n/en.json
 	$(GOBIN)/mmgotool i18n extract --portal-dir="" --skip-dynamic
 	mv i18n/en.json assets/i18n/en.json
 	rm -fr i18n
 endif
+
+i18n-check: ## Exit on empty translation strings and translation source strings
+	$(GO) get -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
+	mkdir -p i18n
+	cp assets/i18n/en.json i18n/en.json
+	$(GOBIN)/mmgotool i18n clean-empty --portal-dir="" --check || (rm -fr i18n && exit 1)
+	mkdir -p i18n
+	cp assets/i18n/en.json i18n/en.json
+	$(GOBIN)/mmgotool i18n check-empty-src --portal-dir="" || (rm -fr i18n && exit 1)
+	rm -fr i18n
 
 ## Disable the plugin.
 .PHONY: disable

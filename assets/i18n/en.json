@@ -61,8 +61,8 @@
   {
     "id": "app.user.digest.runs_in_progress.num_in_progress",
     "translation": {
-        "one": "You have {{.Count}} run currently in progress:",
-        "other": "You have {{.Count}} runs currently in progress:"
+      "one": "You have {{.Count}} run currently in progress:",
+      "other": "You have {{.Count}} runs currently in progress:"
     }
   },
   {
