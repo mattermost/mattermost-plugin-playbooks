@@ -60,6 +60,9 @@ const DialogFieldMessageKey = "message"
 // DialogFieldReminderInSecondsKey is the key for the reminder select field used in UpdatePlaybookRunDialog
 const DialogFieldReminderInSecondsKey = "reminder"
 
+// DialogFieldFinishRun is the key for the "Finish run" bool field used in UpdatePlaybookRunDialog
+const DialogFieldFinishRun = "finish_run"
+
 // DialogFieldPlaybookRunKey is the key for the playbook run chosen in AddToTimelineDialog
 const DialogFieldPlaybookRunKey = "playbook_run"
 
@@ -345,28 +348,31 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 	}
 
-	reporter, err := s.pluginAPI.User.Get(playbookRun.ReporterUserID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", playbookRun.ReporterUserID)
-	}
-
-	owner, err := s.pluginAPI.User.Get(playbookRun.OwnerUserID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve user %s", playbookRun.OwnerUserID)
-	}
-
-	startMessage := fmt.Sprintf("This run has been started by @%s.", reporter.Username)
+	// Do we send a DM to the new owner?
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
-		startMessage = fmt.Sprintf("This run has been started by @%s and is commanded by @%s.", reporter.Username, owner.Username)
-	}
+		var reporter *model.User
+		reporter, err = s.pluginAPI.User.Get(playbookRun.ReporterUserID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to resolve user %s", playbookRun.ReporterUserID)
+		}
 
-	newPost, err := s.poster.PostMessage(channel.Id, startMessage)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error creating start message on run creation, for playbook '%s', to channelID '%s'", playbookRun.ID, channel.Id)
+		startMessage := fmt.Sprintf("You have been assigned ownership of the run: [%s](%s), reported by @%s.",
+			playbookRun.Name, getRunDetailsRelativeURL(playbookRun.ID), reporter.Username)
+
+		if err = s.poster.DM(playbookRun.OwnerUserID, &model.Post{Message: startMessage}); err != nil {
+			return nil, errors.Wrapf(err, "failed to send DM on CreatePlaybookRun")
+		}
 	}
 
 	if pb != nil {
-		message, err := s.buildPlaybookRunCreationMessage(pb.Title, pb.ID, playbookRun, owner)
+		var owner *model.User
+		owner, err = s.pluginAPI.User.Get(playbookRun.OwnerUserID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to resolve user %s", playbookRun.OwnerUserID)
+		}
+
+		var message string
+		message, err = s.buildPlaybookRunCreationMessage(pb.Title, pb.ID, playbookRun, owner)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to build the playbook run creation message")
 		}
@@ -382,7 +388,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		// broadcast to users who are auto-following the playbook
-		if err := s.broadcastPostToAutoFollows(&model.Post{Message: message}, pb.ID, playbookRun.ID, userID); err != nil {
+		if err = s.broadcastPostToAutoFollows(&model.Post{Message: message}, pb.ID, playbookRun.ID, userID); err != nil {
 			s.pluginAPI.Log.Warn("failed to broadcast run creation to auto-follows for the playbook", "PlaybookID", pb.ID, "error", err)
 		}
 	}
@@ -392,7 +398,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		CreateAt:      playbookRun.CreateAt,
 		EventAt:       playbookRun.CreateAt,
 		EventType:     PlaybookRunCreated,
-		PostID:        newPost.Id,
 		SubjectUserID: playbookRun.ReporterUserID,
 	}
 
@@ -1177,27 +1182,33 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	if err != nil {
 		return errors.Wrapf(err, "failed to to resolve user %s", ownerID)
 	}
+	subjectUser, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to to resolve user %s", userID)
+	}
 
 	playbookRunToModify.OwnerUserID = ownerID
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
 	}
 
-	mainChannelID := playbookRunToModify.ChannelID
-	modifyMessage := fmt.Sprintf("changed the owner from **@%s** to **@%s**.",
-		oldOwner.Username, newOwner.Username)
-	post, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
-	if err != nil {
-		return err
+	// Do we send a DM to the new owner?
+	if ownerID != userID {
+		msg := fmt.Sprintf("@%s changed the owner for run: [%s](%s) from **@%s** to **@%s**",
+			subjectUser.Username, playbookRunToModify.Name, getRunDetailsRelativeURL(playbookRunToModify.ID),
+			oldOwner.Username, newOwner.Username)
+		if err = s.poster.DM(ownerID, &model.Post{Message: msg}); err != nil {
+			return errors.Wrapf(err, "failed to send DM in ChangeOwner")
+		}
 	}
 
+	eventTime := model.GetMillis()
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
-		CreateAt:      post.CreateAt,
-		EventAt:       post.CreateAt,
+		CreateAt:      eventTime,
+		EventAt:       eventTime,
 		EventType:     OwnerChanged,
 		Summary:       fmt.Sprintf("@%s to @%s", oldOwner.Username, newOwner.Username),
-		PostID:        post.Id,
 		SubjectUserID: userID,
 	}
 
@@ -1231,9 +1242,6 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		return nil
 	}
 
-	// Send modification message before the actual modification because we need the postID
-	// from the notification message.
-	mainChannelID := playbookRunToModify.ChannelID
 	modifyMessage := fmt.Sprintf("checked off checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	if newState == ChecklistItemStateOpen {
 		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
@@ -1244,14 +1252,9 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	if itemToCheck.State == CheckListItemStateSkipped && newState == ChecklistItemStateOpen {
 		modifyMessage = fmt.Sprintf("restored checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
-	post, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
-	if err != nil {
-		return err
-	}
 
 	itemToCheck.State = newState
 	itemToCheck.StateModified = model.GetMillis()
-	itemToCheck.StateModifiedPostID = post.Id
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
@@ -1266,7 +1269,6 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 		EventAt:       itemToCheck.StateModified,
 		EventType:     TaskStateModified,
 		Summary:       modifyMessage,
-		PostID:        post.Id,
 		SubjectUserID: userID,
 	}
 
@@ -1318,53 +1320,79 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 		return nil
 	}
 
-	newAssigneeUsername := noAssigneeName
+	newAssigneeUserAtMention := noAssigneeName
 	if assigneeID != "" {
-		newUser, err2 := s.pluginAPI.User.Get(assigneeID)
-		if err2 != nil {
+		var newUser *model.User
+		newUser, err = s.pluginAPI.User.Get(assigneeID)
+		if err != nil {
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
-		newAssigneeUsername = "@" + newUser.Username
+		newAssigneeUserAtMention = "@" + newUser.Username
 	}
 
-	oldAssigneeUsername := noAssigneeName
+	oldAssigneeUserAtMention := noAssigneeName
 	if itemToCheck.AssigneeID != "" {
-		oldUser, err2 := s.pluginAPI.User.Get(itemToCheck.AssigneeID)
-		if err2 != nil {
+		var oldUser *model.User
+		oldUser, err = s.pluginAPI.User.Get(itemToCheck.AssigneeID)
+		if err != nil {
 			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
 		}
-		oldAssigneeUsername = oldUser.Username
-	}
-
-	mainChannelID := playbookRunToModify.ChannelID
-	modifyMessage := fmt.Sprintf("changed assignee of checklist item **%s** from **%s** to **%s**",
-		stripmd.Strip(itemToCheck.Title), oldAssigneeUsername, newAssigneeUsername)
-
-	// Send modification message before the actual modification because we need the postID
-	// from the notification message.
-	post, err := s.modificationMessage(userID, mainChannelID, modifyMessage)
-	if err != nil {
-		return err
+		oldAssigneeUserAtMention = "@" + oldUser.Username
 	}
 
 	itemToCheck.AssigneeID = assigneeID
 	itemToCheck.AssigneeModified = model.GetMillis()
-	itemToCheck.AssigneeModifiedPostID = post.Id
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
 	}
 
+	// Do we send a DM to the new assignee?
+	if itemToCheck.AssigneeID != "" && itemToCheck.AssigneeID != userID {
+		siteURL := model.ServiceSettingsDefaultSiteURL
+		if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
+			siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
+		}
+
+		var subjectUser *model.User
+		subjectUser, err = s.pluginAPI.User.Get(userID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to to resolve user %s", assigneeID)
+		}
+
+		var channel *model.Channel
+		channel, err = s.pluginAPI.Channel.Get(playbookRunToModify.ChannelID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get channel")
+		}
+
+		var team *model.Team
+		team, err = s.pluginAPI.Team.Get(playbookRunToModify.TeamID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get team")
+		}
+
+		channelURL := fmt.Sprintf("[%s](%s/%s/channels/%s?telem=dm_assignedtask_clicked&forceRHSOpen)",
+			channel.DisplayName, siteURL, team.Name, channel.Name)
+		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
+			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, channelURL)
+
+		if err = s.poster.DM(itemToCheck.AssigneeID, &model.Post{Message: modifyMessage}); err != nil {
+			return errors.Wrapf(err, "failed to send DM in SetAssignee")
+		}
+	}
+
 	s.telemetry.SetAssignee(playbookRunID, userID, itemToCheck)
 
+	modifyMessage := fmt.Sprintf("changed assignee of checklist item **%s** from **%s** to **%s**",
+		stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, newAssigneeUserAtMention)
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
 		CreateAt:      itemToCheck.AssigneeModified,
 		EventAt:       itemToCheck.AssigneeModified,
 		EventType:     AssigneeChanged,
 		Summary:       modifyMessage,
-		PostID:        post.Id,
 		SubjectUserID: userID,
 	}
 
@@ -1759,20 +1787,6 @@ func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID str
 	}
 
 	return playbookRunToModify, nil
-}
-
-func (s *PlaybookRunServiceImpl) modificationMessage(userID, channelID, message string) (*model.Post, error) {
-	user, err := s.pluginAPI.User.Get(userID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to to resolve user %s", userID)
-	}
-
-	post, err := s.poster.PostMessage(channelID, user.Username+" "+message)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to post modification messsage")
-	}
-
-	return post, nil
 }
 
 func (s *PlaybookRunServiceImpl) checklistItemParamsVerify(playbookRunID, userID string, checklistNumber, itemNumber int) (*PlaybookRun, error) {
@@ -2280,6 +2294,13 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 				Options:     reminderOptions,
 				Optional:    true,
 				Default:     fmt.Sprintf("%d", reminderTimer/time.Second),
+			},
+			{
+				DisplayName: "Finish run",
+				Name:        DialogFieldFinishRun,
+				Placeholder: "Also mark the run as finished",
+				Type:        "bool",
+				Optional:    true,
 			},
 		},
 		SubmitLabel:    "Update status",

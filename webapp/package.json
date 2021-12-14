@@ -30,7 +30,7 @@
     "@babel/preset-react": "7.14.5",
     "@babel/preset-typescript": "7.14.5",
     "@formatjs/cli": "4.3.1",
-    "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.3",
     "@types/classnames": "2.3.1",
     "@types/debounce": "1.2.0",
     "@types/jest": "26.0.24",

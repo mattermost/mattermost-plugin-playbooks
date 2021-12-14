@@ -184,3 +184,15 @@ func (s *PlaybookRunService) RenameChecklist(ctx context.Context, playbookRunID 
 	_, err = s.client.do(ctx, req, nil)
 	return err
 }
+
+func (s *PlaybookRunService) AddChecklistItem(ctx context.Context, playbookRunID string, checklistNumber int, checklistItem ChecklistItem) error {
+	addURL := fmt.Sprintf("runs/%s/checklists/%d/add", playbookRunID, checklistNumber)
+	req, err := s.client.newRequest(http.MethodPost, addURL, checklistItem)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+
+}

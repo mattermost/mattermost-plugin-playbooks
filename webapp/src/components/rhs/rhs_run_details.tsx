@@ -13,7 +13,7 @@ import {
 } from 'src/components/rhs/rhs_shared';
 import {currentPlaybookRun} from 'src/selectors';
 import RHSAbout from 'src/components/rhs/rhs_about';
-import RHSChecklists from 'src/components/rhs/rhs_checklists';
+import RHSChecklistList from 'src/components/rhs/rhs_checklist_list';
 import {browserHistory} from 'src/webapp_globals';
 import {telemetryEventForPlaybookRun} from 'src/client';
 import {usePrevious} from 'src/hooks/general';
@@ -60,7 +60,7 @@ const RHSRunDetails = () => {
                     style={{position: 'absolute'}}
                 >
                     <RHSAbout playbookRun={playbookRun}/>
-                    <RHSChecklists playbookRun={playbookRun}/>
+                    <RHSChecklistList playbookRun={playbookRun}/>
                 </Scrollbars>
             </RHSContent>
         </RHSContainer>

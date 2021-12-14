@@ -89,12 +89,13 @@ export async function postStatusUpdate(
     playbookRunId: string,
     payload: {
         message: string,
-        reminder?: number
+        reminder?: number,
+        finishRun: boolean,
     },
     ids: {
-        user_id: string;
-        channel_id: string;
-        team_id: string;
+        user_id: string,
+        channel_id: string,
+        team_id: string,
     },
 ) {
     const base = {
@@ -110,6 +111,7 @@ export async function postStatusUpdate(
         submission: {
             ...payload,
             reminder: payload.reminder?.toFixed() ?? '',
+            finish_run: payload.finishRun,
         },
     });
 
@@ -284,14 +286,6 @@ export async function setChecklistItemState(playbookRunID: string, checklistNum:
             new_state: newState,
         }),
     );
-}
-
-export async function clientAddChecklistItem(playbookRunID: string, checklistNum: number, checklistItem: ChecklistItem) {
-    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/add`,
-        JSON.stringify(checklistItem),
-    );
-
-    return data;
 }
 
 export async function clientRemoveChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
