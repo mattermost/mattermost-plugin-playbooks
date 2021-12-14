@@ -2,12 +2,18 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
+import ReactDOM from 'react-dom';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {
     DragDropContext,
     DropResult,
+    Droppable,
+    DroppableProvided,
+    Draggable,
+    DraggableProvided,
+    DraggableStateSnapshot,
 } from 'react-beautiful-dnd';
 
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
@@ -25,11 +31,11 @@ import {
 } from 'src/actions';
 import {
     Checklist,
-    ChecklistItem,
     ChecklistItemsFilter,
     ChecklistItemState,
 } from 'src/types/playbook';
 import {
+    clientMoveChecklist,
     clientMoveChecklistItem,
     telemetryEventForPlaybookRun,
 } from 'src/client';
@@ -50,6 +56,10 @@ import RHSChecklist from 'src/components/rhs/rhs_checklist';
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
 window['__react-beautiful-dnd-disable-dev-warnings'] = true;
+
+// Create a portal for the checklist to render while dragging
+const portal: HTMLElement = document.createElement('div');
+document.body.appendChild(portal);
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -90,6 +100,81 @@ const RHSChecklistList = (props: Props) => {
         }));
     };
 
+    const onDragEnd = (result: DropResult) => {
+        // If the item is dropped out of any droppable zones, do nothing
+        if (!result.destination) {
+            return;
+        }
+
+        const [srcIdx, dstIdx] = [result.source.index, result.destination.index];
+
+        // If the source and desination are the same, do nothing
+        if (result.destination.droppableId === result.source.droppableId && srcIdx === dstIdx) {
+            return;
+        }
+
+        // Copy the data to modify it
+        const newChecklists = Array.from(checklists);
+
+        // Move a checklist item, either inside of the same checklist, or between checklists
+        if (result.type === 'checklist-item') {
+            const srcChecklistIdx = parseInt(result.source.droppableId, 10);
+            const dstChecklistIdx = parseInt(result.destination.droppableId, 10);
+
+            if (srcChecklistIdx === dstChecklistIdx) {
+                // Remove the dragged item from the checklist
+                const newChecklistItems = Array.from(checklists[srcChecklistIdx].items);
+                const [removed] = newChecklistItems.splice(srcIdx, 1);
+
+                // Add the dragged item to the checklist
+                newChecklistItems.splice(dstIdx, 0, removed);
+                newChecklists[srcChecklistIdx] = {
+                    ...newChecklists[srcChecklistIdx],
+                    items: newChecklistItems,
+                };
+            } else {
+                const srcChecklist = checklists[srcChecklistIdx];
+                const dstChecklist = checklists[dstChecklistIdx];
+
+                // Remove the dragged item from the source checklist
+                const newSrcChecklistItems = Array.from(srcChecklist.items);
+                const [moved] = newSrcChecklistItems.splice(srcIdx, 1);
+
+                // Add the dragged item to the destination checklist
+                const newDstChecklistItems = Array.from(dstChecklist.items);
+                newDstChecklistItems.splice(dstIdx, 0, moved);
+
+                // Modify the new checklists array with the new source and destination checklists
+                newChecklists[srcChecklistIdx] = {
+                    ...srcChecklist,
+                    items: newSrcChecklistItems,
+                };
+                newChecklists[dstChecklistIdx] = {
+                    ...dstChecklist,
+                    items: newDstChecklistItems,
+                };
+            }
+
+            // Persist the new data in the server
+            clientMoveChecklistItem(props.playbookRun.id, srcChecklistIdx, srcIdx, dstChecklistIdx, dstIdx);
+        }
+
+        // Move a whole checklist
+        if (result.type === 'checklist') {
+            const [moved] = newChecklists.splice(srcIdx, 1);
+            newChecklists.splice(dstIdx, 0, moved);
+
+            // Persist the new data in the server
+            clientMoveChecklist(props.playbookRun.id, srcIdx, dstIdx);
+        }
+
+        // Update the store with the new checklists
+        dispatch(playbookRunUpdated({
+            ...props.playbookRun,
+            checklists: newChecklists,
+        }));
+    };
+
     return (
         <InnerContainer
             onMouseEnter={() => setShowMenu(true)}
@@ -125,81 +210,55 @@ const RHSChecklistList = (props: Props) => {
                     }
                 </MainTitle>
             </MainTitleBG>
-            <DragDropContext
-                onDragEnd={(result: DropResult) => {
-                    if (!result.destination) {
-                        return;
-                    }
+            <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable
+                    droppableId={'all-checklists'}
+                    direction={'vertical'}
+                    type={'checklist'}
+                >
+                    {(droppableProvided: DroppableProvided) => (
+                        <ChecklistsContainer
+                            {...droppableProvided.droppableProps}
+                            ref={droppableProvided.innerRef}
+                        >
+                            {checklists.map((checklist: Checklist, checklistIndex: number) => (
+                                <Draggable
+                                    key={checklist.title}
+                                    draggableId={checklist.title + checklistIndex}
+                                    index={checklistIndex}
+                                >
+                                    {(draggableProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => {
+                                        const component = (
+                                            <CollapsibleChecklist
+                                                draggableProvided={draggableProvided}
+                                                title={checklist.title}
+                                                items={checklist.items}
+                                                index={checklistIndex}
+                                                numChecklists={checklists.length}
+                                                collapsed={Boolean(checklistsState[checklistIndex])}
+                                                setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
+                                                disabledOrRunID={finished || props.playbookRun.id}
+                                            >
+                                                <RHSChecklist
+                                                    playbookRun={props.playbookRun}
+                                                    checklist={checklist}
+                                                    checklistIndex={checklistIndex}
+                                                />
+                                            </CollapsibleChecklist>
+                                        );
 
-                    if (result.destination.droppableId === result.source.droppableId &&
-                        result.destination.index === result.source.index) {
-                        return;
-                    }
+                                        if (snapshot.isDragging) {
+                                            return ReactDOM.createPortal(component, portal);
+                                        }
 
-                    const sourceChecklistIdx = parseInt(result.source.droppableId, 10);
-                    const destChecklistIdx = parseInt(result.destination.droppableId, 10);
-                    const newChecklists = Array.from(checklists);
-
-                    if (sourceChecklistIdx === destChecklistIdx) {
-                        // Remove the dragged item from the checklist
-                        const newChecklistItems = Array.from(checklists[sourceChecklistIdx].items);
-                        const [removed] = newChecklistItems.splice(result.source.index, 1);
-
-                        // Add the dragged item to the checklist
-                        newChecklistItems.splice(result.destination.index, 0, removed);
-                        newChecklists[sourceChecklistIdx] = {
-                            ...newChecklists[sourceChecklistIdx],
-                            items: newChecklistItems,
-                        };
-                    } else {
-                        const sourceChecklist = checklists[sourceChecklistIdx];
-                        const destChecklist = checklists[destChecklistIdx];
-
-                        // Remove the dragged item from the source checklist
-                        const newSourceChecklistItems = Array.from(sourceChecklist.items);
-                        const [moved] = newSourceChecklistItems.splice(result.source.index, 1);
-
-                        // Add the dragged item to the destination checklist
-                        const newDestChecklistItems = Array.from(destChecklist.items);
-                        newDestChecklistItems.splice(result.destination.index, 0, moved);
-
-                        // Modify the new checklists array with the new source and destination checklists
-                        newChecklists[sourceChecklistIdx] = {
-                            ...sourceChecklist,
-                            items: newSourceChecklistItems,
-                        };
-                        newChecklists[destChecklistIdx] = {
-                            ...destChecklist,
-                            items: newDestChecklistItems,
-                        };
-                    }
-
-                    dispatch(playbookRunUpdated({
-                        ...props.playbookRun,
-                        checklists: newChecklists,
-                    }));
-
-                    clientMoveChecklistItem(props.playbookRun.id, sourceChecklistIdx, result.source.index, destChecklistIdx, result.destination.index);
-                }}
-            >
-                {checklists.map((checklist: Checklist, checklistIndex: number) => (
-                    <CollapsibleChecklist
-                        key={checklist.title}
-                        title={checklist.title}
-                        items={checklist.items}
-                        index={checklistIndex}
-                        numChecklists={checklists.length}
-                        collapsed={Boolean(checklistsState[checklistIndex])}
-                        setCollapsed={(newState) => dispatch(setChecklistCollapsedState(channelId, checklistIndex, newState))}
-                        disabledOrRunID={finished || props.playbookRun.id}
-                    >
-                        <RHSChecklist
-                            playbookRun={props.playbookRun}
-                            checklist={checklist}
-                            checklistIndex={checklistIndex}
-                        />
-                    </CollapsibleChecklist>
-                ))}
+                                        return component;
+                                    }}
+                                </Draggable>
+                            ))}
+                            {droppableProvided.placeholder}
+                        </ChecklistsContainer>
+                    )}
+                </Droppable>
             </DragDropContext>
             {
                 active &&
@@ -249,26 +308,7 @@ const MainTitle = styled.div`
     padding: 12px 0 12px 8px;
 `;
 
-const ChecklistContainer = styled.div`
-    background-color: var(--center-channel-bg);
-    border-radius: 0 0 4px 4px;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    border-top: 0;
-    padding: 16px 12px;
-`;
-
-const EmptyChecklistContainer = styled(ChecklistContainer)`
-    padding: 12px;
-`;
-
-const AddTaskLink = styled.button`
-    font-size: 12px;
-    font-weight: 600;
-
-    color: var(--button-bg);
-
-    background: none;
-    border: none;
+const ChecklistsContainer = styled.div`
 `;
 
 const HoverRow = styled(HoverMenu)`
@@ -373,39 +413,6 @@ const makeFilterOptions = (filter: ChecklistItemsFilter, name: string): Checkbox
             disabled: filter.all,
         },
     ];
-};
-
-const showItem = (checklistItem: ChecklistItem, filter: ChecklistItemsFilter, myId: string) => {
-    if (filter.all) {
-        return true;
-    }
-
-    // "Show checked tasks" is not checked, so if item is checked (closed), don't show it.
-    if (!filter.checked && checklistItem.state === ChecklistItemState.Closed) {
-        return false;
-    }
-
-    // "Me" is not checked, so if assignee_id is me, don't show it.
-    if (!filter.me && checklistItem.assignee_id === myId) {
-        return false;
-    }
-
-    // "Unassigned" is not checked, so if assignee_id is blank (unassigned), don't show it.
-    if (!filter.unassigned && checklistItem.assignee_id === '') {
-        return false;
-    }
-
-    // "Others" is not checked, so if item has someone else as the assignee, don't show it.
-    if (!filter.others && checklistItem.assignee_id !== '' && checklistItem.assignee_id !== myId) {
-        return false;
-    }
-
-    // We should show it!
-    return true;
-};
-
-const visibleTasks = (list: Checklist, filter: ChecklistItemsFilter, myId: string) => {
-    return list.items.some((item) => showItem(item, filter, myId));
 };
 
 // isLastCheckedValueInBottomCategory returns true only if this value is in the bottom category and
