@@ -251,7 +251,9 @@ ifneq ($(HAS_SERVER),)
 	rm -fr i18n
 endif
 
-i18n-check: ## Exit on empty translation strings and translation source strings
+## Exit on empty translation strings and translation source strings
+i18n-check:
+ifneq ($(HAS_SERVER),)
 	$(GO) get -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
 	mkdir -p i18n
 	cp assets/i18n/en.json i18n/en.json
@@ -260,6 +262,7 @@ i18n-check: ## Exit on empty translation strings and translation source strings
 	cp assets/i18n/en.json i18n/en.json
 	$(GOBIN)/mmgotool i18n check-empty-src --portal-dir="" || (rm -fr i18n && exit 1)
 	rm -fr i18n
+endif
 
 ## Disable the plugin.
 .PHONY: disable
