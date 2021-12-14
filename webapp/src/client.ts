@@ -350,8 +350,19 @@ export async function clientRenameChecklist(playbookRunID: string, checklistNum:
     return data;
 }
 
-export async function clientMoveChecklistItem(playbookRunID: string, sourceChecklistIdx: number, sourceItemIdx: number, destChecklistIdx: number, destItemIdx: number) {
+export async function clientMoveChecklist(playbookRunID: string, sourceChecklistIdx: number, destChecklistIdx: number) {
     const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists/move`,
+        JSON.stringify({
+            source_checklist_idx: sourceChecklistIdx,
+            dest_checklist_idx: destChecklistIdx,
+        }),
+    );
+
+    return data;
+}
+
+export async function clientMoveChecklistItem(playbookRunID: string, sourceChecklistIdx: number, sourceItemIdx: number, destChecklistIdx: number, destItemIdx: number) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists/move-item`,
         JSON.stringify({
             source_checklist_idx: sourceChecklistIdx,
             source_item_idx: sourceItemIdx,
