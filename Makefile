@@ -119,6 +119,7 @@ bundle:
 	./build/bin/manifest dist
 ifneq ($(wildcard $(ASSETS_DIR)/.),)
 	cp -r $(ASSETS_DIR) dist/$(PLUGIN_ID)/
+	cp -r server/i18n dist/$(PLUGIN_ID)/$(ASSETS_DIR)/
 endif
 ifneq ($(HAS_PUBLIC),)
 	cp -r public dist/$(PLUGIN_ID)/
@@ -243,25 +244,16 @@ ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run extract
 endif
 ifneq ($(HAS_SERVER),)
-	$(GO) get -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
-	mkdir -p i18n
-	cp assets/i18n/en.json i18n/en.json
-	$(GOBIN)/mmgotool i18n extract --portal-dir="" --skip-dynamic
-	mv i18n/en.json assets/i18n/en.json
-	rm -fr i18n
+	$(GO) get -d -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
+	cd server && $(GOBIN)/mmgotool i18n extract --portal-dir="" --skip-dynamic
 endif
 
 ## Exit on empty translation strings and translation source strings
 i18n-check:
 ifneq ($(HAS_SERVER),)
-	$(GO) get -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
-	mkdir -p i18n
-	cp assets/i18n/en.json i18n/en.json
-	$(GOBIN)/mmgotool i18n clean-empty --portal-dir="" --check || (rm -fr i18n && exit 1)
-	mkdir -p i18n
-	cp assets/i18n/en.json i18n/en.json
-	$(GOBIN)/mmgotool i18n check-empty-src --portal-dir="" || (rm -fr i18n && exit 1)
-	rm -fr i18n
+	$(GO) get -d -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
+	cd server && $(GOBIN)/mmgotool i18n clean-empty --portal-dir="" --check
+	cd server && $(GOBIN)/mmgotool i18n check-empty-src --portal-dir=""
 endif
 
 ## Disable the plugin.

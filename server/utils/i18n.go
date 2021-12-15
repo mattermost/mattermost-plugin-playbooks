@@ -13,6 +13,7 @@ import (
 // this functions loads translations from filesystem if they are not
 // loaded already and assigns english while loading server config
 func TranslationsPreInit() error {
+	// source located in server/i18n; copied to assets pre-bundling
 	translationsDir := "assets/i18n"
 
 	i18nDirectory, found := fileutils.FindDirRelBinary(translationsDir)
