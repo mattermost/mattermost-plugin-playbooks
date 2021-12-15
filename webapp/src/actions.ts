@@ -54,6 +54,8 @@ import {
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
     SET_CHECKLIST_ITEMS_FILTER,
     SetChecklistItemsFilter,
+    SetEachChecklistCollapsedState,
+    SET_EACH_CHECKLIST_COLLAPSED_STATE,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
@@ -276,6 +278,12 @@ export const setChecklistCollapsedState = (channelId: string, checklistIndex: nu
     channelId,
     checklistIndex,
     collapsed,
+});
+
+export const setEachChecklistCollapsedState = (channelId: string, state: Record<number, boolean>): SetEachChecklistCollapsedState => ({
+    type: SET_EACH_CHECKLIST_COLLAPSED_STATE,
+    channelId,
+    state,
 });
 
 export const setAllChecklistsCollapsedState = (channelId: string, collapsed: boolean, numOfChecklists: number): SetAllChecklistsCollapsedState => ({
