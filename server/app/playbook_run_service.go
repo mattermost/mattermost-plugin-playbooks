@@ -2693,7 +2693,7 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string, locale
 		return msg + T("app.user.digest.tasks.zero_outstanding") + "\n"
 	}
 
-	msg += T("app.user.digest.tasks.num_outstanding", total) + "\n"
+	msg += T("app.user.digest.tasks.num_outstanding", total) + "\n\n"
 
 	for _, run := range runs {
 		msg += fmt.Sprintf("[%s](%s/%s/channels/%s?telem=todo_assignedtask_clicked&forceRHSOpen)\n",
