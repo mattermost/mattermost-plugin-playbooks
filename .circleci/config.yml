@@ -174,9 +174,13 @@ jobs:
             git --no-pager diff --exit-code *manifest.* || (echo "Please run \"make apply\" and commit the changes in the generated manifests." && exit 1)
       - run: make i18n-extract
       - run:
-          name: Checking diff of i18n files
+          name: Checking diff of webapp i18n files
           command: |
-            git --no-pager diff --exit-code webapp/i18n/en.json || (echo "Please run \"make i18n-extract\" and commit the changes in en.json." && exit 1)
+            git --no-pager diff --exit-code webapp/i18n/en.json || (echo "Please run \"make i18n-extract\" and commit the changes in webapp/i18n/en.json." && exit 1)
+      - run:
+          name: Checking diff of server i18n files
+          command: |
+            make i18n-check || (echo "Please run \"make i18n-extract\", add messages to any empty translations, and commit the changes in server/i18n/en.json." && exit 1)
 
       - *save_go_cache
 
