@@ -130,6 +130,84 @@ describe('playbooks > creation button', () => {
             cy.get('a').contains('Remove').should('exist');
         });
     });
+
+    describe('when the test user belongs to multiple teams', () => {
+        let multiTeamUser;
+        let mtUserTeam1;
+        let mtUserTeam2;
+        before(() => {
+            cy.apiAdminLogin();
+            cy.apiCreateUser().then(({user: newUser}) => {
+                multiTeamUser = newUser;
+                cy.apiCreateTeam().then(({team: team1}) => {
+                    mtUserTeam1 = team1;
+                    cy.apiCreateTeam().then(({team: team2}) => {
+                        mtUserTeam2 = team2;
+                        cy.apiAddUserToTeam(team1.id, newUser.id);
+                        cy.apiAddUserToTeam(team2.id, newUser.id);
+                    });
+                });
+            });
+        });
+
+        beforeEach(() => {
+            cy.apiLogin(multiTeamUser);
+        });
+
+        it('"Create playbook" requires team selection before proceeding', () => {
+            // # Open the product
+            cy.visit('/playbooks');
+
+            // # Switch to playbooks
+            cy.findByTestId('playbooksLHSButton').click();
+
+            // # Click 'New Playbook' button
+            cy.findByText('Create playbook').click();
+
+            // * Verify no redirect to creation has happened yet
+            cy.url().should('not.include', 'new');
+
+            // * Verify the team picker opened with the user's teams
+            cy.findByText(mtUserTeam1.display_name).should('exist');
+            cy.findByText(mtUserTeam2.display_name).should('exist');
+
+            // # Select a team to continue to creation
+            cy.findByText(mtUserTeam2.display_name).click();
+
+            const url = `playbooks/new?teamId=${mtUserTeam2.id}`;
+            const playbookName = 'Untitled playbook';
+
+            // * Verify redirect to creation page for selected team
+            verifyPlaybookCreationPageOpened(url, playbookName);
+        });
+
+        it('"Blank" template requires team selection before proceeding', () => {
+            // # Open the product
+            cy.visit('/playbooks');
+
+            // # Switch to playbooks
+            cy.findByTestId('playbooksLHSButton').click();
+
+            // # Click "Blank" template button
+            cy.findByText('Blank').click();
+
+            // * Verify no redirect to creation has happened yet
+            cy.url().should('not.include', 'new');
+
+            // * Verify the team picker opened with the user's teams
+            cy.findByText(mtUserTeam1.display_name).should('exist');
+            cy.findByText(mtUserTeam2.display_name).should('exist');
+
+            // # Select a team to continue to creation
+            cy.findByText(mtUserTeam2.display_name).click();
+
+            const url = `playbooks/new?teamId=${mtUserTeam2.id}&template_title=Blank`;
+            const playbookName = 'Untitled playbook';
+
+            // * Verify redirect to creation page for selected team & template
+            verifyPlaybookCreationPageOpened(url, playbookName);
+        });
+    });
 });
 
 function verifyPlaybookCreationPageOpened(url, playbookName) {
