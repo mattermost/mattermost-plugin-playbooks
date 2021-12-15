@@ -60,6 +60,9 @@ const DialogFieldMessageKey = "message"
 // DialogFieldReminderInSecondsKey is the key for the reminder select field used in UpdatePlaybookRunDialog
 const DialogFieldReminderInSecondsKey = "reminder"
 
+// DialogFieldFinishRun is the key for the "Finish run" bool field used in UpdatePlaybookRunDialog
+const DialogFieldFinishRun = "finish_run"
+
 // DialogFieldPlaybookRunKey is the key for the playbook run chosen in AddToTimelineDialog
 const DialogFieldPlaybookRunKey = "playbook_run"
 
@@ -2306,6 +2309,13 @@ func (s *PlaybookRunServiceImpl) newUpdatePlaybookRunDialog(description, message
 				Options:     reminderOptions,
 				Optional:    true,
 				Default:     fmt.Sprintf("%d", reminderTimer/time.Second),
+			},
+			{
+				DisplayName: "Finish run",
+				Name:        DialogFieldFinishRun,
+				Placeholder: "Also mark the run as finished",
+				Type:        "bool",
+				Optional:    true,
 			},
 		},
 		SubmitLabel:    "Update status",

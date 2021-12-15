@@ -692,26 +692,41 @@ func (h *PlaybookRunHandler) status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	options.Message = strings.TrimSpace(options.Message)
-	if options.Message == "" {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "message must not be empty", errors.New("message field empty"))
-		return
-	}
-
-	if options.Reminder == 0 {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "the reminder must be set and not 0", errors.New("reminder was 0"))
-		return
-	}
-	options.Reminder = options.Reminder * time.Second
-
-	err = h.playbookRunService.UpdateStatus(playbookRunID, userID, options)
-	if err != nil {
-		h.HandleError(w, err)
+	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, publicMsg, internalErr)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
+}
+
+// updateStatus returns a publicMessage and an internal error
+func (h *PlaybookRunHandler) updateStatus(playbookRunID, userID string, options app.StatusUpdateOptions) (string, error) {
+	options.Message = strings.TrimSpace(options.Message)
+	if options.Message == "" {
+		return "message must not be empty", errors.New("message field empty")
+	}
+
+	if options.Reminder <= 0 && !options.FinishRun {
+		return "the reminder must be set and not 0", errors.New("reminder was 0")
+	}
+	if options.Reminder < 0 || options.FinishRun {
+		options.Reminder = 0
+	}
+	options.Reminder = options.Reminder * time.Second
+
+	if err := h.playbookRunService.UpdateStatus(playbookRunID, userID, options); err != nil {
+		return "An internal error has occurred. Check app server logs for details.", err
+	}
+
+	if options.FinishRun {
+		if err := h.playbookRunService.FinishPlaybookRun(playbookRunID, userID); err != nil {
+			return "An internal error has occurred. Check app server logs for details.", err
+		}
+	}
+
+	return "", nil
 }
 
 // updateStatusD handles the POST /runs/{id}/finish endpoint, user has edit permissions
@@ -791,27 +806,28 @@ func (h *PlaybookRunHandler) updateStatusDialog(w http.ResponseWriter, r *http.R
 
 	var options app.StatusUpdateOptions
 	if message, ok := request.Submission[app.DialogFieldMessageKey]; ok {
-		options.Message = strings.TrimSpace(message.(string))
-	}
-	if options.Message == "" {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(fmt.Sprintf(`{"errors": {"%s":"This field is required."}}`, app.DialogFieldMessageKey)))
-		return
+		options.Message = message.(string)
 	}
 
 	if reminderI, ok := request.Submission[app.DialogFieldReminderInSecondsKey]; ok {
 		var reminder int
 		reminder, err = strconv.Atoi(reminderI.(string))
-		if reminder <= 0 {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "The reminder must be set and greater than 0.", err)
+		if err != nil {
+			h.HandleError(w, err)
 			return
 		}
-		options.Reminder = time.Duration(reminder) * time.Second
+		options.Reminder = time.Duration(reminder)
 	}
 
-	err = h.playbookRunService.UpdateStatus(playbookRunID, userID, options)
-	if err != nil {
-		h.HandleError(w, err)
+	if finishB, ok := request.Submission[app.DialogFieldFinishRun]; ok {
+		var finish bool
+		if finish, ok = finishB.(bool); ok {
+			options.FinishRun = finish
+		}
+	}
+
+	if publicMsg, internalErr := h.updateStatus(playbookRunID, userID, options); internalErr != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, publicMsg, internalErr)
 		return
 	}
 
