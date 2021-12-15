@@ -28,6 +28,7 @@ import {
     setAllChecklistsCollapsedState,
     setChecklistCollapsedState,
     setChecklistItemsFilter,
+    setEachChecklistCollapsedState,
 } from 'src/actions';
 import {
     Checklist,
@@ -163,6 +164,22 @@ const RHSChecklistList = (props: Props) => {
         if (result.type === 'checklist') {
             const [moved] = newChecklists.splice(srcIdx, 1);
             newChecklists.splice(dstIdx, 0, moved);
+
+            // The collapsed state of a checklist in the store is linked to the index in the list,
+            // so we need to shift all indices between srcIdx and dstIdx to the left (or to the
+            // right, depending on whether srcIdx < dstIdx) one position
+            const newState = {...checklistsState};
+            if (srcIdx < dstIdx) {
+                for (let i = srcIdx; i < dstIdx; i++) {
+                    newState[i] = checklistsState[i + 1];
+                }
+            } else {
+                for (let i = dstIdx + 1; i <= srcIdx; i++) {
+                    newState[i] = checklistsState[i - 1];
+                }
+            }
+            newState[dstIdx] = checklistsState[srcIdx];
+            dispatch(setEachChecklistCollapsedState(channelId, newState));
 
             // Persist the new data in the server
             clientMoveChecklist(props.playbookRun.id, srcIdx, dstIdx);
