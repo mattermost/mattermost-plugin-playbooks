@@ -239,10 +239,14 @@ endif
 
 ## Extract strings for translation from the source code.
 .PHONY: i18n-extract
-i18n-extract:
+i18n-extract: i18n-extract-webapp i18n-extract-server
+
+i18n-extract-webapp:
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run extract
 endif
+
+i18n-extract-server:
 ifneq ($(HAS_SERVER),)
 	$(GO) get -d -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
 	cd server && $(GOBIN)/mmgotool i18n extract --portal-dir="" --skip-dynamic

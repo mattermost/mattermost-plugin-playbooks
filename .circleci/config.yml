@@ -172,7 +172,7 @@ jobs:
           name: Checking diff of generated manifest files
           command: |
             git --no-pager diff --exit-code *manifest.* || (echo "Please run \"make apply\" and commit the changes in the generated manifests." && exit 1)
-      - run: make i18n-extract
+      - run: make i18n-extract-webapp
       - run:
           name: Checking diff of webapp i18n files
           command: |
