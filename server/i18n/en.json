@@ -55,9 +55,5 @@
   {
     "id": "app.user.digest.tasks.zero_outstanding",
     "translation": "You have 0 outstanding tasks."
-  },
-  {
-    "id": "ci.test_empty",
-    "translation": ""
   }
 ]
