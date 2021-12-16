@@ -6,20 +6,28 @@ import {useDispatch, useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentChannel, getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
+import {UserProfile} from 'mattermost-redux/types/users';
+import {GlobalState} from 'mattermost-redux/types/store';
+import {displayUsername} from 'mattermost-redux/utils/user_utils';
+import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {setOwner, changeChannelName, updatePlaybookRunDescription} from 'src/client';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import RHSPostUpdate from 'src/components/rhs/rhs_post_update';
-import {useProfilesInCurrentChannel} from 'src/hooks';
+import {useProfilesInCurrentChannel, useProfilesInTeam} from 'src/hooks';
 import RHSParticipants from 'src/components/rhs/rhs_participants';
 import {HoverMenu} from 'src/components/rhs/rhs_shared';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import RHSAboutButtons from 'src/components/rhs/rhs_about_buttons';
 import RHSAboutTitle, {DefaultRenderedTitle} from 'src/components/rhs/rhs_about_title';
 import RHSAboutDescription from 'src/components/rhs/rhs_about_description';
 import {currentRHSAboutCollapsedState} from 'src/selectors';
-import {setRHSAboutCollapsedState} from 'src/actions';
+import {setRHSAboutCollapsedState, addToCurrentChannel} from 'src/actions';
+import {ChannelNamesMap} from 'src/types/backstage';
+import {messageHtmlToComponent, formatText} from 'src/webapp_globals';
 
 interface Props {
     playbookRun: PlaybookRun;
@@ -28,17 +36,39 @@ interface Props {
 const RHSAbout = (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
-    const channelId = useSelector(getCurrentChannelId);
     const profilesInChannel = useProfilesInCurrentChannel();
     const collapsed = useSelector(currentRHSAboutCollapsedState);
+    const channel = useSelector(getCurrentChannel);
+    const profilesInTeam = useProfilesInTeam();
 
-    const toggleCollapsed = () => dispatch(setRHSAboutCollapsedState(channelId, !collapsed));
+    const team = useSelector(getCurrentTeam);
+    const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
+    const [showAddToChannel, setShowAddToChannelConfirm] = useState(false);
+    const [currentUserSelect, setCurrentUserSelect] = useState<UserProfile | null>();
+    const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
+    const overviewURL = `/playbooks/runs/${props.playbookRun.id}`;
+
+    const markdownOptions = {
+        singleline: true,
+        mentionHighlight: true,
+        atMentions: true,
+        team,
+        channelNamesMap,
+    };
+
+    const mdText = (text: string) => messageHtmlToComponent(formatText(text, markdownOptions), true, {});
+
+    const toggleCollapsed = () => dispatch(setRHSAboutCollapsedState(channel.id, !collapsed));
 
     const fetchUsers = async () => {
         return profilesInChannel;
     };
 
-    const onSelectedProfileChange = async (userId?: string) => {
+    const fetchUsersInTeam = async () => {
+        return profilesInTeam;
+    };
+
+    const setOwnerUtil = async (userId?: string) => {
         if (!userId) {
             return;
         }
@@ -46,6 +76,19 @@ const RHSAbout = (props: Props) => {
         if (response.error) {
             // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console
+        }
+    };
+
+    const onSelectedProfileChange = (userType?: string, user?: UserProfile) => {
+        if (!user || !userType) {
+            return;
+        }
+
+        if (userType === 'Member') {
+            setOwnerUtil(user?.id);
+        } else {
+            setCurrentUserSelect(user);
+            setShowAddToChannelConfirm(true);
         }
     };
 
@@ -69,62 +112,82 @@ const RHSAbout = (props: Props) => {
     const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
 
     return (
-        <Container
-            tabIndex={0}
-            id={'rhs-about'}
-        >
-            <ButtonsRow data-testid='buttons-row'>
-                <RHSAboutButtons
-                    playbookRun={props.playbookRun}
-                    collapsed={collapsed}
-                    toggleCollapsed={toggleCollapsed}
-                    editSummary={editSummary}
+        <>
+            <Container
+                tabIndex={0}
+                id={'rhs-about'}
+            >
+                <ButtonsRow data-testid='buttons-row'>
+                    <RHSAboutButtons
+                        playbookRun={props.playbookRun}
+                        collapsed={collapsed}
+                        toggleCollapsed={toggleCollapsed}
+                        editSummary={editSummary}
+                    />
+                </ButtonsRow>
+                <RHSAboutTitle
+                    value={props.playbookRun.name}
+                    onEdit={onTitleEdit}
+                    renderedTitle={RenderedTitle}
+                    status={props.playbookRun.current_status}
                 />
-            </ButtonsRow>
-            <RHSAboutTitle
-                value={props.playbookRun.name}
-                onEdit={onTitleEdit}
-                renderedTitle={RenderedTitle}
-                status={props.playbookRun.current_status}
-            />
-            {!collapsed &&
-            <>
-                <RHSAboutDescription
-                    value={props.playbookRun.summary}
-                    onEdit={onDescriptionEdit}
-                    editing={editingSummary}
-                    setEditing={setEditingSummary}
-                />
-                <Row>
-                    <OwnerSection>
-                        <MemberSectionTitle>{formatMessage({defaultMessage: 'Owner'})}</MemberSectionTitle>
-                        <StyledProfileSelector
-                            testId={'owner-profile-selector'}
-                            selectedUserId={props.playbookRun.owner_user_id}
-                            placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
-                            placeholderButtonClass={'NoAssignee-button'}
-                            profileButtonClass={'Assigned-button'}
-                            enableEdit={!isFinished}
-                            getUsers={fetchUsers}
-                            onSelectedChange={onSelectedProfileChange}
-                            selfIsFirstOption={true}
+                {!collapsed &&
+                    <>
+                        <RHSAboutDescription
+                            value={props.playbookRun.summary}
+                            onEdit={onDescriptionEdit}
+                            editing={editingSummary}
+                            setEditing={setEditingSummary}
                         />
-                    </OwnerSection>
-                    <ParticipantsSection>
-                        <MemberSectionTitle>{formatMessage({defaultMessage: 'Participants'})}</MemberSectionTitle>
-                        <RHSParticipants userIds={participantsIds}/>
-                    </ParticipantsSection>
-                </Row>
-            </>
+                        <Row>
+                            <OwnerSection>
+                                <MemberSectionTitle>{formatMessage({defaultMessage: 'Owner'})}</MemberSectionTitle>
+                                <StyledProfileSelector
+                                    testId={'owner-profile-selector'}
+                                    selectedUserId={props.playbookRun.owner_user_id}
+                                    placeholder={formatMessage({defaultMessage: 'Assign the owner role'})}
+                                    placeholderButtonClass={'NoAssignee-button'}
+                                    profileButtonClass={'Assigned-button'}
+                                    enableEdit={!isFinished}
+                                    getUsers={fetchUsers}
+                                    getUsersInTeam={fetchUsersInTeam}
+                                    onSelectedChange={onSelectedProfileChange}
+                                    selfIsFirstOption={true}
+                                />
+                            </OwnerSection>
+                            <ParticipantsSection>
+                                <MemberSectionTitle>{formatMessage({defaultMessage: 'Participants'})}</MemberSectionTitle>
+                                <RHSParticipants userIds={participantsIds}/>
+                            </ParticipantsSection>
+                        </Row>
+                    </>
+                }
+                {props.playbookRun.status_update_enabled && (
+                    <RHSPostUpdate
+                        collapsed={collapsed}
+                        playbookRun={props.playbookRun}
+                        updatesExist={props.playbookRun.status_posts.length !== 0}
+                    />
+                )}
+            </Container>
+            {(currentUserSelect?.id) ?
+                <ConfirmModal
+                    show={showAddToChannel}
+                    title={mdText(formatMessage({defaultMessage: 'Add @{displayName} to Channel'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting)}))}
+                    message={mdText(formatMessage({defaultMessage: '@{displayName} is not a member of the [{runName}]({overviewUrl}) channel. Would you like to add them to this channel? They will have access to all of the message history.'}, {displayName: displayUsername(currentUserSelect, teamnameNameDisplaySetting), runName: channel.name, overviewUrl: overviewURL}))}
+                    confirmButtonText={formatMessage({defaultMessage: 'Add'})}
+                    onConfirm={() => {
+                        if (currentUserSelect) {
+                            dispatch(addToCurrentChannel(currentUserSelect.id));
+                            setShowAddToChannelConfirm(false);
+                            setOwnerUtil(currentUserSelect.id);
+                        }
+                    }
+                    }
+                    onCancel={() => setShowAddToChannelConfirm(false)}
+                /> : null
             }
-            {props.playbookRun.status_update_enabled && (
-                <RHSPostUpdate
-                    collapsed={collapsed}
-                    playbookRun={props.playbookRun}
-                    updatesExist={props.playbookRun.status_posts.length !== 0}
-                />
-            )}
-        </Container>
+        </>
     );
 };
 
