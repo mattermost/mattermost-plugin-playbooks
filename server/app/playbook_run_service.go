@@ -1674,9 +1674,12 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 	copy(destChecklist[destItemIdx+1:], destChecklist[destItemIdx:])
 	destChecklist[destItemIdx] = itemMoved
 
-	// Update the playbookRunToModify checklists, updating the destChecklist only if it's different than the source
-	playbookRunToModify.Checklists[sourceChecklistIdx].Items = sourceChecklist
-	if sourceChecklistIdx != destChecklistIdx {
+	// Update the playbookRunToModify checklists. If the source and destination indices
+	// are the same, we only need to update the checklist to its final state (destChecklist)
+	if sourceChecklistIdx == destChecklistIdx {
+		playbookRunToModify.Checklists[sourceChecklistIdx].Items = destChecklist
+	} else {
+		playbookRunToModify.Checklists[sourceChecklistIdx].Items = sourceChecklist
 		playbookRunToModify.Checklists[destChecklistIdx].Items = destChecklist
 	}
 
