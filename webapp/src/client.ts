@@ -4,10 +4,10 @@
 import {AnyAction, Dispatch} from 'redux';
 import qs from 'qs';
 
-import {GetStateFunc, batchActions} from 'mattermost-redux/types/actions';
+import {GetStateFunc} from 'mattermost-redux/types/actions';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {Channel} from 'mattermost-redux/types/channels';
-import {IntegrationTypes, UserTypes, ChannelTypes} from 'mattermost-redux/action_types';
+import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {Client4} from 'mattermost-redux/client';
 import {ClientError} from 'mattermost-redux/client/client4';
 import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
@@ -25,7 +25,6 @@ import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
 import {
     Checklist,
-    ChecklistItem,
     ChecklistItemState,
     FetchPlaybooksParams,
     FetchPlaybooksReturn,

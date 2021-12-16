@@ -86,9 +86,9 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam, fixedPlaybook}: Props)
         });
     };
 
-    const setOwnerId = (userId?: string) => {
+    const setOwnerId = (userType?: string, user?: UserProfile) => {
         setFetchParams((oldParams) => {
-            return {...oldParams, owner_user_id: userId, page: 0};
+            return {...oldParams, owner_user_id: user?.id, page: 0};
         });
     };
 

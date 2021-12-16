@@ -261,6 +261,9 @@ export default function ProfileSelector(props: Props) {
         Control: props.customControl,
     } : noDropdown;
 
+    const selectOptions = (userNotInChannelOptions.length === 0) ? userOptions : [{label: formatMessage({defaultMessage: 'CHANNEL MEMBERS'}), options: userOptions},
+        {label: formatMessage({defaultMessage: 'NOT IN CHANNEL'}), options: userNotInChannelOptions}];
+
     return (
         <Dropdown
             isOpen={isOpen}
@@ -277,8 +280,7 @@ export default function ProfileSelector(props: Props) {
                 hideSelectedOptions={false}
                 isClearable={props.isClearable}
                 menuIsOpen={true}
-                options={[{label: formatMessage({defaultMessage: 'CHANNEL MEMBERS'}), options: userOptions},
-                    {label: formatMessage({defaultMessage: 'NOT IN CHANNEL'}), options: userNotInChannelOptions}]}
+                options={selectOptions}
                 placeholder={'Search'}
                 styles={selectStyles}
                 tabSelectsValue={false}
