@@ -12,11 +12,11 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
 
-import './profile_selector.scss';
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
 import {useClientRect} from 'src/hooks';
 import {PlaybookRunFilterButton} from '../backstage/styles';
+import {DropdownSelectorStyle} from 'src/components/profile/dropdown_selector_style';
 
 export interface Option {
     value: string;
@@ -355,17 +355,19 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
         'PlaybookRunFilter--active', 'profile-dropdown--active');
 
     return (
-        <ProfileDropdown className={classes}>
-            {target}
-            <ChildContainer
-                className='playbook-run-user-select__container'
-                moveUp={moveUp}
-                showOnRight={showOnRight}
-            >
-                {children}
-            </ChildContainer>
-            <Blanket onClick={onClose}/>
-        </ProfileDropdown>
+        <DropdownSelectorStyle>
+            <ProfileDropdown className={classes}>
+                {target}
+                <ChildContainer
+                    className='playbook-run-user-select__container'
+                    moveUp={moveUp}
+                    showOnRight={showOnRight}
+                >
+                    {children}
+                </ChildContainer>
+                <Blanket onClick={onClose}/>
+            </ProfileDropdown>
+        </DropdownSelectorStyle>
     );
 };
 
