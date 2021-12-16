@@ -25,6 +25,11 @@ describe('playbooks > creation button', () => {
             cy.apiLogin(testUser);
 
             // # Create a public playbook
+            // # Creating this playbook ensures the list view
+            // # specifically is shown in the backstage content section.
+            // # Without it there is a brief flicker from the list view
+            // # to the no content view, which causes some flake
+            // # on clicking the 'Create playbook' button
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: 'Playbook',
@@ -145,6 +150,17 @@ describe('playbooks > creation button', () => {
                         mtUserTeam2 = team2;
                         cy.apiAddUserToTeam(team1.id, newUser.id);
                         cy.apiAddUserToTeam(team2.id, newUser.id);
+
+                        // # Creating this playbook ensures the list view
+                        // # specifically is shown in the backstage content section.
+                        // # Without it there is a brief flicker from the list view
+                        // # to the no content view, which causes some flake
+                        // # on clicking the 'Create playbook' button.
+                        cy.apiCreatePlaybook({
+                            teamId: team1.id,
+                            title: 'Playbook',
+                            memberIDs: [],
+                        });
                     });
                 });
             });
@@ -156,10 +172,7 @@ describe('playbooks > creation button', () => {
 
         it('"Create playbook" requires team selection before proceeding', () => {
             // # Open the product
-            cy.visit('/playbooks');
-
-            // # Switch to playbooks
-            cy.findByTestId('playbooksLHSButton').click();
+            cy.visit('/playbooks/playbooks');
 
             // # Click 'New Playbook' button
             cy.findByText('Create playbook').click();
@@ -167,12 +180,14 @@ describe('playbooks > creation button', () => {
             // * Verify no redirect to creation has happened yet
             cy.url().should('not.include', 'new');
 
-            // * Verify the team picker opened with the user's teams
-            cy.findByText(mtUserTeam1.display_name).should('exist');
-            cy.findByText(mtUserTeam2.display_name).should('exist');
+            cy.findByTestId('create-playbook-team-selector').next().within(() => {
+                // * Verify the team picker opened with the user's teams
+                cy.findByText(mtUserTeam1.display_name).should('exist');
+                cy.findByText(mtUserTeam2.display_name).should('exist');
 
-            // # Select a team to continue to creation
-            cy.findByText(mtUserTeam2.display_name).click();
+                // # Select a team to continue to creation
+                cy.findByText(mtUserTeam2.display_name).click();
+            });
 
             const url = `playbooks/new?teamId=${mtUserTeam2.id}`;
             const playbookName = 'Untitled playbook';
@@ -183,10 +198,7 @@ describe('playbooks > creation button', () => {
 
         it('"Blank" template requires team selection before proceeding', () => {
             // # Open the product
-            cy.visit('/playbooks');
-
-            // # Switch to playbooks
-            cy.findByTestId('playbooksLHSButton').click();
+            cy.visit('/playbooks/playbooks');
 
             // # Click "Blank" template button
             cy.findByText('Blank').click();
@@ -194,12 +206,14 @@ describe('playbooks > creation button', () => {
             // * Verify no redirect to creation has happened yet
             cy.url().should('not.include', 'new');
 
-            // * Verify the team picker opened with the user's teams
-            cy.findByText(mtUserTeam1.display_name).should('exist');
-            cy.findByText(mtUserTeam2.display_name).should('exist');
+            cy.findAllByTestId('template-item-team-selector').eq(0).next().within(() => {
+                // * Verify the team picker opened with the user's teams
+                cy.findByText(mtUserTeam1.display_name).should('exist');
+                cy.findByText(mtUserTeam2.display_name).should('exist');
 
-            // # Select a team to continue to creation
-            cy.findByText(mtUserTeam2.display_name).click();
+                // # Select a team to continue to creation
+                cy.findByText(mtUserTeam2.display_name).click();
+            });
 
             const url = `playbooks/new?teamId=${mtUserTeam2.id}&template_title=Blank`;
             const playbookName = 'Untitled playbook';
