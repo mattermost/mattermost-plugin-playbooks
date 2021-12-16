@@ -119,7 +119,6 @@ bundle:
 	./build/bin/manifest dist
 ifneq ($(wildcard $(ASSETS_DIR)/.),)
 	cp -r $(ASSETS_DIR) dist/$(PLUGIN_ID)/
-	cp -r server/i18n dist/$(PLUGIN_ID)/$(ASSETS_DIR)/
 endif
 ifneq ($(HAS_PUBLIC),)
 	cp -r public dist/$(PLUGIN_ID)/
@@ -249,15 +248,27 @@ endif
 i18n-extract-server:
 ifneq ($(HAS_SERVER),)
 	$(GO) get -d -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
+	mkdir -p server/i18n
+	cp assets/i18n/en.json server/i18n/en.json
+
 	cd server && $(GOBIN)/mmgotool i18n extract --portal-dir="" --skip-dynamic
+
+	mv server/i18n/en.json assets/i18n/en.json
+	rmdir server/i18n
 endif
 
 ## Exit on empty translation strings and translation source strings
 i18n-check:
 ifneq ($(HAS_SERVER),)
 	$(GO) get -d -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
+	mkdir -p server/i18n
+	cp assets/i18n/en.json server/i18n/en.json
+
 	cd server && $(GOBIN)/mmgotool i18n clean-empty --portal-dir="" --check
 	cd server && $(GOBIN)/mmgotool i18n check-empty-src --portal-dir=""
+
+	mv server/i18n/en.json assets/i18n/en.json
+	rmdir server/i18n
 endif
 
 ## Disable the plugin.
