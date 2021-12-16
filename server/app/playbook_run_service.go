@@ -1676,7 +1676,9 @@ func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string,
 
 	// Update the playbookRunToModify checklists, updating the destChecklist only if it's different than the source
 	playbookRunToModify.Checklists[sourceChecklistIdx].Items = sourceChecklist
-	playbookRunToModify.Checklists[destChecklistIdx].Items = destChecklist
+	if sourceChecklistIdx != destChecklistIdx {
+		playbookRunToModify.Checklists[destChecklistIdx].Items = destChecklist
+	}
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
