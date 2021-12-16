@@ -1656,10 +1656,10 @@ func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sou
 	checklistMoved := playbookRunToModify.Checklists[sourceChecklistIdx]
 
 	// Delete checklist to move
-	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists[:sourceChecklistIdx], playbookRunToModify.Checklists[sourceChecklistIdx+1:]...)
+	copy(playbookRunToModify.Checklists[sourceChecklistIdx:], playbookRunToModify.Checklists[sourceChecklistIdx+1:])
+	playbookRunToModify.Checklists[len(playbookRunToModify.Checklists)-1] = Checklist{}
 
 	// Insert checklist in new location
-	playbookRunToModify.Checklists = append(playbookRunToModify.Checklists, Checklist{})
 	copy(playbookRunToModify.Checklists[destChecklistIdx+1:], playbookRunToModify.Checklists[destChecklistIdx:])
 	playbookRunToModify.Checklists[destChecklistIdx] = checklistMoved
 
