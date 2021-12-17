@@ -1439,9 +1439,6 @@ describe('playbooks > edit', () => {
                 // * Verify that the update text is disabled
                 cy.get('#playbook_reminder_message_edit').should('be.disabled');
 
-                // # Switch to Status updates tab
-                cy.get('#root').findByText('Status updates').click();
-
                 // * Verify that the toggle can't be checked
                 cy.get('#broadcast-channels').within(() => {
                     // * Verify that the toggle is unchecked
@@ -1498,9 +1495,6 @@ describe('playbooks > edit', () => {
                     cy.get('label input').should('be.checked');
                 });
 
-                // # Switch to Status updates tab
-                cy.get('#root').findByText('Status updates').click();
-
                 // * Verify that toggle can be selected
                 cy.get('#status-updates').within(() => {
                     // * Verify that the toggle is checked
@@ -1512,9 +1506,6 @@ describe('playbooks > edit', () => {
                     // * Verify that the toggle is unchecked
                     cy.get('label input').should('not.be.checked');
                 });
-
-                // # Switch to Status updates tab
-                cy.get('#root').findByText('Status updates').click();
 
                 // * Verify that the toggle can't be checked
                 cy.get('#broadcast-channels').within(() => {
