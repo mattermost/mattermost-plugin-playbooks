@@ -374,5 +374,11 @@
     "5Ofkag": "Retrospektive ermöglichen",
     "2563nT": "Bestätigen Sie das Beenden des Laufs",
     "2/2yg+": "Hinzufügen",
-    "/ZsEUy": "Sind Sie sicher, dass Sie diese Checkliste löschen wollen? Sie wird aus diesem Lauf entfernt, hat aber keine Auswirkungen auf das Playbook."
+    "/ZsEUy": "Sind Sie sicher, dass Sie diese Checkliste löschen wollen? Sie wird aus diesem Lauf entfernt, hat aber keine Auswirkungen auf das Playbook.",
+    "kDcpd/": "{numKeywords, plural, other {# Schlüsselwörter}}",
+    "vaYTD+": "Es gibt {outstanding, plural, =1 {# ausstehende Aufgabe} other {# ausstehende Aufgaben}}. Sind Sie sicher, dass Sie den Lauf beenden wollen?",
+    "pK6+CW": "@{displayName} ist kein Mitglied des Kanals [{runName}]({overviewUrl}). Möchten Sie sie zu diesem Kanal hinzufügen? Er hat dann Zugriff auf den gesamten Nachrichtenverlauf.",
+    "iDMOiz": "KANALMITGLIEDER",
+    "JqKASQ": "@{displayName} zum Kanal hinzufügen",
+    "5ciuDD": "NICHT IM KANAL"
 }
