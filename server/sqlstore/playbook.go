@@ -142,6 +142,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"SignalAnyKeywordsEnabled",
 			"CategorizeChannelEnabled",
 			"COALESCE(CategoryName, '') CategoryName",
+			"RunSummaryTemplateEnabled",
 			"COALESCE(RunSummaryTemplate, '') RunSummaryTemplate",
 			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
 		).
@@ -218,6 +219,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
 			"CategoryName":                          rawPlaybook.CategoryName,
+			"RunSummaryTemplateEnabled":             rawPlaybook.RunSummaryTemplateEnabled,
 			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
 			"ChannelNameTemplate":                   rawPlaybook.ChannelNameTemplate,
 		}))
@@ -594,6 +596,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
 			"CategoryName":                          rawPlaybook.CategoryName,
+			"RunSummaryTemplateEnabled":             rawPlaybook.RunSummaryTemplateEnabled,
 			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
 			"ChannelNameTemplate":                   rawPlaybook.ChannelNameTemplate,
 		}).

@@ -89,15 +89,16 @@ func TestPlaybookRuns(t *testing.T) {
 
 		teamID := model.NewId()
 		withid := app.Playbook{
-			ID:                      "playbookid1",
-			Title:                   "My Playbook",
-			TeamID:                  teamID,
-			RunSummaryTemplate:      "description",
-			CreatePublicPlaybookRun: true,
-			MemberIDs:               []string{"testUserID"},
-			InviteUsersEnabled:      false,
-			InvitedUserIDs:          []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:         []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			ID:                        "playbookid1",
+			Title:                     "My Playbook",
+			TeamID:                    teamID,
+			RunSummaryTemplateEnabled: true,
+			RunSummaryTemplate:        "description",
+			CreatePublicPlaybookRun:   true,
+			MemberIDs:                 []string{"testUserID"},
+			InviteUsersEnabled:        false,
+			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{
@@ -153,15 +154,16 @@ func TestPlaybookRuns(t *testing.T) {
 
 		teamID := model.NewId()
 		withid := app.Playbook{
-			ID:                      "playbookid1",
-			Title:                   "My Playbook",
-			TeamID:                  teamID,
-			RunSummaryTemplate:      "description",
-			CreatePublicPlaybookRun: true,
-			MemberIDs:               []string{"testUserID"},
-			InviteUsersEnabled:      false,
-			InvitedUserIDs:          []string{"testInvitedUserID1", "testInvitedUserID2"},
-			InvitedGroupIDs:         []string{"testInvitedGroupID1", "testInvitedGroupID2"},
+			ID:                        "playbookid1",
+			Title:                     "My Playbook",
+			TeamID:                    teamID,
+			RunSummaryTemplateEnabled: true,
+			RunSummaryTemplate:        "description",
+			CreatePublicPlaybookRun:   true,
+			MemberIDs:                 []string{"testUserID"},
+			InviteUsersEnabled:        false,
+			InvitedUserIDs:            []string{"testInvitedUserID1", "testInvitedUserID2"},
+			InvitedGroupIDs:           []string{"testInvitedGroupID1", "testInvitedGroupID2"},
 		}
 
 		dialogRequest := model.SubmitDialogRequest{

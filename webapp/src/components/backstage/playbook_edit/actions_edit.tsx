@@ -17,6 +17,7 @@ import {Broadcast} from 'src/components/backstage/playbook_edit/automation/broad
 import {MessageOnJoin} from 'src/components/backstage/playbook_edit/automation/message_on_join';
 import {CategorizePlaybookRun} from 'src/components/backstage/playbook_edit/automation/categorize_playbook_run';
 import {InputKeywords} from 'src/components/backstage/playbook_edit/automation/input_keywords';
+import RunSummary from 'src/components/backstage/playbook_edit/automation/run_summary';
 
 interface Props {
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
@@ -135,6 +136,22 @@ const ActionsEdit = ({playbook, setPlaybook, setChangesMade, searchUsers, getUse
         setChangesMade(true);
     };
 
+    const handleToggleRunSummary = () => {
+        setPlaybook({
+            ...playbook,
+            run_summary_template_enabled: !playbook.run_summary_template_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleRunSummaryChange = (runSummary: string) => {
+        setPlaybook({
+            ...playbook,
+            run_summary_template: runSummary,
+        });
+        setChangesMade(true);
+    };
+
     const handleToggleBroadcastChannels = () => {
         setPlaybook({
             ...playbook,
@@ -239,6 +256,14 @@ const ActionsEdit = ({playbook, setPlaybook, setChangesMade, searchUsers, getUse
                         getProfiles={getUsers}
                         ownerID={playbook.default_owner_id}
                         onAssignOwner={handleAssignDefaultOwner}
+                    />
+                </Setting>
+                <Setting id={'run-summary'}>
+                    <RunSummary
+                        enabled={playbook.run_summary_template_enabled}
+                        onToggle={handleToggleRunSummary}
+                        summary={playbook.run_summary_template}
+                        onSummaryChanged={handleRunSummaryChange}
                     />
                 </Setting>
                 <Setting id={'playbook-run-creation__outgoing-webhook'}>

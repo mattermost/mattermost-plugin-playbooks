@@ -44,27 +44,6 @@ const StatusUpdatesEdit = ({playbook, setPlaybook, setChangesMade, retrospective
     return (
         <TabContainer>
             <SidebarBlock>
-                <BackstageSubheader>
-                    {formatMessage({defaultMessage: 'Run Summary'})}
-                    <BackstageSubheaderDescription>
-                        {formatMessage({defaultMessage: 'This template helps to standardize the format for a concise description that explains each run to its stakeholders.'})}
-                    </BackstageSubheaderDescription>
-                </BackstageSubheader>
-                <StyledMarkdownTextbox
-                    className={'playbook_description'}
-                    id={'playbook_description_edit'}
-                    placeholder={formatMessage({defaultMessage: 'Use Markdown to create a template.'})}
-                    value={playbook.run_summary_template}
-                    setValue={(run_summary_template: string) => {
-                        setPlaybook({
-                            ...playbook,
-                            run_summary_template,
-                        });
-                        setChangesMade(true);
-                    }}
-                />
-            </SidebarBlock>
-            <SidebarBlock>
                 <BackstageGroupToggleHeader id={'status-updates'}>
                     <Toggle
                         isChecked={playbook.status_update_enabled}
