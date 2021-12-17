@@ -8,7 +8,6 @@ import {
     BackstageSubheader,
     BackstageSubheaderDescription,
     StyledMarkdownTextbox,
-    StyledSelect,
     TabContainer,
 } from 'src/components/backstage/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
@@ -21,25 +20,52 @@ import {
     SidebarBlock,
 } from 'src/components/backstage/playbook_edit/styles';
 import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playbook';
-import {InputKeywords} from 'src/components/backstage/playbook_edit/automation/input_keywords';
-
-const retrospectiveReminderOptions = [
-    {value: 0, label: 'Once'},
-    {value: 3600, label: '1hr'},
-    {value: 14400, label: '4hr'},
-    {value: 86400, label: '24hr'},
-    {value: 604800, label: '7days'},
-] as const;
+import {Broadcast} from 'src/components/backstage/playbook_edit/automation/broadcast';
+import {PatternedTextArea} from 'src/components/backstage/playbook_edit/automation/patterned_text_area';
 
 interface Props {
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
-    retrospectiveAccess: boolean;
     setPlaybook: (playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist) => void;
     setChangesMade: (b: boolean) => void;
 }
 
-const StatusUpdatesEdit = ({playbook, setPlaybook, setChangesMade, retrospectiveAccess}: Props) => {
+const StatusUpdatesEdit = ({playbook, setPlaybook, setChangesMade}: Props) => {
     const {formatMessage} = useIntl();
+
+    const handleToggleBroadcastChannels = () => {
+        setPlaybook({
+            ...playbook,
+            broadcast_enabled: !playbook.broadcast_enabled && playbook.status_update_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleBroadcastChannelSelected = (channelIds: string[]) => {
+        // assumes no repeated elements on any of the arrays
+        if (channelIds.length !== playbook.broadcast_channel_ids.length || channelIds.some((id) => !playbook.broadcast_channel_ids.includes(id))) {
+            setPlaybook({
+                ...playbook,
+                broadcast_channel_ids: channelIds,
+            });
+            setChangesMade(true);
+        }
+    };
+
+    const handleToggleWebhookOnStatusUpdate = () => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_status_update_enabled: !playbook.webhook_on_status_update_enabled && playbook.status_update_enabled,
+        });
+        setChangesMade(true);
+    };
+
+    const handleWebhookOnStatusUpdateChange = (urls: string) => {
+        setPlaybook({
+            ...playbook,
+            webhook_on_status_update_urls: urls.split('\n'),
+        });
+        setChangesMade(true);
+    };
 
     return (
         <TabContainer>
@@ -97,69 +123,36 @@ const StatusUpdatesEdit = ({playbook, setPlaybook, setChangesMade, retrospective
                     disabled={!playbook.status_update_enabled}
                 />
             </SidebarBlock>
-            {retrospectiveAccess &&
-                <>
-                    <SidebarBlock>
-                        <BackstageGroupToggleHeader id={'retrospective-enabled'}>
-                            <Toggle
-                                isChecked={playbook.retrospective_enabled}
-                                onChange={() => {
-                                    setPlaybook({
-                                        ...playbook,
-                                        retrospective_enabled: !playbook.retrospective_enabled,
-                                    });
-                                    setChangesMade(true);
-                                }}
-                            />
-                            {formatMessage({defaultMessage: 'Enable retrospective'})}
-                        </BackstageGroupToggleHeader>
-                    </SidebarBlock>
-
-                    <SidebarBlock id={'retrospective-reminder-interval'}>
-                        <BackstageSubheader>
-                            {formatMessage({defaultMessage: 'Retrospective reminder interval'})}
-                            <BackstageSubheaderDescription>
-                                {formatMessage({defaultMessage: 'Reminds the channel at a specified interval to fill out the retrospective.'})}
-                            </BackstageSubheaderDescription>
-                        </BackstageSubheader>
-                        <StyledSelect
-                            value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
-                            onChange={(option: { label: string, value: number }) => {
-                                setPlaybook({
-                                    ...playbook,
-                                    retrospective_reminder_interval_seconds: option ? option.value : option,
-                                });
-                                setChangesMade(true);
-                            }}
-                            options={retrospectiveReminderOptions}
-                            isClearable={false}
-                            isDisabled={!playbook.retrospective_enabled}
-                        />
-                    </SidebarBlock>
-                    <SidebarBlock>
-                        <BackstageSubheader>
-                            {formatMessage({defaultMessage: 'Retrospective template'})}
-                            <BackstageSubheaderDescription>
-                                {formatMessage({defaultMessage: 'Default text for the retrospective.'})}
-                            </BackstageSubheaderDescription>
-                        </BackstageSubheader>
-                        <StyledMarkdownTextbox
-                            className={'playbook_retrospective_template'}
-                            id={'playbook_retrospective_template_edit'}
-                            placeholder={formatMessage({defaultMessage: 'Enter retrospective template'})}
-                            value={playbook.retrospective_template}
-                            setValue={(value: string) => {
-                                setPlaybook({
-                                    ...playbook,
-                                    retrospective_template: value,
-                                });
-                                setChangesMade(true);
-                            }}
-                            disabled={!playbook.retrospective_enabled}
-                        />
-                    </SidebarBlock>
-                </>
-            }
+            <Section>
+                <SectionTitle>
+                    {formatMessage({defaultMessage: 'When an update is posted'})}
+                </SectionTitle>
+                <Setting id={'broadcast-channels'}>
+                    <Broadcast
+                        enabled={playbook.broadcast_enabled && playbook.status_update_enabled}
+                        onToggle={handleToggleBroadcastChannels}
+                        channelIds={playbook.broadcast_channel_ids}
+                        onChannelsSelected={handleBroadcastChannelSelected}
+                    />
+                </Setting>
+                <Setting id={'playbook-run-status-update__outgoing-webhook'}>
+                    <PatternedTextArea
+                        enabled={playbook.webhook_on_status_update_enabled && playbook.status_update_enabled}
+                        onToggle={handleToggleWebhookOnStatusUpdate}
+                        input={playbook.webhook_on_status_update_urls.join('\n')}
+                        onChange={handleWebhookOnStatusUpdateChange}
+                        pattern={'https?://.*'}
+                        delimiter={'\n'}
+                        maxLength={1000}
+                        rows={3}
+                        placeholderText={formatMessage({defaultMessage: 'Enter webhook'})}
+                        textOnToggle={formatMessage({defaultMessage: 'Send outgoing webhook (One per line)'})}
+                        errorText={formatMessage({defaultMessage: 'Invalid webhook URLs'})}
+                        maxRows={64}
+                        maxErrorText={formatMessage({defaultMessage: 'Invalid entry: the maximum number of webhooks allowed is 64'})}
+                    />
+                </Setting>
+            </Section>
         </TabContainer>
     );
 };

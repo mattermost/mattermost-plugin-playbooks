@@ -41,17 +41,16 @@ export const MessageOnJoin = (props: Props) => {
                 />
                 <div><FormattedMessage defaultMessage='Send a welcome message'/></div>
             </AutomationTitle>
-            {props.enabled && (
-                <TextboxWrapper>
-                    <StyledMarkdownTextbox
-                        className={'playbook_welcome_message'}
-                        id={'playbook_welcome_message'}
-                        placeholder={'Welcome message'}
-                        value={props.message}
-                        setValue={props.onChange}
-                    />
-                </TextboxWrapper>
-            )}
+            <TextboxWrapper>
+                <StyledMarkdownTextbox
+                    disabled={!props.enabled}
+                    className={'playbook_welcome_message'}
+                    id={'playbook_welcome_message'}
+                    placeholder={'Welcome message'}
+                    value={props.message}
+                    setValue={props.onChange}
+                />
+            </TextboxWrapper>
         </StyledAutomationHeader>
     );
 };

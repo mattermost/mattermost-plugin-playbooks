@@ -3,133 +3,112 @@
 
 import React from 'react';
 import {useIntl} from 'react-intl';
-import styled from 'styled-components';
-import {useSelector} from 'react-redux';
 
-import {ActionFunc} from 'mattermost-redux/types/actions';
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-
-import {SidebarBlock} from 'src/components/backstage/playbook_edit/styles';
-import {BackstageSubheader, BackstageSubheaderDescription, TabContainer} from 'src/components/backstage/styles';
-import SharePlaybook from 'src/components/backstage/share_playbook';
+import {BackstageGroupToggleHeader, SidebarBlock} from 'src/components/backstage/playbook_edit/styles';
+import {
+    BackstageSubheader,
+    BackstageSubheaderDescription,
+    StyledMarkdownTextbox,
+    StyledSelect,
+    TabContainer,
+} from 'src/components/backstage/styles';
 import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playbook';
+import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
+
+const retrospectiveReminderOptions = [
+    {value: 0, label: 'Once'},
+    {value: 3600, label: '1hr'},
+    {value: 14400, label: '4hr'},
+    {value: 86400, label: '24hr'},
+    {value: 604800, label: '7days'},
+] as const;
 
 interface Props {
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
+    retrospectiveAccess: boolean;
     setPlaybook: (playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist) => void;
     setChangesMade: (b: boolean) => void;
-    searchUsers: (term: string) => ActionFunc;
-    getUsers: () => ActionFunc;
-    teamId?: string;
 }
 
-const RetrospectiveEdit = ({playbook, setPlaybook, setChangesMade, searchUsers, getUsers, teamId}: Props) => {
+const RetrospectiveEdit = ({
+    playbook,
+    retrospectiveAccess,
+    setPlaybook,
+    setChangesMade,
+}: Props) => {
     const {formatMessage} = useIntl();
-    const currentUserId = useSelector(getCurrentUserId);
 
-    const handlePublicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setPlaybook({
-            ...playbook,
-            create_public_playbook_run: e.target.value === 'public',
-        });
-        setChangesMade(true);
-    };
-
-    const handleUsersInput = (userId: string) => {
-        setPlaybook({
-            ...playbook,
-            member_ids: [...playbook.member_ids, userId],
-        });
-        setChangesMade(true);
-    };
-
-    const handleRemoveUser = (userId: string) => {
-        const idx = playbook.member_ids.indexOf(userId);
-        setPlaybook({
-            ...playbook,
-            member_ids: [...playbook.member_ids.slice(0, idx), ...playbook.member_ids.slice(idx + 1)],
-        });
-        setChangesMade(true);
-    };
-
-    const handleClearUsers = () => {
-        setPlaybook({
-            ...playbook,
-            member_ids: [],
-        });
-        setChangesMade(true);
-    };
+    if (!retrospectiveAccess) {
+        return (
+            <TabContainer>
+                {'Upgrade required for access to retrospective features.'}
+            </TabContainer>
+        );
+    }
 
     return (
         <TabContainer>
             <SidebarBlock>
+                <BackstageGroupToggleHeader id={'retrospective-enabled'}>
+                    <Toggle
+                        isChecked={playbook.retrospective_enabled}
+                        onChange={() => {
+                            setPlaybook({
+                                ...playbook,
+                                retrospective_enabled: !playbook.retrospective_enabled,
+                            });
+                            setChangesMade(true);
+                        }}
+                    />
+                    {formatMessage({defaultMessage: 'Enable retrospective'})}
+                </BackstageGroupToggleHeader>
+            </SidebarBlock>
+
+            <SidebarBlock id={'retrospective-reminder-interval'}>
                 <BackstageSubheader>
-                    {formatMessage({defaultMessage: 'Channel access'})}
+                    {formatMessage({defaultMessage: 'Retrospective reminder interval'})}
                     <BackstageSubheaderDescription>
-                        {formatMessage({defaultMessage: 'Determine the type of channel this playbook creates.'})}
+                        {formatMessage({defaultMessage: 'Reminds the channel at a specified interval to fill out the retrospective.'})}
                     </BackstageSubheaderDescription>
                 </BackstageSubheader>
-                <RadioContainer>
-                    <RadioLabel>
-                        <RadioInput
-                            type='radio'
-                            name='public'
-                            value={'public'}
-                            checked={playbook.create_public_playbook_run}
-                            onChange={handlePublicChange}
-                        />
-                        {formatMessage({defaultMessage: 'Public'})}
-                    </RadioLabel>
-                    <RadioLabel>
-                        <RadioInput
-                            type='radio'
-                            name='public'
-                            value={'private'}
-                            checked={!playbook.create_public_playbook_run}
-                            onChange={handlePublicChange}
-                        />
-                        {formatMessage({defaultMessage: 'Private'})}
-                    </RadioLabel>
-                </RadioContainer>
+                <StyledSelect
+                    value={retrospectiveReminderOptions.find((option) => option.value === playbook.retrospective_reminder_interval_seconds)}
+                    onChange={(option: { label: string, value: number }) => {
+                        setPlaybook({
+                            ...playbook,
+                            retrospective_reminder_interval_seconds: option ? option.value : option,
+                        });
+                        setChangesMade(true);
+                    }}
+                    options={retrospectiveReminderOptions}
+                    isClearable={false}
+                    isDisabled={!playbook.retrospective_enabled}
+                />
             </SidebarBlock>
             <SidebarBlock>
-                <SharePlaybook
-                    currentUserId={currentUserId}
-                    onAddUser={handleUsersInput}
-                    onRemoveUser={handleRemoveUser}
-                    searchProfiles={searchUsers}
-                    getProfiles={getUsers}
-                    memberIds={playbook.member_ids}
-                    onClear={handleClearUsers}
-                    teamId={teamId || playbook.team_id}
+                <BackstageSubheader>
+                    {formatMessage({defaultMessage: 'Retrospective template'})}
+                    <BackstageSubheaderDescription>
+                        {formatMessage({defaultMessage: 'Default text for the retrospective.'})}
+                    </BackstageSubheaderDescription>
+                </BackstageSubheader>
+                <StyledMarkdownTextbox
+                    className={'playbook_retrospective_template'}
+                    id={'playbook_retrospective_template_edit'}
+                    placeholder={formatMessage({defaultMessage: 'Enter retrospective template'})}
+                    value={playbook.retrospective_template}
+                    setValue={(value: string) => {
+                        setPlaybook({
+                            ...playbook,
+                            retrospective_template: value,
+                        });
+                        setChangesMade(true);
+                    }}
+                    disabled={!playbook.retrospective_enabled}
                 />
             </SidebarBlock>
         </TabContainer>
     );
 };
-
-const RadioContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-`;
-
-const RadioLabel = styled.label`
-    && {
-        margin: 0 0 8px;
-        display: flex;
-        align-items: center;
-        font-size: 14px;
-        font-weight: normal;
-        line-height: 20px;
-    }
-`;
-
-const RadioInput = styled.input`
-    && {
-        width: 16px;
-        height: 16px;
-        margin: 0 8px 0 0;
-    }
-`;
 
 export default RetrospectiveEdit;

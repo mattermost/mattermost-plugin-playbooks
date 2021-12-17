@@ -9,15 +9,14 @@ import {ActionFunc} from 'mattermost-redux/types/actions';
 import {TabContainer} from 'src/components/backstage/styles';
 import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playbook';
 import {Section, SectionTitle, Setting} from 'src/components/backstage/playbook_edit/styles';
-import {PatternedInput} from 'src/components/backstage/playbook_edit/automation/patterned_input';
 import {InviteUsers} from 'src/components/backstage/playbook_edit/automation/invite_users';
 import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation/auto_assign_owner';
 import {PatternedTextArea} from 'src/components/backstage/playbook_edit/automation/patterned_text_area';
-import {Broadcast} from 'src/components/backstage/playbook_edit/automation/broadcast';
 import {MessageOnJoin} from 'src/components/backstage/playbook_edit/automation/message_on_join';
 import {CategorizePlaybookRun} from 'src/components/backstage/playbook_edit/automation/categorize_playbook_run';
 import {InputKeywords} from 'src/components/backstage/playbook_edit/automation/input_keywords';
 import RunSummary from 'src/components/backstage/playbook_edit/automation/run_summary';
+import {CreateAChannel} from 'src/components/backstage/playbook_edit/automation/channel_access';
 
 interface Props {
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
@@ -75,29 +74,10 @@ const ActionsEdit = ({playbook, setPlaybook, setChangesMade, searchUsers, getUse
         }
     };
 
-    const handleBroadcastChannelSelected = (channelIds: string[]) => {
-        // assumes no repeated elements on any of the arrays
-        if (channelIds.length !== playbook.broadcast_channel_ids.length || channelIds.some((id) => !playbook.broadcast_channel_ids.includes(id))) {
-            setPlaybook({
-                ...playbook,
-                broadcast_channel_ids: channelIds,
-            });
-            setChangesMade(true);
-        }
-    };
-
     const handleWebhookOnCreationChange = (urls: string) => {
         setPlaybook({
             ...playbook,
             webhook_on_creation_urls: urls.split('\n'),
-        });
-        setChangesMade(true);
-    };
-
-    const handleWebhookOnStatusUpdateChange = (urls: string) => {
-        setPlaybook({
-            ...playbook,
-            webhook_on_status_update_urls: urls.split('\n'),
         });
         setChangesMade(true);
     };
@@ -152,26 +132,10 @@ const ActionsEdit = ({playbook, setPlaybook, setChangesMade, searchUsers, getUse
         setChangesMade(true);
     };
 
-    const handleToggleBroadcastChannels = () => {
-        setPlaybook({
-            ...playbook,
-            broadcast_enabled: !playbook.broadcast_enabled && playbook.status_update_enabled,
-        });
-        setChangesMade(true);
-    };
-
     const handleToggleWebhookOnCreation = () => {
         setPlaybook({
             ...playbook,
             webhook_on_creation_enabled: !playbook.webhook_on_creation_enabled,
-        });
-        setChangesMade(true);
-    };
-
-    const handleToggleWebhookOnStatusUpdate = () => {
-        setPlaybook({
-            ...playbook,
-            webhook_on_status_update_enabled: !playbook.webhook_on_status_update_enabled && playbook.status_update_enabled,
         });
         setChangesMade(true);
     };
@@ -194,14 +158,6 @@ const ActionsEdit = ({playbook, setPlaybook, setChangesMade, searchUsers, getUse
         }
     };
 
-    const handleChannelNameTemplateChange = (channelNameTemplate: string) => {
-        setPlaybook({
-            ...playbook,
-            channel_name_template: channelNameTemplate,
-        });
-        setChangesMade(true);
-    };
-
     return (
         <TabContainer>
             <Section>
@@ -220,21 +176,14 @@ const ActionsEdit = ({playbook, setPlaybook, setChangesMade, searchUsers, getUse
                 </Setting>
             </Section>
             <Section>
-                <SectionTitle>
+                <SectionTitle style={{marginBottom: '24px'}}>
                     {formatMessage({defaultMessage: 'When a run starts'})}
                 </SectionTitle>
                 <Setting id={'create-channel'}>
-                    <PatternedInput
-                        enabled={true}
-                        disableToggle={true}
-                        onToggle={() => null}
-                        input={playbook.channel_name_template}
-                        onChange={handleChannelNameTemplateChange}
-                        pattern={'[\\S][\\s\\S]*[\\S]'} // at least two non-whitespace characters
-                        placeholderText={formatMessage({defaultMessage: 'Channel name template (optional)'})}
-                        textOnToggle={formatMessage({defaultMessage: 'Create a channel'})}
-                        type={'text'}
-                        errorText={formatMessage({defaultMessage: 'Channel name is not valid.'})}
+                    <CreateAChannel
+                        playbook={playbook}
+                        setPlaybook={setPlaybook}
+                        setChangesMade={setChangesMade}
                     />
                 </Setting>
                 <Setting id={'invite-users'}>
@@ -272,36 +221,6 @@ const ActionsEdit = ({playbook, setPlaybook, setChangesMade, searchUsers, getUse
                         onToggle={handleToggleWebhookOnCreation}
                         input={playbook.webhook_on_creation_urls.join('\n')}
                         onChange={handleWebhookOnCreationChange}
-                        pattern={'https?://.*'}
-                        delimiter={'\n'}
-                        maxLength={1000}
-                        rows={3}
-                        placeholderText={formatMessage({defaultMessage: 'Enter webhook'})}
-                        textOnToggle={formatMessage({defaultMessage: 'Send outgoing webhook (One per line)'})}
-                        errorText={formatMessage({defaultMessage: 'Invalid webhook URLs'})}
-                        maxRows={64}
-                        maxErrorText={formatMessage({defaultMessage: 'Invalid entry: the maximum number of webhooks allowed is 64'})}
-                    />
-                </Setting>
-            </Section>
-            <Section>
-                <SectionTitle>
-                    {formatMessage({defaultMessage: 'When an update is posted'})}
-                </SectionTitle>
-                <Setting id={'broadcast-channels'}>
-                    <Broadcast
-                        enabled={playbook.broadcast_enabled && playbook.status_update_enabled}
-                        onToggle={handleToggleBroadcastChannels}
-                        channelIds={playbook.broadcast_channel_ids}
-                        onChannelsSelected={handleBroadcastChannelSelected}
-                    />
-                </Setting>
-                <Setting id={'playbook-run-status-update__outgoing-webhook'}>
-                    <PatternedTextArea
-                        enabled={playbook.webhook_on_status_update_enabled && playbook.status_update_enabled}
-                        onToggle={handleToggleWebhookOnStatusUpdate}
-                        input={playbook.webhook_on_status_update_urls.join('\n')}
-                        onChange={handleWebhookOnStatusUpdateChange}
                         pattern={'https?://.*'}
                         delimiter={'\n'}
                         maxLength={1000}

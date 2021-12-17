@@ -31,18 +31,16 @@ const RunSummary = ({enabled, onToggle, summary, onSummaryChanged}: Props) => {
                 />
                 <FormattedMessage defaultMessage={'Update the run Summary'}/>
             </AutomationTitle>
-            {
-                enabled &&
-                <TextboxWrapper>
-                    <StyledMarkdownTextbox
-                        className={'playbook_description'}
-                        id={'playbook_description_edit'}
-                        placeholder={formatMessage({defaultMessage: 'Define a template for a concise description that explains each run to its stakeholders.'})}
-                        value={summary}
-                        setValue={onSummaryChanged}
-                    />
-                </TextboxWrapper>
-            }
+            <TextboxWrapper>
+                <StyledMarkdownTextbox
+                    disabled={!enabled}
+                    className={'playbook_description'}
+                    id={'playbook_description_edit'}
+                    placeholder={formatMessage({defaultMessage: 'Define a template for a concise description that explains each run to its stakeholders.'})}
+                    value={summary}
+                    setValue={onSummaryChanged}
+                />
+            </TextboxWrapper>
         </StyledAutomationHeader>
     );
 };

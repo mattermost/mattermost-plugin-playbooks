@@ -298,17 +298,14 @@ const PlaybookEdit = (props: Props) => {
                             />
                             <StatusUpdatesEdit
                                 playbook={playbook}
-                                retrospectiveAccess={retrospectiveAccess}
                                 setPlaybook={setPlaybook}
                                 setChangesMade={setChangesMade}
                             />
                             <RetrospectiveEdit
                                 playbook={playbook}
+                                retrospectiveAccess={retrospectiveAccess}
                                 setPlaybook={setPlaybook}
                                 setChangesMade={setChangesMade}
-                                searchUsers={searchUsers}
-                                getUsers={getUsers}
-                                teamId={props.teamId}
                             />
                         </TabsContent>
                     </EditContent>
