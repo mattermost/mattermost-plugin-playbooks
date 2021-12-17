@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 import debounce from 'debounce';
@@ -22,16 +22,9 @@ interface ReportProps {
 }
 
 const Report = (props: ReportProps) => {
-    const [report, setReport] = useState(props.playbookRun.retrospective);
     const [publishedThisSession, setPublishedThisSession] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const {formatMessage} = useIntl();
-
-    useEffect(() => {
-        if (!publishedThisSession) {
-            setReport(props.playbookRun.retrospective);
-        }
-    }, [props.playbookRun.retrospective]);
 
     const confirmedPublish = () => {
         publishRetrospective(props.playbookRun.id, props.playbookRun.retrospective);
@@ -71,7 +64,7 @@ const Report = (props: ReportProps) => {
             </Header>
             <ReportTextArea
                 teamId={props.playbookRun.team_id}
-                text={report}
+                text={props.playbookRun.retrospective}
                 onEdit={debouncedPersistEditEvent}
                 flushChanges={() => debouncedPersistEditEvent.flush()}
             />
