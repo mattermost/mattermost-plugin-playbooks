@@ -372,5 +372,9 @@
     "5Ofkag": "Enable retrospective",
     "2563nT": "Confirm finish run",
     "2/2yg+": "Add",
-    "/ZsEUy": "Are you sure you want to delete this checklist? It will be removed from this run but will not affect the playbook."
+    "/ZsEUy": "Are you sure you want to delete this checklist? It will be removed from this run but will not affect the playbook.",
+    "pK6+CW": "@{displayName} is not a member of the [{runName}]({overviewUrl}) channel. Would you like to add them to this channel? They will have access to all of the message history.",
+    "iDMOiz": "CHANNEL MEMBERS",
+    "JqKASQ": "Add @{displayName} to Channel",
+    "5ciuDD": "NOT IN CHANNEL"
 }
