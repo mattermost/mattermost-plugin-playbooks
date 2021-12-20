@@ -1,7 +1,7 @@
 import React from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
 import {useSelector} from 'react-redux';
-import {getMyChannels, getChannel as getChannelFromRedux} from 'mattermost-redux/selectors/entities/channels';
+import {getMyChannels} from 'mattermost-redux/selectors/entities/channels';
 import General from 'mattermost-redux/constants/general';
 
 import {Channel} from 'mattermost-redux/types/channels';
@@ -27,22 +27,31 @@ const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(stat
     channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL && channel.delete_at === 0,
 );
 
-type GetChannelType = (channelID: string) => Channel
-
-const getChannel = (state: GlobalState, channelID: string): Channel => {
-    const channel = getChannelFromRedux(state, channelID);
-
-    if (channel && channel.delete_at === 0) {
-        return channel;
+const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] => {
+    if (!channelIDs || !channels) {
+        return [];
     }
-    return {display_name: 'Unknown Channel', id: channelID} as Channel;
+
+    const channelsMap = new Map<string, Channel>();
+    channels.forEach((channel: Channel) => channelsMap.set(channel.id, channel));
+
+    const result: Channel[] = [];
+    channelIDs.forEach((id: string) => {
+        let filteredChannel: Channel;
+        const channel = channelsMap.get(id);
+        if (channel && channel.delete_at === 0) {
+            filteredChannel = channel;
+        } else {
+            filteredChannel = {display_name: 'Unknown Channel', id} as Channel;
+        }
+        result.push(filteredChannel);
+    });
+    return result;
 };
 
 const ChannelSelector = (props: Props & {className?: string}) => {
     const {formatMessage} = useIntl();
     const selectableChannels = useSelector(getMyPublicAndPrivateChannels);
-
-    const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID));
 
     const onChange = (channels: Channel[], {action}: {action: string}) => {
         if (action === 'clear') {
@@ -76,7 +85,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
                channel.id.toLowerCase() === term.toLowerCase();
     };
 
-    const values = props.channelIds?.map(getChannelFromID);
+    const values = filterChannels(props.channelIds, selectableChannels);
 
     const components = props.selectComponents || defaultComponents;
 

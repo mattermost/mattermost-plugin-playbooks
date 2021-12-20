@@ -360,12 +360,10 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			return nil, errors.Wrapf(err, "failed to build the playbook run creation message")
 		}
 
-		if err := s.broadcastPlaybookRunCreationToChannels(pb.BroadcastChannelIDs, message, playbookRun, channel.Id); err != nil {
-			return nil, errors.Wrap(err, "failed to broadcast to channels")
-		}
+		s.broadcastPlaybookRunMessageToChannels(pb.BroadcastChannelIDs, &model.Post{Message: message}, creationMessage, playbookRun)
 
-		// broadcast to users who are auto-following the playbook
-		s.broadcastPostToAutoFollows(&model.Post{Message: message}, pb.ID, playbookRun.ID, userID)
+		// dm to users who are auto-following the playbook
+		s.dmPostToAutoFollows(&model.Post{Message: message}, pb.ID, playbookRun.ID, userID)
 	}
 
 	event := &TimelineEvent{
@@ -728,9 +726,9 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state.")
 	}
 
-	s.broadcastStatusUpdateToChannels(playbookRunToModify.BroadcastChannelIDs, originalPost.Clone(), playbookRunID, userID)
+	s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, originalPost.Clone(), statusUpdateMessage, playbookRunToModify)
 
-	s.broadcastPostToRunFollowers(originalPost.Clone(), "status update", playbookRunID, userID)
+	s.dmPostToRunFollowers(originalPost.Clone(), statusUpdateMessage, playbookRunID, userID)
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	if err = s.SetNewReminder(playbookRunID, options.Reminder); err != nil {
@@ -839,10 +837,10 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 		postID = post.Id
 	}
 
-	s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, message, "finish", playbookRunToModify)
+	s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, &model.Post{Message: message}, finishMessage, playbookRunToModify)
 
 	runFinishedMessage := s.buildRunFinishedMessage(playbookRunToModify, user.Username)
-	s.broadcastPostToRunFollowers(&model.Post{Message: runFinishedMessage}, "finish", playbookRunToModify.ID, userID)
+	s.dmPostToRunFollowers(&model.Post{Message: runFinishedMessage}, finishMessage, playbookRunToModify.ID, userID)
 
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(playbookRunID)
@@ -922,7 +920,7 @@ func (s *PlaybookRunServiceImpl) RestorePlaybookRun(playbookRunID, userID string
 		postID = post.Id
 	}
 
-	s.broadcastPlaybookRunMessageToChannels(playbookRunToRestore.BroadcastChannelIDs, message, "status update", playbookRunToRestore)
+	s.broadcastPlaybookRunMessageToChannels(playbookRunToRestore.BroadcastChannelIDs, &model.Post{Message: message}, restoreMessage, playbookRunToRestore)
 
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
@@ -2313,7 +2311,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, text, publi
 	}
 
 	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, text)
-	s.broadcastPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, "retrospective", playbookRunToPublish.ID, publisherID)
+	s.dmPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, retroMessage, playbookRunToPublish.ID, publisherID)
 
 	event := &TimelineEvent{
 		PlaybookRunID: playbookRunID,
@@ -2623,4 +2621,84 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string) string {
 	}
 
 	return message
+}
+
+type messageType string
+
+const (
+	creationMessage            messageType = "creation"
+	finishMessage              messageType = "finish"
+	overdueStatusUpdateMessage messageType = "overdue status update"
+	restoreMessage             messageType = "restore"
+	retroMessage               messageType = "retrospective"
+	statusUpdateMessage        messageType = "status update"
+)
+
+// broadcasting to channels
+func (s *PlaybookRunServiceImpl) broadcastPlaybookRunMessageToChannels(channelIDs []string, post *model.Post, mType messageType, playbookRun *PlaybookRun) {
+	for _, broadcastChannelID := range channelIDs {
+		post.Id = "" // Reset the ID so we avoid cloning the whole object
+		if err := s.broadcastPlaybookRunMessage(broadcastChannelID, post, mType, playbookRun); err != nil {
+			s.pluginAPI.Log.Warn(fmt.Sprintf("failed to broadcast run %s to channel", mType), "error", err.Error())
+
+			if _, err = s.poster.PostMessage(playbookRun.ChannelID, fmt.Sprintf("Failed to broadcast run %s to the configured channel.", mType)); err != nil {
+				s.pluginAPI.Log.Warn("failed to post failure message to the channel", "channelID", playbookRun.ChannelID, "error", err.Error())
+			}
+		}
+	}
+}
+
+func (s *PlaybookRunServiceImpl) broadcastPlaybookRunMessage(broadcastChannelID string, post *model.Post, mType messageType, playbookRun *PlaybookRun) error {
+	post.ChannelId = broadcastChannelID
+	if err := IsChannelActiveInTeam(post.ChannelId, playbookRun.TeamID, s.pluginAPI); err != nil {
+		return errors.Wrap(err, "announcement channel is not active")
+	}
+
+	if err := s.postMessageToThreadAndSaveRootID(playbookRun.ID, post.ChannelId, post); err != nil {
+		return errors.Wrapf(err, "error posting '%s' message, for playbook '%s', to channelID '%s'", mType, playbookRun.ID, post.ChannelId)
+	}
+
+	return nil
+}
+
+// dm to users who follow
+
+func (s *PlaybookRunServiceImpl) dmPostToRunFollowers(post *model.Post, mType messageType, playbookRunID, authorID string) {
+	followers, err := s.GetFollowers(playbookRunID)
+	if err != nil {
+		s.pluginAPI.Log.Warn(fmt.Sprintf("failed to broadcast run %s to run followers", mType))
+		return
+	}
+
+	s.dmPostToUsersWithPermission(followers, post, playbookRunID, authorID)
+}
+
+func (s *PlaybookRunServiceImpl) dmPostToAutoFollows(post *model.Post, playbookID, playbookRunID, authorID string) {
+	autoFollows, err := s.playbookService.GetAutoFollows(playbookID)
+	if err != nil {
+		s.pluginAPI.Log.Warn("failed to broadcast run creation to auto-follows for the playbook", "PlaybookID", playbookID, "error", err)
+		return
+	}
+
+	s.dmPostToUsersWithPermission(autoFollows, post, playbookRunID, authorID)
+}
+
+func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, post *model.Post, playbookRunID, authorID string) {
+	for _, user := range users {
+		// Do not send update to the author
+		if user == authorID {
+			continue
+		}
+		// Check for access permissions
+		if err := UserCanViewPlaybookRun(user, playbookRunID, s.playbookService, s, s.pluginAPI); err != nil {
+			continue
+		}
+
+		post.Id = "" // Reset the ID so we avoid cloning the whole object
+		post.RootId = ""
+		if err := s.poster.DM(user, post); err != nil {
+			s.pluginAPI.Log.Warn("failed to broadcast post to the user",
+				"user", user, "error", err.Error())
+		}
+	}
 }

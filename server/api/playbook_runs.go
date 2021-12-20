@@ -420,15 +420,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		}
 
 		if pb.BroadcastEnabled {
-			channelIDs := []string{}
-			for _, channelID := range pb.BroadcastChannelIDs {
-				channel, err := h.pluginAPI.Channel.Get(channelID)
-				if err != nil || channel.DeleteAt != 0 {
-					continue
-				}
-				channelIDs = append(channelIDs, channelID)
-			}
-			playbookRun.BroadcastChannelIDs = channelIDs
+			playbookRun.BroadcastChannelIDs = pb.BroadcastChannelIDs
 		}
 
 		playbookRun.WebhookOnCreationURLs = []string{}
