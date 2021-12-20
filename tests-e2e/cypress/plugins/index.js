@@ -65,7 +65,7 @@ module.exports = (on, config) => {
         const timeInSec = timeInMillis / 1000;
         const XMLResult = `<testsuite><testcase file="${spec.relative}" time="${timeInSec}"></testcase></testsuite>`;
 
-        shell.echo(XMLResult).toEnd('./cypress/results/junit.xml');
+        shell.echo(XMLResult).toEnd('temp-results.txt');
     });
 
     installLogsPrinter(on);

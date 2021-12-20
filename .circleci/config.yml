@@ -141,9 +141,10 @@ commands:
           no_output_timeout: 30m
           command: |
             cd tests-e2e
-            echo "<?xml version="1.0" encoding="UTF-8"?><testsuites name=\"Cypress tests\">" > ./cypress/results/junit.xml
             circleci tests glob "cypress/integration/**/*.js" | circleci tests split --split-by=timings > ./tests-to-run
             npm run test -- --spec "$(cat ./tests-to-run | tr '\n' ',')"
+            echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?><testsuites name=\"Cypress tests\">" > ./cypress/results/junit.xml
+            cat temp-results.txt >> ./cypress/results/junit.xml
             echo "</testsuites>" >> ./cypress/results/junit.xml
       - *save_cypress_cache
       - store_test_results:
