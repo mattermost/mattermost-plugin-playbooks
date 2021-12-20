@@ -2721,12 +2721,8 @@ func buildRunsInProgressMessage(runs []RunLink, siteURL string, locale string) s
 	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
 	for _, run := range runs {
-		values := map[string]interface{}{
-			"LinkName": run.ChannelDisplayName,
-			"LinkUrl": fmt.Sprintf("%s/%s/channels/%s?telem=todo_runsinprogress_clicked&forceRHSOpen",
-				siteURL, run.TeamName, run.ChannelName),
-		}
-		msg += T("app.user.digest.runs_in_progress.md_link_item", values) + "\n"
+		msg += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_runsinprogress_clicked&forceRHSOpen)\n",
+			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
 	}
 
 	return msg
@@ -2745,12 +2741,11 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string, locale string) stri
 
 	for _, run := range runs {
 		values := map[string]interface{}{
-			"LinkName": run.ChannelDisplayName,
-			"LinkUrl": fmt.Sprintf("%s/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen",
-				siteURL, run.TeamName, run.ChannelName),
 			"Username": run.OwnerUserName,
 		}
-		msg += T("app.user.digest.overdue_status_updates.md_link_item", values) + "\n"
+		appended := " " + T("app.user.digest.overdue_status_updates.md_link_item_appended", values)
+		msg += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen)",
+			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName) + appended + "\n"
 	}
 
 	return msg

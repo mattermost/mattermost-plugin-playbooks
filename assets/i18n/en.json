@@ -8,8 +8,8 @@
     "translation": "Overdue Status Updates"
   },
   {
-    "id": "app.user.digest.overdue_status_updates.md_link_item",
-    "translation": "- [{{.LinkName}}]({{.LinkUrl}}) (Owner: @{{.Username}})"
+    "id": "app.user.digest.overdue_status_updates.md_link_item_appended",
+    "translation": "(Owner: @{{.Username}})"
   },
   {
     "id": "app.user.digest.overdue_status_updates.num_overdue",
@@ -25,10 +25,6 @@
   {
     "id": "app.user.digest.runs_in_progress.heading",
     "translation": "Runs in Progress"
-  },
-  {
-    "id": "app.user.digest.runs_in_progress.md_link_item",
-    "translation": "- [{{.LinkName}}]({{.LinkUrl}})"
   },
   {
     "id": "app.user.digest.runs_in_progress.num_in_progress",
