@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 /* eslint-disable no-console */
+const shell = require('shelljs');
 
 const installLogsPrinter = require('cypress-terminal-report/src/installLogsPrinter');
 
@@ -57,6 +58,14 @@ module.exports = (on, config) => {
         }
 
         return launchOptions;
+    });
+
+    on('after:spec', (spec, results) => {
+        const timeInMillis = results.stats.wallClockDuration;
+        const timeInSec = timeInMillis / 1000;
+        const XMLResult = `<testcase file="${spec.relative}" time="${timeInSec}"></testcase>`;
+
+        shell.echo(XMLResult).toEnd('./cypress/results/junit.xml');
     });
 
     installLogsPrinter(on);
