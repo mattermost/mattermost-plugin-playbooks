@@ -148,6 +148,8 @@ commands:
           path: tests-e2e/cypress/results
       - store_artifacts:
           path: tests-e2e/cypress/videos
+      - store_artifacts:
+          path: tests-e2e/cypress/results
 
 jobs:
   lint:
