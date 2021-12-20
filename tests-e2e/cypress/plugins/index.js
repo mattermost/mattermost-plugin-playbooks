@@ -63,7 +63,7 @@ module.exports = (on, config) => {
     on('after:spec', (spec, results) => {
         const timeInMillis = results.stats.wallClockDuration;
         const timeInSec = timeInMillis / 1000;
-        const XMLResult = `<testcase file="${spec.relative}" time="${timeInSec}"></testcase>`;
+        const XMLResult = `<testsuite><testcase file="${spec.relative}" time="${timeInSec}"></testcase></testsuite>`;
 
         shell.echo(XMLResult).toEnd('./cypress/results/junit.xml');
     });
