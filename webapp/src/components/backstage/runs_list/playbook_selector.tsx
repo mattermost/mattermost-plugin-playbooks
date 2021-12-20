@@ -10,6 +10,7 @@ import {useClientRect} from 'src/hooks';
 import {PlaybookRunFilterButton} from '../../backstage/styles';
 import {Playbook} from '../../../types/playbook';
 import {SelectedButton} from 'src/components/team/team_selector';
+import {DropdownSelectorStyle} from 'src/components/profile/dropdown_selector_style';
 
 export interface Option {
     value: string;
@@ -263,16 +264,18 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
         'PlaybookRunFilter--active', 'profile-dropdown--active');
 
     return (
-        <ProfileDropdown className={classes}>
-            {target}
-            <ChildContainer
-                className='playbook-run-user-select__container'
-                moveUp={moveUp}
-                showOnRight={showOnRight}
-            >
-                {children}
-            </ChildContainer>
-            <Blanket onClick={onClose}/>
-        </ProfileDropdown>
+        <DropdownSelectorStyle>
+            <ProfileDropdown className={classes}>
+                {target}
+                <ChildContainer
+                    className='playbook-run-user-select__container'
+                    moveUp={moveUp}
+                    showOnRight={showOnRight}
+                >
+                    {children}
+                </ChildContainer>
+                <Blanket onClick={onClose}/>
+            </ProfileDropdown>
+        </DropdownSelectorStyle>
     );
 };
