@@ -358,5 +358,22 @@
     "5Ofkag": "Maak terugblik mogelijk",
     "2563nT": "Bevestig beëindigen uitvoering",
     "2/2yg+": "Toevoegen",
-    "/ZsEUy": "Weet je zeker dat je deze checklist wil verwijderen? Hij zal uit deze run worden verwijderd, maar heeft geen invloed op het playbook."
+    "/ZsEUy": "Weet je zeker dat je deze checklist wil verwijderen? Hij zal uit deze run worden verwijderd, maar heeft geen invloed op het playbook.",
+    "vaYTD+": "Er zijn {outstanding, plural, =1 {is # openstaande taak} other {are # openstaande taken}}. Ben je zeker dat je deze uitvoering wil afsluiten?",
+    "q0cpUe": "Checklist toevoegen",
+    "pK6+CW": "@{displayName} is geen lid van het [{runName}]({overviewUrl}) kanaal. Wil je deze toevoegen aan dit kanaal? Deze zal toegang hebben tot de gehele berichtengeschiedenis.",
+    "nSFBC2": "+ Taak toevoegen",
+    "m/Q4ye": "Hernoem checklist",
+    "k1djnL": "Checklist verwijderen",
+    "iXNbPf": "Hernoemen",
+    "iDMOiz": "KANAALLEDEN",
+    "X2K92H": "Naam checklist",
+    "WbsomC": "Publiceer terugblik",
+    "TxCTXQ": "Weet je zeker dat je de uitvoering wil markeren als afgewerkt?",
+    "QywYDe": "Markeer de uitvoering ook als voltooid",
+    "MrJPOh": "Statusupdates inschakelen",
+    "JqKASQ": "Voeg @{displayName} toe aan kanaal",
+    "Ja1sVR": "Statusupdates waren uitgeschakeld voor deze playbook run.",
+    "I5NMJ8": "Meer",
+    "D9IV7i": "Een terugblik was uitgeschakeld voor deze playbook run."
 }
