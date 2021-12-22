@@ -250,9 +250,7 @@ ifneq ($(HAS_SERVER),)
 	$(GO) get -d -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
 	mkdir -p server/i18n
 	cp assets/i18n/en.json server/i18n/en.json
-
 	cd server && $(GOBIN)/mmgotool i18n extract --portal-dir="" --skip-dynamic
-
 	mv server/i18n/en.json assets/i18n/en.json
 	rmdir server/i18n
 endif
@@ -263,11 +261,8 @@ ifneq ($(HAS_SERVER),)
 	$(GO) get -d -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
 	mkdir -p server/i18n
 	cp assets/i18n/en.json server/i18n/en.json
-
 	cd server && $(GOBIN)/mmgotool i18n clean-empty --portal-dir="" --check
 	cd server && $(GOBIN)/mmgotool i18n check-empty-src --portal-dir=""
-
-	mv server/i18n/en.json assets/i18n/en.json
 	rmdir server/i18n
 endif
 

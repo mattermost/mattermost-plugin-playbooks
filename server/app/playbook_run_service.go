@@ -1736,10 +1736,6 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 		return err
 	}
 
-	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	}
-
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
 		return err
