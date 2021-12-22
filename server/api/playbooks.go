@@ -52,7 +52,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("", handler.updatePlaybook).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("", handler.archivePlaybook).Methods(http.MethodDelete)
-	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPost)
+	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPut)
 
 	autoFollowsRouter := playbookRouter.PathPrefix("/autofollows").Subrouter()
 	autoFollowRouter := autoFollowsRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
