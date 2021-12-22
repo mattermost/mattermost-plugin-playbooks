@@ -125,6 +125,7 @@ const PlaybookPreviewActions = (props: Props) => {
                                 profileButtonClass={'Assigned-button'}
                                 enableEdit={false}
                                 getUsers={() => Promise.resolve([])}
+                                getUsersInTeam={() => Promise.resolve([])}
                             />
                         )}
                     />

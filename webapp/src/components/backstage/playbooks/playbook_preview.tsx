@@ -46,7 +46,7 @@ const PlaybookPreview = (props: Props) => {
 
     return (
         <Container>
-            <Content>
+            <Content data-testid='preview-content'>
                 {description}
                 {checklists}
                 {actions}

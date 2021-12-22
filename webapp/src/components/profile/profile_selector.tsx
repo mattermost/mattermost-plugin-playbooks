@@ -3,6 +3,7 @@
 
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import classNames from 'classnames';
 import styled, {css} from 'styled-components';
@@ -11,16 +12,17 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
 
-import './profile_selector.scss';
 import Profile from 'src/components/profile/profile';
 import ProfileButton from 'src/components/profile/profile_button';
 import {useClientRect} from 'src/hooks';
 import {PlaybookRunFilterButton} from '../backstage/styles';
+import {DropdownSelectorStyle} from 'src/components/profile/dropdown_selector_style';
 
 export interface Option {
     value: string;
     label: JSX.Element | string;
-    userId: string;
+    userType: string;
+    user: UserProfile;
 }
 
 interface ActionObj {
@@ -42,7 +44,8 @@ interface Props {
     defaultValue?: string;
     selfIsFirstOption?: boolean;
     getUsers: () => Promise<UserProfile[]>;
-    onSelectedChange?: (userId?: string) => void;
+    getUsersInTeam: () => Promise<UserProfile[]>;
+    onSelectedChange?: (userType?: string, user?: UserProfile) => void;
     customControlProps?: any;
     showOnRight?: boolean;
     className?: string;
@@ -50,6 +53,7 @@ interface Props {
 
 export default function ProfileSelector(props: Props) {
     const currentUserId = useSelector<GlobalState, string>(getCurrentUserId);
+    const {formatMessage} = useIntl();
 
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
@@ -70,6 +74,7 @@ export default function ProfileSelector(props: Props) {
     }, [props.controlledOpenToggle]);
 
     const [userOptions, setUserOptions] = useState<Option[]>([]);
+    const [userNotInChannelOptions, setUserNotInChannelOptions] = useState<Option[]>([]);
 
     async function fetchUsers() {
         const formatName = (descriptionSuffix: string) => {
@@ -93,7 +98,23 @@ export default function ProfileSelector(props: Props) {
             return props.selfIsFirstOption && userId === currentUserId;
         };
 
-        const users = await props.getUsers();
+        const [users, usersInTeam] = await Promise.all([props.getUsers(), props.getUsersInTeam()]);
+        const usersNotInChannel = usersInTeam.filter((user) => !users.includes(user));
+
+        const optionNotInTeamList = usersNotInChannel.map((user: UserProfile) => {
+            return ({
+                value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
+                label: (
+                    <Profile
+                        userId={user.id}
+                        nameFormatter={needsSuffix(user.id) ? formatName(' (assign to me)') : formatName('')}
+                    />
+                ),
+                userType: 'NonMember',
+                user,
+            } as Option);
+        });
+
         const optionList = users.map((user: UserProfile) => {
             return ({
                 value: nameAsText(user.username, user.first_name, user.last_name, user.nickname),
@@ -103,18 +124,20 @@ export default function ProfileSelector(props: Props) {
                         nameFormatter={needsSuffix(user.id) ? formatName(' (assign to me)') : formatName('')}
                     />
                 ),
-                userId: user.id,
+                userType: 'Member',
+                user,
             } as Option);
         });
 
         if (props.selfIsFirstOption) {
-            const idx = optionList.findIndex((elem) => elem.userId === currentUserId);
+            const idx = optionList.findIndex((elem) => elem.user.id === currentUserId);
             if (idx > 0) {
                 const currentUser = optionList.splice(idx, 1);
                 optionList.unshift(currentUser[0]);
             }
         }
 
+        setUserNotInChannelOptions(optionNotInTeamList);
         setUserOptions(optionList);
     }
 
@@ -131,8 +154,7 @@ export default function ProfileSelector(props: Props) {
         if (userOptions === []) {
             return;
         }
-
-        const user = userOptions.find((option: Option) => option.userId === props.selectedUserId);
+        const user = userOptions.find((option: Option) => option.user.id === props.selectedUserId);
         if (user) {
             setSelected(user);
         } else {
@@ -145,11 +167,11 @@ export default function ProfileSelector(props: Props) {
             return;
         }
         toggleOpen();
-        if (value?.userId === selected?.userId) {
+        if (value?.user.id === selected?.user.id) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.userId);
+            props.onSelectedChange(value?.userType, value?.user);
         }
     };
 
@@ -239,6 +261,9 @@ export default function ProfileSelector(props: Props) {
         Control: props.customControl,
     } : noDropdown;
 
+    const selectOptions = (userNotInChannelOptions.length === 0) ? userOptions : [{label: formatMessage({defaultMessage: 'CHANNEL MEMBERS'}), options: userOptions},
+        {label: formatMessage({defaultMessage: 'NOT IN CHANNEL'}), options: userNotInChannelOptions}];
+
     return (
         <Dropdown
             isOpen={isOpen}
@@ -255,7 +280,7 @@ export default function ProfileSelector(props: Props) {
                 hideSelectedOptions={false}
                 isClearable={props.isClearable}
                 menuIsOpen={true}
-                options={userOptions}
+                options={selectOptions}
                 placeholder={'Search'}
                 styles={selectStyles}
                 tabSelectsValue={false}
@@ -330,17 +355,19 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
         'PlaybookRunFilter--active', 'profile-dropdown--active');
 
     return (
-        <ProfileDropdown className={classes}>
-            {target}
-            <ChildContainer
-                className='playbook-run-user-select__container'
-                moveUp={moveUp}
-                showOnRight={showOnRight}
-            >
-                {children}
-            </ChildContainer>
-            <Blanket onClick={onClose}/>
-        </ProfileDropdown>
+        <DropdownSelectorStyle>
+            <ProfileDropdown className={classes}>
+                {target}
+                <ChildContainer
+                    className='playbook-run-user-select__container'
+                    moveUp={moveUp}
+                    showOnRight={showOnRight}
+                >
+                    {children}
+                </ChildContainer>
+                <Blanket onClick={onClose}/>
+            </ProfileDropdown>
+        </DropdownSelectorStyle>
     );
 };
 
