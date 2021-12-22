@@ -381,5 +381,6 @@
     "/ZsEUy": "Biztos, hogy törölni szeretné ezt az ellenőrzőlistát? Eltávolításra kerül ebből a futtatásból, de nem befolyásolja a forgatókönyvet.",
     "JqKASQ": "@{displayName} hozzáadása a Csatornához",
     "iDMOiz": "CSATORNA TAGJAI",
-    "5ciuDD": "NINCS A CSATORNÁBAN"
+    "5ciuDD": "NINCS A CSATORNÁBAN",
+    "pK6+CW": "@{displayName} nem taga a [{runName}]({overviewUrl}) csatornának. Szeretné hozzáadni a csatornához? Hozzáférése lesz az összes korábbi üzenethez."
 }
