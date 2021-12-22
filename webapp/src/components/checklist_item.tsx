@@ -8,6 +8,7 @@ import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entiti
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
+import {UserProfile} from 'mattermost-redux/types/users';
 import {Overlay, Popover, PopoverProps} from 'react-bootstrap';
 import Scrollbars from 'react-custom-scrollbars';
 import {useDispatch, useSelector} from 'react-redux';
@@ -404,11 +405,11 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
         return profilesInTeam;
     };
 
-    const onAssigneeChange = async (userId?: string) => {
+    const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
         if (!props.playbookRunId) {
             return;
         }
-        const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, userId);
+        const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, user?.id);
         if (response.error) {
             // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console
