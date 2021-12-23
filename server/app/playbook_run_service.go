@@ -18,6 +18,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/httptools"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/shared/i18n"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 )
@@ -79,8 +80,17 @@ const DialogFieldItemDescriptionKey = "description"
 const DialogFieldItemCommandKey = "command"
 
 // NewPlaybookRunService creates a new PlaybookRunServiceImpl.
-func NewPlaybookRunService(pluginAPI *pluginapi.Client, store PlaybookRunStore, poster bot.Poster, logger bot.Logger,
-	configService config.Service, scheduler JobOnceScheduler, telemetry PlaybookRunTelemetry, api plugin.API, playbookService PlaybookService) *PlaybookRunServiceImpl {
+func NewPlaybookRunService(
+	pluginAPI *pluginapi.Client,
+	store PlaybookRunStore,
+	poster bot.Poster,
+	logger bot.Logger,
+	configService config.Service,
+	scheduler JobOnceScheduler,
+	telemetry PlaybookRunTelemetry,
+	api plugin.API,
+	playbookService PlaybookService,
+) *PlaybookRunServiceImpl {
 	return &PlaybookRunServiceImpl{
 		pluginAPI:       pluginAPI,
 		store:           store,
@@ -1725,20 +1735,25 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 	if err != nil {
 		return err
 	}
-	part1 := buildRunsOverdueMessage(runsOverdue, siteURL)
+
+	user, err := s.pluginAPI.User.Get(userID)
+	if err != nil {
+		return err
+	}
+	part1 := buildRunsOverdueMessage(runsOverdue, siteURL, user.Locale)
 
 	runsAssigned, err := s.GetRunsWithAssignedTasks(userID)
 	if err != nil {
 		return err
 	}
-	part2 := buildAssignedTaskMessageAndTotal(runsAssigned, siteURL)
+	part2 := buildAssignedTaskMessageAndTotal(runsAssigned, siteURL, user.Locale)
 
 	if force {
 		runsInProgress, err := s.GetParticipatingRuns(userID)
 		if err != nil {
 			return err
 		}
-		part3 := buildRunsInProgressMessage(runsInProgress, siteURL)
+		part3 := buildRunsInProgressMessage(runsInProgress, siteURL, user.Locale)
 
 		return s.poster.DM(userID, &model.Post{Message: part1 + part2 + part3})
 	}
@@ -2661,79 +2676,73 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 }
 
-func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string) string {
+func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string, locale string) string {
+	T := i18n.GetUserTranslations(locale)
 	total := 0
 	for _, run := range runs {
 		total += len(run.Tasks)
 	}
 
+	msg := "##### " + T("app.user.digest.tasks.heading") + "\n"
+
 	if total == 0 {
-		return "##### Your Outstanding Tasks\nYou have 0 outstanding tasks.\n"
+		return msg + T("app.user.digest.tasks.zero_outstanding") + "\n"
 	}
 
-	taskPlural := "1 outstanding task"
-	if total > 1 {
-		taskPlural = fmt.Sprintf("%d total outstanding tasks", total)
-	}
-	runPlural := "1 run"
-	if len(runs) > 1 {
-		runPlural = fmt.Sprintf("%d runs", len(runs))
-	}
-
-	message := fmt.Sprintf("##### Your Outstanding Tasks\nYou have %s in %s:\n\n", taskPlural, runPlural)
+	msg += T("app.user.digest.tasks.num_outstanding", total) + "\n\n"
 
 	for _, run := range runs {
-		message += fmt.Sprintf("[%s](%s/%s/channels/%s?telem=todo_assignedtask_clicked&forceRHSOpen)\n",
+		msg += fmt.Sprintf("[%s](%s/%s/channels/%s?telem=todo_assignedtask_clicked&forceRHSOpen)\n",
 			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
 
 		for _, task := range run.Tasks {
-			message += fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
+			msg += fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
 		}
 	}
 
-	return message
+	return msg
 }
 
-func buildRunsInProgressMessage(runs []RunLink, siteURL string) string {
+func buildRunsInProgressMessage(runs []RunLink, siteURL string, locale string) string {
+	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 
+	msg := "\n"
+
+	msg += "##### " + T("app.user.digest.runs_in_progress.heading") + "\n"
 	if total == 0 {
-		return "\n##### Runs in Progress\nYou have 0 runs currently in progress.\n"
+		return msg + T("app.user.digest.runs_in_progress.zero_in_progress") + "\n"
 	}
 
-	runPlural := "run"
-	if total > 1 {
-		runPlural += "s"
-	}
-
-	message := fmt.Sprintf("\n##### Runs in Progress\nYou have %d %s currently in progress:\n", total, runPlural)
+	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
 	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_runsinprogress_clicked&forceRHSOpen)\n",
+		msg += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_runsinprogress_clicked&forceRHSOpen)\n",
 			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
 	}
 
-	return message
+	return msg
 }
 
-func buildRunsOverdueMessage(runs []RunLink, siteURL string) string {
+func buildRunsOverdueMessage(runs []RunLink, siteURL string, locale string) string {
+	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
-
+	msg := "\n"
+	msg += "##### " + T("app.user.digest.overdue_status_updates.heading") + "\n"
 	if total == 0 {
-		return "\n##### Overdue Status Updates\nYou have 0 runs overdue.\n"
+		return msg + T("app.user.digest.overdue_status_updates.zero_overdue") + "\n"
 	}
 
-	runPlural := "run"
-	if total > 1 {
-		runPlural += "s"
-	}
-
-	message := fmt.Sprintf("\n##### Overdue Status Updates\nYou have %d %s overdue for a status update:\n", total, runPlural)
+	msg += T("app.user.digest.overdue_status_updates.num_overdue", total) + "\n"
 
 	for _, run := range runs {
-		message += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen) (Owner: @%s)\n",
-			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName, run.OwnerUserName)
+		values := map[string]interface{}{
+			"Username": run.OwnerUserName,
+		}
+		appended := " " + T("app.user.digest.overdue_status_updates.md_link_item_appended", values)
+		msg += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen)",
+			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName) + appended + "\n"
 	}
 
-	return message
+	return msg
 }
