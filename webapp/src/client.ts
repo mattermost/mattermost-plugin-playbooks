@@ -25,7 +25,6 @@ import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
 import {
     Checklist,
-    ChecklistItem,
     ChecklistItemState,
     FetchPlaybooksParams,
     FetchPlaybooksReturn,

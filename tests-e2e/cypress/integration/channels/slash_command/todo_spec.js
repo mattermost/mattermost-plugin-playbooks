@@ -169,7 +169,7 @@ describe('channels > slash command > todo', () => {
             cy.getLastPost().within((post) => {
                 // * Should show titles
                 cy.wrap(post).contains('You have 0 runs overdue.');
-                cy.wrap(post).contains('You have 4 total outstanding tasks in 3 runs:');
+                cy.wrap(post).contains('You have 4 total outstanding tasks:');
 
                 // * Should show 3 runs
                 cy.get('a').then((links) => {
@@ -202,7 +202,7 @@ describe('channels > slash command > todo', () => {
             cy.getLastPost().within((post) => {
                 // * Should show titles
                 cy.wrap(post).contains('You have 0 runs overdue.');
-                cy.wrap(post).contains('You have 2 total outstanding tasks in 2 runs:');
+                cy.wrap(post).contains('You have 2 total outstanding tasks:');
 
                 // * Should show 2 runs
                 cy.get('a').then((links) => {

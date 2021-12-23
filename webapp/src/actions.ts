@@ -5,7 +5,10 @@ import {AnyAction, Dispatch} from 'redux';
 import {generateId} from 'mattermost-redux/utils/helpers';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import {GetStateFunc} from 'mattermost-redux/types/actions';
+import {addChannelMember} from 'mattermost-redux/actions/channels';
+import {DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
+
+import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
@@ -146,6 +149,14 @@ export function addNewTask(checklist: number) {
         const currentTeamId = getCurrentTeamId(getState());
 
         await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, currentTeamId);
+    };
+}
+
+export function addToCurrentChannel(userId: string) {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
+        const currentChannelId = getCurrentChannelId(getState());
+
+        dispatch(addChannelMember(currentChannelId, userId));
     };
 }
 
