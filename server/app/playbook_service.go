@@ -116,7 +116,7 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 	}
 
 	if playbook.DeleteAt == 0 {
-		return errors.New("can't restore an undeleted playbook")
+		return nil
 	}
 
 	if err := s.store.Restore(playbook.ID); err != nil {
