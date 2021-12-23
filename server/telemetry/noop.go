@@ -75,6 +75,10 @@ func (t *NoopTelemetry) ModifyCheckedState(string, string, app.ChecklistItem, bo
 func (t *NoopTelemetry) SetAssignee(string, string, app.ChecklistItem) {
 }
 
+// MoveChecklist does nothing.
+func (t *NoopTelemetry) MoveChecklist(string, string, app.Checklist) {
+}
+
 // MoveTask does nothing.
 func (t *NoopTelemetry) MoveTask(string, string, app.ChecklistItem) {
 }

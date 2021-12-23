@@ -83,7 +83,8 @@ func NewPlaybookRunHandler(router *mux.Router, playbookRunService app.PlaybookRu
 
 	checklistsRouter := playbookRunRouterAuthorized.PathPrefix("/checklists").Subrouter()
 	checklistsRouter.HandleFunc("", handler.addChecklist).Methods(http.MethodPost)
-	checklistsRouter.HandleFunc("/move", handler.moveChecklistItem).Methods(http.MethodPost)
+	checklistsRouter.HandleFunc("/move", handler.moveChecklist).Methods(http.MethodPost)
+	checklistsRouter.HandleFunc("/move-item", handler.moveChecklistItem).Methods(http.MethodPost)
 
 	checklistRouter := checklistsRouter.PathPrefix("/{checklist:[0-9]+}").Subrouter()
 	checklistRouter.HandleFunc("", handler.removeChecklist).Methods(http.MethodDelete)
@@ -1466,6 +1467,28 @@ func (h *PlaybookRunHandler) renameChecklist(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err := h.playbookRunService.RenameChecklist(id, userID, checklistNum, modificationParams.NewTitle); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) moveChecklist(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var params struct {
+		SourceChecklistIdx int `json:"source_checklist_idx"`
+		DestChecklistIdx   int `json:"dest_checklist_idx"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal edit params", err)
+		return
+	}
+
+	if err := h.playbookRunService.MoveChecklist(id, userID, params.SourceChecklistIdx, params.DestChecklistIdx); err != nil {
 		h.HandleError(w, err)
 		return
 	}

@@ -1641,6 +1641,38 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 	return nil
 }
 
+// MoveChecklist moves a checklist to a new location
+func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sourceChecklistIdx, destChecklistIdx int) error {
+	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, sourceChecklistIdx)
+	if err != nil {
+		return err
+	}
+
+	if destChecklistIdx < 0 || destChecklistIdx >= len(playbookRunToModify.Checklists) {
+		return errors.New("invalid destChecklist")
+	}
+
+	// Get checklist to move
+	checklistMoved := playbookRunToModify.Checklists[sourceChecklistIdx]
+
+	// Delete checklist to move
+	copy(playbookRunToModify.Checklists[sourceChecklistIdx:], playbookRunToModify.Checklists[sourceChecklistIdx+1:])
+	playbookRunToModify.Checklists[len(playbookRunToModify.Checklists)-1] = Checklist{}
+
+	// Insert checklist in new location
+	copy(playbookRunToModify.Checklists[destChecklistIdx+1:], playbookRunToModify.Checklists[destChecklistIdx:])
+	playbookRunToModify.Checklists[destChecklistIdx] = checklistMoved
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.MoveChecklist(playbookRunID, userID, checklistMoved)
+
+	return nil
+}
+
 // MoveChecklistItem moves a checklist item to a new location
 func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string, sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx int) error {
 	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, sourceChecklistIdx, sourceItemIdx)

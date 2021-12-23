@@ -74,7 +74,7 @@ const RHSChecklist = (props: Props) => {
             <Droppable
                 droppableId={props.checklistIndex.toString()}
                 direction='vertical'
-                type='checklist'
+                type='checklist-item'
             >
                 {(droppableProvided: DroppableProvided) => (
                     <EmptyChecklistContainer
@@ -100,7 +100,7 @@ const RHSChecklist = (props: Props) => {
         <Droppable
             droppableId={props.checklistIndex.toString()}
             direction='vertical'
-            type='checklist'
+            type='checklist-item'
         >
             {(droppableProvided: DroppableProvided) => (
                 <ChecklistContainer className='checklist'>

@@ -51,6 +51,7 @@ const (
 	actionAddChecklist    = "add_checklist"
 	actionRemoveChecklist = "remove_checklist"
 	actionRenameChecklist = "rename_checklist"
+	actionMoveChecklist   = "move_checklist"
 
 	eventPlaybook      = "playbook"
 	actionUpdate       = "update"
@@ -342,6 +343,13 @@ func (t *RudderTelemetry) RemoveChecklist(playbookRunID, userID string, checklis
 func (t *RudderTelemetry) RenameChecklist(playbookRunID, userID string, checklist app.Checklist) {
 	properties := checklistProperties(playbookRunID, userID, checklist)
 	properties["Action"] = actionRenameChecklist
+	t.track(eventChecklists, properties)
+}
+
+// MoveChecklist tracks the movement of a checklist
+func (t *RudderTelemetry) MoveChecklist(playbookRunID, userID string, checklist app.Checklist) {
+	properties := checklistProperties(playbookRunID, userID, checklist)
+	properties["Action"] = actionMoveChecklist
 	t.track(eventChecklists, properties)
 }
 
