@@ -42,7 +42,7 @@ const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] =>
         if (channel && channel.delete_at === 0) {
             filteredChannel = channel;
         } else {
-            filteredChannel = {display_name: 'Unknown Channel', id} as Channel;
+            filteredChannel = {display_name: '', id} as Channel;
         }
         result.push(filteredChannel);
     });
@@ -68,7 +68,7 @@ const ChannelSelector = (props: Props & {className?: string}) => {
     const formatOptionLabel = (channel: Channel) => {
         return (
             <React.Fragment>
-                {channel.display_name}
+                {channel.display_name || formatMessage({defaultMessage: 'Unknown Channel'})}
             </React.Fragment>
         );
     };
