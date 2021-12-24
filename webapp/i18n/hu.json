@@ -382,5 +382,6 @@
     "JqKASQ": "@{displayName} hozzáadása a Csatornához",
     "iDMOiz": "CSATORNA TAGJAI",
     "5ciuDD": "NINCS A CSATORNÁBAN",
-    "pK6+CW": "@{displayName} nem taga a [{runName}]({overviewUrl}) csatornának. Szeretné hozzáadni a csatornához? Hozzáférése lesz az összes korábbi üzenethez."
+    "pK6+CW": "@{displayName} nem taga a [{runName}]({overviewUrl}) csatornának. Szeretné hozzáadni a csatornához? Hozzáférése lesz az összes korábbi üzenethez.",
+    "Lo10yH": "Ismeretlen csatorna"
 }
