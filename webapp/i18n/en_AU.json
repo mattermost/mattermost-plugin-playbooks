@@ -376,5 +376,6 @@
     "pK6+CW": "@{displayName} is not a member of the [{runName}]({overviewUrl}) channel. Would you like to add them to this channel? They will have access to all of the message history.",
     "iDMOiz": "CHANNEL MEMBERS",
     "JqKASQ": "Add @{displayName} to Channel",
-    "5ciuDD": "NOT IN CHANNEL"
+    "5ciuDD": "NOT IN CHANNEL",
+    "Lo10yH": "Unknown Channel"
 }
