@@ -116,6 +116,17 @@ export default class Plugin {
         registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
         registry.registerRootComponent(PostMenuModal);
 
+        // App Bar icon
+        if (registry.registerAppBarComponent) {
+            const siteUrl = getConfig(store.getState())?.SiteURL || '';
+            const iconURL = `${siteUrl}/plugins/${pluginId}/public/app-bar-icon.png`;
+            registry.registerAppBarComponent(
+                iconURL,
+                boundToggleRHSAction,
+                ChannelHeaderTooltip,
+            );
+        }
+
         // Websocket listeners
         registry.registerReconnectHandler(handleReconnect(store.getState, store.dispatch));
         registry.registerWebSocketEventHandler(WEBSOCKET_PLAYBOOK_RUN_UPDATED, handleWebsocketPlaybookRunUpdated(store.getState, store.dispatch));
