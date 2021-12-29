@@ -10,7 +10,7 @@ interface Props {
     show: boolean;
     title: React.ReactNode;
     message: React.ReactNode;
-    confirmButtonText?: React.ReactNode;
+    confirmButtonText: React.ReactNode;
     onConfirm: () => void;
     onCancel: () => void;
 }
@@ -18,9 +18,9 @@ interface Props {
 const ConfirmModalLight = ({show, title, message, confirmButtonText, onConfirm, onCancel}: Props) => {
     return (
         <ConfirmModal
-            id={'Confirm-modal-light'}
+            id={'confirm-modal-light'}
             show={show}
-            confirmButtonText={confirmButtonText}
+            confirmButtonText={<div id='confirm-modal-light-button'>{confirmButtonText}</div>}
             autoCloseOnCancelButton={true}
             autoCloseOnConfirmButton={true}
             handleConfirm={onConfirm}

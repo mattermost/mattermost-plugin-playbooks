@@ -64,10 +64,13 @@ describe('runs > retrospective', () => {
         cy.findByText('Publish').click({force: true});
 
         // * Verify we're showing the publish retro confirmation modal
-        cy.get('#confirmModalLabel').contains('Publish retrospective');
+        cy.get('#confirm-modal-light').contains('Are you sure you want to publish');
 
         // # Publish
-        cy.get('#confirmModalButton').click({force: true});
+        cy.get('#confirm-modal-light-button').click({force: true});
+
+        // * Verify that retro got published
+        cy.get('.icon-check-all').should('be.visible');
 
         // # Switch to the run channel
         cy.findByText('Go to channel').click();
