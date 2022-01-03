@@ -380,5 +380,6 @@
     "pK6+CW": "@{displayName} ist kein Mitglied des Kanals [{runName}]({overviewUrl}). Möchten Sie sie zu diesem Kanal hinzufügen? Er hat dann Zugriff auf den gesamten Nachrichtenverlauf.",
     "iDMOiz": "KANALMITGLIEDER",
     "JqKASQ": "@{displayName} zum Kanal hinzufügen",
-    "5ciuDD": "NICHT IM KANAL"
+    "5ciuDD": "NICHT IM KANAL",
+    "Lo10yH": "Unbekannter Kanal"
 }
