@@ -1595,16 +1595,18 @@ var migrations = []Migration{
 				if err := addColumnToMySQLTable(e, "IR_Playbook", "Public", "BOOLEAN DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
 				}
-				if _, err := e.Exec("UPDATE IR_PlaybookMember SET Roles = 'playbook_member playbook_admin' WHERE Roles IS NULL"); err != nil {
-					return errors.Wrapf(err, "failed setting default value in column Roles of table IR_Playbook")
-				}
 			} else {
-				if err := addColumnToPGTable(e, "IR_PlaybookMember", "Roles", "TEXT DEFAULT 'playbook_member playbook_admin'"); err != nil {
+				if err := addColumnToPGTable(e, "IR_PlaybookMember", "Roles", "TEXT"); err != nil {
 					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
 				}
 				if err := addColumnToPGTable(e, "IR_Playbook", "Public", "BOOLEAN DEFAULT FALSE"); err != nil {
 					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
 				}
+			}
+
+			// Set all existing members to admins
+			if _, err := e.Exec("UPDATE IR_PlaybookMember SET Roles = 'playbook_member playbook_admin' WHERE Roles IS NULL"); err != nil {
+				return errors.Wrapf(err, "failed setting default value in column Roles of table IR_Playbook")
 			}
 
 			// Set all playbooks with no members as public
