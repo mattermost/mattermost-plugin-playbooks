@@ -90,8 +90,9 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	activeParticipantsPerDay, activeParticipantsPerDayTimes := h.statsStore.ActiveParticipantsPerDayLastXDays(14, filters)
 
 	ReturnJSON(w, &PlaybookStats{
-		RunsInProgress:     h.statsStore.TotalInProgressPlaybookRuns(filters),
-		ParticipantsActive: h.statsStore.TotalActiveParticipants(filters), RunsFinishedPrev30Days: runsFinishedLast30Days,
+		RunsInProgress:                h.statsStore.TotalInProgressPlaybookRuns(filters),
+		ParticipantsActive:            h.statsStore.TotalActiveParticipants(filters),
+		RunsFinishedPrev30Days:        runsFinishedLast30Days,
 		RunsFinishedPercentageChange:  percentageChange,
 		RunsStartedPerWeek:            runsStartedPerWeek,
 		RunsStartedPerWeekTimes:       runsStartedPerWeekTimes,

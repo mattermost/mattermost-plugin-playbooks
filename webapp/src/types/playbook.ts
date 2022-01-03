@@ -188,39 +188,6 @@ export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
 };
 
 // eslint-disable-next-line
-export function isPlaybook(arg: any): arg is PlaybookWithChecklist {
-    return (
-        arg &&
-        typeof arg.id === 'string' &&
-        typeof arg.title === 'string' &&
-        typeof arg.team_id === 'string' &&
-        typeof arg.create_public_playbook_run === 'boolean' &&
-        typeof arg.delete_at === 'number' &&
-        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
-        arg.members && Array.isArray(arg.members) && arg.checklists.every((id: any) => typeof id === 'string') &&
-        arg.broadcast_channel_ids && Array.isArray(arg.broadcast_channel_ids) && arg.broadcast_channel_ids.every((id: any) => typeof id === 'string') &&
-        typeof arg.reminder_message_template == 'string' &&
-        typeof arg.reminder_timer_default_seconds == 'number' &&
-        arg.invited_user_ids && Array.isArray(arg.invited_user_ids) && arg.invited_user_ids.every((id: any) => typeof id === 'string') &&
-        arg.invited_group_ids && Array.isArray(arg.invited_group_ids) && arg.invited_group_ids.every((id: any) => typeof id === 'string') &&
-        typeof arg.invite_users_enabled === 'boolean' &&
-        typeof arg.default_owner_id === 'string' &&
-        typeof arg.default_owner_enabled === 'boolean' &&
-        typeof arg.announcement_channel_id === 'string' &&
-        typeof arg.announcement_channel_enabled === 'boolean' &&
-        typeof arg.webhook_on_creation_url === 'string' &&
-        typeof arg.webhook_on_creation_enabled === 'boolean' &&
-        typeof arg.webhook_on_status_update_url === 'string' &&
-        typeof arg.webhook_on_status_update_enabled === 'boolean' &&
-        typeof arg.message_on_join === 'string' &&
-        typeof arg.message_on_join_enabled === 'boolean' &&
-        typeof arg.signal_any_keywords && Array.isArray(arg.signal_any_keywords) && arg.signal_any_keywords.every((id: any) => typeof id === 'string') &&
-        typeof arg.signal_any_keywords_enabled === 'boolean' &&
-        typeof arg.channel_name_template === 'string'
-    );
-}
-
-// eslint-disable-next-line
 export function isChecklist(arg: any): arg is Checklist {
     return arg &&
         typeof arg.title === 'string' &&

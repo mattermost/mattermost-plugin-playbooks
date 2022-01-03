@@ -75,7 +75,7 @@ function roleDisplayText(roles: string[]) {
 
 const SelectUsersBelow = (props: SelectUsersBelowProps) => {
     const permissionToEditMembers = useHasPlaybookPermission(PlaybookPermissionGeneral.ManageMembers, props.playbook);
-    const teamnameNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
+    const teammateNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const users = useSelector(getUsers);
 
     const handleAddUser = (userId: string) => {
@@ -83,7 +83,7 @@ const SelectUsersBelow = (props: SelectUsersBelowProps) => {
     };
 
     const sortedMembers = props.members.slice().sort((a: PlaybookMember, b:PlaybookMember) => {
-        return displayUsername(users[a.user_id], teamnameNameDisplaySetting).localeCompare(displayUsername(users[b.user_id], teamnameNameDisplaySetting));
+        return displayUsername(users[a.user_id], teammateNameDisplaySetting).localeCompare(displayUsername(users[b.user_id], teammateNameDisplaySetting));
     });
 
     return (

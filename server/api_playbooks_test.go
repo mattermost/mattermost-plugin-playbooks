@@ -17,7 +17,7 @@ func TestPlaybooks(t *testing.T) {
 	e.CreateClients()
 	e.CreateBasicServer()
 
-	t.Run("unlicenced servers can't create a private playbooks", func(t *testing.T) {
+	t.Run("unlicenced servers can't create a private playbook", func(t *testing.T) {
 		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "test1",
 			TeamID: e.BasicTeam.Id,
@@ -191,7 +191,7 @@ func TestPlaybooks(t *testing.T) {
 	})
 }
 
-func TestPlaybooksRetrival(t *testing.T) {
+func TestPlaybooksRetrieval(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 

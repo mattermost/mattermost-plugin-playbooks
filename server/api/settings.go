@@ -30,7 +30,6 @@ func NewSettingsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logge
 
 	settingsRouter := router.PathPrefix("/settings").Subrouter()
 	settingsRouter.HandleFunc("", handler.getSettings).Methods(http.MethodGet)
-	//settingsRouter.HandleFunc("", handler.setSettings).Methods(http.MethodPut)
 
 	return handler
 }
@@ -43,21 +42,3 @@ func (h *SettingsHandler) getSettings(w http.ResponseWriter, r *http.Request) {
 
 	ReturnJSON(w, &settings, http.StatusOK)
 }
-
-/*
-func (h *SettingsHandler) setSettings(w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	var settings client.GlobalSettings
-	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode settings", err)
-		return
-	}
-
-	pluginConfig := h.pluginAPI.Configuration.GetPluginConfig()
-	if err := h.pluginAPI.Configuration.SavePluginConfig(pluginConfig); err != nil {
-		h.HandleError(w, err)
-	}
-
-	w.WriteHeader(http.StatusOK)
-}*/
