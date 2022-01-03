@@ -61,7 +61,7 @@ func (p *PermissionsService) getPlaybookRole(userID string, playbook Playbook) [
 func (p *PermissionsService) getRunRole(userID string, run *PlaybookRun) []string {
 	// For now, everyone with access to the channel is a run admin
 	if p.pluginAPI.User.HasPermissionToChannel(userID, run.ChannelID, model.PermissionReadChannel) {
-		return []string{"run_member", "run_admin"}
+		return []string{RunRoleMember, RunRoleAdmin}
 	}
 
 	return []string{}
@@ -116,7 +116,7 @@ func (p *PermissionsService) checkPlaybookNotUsingE10Features(playbook Playbook)
 	return nil
 }
 
-func (p *PermissionsService) checkPlaybookNotUsingUnlicencedFeatures(playbook Playbook) error {
+func (p *PermissionsService) checkPlaybookLicenceRequirements(playbook Playbook) error {
 	if p.configService.IsAtLeastE20Licensed() {
 		return nil
 	}
@@ -133,7 +133,7 @@ func (p *PermissionsService) checkPlaybookNotUsingUnlicencedFeatures(playbook Pl
 }
 
 func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) error {
-	if err := p.checkPlaybookNotUsingUnlicencedFeatures(playbook); err != nil {
+	if err := p.checkPlaybookLicenceRequirements(playbook); err != nil {
 		return err
 	}
 
@@ -253,6 +253,19 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 		}
 	}
 
+	// Check if we have done a public conversion
+	if oldPlaybook.Public != playbook.Public {
+		if oldPlaybook.Public {
+			if err := p.PlaybookMakePrivate(userID, oldPlaybook); err != nil {
+				return errors.Wrap(err, "attempted to make playbook private without permissions")
+			}
+		} else {
+			if err := p.PlaybookMakePublic(userID, oldPlaybook); err != nil {
+				return errors.Wrap(err, "attempted to make playbook public without permissions")
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -336,7 +349,21 @@ func (p *PermissionsService) PlaybookViewWithPlaybook(userID string, playbook Pl
 	return noAccessErr
 }
 
-func (p *PermissionsService) PlaybookMakePrivate() {}
+func (p *PermissionsService) PlaybookMakePrivate(userID string, playbook Playbook) error {
+	if p.hasPermissionsToPlaybook(userID, playbook, model.PermissionPublicPlaybookMakePrivate) {
+		return nil
+	}
+
+	return ErrNoPermissions
+}
+
+func (p *PermissionsService) PlaybookMakePublic(userID string, playbook Playbook) error {
+	if p.hasPermissionsToPlaybook(userID, playbook, model.PermissionPrivatePlaybookMakePublic) {
+		return nil
+	}
+
+	return ErrNoPermissions
+}
 
 func (p *PermissionsService) RunCreate(userID string, playbook Playbook) error {
 	if p.hasPermissionsToPlaybook(userID, playbook, model.PermissionRunCreate) {

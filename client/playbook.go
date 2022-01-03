@@ -5,6 +5,7 @@ type Playbook struct {
 	ID                          string           `json:"id"`
 	Title                       string           `json:"title"`
 	Description                 string           `json:"description"`
+	Public                      bool             `json:"public"`
 	TeamID                      string           `json:"team_id"`
 	CreatePublicPlaybookRun     bool             `json:"create_public_playbook_run"`
 	CreateAt                    int64            `json:"create_at"`

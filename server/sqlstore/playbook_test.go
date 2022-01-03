@@ -1497,10 +1497,10 @@ func NewPBBuilder() *PlaybookBuilder {
 			InvitedUserIDs:            []string(nil),
 			InvitedGroupIDs:           []string(nil),
 			NumActions:                1, // Channel creation is always on
-			DefaultPlaybookAdminRole:  "playbook_admin",
-			DefaultPlaybookMemberRole: "playbook_member",
-			DefaultRunAdminRole:       "run_admin",
-			DefaultRunMemberRole:      "run_member",
+			DefaultPlaybookAdminRole:  app.PlaybookRoleAdmin,
+			DefaultPlaybookMemberRole: app.PlaybookRoleMember,
+			DefaultRunAdminRole:       app.RunRoleAdmin,
+			DefaultRunMemberRole:      app.RunRoleMember,
 		},
 	}
 }

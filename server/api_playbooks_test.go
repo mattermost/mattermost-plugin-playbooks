@@ -724,5 +724,47 @@ func TestPlaybooksPermissions(t *testing.T) {
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPrivatePlaybook)
 			requireErrorWithStatusCode(t, err, http.StatusForbidden)
 		})
+
+	})
+}
+
+func TestPlaybooksConversions(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("public to private conversion", func(t *testing.T) {
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defer func() {
+			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+		}()
+		e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
+
+		e.BasicPlaybook.Public = false
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
+
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
+
+	})
+
+	t.Run("private to public conversion", func(t *testing.T) {
+		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+		defer func() {
+			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+		}()
+		e.Permissions.RemovePermissionFromRole(model.PermissionPrivatePlaybookMakePublic.Id, model.PlaybookMemberRoleId)
+
+		e.BasicPlaybook.Public = true
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+
+		e.Permissions.AddPermissionToRole(model.PermissionPrivatePlaybookMakePublic.Id, model.PlaybookMemberRoleId)
+
+		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		require.NoError(t, err)
+
 	})
 }
