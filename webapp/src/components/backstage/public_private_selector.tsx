@@ -42,13 +42,13 @@ const StackedText = styled.div`
 const GiantIcon = styled.i<{active?: boolean}>`
 	font-size: 36px;
 	line-height: 42px;
-	color: ${(props) => (props.active ? 'rgb(var(--button-bg-rgb))' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
+	color: ${(props) => (props.active ? 'var(--button-bg)' : 'rgba(var(--center-channel-color-rgb), 0.56)')};
 `;
 
 const CheckIcon = styled.i`
 	font-size: 24px;
 	line-height: 24px;
-	color: rgb(var(--button-bg-rgb));
+	color: var(--button-bg);
 `;
 
 const BigText = styled.div`
@@ -65,9 +65,7 @@ const SmallText = styled.div`
 
 const PublicPrivateSelector = (props: Props) => {
     const {formatMessage} = useIntl();
-    const handleButtonClick = (pub: boolean) => {
-        props.setPlaybookPublic(pub);
-    };
+    const handleButtonClick = props.setPlaybookPublic;
 
     const publicButtonDisabled = !props.public && props.disableOtherOption;
     const privateButtonDisabled = props.public && props.disableOtherOption;

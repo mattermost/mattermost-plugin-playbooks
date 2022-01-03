@@ -221,7 +221,7 @@ func TestRunCreation(t *testing.T) {
 	})
 }
 
-func TestRunRetreval(t *testing.T) {
+func TestRunRetrieval(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 

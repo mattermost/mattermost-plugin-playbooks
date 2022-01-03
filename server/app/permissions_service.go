@@ -196,7 +196,7 @@ func (p *PermissionsService) PlaybookManageProperties(userID string, playbook Pl
 	return ErrNoPermissions
 }
 
-// PlaybookMakeChangesWithFixes checks both ManageProperties and ManageMembers permissions
+// PlaybookodifyWithFixes checks both ManageProperties and ManageMembers permissions
 // performs permissions checks that can be resolved though modification of the input.
 // This function modifies the playbook argument.
 func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Playbook, oldPlaybook Playbook) error {

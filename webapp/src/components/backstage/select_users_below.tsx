@@ -55,7 +55,7 @@ const IconWrapper = styled.div`
 `;
 
 export interface SelectUsersBelowProps {
-    playbook: Playbook
+    playbook: Playbook;
     members: PlaybookMember[];
     onAddMember: (member: PlaybookMember) => void;
     onRemoveUser: (userid: string) => void;
@@ -126,8 +126,8 @@ interface UserLineProps {
 const MemberButton = styled.div`
     display: inline-flex;
     border-radius: 4px;
-    fill: rgb(var(--link-color-rgb));
-    color: rgb(var(--link-color-rgb));
+    fill: var(--link-color);
+    color: var(--link-color);
     &:hover {
        background: rgba(var(--center-channel-color-rgb), 0.08);
        color: rgba(var(--center-channel-color-rgb), 0.72);

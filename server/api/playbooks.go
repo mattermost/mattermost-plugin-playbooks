@@ -87,7 +87,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// If not specified make the creater the sole admin
+	// If not specified make the creator the sole admin
 	if len(playbook.Members) == 0 {
 		playbook.Members = []app.PlaybookMember{
 			{

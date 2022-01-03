@@ -38,7 +38,7 @@ const SizedGenericModal = styled(GenericModal)`
 const HorizontalBlock = styled.div`
     display: flex;
     flex-direction: row;
-    color: var(--center-channel-color-64);
+    color: rgba(var(--center-channel-color-rgb), 0.64);
 
     > i {
         font-size: 12px;
