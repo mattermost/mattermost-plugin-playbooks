@@ -8,6 +8,7 @@ import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entiti
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
+import {UserProfile} from 'mattermost-redux/types/users';
 import {Overlay, Popover, PopoverProps} from 'react-bootstrap';
 import Scrollbars from 'react-custom-scrollbars';
 import {useDispatch, useSelector} from 'react-redux';
@@ -30,7 +31,7 @@ import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/p
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {useClickOutsideRef, useProfilesInCurrentChannel, useTimeout} from 'src/hooks';
+import {useClickOutsideRef, useProfilesInCurrentChannel, useTimeout, useProfilesInTeam} from 'src/hooks';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
@@ -369,6 +370,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
     const profilesInChannel = useProfilesInCurrentChannel();
+    const profilesInTeam = useProfilesInTeam();
     const [showDescription, setShowDescription] = useState(true);
 
     const markdownOptions = {
@@ -399,11 +401,15 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
         return profilesInChannel;
     };
 
-    const onAssigneeChange = async (userId?: string) => {
+    const fetchUsersInTeam = async () => {
+        return profilesInTeam;
+    };
+
+    const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
         if (!props.playbookRunId) {
             return;
         }
-        const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, userId);
+        const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, user?.id);
         if (response.error) {
             // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console
@@ -463,6 +469,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                     }
                                     enableEdit={true}
                                     getUsers={fetchUsers}
+                                    getUsersInTeam={fetchUsersInTeam}
                                     onSelectedChange={onAssigneeChange}
                                     selfIsFirstOption={true}
                                     customControl={ControlComponent}

@@ -25,6 +25,11 @@ describe('playbooks > creation button', () => {
             cy.apiLogin(testUser);
 
             // # Create a public playbook
+            // # Creating this playbook ensures the list view
+            // # specifically is shown in the backstage content section.
+            // # Without it there is a brief flicker from the list view
+            // # to the no content view, which causes some flake
+            // # on clicking the 'Create playbook' button
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: 'Playbook',

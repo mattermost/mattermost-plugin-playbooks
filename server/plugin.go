@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"path/filepath"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -12,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/shared/i18n"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -59,6 +61,15 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
+	bundlePath, err := p.API.GetBundlePath()
+	if err != nil {
+		return errors.Wrapf(err, "unable to get bundle path")
+	}
+
+	if err := i18n.TranslationsPreInit(filepath.Join(bundlePath, "assets/i18n")); err != nil {
+		return errors.Wrapf(err, "unable to load translation files")
+	}
+
 	pluginAPIClient := pluginapi.NewClient(p.API, p.Driver)
 	p.pluginAPI = pluginAPIClient
 
@@ -225,7 +236,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 		p.playbookRunService, p.playbookService, p.config, p.userInfoStore, p.telemetryClient, p.permissions)
 
 	if err := runner.Execute(); err != nil {
-		return nil, model.NewAppError("Playbooks.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("Playbooks.ExecuteCommand", "app.command.execute.error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	return &model.CommandResponse{}, nil

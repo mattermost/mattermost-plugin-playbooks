@@ -1,0 +1,55 @@
+[
+  {
+    "id": "app.command.execute.error",
+    "translation": "Unable to execute command."
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.heading",
+    "translation": "Overdue Status Updates"
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.md_link_item_appended",
+    "translation": "(Owner: @{{.Username}})"
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.num_overdue",
+    "translation": {
+      "one": "You have {{.Count}} run overdue for a status update:",
+      "other": "You have {{.Count}} runs overdue for a status update:"
+    }
+  },
+  {
+    "id": "app.user.digest.overdue_status_updates.zero_overdue",
+    "translation": "You have 0 runs overdue."
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.heading",
+    "translation": "Runs in Progress"
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.num_in_progress",
+    "translation": {
+      "one": "You have {{.Count}} run currently in progress:",
+      "other": "You have {{.Count}} runs currently in progress:"
+    }
+  },
+  {
+    "id": "app.user.digest.runs_in_progress.zero_in_progress",
+    "translation": "You have 0 runs currently in progress."
+  },
+  {
+    "id": "app.user.digest.tasks.heading",
+    "translation": "Your Outstanding Tasks"
+  },
+  {
+    "id": "app.user.digest.tasks.num_outstanding",
+    "translation": {
+      "one": "You have {{.Count}} outstanding task:",
+      "other": "You have {{.Count}} total outstanding tasks:"
+    }
+  },
+  {
+    "id": "app.user.digest.tasks.zero_outstanding",
+    "translation": "You have 0 outstanding tasks."
+  }
+]
