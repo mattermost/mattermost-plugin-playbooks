@@ -92,6 +92,11 @@ interface Props {
     channelId: string;
 }
 
+const REL_UNITS = [
+    'Today',
+    'Yesterday',
+];
+
 const PostCard = (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -119,7 +124,7 @@ const PostCard = (props: Props) => {
                     >
                         <Timestamp
                             value={props.post.create_at}
-                            useRelative={true}
+                            units={REL_UNITS}
                         />
                     </UpdateTimeLink>
                 </UpdateHeader>
