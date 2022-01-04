@@ -467,6 +467,8 @@ func TestUpdateStatus(t *testing.T) {
 		mattermostConfig.ServiceSettings.SiteURL = &siteURL
 		pluginAPI.On("CreatePost", mock.Anything).Return(&model.Post{}, nil)
 		pluginAPI.On("GetChannel", homeChannelID).Return(&model.Channel{Id: homeChannelID, Name: "channel_name"}, nil)
+		pluginAPI.On("GetChannel", broadcastChannelID1).Return(&model.Channel{Id: broadcastChannelID1, Name: "channel_name", TeamId: teamID}, nil)
+		pluginAPI.On("GetChannel", broadcastChannelID2).Return(&model.Channel{Id: broadcastChannelID2, Name: "channel_name", TeamId: teamID}, nil)
 		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "team_name"}, nil)
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 		pluginAPI.On("GetConfig").Return(&model.Config{
@@ -660,6 +662,8 @@ func TestUpdateStatusWebhookFailure(t *testing.T) {
 	mattermostConfig.ServiceSettings.SiteURL = &siteURL
 	pluginAPI.On("CreatePost", mock.Anything).Return(&model.Post{}, nil)
 	pluginAPI.On("GetChannel", homeChannelID).Return(&model.Channel{Id: homeChannelID, Name: "channel_name"}, nil)
+	pluginAPI.On("GetChannel", broadcastChannelID1).Return(&model.Channel{Id: broadcastChannelID1, Name: "channel_name", TeamId: teamID}, nil)
+	pluginAPI.On("GetChannel", broadcastChannelID2).Return(&model.Channel{Id: broadcastChannelID2, Name: "channel_name", TeamId: teamID}, nil)
 	pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "team_name"}, nil)
 	pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 	pluginAPI.On("GetConfig").Return(&model.Config{
@@ -1239,6 +1243,8 @@ func TestMultipleWebhooks(t *testing.T) {
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
 		pluginAPI.On("CreatePost", mock.Anything).Return(&model.Post{}, nil)
 		pluginAPI.On("GetChannel", homeChannelID).Return(&model.Channel{Id: homeChannelID, Name: "channel_name"}, nil)
+		pluginAPI.On("GetChannel", broadcastChannelID1).Return(&model.Channel{Id: broadcastChannelID1, Name: "channel_name", TeamId: teamID}, nil)
+		pluginAPI.On("GetChannel", broadcastChannelID2).Return(&model.Channel{Id: broadcastChannelID2, Name: "channel_name", TeamId: teamID}, nil)
 		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "team_name"}, nil)
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 

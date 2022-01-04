@@ -113,9 +113,7 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 	if err != nil {
 		s.pluginAPI.Log.Warn("failed to build overdue status update message", "PlaybookRunID", playbookRunToModify.ID, "error", err)
 	} else {
-		if err := s.broadcastPostToRunFollowers(&model.Post{Message: message}, playbookRunToModify.ID, ""); err != nil {
-			s.pluginAPI.Log.Warn("error broadcasting overdue status update to run followers", "PlaybookRunID", playbookRunToModify.ID, "error", err)
-		}
+		s.dmPostToRunFollowers(&model.Post{Message: message}, overdueStatusUpdateMessage, playbookRunToModify.ID, "")
 	}
 
 	playbookRunToModify.ReminderPostID = post.Id

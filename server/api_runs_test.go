@@ -399,4 +399,313 @@ func TestChecklistManagement(t *testing.T) {
 		})
 		require.Error(t, err)
 	})
+
+	type ExpectedError struct{ StatusCode int }
+
+	moveItemTests := []struct {
+		Title              string
+		Checklists         [][]string
+		SourceChecklistIdx int
+		SourceItemIdx      int
+		DestChecklistIdx   int
+		DestItemIdx        int
+		ExpectedItemTitles [][]string
+		ExpectedError      *ExpectedError
+	}{
+		{
+			"One checklist with two items - move the first item",
+			[][]string{{"00", "01"}},
+			0, 0, 0, 1,
+			[][]string{{"01", "00"}},
+			nil,
+		},
+		{
+			"One checklist with two items - move the second item",
+			[][]string{{"00", "01"}},
+			0, 1, 0, 0,
+			[][]string{{"01", "00"}},
+			nil,
+		},
+		{
+			"One checklist with three items - move the first item to the second position",
+			[][]string{{"00", "01", "02"}},
+			0, 0, 0, 1,
+			[][]string{{"01", "00", "02"}},
+			nil,
+		},
+		{
+			"One checklist with three items - move the second item to the first position",
+			[][]string{{"00", "01", "02"}},
+			0, 1, 0, 0,
+			[][]string{{"01", "00", "02"}},
+			nil,
+		},
+		{
+			"One checklist with three items - move the first item to the last position",
+			[][]string{{"00", "01", "02"}},
+			0, 0, 0, 2,
+			[][]string{{"01", "02", "00"}},
+			nil,
+		},
+		{
+			"Multiple checklists - move from one to another",
+			[][]string{{"00", "01", "02"}, {"10", "11", "12"}},
+			0, 1, 1, 0,
+			[][]string{{"00", "02"}, {"01", "10", "11", "12"}},
+			nil,
+		},
+		{
+			"Multiple checklists - move to an empty checklist",
+			[][]string{{"00", "01"}, {}},
+			0, 0, 1, 0,
+			[][]string{{"01"}, {"00"}},
+			nil,
+		},
+		{
+			"Multiple checklists - leave the original checklist empty",
+			[][]string{{"00"}, {"10"}},
+			0, 0, 1, 1,
+			[][]string{{}, {"10", "00"}},
+			nil,
+		},
+		{
+			"One checklist - invalid source checklist: greater than lenght of checklists",
+			[][]string{{"00"}},
+			1, 0, 0, 0,
+			[][]string{},
+			&ExpectedError{StatusCode: 500},
+		},
+		{
+			"One checklist - invalid source checklist: negative number",
+			[][]string{{"00"}},
+			-1, 0, 0, 0,
+			[][]string{},
+			&ExpectedError{StatusCode: 500},
+		},
+		{
+			"One checklist - invalid dest checklist: greater than length of items",
+			[][]string{{"00"}},
+			0, 0, 1, 0,
+			[][]string{},
+			&ExpectedError{StatusCode: 500},
+		},
+		{
+			"One checklist - invalid dest checklist: negative number",
+			[][]string{{"00"}},
+			0, 0, -1, 0,
+			[][]string{},
+			&ExpectedError{StatusCode: 500},
+		},
+		{
+			"One checklist - invalid source item: greater than lenght of items",
+			[][]string{{"00"}},
+			0, 1, 0, 0,
+			[][]string{},
+			&ExpectedError{StatusCode: 500},
+		},
+		{
+			"One checklist - invalid source item: negative number",
+			[][]string{{"00"}},
+			0, -1, 0, 0,
+			[][]string{},
+			&ExpectedError{StatusCode: 500},
+		},
+		{
+			"One checklist - invalid dest item: greater than length of items",
+			[][]string{{"00"}},
+			0, 0, 0, 1,
+			[][]string{},
+			&ExpectedError{StatusCode: 500},
+		},
+		{
+			"One checklist - invalid dest item: negative number",
+			[][]string{{"00"}},
+			0, 0, 0, -1,
+			[][]string{},
+			&ExpectedError{StatusCode: 500},
+		},
+	}
+
+	for _, test := range moveItemTests {
+		t.Run(test.Title, func(t *testing.T) {
+			// Create a new empty run
+			run := createNewRunWithNoChecklists(t)
+
+			// Add the specified checklists: note that we need to iterate backwards because CreateChecklist prepends new checklists
+			for i := len(test.Checklists) - 1; i >= 0; i-- {
+				// Generate the items for this checklist
+				checklist := test.Checklists[i]
+				items := make([]client.ChecklistItem, 0, len(checklist))
+				for _, title := range checklist {
+					items = append(items, client.ChecklistItem{Title: title})
+				}
+
+				// Create the checklist with the defined items
+				err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+					Title: "Checklist",
+					Items: items,
+				})
+				require.NoError(t, err)
+			}
+
+			// Move the item from its source to its destination
+			err := e.PlaybooksClient.PlaybookRuns.MoveChecklistItem(context.Background(), run.ID, test.SourceChecklistIdx, test.SourceItemIdx, test.DestChecklistIdx, test.DestItemIdx)
+
+			// If an error is expected, check that it's the one we expect
+			if test.ExpectedError != nil {
+				requireErrorWithStatusCode(t, err, test.ExpectedError.StatusCode)
+				return
+			}
+
+			// If no error is expected, retrieve the run again
+			require.NoError(t, err)
+			run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+			require.NoError(t, err)
+
+			// And check that the new checklists are ordered as specified by the test data
+			for checklistIdx, actualChecklist := range run.Checklists {
+				expectedItemTitles := test.ExpectedItemTitles[checklistIdx]
+				require.Len(t, actualChecklist.Items, len(expectedItemTitles))
+
+				for itemIdx, actualItem := range actualChecklist.Items {
+					require.Equal(t, expectedItemTitles[itemIdx], actualItem.Title)
+				}
+			}
+		})
+	}
+
+	moveChecklistTests := []struct {
+		Title              string
+		Checklists         []string
+		SourceChecklistIdx int
+		DestChecklistIdx   int
+		ExpectedChecklists []string
+		ExpectedError      *ExpectedError
+	}{
+		{
+			"Move checklist to the same position",
+			[]string{"0"},
+			0, 0,
+			[]string{"0"},
+			nil,
+		},
+		{
+			"Swap two checklists, moving the first one",
+			[]string{"0", "1"},
+			0, 1,
+			[]string{"1", "0"},
+			nil,
+		},
+		{
+			"Swap two checklists, moving the second one",
+			[]string{"0", "1"},
+			1, 0,
+			[]string{"1", "0"},
+			nil,
+		},
+		{
+			"Move a checklist in a list of three checklists - first to second ",
+			[]string{"0", "1", "2"},
+			0, 1,
+			[]string{"1", "0", "2"},
+			nil,
+		},
+		{
+			"Move a checklist in a list of three checklists - first to third",
+			[]string{"0", "1", "2"},
+			0, 2,
+			[]string{"1", "2", "0"},
+			nil,
+		},
+		{
+			"Move a checklist in a list of three checklists - second to first",
+			[]string{"0", "1", "2"},
+			1, 0,
+			[]string{"1", "0", "2"},
+			nil,
+		},
+		{
+			"Move a checklist in a list of three checklists - second to third",
+			[]string{"0", "1", "2"},
+			1, 2,
+			[]string{"0", "2", "1"},
+			nil,
+		},
+		{
+			"Move a checklist in a list of three checklists - third to first",
+			[]string{"0", "1", "2"},
+			2, 0,
+			[]string{"2", "0", "1"},
+			nil,
+		},
+		{
+			"Move a checklist in a list of three checklists - third to second",
+			[]string{"0", "1", "2"},
+			2, 1,
+			[]string{"0", "2", "1"},
+			nil,
+		},
+		{
+			"Wrong destination index - greater than length of list",
+			[]string{"0", "1", "2"},
+			0, 5,
+			[]string{"0", "1", "2"},
+			&ExpectedError{500},
+		},
+		{
+			"Wrong destination index - negative",
+			[]string{"0", "1", "2"},
+			0, -5,
+			[]string{"0", "1", "2"},
+			&ExpectedError{500},
+		},
+		{
+			"Wrong source index - greater than length of list",
+			[]string{"0", "1", "2"},
+			5, 0,
+			[]string{"0", "1", "2"},
+			&ExpectedError{500},
+		},
+		{
+			"Wrong source index - negative",
+			[]string{"0", "1", "2"},
+			-5, 0,
+			[]string{"0", "1", "2"},
+			&ExpectedError{500},
+		},
+	}
+
+	for _, test := range moveChecklistTests {
+		t.Run(test.Title, func(t *testing.T) {
+			// Create a new empty run
+			run := createNewRunWithNoChecklists(t)
+
+			// Add the specified checklists: note that we need to iterate backwards because CreateChecklist prepends new checklists
+			for i := len(test.Checklists) - 1; i >= 0; i-- {
+				err := e.PlaybooksClient.PlaybookRuns.CreateChecklist(context.Background(), run.ID, client.Checklist{
+					Title: test.Checklists[i],
+				})
+				require.NoError(t, err)
+			}
+
+			// Move the checklist from its source to its destination
+			err := e.PlaybooksClient.PlaybookRuns.MoveChecklist(context.Background(), run.ID, test.SourceChecklistIdx, test.DestChecklistIdx)
+
+			// If an error is expected, check that it's the one we expect
+			if test.ExpectedError != nil {
+				requireErrorWithStatusCode(t, err, test.ExpectedError.StatusCode)
+				return
+			}
+
+			// If no error is expected, retrieve the run again
+			require.NoError(t, err)
+			run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+			require.NoError(t, err)
+
+			// And check that the new checklists are ordered as specified by the test data
+			for checklistIdx, actualChecklist := range run.Checklists {
+				require.Equal(t, test.ExpectedChecklists[checklistIdx], actualChecklist.Title)
+			}
+		})
+	}
 }

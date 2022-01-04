@@ -52,7 +52,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("", handler.updatePlaybook).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("", handler.archivePlaybook).Methods(http.MethodDelete)
-	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPost)
+	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPut)
 
 	autoFollowsRouter := playbookRouter.PathPrefix("/autofollows").Subrouter()
 	autoFollowRouter := autoFollowsRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
@@ -140,6 +140,21 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 
 	if len(playbook.SignalAnyKeywords) != 0 {
 		playbook.SignalAnyKeywords = removeDuplicates(playbook.SignalAnyKeywords)
+	}
+
+	if playbook.BroadcastEnabled {
+		for _, channelID := range playbook.BroadcastChannelIDs {
+			channel, err := h.pluginAPI.Channel.Get(channelID)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "broadcasting to invalid channel ID", err)
+				return
+			}
+			// check if channel is archived
+			if channel.DeleteAt != 0 {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "broadcasting to archived channel", err)
+				return
+			}
+		}
 	}
 
 	id, err := h.playbookService.Create(playbook, userID)

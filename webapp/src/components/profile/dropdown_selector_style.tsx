@@ -11,7 +11,7 @@ export const DropdownSelectorStyle = styled.div`
 
     .profile-dropdown {
         .playbook-run-user-select__container {
-            z-index: 3;
+            z-index: 50;
             position: absolute;
         }
     }

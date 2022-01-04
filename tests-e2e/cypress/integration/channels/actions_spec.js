@@ -553,7 +553,7 @@ describe('channels > actions', () => {
                     // * Verify that there is an error message from the bot
                     cy.getLastPostId().then((id) => {
                         cy.get(`#postMessageText_${id}`)
-                            .contains('Failed to announce the creation of this playbook run in the configured channel.');
+                            .contains('Failed to broadcast run creation to the configured channel.');
                     });
                 });
             });
@@ -629,12 +629,12 @@ describe('channels > actions', () => {
 
             // # Navigate to the playbook run channel
             cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
-        
+
             // * Verify that playbook run finished message was posted
             cy.findAllByTestId('postView').contains('marked this run as finished');
 
             // * Verify that retrospective dialog was not posted
             cy.findAllByTestId('retrospective-reminder').should('not.exist');
         });
-    });    
+    });
 });
