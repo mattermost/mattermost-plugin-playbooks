@@ -1538,27 +1538,79 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 	return nil
 }
 
-// MoveChecklistItem moves a checklist item to a new location
-func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber, newLocation int) error {
-	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+// MoveChecklist moves a checklist to a new location
+func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sourceChecklistIdx, destChecklistIdx int) error {
+	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, sourceChecklistIdx)
 	if err != nil {
 		return err
 	}
 
-	if newLocation >= len(playbookRunToModify.Checklists[checklistNumber].Items) {
-		return errors.New("invalid targetNumber")
+	if destChecklistIdx < 0 || destChecklistIdx >= len(playbookRunToModify.Checklists) {
+		return errors.New("invalid destChecklist")
 	}
 
-	// Move item
-	checklist := playbookRunToModify.Checklists[checklistNumber].Items
-	itemMoved := checklist[itemNumber]
+	// Get checklist to move
+	checklistMoved := playbookRunToModify.Checklists[sourceChecklistIdx]
+
+	// Delete checklist to move
+	copy(playbookRunToModify.Checklists[sourceChecklistIdx:], playbookRunToModify.Checklists[sourceChecklistIdx+1:])
+	playbookRunToModify.Checklists[len(playbookRunToModify.Checklists)-1] = Checklist{}
+
+	// Insert checklist in new location
+	copy(playbookRunToModify.Checklists[destChecklistIdx+1:], playbookRunToModify.Checklists[destChecklistIdx:])
+	playbookRunToModify.Checklists[destChecklistIdx] = checklistMoved
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.MoveChecklist(playbookRunID, userID, checklistMoved)
+
+	return nil
+}
+
+// MoveChecklistItem moves a checklist item to a new location
+func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string, sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx int) error {
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, sourceChecklistIdx, sourceItemIdx)
+	if err != nil {
+		return err
+	}
+
+	if destChecklistIdx < 0 || destChecklistIdx >= len(playbookRunToModify.Checklists) {
+		return errors.New("invalid destChecklist")
+	}
+
+	lenDestItems := len(playbookRunToModify.Checklists[destChecklistIdx].Items)
+	if (destItemIdx < 0) || (sourceChecklistIdx == destChecklistIdx && destItemIdx >= lenDestItems) || (destItemIdx > lenDestItems) {
+		return errors.New("invalid destItem")
+	}
+
+	// Moved item
+	sourceChecklist := playbookRunToModify.Checklists[sourceChecklistIdx].Items
+	itemMoved := sourceChecklist[sourceItemIdx]
+
 	// Delete item to move
-	checklist = append(checklist[:itemNumber], checklist[itemNumber+1:]...)
+	sourceChecklist = append(sourceChecklist[:sourceItemIdx], sourceChecklist[sourceItemIdx+1:]...)
+
 	// Insert item in new location
-	checklist = append(checklist, ChecklistItem{})
-	copy(checklist[newLocation+1:], checklist[newLocation:])
-	checklist[newLocation] = itemMoved
-	playbookRunToModify.Checklists[checklistNumber].Items = checklist
+	destChecklist := playbookRunToModify.Checklists[destChecklistIdx].Items
+	if sourceChecklistIdx == destChecklistIdx {
+		destChecklist = sourceChecklist
+	}
+
+	destChecklist = append(destChecklist, ChecklistItem{})
+	copy(destChecklist[destItemIdx+1:], destChecklist[destItemIdx:])
+	destChecklist[destItemIdx] = itemMoved
+
+	// Update the playbookRunToModify checklists. If the source and destination indices
+	// are the same, we only need to update the checklist to its final state (destChecklist)
+	if sourceChecklistIdx == destChecklistIdx {
+		playbookRunToModify.Checklists[sourceChecklistIdx].Items = destChecklist
+	} else {
+		playbookRunToModify.Checklists[sourceChecklistIdx].Items = sourceChecklist
+		playbookRunToModify.Checklists[destChecklistIdx].Items = destChecklist
+	}
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
@@ -1684,7 +1736,7 @@ func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID str
 		return nil, errors.New("user does not have permission to modify playbook run")
 	}
 
-	if checklistNumber >= len(playbookRunToModify.Checklists) {
+	if checklistNumber < 0 || checklistNumber >= len(playbookRunToModify.Checklists) {
 		return nil, errors.New("invalid checklist number")
 	}
 
@@ -1697,7 +1749,7 @@ func (s *PlaybookRunServiceImpl) checklistItemParamsVerify(playbookRunID, userID
 		return nil, err
 	}
 
-	if itemNumber >= len(playbookRunToModify.Checklists[checklistNumber].Items) {
+	if itemNumber < 0 || itemNumber >= len(playbookRunToModify.Checklists[checklistNumber].Items) {
 		return nil, errors.New("invalid item number")
 	}
 
