@@ -99,43 +99,6 @@ describe('playbooks > creation button', () => {
         verifyPlaybookCreationPageOpened(url2, playbookName);
     });
 
-    it('shows remove beside members when > 1 member', () => {
-        // # Open the product
-        cy.visit('/playbooks');
-
-        // # Switch to playbooks
-        cy.findByTestId('playbooksLHSButton').click();
-
-        // # Click 'Create playbook' button
-        cy.findByText('Create playbook').click();
-
-        // # Click 'Permissions' tab
-        cy.findByText('Permissions').click();
-
-        // # Click 'only selected users can access'
-        cy.get('input[name="enabled"][value="enabled"]').click();
-
-        // * Verify that there is no Remove link when there is one member
-        cy.findAllByTestId('user-line').should('have.length', 1);
-        cy.findAllByTestId('user-line').eq(0).within(() => {
-            cy.get('a').should('not.exist');
-        });
-
-        // # Add a new user
-        cy.get('.profile-autocomplete__input > input')
-            .type(`${testUser2.username}`, {force: true, delay: 100}).wait(100)
-            .type('{enter}');
-
-        // * Verify that there is a Remove link when there is more than one member
-        cy.findAllByTestId('user-line').should('have.length', 2);
-        cy.findAllByTestId('user-line').eq(0).within(() => {
-            cy.get('a').contains('Remove').should('exist');
-        });
-        cy.findAllByTestId('user-line').eq(1).within(() => {
-            cy.get('a').contains('Remove').should('exist');
-        });
-    });
-
     describe('when the test user belongs to multiple teams', () => {
         let multiTeamUser;
         let mtUserTeam1;
