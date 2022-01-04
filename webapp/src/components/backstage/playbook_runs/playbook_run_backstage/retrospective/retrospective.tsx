@@ -13,6 +13,8 @@ import {AdminNotificationType} from 'src/constants';
 
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookRun} from 'src/types/playbook_run';
+import {browserHistory} from 'src/webapp_globals';
+import {telemetryEventForPlaybookRun} from 'src/client';
 
 import Report from './report';
 import TimelineRetro from './timeline_retro';
@@ -26,6 +28,18 @@ interface Props {
 export const Retrospective = (props: Props) => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
+    const url = new URL(window.location.href);
+    const searchParams = new URLSearchParams(url.searchParams);
+
+    if (searchParams.has('telem') && props.playbookRun) {
+        const action = searchParams.get('telem');
+        if (action) {
+            telemetryEventForPlaybookRun(props.playbookRun.id, action);
+        }
+        searchParams.delete('telem');
+        url.search = searchParams.toString();
+        browserHistory.replace({pathname: url.pathname, search: url.search});
+    }
 
     if (!allowRetrospectiveAccess) {
         return (

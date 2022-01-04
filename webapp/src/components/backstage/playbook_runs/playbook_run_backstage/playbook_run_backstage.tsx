@@ -32,7 +32,9 @@ import {
     followPlaybookRun,
     unfollowPlaybookRun,
     getSiteUrl,
+    telemetryEventForPlaybookRun,
 } from 'src/client';
+import {browserHistory} from 'src/webapp_globals';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
@@ -245,6 +247,19 @@ const PlaybookRunBackstage = () => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
 
     useForceDocumentTitle(playbookRun?.name ? (playbookRun.name + ' - Playbooks') : 'Playbooks');
+
+    const url = new URL(window.location.href);
+    const searchParams = new URLSearchParams(url.searchParams);
+
+    if (searchParams.has('telem') && match.params.playbookRunId) {
+        const action = searchParams.get('telem');
+        if (action) {
+            telemetryEventForPlaybookRun(match.params.playbookRunId, action);
+        }
+        searchParams.delete('telem');
+        url.search = searchParams.toString();
+        browserHistory.replace({pathname: url.pathname, search: url.search});
+    }
 
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
