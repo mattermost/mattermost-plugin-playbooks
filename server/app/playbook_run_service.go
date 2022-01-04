@@ -780,7 +780,7 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, trig
 	numOutstanding := 0
 	for _, c := range currentPlaybookRun.Checklists {
 		for _, item := range c.Items {
-			if item.State != ChecklistItemStateClosed {
+			if item.State == "" {
 				numOutstanding++
 			}
 		}
