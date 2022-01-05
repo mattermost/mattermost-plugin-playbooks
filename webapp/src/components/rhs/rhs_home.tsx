@@ -33,7 +33,7 @@ import {
     usePlaybooksCrud,
     getPlaybookOrFetch,
     usePlaybooksRouting,
-    useCanCreatePlaybooks,
+    useCanCreatePlaybooksOnAnyTeam,
     useAllowPlaybookCreationInCurrentTeam,
 } from 'src/hooks';
 import {navigateToUrl} from 'src/browser_routing';
@@ -212,7 +212,7 @@ const RHSHome = () => {
     const [playbooks, {hasMore, isLoading}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
     const {create} = usePlaybooksRouting<Playbook>();
 
-    const canCreatePlaybooks = useCanCreatePlaybooks();
+    const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
     const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
 
@@ -221,7 +221,7 @@ const RHSHome = () => {
             telemetryEventForTemplate(template.title, 'use_template_option');
         }
         if (allowPlaybookCreation) {
-            create(currentTeam, template?.title);
+            create({teamId: currentTeam.id, template: template?.title});
         } else {
             showUpgradeModal();
         }

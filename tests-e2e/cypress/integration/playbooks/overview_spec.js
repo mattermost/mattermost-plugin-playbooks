@@ -188,50 +188,6 @@ describe('playbooks > overview', () => {
         });
     });
 
-    describe('permissions text', () => {
-        it('should describe public playbooks', () => {
-            // # Navigate directly to the playbook
-            cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
-
-            // # Verify permissions icon
-            cy.findByTestId('playbookPermissionsDescription').within(() => {
-                cy.get('.icon-globe').should('be.visible');
-            });
-
-            // # Verify permissions text
-            cy.findByTestId('playbookPermissionsDescription')
-                .contains(`Everyone in ${testTeam.display_name} can access this playbook`);
-        });
-
-        it('should describe playbooks private only to the current user', () => {
-            // # Navigate directly to the playbook
-            cy.visit(`/playbooks/playbooks/${testPrivateOnlyMinePlaybook.id}`);
-
-            // # Verify permissions icon
-            cy.findByTestId('playbookPermissionsDescription').within(() => {
-                cy.get('.icon-lock-outline').should('be.visible');
-            });
-
-            // # Verify permissions text
-            cy.findByTestId('playbookPermissionsDescription')
-                .contains('Only you can access this playbook');
-        });
-
-        it('should describe playbooks private to multiple users', () => {
-            // # Navigate directly to the playbook
-            cy.visit(`/playbooks/playbooks/${testPrivateSharedPlaybook.id}`);
-
-            // # Verify permissions icon
-            cy.findByTestId('playbookPermissionsDescription').within(() => {
-                cy.get('.icon-lock-outline').should('be.visible');
-            });
-
-            // # Verify permissions text
-            cy.findByTestId('playbookPermissionsDescription')
-                .contains('2 people can access this playbook');
-        });
-    });
-
     describe('archiving', () => {
         const playbookTitle = 'Playbook (' + Date.now() + ')';
         let testPlaybook;

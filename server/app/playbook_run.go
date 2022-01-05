@@ -16,6 +16,11 @@ const (
 	StatusFinished   = "Finished"
 )
 
+const (
+	RunRoleMember = "run_member"
+	RunRoleAdmin  = "run_admin"
+)
+
 // PlaybookRun holds the detailed information of a playbook run.
 //
 // NOTE: When adding a column to the db, search for "When adding a PlaybookRun column" to see where

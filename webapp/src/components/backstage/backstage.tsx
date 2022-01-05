@@ -28,7 +28,6 @@ import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 import ErrorPage from 'src/components/error_page';
-import SettingsView from 'src/components/backstage/settings';
 import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
 import RunsPage from 'src/components/backstage/runs_page';
 import {applyTheme} from 'src/components/backstage/css_utils';
@@ -137,14 +136,6 @@ const Backstage = () => {
                                 <PlaybookIcon/>
                                 {formatMessage({defaultMessage: 'Playbooks'})}
                             </BackstageTitlebarItem>
-                            <BackstageTitlebarItem
-                                to={`${match.url}/settings`}
-                                activeClassName={'active'}
-                                data-testid='settingsLHSButton'
-                            >
-                                <div className={'fa fa-gear'}/>
-                                {formatMessage({defaultMessage: 'Settings'})}
-                            </BackstageTitlebarItem>
                         </div>
                         <div className='d-flex items-center'>
                             {npsAvailable &&
@@ -194,9 +185,6 @@ const Backstage = () => {
                     />
                     <Route path={`${match.url}/runs`}>
                         <RunsPage/>
-                    </Route>
-                    <Route path={`${match.url}/settings`}>
-                        <SettingsView/>
                     </Route>
                     <Route path={`${match.url}/error`}>
                         <ErrorPage/>

@@ -9,8 +9,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
 )
 
 func TestRunCreation(t *testing.T) {
@@ -19,8 +19,9 @@ func TestRunCreation(t *testing.T) {
 
 	t.Run("dialog requests", func(t *testing.T) {
 		for name, tc := range map[string]struct {
-			dialogRequest model.SubmitDialogRequest
-			expected      func(t *testing.T, result *http.Response, err error)
+			dialogRequest   model.SubmitDialogRequest
+			expected        func(t *testing.T, result *http.Response, err error)
+			permissionsPrep func()
 		}{
 			"valid": {
 				dialogRequest: model.SubmitDialogRequest{
@@ -87,21 +88,215 @@ func TestRunCreation(t *testing.T) {
 					State:  `{"post_id": "` + e.BasicPrivateChannelPost.Id + `"}`,
 					Submission: map[string]interface{}{
 						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
-						app.DialogFieldNameKey:       "run number 1",
+						app.DialogFieldNameKey:       "no permissions",
 					},
 				},
 				expected: func(t *testing.T, result *http.Response, err error) {
 					assert.Equal(t, http.StatusInternalServerError, result.StatusCode)
 				},
 			},
+			"no permissions to playbook": {
+				dialogRequest: model.SubmitDialogRequest{
+					TeamId: e.BasicTeam.Id,
+					UserId: e.RegularUser.Id,
+					State:  "{}",
+					Submission: map[string]interface{}{
+						app.DialogFieldPlaybookIDKey: e.PrivatePlaybookNoMembers.ID,
+						app.DialogFieldNameKey:       "not happening",
+					},
+				},
+				expected: func(t *testing.T, result *http.Response, err error) {
+					assert.Equal(t, http.StatusForbidden, result.StatusCode)
+				},
+			},
+			"no permissions to private channels": {
+				dialogRequest: model.SubmitDialogRequest{
+					TeamId: e.BasicTeam.Id,
+					UserId: e.RegularUser.Id,
+					State:  "{}",
+					Submission: map[string]interface{}{
+						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
+						app.DialogFieldNameKey:       "run number 1",
+					},
+				},
+				permissionsPrep: func() {
+					e.Permissions.RemovePermissionFromRole(model.PermissionCreatePrivateChannel.Id, model.TeamUserRoleId)
+				},
+				expected: func(t *testing.T, result *http.Response, err error) {
+					require.Error(t, err)
+					assert.Equal(t, http.StatusForbidden, result.StatusCode)
+				},
+			},
+			"request userid doesn't match": {
+				dialogRequest: model.SubmitDialogRequest{
+					TeamId: e.BasicTeam.Id,
+					UserId: e.AdminUser.Id,
+					State:  "{}",
+					Submission: map[string]interface{}{
+						app.DialogFieldPlaybookIDKey: e.BasicPlaybook.ID,
+						app.DialogFieldNameKey:       "bad userid",
+					},
+				},
+				expected: func(t *testing.T, result *http.Response, err error) {
+					require.Error(t, err)
+					assert.Equal(t, http.StatusBadRequest, result.StatusCode)
+				},
+			},
 		} {
 			t.Run(name, func(t *testing.T) {
 				dialogRequestBytes, err := json.Marshal(tc.dialogRequest)
 				require.NoError(t, err)
+
+				if tc.permissionsPrep != nil {
+					defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
+					defer func() {
+						e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+					}()
+					tc.permissionsPrep()
+				}
+
 				result, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/dialog", dialogRequestBytes, "")
 				tc.expected(t, result, err)
 			})
 		}
+	})
+
+	t.Run("create valid run", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, run)
+	})
+
+	t.Run("create valid run without playbook", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "No playbook",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, run)
+	})
+
+	t.Run("can't without owner", func(t *testing.T) {
+		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "No owner",
+			OwnerUserID: "",
+			TeamID:      e.BasicTeam.Id,
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("can't without team", func(t *testing.T) {
+		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("missing name", func(t *testing.T) {
+		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("archived playbook", func(t *testing.T) {
+		_, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Basic create",
+			OwnerUserID: e.RegularUser.Id,
+			TeamID:      e.BasicTeam.Id,
+			PlaybookID:  e.ArchivedPlaybook.ID,
+		})
+		assert.Error(t, err)
+	})
+}
+
+func TestRunRetrieval(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("by channel id", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.GetByChannelID(context.Background(), e.BasicRun.ChannelID)
+		require.NoError(t, err)
+		require.Equal(t, e.BasicRun.ID, run.ID)
+	})
+
+	t.Run("by channel id not found", func(t *testing.T) {
+		run, err := e.PlaybooksClient.PlaybookRuns.GetByChannelID(context.Background(), model.NewId())
+		require.Error(t, err)
+		require.Nil(t, run)
+	})
+
+	t.Run("empty list", func(t *testing.T) {
+		list, err := e.PlaybooksAdminClient.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID: e.BasicTeam2.Id,
+		})
+		require.Nil(t, err)
+		require.Len(t, list.Items, 0)
+	})
+
+	t.Run("filters", func(t *testing.T) {
+		endedRun, err := e.PlaybooksAdminClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+			Name:        "Anouther Run",
+			TeamID:      e.BasicTeam.Id,
+			OwnerUserID: e.AdminUser.Id,
+			PlaybookID:  e.BasicPlaybook.ID,
+		})
+		require.NoError(t, err)
+		err = e.PlaybooksAdminClient.PlaybookRuns.Finish(context.Background(), endedRun.ID)
+		require.NoError(t, err)
+
+		list, err := e.PlaybooksAdminClient.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID: e.BasicTeam.Id,
+		})
+		require.Nil(t, err)
+		require.Len(t, list.Items, 2)
+
+		list, err = e.PlaybooksAdminClient.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID:   e.BasicTeam.Id,
+			Statuses: []client.Status{client.StatusInProgress},
+		})
+		require.Nil(t, err)
+		require.Len(t, list.Items, 1)
+
+		list, err = e.PlaybooksAdminClient.PlaybookRuns.List(context.Background(), 0, 100, client.PlaybookRunListOptions{
+			TeamID:  e.BasicTeam.Id,
+			OwnerID: e.RegularUser.Id,
+		})
+		require.Nil(t, err)
+		require.Len(t, list.Items, 1)
+	})
+
+	t.Run("checklist autocomplete", func(t *testing.T) {
+		resp, err := e.ServerClient.DoAPIRequest("GET", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/checklist-autocomplete?channel_id="+e.BasicPrivateChannel.Id, "", "")
+		assert.Error(t, err)
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+}
+
+func TestRunStatus(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	t.Run("update", func(t *testing.T) {
+		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "update", 600)
+		assert.NoError(t, err)
+	})
+
+	t.Run("update empty message", func(t *testing.T) {
+		err := e.PlaybooksClient.PlaybookRuns.UpdateStatus(context.Background(), e.BasicRun.ID, "  \t  \r ", 600)
+		assert.Error(t, err)
 	})
 }
 

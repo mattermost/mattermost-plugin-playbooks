@@ -182,7 +182,7 @@
       }
     ],
     "max-lines": [
-      1,
+      0,
       {
         "max": 450,
         "skipBlankLines": true,

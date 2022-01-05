@@ -19,9 +19,9 @@ import {Playbook} from 'src/types/playbook';
 import NoContentPlaybookRunSvg from 'src/components/assets/no_content_playbook_runs_svg';
 import {startPlaybookRun} from 'src/actions';
 import {navigateToUrl} from 'src/browser_routing';
-import {usePlaybooksRouting, useAllowPlaybookCreationInTeams, usePlaybooksCrud} from 'src/hooks';
+import {usePlaybooksRouting, useAllowPlaybookCreationInTeams, usePlaybooksCrud, useCanCreatePlaybooksOnAnyTeam} from 'src/hooks';
 
-import {clientHasPlaybooks, fetchPlaybookRuns} from 'src/client';
+import {clientHasPlaybooks} from 'src/client';
 
 import UpgradeModal from './upgrade_modal';
 import {useUpgradeModalVisibility} from './playbook_list';
@@ -117,9 +117,10 @@ const NoContentPage = () => {
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
     const {create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
     const allowPlaybookCreationInTeams = useAllowPlaybookCreationInTeams();
+    const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const newPlaybook = (team: Team, templateTitle?: string | undefined) => {
         if (allowPlaybookCreationInTeams.get(team.id)) {
-            create(team, templateTitle);
+            create({teamId: team.id, template: templateTitle});
         } else {
             showUpgradeModal();
         }
@@ -142,6 +143,7 @@ const NoContentPage = () => {
             <NoContentTextContainer>
                 <NoContentTitle><FormattedMessage defaultMessage='What are playbook runs?'/></NoContentTitle>
                 <NoContentDescription><FormattedMessage defaultMessage='Running a playbook orchestrates workflows for your team and tools.'/></NoContentDescription>
+                {(canCreatePlaybooks || playbookExist) &&
                 <NoContentButton
                     className='mt-6'
                     onClick={handleClick}
@@ -149,6 +151,7 @@ const NoContentPage = () => {
                     <i className='icon-plus mr-2'/>
                     {playbookExist ? <FormattedMessage defaultMessage='Run playbook'/> : <FormattedMessage defaultMessage='Create playbook'/>}
                 </NoContentButton>
+                }
             </NoContentTextContainer>
             <NoContentPlaybookRunSvgContainer>
                 <NoContentPlaybookRunSvg/>

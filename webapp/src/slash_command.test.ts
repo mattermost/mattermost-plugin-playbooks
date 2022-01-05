@@ -8,6 +8,11 @@ import {makeSlashCommandHook} from './slash_command';
 
 const mockStore = configureStore<GlobalState, DispatchFunc>();
 
+jest.mock('@mdi/react', () => ({
+    __esModule: true,
+    default: jest.fn(),
+}));
+
 test('makeSlashCommandHook leaves rejected slash commands unmodified', async () => {
     const inPlaybookRunChannel = jest.spyOn(Selectors, 'inPlaybookRunChannel');
     inPlaybookRunChannel.mockReturnValue(true);

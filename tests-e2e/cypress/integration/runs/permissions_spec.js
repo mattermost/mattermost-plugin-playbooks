@@ -1,4 +1,4 @@
-// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
 // ***************************************************************
@@ -294,6 +294,7 @@ describe('runs > permissions', () => {
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: 'Playbook',
+                makePublic: false,
                 memberIDs: [testUser.id, playbookMember.id],
                 createPublicPlaybookRun: false,
             }).then((createdPlaybook) => {
@@ -376,6 +377,7 @@ describe('runs > permissions', () => {
                 teamId: testTeam.id,
                 title: 'Playbook',
                 memberIDs: [testUser.id, playbookMember.id],
+                makePublic: false,
                 createPublicPlaybookRun: true,
             }).then((createdPlaybook) => {
                 playbook = createdPlaybook;
@@ -470,7 +472,7 @@ const assertRunOverviewIsVisible = (run) => {
 
     // * Verify that the details loaded
     cy.findByTestId('playbook-run-title').contains(run.name);
-}
+};
 
 const assertRunIsNotVisible = (run, user) => {
     // # Login as the user in question
