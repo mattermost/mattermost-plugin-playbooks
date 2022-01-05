@@ -30,14 +30,20 @@ import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
 import {RegularHeading} from 'src/styles/headings';
 import EditTitleDescriptionModal from 'src/components/backstage/playbook_edit_title_description_modal';
-import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useHasPlaybookPermissionById} from 'src/hooks';
 import StatusUpdatesEdit from 'src/components/backstage/playbook_edit/status_updates_edit';
 import ActionsEdit from 'src/components/backstage/playbook_edit/actions_edit';
 import RetrospectiveEdit from 'src/components/backstage/playbook_edit/retrospective_edit';
 
+import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
+
 interface Props {
     isNew: boolean;
     teamId?: string;
+    name?: string;
+    template?: string;
+    description?: string;
+    public?: boolean;
 }
 
 interface URLParams {
@@ -86,17 +92,34 @@ const PlaybookEdit = (props: Props) => {
 
     const currentUserId = useSelector(getCurrentUserId);
 
-    const [playbook, setPlaybook] = useState<DraftPlaybookWithChecklist | PlaybookWithChecklist>({
-        ...emptyPlaybook(),
-        reminder_timer_default_seconds: 86400,
-        team_id: props.teamId || '',
+    const [playbook, setPlaybook] = useState<DraftPlaybookWithChecklist | PlaybookWithChecklist>(() => {
+        const initialPlaybook: DraftPlaybookWithChecklist = {
+            ...(PresetTemplates.find((t) => t.title === props.template)?.template || emptyPlaybook()),
+            reminder_timer_default_seconds: 86400,
+            members: [{user_id: currentUserId, roles: [PlaybookRole.Member, PlaybookRole.Admin]}],
+            team_id: props.teamId || '',
+        };
+
+        if (props.name) {
+            initialPlaybook.title = props.name;
+        }
+        if (props.description) {
+            initialPlaybook.description = props.description;
+        }
+
+        if (props.public) {
+            initialPlaybook.public = true;
+        } else {
+            initialPlaybook.public = false;
+        }
+
+        return initialPlaybook;
     });
     const [changesMade, setChangesMade] = useState(false);
 
     const [showTitleDescriptionModal, setShowTitleDescriptionModal] = useState(false);
 
     const urlParams = useParams<URLParams>();
-    const location = useLocation();
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -115,33 +138,11 @@ const PlaybookEdit = (props: Props) => {
 
     useEffect(() => {
         const fetchData = async () => {
-            // No need to fetch anything if we're adding a new playbook
-            if (props.isNew) {
-                // Use preset template if specified
-                const searchParams = new URLSearchParams(location.search);
-                const templateTitle = searchParams.get(TEMPLATE_TITLE_KEY);
-                if (templateTitle) {
-                    const template = PresetTemplates.find((t) => t.title === templateTitle);
-                    if (!template) {
-                        // eslint-disable-next-line no-console
-                        console.error('Failed to find template using template key =', templateTitle);
-                        return;
-                    }
-
-                    setPlaybook({
-                        ...template.template,
-                        team_id: props.teamId || '',
-                    });
-                    setChangesMade(true);
-                }
-                return;
-            }
-
             if (urlParams.playbookId) {
                 try {
                     const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
                     if (fetchedPlaybook) {
-                        fetchedPlaybook.member_ids ??= [currentUserId];
+                        fetchedPlaybook.members ??= [{user_id: currentUserId, roles: [PlaybookRole.Member, PlaybookRole.Admin]}];
                         setPlaybook(fetchedPlaybook);
                     }
                     setFetchingState(FetchingStateType.fetched);
@@ -151,7 +152,7 @@ const PlaybookEdit = (props: Props) => {
             }
         };
         fetchData();
-    }, [urlParams.playbookId, props.isNew, props.teamId, currentUserId, location.search]);
+    }, [urlParams.playbookId, props.isNew, props.teamId]);
 
     useEffect(() => {
         const teamId = props.teamId || playbook.team_id;
