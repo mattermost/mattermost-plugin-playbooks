@@ -786,7 +786,7 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, trig
 	numOutstanding := 0
 	for _, c := range currentPlaybookRun.Checklists {
 		for _, item := range c.Items {
-			if item.State != ChecklistItemStateClosed {
+			if item.State == ChecklistItemStateOpen || item.State == ChecklistItemStateInProgress {
 				numOutstanding++
 			}
 		}
@@ -1149,10 +1149,10 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	if newState == ChecklistItemStateOpen {
 		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
-	if newState == CheckListItemStateSkipped {
+	if newState == ChecklistItemStateSkipped {
 		modifyMessage = fmt.Sprintf("skipped checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
-	if itemToCheck.State == CheckListItemStateSkipped && newState == ChecklistItemStateOpen {
+	if itemToCheck.State == ChecklistItemStateSkipped && newState == ChecklistItemStateOpen {
 		modifyMessage = fmt.Sprintf("restored checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 
@@ -1482,7 +1482,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 	}
 
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].LastSkipped = model.GetMillis()
-	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = CheckListItemStateSkipped
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateSkipped
 
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
