@@ -19,16 +19,24 @@ type TelemetryHandler struct {
 	playbookRunService   app.PlaybookRunService
 	playbookRunTelemetry app.PlaybookRunTelemetry
 	playbookService      app.PlaybookService
+	permissions          *app.PermissionsService
 	playbookTelemetry    app.PlaybookTelemetry
 	botTelemetry         bot.Telemetry
 	pluginAPI            *pluginapi.Client
 }
 
 // NewTelemetryHandler Creates a new Plugin API handler.
-func NewTelemetryHandler(router *mux.Router, playbookRunService app.PlaybookRunService,
-	api *pluginapi.Client, log bot.Logger, playbookRunTelemetry app.PlaybookRunTelemetry,
-	playbookService app.PlaybookService, playbookTelemetry app.PlaybookTelemetry,
-	botTelemetry bot.Telemetry) *TelemetryHandler {
+func NewTelemetryHandler(
+	router *mux.Router,
+	playbookRunService app.PlaybookRunService,
+	api *pluginapi.Client,
+	log bot.Logger,
+	playbookRunTelemetry app.PlaybookRunTelemetry,
+	playbookService app.PlaybookService,
+	playbookTelemetry app.PlaybookTelemetry,
+	botTelemetry bot.Telemetry,
+	permissions *app.PermissionsService,
+) *TelemetryHandler {
 	handler := &TelemetryHandler{
 		ErrorHandler:         &ErrorHandler{log: log},
 		playbookRunService:   playbookRunService,
@@ -37,6 +45,7 @@ func NewTelemetryHandler(router *mux.Router, playbookRunService app.PlaybookRunS
 		playbookTelemetry:    playbookTelemetry,
 		botTelemetry:         botTelemetry,
 		pluginAPI:            api,
+		permissions:          permissions,
 	}
 
 	telemetryRouter := router.PathPrefix("/telemetry").Subrouter()
@@ -62,8 +71,9 @@ func (h *TelemetryHandler) checkPlaybookRunViewPermissions(next http.Handler) ht
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		userID := r.Header.Get("Mattermost-User-ID")
+		runID := vars["id"]
 
-		if err := app.UserCanViewPlaybookRun(userID, vars["id"], h.playbookService, h.playbookRunService, h.pluginAPI); err != nil {
+		if err := h.permissions.RunView(userID, runID); err != nil {
 			if errors.Is(err, app.ErrNoPermissions) {
 				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return
@@ -80,8 +90,9 @@ func (h *TelemetryHandler) checkPlaybookViewPermissions(next http.Handler) http.
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		userID := r.Header.Get("Mattermost-User-ID")
+		playbookID := vars["id"]
 
-		if err := app.PlaybookAccess(userID, vars["id"], h.playbookService, h.pluginAPI); err != nil {
+		if err := h.permissions.PlaybookView(userID, playbookID); err != nil {
 			if errors.Is(err, app.ErrNoPermissions) {
 				h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
 				return

@@ -388,7 +388,7 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 		"NumChecklists":               len(playbook.Checklists),
 		"TotalChecklistItems":         totalChecklistItems,
 		"NumSlashCommands":            totalChecklistItemsWithCommands,
-		"NumMembers":                  len(playbook.MemberIDs),
+		"NumMembers":                  len(playbook.Members),
 		"UsesReminderMessageTemplate": playbook.ReminderMessageTemplate != "",
 		"ReminderTimerDefaultSeconds": playbook.ReminderTimerDefaultSeconds,
 		"NumInvitedUserIDs":           len(playbook.InvitedUserIDs),

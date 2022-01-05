@@ -12,21 +12,13 @@ import {useIntl} from 'react-intl';
 import {useDropdownPosition} from 'src/hooks';
 import {DropdownSelectorStyle} from 'src/components/profile/dropdown_selector_style';
 
+import GenericModal from '../widgets/generic_modal';
+
 import TeamWithIcon from './team_with_icon';
 
 interface Option {
     value: Team;
     label: React.ReactNode;
-}
-
-interface Props {
-    testId?: string
-    children: React.ReactNode;
-    enableEdit: boolean;
-    teams: Team[];
-    allowPlaybookCreationInTeams: Map<string, boolean>;
-    withButton: boolean;
-    onSelectedChange: (team: Team) => void;
 }
 
 interface DropdownPosition {
@@ -35,7 +27,29 @@ interface DropdownPosition {
     isOpen: boolean;
 }
 
-export default function CreatePlaybookTeamSelector(props: Props) {
+export type PlaybookCreateModalProps = {
+    testId?: string
+    children: React.ReactNode;
+    enableEdit: boolean;
+    teams: Team[];
+    allowPlaybookCreationInTeams: Map<string, boolean>;
+    withButton: boolean;
+    onSelectedChange: (team: Team) => void;
+};
+
+const ID = 'playbooks_create';
+
+export const makePlaybookCreateModal = (props: PlaybookCreateModalProps) => ({
+    modalId: ID,
+    dialogType: PlaybookCreateModal,
+    dialogProps: props,
+});
+
+const SizedGenericModal = styled(GenericModal)`
+    width: 800px;
+`;
+
+const PlaybookCreateModal = (props: PlaybookCreateModalProps) => {
     const {formatMessage} = useIntl();
     const teamOptions = props.teams.map((team: Team) => {
         return ({
@@ -49,46 +63,19 @@ export default function CreatePlaybookTeamSelector(props: Props) {
         } as Option);
     });
 
-    const [dropdownPosition, toggleOpen] = useDropdownPosition(teamOptions.length);
-
     const onSelectedChange = async (value: Option | undefined | null | readonly Option[]) => {
-        toggleOpen(0, 0);
-
         const team = (value as Option).value;
         if (team) {
             props.onSelectedChange(team);
         }
     };
 
-    const target = (
-        <div
-            onClick={(event) => {
-                if (props.enableEdit) {
-                    if (props.teams.length === 1) {
-                        props.onSelectedChange(props.teams[0]);
-                        return;
-                    }
-
-                    toggleOpen(event.clientX, event.clientY);
-                }
-            }}
-        >
-            {props.children}
-        </div>
-    );
-
-    const targetWrapped = (
-        <div data-testid={props.testId}>
-            {target}
-        </div>
-    );
+    return null;
 
     return (
-        <Dropdown
-            onClose={() => toggleOpen(0, 0)}
-            target={targetWrapped}
-            dependsOnMousePosition={!props.withButton}
-            position={dropdownPosition}
+        <SizedGenericModal
+            id={ID}
+            modalHeaderText={formatMessage({defaultMessage: 'Create Playbook'})}
         >
             <ReactSelect
                 autoFocus={true}
@@ -105,9 +92,9 @@ export default function CreatePlaybookTeamSelector(props: Props) {
                 classNamePrefix='playbook-run-user-select'
                 className='playbook-run-user-select'
             />
-        </Dropdown>
+        </SizedGenericModal>
     );
-}
+};
 
 // styles for the select component
 const selectStyles: StylesConfig<Option, boolean> = {
@@ -199,3 +186,5 @@ const Dropdown = ({children, showOnRight, moveUp, target, onClose, dependsOnMous
         </DropdownSelectorStyle>
     );
 };
+
+export default PlaybookCreateModal;

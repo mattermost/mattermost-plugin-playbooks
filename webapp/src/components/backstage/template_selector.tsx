@@ -6,15 +6,18 @@ import styled from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiRocketLaunchOutline, mdiHandshakeOutline, mdiCodeBraces} from '@mdi/js';
 
-import {Team} from 'mattermost-redux/types/teams';
+import {FormattedMessage, useIntl} from 'react-intl';
 
-import {FormattedMessage} from 'react-intl';
+import {useDispatch} from 'react-redux';
 
 import {DraftPlaybookWithChecklist, emptyPlaybook, newChecklistItem} from 'src/types/playbook';
 import FileIcon from 'src/components/assets/icons/file_icon';
 import AlertIcon from 'src/components/assets/icons/alert_icon';
 
-import CreatePlaybookTeamSelector from 'src/components/team/create_playbook_team_selector';
+import {displayPlaybookCreateModal} from 'src/actions';
+import {telemetryEventForTemplate} from 'src/client';
+
+import {StyledSelect} from './styles';
 
 export interface PresetTemplate {
     title: string;
@@ -417,6 +420,8 @@ export const PresetTemplates: PresetTemplate[] = [
     },
 ];
 
+const presetTemplateOptions = PresetTemplates.map((template: PresetTemplate) => ({label: template.title, value: template.title}));
+
 const RootContainer = styled.div`
     display: flex;
     flex-direction: column;
@@ -468,9 +473,7 @@ const TemplateItemDiv = styled.div`
 
 interface Props {
     templates?: PresetTemplate[];
-    teams: Team[];
     allowPlaybookCreationInTeams: Map<string, boolean>;
-    onSelect: (team: Team, t: PresetTemplate) => void;
     showUpgradeModal: () => void;
 }
 
@@ -483,8 +486,35 @@ export function isPlaybookCreationAllowed(allowPlaybookCreationInTeams: Map<stri
     return false;
 }
 
-const TemplateSelector = ({templates = PresetTemplates, onSelect, teams, allowPlaybookCreationInTeams, showUpgradeModal}: Props) => {
+interface TemplateDropdownProps {
+    template?: string
+    onTemplateSet: (template?: string) => void
+}
+
+export const TemplateDropdown = (props: TemplateDropdownProps) => {
+    const {formatMessage} = useIntl();
+
+    const handleTemplateSet = (option: {value: string}) => {
+        props.onTemplateSet(option.value);
+    };
+
+    return (
+        <StyledSelect
+            filterOption={null}
+            isMulti={false}
+            placeholder={formatMessage({defaultMessage: 'Select a template'})}
+            onChange={handleTemplateSet}
+            options={presetTemplateOptions}
+            value={presetTemplateOptions.find((val) => val.value === props?.template)}
+            isClearable={false}
+            maxMenuHeight={380}
+        />
+    );
+};
+
+const TemplateSelector = ({templates = PresetTemplates, allowPlaybookCreationInTeams, showUpgradeModal}: Props) => {
     const allowPlaybookCreation = isPlaybookCreationAllowed(allowPlaybookCreationInTeams);
+    const dispatch = useDispatch();
     return (
         <BackgroundColorContainer>
             <RootContainer>
@@ -497,23 +527,16 @@ const TemplateSelector = ({templates = PresetTemplates, onSelect, teams, allowPl
                         {templates.map((template: PresetTemplate) => {
                             if (allowPlaybookCreation) {
                                 return (
-                                    <CreatePlaybookTeamSelector
+                                    <TemplateItem
                                         key={template.title}
-                                        testId={'template-item-team-selector'}
-                                        enableEdit={true}
-                                        teams={teams}
-                                        allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
-                                        onSelectedChange={(team) => {
-                                            onSelect(team, template);
+                                        title={template.title}
+                                        onClick={() => {
+                                            telemetryEventForTemplate(template.title, 'click_template_icon');
+                                            dispatch(displayPlaybookCreateModal({startingTemplate: template.title}));
                                         }}
-                                        withButton={false}
                                     >
-                                        <TemplateItem
-                                            title={template.title}
-                                        >
-                                            {template.icon}
-                                        </TemplateItem>
-                                    </CreatePlaybookTeamSelector>
+                                        {template.icon}
+                                    </TemplateItem>
                                 );
                             }
                             return (

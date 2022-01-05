@@ -169,13 +169,22 @@ type Runner struct {
 	configService      config.Service
 	userInfoStore      app.UserInfoStore
 	userInfoTelemetry  app.UserInfoTelemetry
+	permissions        *app.PermissionsService
 }
 
 // NewCommandRunner creates a command runner.
-func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
-	logger bot.Logger, poster bot.Poster, playbookRunService app.PlaybookRunService,
-	playbookService app.PlaybookService, configService config.Service,
-	userInfoStore app.UserInfoStore, userInfoTelemetry app.UserInfoTelemetry) *Runner {
+func NewCommandRunner(ctx *plugin.Context,
+	args *model.CommandArgs,
+	api *pluginapi.Client,
+	logger bot.Logger,
+	poster bot.Poster,
+	playbookRunService app.PlaybookRunService,
+	playbookService app.PlaybookService,
+	configService config.Service,
+	userInfoStore app.UserInfoStore,
+	userInfoTelemetry app.UserInfoTelemetry,
+	permissions *app.PermissionsService,
+) *Runner {
 	return &Runner{
 		context:            ctx,
 		args:               args,
@@ -187,6 +196,7 @@ func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *plugina
 		configService:      configService,
 		userInfoStore:      userInfoStore,
 		userInfoTelemetry:  userInfoTelemetry,
+		permissions:        permissions,
 	}
 }
 
@@ -222,15 +232,10 @@ func (r *Runner) actionRun(args []string) {
 		postID = args[1]
 	}
 
-	if !app.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI) {
-		r.postCommandResponse("Must be a member of the team to run playbooks.")
-		return
-	}
-
 	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.pluginAPI),
 	}
 
 	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
@@ -268,15 +273,10 @@ func (r *Runner) actionRunPlaybook(args []string) {
 	playbookID := args[0]
 	clientID := args[1]
 
-	if !app.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI) {
-		r.postCommandResponse("Must be a member of the team to run playbooks.")
-		return
-	}
-
 	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.pluginAPI),
 	}
 
 	// Using the GetPlaybooksForTeam so that requesterInfo and the expected security restrictions
@@ -663,7 +663,7 @@ func (r *Runner) actionFinish() {
 		return
 	}
 
-	if err = app.EditPlaybookRun(r.args.UserId, r.args.ChannelId, r.pluginAPI); err != nil {
+	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunID); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
@@ -690,7 +690,7 @@ func (r *Runner) actionUpdate() {
 		return
 	}
 
-	if err = app.EditPlaybookRun(r.args.UserId, r.args.ChannelId, r.pluginAPI); err != nil {
+	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunID); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
@@ -722,16 +722,10 @@ func (r *Runner) actionAdd(args []string) {
 		return
 	}
 
-	isGuest, err := app.IsGuest(r.args.UserId, r.pluginAPI)
+	requesterInfo, err := app.GetRequesterInfo(r.args.UserId, r.pluginAPI)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
-	}
-
-	requesterInfo := app.RequesterInfo{
-		UserID:  r.args.UserId,
-		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
-		IsGuest: isGuest,
 	}
 
 	if err := r.playbookRunService.OpenAddToTimelineDialog(requesterInfo, postID, r.args.TeamId, r.args.TriggerId); err != nil {
@@ -1702,7 +1696,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.pluginAPI),
 	}
 
 	playbooksResult, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId, app.PlaybookFilterOptions{

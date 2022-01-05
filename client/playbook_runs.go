@@ -129,9 +129,13 @@ func (s *PlaybookRunService) UpdateStatus(ctx context.Context, playbookRunID str
 		return err
 	}
 
-	_, err = s.client.do(ctx, req, nil)
+	resp, err := s.client.do(ctx, req, nil)
 	if err != nil {
 		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected status code %d", http.StatusOK)
 	}
 
 	return nil

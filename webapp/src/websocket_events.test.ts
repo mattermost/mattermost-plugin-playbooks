@@ -6,6 +6,11 @@ import {handleReconnect} from './websocket_events';
 
 const mockStore = configureStore<GlobalState, DispatchFunc>();
 
+jest.mock('@mdi/react', () => ({
+    __esModule: true,
+    default: jest.fn(),
+}));
+
 describe('handleReconnect', () => {
     it('does nothing if there is no current team', async () => {
         const initialState = {

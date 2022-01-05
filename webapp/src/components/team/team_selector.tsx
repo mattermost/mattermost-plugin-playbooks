@@ -42,6 +42,11 @@ interface Props {
 
 const dropdownYShift = 27;
 
+const RightAlign = styled.div`
+	flex-grow: 1;
+	text-align: right;
+`;
+
 export default function TeamSelector(props: Props) {
     const {formatMessage} = useIntl();
     const [isOpen, setOpen] = useState(false);
@@ -142,6 +147,8 @@ export default function TeamSelector(props: Props) {
     if (props.selectedTeamId) {
         target = (
             <SelectedButton
+                data-testid={props.testId}
+                ref={ref}
                 onClick={() => {
                     if (props.enableEdit) {
                         toggleOpen();
@@ -153,12 +160,16 @@ export default function TeamSelector(props: Props) {
                     showNotLicensedIcon={false}
                 />
 
-                {<i className='icon-chevron-down ml-1 mr-2'/>}
+                <RightAlign>
+                    {<i className='icon-chevron-down ml-1 mr-2'/>}
+                </RightAlign>
             </SelectedButton>
         );
     } else if (props.placeholderButtonClass) {
         target = (
             <button
+                data-testid={props.testId}
+                ref={ref}
                 onClick={() => {
                     if (props.enableEdit) {
                         toggleOpen();
@@ -167,12 +178,16 @@ export default function TeamSelector(props: Props) {
                 className={props.placeholderButtonClass}
             >
                 {selected === null ? props.placeholder : selected.label}
-                {<i className='icon-chevron-down icon--small ml-2'/>}
+                <RightAlign>
+                    {<i className='icon-chevron-down icon--small ml-2'/>}
+                </RightAlign>
             </button>
         );
     } else {
         target = (
             <PlaybookRunFilterButton
+                data-testid={props.testId}
+                ref={ref}
                 active={isOpen}
                 onClick={() => {
                     if (props.enableEdit) {
@@ -181,7 +196,9 @@ export default function TeamSelector(props: Props) {
                 }}
             >
                 {selected === null ? props.placeholder : selected.label}
-                {<i className='icon-chevron-down icon--small ml-2'/>}
+                <RightAlign>
+                    {<i className='icon-chevron-down icon--small ml-2'/>}
+                </RightAlign>
             </PlaybookRunFilterButton>
         );
     }
@@ -189,20 +206,14 @@ export default function TeamSelector(props: Props) {
     if (props.onlyPlaceholder) {
         target = (
             <div
+                data-testid={props.testId}
+                ref={ref}
                 onClick={toggleOpen}
             >
                 {props.placeholder}
             </div>
         );
     }
-    const targetWrapped = (
-        <div
-            data-testid={props.testId}
-            ref={ref}
-        >
-            {target}
-        </div>
-    );
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
     const components = props.customControl ? {
@@ -214,7 +225,7 @@ export default function TeamSelector(props: Props) {
         <Dropdown
             isOpen={isOpen}
             onClose={toggleOpen}
-            target={targetWrapped}
+            target={target}
             showOnRight={props.showOnRight}
             moveUp={moveUp}
         >
@@ -267,6 +278,8 @@ interface DropdownProps {
 
 const ProfileDropdown = styled.div`
     position: relative;
+	flex-grow: 1;
+	display: flex;
 `;
 
 const Blanket = styled.div`
@@ -311,6 +324,7 @@ const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: Drop
 };
 
 export const SelectedButton = styled.button`
+	flex-grow: 1;
     font-weight: 600;
     height: 40px;
     padding: 0 4px 0 12px;

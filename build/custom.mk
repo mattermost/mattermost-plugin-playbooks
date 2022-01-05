@@ -4,7 +4,6 @@ GO_BUILD_FLAGS += -ldflags "-X main.rudderDataplaneURL=$(MM_RUDDER_DATAPLANE_URL
 ## Generate mocks.
 mocks:
 ifneq ($(HAS_SERVER),)
-	go install github.com/golang/mock/mockgen
 	mockgen -destination server/config/mocks/mock_service.go github.com/mattermost/mattermost-plugin-playbooks/server/config Service
 	mockgen -destination server/bot/mocks/mock_logger.go github.com/mattermost/mattermost-plugin-playbooks/server/bot Logger
 	mockgen -destination server/bot/mocks/mock_poster.go github.com/mattermost/mattermost-plugin-playbooks/server/bot Poster

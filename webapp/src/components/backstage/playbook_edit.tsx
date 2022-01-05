@@ -33,9 +33,10 @@ import {RegularHeading} from 'src/styles/headings';
 import DefaultUpdateTimer from 'src/components/backstage/default_update_timer';
 import EditTitleDescriptionModal from 'src/components/backstage/playbook_edit_title_description_modal';
 
-import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useHasPlaybookPermissionById} from 'src/hooks';
 
-import SharePlaybook from './share_playbook';
+import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
+
 import {
     BackstageSubheader,
     BackstageSubheaderDescription,
@@ -176,6 +177,10 @@ const BackstageGroupToggleHeader = styled.div`
 interface Props {
     isNew: boolean;
     teamId?: string;
+    name?: string;
+    template?: string;
+    description?: string;
+    public?: boolean;
 }
 
 interface URLParams {
@@ -232,17 +237,34 @@ const PlaybookEdit = (props: Props) => {
 
     const currentUserId = useSelector(getCurrentUserId);
 
-    const [playbook, setPlaybook] = useState<DraftPlaybookWithChecklist | PlaybookWithChecklist>({
-        ...emptyPlaybook(),
-        reminder_timer_default_seconds: 86400,
-        team_id: props.teamId || '',
+    const [playbook, setPlaybook] = useState<DraftPlaybookWithChecklist | PlaybookWithChecklist>(() => {
+        const initialPlaybook: DraftPlaybookWithChecklist = {
+            ...(PresetTemplates.find((t) => t.title === props.template)?.template || emptyPlaybook()),
+            reminder_timer_default_seconds: 86400,
+            members: [{user_id: currentUserId, roles: [PlaybookRole.Member, PlaybookRole.Admin]}],
+            team_id: props.teamId || '',
+        };
+
+        if (props.name) {
+            initialPlaybook.title = props.name;
+        }
+        if (props.description) {
+            initialPlaybook.description = props.description;
+        }
+
+        if (props.public) {
+            initialPlaybook.public = true;
+        } else {
+            initialPlaybook.public = false;
+        }
+
+        return initialPlaybook;
     });
     const [changesMade, setChangesMade] = useState(false);
 
     const [showTitleDescriptionModal, setShowTitleDescriptionModal] = useState(false);
 
     const urlParams = useParams<URLParams>();
-    const location = useLocation();
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -261,33 +283,11 @@ const PlaybookEdit = (props: Props) => {
 
     useEffect(() => {
         const fetchData = async () => {
-            // No need to fetch anything if we're adding a new playbook
-            if (props.isNew) {
-                // Use preset template if specified
-                const searchParams = new URLSearchParams(location.search);
-                const templateTitle = searchParams.get(TEMPLATE_TITLE_KEY);
-                if (templateTitle) {
-                    const template = PresetTemplates.find((t) => t.title === templateTitle);
-                    if (!template) {
-                        // eslint-disable-next-line no-console
-                        console.error('Failed to find template using template key =', templateTitle);
-                        return;
-                    }
-
-                    setPlaybook({
-                        ...template.template,
-                        team_id: props.teamId || '',
-                    });
-                    setChangesMade(true);
-                }
-                return;
-            }
-
             if (urlParams.playbookId) {
                 try {
                     const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
                     if (fetchedPlaybook) {
-                        fetchedPlaybook.member_ids ??= [currentUserId];
+                        fetchedPlaybook.members ??= [{user_id: currentUserId, roles: [PlaybookRole.Member, PlaybookRole.Admin]}];
                         setPlaybook(fetchedPlaybook);
                     }
                     setFetchingState(FetchingStateType.fetched);
@@ -360,31 +360,6 @@ const PlaybookEdit = (props: Props) => {
         setPlaybook({
             ...playbook,
             create_public_playbook_run: e.target.value === 'public',
-        });
-        setChangesMade(true);
-    };
-
-    const handleUsersInput = (userId: string) => {
-        setPlaybook({
-            ...playbook,
-            member_ids: [...playbook.member_ids, userId],
-        });
-        setChangesMade(true);
-    };
-
-    const handleRemoveUser = (userId: string) => {
-        const idx = playbook.member_ids.indexOf(userId);
-        setPlaybook({
-            ...playbook,
-            member_ids: [...playbook.member_ids.slice(0, idx), ...playbook.member_ids.slice(idx + 1)],
-        });
-        setChangesMade(true);
-    };
-
-    const handleClearUsers = () => {
-        setPlaybook({
-            ...playbook,
-            member_ids: [],
         });
         setChangesMade(true);
     };
@@ -836,18 +811,6 @@ const PlaybookEdit = (props: Props) => {
                                             {formatMessage({defaultMessage: 'Private'})}
                                         </RadioLabel>
                                     </RadioContainer>
-                                </SidebarBlock>
-                                <SidebarBlock>
-                                    <SharePlaybook
-                                        currentUserId={currentUserId}
-                                        onAddUser={handleUsersInput}
-                                        onRemoveUser={handleRemoveUser}
-                                        searchProfiles={searchUsers}
-                                        getProfiles={getUsers}
-                                        memberIds={playbook.member_ids}
-                                        onClear={handleClearUsers}
-                                        teamId={props.teamId || playbook.team_id}
-                                    />
                                 </SidebarBlock>
                             </TabContainer>
                         </TabsContent>

@@ -65,6 +65,9 @@ import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 import {modals} from 'src/webapp_globals';
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
+import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbook_access_modal';
+
+import {makePlaybookCreateModal, PlaybookCreateModalProps} from './components/create_playbook_modal';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -128,6 +131,20 @@ export function openUpdateRunStatusModal(
         reminderInSeconds,
         finishRunChecked,
     }));
+}
+
+export function displayEditPlaybookAccessModal(
+    playbookId: string
+) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        dispatch(modals.openModal(makePlaybookAccessModalDefinition({playbookId})));
+    };
+}
+
+export function displayPlaybookCreateModal(props: PlaybookCreateModalProps) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        dispatch(modals.openModal(makePlaybookCreateModal(props)));
+    };
 }
 
 export function finishRun(teamId: string) {

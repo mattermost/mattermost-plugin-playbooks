@@ -57,6 +57,7 @@ export const DropdownMenu = styled.div<DropdownMenuProps>`
     list-style: none;
 
     padding: 10px 0;
+	margin-left: 50px;
     font-family: Open Sans;
     font-style: normal;
     font-weight: normal;
@@ -73,7 +74,7 @@ export const DropdownMenu = styled.div<DropdownMenuProps>`
 `;
 
 interface DotMenuProps {
-    children: JSX.Element[] | JSX.Element;
+    children: React.ReactNode;
     icon: JSX.Element;
     top?: boolean;
     left?: boolean;

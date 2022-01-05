@@ -27,6 +27,8 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
+import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
+
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 
@@ -172,6 +174,16 @@ export function useProfilesInCurrentChannel() {
     }, [currentChannelId, profilesInChannel]);
 
     return profilesInChannel;
+}
+
+export function useCanCreatePlaybooksOnAnyTeam() {
+    const teams = useSelector(getMyTeams);
+    return useSelector((state: GlobalState) => (
+        teams.some((team: Team) => (
+            haveITeamPermission(state, team.id, 'playbook_public_create') ||
+			haveITeamPermission(state, team.id, 'playbook_private_create')
+        ))
+    ));
 }
 
 export function useProfilesInTeam() {

@@ -42,6 +42,7 @@ type PlaybookRunServiceImpl struct {
 	telemetry       PlaybookRunTelemetry
 	api             plugin.API
 	playbookService PlaybookService
+	permissions     *PermissionsService
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -91,7 +92,7 @@ func NewPlaybookRunService(
 	api plugin.API,
 	playbookService PlaybookService,
 ) *PlaybookRunServiceImpl {
-	return &PlaybookRunServiceImpl{
+	service := &PlaybookRunServiceImpl{
 		pluginAPI:       pluginAPI,
 		store:           store,
 		poster:          poster,
@@ -103,6 +104,10 @@ func NewPlaybookRunService(
 		api:             api,
 		playbookService: playbookService,
 	}
+
+	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService)
+
+	return service
 }
 
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -422,8 +427,16 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 }
 
 // OpenCreatePlaybookRunDialog opens a interactive dialog to start a new playbook run.
-func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error {
-	dialog, err := s.newPlaybookRunDialog(teamID, ownerID, postID, clientID, playbooks, isMobileApp)
+func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error {
+
+	filteredPlaybooks := make([]Playbook, 0, len(playbooks))
+	for _, playbook := range playbooks {
+		if err := s.permissions.RunCreate(requesterID, playbook); err == nil {
+			filteredPlaybooks = append(filteredPlaybooks, playbook)
+		}
+	}
+
+	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, isMobileApp)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new playbook run dialog")
 	}
@@ -2721,8 +2734,9 @@ func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, pos
 		if user == authorID {
 			continue
 		}
+
 		// Check for access permissions
-		if err := UserCanViewPlaybookRun(user, playbookRunID, s.playbookService, s, s.pluginAPI); err != nil {
+		if err := s.permissions.RunView(user, playbookRunID); err != nil {
 			continue
 		}
 
