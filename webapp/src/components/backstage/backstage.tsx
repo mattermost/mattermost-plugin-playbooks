@@ -34,11 +34,10 @@ import {applyTheme} from 'src/components/backstage/css_utils';
 
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
-    // The container should take up all vertical real estate, less the height of the global header.
-    height: calc(100% - 40px);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    height: 100%;
 `;
 
 const BackstageTitlebarItem = styled(NavLink)`
