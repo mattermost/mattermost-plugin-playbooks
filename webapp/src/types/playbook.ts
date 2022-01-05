@@ -8,6 +8,7 @@ export interface Playbook {
     team_id: string;
     create_public_playbook_run: boolean;
     delete_at: number;
+    public: boolean;
 
     /** @alias num_checklists */
     num_stages: number;
@@ -15,7 +16,14 @@ export interface Playbook {
     num_runs: number;
     num_actions: number;
     last_run_at: number;
-    member_ids: string[];
+    members: PlaybookMember[];
+    default_playbook_member_role: string;
+}
+
+export interface PlaybookMember {
+    user_id: string
+    roles: string[]
+    scheme_roles?: string[]
 }
 
 export interface PlaybookWithChecklist extends Playbook {
@@ -99,6 +107,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         title: '',
         description: '',
         team_id: '',
+        public: true,
         create_public_playbook_run: false,
         delete_at: 0,
         num_stages: 0,
@@ -107,7 +116,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         num_actions: 0,
         last_run_at: 0,
         checklists: [emptyChecklist()],
-        member_ids: [],
+        members: [],
         reminder_message_template: '',
         reminder_timer_default_seconds: 7 * 24 * 60 * 60, // 7 days
         status_update_enabled: true,
@@ -133,6 +142,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         categorize_channel_enabled: false,
         run_summary_template: '',
         channel_name_template: '',
+        default_playbook_member_role: '',
     };
 }
 
@@ -176,39 +186,6 @@ export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
     unassigned: true,
     others: true,
 };
-
-// eslint-disable-next-line
-export function isPlaybook(arg: any): arg is PlaybookWithChecklist {
-    return (
-        arg &&
-        typeof arg.id === 'string' &&
-        typeof arg.title === 'string' &&
-        typeof arg.team_id === 'string' &&
-        typeof arg.create_public_playbook_run === 'boolean' &&
-        typeof arg.delete_at === 'number' &&
-        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
-        arg.member_ids && Array.isArray(arg.member_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
-        arg.broadcast_channel_ids && Array.isArray(arg.broadcast_channel_ids) && arg.broadcast_channel_ids.every((id: any) => typeof id === 'string') &&
-        typeof arg.reminder_message_template == 'string' &&
-        typeof arg.reminder_timer_default_seconds == 'number' &&
-        arg.invited_user_ids && Array.isArray(arg.invited_user_ids) && arg.invited_user_ids.every((id: any) => typeof id === 'string') &&
-        arg.invited_group_ids && Array.isArray(arg.invited_group_ids) && arg.invited_group_ids.every((id: any) => typeof id === 'string') &&
-        typeof arg.invite_users_enabled === 'boolean' &&
-        typeof arg.default_owner_id === 'string' &&
-        typeof arg.default_owner_enabled === 'boolean' &&
-        typeof arg.announcement_channel_id === 'string' &&
-        typeof arg.announcement_channel_enabled === 'boolean' &&
-        typeof arg.webhook_on_creation_url === 'string' &&
-        typeof arg.webhook_on_creation_enabled === 'boolean' &&
-        typeof arg.webhook_on_status_update_url === 'string' &&
-        typeof arg.webhook_on_status_update_enabled === 'boolean' &&
-        typeof arg.message_on_join === 'string' &&
-        typeof arg.message_on_join_enabled === 'boolean' &&
-        typeof arg.signal_any_keywords && Array.isArray(arg.signal_any_keywords) && arg.signal_any_keywords.every((id: any) => typeof id === 'string') &&
-        typeof arg.signal_any_keywords_enabled === 'boolean' &&
-        typeof arg.channel_name_template === 'string'
-    );
-}
 
 // eslint-disable-next-line
 export function isChecklist(arg: any): arg is Checklist {

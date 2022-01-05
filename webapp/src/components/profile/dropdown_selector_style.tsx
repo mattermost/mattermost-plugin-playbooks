@@ -1,4 +1,6 @@
-.app__body {
+import styled from 'styled-components';
+
+export const DropdownSelectorStyle = styled.div`
     .profile-dropdown--active {
         .PlaybookRunProfileButton {
             .Profile {
@@ -9,7 +11,7 @@
 
     .profile-dropdown {
         .playbook-run-user-select__container {
-            z-index: 3;
+            z-index: 50;
             position: absolute;
         }
     }
@@ -98,4 +100,4 @@
             top: 3px;
         }
     }
-}
+`;

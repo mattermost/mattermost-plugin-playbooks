@@ -1588,6 +1588,39 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.43.0"),
 		toVersion:   semver.MustParse("0.44.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_PlaybookMember", "Roles", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "Public", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_PlaybookMember", "Roles", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "Public", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
+				}
+			}
+
+			// Set all existing members to admins
+			if _, err := e.Exec("UPDATE IR_PlaybookMember SET Roles = 'playbook_member playbook_admin' WHERE Roles IS NULL"); err != nil {
+				return errors.Wrapf(err, "failed setting default value in column Roles of table IR_Playbook")
+			}
+
+			// Set all playbooks with no members as public
+			if _, err := e.Exec("UPDATE IR_Playbook p SET Public = true WHERE NOT EXISTS(SELECT 1 FROM IR_PlaybookMember as pm WHERE pm.PlaybookID = p.ID)"); err != nil {
+				return errors.Wrapf(err, "failed setting default value in column ConcatenatedSignalAnyKeywords of table IR_Playbook")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.44.0"),
+		toVersion:   semver.MustParse("0.45.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
 			// Existing runs without a reminder need to have a reminder set; use 1 week from now.
 			oneWeek := 7 * 24 * time.Hour
 

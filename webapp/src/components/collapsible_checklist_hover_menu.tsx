@@ -7,9 +7,12 @@ import styled from 'styled-components';
 
 import {useIntl} from 'react-intl';
 
+import {DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
+
 import {addNewTask} from 'src/actions';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
 import DotMenu, {DotMenuButton, DropdownMenu, DropdownMenuItem} from 'src/components/dot_menu';
+import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 export interface Props {
     playbookRunID: string;
@@ -17,6 +20,7 @@ export interface Props {
     checklistTitle: string;
     onRenameChecklist: () => void;
     onDeleteChecklist: () => void;
+    dragHandleProps: DraggableProvidedDragHandleProps | undefined;
 }
 
 const CollapsibleChecklistHoverMenu = (props: Props) => {
@@ -25,6 +29,13 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
 
     return (
         <ButtonRow>
+            {props.dragHandleProps &&
+            <Handle
+                title={formatMessage({defaultMessage: 'Drag to reorder checklist'})}
+                className={'icon icon-menu'}
+                {...props.dragHandleProps}
+            />
+            }
             <AddNewTask
                 data-testid={'addNewTask'}
                 onClick={(e) => {
@@ -56,6 +67,14 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
         </ButtonRow>
     );
 };
+
+const Handle = styled(HoverMenuButton)`
+    border-radius: 4px;
+    margin-right: 8px;
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08)
+    }
+`;
 
 const ButtonRow = styled.div`
     display: flex;

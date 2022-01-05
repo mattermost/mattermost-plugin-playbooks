@@ -2,7 +2,9 @@
 // See LICENSE.txt for license information.
 
 import React, {useRef, useState} from 'react';
+import ReactDOM from 'react-dom';
 import styled from 'styled-components';
+import {Draggable, DraggableProvided, DraggableStateSnapshot, DraggableProvidedDragHandleProps} from 'react-beautiful-dnd';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 
@@ -22,6 +24,7 @@ export interface Props {
     children: React.ReactNode;
     disabledOrRunID: true | string;
     titleHelpText?: React.ReactNode;
+    draggableProvided?: DraggableProvided;
 }
 
 const CollapsibleChecklist = ({
@@ -34,6 +37,7 @@ const CollapsibleChecklist = ({
     children,
     disabledOrRunID,
     titleHelpText,
+    draggableProvided,
 }: Props) => {
     const titleRef = useRef(null);
     const [showMenu, setShowMenu] = useState(false);
@@ -47,8 +51,15 @@ const CollapsibleChecklist = ({
     const disabled = typeof disabledOrRunID !== 'string';
     const playbookRunID = typeof disabledOrRunID === 'string' ? disabledOrRunID : '';
 
+    let borderProps = {};
+    if (draggableProvided) {
+        borderProps = {
+            ...draggableProvided.draggableProps,
+            ref: draggableProvided.innerRef,
+        };
+    }
     return (
-        <Border>
+        <Border {...borderProps}>
             <HorizontalBG
                 checklistIndex={index}
                 numChecklists={numChecklists}
@@ -83,6 +94,7 @@ const CollapsibleChecklist = ({
                             checklistTitle={title}
                             onRenameChecklist={() => setShowRenameDialog(true)}
                             onDeleteChecklist={() => setShowDeleteDialog(true)}
+                            dragHandleProps={draggableProvided?.dragHandleProps}
                         />
                     }
                 </Horizontal>

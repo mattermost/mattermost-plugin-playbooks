@@ -102,7 +102,6 @@ const RHSPostUpdate = (props: Props) => {
                     dispatch(promptUpdateStatus(
                         props.playbookRun.team_id,
                         props.playbookRun.id,
-                        props.playbookRun.playbook_id,
                         props.playbookRun.channel_id,
                     ));
                 }}

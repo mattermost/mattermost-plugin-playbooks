@@ -9,22 +9,25 @@ import {
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getCurrentTeam, getMyTeams, getTeam} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeam, getMyTeams, getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {
     getProfilesInCurrentChannel,
     getCurrentUserId,
     getUser,
+    getProfilesInCurrentTeam,
 } from 'mattermost-redux/selectors/entities/users';
 import {getCurrentChannelId, getChannelsNameMapInTeam, getChannel as getChannelFromState} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
-import {getProfilesByIds, getProfilesInChannel} from 'mattermost-redux/actions/users';
+import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
+
+import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
@@ -171,6 +174,31 @@ export function useProfilesInCurrentChannel() {
     }, [currentChannelId, profilesInChannel]);
 
     return profilesInChannel;
+}
+
+export function useCanCreatePlaybooksOnAnyTeam() {
+    const teams = useSelector(getMyTeams);
+    return useSelector((state: GlobalState) => (
+        teams.some((team: Team) => (
+            haveITeamPermission(state, team.id, 'playbook_public_create') ||
+			haveITeamPermission(state, team.id, 'playbook_private_create')
+        ))
+    ));
+}
+
+export function useProfilesInTeam() {
+    const dispatch = useDispatch() as DispatchFunc;
+    const profilesInTeam = useSelector(getProfilesInCurrentTeam);
+    const currentTeamId = useSelector(getCurrentTeamId);
+    useEffect(() => {
+        if (profilesInTeam.length > 0) {
+            return;
+        }
+
+        dispatch(getProfilesInTeam(currentTeamId, 0, PROFILE_CHUNK_SIZE));
+    }, [currentTeamId, profilesInTeam]);
+
+    return profilesInTeam;
 }
 
 export function useCanCreatePlaybooks() {

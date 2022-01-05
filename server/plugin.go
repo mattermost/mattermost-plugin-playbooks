@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"path/filepath"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -12,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/shared/i18n"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -45,6 +47,7 @@ type Plugin struct {
 	config             *config.ServiceImpl
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
+	permissions        *app.PermissionsService
 	bot                *bot.Bot
 	pluginAPI          *pluginapi.Client
 	userInfoStore      app.UserInfoStore
@@ -58,6 +61,15 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
+	bundlePath, err := p.API.GetBundlePath()
+	if err != nil {
+		return errors.Wrapf(err, "unable to get bundle path")
+	}
+
+	if err := i18n.TranslationsPreInit(filepath.Join(bundlePath, "assets/i18n")); err != nil {
+		return errors.Wrapf(err, "unable to load translation files")
+	}
+
 	pluginAPIClient := pluginapi.NewClient(p.API, p.Driver)
 	p.pluginAPI = pluginAPIClient
 
@@ -164,25 +176,29 @@ func (p *Plugin) OnActivate() error {
 	}
 	mutex.Unlock()
 
+	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config)
+
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
 		p.playbookService,
 		pluginAPIClient,
 		p.bot,
 		p.config,
+		p.permissions,
 	)
 	api.NewPlaybookRunHandler(
 		p.handler.APIRouter,
 		p.playbookRunService,
 		p.playbookService,
+		p.permissions,
 		pluginAPIClient,
 		p.bot,
 		p.bot,
 		p.config,
 	)
-	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService)
+	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService, p.permissions)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config, p.playbookRunService, p.userInfoStore)
-	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient)
+	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.permissions)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
 
@@ -217,10 +233,10 @@ func (p *Plugin) OnConfigurationChange() error {
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot, p.bot,
-		p.playbookRunService, p.playbookService, p.config, p.userInfoStore, p.telemetryClient)
+		p.playbookRunService, p.playbookService, p.config, p.userInfoStore, p.telemetryClient, p.permissions)
 
 	if err := runner.Execute(); err != nil {
-		return nil, model.NewAppError("Playbooks.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("Playbooks.ExecuteCommand", "app.command.execute.error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	return &model.CommandResponse{}, nil

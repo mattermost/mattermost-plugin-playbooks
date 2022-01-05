@@ -2,9 +2,10 @@ import {useEffect, useState} from 'react';
 import debounce from 'debounce';
 
 import {
+    archivePlaybook as clientArchivePlaybook,
     clientFetchPlaybook,
     clientFetchPlaybooks,
-    archivePlaybook as clientArchivePlaybook,
+    savePlaybook,
 } from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
 
@@ -28,6 +29,25 @@ export function usePlaybook(id: Playbook['id']) {
     }, [id]);
 
     return playbook;
+}
+
+type EditPlaybookReturn = [PlaybookWithChecklist | undefined, (update: Partial<PlaybookWithChecklist>) => void]
+
+export function useEditPlaybook(id: Playbook['id']): EditPlaybookReturn {
+    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | undefined>();
+    useEffect(() => {
+        clientFetchPlaybook(id).then(setPlaybook);
+    }, [id]);
+
+    const updatePlaybook = (update: Partial<PlaybookWithChecklist>) => {
+        if (playbook) {
+            const updatedPlaybook: PlaybookWithChecklist = {...playbook, ...update};
+            setPlaybook(updatedPlaybook);
+            savePlaybook(updatedPlaybook);
+        }
+    };
+
+    return [playbook, updatePlaybook];
 }
 
 export function usePlaybooksCrud(

@@ -16,27 +16,26 @@ describe('runs > list', () => {
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
-            testTeam = team;
-            testUser = user;
-
             // # Create another user
             cy.apiCreateUser().then(({user: anotherUser}) => {
+                testTeam = team;
+                testUser = user;
                 testAnotherUser = anotherUser;
-
                 cy.apiAddUserToTeam(testTeam.id, anotherUser.id);
-            });
 
-            // # Login as testUser
-            cy.apiLogin(testUser);
+                // # Login as testUser
+                cy.apiLogin(testUser);
 
-            // # Create a public playbook
-            cy.apiCreatePlaybook({
-                teamId: testTeam.id,
-                title: 'Public Playbook',
-                memberIDs: [],
-                createPublicPlaybookRun: true,
-            }).then((playbook) => {
-                testPlaybook = playbook;
+                // # Create a public playbook
+                cy.apiCreatePlaybook({
+                    teamId: testTeam.id,
+                    title: 'Public Playbook',
+                    makePublic: true,
+                    memberIDs: [testUser.id, testAnotherUser.id],
+                    createPublicPlaybookRun: true,
+                }).then((playbook) => {
+                    testPlaybook = playbook;
+                });
             });
         });
     });
@@ -128,7 +127,7 @@ describe('runs > list', () => {
             cy.apiLogin(testUser);
 
             // # Open the product
-            cy.visit('/playbooks');
+            cy.visit('/playbooks/runs');
 
             // # Filter to all runs
             cy.findByTestId('my-runs-only').click();

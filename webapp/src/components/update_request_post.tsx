@@ -89,7 +89,6 @@ export const UpdateRequestPost = (props: Props) => {
                         dispatch(promptUpdateStatus(
                             team.id,
                             currentRun?.id,
-                            currentRun?.playbook_id,
                             props.post.channel_id,
                         ));
                     }}

@@ -5,7 +5,10 @@ import {AnyAction, Dispatch} from 'redux';
 import {generateId} from 'mattermost-redux/utils/helpers';
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import {GetStateFunc} from 'mattermost-redux/types/actions';
+import {addChannelMember} from 'mattermost-redux/actions/channels';
+import {DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
+
+import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
@@ -54,12 +57,17 @@ import {
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
     SET_CHECKLIST_ITEMS_FILTER,
     SetChecklistItemsFilter,
+    SetEachChecklistCollapsedState,
+    SET_EACH_CHECKLIST_COLLAPSED_STATE,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
 import {modals} from 'src/webapp_globals';
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
+import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbook_access_modal';
+
+import {makePlaybookCreateModal, PlaybookCreateModalProps} from './components/create_playbook_modal';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -98,14 +106,44 @@ export function startPlaybookRunById(teamId: string, playbookId: string, timeout
 export function promptUpdateStatus(
     teamId: string,
     playbookRunId: string,
-    playbookId: string,
     channelId: string,
 ) {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+    return async (dispatch: Dispatch, getState: GetStateFunc) => {
         const state = getState();
         const hasPermission = canIPostUpdateForRun(state, channelId, teamId);
+        dispatch(openUpdateRunStatusModal(playbookRunId, channelId, hasPermission));
+    };
+}
 
-        dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookRunId, channelId, hasPermission})));
+export function openUpdateRunStatusModal(
+    playbookRunId: string,
+    channelId: string,
+    hasPermission: boolean,
+    message?: string,
+    reminderInSeconds?: number,
+    finishRunChecked?: boolean
+) {
+    return modals.openModal(makeUpdateRunStatusModalDefinition({
+        playbookRunId,
+        channelId,
+        hasPermission,
+        message,
+        reminderInSeconds,
+        finishRunChecked,
+    }));
+}
+
+export function displayEditPlaybookAccessModal(
+    playbookId: string
+) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        dispatch(modals.openModal(makePlaybookAccessModalDefinition({playbookId})));
+    };
+}
+
+export function displayPlaybookCreateModal(props: PlaybookCreateModalProps) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        dispatch(modals.openModal(makePlaybookCreateModal(props)));
     };
 }
 
@@ -128,6 +166,14 @@ export function addNewTask(checklist: number) {
         const currentTeamId = getCurrentTeamId(getState());
 
         await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, currentTeamId);
+    };
+}
+
+export function addToCurrentChannel(userId: string) {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
+        const currentChannelId = getCurrentChannelId(getState());
+
+        dispatch(addChannelMember(currentChannelId, userId));
     };
 }
 
@@ -260,6 +306,12 @@ export const setChecklistCollapsedState = (channelId: string, checklistIndex: nu
     channelId,
     checklistIndex,
     collapsed,
+});
+
+export const setEachChecklistCollapsedState = (channelId: string, state: Record<number, boolean>): SetEachChecklistCollapsedState => ({
+    type: SET_EACH_CHECKLIST_COLLAPSED_STATE,
+    channelId,
+    state,
 });
 
 export const setAllChecklistsCollapsedState = (channelId: string, collapsed: boolean, numOfChecklists: number): SetAllChecklistsCollapsedState => ({

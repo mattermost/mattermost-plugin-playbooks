@@ -10,6 +10,9 @@ import {Team} from 'mattermost-redux/types/teams';
 import {useIntl} from 'react-intl';
 
 import {useDropdownPosition} from 'src/hooks';
+import {DropdownSelectorStyle} from 'src/components/profile/dropdown_selector_style';
+
+import GenericModal from '../widgets/generic_modal';
 
 import TeamWithIcon from './team_with_icon';
 
@@ -18,7 +21,13 @@ interface Option {
     label: React.ReactNode;
 }
 
-interface Props {
+interface DropdownPosition {
+    x: number;
+    y: number;
+    isOpen: boolean;
+}
+
+export type PlaybookCreateModalProps = {
     testId?: string
     children: React.ReactNode;
     enableEdit: boolean;
@@ -26,15 +35,21 @@ interface Props {
     allowPlaybookCreationInTeams: Map<string, boolean>;
     withButton: boolean;
     onSelectedChange: (team: Team) => void;
-}
+};
 
-interface DropdownPosition {
-    x: number;
-    y: number;
-    isOpen: boolean;
-}
+const ID = 'playbooks_create';
 
-export default function CreatePlaybookTeamSelector(props: Props) {
+export const makePlaybookCreateModal = (props: PlaybookCreateModalProps) => ({
+    modalId: ID,
+    dialogType: PlaybookCreateModal,
+    dialogProps: props,
+});
+
+const SizedGenericModal = styled(GenericModal)`
+    width: 800px;
+`;
+
+const PlaybookCreateModal = (props: PlaybookCreateModalProps) => {
     const {formatMessage} = useIntl();
     const teamOptions = props.teams.map((team: Team) => {
         return ({
@@ -48,46 +63,19 @@ export default function CreatePlaybookTeamSelector(props: Props) {
         } as Option);
     });
 
-    const [dropdownPosition, toggleOpen] = useDropdownPosition(teamOptions.length);
-
     const onSelectedChange = async (value: Option | undefined | null | readonly Option[]) => {
-        toggleOpen(0, 0);
-
         const team = (value as Option).value;
         if (team) {
             props.onSelectedChange(team);
         }
     };
 
-    const target = (
-        <div
-            onClick={(event) => {
-                if (props.enableEdit) {
-                    if (props.teams.length === 1) {
-                        props.onSelectedChange(props.teams[0]);
-                        return;
-                    }
-
-                    toggleOpen(event.clientX, event.clientY);
-                }
-            }}
-        >
-            {props.children}
-        </div>
-    );
-
-    const targetWrapped = (
-        <div data-testid={props.testId}>
-            {target}
-        </div>
-    );
+    return null;
 
     return (
-        <Dropdown
-            onClose={() => toggleOpen(0, 0)}
-            target={targetWrapped}
-            dependsOnMousePosition={!props.withButton}
-            position={dropdownPosition}
+        <SizedGenericModal
+            id={ID}
+            modalHeaderText={formatMessage({defaultMessage: 'Create Playbook'})}
         >
             <ReactSelect
                 autoFocus={true}
@@ -104,9 +92,9 @@ export default function CreatePlaybookTeamSelector(props: Props) {
                 classNamePrefix='playbook-run-user-select'
                 className='playbook-run-user-select'
             />
-        </Dropdown>
+        </SizedGenericModal>
     );
-}
+};
 
 // styles for the select component
 const selectStyles: StylesConfig<Option, boolean> = {
@@ -183,16 +171,20 @@ const Dropdown = ({children, showOnRight, moveUp, target, onClose, dependsOnMous
         'PlaybookRunFilter--active', 'profile-dropdown--active', {'show-on-right': showOnRight});
 
     return (
-        <ProfileDropdown className={classes}>
-            {target}
-            <ChildContainer
-                moveUp={moveUp}
-                position={position}
-                dependsOnPosition={dependsOnMousePosition}
-            >
-                {children}
-            </ChildContainer>
-            <Blanket onClick={onClose}/>
-        </ProfileDropdown>
+        <DropdownSelectorStyle>
+            <ProfileDropdown className={classes}>
+                {target}
+                <ChildContainer
+                    moveUp={moveUp}
+                    position={position}
+                    dependsOnPosition={dependsOnMousePosition}
+                >
+                    {children}
+                </ChildContainer>
+                <Blanket onClick={onClose}/>
+            </ProfileDropdown>
+        </DropdownSelectorStyle>
     );
 };
+
+export default PlaybookCreateModal;
