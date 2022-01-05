@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {CSSProperties} from 'react';
+import React, {CSSProperties, useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
@@ -24,6 +24,7 @@ import {makeOption, Mode, ms, Option} from 'src/components/datetime_input';
 import {nearest} from 'src/utils';
 import {optionFromSeconds} from 'src/components/modals/update_run_status_modal';
 import {StyledSelect} from 'src/components/backstage/styles';
+import {useClientRect} from 'src/hooks';
 
 interface Props {
     post: Post;
@@ -36,6 +37,17 @@ export const UpdateRequestPost = (props: Props) => {
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel.team_id));
     const currentRun = useSelector(currentPlaybookRun);
     const targetUsername = props.post.props.targetUsername ?? '';
+
+    // Decide whether to open the snooze menu above or below
+    const [snoozeMenuPos, setSnoozeMenuPos] = useState('top');
+    const [rect, ref] = useClientRect();
+    useEffect(() => {
+        if (!rect) {
+            return;
+        }
+
+        setSnoozeMenuPos((rect.top < 250) ? 'bottom' : 'top');
+    }, [rect]);
 
     if (!currentRun) {
         return null;
@@ -83,7 +95,7 @@ export const UpdateRequestPost = (props: Props) => {
                 text={formatMessage({defaultMessage: '@{targetUsername}, please provide a status update.'}, {targetUsername})}
                 team={team}
             />
-            <Container>
+            <Container ref={ref}>
                 <PostUpdatePrimaryButton
                     onClick={() => {
                         dispatch(promptUpdateStatus(
@@ -98,7 +110,7 @@ export const UpdateRequestPost = (props: Props) => {
                 <SelectWrapper
                     filterOption={null}
                     isMulti={false}
-                    menuPlacement={'top'}
+                    menuPlacement={snoozeMenuPos}
                     components={{
                         IndicatorSeparator: () => null,
                         SelectContainer,
@@ -115,6 +127,7 @@ export const UpdateRequestPost = (props: Props) => {
                         }),
                         menuPortal: (base: CSSProperties) => ({
                             ...base,
+                            minWidth: '168px',
                             zIndex: 22,
                         }),
                     }}
@@ -136,7 +149,7 @@ const SelectWrapper = styled(StyledSelect)`
 `;
 
 const PostUpdatePrimaryButton = styled(PrimaryButton)`
-    ${PostUpdateButtonCommon}{
+    ${PostUpdateButtonCommon} {
     }
 
     white-space: nowrap;
