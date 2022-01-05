@@ -119,46 +119,38 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 	}, nil
 }
 
-func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessage(playbookTitle, playbookID string, playbookRun *PlaybookRun, owner *model.User) (string, string, error) {
+func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, owner *model.User) (string, error) {
 	playbookRunChannel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
-		return "", "", errors.Wrap(err, "failed to get playbook run channel")
+		return "", errors.Wrap(err, "failed to get playbook run channel")
 	}
 
 	header := "### New run started: "
 	announcementMsg := fmt.Sprintf(
-		"%s[%s](%s)\n",
+		"%s[%s](%s%s)\n",
 		header,
 		playbookRun.Name,
 		getRunDetailsRelativeURL(playbookRun.ID),
-	)
-	announcementMsgWithTelem := fmt.Sprintf(
-		"%s[%s](%s?telem=follower_clicked_run_started_dm)\n",
-		header,
-		playbookRun.Name,
-		getRunDetailsRelativeURL(playbookRun.ID),
+		"%s", // for the telemetry data injection
 	)
 
-	justRanText := fmt.Sprintf(
+	announcementMsg += fmt.Sprintf(
 		"@%s just ran the [%s](%s) playbook.",
 		owner.Username,
 		playbookTitle,
 		getPlaybookDetailsRelativeURL(playbookID),
 	)
-	announcementMsg += justRanText
-	announcementMsgWithTelem += justRanText
 
-	visitText := " Visit the link above for more information."
 	if playbookRunChannel.Type == model.ChannelTypeOpen {
-		visitText = fmt.Sprintf(
+		announcementMsg += fmt.Sprintf(
 			" Visit the link above for more information or join ~%v to participate.",
 			playbookRunChannel.Name,
 		)
+	} else {
+		announcementMsg += " Visit the link above for more information."
 	}
-	announcementMsg += visitText
-	announcementMsgWithTelem += visitText
 
-	return announcementMsg, announcementMsgWithTelem, nil
+	return announcementMsg, nil
 }
 
 // PlaybookRunWebhookPayload is the body of the payload sent via playbook run webhooks.
@@ -376,17 +368,16 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			return nil, errors.Wrapf(err, "failed to resolve user %s", playbookRun.OwnerUserID)
 		}
 
-		var message string
-		var messageWithTelem string
-		message, messageWithTelem, err = s.buildPlaybookRunCreationMessage(pb.Title, pb.ID, playbookRun, owner)
+		var messageTemplate string
+		messageTemplate, err = s.buildPlaybookRunCreationMessageTemplate(pb.Title, pb.ID, playbookRun, owner)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to build the playbook run creation message")
 		}
 
-		s.broadcastPlaybookRunMessageToChannels(pb.BroadcastChannelIDs, &model.Post{Message: message}, creationMessage, playbookRun)
+		s.broadcastPlaybookRunMessageToChannels(pb.BroadcastChannelIDs, &model.Post{Message: fmt.Sprintf(messageTemplate, "")}, creationMessage, playbookRun)
 
 		// dm to users who are auto-following the playbook
-		s.dmPostToAutoFollows(&model.Post{Message: messageWithTelem}, pb.ID, playbookRun.ID, userID)
+		s.dmPostToAutoFollows(&model.Post{Message: fmt.Sprintf(messageTemplate, "?telem=follower_clicked_run_started_dm")}, pb.ID, playbookRun.ID, userID)
 	}
 
 	event := &TimelineEvent{
