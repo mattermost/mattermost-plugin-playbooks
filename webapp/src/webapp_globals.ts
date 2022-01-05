@@ -12,12 +12,10 @@ export const {
 
 export const {
     modals,
+    browserHistory,
 
 // @ts-ignore
-} = global.WebappUtils ?? {};
-
-// @ts-ignore
-export const browserHistory: History = global.WebappUtils.browserHistory ?? {};
+}: {modals: any, browserHistory: History} = global.WebappUtils ?? {};
 
 export const {
     Timestamp,
