@@ -294,6 +294,7 @@
   "nkCCM2": "You will not be reminded again.",
   "nmpevl": "Discard",
   "nqVby7": "<b>{numTasksChecked, number}</b> of <b>{numTasks, number}</b> {numTasks, plural, =1 {task} other {tasks}} checked",
+  "o+ZEL3": "Published {timestamp}",
   "o2eHmz": "Run finished by {name}",
   "oS0w4E": "Default update timer",
   "oVHn4s": "Last update",

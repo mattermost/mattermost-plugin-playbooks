@@ -3,11 +3,12 @@
 
 import React, {useState} from 'react';
 import styled from 'styled-components';
-import {useIntl} from 'react-intl';
+import {useIntl, FormattedMessage} from 'react-intl';
 import debounce from 'debounce';
 import {DateTime} from 'luxon';
 
-import FormattedDuration from 'src/components/formatted_duration';
+import {Timestamp} from 'src/webapp_globals';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 import {Title} from 'src/components/backstage/playbook_runs/shared';
 import {publishRetrospective, updateRetrospective} from 'src/client';
@@ -22,6 +23,18 @@ interface ReportProps {
     playbookRun: PlaybookRun;
     setRetrospective: (report: string) => void;
 }
+
+const PUB_TIME = {
+    useTime: false,
+    units: [
+        {within: ['second', -45], display: <FormattedMessage defaultMessage='just now'/>},
+        ['minute', -59],
+        ['hour', -48],
+        ['day', -30],
+        ['month', -12],
+        'year',
+    ],
+};
 
 const Report = (props: ReportProps) => {
     // we are creating the local state for this session to avoid get request
@@ -49,17 +62,20 @@ const Report = (props: ReportProps) => {
 
     const isPublished = publishedThisSession || props.playbookRun.retrospective_published_at > 0;
     if (isPublished) {
+        const publishedAt = (
+            <Timestamp
+                value={publishedAtThisSession || props.playbookRun.retrospective_published_at}
+                {...PUB_TIME}
+            />
+        );
         publishComponent = (
             <>
+                <i className={'icon icon-check-all'}/>
+                <span>{''}</span>
+                {formatMessage({defaultMessage: 'Published {timestamp}'}, {timestamp: publishedAt})}
                 <DisabledPrimaryButtonSmaller>
                     <TextContainer>{publishButtonText}</TextContainer>
                 </DisabledPrimaryButtonSmaller>
-                <FormattedDuration
-                    from={publishedAtThisSession || props.playbookRun.retrospective_published_at}
-                    ago={true}
-                />
-                <span>{'Published'}</span>
-                <i className={'icon icon-check-all'}/>
             </>
         );
     }
@@ -105,8 +121,8 @@ const Header = styled.div`
 const HeaderButtonsRight = styled.div`
     flex-grow: 1;
     display: flex;
-    flex-direction: row-reverse;
     align-items: center;
+    justify-content: flex-end;
 
     > * {
         margin-left: 4px;
