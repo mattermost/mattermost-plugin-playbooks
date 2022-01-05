@@ -383,5 +383,22 @@
     "5ciuDD": "NICHT IM KANAL",
     "Lo10yH": "Unbekannter Kanal",
     "3Ls2m+": "Playbook-Mitglied",
-    "0tznw6": "In privates Playbook umwandeln"
+    "0tznw6": "In privates Playbook umwandeln",
+    "wylJpv": "Jeder in {team} kann dieses Playbook einsehen.",
+    "tVPYMu": "Playbook Administrator",
+    "sDKojV": "Playbook archivieren",
+    "ruJGqS": "Zugang zum Playbook",
+    "osuP6z": "Ziehen, um die Checkliste neu zu ordnen",
+    "o+ZEL3": "Veröffentlicht {timestamp}",
+    "lQT7iD": "Playbook erstellen",
+    "gGcNUr": "Sie haben keine Berechtigung",
+    "g0mp+I": "Bei der Umwandlung in ein privates Playbook bleiben die Mitgliedschaft und der Verlauf der Ausführung erhalten. Diese Änderung ist dauerhaft und kann nicht rückgängig gemacht werden. Sind Sie sicher, dass Sie {playbookTitle} in einen privaten Playbook konvertieren möchten?",
+    "SXJ98n": "Sie können den retrospektiven Bericht nach der Veröffentlichung nicht mehr bearbeiten. Möchten Sie den retrospektiven Bericht veröffentlichen?",
+    "R/2lqw": "Vorlage auswählen",
+    "MJ89uW": "In privates Playbook umwandeln",
+    "HLn43R": "Zugang verwalten",
+    "EvBQLq": "Playbook Admin definieren",
+    "EWz2w5": "Playbook ausführen",
+    "8oCVbz": "Sind Sie sicher, dass Sie veröffentlichen wollen",
+    "5BUxvl": "Jeder in diesem Team kann dieses Playbook einsehen."
 }
