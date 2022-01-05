@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useEffect} from 'react';
-import {Redirect, useParams, useLocation} from 'react-router-dom';
+import {Redirect, useParams} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
@@ -23,19 +23,19 @@ import {
 } from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/playbook_edit/stages_and_steps_edit';
-import {ErrorPageTypes, TEMPLATE_TITLE_KEY, PROFILE_CHUNK_SIZE} from 'src/constants';
+import {ErrorPageTypes, PROFILE_CHUNK_SIZE} from 'src/constants';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
 import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
 import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
 import {RegularHeading} from 'src/styles/headings';
 import EditTitleDescriptionModal from 'src/components/backstage/playbook_edit_title_description_modal';
-import {useAllowRetrospectiveAccess, useHasPlaybookPermissionById} from 'src/hooks';
+import {useAllowRetrospectiveAccess} from 'src/hooks';
 import StatusUpdatesEdit from 'src/components/backstage/playbook_edit/status_updates_edit';
 import ActionsEdit from 'src/components/backstage/playbook_edit/actions_edit';
 import RetrospectiveEdit from 'src/components/backstage/playbook_edit/retrospective_edit';
 
-import {PlaybookPermissionGeneral, PlaybookRole} from 'src/types/permissions';
+import {PlaybookRole} from 'src/types/permissions';
 
 interface Props {
     isNew: boolean;
@@ -107,11 +107,7 @@ const PlaybookEdit = (props: Props) => {
             initialPlaybook.description = props.description;
         }
 
-        if (props.public) {
-            initialPlaybook.public = true;
-        } else {
-            initialPlaybook.public = false;
-        }
+        initialPlaybook.public = Boolean(props.public);
 
         return initialPlaybook;
     });
@@ -152,7 +148,7 @@ const PlaybookEdit = (props: Props) => {
             }
         };
         fetchData();
-    }, [urlParams.playbookId, props.isNew, props.teamId]);
+    }, [urlParams.playbookId, props.isNew, props.teamId, currentUserId]);
 
     useEffect(() => {
         const teamId = props.teamId || playbook.team_id;
