@@ -264,7 +264,7 @@ describe('runs > list', () => {
             cy.findByTestId('owner-filter').click();
 
             // # Find the list and chose the first owner in the list
-            cy.find('.PlaybookRunProfile').first().parent().click({force: true});
+            cy.get('.PlaybookRunProfile').first().parent().click({force: true});
 
             // * Verify "Previous" no longer shown
             cy.findByText('Previous').should('not.exist');
