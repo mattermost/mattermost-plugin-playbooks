@@ -1624,12 +1624,14 @@ var migrations = []Migration{
 			// Existing runs without a reminder need to have a reminder set; use 1 week from now.
 			oneWeek := 7 * 24 * time.Hour
 
-			// Get runs whose reminder was dismissed (PreviousReminder was set to 0)
+			// Get runs whose reminder was dismissed (PreviousReminder was set to 0), but only for those
+			// that have status updates enabled (or else they can't fix an overdue status update)
 			dimissedQuery := sqlStore.builder.
 				Select("ID").
 				From("IR_Incident").
 				Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
-				Where(sq.Eq{"PreviousReminder": 0})
+				Where(sq.Eq{"PreviousReminder": 0}).
+				Where(sq.Eq{"StatusUpdateEnabled": true})
 
 			var runIDs []string
 			if err := sqlStore.selectBuilder(sqlStore.db, &runIDs, dimissedQuery); err != nil {
