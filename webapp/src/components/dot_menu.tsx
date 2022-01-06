@@ -57,7 +57,6 @@ export const DropdownMenu = styled.div<DropdownMenuProps>`
     list-style: none;
 
     padding: 10px 0;
-	margin-left: 50px;
     font-family: Open Sans;
     font-style: normal;
     font-weight: normal;
