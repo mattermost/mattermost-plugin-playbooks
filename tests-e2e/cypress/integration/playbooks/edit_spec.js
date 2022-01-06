@@ -198,13 +198,13 @@ describe('playbooks > edit', () => {
 
                     cy.get('#create-channel').within(() => {
                         // * Verify that the toggle is checked
-                        cy.get('label input').should('be.checked');
+                        cy.get('[type="checkbox"]').should('be.checked');
 
                         // # Click on the toggle to enable the setting
-                        cy.get('label input').click({force: true});
+                        cy.get('[type="checkbox"]').click({force: true});
 
                         // * Verify that the toggle remains checked
-                        cy.get('label input').should('be.checked');
+                        cy.get('[type="checkbox"]').should('be.checked');
                     });
                 });
             });
