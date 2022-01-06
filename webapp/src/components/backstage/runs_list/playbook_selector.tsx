@@ -3,14 +3,13 @@
 
 import React, {useEffect, useState} from 'react';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
-import classNames from 'classnames';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import {useClientRect} from 'src/hooks';
 import {PlaybookRunFilterButton} from '../../backstage/styles';
 import {Playbook} from '../../../types/playbook';
 import {SelectedButton} from 'src/components/team/team_selector';
-import {DropdownSelectorStyle} from 'src/components/profile/dropdown_selector_style';
+import Dropdown from 'src/components/dropdown';
 
 export interface Option {
     value: string;
@@ -211,29 +210,6 @@ const selectStyles: StylesConfig<Option, boolean> = {
     },
 };
 
-// styled components
-interface DropdownProps {
-    children: JSX.Element;
-    isOpen: boolean;
-    showOnRight?: boolean;
-    moveUp?: number;
-    target: JSX.Element;
-    onClose: () => void;
-}
-
-const ProfileDropdown = styled.div`
-    position: relative;
-`;
-
-const Blanket = styled.div`
-    bottom: 0;
-    left: 0;
-    top: 0;
-    right: 0;
-    position: fixed;
-    z-index: 1;
-`;
-
 const StyledSpan = styled.span`
     white-space: nowrap;
     overflow: hidden;
@@ -241,41 +217,3 @@ const StyledSpan = styled.span`
     max-width: 180px;
 `;
 
-interface ChildContainerProps {
-    moveUp?: number;
-    showOnRight?: boolean;
-}
-
-const ChildContainer = styled.div<ChildContainerProps>`
-    margin: 4px 0 0;
-    min-width: 20rem;
-    top: ${(props) => 27 - (props.moveUp || 0)}px;
-    ${(props) => props.showOnRight && css`
-        right: -55px;
-    `}
-`;
-
-const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: DropdownProps) => {
-    if (!isOpen) {
-        return target;
-    }
-
-    const classes = classNames('PlaybookRunFilter', 'profile-dropdown',
-        'PlaybookRunFilter--active', 'profile-dropdown--active');
-
-    return (
-        <DropdownSelectorStyle>
-            <ProfileDropdown className={classes}>
-                {target}
-                <ChildContainer
-                    className='playbook-run-user-select__container'
-                    moveUp={moveUp}
-                    showOnRight={showOnRight}
-                >
-                    {children}
-                </ChildContainer>
-                <Blanket onClick={onClose}/>
-            </ProfileDropdown>
-        </DropdownSelectorStyle>
-    );
-};

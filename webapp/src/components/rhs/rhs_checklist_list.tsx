@@ -373,7 +373,7 @@ const outstandingTasks = (checklists: Checklist[]) => {
     let count = 0;
     for (const list of checklists) {
         for (const item of list.items) {
-            if (item.state !== ChecklistItemState.Closed) {
+            if (item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) {
                 count++;
             }
         }

@@ -786,7 +786,7 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, trig
 	numOutstanding := 0
 	for _, c := range currentPlaybookRun.Checklists {
 		for _, item := range c.Items {
-			if item.State != ChecklistItemStateClosed {
+			if item.State == ChecklistItemStateOpen || item.State == ChecklistItemStateInProgress {
 				numOutstanding++
 			}
 		}
@@ -861,7 +861,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(playbookRunID)
 
-	err = s.ResetReminderTimer(playbookRunID)
+	err = s.resetReminderTimer(playbookRunID)
 	if err != nil {
 		s.pluginAPI.Log.Warn("failed to reset the reminder timer when updating status to Archived", "playbook ID", playbookRunToModify.ID, "error", err)
 	}
@@ -1149,10 +1149,10 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	if newState == ChecklistItemStateOpen {
 		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
-	if newState == CheckListItemStateSkipped {
+	if newState == ChecklistItemStateSkipped {
 		modifyMessage = fmt.Sprintf("skipped checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
-	if itemToCheck.State == CheckListItemStateSkipped && newState == ChecklistItemStateOpen {
+	if itemToCheck.State == ChecklistItemStateSkipped && newState == ChecklistItemStateOpen {
 		modifyMessage = fmt.Sprintf("restored checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 
@@ -1482,7 +1482,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 	}
 
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].LastSkipped = model.GetMillis()
-	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = CheckListItemStateSkipped
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateSkipped
 
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 

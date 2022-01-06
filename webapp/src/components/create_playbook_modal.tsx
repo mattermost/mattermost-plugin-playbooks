@@ -65,7 +65,7 @@ const PlaybookCreateModal = ({startingName, startingTeamId, startingTemplate, st
     const {formatMessage} = useIntl();
     const teams = useSelector(selectTeamsIHavePermissionToMakePlaybooksOn);
     const [name, setName] = useState(startingName);
-    const [teamId, setTeamId] = useState(teams.length === 1 ? teams[0].id : startingTeamId);
+    const [teamId, setTeamId] = useState<string>(teams.length === 1 ? teams[0].id : (startingTeamId || teams[0].id));
     const [template, setTemplate] = useState(startingTemplate);
     const [description, setDescription] = useState(startingDescription);
     const [makePublic, setMakePublic] = useState(startingPublic ?? true);
