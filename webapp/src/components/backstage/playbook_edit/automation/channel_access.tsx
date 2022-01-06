@@ -49,10 +49,11 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
             </AutomationTitle>
             <HorizontalSplit>
                 <VerticalSplit>
-                    <ButtonLabel onClick={() => handlePublicChange(true)}>
+                    <ButtonLabel>
                         <RadioInput
                             type='radio'
                             checked={playbook.create_public_playbook_run}
+                            onChange={() => handlePublicChange(true)}
                         />
                         <Icon
                             active={playbook.create_public_playbook_run}
@@ -61,10 +62,11 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                         <BigText>{formatMessage({defaultMessage: 'Public'})}</BigText>
                     </ButtonLabel>
                     <HorizontalSpacer size={8}/>
-                    <ButtonLabel onClick={() => handlePublicChange(false)}>
+                    <ButtonLabel>
                         <RadioInput
                             type='radio'
                             checked={!playbook.create_public_playbook_run}
+                            onChange={() => handlePublicChange(false)}
                         />
                         <Icon
                             active={!playbook.create_public_playbook_run}
