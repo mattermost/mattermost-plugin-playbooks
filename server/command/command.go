@@ -157,6 +157,24 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	return command
 }
 
+func getRandomUniqueNumbers(minVal, maxVal, count int, seed int64) []int {
+	rand.Seed(seed)
+	allValues := make([]int, maxVal-minVal)
+	for i := range allValues {
+		allValues[i] = minVal + i
+	}
+	if len(allValues) < count {
+		count = len(allValues)
+	}
+	randValues := make([]int, count)
+	for i := 0; i < count; i++ {
+		r := rand.Intn(len(allValues) - i)
+		randValues[i] = allValues[r]
+		allValues[r] = allValues[len(allValues)-i-1]
+	}
+	return randValues
+}
+
 // Runner handles commands.
 type Runner struct {
 	context            *plugin.Context
@@ -1184,8 +1202,9 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 	}
 
 	playbookIds := make([]string, 0, numPlaybooks)
+	randPlaybooksIndexes := getRandomUniqueNumbers(0, len(dummyListPlaybooks), numPlaybooks, time.Now().UTC().UnixNano())
 	for i := 0; i < numPlaybooks; i++ {
-		dummyPlaybook := dummyListPlaybooks[i]
+		dummyPlaybook := dummyListPlaybooks[randPlaybooksIndexes[i]]
 		dummyPlaybook.TeamID = r.args.TeamId
 		newPlaybookID, errCreatePlaybook := r.playbookService.Create(dummyPlaybook, r.args.UserId)
 		if errCreatePlaybook != nil {
@@ -1199,7 +1218,7 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 	msg := "Playbooks successfully created"
 	for i, playbookID := range playbookIds {
 		url := fmt.Sprintf("/playbooks/playbooks/%s", playbookID)
-		msg += fmt.Sprintf("\n- [%s](%s)", dummyListPlaybooks[i].Title, url)
+		msg += fmt.Sprintf("\n- [%s](%s)", dummyListPlaybooks[randPlaybooksIndexes[i]].Title, url)
 	}
 
 	r.postCommandResponse(msg)
@@ -1400,7 +1419,9 @@ var dummyListPlaybooks = []app.Playbook{
 		Description: "This is an example of an empty playbook",
 	},
 	{
-		Title: "Test playbook",
+		Title:                "Test playbook",
+		RetrospectiveEnabled: true,
+		StatusUpdateEnabled:  true,
 		Checklists: []app.Checklist{
 			{
 				Title: "Identification",
@@ -1451,7 +1472,9 @@ var dummyListPlaybooks = []app.Playbook{
 		},
 	},
 	{
-		Title: "Release 2.4",
+		Title:                "Release 2.4",
+		RetrospectiveEnabled: true,
+		StatusUpdateEnabled:  true,
 		Checklists: []app.Checklist{
 			{
 				Title: "Preparation",
@@ -1516,8 +1539,10 @@ var dummyListPlaybooks = []app.Playbook{
 		},
 	},
 	{
-		Title:       "Incident #4281",
-		Description: "There is an error when accessing message from deleted channel",
+		Title:                "Incident #4281",
+		Description:          "There is an error when accessing message from deleted channel",
+		RetrospectiveEnabled: true,
+		StatusUpdateEnabled:  true,
 		Checklists: []app.Checklist{
 			{
 				Title: "Prepare the Jira card for this task",
@@ -1581,8 +1606,10 @@ var dummyListPlaybooks = []app.Playbook{
 		},
 	},
 	{
-		Title:       "Playbooks Playbook",
-		Description: "Sample playbook",
+		Title:                "Playbooks Playbook",
+		Description:          "Sample playbook",
+		RetrospectiveEnabled: true,
+		StatusUpdateEnabled:  true,
 		Checklists: []app.Checklist{
 			{
 				Title: "Triage",
@@ -1710,21 +1737,22 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 
 	var playbooks []app.Playbook
 	if len(playbooksResult.Items) == 0 {
-		dummyPlaybook := dummyListPlaybooks[rand.Intn(len(dummyListPlaybooks))]
-		dummyPlaybook.TeamID = r.args.TeamId
-		newPlaybookID, err := r.playbookService.Create(dummyPlaybook, r.args.UserId)
-		if err != nil {
-			r.warnUserAndLogErrorf("unable to create playbook: %v", err)
-			return
-		}
+		for _, dummyPlaybook := range dummyListPlaybooks {
+			dummyPlaybook.TeamID = r.args.TeamId
+			newPlaybookID, err := r.playbookService.Create(dummyPlaybook, r.args.UserId)
+			if err != nil {
+				r.warnUserAndLogErrorf("unable to create playbook: %v", err)
+				return
+			}
 
-		newPlaybook, err := r.playbookService.Get(newPlaybookID)
-		if err != nil {
-			r.warnUserAndLogErrorf("Error getting playbook: %v", err)
-			return
-		}
+			newPlaybook, err := r.playbookService.Get(newPlaybookID)
+			if err != nil {
+				r.warnUserAndLogErrorf("Error getting playbook: %v", err)
+				return
+			}
 
-		playbooks = []app.Playbook{newPlaybook}
+			playbooks = append(playbooks, newPlaybook)
+		}
 	} else {
 		playbooks = make([]app.Playbook, 0, len(playbooksResult.Items))
 		for _, thePlaybook := range playbooksResult.Items {
@@ -1752,11 +1780,13 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 
 		playbookRun, err := r.playbookRunService.CreatePlaybookRun(
 			&app.PlaybookRun{
-				Name:        playbookRunName,
-				OwnerUserID: r.args.UserId,
-				TeamID:      r.args.TeamId,
-				PlaybookID:  playbook.ID,
-				Checklists:  playbook.Checklists,
+				Name:                 playbookRunName,
+				OwnerUserID:          r.args.UserId,
+				TeamID:               r.args.TeamId,
+				PlaybookID:           playbook.ID,
+				Checklists:           playbook.Checklists,
+				RetrospectiveEnabled: playbook.RetrospectiveEnabled,
+				StatusUpdateEnabled:  playbook.StatusUpdateEnabled,
 			},
 			&playbook,
 			r.args.UserId,
