@@ -36,7 +36,7 @@ interface Props {
     customControl?: (props: ControlProps<Option, boolean>) => React.ReactElement;
     controlledOpenToggle?: boolean;
     teams: Team[];
-    onSelectedChange?: (teamId?: string) => void;
+    onSelectedChange?: (teamId: string) => void;
     customControlProps?: any;
     showOnRight?: boolean;
 }
@@ -122,7 +122,7 @@ export default function TeamSelector(props: Props) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.teamId);
+            props.onSelectedChange(value?.teamId || '');
         }
     };
 
