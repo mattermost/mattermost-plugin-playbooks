@@ -288,6 +288,13 @@ const PlaybookRunBackstage = () => {
         } as PlaybookRun));
     };
 
+    const setPublishedAt = (retrospective_published_at: number) => {
+        setPlaybookRun((run) => ({
+            ...run,
+            retrospective_published_at,
+        } as PlaybookRun));
+    };
+
     if (fetchingState === FetchingStateType.loading) {
         return null;
     }
@@ -416,6 +423,7 @@ const PlaybookRunBackstage = () => {
                                 playbookRun={playbookRun}
                                 deleteTimelineEvent={deleteTimelineEvent}
                                 setRetrospective={setRetrospective}
+                                setPublishedAt={setPublishedAt}
                             />
                         </Route>
                         <Redirect to={`${match.url}/overview`}/>
