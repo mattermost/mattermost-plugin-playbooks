@@ -1187,8 +1187,8 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 	for i := 0; i < numPlaybooks; i++ {
 		dummyPlaybook := dummyListPlaybooks[i]
 		dummyPlaybook.TeamID = r.args.TeamId
-		newPlaybookID, errCreatePlayboook := r.playbookService.Create(dummyPlaybook, r.args.UserId)
-		if errCreatePlayboook != nil {
+		newPlaybookID, errCreatePlaybook := r.playbookService.Create(dummyPlaybook, r.args.UserId)
+		if errCreatePlaybook != nil {
 			r.warnUserAndLogErrorf("unable to create playbook: %v", err)
 			return
 		}
