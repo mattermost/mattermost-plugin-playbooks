@@ -50,12 +50,12 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
         const url = new URL(window.location.href);
         const searchParams = new URLSearchParams(url.searchParams);
 
-        if (searchParams.has('telem') && searchParams.has('id')) {
-            const telem = searchParams.get('telem') || '';
-            const id = searchParams.get('id') || '';
-            telemetryEventForPlaybookRun(id, telem);
-            searchParams.delete('telem');
-            searchParams.delete('id');
+        if (searchParams.has('telem_action') && searchParams.has('telem_run_id')) {
+            const action = searchParams.get('telem_action') || '';
+            const runId = searchParams.get('telem_run_id') || '';
+            telemetryEventForPlaybookRun(runId, action);
+            searchParams.delete('telem_action');
+            searchParams.delete('telem_run_id');
             browserHistory.replace({pathname: url.pathname, search: searchParams.toString()});
         }
 
