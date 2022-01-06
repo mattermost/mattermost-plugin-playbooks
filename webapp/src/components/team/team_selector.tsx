@@ -4,9 +4,10 @@
 import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
-import classNames from 'classnames';
 import styled from 'styled-components';
 import {Team} from 'mattermost-redux/types/teams';
+
+import Dropdown from 'src/components/dropdown';
 
 import {useClientRect} from 'src/hooks';
 
@@ -264,63 +265,6 @@ const selectStyles: StylesConfig<Option, boolean> = {
             color: 'unset',
         };
     },
-};
-
-// styled components
-interface DropdownProps {
-    children: JSX.Element;
-    isOpen: boolean;
-    showOnRight?: boolean;
-    moveUp?: number;
-    target: JSX.Element;
-    onClose: () => void;
-}
-
-const ProfileDropdown = styled.div`
-    position: relative;
-	flex-grow: 1;
-	display: flex;
-`;
-
-const Blanket = styled.div`
-    bottom: 0;
-    left: 0;
-    top: 0;
-    right: 0;
-    position: fixed;
-    z-index: 1;
-`;
-
-interface ChildContainerProps {
-    moveUp?: number
-}
-
-const ChildContainer = styled.div<ChildContainerProps>`
-    margin: 4px 0 0;
-    min-width: 20rem;
-    top: ${(props) => dropdownYShift - (props.moveUp || 0)}px;
-`;
-
-const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: DropdownProps) => {
-    if (!isOpen) {
-        return target;
-    }
-
-    const classes = classNames('PlaybookRunFilter', 'profile-dropdown',
-        'PlaybookRunFilter--active', 'profile-dropdown--active', {'show-on-right': showOnRight});
-
-    return (
-        <ProfileDropdown className={classes}>
-            {target}
-            <ChildContainer
-                className='playbook-run-user-select__container'
-                moveUp={moveUp}
-            >
-                {children}
-            </ChildContainer>
-            <Blanket onClick={onClose}/>
-        </ProfileDropdown>
-    );
 };
 
 export const SelectedButton = styled.button`
