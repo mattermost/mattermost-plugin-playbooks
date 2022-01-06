@@ -49,7 +49,7 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
             </AutomationTitle>
             <HorizontalSplit>
                 <VerticalSplit>
-                    <Button onClick={() => handlePublicChange(true)}>
+                    <ButtonLabel onClick={() => handlePublicChange(true)}>
                         <RadioInput
                             type='radio'
                             checked={playbook.create_public_playbook_run}
@@ -58,10 +58,10 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                             active={playbook.create_public_playbook_run}
                             className={'icon-globe'}
                         />
-                        <BigText>{'Public'}</BigText>
-                    </Button>
+                        <BigText>{formatMessage({defaultMessage: 'Public'})}</BigText>
+                    </ButtonLabel>
                     <HorizontalSpacer size={8}/>
-                    <Button onClick={() => handlePublicChange(false)}>
+                    <ButtonLabel onClick={() => handlePublicChange(false)}>
                         <RadioInput
                             type='radio'
                             checked={!playbook.create_public_playbook_run}
@@ -70,8 +70,8 @@ export const CreateAChannel = ({playbook, setPlaybook, setChangesMade}: Props) =
                             active={!playbook.create_public_playbook_run}
                             className={'icon-lock-outline'}
                         />
-                        <BigText>{'Private'}</BigText>
-                    </Button>
+                        <BigText>{formatMessage({defaultMessage: 'Private'})}</BigText>
+                    </ButtonLabel>
                 </VerticalSplit>
                 <PatternedInput
                     enabled={true}
@@ -96,7 +96,7 @@ const HorizontalSplit = styled.div`
     text-align: left;
 `;
 
-const Button = styled.button`
+const ButtonLabel = styled.label`
     padding: 10px 16px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     background: var(--center-channel-bg);
@@ -111,6 +111,7 @@ const Button = styled.button`
 
     display: flex;
     align-items: center;
+    cursor: pointer;
 `;
 
 const Icon = styled.i<{ active?: boolean }>`
