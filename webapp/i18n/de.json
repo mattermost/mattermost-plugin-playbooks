@@ -400,5 +400,7 @@
     "EvBQLq": "Playbook Admin definieren",
     "EWz2w5": "Playbook ausführen",
     "8oCVbz": "Sind Sie sicher, dass Sie veröffentlichen wollen",
-    "5BUxvl": "Jeder in diesem Team kann dieses Playbook einsehen."
+    "5BUxvl": "Jeder in diesem Team kann dieses Playbook einsehen.",
+    "QpUBDr": "{members, plural, =0 {Keiner kann} =1 {Eine Person kann} other {# Personen können}} auf dieses Playbook zugreifen.",
+    "0Vvpht": "Zum Playbook Teilnehmer machen"
 }
