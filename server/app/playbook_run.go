@@ -514,12 +514,6 @@ type PlaybookRunService interface {
 	// HandleReminder is the handler for all reminder events.
 	HandleReminder(key string)
 
-	// RemoveReminderPost will remove the reminder in the playbook run channel (if any).
-	RemoveReminderPost(playbookRunID string) error
-
-	// ResetReminderTimer sets the previous reminder timer to 0.
-	ResetReminderTimer(playbookRunID string) error
-
 	// SetNewReminder sets a new reminder for playbookRunID, removes any pending reminder, removes the
 	// reminder post in the playbookRun's channel, and resets the PreviousReminder and
 	// LastStatusUpdateAt (so the countdown timer to "update due" shows the correct time)
