@@ -120,11 +120,7 @@ export default class Plugin {
         if (registry.registerAppBarComponent) {
             const siteUrl = getConfig(store.getState())?.SiteURL || '';
             const iconURL = `${siteUrl}/plugins/${pluginId}/public/app-bar-icon.png`;
-            registry.registerAppBarComponent(
-                iconURL,
-                boundToggleRHSAction,
-                ChannelHeaderTooltip,
-            );
+            registry.registerAppBarComponent(iconURL, boundToggleRHSAction, ChannelHeaderTooltip);
         }
 
         // Websocket listeners
