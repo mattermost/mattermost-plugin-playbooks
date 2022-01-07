@@ -536,7 +536,8 @@
         "ignore": [
           "location",
           "history",
-          "component"
+          "component",
+		  "className"
         ]
       }
     ],

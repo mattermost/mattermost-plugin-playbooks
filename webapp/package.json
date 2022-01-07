@@ -108,6 +108,7 @@
       "/node_modules/",
       "/non_npm_dependencies/"
     ],
+    "testEnvironment": "jsdom",
     "clearMocks": true,
     "collectCoverageFrom": [
       "src/**/*.{js,jsx}"
