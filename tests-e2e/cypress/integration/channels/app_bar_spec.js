@@ -66,7 +66,7 @@ describe('channels > App Bar', () => {
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
-            // Verify App Bar icon is not showing
+            // * Verify App Bar icon is not showing
             cy.get('#channel_view').within(() => {
                 cy.get(getAppBarImageSelector(siteURL)).should('not.exist');
             });
@@ -80,7 +80,7 @@ describe('channels > App Bar', () => {
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
-            // Verify App Bar icon is showing
+            // * Verify App Bar icon is showing
             cy.get('#channel_view').within(() => {
                 cy.get(getAppBarImageSelector(siteURL)).should('exist');
             });
@@ -96,7 +96,7 @@ describe('channels > App Bar', () => {
                 // # Hover over the channel header icon
                 cy.get(getAppBarImageSelector(siteURL)).trigger('mouseover');
 
-                // # Verify tooltip text
+                // * Verify tooltip text
                 cy.get('body > div[role="tooltip"]').contains('Toggle Playbook List');
             });
 
@@ -110,7 +110,7 @@ describe('channels > App Bar', () => {
                 cy.get(getAppBarImageSelector(siteURL)).trigger('mouseover');
                 cy.wait(TIMEOUTS.HALF_SEC);
 
-                // # Verify tooltip text
+                // * Verify tooltip text
                 cy.get('body > div[role="tooltip"]').contains('Toggle Run Details');
             });
         });
