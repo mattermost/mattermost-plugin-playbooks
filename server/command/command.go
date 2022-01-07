@@ -1206,6 +1206,12 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 	for i := 0; i < numPlaybooks; i++ {
 		dummyPlaybook := dummyListPlaybooks[randPlaybooksIndexes[i]]
 		dummyPlaybook.TeamID = r.args.TeamId
+		dummyPlaybook.Members = []app.PlaybookMember{
+			{
+				UserID: r.args.UserId,
+				Roles:  []string{app.PlaybookRoleMember, app.PlaybookRoleAdmin},
+			},
+		}
 		newPlaybookID, errCreatePlaybook := r.playbookService.Create(dummyPlaybook, r.args.UserId)
 		if errCreatePlaybook != nil {
 			r.warnUserAndLogErrorf("unable to create playbook: %v", err)
@@ -1739,6 +1745,12 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 	if len(playbooksResult.Items) == 0 {
 		for _, dummyPlaybook := range dummyListPlaybooks {
 			dummyPlaybook.TeamID = r.args.TeamId
+			dummyPlaybook.Members = []app.PlaybookMember{
+				{
+					UserID: r.args.UserId,
+					Roles:  []string{app.PlaybookRoleMember, app.PlaybookRoleAdmin},
+				},
+			}
 			newPlaybookID, err := r.playbookService.Create(dummyPlaybook, r.args.UserId)
 			if err != nil {
 				r.warnUserAndLogErrorf("unable to create playbook: %v", err)
