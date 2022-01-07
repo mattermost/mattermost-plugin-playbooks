@@ -1,6 +1,6 @@
 module github.com/mattermost/mattermost-plugin-playbooks/server
 
-go 1.17
+go 1.16
 
 replace github.com/mattermost/mattermost-plugin-playbooks/client => ./client
 
