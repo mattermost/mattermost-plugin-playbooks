@@ -157,6 +157,7 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	return command
 }
 
+// Returns list of unique random numbers, with values in range [minVal, maxVal).
 func getRandomUniqueNumbers(minVal, maxVal, count int, seed int64) []int {
 	rand.Seed(seed)
 	allValues := make([]int, maxVal-minVal)
