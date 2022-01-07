@@ -6,13 +6,15 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-import {onlyOn} from '@cypress/skip-test'
+import {onlyOn} from '@cypress/skip-test';
 
-describe('channels > channel header', () => {
+import * as TIMEOUTS from '../../fixtures/timeouts';
+
+describe('channels > App Bar', () => {
     let testTeam;
     let testUser;
     let testPlaybook;
-    let testPlaybookRun;
+    let siteURL;
     let appBarFeatureFlagEnabled;
 
     before(() => {
@@ -37,12 +39,11 @@ describe('channels > channel header', () => {
                     playbookId: testPlaybook.id,
                     playbookRunName: 'Playbook Run',
                     ownerUserId: testUser.id,
-                }).then((run) => {
-                    testPlaybookRun = run;
                 });
             });
 
             cy.apiGetConfig(true).then(({config}) => {
+                siteURL = config.SiteURL;
                 appBarFeatureFlagEnabled = config.FeatureFlagAppBarEnabled === 'true';
             });
         });
@@ -56,83 +57,61 @@ describe('channels > channel header', () => {
         cy.apiLogin(testUser);
     });
 
-    describe('App Bar feature flag enabled', () => {
-        it('webapp should hide the Playbook channel header button', () => {
-            onlyOn(appBarFeatureFlagEnabled);
-
-            // # Navigate directly to a non-playbook run channel
-            cy.visit(`/${testTeam.name}/channels/town-square`);
-
-            // # Verify channel header button is showing
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('not.exist');
-            });
-        });
-    });
+    const getAppBarImageSelector = (siteURL) => `.app-bar .app-bar__icon-inner img[src="${siteURL}/plugins/playbooks/public/app-bar-icon.png"]`;
 
     describe('App Bar feature flag disabled', () => {
-        it('webapp should show the Playbook channel header button', () => {
+        it('should not show the Playbook App Bar icon', () => {
             onlyOn(!appBarFeatureFlagEnabled);
 
             // # Navigate directly to a non-playbook run channel
             cy.visit(`/${testTeam.name}/channels/town-square`);
 
-            // Verify channel header button is showing
-            cy.get('#channel-header').within(() => {
-                cy.get('#incidentIcon').should('exist');
+            // Verify App Bar icon is not showing
+            cy.get('#channel_view').within(() => {
+                cy.get(getAppBarImageSelector(siteURL)).should('not.exist');
+            });
+        });
+    });
+
+    describe('App Bar feature flag enabled', () => {
+        it('should show the Playbook App Bar icon', () => {
+            onlyOn(appBarFeatureFlagEnabled);
+
+            // # Navigate directly to a non-playbook run channel
+            cy.visit(`/${testTeam.name}/channels/town-square`);
+
+            // Verify App Bar icon is showing
+            cy.get('#channel_view').within(() => {
+                cy.get(getAppBarImageSelector(siteURL)).should('exist');
             });
         });
 
         describe('tooltip text', () => {
             it('should show "Toggle Playbook List" outside a playbook run channel', () => {
-                onlyOn(!appBarFeatureFlagEnabled);
+                onlyOn(appBarFeatureFlagEnabled);
 
                 // # Navigate directly to a non-playbook run channel
                 cy.visit(`/${testTeam.name}/channels/town-square`);
 
                 // # Hover over the channel header icon
-                cy.get('#channel-header').within(() => {
-                    cy.get('#incidentIcon').trigger('mouseover');
-                });
+                cy.get(getAppBarImageSelector(siteURL)).trigger('mouseover');
 
                 // # Verify tooltip text
-                cy.get('#pluginTooltip').contains('Toggle Playbook List');
+                cy.get('body > div[role="tooltip"]').contains('Toggle Playbook List');
             });
 
             it('should show "Toggle Run Details" inside a playbook run channel', () => {
-                onlyOn(!appBarFeatureFlagEnabled);
+                onlyOn(appBarFeatureFlagEnabled);
 
                 // # Navigate directly to a playbook run channel
                 cy.visit(`/${testTeam.name}/channels/playbook-run`);
 
                 // # Hover over the channel header icon
-                cy.get('#channel-header').within(() => {
-                    cy.get('#incidentIcon').trigger('mouseover');
-                });
+                cy.get(getAppBarImageSelector(siteURL)).trigger('mouseover');
+                cy.wait(TIMEOUTS.HALF_SEC);
 
                 // # Verify tooltip text
-                cy.get('#pluginTooltip').contains('Toggle Run Details');
-            });
-        });
-    });
-
-    describe('description text', () => {
-        it('should contain a link to the playbook', () => {
-            // # Navigate directly to a playbook run channel
-            cy.visit(`/${testTeam.name}/channels/playbook-run`);
-
-            // * Verify link to playbook
-            cy.get('.header-description__text').findByText('Playbook').should('have.attr', 'href').then((href) => {
-                expect(href).to.equals(`/playbooks/playbooks/${testPlaybook.id}`);
-            });
-        });
-        it('should contain a link to the overview page', () => {
-            // # Navigate directly to a playbook run channel
-            cy.visit(`/${testTeam.name}/channels/playbook-run`);
-
-            // * Verify link to overview page
-            cy.get('.header-description__text').findByText('the overview page').should('have.attr', 'href').then((href) => {
-                expect(href).to.equals(`/playbooks/runs/${testPlaybookRun.id}`);
+                cy.get('body > div[role="tooltip"]').contains('Toggle Run Details');
             });
         });
     });
