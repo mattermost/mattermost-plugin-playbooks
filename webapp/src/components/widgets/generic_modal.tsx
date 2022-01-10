@@ -52,7 +52,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         this.setState({show: false}, () => {
             setTimeout(this.props.onHide, 150);
         });
-    }
+    };
 
     handleCancel = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
@@ -60,7 +60,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
             this.onHide();
         }
         this.props.handleCancel?.();
-    }
+    };
 
     handleConfirm = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
@@ -69,7 +69,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         }
 
         this.props.handleConfirm?.();
-    }
+    };
 
     render() {
         let confirmButton;
