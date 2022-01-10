@@ -124,8 +124,8 @@ func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *Pl
 		return "", errors.Wrapf(err, "can't get team - %s", channel.TeamId)
 	}
 
-	message := fmt.Sprintf("Status update is overdue for [%s](/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen) (Owner: @%s)\n",
-		channel.DisplayName, team.Name, channel.Name, ownerUserName)
+	message := fmt.Sprintf("Status update is overdue for [%s](/%s/channels/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen) (Owner: @%s)\n",
+		channel.DisplayName, team.Name, channel.Name, playbookRun.ID, ownerUserName)
 
 	return message, nil
 }
