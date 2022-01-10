@@ -22,7 +22,7 @@ const TabItem = styled.div<TabItemProps>`
     font-weight: 600;
     cursor: pointer;
     margin-right: 2px;
-    width: 104px;
+    width: 124px;
     opacity: 64%;
 
     box-shadow: inset 0px -2px 0px rgba(var(--center-channel-color-rgb), 0.16);

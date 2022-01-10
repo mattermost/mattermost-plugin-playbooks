@@ -404,7 +404,9 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.Checklists = pb.Checklists
 		public = pb.CreatePublicPlaybookRun
 
-		playbookRun.Summary = pb.RunSummaryTemplate
+		if pb.RunSummaryTemplateEnabled {
+			playbookRun.Summary = pb.RunSummaryTemplate
+		}
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		playbookRun.StatusUpdateEnabled = pb.StatusUpdateEnabled
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
