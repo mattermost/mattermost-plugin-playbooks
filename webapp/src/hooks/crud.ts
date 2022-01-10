@@ -1,9 +1,17 @@
 import {useEffect, useState} from 'react';
+import debounce from 'debounce';
 
-import {clientFetchPlaybook, clientFetchPlaybooks, deletePlaybook as clientDeletePlaybook} from 'src/client';
+import {
+    archivePlaybook as clientArchivePlaybook,
+    clientFetchPlaybook,
+    clientFetchPlaybooks,
+    savePlaybook,
+} from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
 
 type ParamsState = Required<FetchPlaybooksParams>;
+
+const searchDebounceDelayMilliseconds = 300;
 
 export async function getPlaybookOrFetch(id: string, playbooks: Playbook[] | null) {
     return playbooks?.find((p) => p.id === id) ?? clientFetchPlaybook(id);
@@ -23,6 +31,25 @@ export function usePlaybook(id: Playbook['id']) {
     return playbook;
 }
 
+type EditPlaybookReturn = [PlaybookWithChecklist | undefined, (update: Partial<PlaybookWithChecklist>) => void]
+
+export function useEditPlaybook(id: Playbook['id']): EditPlaybookReturn {
+    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | undefined>();
+    useEffect(() => {
+        clientFetchPlaybook(id).then(setPlaybook);
+    }, [id]);
+
+    const updatePlaybook = (update: Partial<PlaybookWithChecklist>) => {
+        if (playbook) {
+            const updatedPlaybook: PlaybookWithChecklist = {...playbook, ...update};
+            setPlaybook(updatedPlaybook);
+            savePlaybook(updatedPlaybook);
+        }
+    };
+
+    return [playbook, updatePlaybook];
+}
+
 export function usePlaybooksCrud(
     defaultParams: Partial<FetchPlaybooksParams>,
     {infinitePaging} = {infinitePaging: false},
@@ -38,6 +65,7 @@ export function usePlaybooksCrud(
         direction: 'asc',
         page: 0,
         per_page: 10,
+        search_term: '',
         ...defaultParams,
     });
 
@@ -80,8 +108,8 @@ export function usePlaybooksCrud(
         setLoading(false);
     };
 
-    const deletePlaybook = async (playbookId: Playbook['id']) => {
-        await clientDeletePlaybook(playbookId);
+    const archivePlaybook = async (playbookId: Playbook['id']) => {
+        await clientArchivePlaybook(playbookId);
 
         // Fetch latest count
         const result = await clientFetchPlaybooks(params.team_id, params);
@@ -101,12 +129,28 @@ export function usePlaybooksCrud(
             return;
         }
 
-        setParams({sort: colName, direction: 'asc'});
+        setParams({sort: colName, direction: 'desc'});
     };
+
+    const setSearchTerm = (term: string) => {
+        setLoading(true);
+        setParams({search_term: term});
+    };
+    const setSearchTermDebounced = debounce(setSearchTerm, searchDebounceDelayMilliseconds);
+
+    const isFiltering = (params?.search_term?.length ?? 0) > 0;
 
     return [
         playbooks,
         {isLoading, totalCount, hasMore, params, selectedPlaybook},
-        {setPage, setParams, sortBy, setSelectedPlaybook, deletePlaybook},
+        {
+            setPage,
+            setParams,
+            sortBy,
+            setSelectedPlaybook,
+            archivePlaybook,
+            setSearchTerm: setSearchTermDebounced,
+            isFiltering,
+        },
     ] as const;
 }

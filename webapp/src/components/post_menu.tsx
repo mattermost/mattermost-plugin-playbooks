@@ -13,6 +13,8 @@ import {getPost} from 'mattermost-redux/selectors/entities/posts';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {Channel} from 'mattermost-redux/types/channels';
 
+import {FormattedMessage} from 'react-intl';
+
 import PlaybookRunPostMenuIcon from 'src/components/assets/icons/post_menu_icon';
 
 import {addToTimeline, startPlaybookRun, showPostMenuModal} from 'src/actions';
@@ -27,9 +29,14 @@ interface Props {
 
 export const StartPlaybookRunPostMenu = (props: Props) => {
     const dispatch = useDispatch();
-    const post = useSelector<GlobalState, Post>((state) => getPost(state, props.postId));
-    const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, post.channel_id));
-    if (!post || isSystemMessage(post)) {
+    const channel = useSelector<GlobalState, Channel | null>((state) => {
+        const post = getPost(state, props.postId);
+        if (!post || isSystemMessage(post)) {
+            return null;
+        }
+        return getChannel(state, post.channel_id);
+    });
+    if (!channel) {
         return null;
     }
 
@@ -50,7 +57,7 @@ export const StartPlaybookRunPostMenu = (props: Props) => {
                     role='presentation'
                 >
                     <PlaybookRunPostMenuIcon/>
-                    {'Run playbook'}
+                    <FormattedMessage defaultMessage='Run playbook'/>
                 </button>
             </li>
         </React.Fragment>
@@ -87,7 +94,7 @@ export const AttachToPlaybookRunPostMenu = (props: Props) => {
                     role='presentation'
                 >
                     <PlaybookRunPostMenuIcon/>
-                    {'Add to run timeline'}
+                    <FormattedMessage defaultMessage='Add to run timeline'/>
                     {!allowMessage && <PositionedUpgradeBadge/>}
                 </button>
             </li>

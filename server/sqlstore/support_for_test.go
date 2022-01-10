@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/blang/semver"
+	mock_app "github.com/mattermost/mattermost-plugin-playbooks/server/app/mocks"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
@@ -44,6 +47,7 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 
 	mockCtrl := gomock.NewController(t)
 	logger := mock_bot.NewMockLogger(mockCtrl)
+	scheduler := mock_app.NewMockJobOnceScheduler(mockCtrl)
 
 	driverName := db.DriverName()
 
@@ -56,9 +60,10 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 		logger,
 		db,
 		builder,
+		scheduler,
 	}
 
-	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).Times(2)
+	logger.EXPECT().Debugf(gomock.AssignableToTypeOf("string")).AnyTimes()
 
 	currentSchemaVersion, err := sqlStore.GetCurrentVersion()
 	require.NoError(t, err)
@@ -67,6 +72,11 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	setupPostsTable(t, db)
 	setupBotsTable(t, db)
 	setupChannelMembersTable(t, db)
+	setupKVStoreTable(t, db)
+	setupUsersTable(t, db)
+	setupTeamsTable(t, db)
+	setupRolesTable(t, db)
+	setupSchemesTable(t, db)
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		err = sqlStore.Migrate(currentSchemaVersion)
@@ -110,7 +120,8 @@ func setupUsersTable(t *testing.T, db *sqlx.DB) {
 				locale character varying(5),
 				timezone character varying(256),
 				mfaactive boolean,
-				mfasecret character varying(128)
+				mfasecret character varying(128),
+				PRIMARY KEY (Id)
 			);
 		`)
 		require.NoError(t, err)
@@ -410,6 +421,177 @@ func setupPostsTable(t testing.TB, db *sqlx.DB) {
 	require.NoError(t, err)
 }
 
+func setupTeamsTable(t testing.TB, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-6.0.sql
+	if db.DriverName() == model.DatabaseDriverPostgres {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.teams (
+				id character varying(26) NOT NULL,
+				PRIMARY KEY (Id),
+				createat bigint,
+				updateat bigint,
+				deleteat bigint,
+				displayname character varying(64),
+				name character varying(64),
+				description character varying(255),
+				email character varying(128),
+				type character varying(255),
+				companyname character varying(64),
+				alloweddomains character varying(1000),
+				inviteid character varying(32),
+				schemeid character varying(26),
+				allowopeninvite boolean,
+				lastteamiconupdate bigint,
+				groupconstrained boolean
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-6.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS Teams (
+			  Id varchar(26) NOT NULL,
+			  CreateAt bigint(20) DEFAULT NULL,
+			  UpdateAt bigint(20) DEFAULT NULL,
+			  DeleteAt bigint(20) DEFAULT NULL,
+			  DisplayName varchar(64) DEFAULT NULL,
+			  Name varchar(64) DEFAULT NULL,
+			  Description varchar(255) DEFAULT NULL,
+			  Email varchar(128) DEFAULT NULL,
+			  Type varchar(255) DEFAULT NULL,
+			  CompanyName varchar(64) DEFAULT NULL,
+			  AllowedDomains text,
+			  InviteId varchar(32) DEFAULT NULL,
+			  SchemeId varchar(26) DEFAULT NULL,
+			  AllowOpenInvite tinyint(1) DEFAULT NULL,
+			  LastTeamIconUpdate bigint(20) DEFAULT NULL,
+			  GroupConstrained tinyint(1) DEFAULT NULL,
+			  PRIMARY KEY (Id),
+			  UNIQUE KEY Name (Name),
+			  KEY idx_teams_invite_id (InviteId),
+			  KEY idx_teams_update_at (UpdateAt),
+			  KEY idx_teams_create_at (CreateAt),
+			  KEY idx_teams_delete_at (DeleteAt),
+			  KEY idx_teams_scheme_id (SchemeId)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
+func setupRolesTable(t testing.TB, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-6.0.sql
+	if db.DriverName() == model.DatabaseDriverPostgres {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.roles (
+				id character varying(26) NOT NULL,
+				PRIMARY KEY (Id),
+				name character varying(64),
+				displayname character varying(128),
+				description character varying(1024),
+				createat bigint,
+				updateat bigint,
+				deleteat bigint,
+				permissions text,
+				schememanaged boolean,
+				builtin boolean
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-6.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS Roles (
+			  Id varchar(26) NOT NULL,
+			  Name varchar(64) DEFAULT NULL,
+			  DisplayName varchar(128) DEFAULT NULL,
+			  Description text,
+			  CreateAt bigint(20) DEFAULT NULL,
+			  UpdateAt bigint(20) DEFAULT NULL,
+			  DeleteAt bigint(20) DEFAULT NULL,
+			  Permissions text,
+			  SchemeManaged tinyint(1) DEFAULT NULL,
+			  BuiltIn tinyint(1) DEFAULT NULL,
+			  PRIMARY KEY (Id),
+			  UNIQUE KEY Name (Name)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
+func setupSchemesTable(t testing.TB, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-6.0.sql
+	if db.DriverName() == model.DatabaseDriverPostgres {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.schemes (
+				id character varying(26) NOT NULL,
+				PRIMARY KEY (Id),
+				name character varying(64),
+				displayname character varying(128),
+				description character varying(1024),
+				createat bigint,
+				updateat bigint,
+				deleteat bigint,
+				scope character varying(32),
+				defaultteamadminrole character varying(64),
+				defaultteamuserrole character varying(64),
+				defaultchanneladminrole character varying(64),
+				defaultchanneluserrole character varying(64),
+				defaultteamguestrole character varying(64),
+				defaultchannelguestrole character varying(64),
+				defaultplaybookadminrole character varying(64),
+				defaultplaybookmemberrole character varying(64),
+				defaultrunadminrole character varying(64),
+				defaultrunmemberrole character varying(64)
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-6.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS Schemes (
+			  Id varchar(26) NOT NULL,
+			  Name varchar(64) DEFAULT NULL,
+			  DisplayName varchar(128) DEFAULT NULL,
+			  Description text,
+			  CreateAt bigint(20) DEFAULT NULL,
+			  UpdateAt bigint(20) DEFAULT NULL,
+			  DeleteAt bigint(20) DEFAULT NULL,
+			  Scope varchar(32) DEFAULT NULL,
+			  DefaultTeamAdminRole varchar(64) DEFAULT NULL,
+			  DefaultTeamUserRole varchar(64) DEFAULT NULL,
+			  DefaultChannelAdminRole varchar(64) DEFAULT NULL,
+			  DefaultChannelUserRole varchar(64) DEFAULT NULL,
+			  DefaultTeamGuestRole varchar(64) DEFAULT NULL,
+			  DefaultChannelGuestRole varchar(64) DEFAULT NULL,
+			  DefaultPlaybookAdminRole varchar(64) DEFAULT NULL,
+			  DefaultPlaybookMemberRole varchar(64) DEFAULT NULL,
+			  DefaultRunAdminRole varchar(64) DEFAULT NULL,
+			  DefaultRunMemberRole varchar(64) DEFAULT NULL,
+			  PRIMARY KEY (Id),
+			  UNIQUE KEY Name (Name),
+			  KEY idx_schemes_channel_guest_role (DefaultChannelGuestRole),
+			  KEY idx_schemes_channel_user_role (DefaultChannelUserRole),
+			  KEY idx_schemes_channel_admin_role (DefaultChannelAdminRole)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
 func setupBotsTable(t testing.TB, db *sqlx.DB) {
 	t.Helper()
 
@@ -436,6 +618,37 @@ func setupBotsTable(t testing.TB, db *sqlx.DB) {
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 		`)
 	require.NoError(t, err)
+}
+
+func setupKVStoreTable(t *testing.T, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
+	if db.DriverName() == model.DatabaseDriverPostgres {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.pluginkeyvaluestore (
+				pluginid character varying(190) NOT NULL,
+				pkey character varying(50) NOT NULL,
+				pvalue bytea,
+				expireat bigint,
+				PRIMARY KEY (PluginId,PKey)
+			);
+		`)
+		require.NoError(t, err)
+	} else {
+		// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS PluginKeyValueStore (
+			  PluginId varchar(190) NOT NULL,
+			  PKey varchar(50) NOT NULL,
+			  PValue mediumblob,
+			  ExpireAt bigint(20) DEFAULT NULL,
+			  PRIMARY KEY (PluginId,PKey)
+		  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+		require.NoError(t, err)
+	}
+
 }
 
 type userInfo struct {
@@ -500,10 +713,23 @@ func addUsersToChannels(t *testing.T, store *SQLStore, users []userInfo, channel
 func createChannels(t testing.TB, store *SQLStore, channels []model.Channel) {
 	t.Helper()
 
-	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "Type", "CreateAt", "DeleteAt")
+	insertBuilder := store.builder.Insert("Channels").Columns("Id", "DisplayName", "Type", "CreateAt", "DeleteAt", "Name")
 
 	for _, channel := range channels {
-		insertBuilder = insertBuilder.Values(channel.Id, channel.DisplayName, channel.Type, channel.CreateAt, channel.DeleteAt)
+		insertBuilder = insertBuilder.Values(channel.Id, channel.DisplayName, channel.Type, channel.CreateAt, channel.DeleteAt, channel.Name)
+	}
+
+	_, err := store.execBuilder(store.db, insertBuilder)
+	require.NoError(t, err)
+}
+
+func createTeams(t testing.TB, store *SQLStore, teams []model.Team) {
+	t.Helper()
+
+	insertBuilder := store.builder.Insert("Teams").Columns("Id", "Name")
+
+	for _, team := range teams {
+		insertBuilder = insertBuilder.Values(team.Id, team.Name)
 	}
 
 	_, err := store.execBuilder(store.db, insertBuilder)
@@ -546,4 +772,46 @@ func savePosts(t testing.TB, store *SQLStore, posts []*model.Post) {
 
 	_, err := store.execBuilder(store.db, insertBuilder)
 	require.NoError(t, err)
+}
+
+func migrateUpTo(t *testing.T, store *SQLStore, lastExpectedVersion semver.Version) {
+	t.Helper()
+
+	for _, migration := range migrations {
+		if migration.toVersion.GT(lastExpectedVersion) {
+			break
+		}
+
+		err := store.migrate(migration)
+		require.NoError(t, err)
+
+		currentSchemaVersion, err := store.GetCurrentVersion()
+		require.NoError(t, err)
+		require.Equal(t, currentSchemaVersion, migration.toVersion)
+	}
+
+	currentSchemaVersion, err := store.GetCurrentVersion()
+	require.NoError(t, err)
+	require.Equal(t, currentSchemaVersion, lastExpectedVersion)
+}
+
+func migrateFrom(t *testing.T, store *SQLStore, firstExpectedVersion semver.Version) {
+	t.Helper()
+
+	currentSchemaVersion, err := store.GetCurrentVersion()
+	require.NoError(t, err)
+	require.Equal(t, currentSchemaVersion, firstExpectedVersion)
+
+	for _, migration := range migrations {
+		if migration.toVersion.LE(firstExpectedVersion) {
+			continue
+		}
+
+		err := store.migrate(migration)
+		require.NoError(t, err)
+
+		currentSchemaVersion, err := store.GetCurrentVersion()
+		require.NoError(t, err)
+		require.Equal(t, currentSchemaVersion, migration.toVersion)
+	}
 }

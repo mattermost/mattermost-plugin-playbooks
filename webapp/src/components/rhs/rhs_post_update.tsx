@@ -4,12 +4,16 @@
 import React from 'react';
 import {useDispatch} from 'react-redux';
 import styled, {css} from 'styled-components';
-import moment from 'moment';
+import {DateTime} from 'luxon';
+import Icon from '@mdi/react';
+import {mdiFlagCheckered} from '@mdi/js';
+
+import {FormattedMessage} from 'react-intl';
 
 import {promptUpdateStatus} from 'src/actions';
-import {PlaybookRun} from 'src/types/playbook_run';
 import RHSPostUpdateButton from 'src/components/rhs/rhs_post_update_button';
 import Exclamation from 'src/components/assets/icons/exclamation';
+import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import Clock from 'src/components/assets/icons/clock';
 
 import {useNow} from 'src/hooks';
@@ -33,22 +37,42 @@ const RHSPostUpdate = (props: Props) => {
 
     const isNextUpdateScheduled = props.playbookRun.previous_reminder !== 0;
     const timestamp = getTimestamp(props.playbookRun, isNextUpdateScheduled);
-    const isDue = isNextUpdateScheduled && timestamp.isBefore(now);
+    const isDue = isNextUpdateScheduled && timestamp < now;
+    const isFinished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
 
-    let pretext = 'Last update';
-    if (isNextUpdateScheduled) {
-        pretext = (isDue ? 'Update overdue' : 'Update due');
+    let pretext = <FormattedMessage defaultMessage='Last update'/>;
+    if (isFinished) {
+        pretext = <FormattedMessage defaultMessage='Run finished'/>;
+    } else if (isNextUpdateScheduled) {
+        pretext = (isDue ? <FormattedMessage defaultMessage='Update overdue'/> : <FormattedMessage defaultMessage='Update due'/>);
     }
 
     const timespec = (isDue || !isNextUpdateScheduled) ? PastTimeSpec : FutureTimeSpec;
 
+    let icon: JSX.Element;
+    if (isFinished) {
+        icon = (
+            <Icon
+                path={mdiFlagCheckered}
+                size={2.6}
+            />
+        );
+    } else if (isDue) {
+        icon = <Exclamation/>;
+    } else {
+        icon = <Clock/>;
+    }
+
     return (
-        <PostUpdate collapsed={props.collapsed}>
-            {(props.updatesExist || isNextUpdateScheduled) &&
+        <PostUpdate
+            collapsed={props.collapsed}
+            id={'rhs-post-update'}
+        >
+            {(props.updatesExist || isNextUpdateScheduled || isFinished) &&
             <>
                 <Timer>
                     <IconWrapper collapsed={props.collapsed}>
-                        {isDue ? <Exclamation/> : <Clock/>}
+                        {icon}
                     </IconWrapper>
                     <UpdateNotice
                         collapsed={props.collapsed}
@@ -59,7 +83,7 @@ const RHSPostUpdate = (props: Props) => {
                         </UpdateNoticePretext>
                         <UpdateNoticeTime collapsed={props.collapsed}>
                             <Timestamp
-                                value={timestamp.toDate()}
+                                value={timestamp.toJSDate()}
                                 units={timespec}
                                 useTime={false}
                             />
@@ -73,11 +97,11 @@ const RHSPostUpdate = (props: Props) => {
                 collapsed={props.collapsed}
                 isNextUpdateScheduled={isNextUpdateScheduled}
                 updatesExist={props.updatesExist}
+                disabled={props.playbookRun.current_status === PlaybookRunStatus.Finished}
                 onClick={() => {
                     dispatch(promptUpdateStatus(
                         props.playbookRun.team_id,
                         props.playbookRun.id,
-                        props.playbookRun.playbook_id,
                         props.playbookRun.channel_id,
                     ));
                 }}
@@ -90,16 +114,18 @@ const RHSPostUpdate = (props: Props) => {
 const getTimestamp = (playbookRun: PlaybookRun, isNextUpdateScheduled: boolean) => {
     let timestampValue = playbookRun.last_status_update_at;
 
-    if (isNextUpdateScheduled) {
+    if (playbookRun.current_status === PlaybookRunStatus.Finished) {
+        timestampValue = playbookRun.end_at;
+    } else if (isNextUpdateScheduled) {
         const previousReminderMillis = Math.floor(playbookRun.previous_reminder / 1e6);
         timestampValue = playbookRun.last_status_update_at + previousReminderMillis;
     }
 
-    return moment(timestampValue);
+    return DateTime.fromMillis(timestampValue);
 };
 
-const PastTimeSpec = [
-    {within: ['second', -45], display: 'just now'},
+export const PastTimeSpec = [
+    {within: ['second', -45], display: <FormattedMessage defaultMessage='just now'/>},
     ['minute', -59],
     ['hour', -48],
     ['day', -30],
@@ -107,7 +133,7 @@ const PastTimeSpec = [
     'year',
 ];
 
-const FutureTimeSpec = [
+export const FutureTimeSpec = [
     ['minute', 59],
     ['hour', 48],
     ['day', 30],

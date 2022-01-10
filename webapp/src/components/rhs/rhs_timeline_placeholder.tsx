@@ -5,6 +5,8 @@ import React from 'react';
 
 import styled from 'styled-components';
 
+import {useIntl} from 'react-intl';
+
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
 import UpgradeTimelineBackgroundSvg from '../assets/upgrade_timeline_background_svg';
@@ -14,12 +16,13 @@ const Container = styled.div`
 `;
 
 const TimelineUpgradePlaceholder = () => {
+    const {formatMessage} = useIntl();
     return (
         <Container>
             <UpgradeBanner
                 background={<UpgradeTimelineBackgroundSvg/>}
-                titleText={'Know what happened'}
-                helpText={'Make retrospectives easy with a timeline that automatically keeps track of the key events and messages so that teams have it at their fingertips.'}
+                titleText={formatMessage({defaultMessage: 'Know what happened'})}
+                helpText={formatMessage({defaultMessage: 'Make retrospectives easy with a timeline that automatically keeps track of the key events and messages so that teams have it at their fingertips.'})}
                 notificationType={AdminNotificationType.VIEW_TIMELINE}
                 vertical={true}
                 verticalAdjustment={380}

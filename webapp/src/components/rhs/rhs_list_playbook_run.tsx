@@ -6,22 +6,19 @@ import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-
-import Duration from 'src/components/duration';
+import FormattedDuration from 'src/components/formatted_duration';
 import {lastUpdatedByPlaybookRunId} from 'src/selectors';
-
 import {SmallerProfile} from 'src/components/rhs/rhs_shared';
-
-import StatusBadge from '../backstage/playbook_runs/status_badge';
+import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 
 const PlaybookRunContainer = styled.div<PlaybookRunContainerProps>`
     display: flex;
     flex-direction: column;
     padding: 20px;
-    box-shadow: inset 0px -1px 0px var(--center-channel-color-24);
+    box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.24);
 
     ${(props) => props.active && css`
-        box-shadow: inset 0px -1px 0px var(--center-channel-color-24), inset 4px 0px 0px var(--button-bg);
+        box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.24), inset 4px 0px 0px var(--button-bg);
     `}
 `;
 
@@ -91,7 +88,7 @@ const RHSListPlaybookRun = (props: Props) => {
             <Row>
                 <Col1>{'Duration:'}</Col1>
                 <Col2>
-                    <Duration
+                    <FormattedDuration
                         from={props.playbookRun.create_at}
                         to={props.playbookRun.end_at}
                     />
@@ -101,14 +98,14 @@ const RHSListPlaybookRun = (props: Props) => {
                 <Col1>{'Status:'}</Col1>
                 <Col2>
                     <div>
-                        <StatusBadge status={props.playbookRun.current_status}/>
+                        <StatusBadge status={BadgeType[props.playbookRun.current_status]}/>
                     </div>
                 </Col2>
             </Row>
             <Row>
                 <Col1>{'Last updated:'}</Col1>
                 <Col2>
-                    <Duration
+                    <FormattedDuration
                         from={lastUpdatedMap[props.playbookRun.id]}
                         to={0}
                         ago={true}

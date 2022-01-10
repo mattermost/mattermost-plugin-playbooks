@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import moment from 'moment';
+import {DateTime} from 'luxon';
 import styled from 'styled-components';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
@@ -11,12 +11,14 @@ import {GlobalState} from 'mattermost-redux/types/store';
 
 import {useSelector} from 'react-redux';
 
+import {FormattedMessage} from 'react-intl';
+
 import TextWithTooltip from 'src/components/widgets/text_with_tooltip';
 import {PlaybookRun} from 'src/types/playbook_run';
-import Duration from 'src/components/duration';
+import FormattedDuration from 'src/components/formatted_duration';
 import {navigateToPluginUrl} from 'src/browser_routing';
 import Profile from 'src/components/profile/profile';
-import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
+import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
 
 import {findLastUpdatedWithDefault} from 'src/utils';
@@ -30,7 +32,7 @@ const SmallText = styled.div`
     font-weight: 400;
     font-size: 11px;
     line-height: 16px;
-    color: var(--center-channel-color-64);
+    color: rgba(var(--center-channel-color-rgb), 0.64);
     margin: 5px 0;
 `;
 
@@ -64,6 +66,20 @@ const RunName = styled.div`
     line-height: 16px;
 `;
 
+const PlaybookRunItem = styled.div`
+    display: flex;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    align-items: center;
+    margin: 0;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    cursor: pointer;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.04);
+    }
+`;
+
 interface Props {
     playbookRun: PlaybookRun
     fixedTeam?: boolean
@@ -77,28 +93,32 @@ const Row = (props: Props) => {
     const teamName = useSelector(teamNameSelector(props.playbookRun.team_id));
     const [completedTasks, totalTasks] = tasksCompletedTotal(props.playbookRun.checklists);
 
+    let infoLine: React.ReactNode = null;
+    if (!props.fixedTeam) {
+        infoLine = <InfoLine>{playbookName ? teamName + ' • ' + playbookName : teamName}</InfoLine>;
+    }
+
     function openPlaybookRunDetails(playbookRun: PlaybookRun) {
         navigateToPluginUrl(`/runs/${playbookRun.id}`);
     }
 
     return (
-        <div
-            className='row playbook-run-item'
+        <PlaybookRunItem
+            className='row'
             key={props.playbookRun.id}
             onClick={() => openPlaybookRunDetails(props.playbookRun)}
         >
             <div className='col-sm-4'>
                 <RunName>{props.playbookRun.name}</RunName>
-                {!props.fixedTeam && <InfoLine>{teamName + ' • ' + playbookName}</InfoLine>}
+                {infoLine}
             </div>
             <div className='col-sm-2'>
                 <SmallStatusBadge
-                    status={props.playbookRun.current_status}
+                    status={BadgeType[props.playbookRun.current_status]}
                 />
                 <SmallText>
-                    <Duration
+                    <FormattedDuration
                         from={findLastUpdatedWithDefault(props.playbookRun)}
-                        to={0}
                         ago={true}
                     />
                 </SmallText>
@@ -107,7 +127,7 @@ const Row = (props: Props) => {
                 className='col-sm-2'
             >
                 <NormalText>
-                    <Duration
+                    <FormattedDuration
                         from={props.playbookRun.create_at}
                         to={props.playbookRun.end_at}
                     />
@@ -118,7 +138,12 @@ const Row = (props: Props) => {
             </div>
             <div className='col-sm-2'>
                 <SmallProfile userId={props.playbookRun.owner_user_id}/>
-                <SmallText>{participantsText(props.playbookRun.participant_ids)}</SmallText>
+                <SmallText>
+                    <FormattedMessage
+                        defaultMessage='{numParticipants, plural, =0 {no participants} =1 {# participant} other {# participants}}'
+                        values={{numParticipants: props.playbookRun.participant_ids.length}}
+                    />
+                </SmallText>
             </div>
             <div className='col-sm-2'>
                 <NormalText>{completedTasks + ' / ' + totalTasks}</NormalText>
@@ -127,14 +152,8 @@ const Row = (props: Props) => {
                     total={totalTasks}
                 />
             </div>
-        </div>
+        </PlaybookRunItem>
     );
-};
-
-const participantsText = (participantIds: string[]) => {
-    const num = participantIds.length;
-    const suffix = num === 1 ? '' : 's';
-    return num + ' participant' + suffix;
 };
 
 const tasksCompletedTotal = (checklists: Checklist[]) => {
@@ -143,26 +162,27 @@ const tasksCompletedTotal = (checklists: Checklist[]) => {
 
     for (const cl of checklists) {
         for (const item of cl.items) {
-            total++;
+            if (item.state !== ChecklistItemState.Skip) {
+                total++;
+            }
             if (item.state === ChecklistItemState.Closed) {
                 completed++;
             }
         }
     }
-
     return [completed, total];
 };
 
 const formatDate = (millis: number) => {
-    const mom = moment(millis);
-    if (mom.isAfter(moment().startOf('d').subtract(2, 'd'))) {
-        return mom.calendar();
+    const dt = DateTime.fromMillis(millis);
+    if (dt > DateTime.now().startOf('day').minus({days: 2})) {
+        return dt.toRelativeCalendar();
     }
 
-    if (mom.isSame(moment(), 'year')) {
-        return mom.format('MMM DD LT');
+    if (dt.hasSame(DateTime.now(), 'year')) {
+        return dt.toFormat('LLL dd t');
     }
-    return mom.format('MMM DD YYYY LT');
+    return dt.toFormat('LLL dd yyyy t');
 };
 
 export default Row;

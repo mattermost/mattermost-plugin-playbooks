@@ -134,40 +134,40 @@ func (s *StatsStore) MovingWindowQueryActive(query sq.SelectBuilder, numDays int
 
 // RunsStartedPerWeekLastXWeeks returns the number of runs started each week for the last X weeks.
 // Returns data in order of oldest week to most recent week.
-func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) ([]int, []string, [][]int64) {
+func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) ([]int, [][]int64) {
 	day := int64(86400000)
 	week := day * 7
 	startOfWeek := beginningOfLastSundayMillis()
 	endOfWeek := startOfWeek + week - 1
-	var weeksAsStrings []string
 	var weeksStartAndEnd [][]int64
 
 	q := s.store.builder.Select()
 	for i := 0; i < x; i++ {
 		if s.store.db.DriverName() == model.DatabaseDriverMysql {
 			q = q.Column(`
-                CAST(
-                     SUM(
-                         CASE
-                             WHEN i.CreateAt >= ? AND i.CreateAt < ?
-                                 THEN 1
-                             ELSE 0
-                         END)
-                     AS UNSIGNED)
-                 `, startOfWeek, endOfWeek)
+			CAST(
+				COALESCE(
+					 SUM(
+						 CASE
+							 WHEN i.CreateAt >= ? AND i.CreateAt < ?
+								 THEN 1
+							 ELSE 0
+						 END)
+				, 0)
+				 AS UNSIGNED)
+				 `, startOfWeek, endOfWeek)
 		} else {
 			q = q.Column(`
-                SUM(CASE
-                        WHEN i.CreateAt >= ? AND i.CreateAt < ?
-                            THEN 1
-                        ELSE 0
-                    END)
+			COALESCE(
+				 SUM(CASE
+					WHEN i.CreateAt >= ? AND i.CreateAt < ?
+						THEN 1
+					ELSE 0
+				END)
+			, 0)
                  `, startOfWeek, endOfWeek)
 		}
 
-		// use the middle of the day to get the date, just in case
-		weekAsTime := time.Unix(0, (startOfWeek+day/2)*int64(time.Millisecond))
-		weeksAsStrings = append(weeksAsStrings, weekAsTime.Format("02 Jan"))
 		weeksStartAndEnd = append(weeksStartAndEnd, []int64{startOfWeek, endOfWeek})
 
 		endOfWeek -= week
@@ -180,23 +180,21 @@ func (s *StatsStore) RunsStartedPerWeekLastXWeeks(x int, filters *StatsFilters) 
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
 		s.log.Warnf("failed to perform query: %v", err)
-		return []int{}, []string{}, [][]int64{}
+		return []int{}, [][]int64{}
 	}
 
 	reverseSlice(counts)
-	reverseSlice(weeksAsStrings)
 	reverseSlice(weeksStartAndEnd)
 
-	return counts, weeksAsStrings, weeksStartAndEnd
+	return counts, weeksStartAndEnd
 }
 
 // ActiveRunsPerDayLastXDays returns the number of active runs per day for the last X days.
 // Returns data in order of oldest day to most recent day.
-func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]int, []string, [][]int64) {
+func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]int, [][]int64) {
 	startOfDay := beginningOfTodayMillis()
 	endOfDay := endOfTodayMillis()
 	day := int64(86400000)
-	var daysAsStrings []string
 	var daysAsStartAndEnd [][]int64
 
 	q := s.store.builder.Select()
@@ -205,28 +203,29 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 		// start of the day (or still active)
 		if s.store.db.DriverName() == model.DatabaseDriverMysql {
 			q = q.Column(`
-                CAST(
-                     SUM(
-                         CASE
-                             WHEN (i.EndAt >= ? OR i.EndAt = 0) AND i.CreateAt < ?
-                                 THEN 1
-                             ELSE 0
-                         END)
-                     AS UNSIGNED)
+			CAST(
+				COALESCE(
+					 SUM(
+						 CASE
+							 WHEN (i.EndAt >= ? OR i.EndAt = 0) AND i.CreateAt < ?
+								 THEN 1
+							 ELSE 0
+						 END)
+				, 0)
+				 AS UNSIGNED)
                 `, startOfDay, endOfDay)
 		} else {
 			q = q.Column(`
-                SUM(CASE
-                        WHEN (i.EndAt >= ? OR i.EndAt = 0) AND i.CreateAt < ?
-                            THEN 1
-                        ELSE 0
-                    END)
+			COALESCE(
+				SUM(CASE
+					WHEN (i.EndAt >= ? OR i.EndAt = 0) AND i.CreateAt < ?
+						THEN 1
+					ELSE 0
+				END)
+			, 0)
                 `, startOfDay, endOfDay)
 		}
 
-		// use the middle of the day to get the date, just in case
-		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
-		daysAsStrings = append(daysAsStrings, dayAsTime.Format("02 Jan"))
 		daysAsStartAndEnd = append(daysAsStartAndEnd, []int64{startOfDay, endOfDay})
 
 		endOfDay -= day
@@ -239,23 +238,22 @@ func (s *StatsStore) ActiveRunsPerDayLastXDays(x int, filters *StatsFilters) ([]
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
 		s.log.Warnf("failed to perform query: %v", err)
-		return []int{}, []string{}, [][]int64{}
+		return []int{}, [][]int64{}
 	}
 
 	reverseSlice(counts)
-	reverseSlice(daysAsStrings)
 	reverseSlice(daysAsStartAndEnd)
 
-	return counts, daysAsStrings, daysAsStartAndEnd
+	return counts, daysAsStartAndEnd
 }
 
 // ActiveParticipantsPerDayLastXDays returns the number of active participants per day for the last X days.
 // Returns data in order of oldest day to most recent day.
-func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilters) ([]int, []string) {
+func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilters) ([]int, [][]int64) {
 	startOfDay := beginningOfTodayMillis()
 	endOfDay := endOfTodayMillis()
 	day := int64(86400000)
-	var daysAsStrings []string
+	var daysAsTimes [][]int64
 
 	q := s.store.builder.Select()
 	for i := 0; i < x; i++ {
@@ -268,19 +266,19 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 		// second two lines: a user was active in the same way--if they left after the start of
 		// the day (or are still in the channel) and joined before the end of the day
 		q = q.Column(`
-                COUNT(DISTINCT
-                      (CASE
-                           WHEN (i.EndAt >= ? OR i.EndAt = 0) AND
-                                i.CreateAt < ? AND
-                                (cmh.LeaveTime >= ? OR cmh.LeaveTime is NULL) AND
-                                cmh.JoinTime < ?
-                               THEN cmh.UserId
-                      END))
+				COALESCE(
+					COUNT(DISTINCT
+						  (CASE
+							   WHEN (i.EndAt >= ? OR i.EndAt = 0) AND
+									i.CreateAt < ? AND
+									(cmh.LeaveTime >= ? OR cmh.LeaveTime is NULL) AND
+									cmh.JoinTime < ?
+								   THEN cmh.UserId
+						  END))
+				, 0)
                 `, startOfDay, endOfDay, startOfDay, endOfDay)
 
-		// use the middle of the day to get the date, just in case
-		dayAsTime := time.Unix(0, (startOfDay+day/2)*int64(time.Millisecond))
-		daysAsStrings = append(daysAsStrings, dayAsTime.Format("02 Jan"))
+		daysAsTimes = append(daysAsTimes, []int64{startOfDay, endOfDay})
 
 		endOfDay -= day
 		startOfDay -= day
@@ -295,13 +293,13 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 	counts, err := s.performQueryForXCols(q, x)
 	if err != nil {
 		s.log.Warnf("failed to perform query: %v", err)
-		return []int{}, []string{}
+		return []int{}, [][]int64{}
 	}
 
 	reverseSlice(counts)
-	reverseSlice(daysAsStrings)
+	reverseSlice(daysAsTimes)
 
-	return counts, daysAsStrings
+	return counts, daysAsTimes
 }
 
 func (s *StatsStore) performQueryForXCols(q sq.SelectBuilder, x int) ([]int, error) {

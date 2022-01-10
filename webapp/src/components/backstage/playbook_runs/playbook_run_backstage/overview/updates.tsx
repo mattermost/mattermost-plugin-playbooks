@@ -1,12 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
 import {Team} from 'mattermost-redux/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
+import {useIntl} from 'react-intl';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 
@@ -30,26 +31,36 @@ interface Props {
 
 const Updates = (props: Props) => {
     const statusPosts = props.playbookRun.status_posts.sort((a, b) => b.create_at - a.create_at);
+    const {formatMessage} = useIntl();
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, props.playbookRun.team_id));
 
-    let updates: JSX.Element | JSX.Element[] =
-        <EmptyBody>{'There are no updates available.'}</EmptyBody>;
+    const noUpdatesText = props.playbookRun.status_update_enabled ? formatMessage({defaultMessage: 'There are no updates available.'}) :
+        formatMessage({defaultMessage: 'Status updates were disabled for this playbook run.'});
+
+    let updates: ReactNode = <EmptyBody id={'status-update-msg'}>{noUpdatesText}</EmptyBody>;
+
     if (statusPosts.length) {
-        updates = statusPosts.map((sp) => (
-            <PostContent
-                key={sp.id}
-                postId={sp.id}
-                channelId={props.playbookRun.channel_id}
-                playbookRunId={props.playbookRun.id}
-                playbookId={props.playbookRun.playbook_id}
-                team={team}
-            />
-        ));
+        updates = statusPosts.reduce((result, sp) => {
+            if (sp.delete_at === 0) {
+                result.push(
+                    <PostContent
+                        key={sp.id}
+                        postId={sp.id}
+                        channelId={props.playbookRun.channel_id}
+                        playbookRunId={props.playbookRun.id}
+                        playbookId={props.playbookRun.playbook_id}
+                        team={team}
+                    />
+                );
+            }
+
+            return result;
+        }, [] as ReactNode[]);
     }
 
     return (
-        <TabPageContainer>
-            <Title>{'Updates'}</Title>
+        <TabPageContainer data-testid='updates'>
+            <Title>{formatMessage({defaultMessage: 'Updates'})}</Title>
             {updates}
         </TabPageContainer>
     );

@@ -17,7 +17,8 @@ export enum TimelineEventType {
     UserJoinedLeft = 'user_joined_left',
     PublishedRetrospective = 'published_retrospective',
     CanceledRetrospective = 'canceled_retrospective',
-    RunFinished = 'run_finished'
+    RunFinished = 'run_finished',
+    RunRestored = 'run_restored',
 }
 
 export interface TimelineEvent {
@@ -33,6 +34,9 @@ export interface TimelineEvent {
     subject_user_id: string;
     creator_user_id: string;
     subject_display_name?: string;
+
+    /** @remarks computed client-side */
+    status_delete_at?: number;
 }
 
 export interface TimelineEventsFilter {

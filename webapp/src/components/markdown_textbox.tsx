@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {MouseEvent, ChangeEvent, useState, ComponentProps} from 'react';
+import {useIntl} from 'react-intl';
 
 import {useSelector} from 'react-redux';
 
@@ -18,21 +19,23 @@ const DEFAULT_CHAR_LIMIT = 4000;
 type Props = {
     value: string;
     setValue: (val: string) => void;
-    createMessage?: string;
+    placeholder?: string;
     id: string;
     className?: string;
+    disabled?: boolean;
 } & ComponentProps<typeof Textbox>;
 
 const MarkdownTextbox = ({
     value,
     setValue,
     className,
+    placeholder = '',
+    disabled,
     ...textboxProps
 }: Props) => {
     const [showPreview, setShowPreview] = useState(false);
     const config = useSelector(getConfig);
 
-    // @ts-expect-error
     const charLimit = parseInt(config.MaxPostSize || '', 10) || DEFAULT_CHAR_LIMIT;
 
     return (
@@ -47,12 +50,15 @@ const MarkdownTextbox = ({
                 useChannelMentions={false}
                 onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setValue(e.target.value)}
                 characterLimit={charLimit}
-                createMessage={''}
+                createMessage={placeholder}
                 onKeyPress={() => true}
                 openWhenEmpty={true}
+                channelId={''}
+                disabled={disabled}
                 {...textboxProps}
             />
             <StyledTextboxLinks
+                disabled={disabled}
                 characterLimit={charLimit}
                 showPreview={showPreview}
                 updatePreview={setShowPreview}
@@ -68,15 +74,31 @@ const Wrapper = styled.div`
     }
 
     &&&& {
-        .form-control.textbox-preview-area {
-            background: rgba(var(--center-channel-color-rgb), 0.04);
-        }
         .custom-textarea.custom-textarea {
+            background-color: var(--center-channel-bg);;
+
+            &.textbox-preview-area {
+                background-color: rgba(var(--center-channel-color-rgb), 0.04);
+            }
+
             height: unset;
             min-height: 104px;
             max-height: 324px;
             overflow: auto;
             padding: 12px 30px 12px 16px;
+
+            transition: box-shadow ease-in-out .15s;
+            box-shadow: 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
+
+            border: medium none;
+
+            &:focus:not(.textbox-preview-area) {
+                box-shadow: 0 0 0 2px var(--button-bg);
+            }
+
+            &:disabled {
+                background: rgba(var(--center-channel-bg-rgb), 0.16);
+            }
         }
     }
 `;
@@ -86,6 +108,7 @@ type TextboxLinksProps = {
     characterLimit: number;
     updatePreview: (showPreview: boolean) => void;
     message: string;
+    disabled?: boolean;
     className?: string;
 };
 
@@ -95,6 +118,7 @@ function TextboxLinks({
     showPreview,
     className,
     updatePreview,
+    disabled,
 }: TextboxLinksProps) {
     const togglePreview = (e: MouseEvent) => {
         e.preventDefault();
@@ -102,6 +126,12 @@ function TextboxLinks({
     };
 
     const hasText = message?.length > 0;
+
+    const {formatMessage} = useIntl();
+
+    if (disabled) {
+        return null;
+    }
 
     return (
         <div
@@ -114,12 +144,12 @@ function TextboxLinks({
                 className={'help__format-text'}
             >
                 <HelpText>
-                    <b>{'**bold**'}</b>
-                    <i>{'*italic*'}</i>
-                    <span>{'~~'}<s>{'strike'}</s>{'~~ '}</span>
-                    <span>{'`inline code`'}</span>
-                    <span>{'```preformatted```'}</span>
-                    <span>{'>quote'}</span>
+                    <b>{'**'}{formatMessage({defaultMessage: 'bold'})}{'**'}</b>
+                    <i>{'*'}{formatMessage({defaultMessage: 'italic'})}{'*'}</i>
+                    <span>{'~~'}<s>{formatMessage({defaultMessage: 'strike'})}</s>{'~~ '}</span>
+                    <span>{'`'}{formatMessage({defaultMessage: 'inline code'})}{'`'}</span>
+                    <span>{'```'}{formatMessage({defaultMessage: 'preformatted'})}{'```'}</span>
+                    <span>{'>'}{formatMessage({defaultMessage: 'quote'})}</span>
                 </HelpText>
             </div>
             <div>
@@ -127,7 +157,7 @@ function TextboxLinks({
                     onClick={togglePreview}
                     className='style--none textbox-preview-link color--link'
                 >
-                    {showPreview ? 'Edit' : 'Preview'}
+                    {showPreview ? formatMessage({defaultMessage: 'Edit'}) : formatMessage({defaultMessage: 'Preview'})}
                 </button>
                 <Link
                     target='_blank'
@@ -135,7 +165,7 @@ function TextboxLinks({
                     to='/help/formatting'
                     className='textbox-help-link'
                 >
-                    {'Help'}
+                    {formatMessage({defaultMessage: 'Help'})}
                 </Link>
             </div>
         </div>

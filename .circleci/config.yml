@@ -63,7 +63,7 @@ commands:
     description: "Run tests with database"
     steps:
       - run:
-          name: Waiting for Postgres and MySQL to be ready
+          name: Waiting for databases to be ready
           command: |
             for i in `seq 1 20`;
             do
@@ -71,20 +71,31 @@ commands:
               echo -n .
               sleep 1
             done
-            echo Failed waiting for Postgres and MySQL && exit 1
+            echo Failed waiting for databases && exit 1
       - checkout
       - npm-dependencies
       - *restore_go_cache
       - run:
           name: Testing
           command: |
-            make test
+            make test-ci
       - *save_go_cache
+      - run:
+          when: always
+          command: |
+            mkdir -p server/test-results
+            cp report.xml server/test-results
+      - store_test_results:
+          path: server/test-results/
 
   run-e2e-tests:
     description: "Run the e2e tests with a server"
     steps:
       - setup_remote_docker
+      - run:
+          name: Disable ALSA
+          command: |
+            printf "pcm.!default {\n    type plug\n    slave.pcm \"null\"\n}\n" > ~/.asoundrc;
       - run:
           name: Wait for Inbucket
           command: |
@@ -101,9 +112,9 @@ commands:
             sudo apt-get update
             sudo apt-get install libxss1
             sudo apt-get install postgresql-client
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE migrated;"
-            psql -d $TEST_DATABASE_URL -c "CREATE DATABASE latest;"
-            psql -d $TEST_DATABASE_URL mattermost_test < tests-e2e/db-setup/mm534.sql
+            psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE migrated;"
+            psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" -c "CREATE DATABASE latest;"
+            psql -d $TEST_DATABASE_URL -v "ON_ERROR_STOP=1" mattermost_test < tests-e2e/db-setup/mattermost.sql
       - run:
           name: Upload license
           command: |
@@ -122,20 +133,19 @@ commands:
             NODE_ENV=development npm install --ignore-scripts --no-save
             npx cypress install
       - run:
-          name: Install Incident Collaboration plugin
+          name: Install Playbooks
           command: |
             make deploy
       - run:
           name: Run Cypress Tests
           no_output_timeout: 30m
           command: |
-            export FAILURE_MESSAGE="At least one test has failed."
-            export RESULTS_OUTPUT="results-output.txt"
-            cd tests-e2e && npm run test |& tee $RESULTS_OUTPUT; if grep "$FAILURE_MESSAGE" "$RESULTS_OUTPUT"; then exit 1; fi
+            cd tests-e2e
+            circleci tests glob "cypress/integration/**/*.js" | circleci tests split --split-by=timings > ./tests-to-run
+            npm run test -- --spec "$(cat ./tests-to-run | tr '\n' ',')"
+
       - *save_cypress_cache
       - store_test_results:
-          path: tests-e2e/cypress/results
-      - store_artifacts:
           path: tests-e2e/cypress/results
       - store_artifacts:
           path: tests-e2e/cypress/videos
@@ -163,6 +173,16 @@ jobs:
           name: Checking diff of generated manifest files
           command: |
             git --no-pager diff --exit-code *manifest.* || (echo "Please run \"make apply\" and commit the changes in the generated manifests." && exit 1)
+      - run: make i18n-extract-webapp
+      - run:
+          name: Checking diff of webapp i18n files
+          command: |
+            git --no-pager diff --exit-code webapp/i18n/en.json || (echo "Please run \"make i18n-extract\" and commit the changes in webapp/i18n/en.json." && exit 1)
+      # - run:
+      #     name: Checking diff of server i18n files
+      #     command: |
+      #       make i18n-check || (echo "Please run \"make i18n-extract\", add messages to any empty translations, and commit the changes in server/i18n/en.json." && exit 1)
+
       - *save_go_cache
 
   build:
@@ -170,7 +190,11 @@ jobs:
       name: default
     steps:
       - checkout
-      - npm-dependencies
+      - run:
+          name: Getting JavaScript dependencies
+          command: |
+            cd webapp
+            NODE_ENV=development npm install --ignore-scripts --no-save
       - run:
           name: Building Plugin Bundle
           command: |
@@ -229,32 +253,14 @@ jobs:
           command: |
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -b "$(< ./dist/release-notes.md)" -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -delete ${CIRCLE_TAG} dist/*.tar.gz
 
-  test-MySQL56-Postgres96:
-    docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
-      - image: circleci/postgres:9.6-alpine
-        environment:
-          POSTGRES_USER: mmuser
-          POSTGRES_DB: mattermost_test
-      - image: circleci/mysql:5.6.49
-        environment:
-          MYSQL_ROOT_PASSWORD: mostest
-          MYSQL_DATABASE: mattermost_test
-          MYSQL_USER: mmuser
-          MYSQL_PASSWORD: mostest
-    executor:
-      name: default
-    steps:
-      - test-with-db
-
-  test-MySQL57-Postgres10:
+  test-MySQL5717-Postgres10:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: circleci/postgres:10-alpine
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
-      - image: circleci/mysql:5.7.31
+      - image: circleci/mysql:5.7.17
         environment:
           MYSQL_ROOT_PASSWORD: mostest
           MYSQL_DATABASE: mattermost_test
@@ -278,6 +284,24 @@ jobs:
           MYSQL_DATABASE: mattermost_test
           MYSQL_USER: mmuser
           MYSQL_PASSWORD: mostest
+    executor:
+      name: default
+    steps:
+      - test-with-db
+
+  test-MariaDB-Postgres12:
+    docker:
+      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
+      - image: circleci/postgres:12-alpine
+        environment:
+          POSTGRES_USER: mmuser
+          POSTGRES_DB: mattermost_test
+      - image: circleci/mariadb:latest
+        environment:
+          MARIADB_ROOT_PASSWORD: mostest
+          MARIADB_DATABASE: mattermost_test
+          MARIADB_USER: mmuser
+          MARIADB_PASSWORD: mostest
     executor:
       name: default
     steps:
@@ -360,6 +384,7 @@ jobs:
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
+          MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW: false
     environment:
       MM_DOCKER_IMAGE_TAG: prerelease
       TYPE: NONE
@@ -371,6 +396,7 @@ jobs:
       MM_SERVICESETTINGS_SITEURL: http://localhost:8065
       MM_ADMIN_USERNAME: sysadmin
       MM_ADMIN_PASSWORD: Sys@dmin-sample1
+    parallelism: 4
     steps:
       - run-e2e-tests
 
@@ -432,6 +458,8 @@ jobs:
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
+          MM_FEATUREFLAGS_GLOBALHEADER: true
+          MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW: false
     environment:
       MM_DOCKER_IMAGE_TAG: master
       TYPE: NONE
@@ -443,70 +471,7 @@ jobs:
       MM_SERVICESETTINGS_SITEURL: http://localhost:8065
       MM_ADMIN_USERNAME: sysadmin
       MM_ADMIN_PASSWORD: Sys@dmin-sample1
-    steps:
-      - run-e2e-tests
-
-  e2e-cypress-tests-534:
-    resource_class: large
-    docker:
-      - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
-        environment:
-          TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
-      - image: circleci/postgres:10-alpine-ram
-        environment:
-          POSTGRES_USER: mmuser
-          POSTGRES_PASSWORD: mostest
-          POSTGRES_DB: mattermost_test
-      - image: mattermost/inbucket:release-1.2.0
-      - image: minio/minio:RELEASE.2019-10-11T00-38-09Z
-        command: "server /data"
-        environment:
-          MINIO_ACCESS_KEY: minioaccesskey
-          MINIO_SECRET_KEY: miniosecretkey
-          MINIO_SSE_MASTER_KEY: "my-minio-key:6368616e676520746869732070617373776f726420746f206120736563726574"
-      - image: mattermost/mattermost-elasticsearch-docker:7.0.0
-        environment:
-          http.host: "0.0.0.0"
-          http.port: 9200
-          http.cors.enabled: "true"
-          http.cors.allow-origin: "http://localhost:1358,http://127.0.0.1:1358"
-          http.cors.allow-headers: "X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization"
-          http.cors.allow-credentials: "true"
-          transport.host: "127.0.0.1"
-          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-      - image: mattermost/mattermost-enterprise-edition:$MM_DOCKER_IMAGE_TAG
-        environment:
-          DB_HOST: localhost
-          DB_PORT_NUMBER: 5432
-          MM_DBNAME: mattermost_test
-          MM_USERNAME: mmuser
-          MM_PASSWORD: mostest
-          CI_INBUCKET_HOST: localhost
-          CI_INBUCKET_PORT: 10080
-          CI_MINIO_HOST: minio
-          IS_CI: true
-          MM_CLUSTERSETTINGS_READONLYCONFIG: false
-          MM_EMAILSETTINGS_SMTPSERVER: localhost
-          MM_EMAILSETTINGS_SMTPPORT: 10025
-          MM_ELASTICSEARCHSETTINGS_CONNECTIONURL: http://localhost:9200
-          MM_EXPERIMENTALSETTINGS_USENEWSAMLLIBRARY: true
-          MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mostest@localhost:5432/mattermost_test?sslmode=disable&connect_timeout=10"
-          MM_SQLSETTINGS_DRIVERNAME: postgres
-          MM_PLUGINSETTINGS_ENABLEUPLOADS: true
-          MM_SERVICESETTINGS_SITEURL: http://localhost:8065
-          MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: false
-          MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
-    environment:
-      MM_DOCKER_IMAGE_TAG: 5.34.0
-      TYPE: NONE
-      PULL_REQUEST:
-      BROWSER: chrome
-      HEADLESS: true
-      DASHBOARD_ENABLE: false
-      FULL_REPORT: false
-      MM_SERVICESETTINGS_SITEURL: http://localhost:8065
-      MM_ADMIN_USERNAME: sysadmin
-      MM_ADMIN_PASSWORD: Sys@dmin-sample1
+    parallelism: 4
     steps:
       - run-e2e-tests
 
@@ -515,18 +480,12 @@ workflows:
   ci:
     jobs:
       - lint
-      - test-MySQL56-Postgres96
-      - test-MySQL57-Postgres10
+      - test-MySQL5717-Postgres10
       - test-MySQL8-Postgres11
+      - test-MariaDB-Postgres12
       - test-MySQL-Postgres-latest
-      # 534 is broken at the moment (sql schema mismatch with what works on cloud and master)
-      # - e2e-cypress-tests-534
-#      - e2e-cypress-tests-cloud
+      - e2e-cypress-tests-cloud
       - e2e-cypress-tests-master
-           # remove/comment this filters statement to include e2e tests on master for a PR branch
-#          filters:
-#            branches:
-#              ignore: /.*/
       - build:
           context: mattermost-plugin-incident-response-production
           filters:
@@ -539,9 +498,9 @@ workflows:
               only: master
           requires:
             - lint
-            - test-MySQL56-Postgres96
-            - test-MySQL57-Postgres10
+            - test-MySQL5717-Postgres10
             - test-MySQL8-Postgres11
+            - test-MariaDB-Postgres12
             - test-MySQL-Postgres-latest
             #- e2e-cypress-tests-cloud
             - build
@@ -554,9 +513,9 @@ workflows:
               ignore: /.*/
           requires:
             - lint
-            - test-MySQL56-Postgres96
-            - test-MySQL57-Postgres10
+            - test-MySQL5717-Postgres10
             - test-MySQL8-Postgres11
+            - test-MariaDB-Postgres12
             - test-MySQL-Postgres-latest
             # - e2e-cypress-tests-cloud
             - build
@@ -569,9 +528,9 @@ workflows:
               ignore: /.*/
           requires:
             - lint
-            - test-MySQL56-Postgres96
-            - test-MySQL57-Postgres10
+            - test-MySQL5717-Postgres10
             - test-MySQL8-Postgres11
+            - test-MariaDB-Postgres12
             - test-MySQL-Postgres-latest
             # - e2e-cypress-tests-cloud
             - build

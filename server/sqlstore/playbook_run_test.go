@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	sq "github.com/Masterminds/squirrel"
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -18,1023 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestGetPlaybookRuns(t *testing.T) {
-	team1id := model.NewId()
-	team2id := model.NewId()
-	team3id := model.NewId()
-
-	owner1 := app.OwnerInfo{
-		UserID:   model.NewId(),
-		Username: "Owner 1",
-	}
-	owner2 := app.OwnerInfo{
-		UserID:   model.NewId(),
-		Username: "Owner 2",
-	}
-	owner3 := app.OwnerInfo{
-		UserID:   model.NewId(),
-		Username: "Owner 3",
-	}
-	owner4 := app.OwnerInfo{
-		UserID:   model.NewId(),
-		Username: "Owner 4",
-	}
-
-	lucy := userInfo{
-		ID:   model.NewId(),
-		Name: "Lucy",
-	}
-
-	bob := userInfo{
-		ID:   model.NewId(),
-		Name: "bob",
-	}
-
-	john := userInfo{
-		ID:   model.NewId(),
-		Name: "john",
-	}
-
-	jane := userInfo{
-		ID:   model.NewId(),
-		Name: "jane",
-	}
-
-	alice := userInfo{
-		ID:   model.NewId(),
-		Name: "alice",
-	}
-
-	charlotte := userInfo{
-		ID:   model.NewId(),
-		Name: "Charlotte",
-	}
-
-	channel01 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 123, DeleteAt: 0}
-	channel02 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 199, DeleteAt: 0}
-	channel03 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 222, DeleteAt: 0}
-	channel04 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 333, DeleteAt: 0}
-	channel05 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 400, DeleteAt: 0}
-	channel06 := model.Channel{Id: model.NewId(), Type: "O", CreateAt: 444, DeleteAt: 0}
-	channel07 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 555, DeleteAt: 0}
-	channel08 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 555, DeleteAt: 0}
-	channel09 := model.Channel{Id: model.NewId(), Type: "P", CreateAt: 556, DeleteAt: 0}
-
-	inc01 := *NewBuilder(nil).
-		WithName("pr 1 - wheel cat aliens wheelbarrow").
-		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
-		WithChannel(&channel01). // public
-		WithOwnerUserID(owner1.UserID).
-		WithTeamID(team1id).
-		WithCreateAt(123).
-		WithChecklists([]int{8}).
-		WithPlaybookID("playbook1").
-		WithParticipant(bob).
-		WithParticipant(john).
-		ToPlaybookRun()
-
-	inc02 := *NewBuilder(nil).
-		WithName("pr 2 - horse staple battery aliens shotgun mouse shotput").
-		WithChannel(&channel02). // public
-		WithOwnerUserID(owner2.UserID).
-		WithTeamID(team1id).
-		WithCreateAt(199).
-		WithChecklists([]int{7}).
-		WithPlaybookID("playbook1").
-		WithParticipant(bob).
-		WithParticipant(john).
-		ToPlaybookRun()
-
-	inc03 := *NewBuilder(nil).
-		WithName("pr 3 - Horse stapler battery shotgun mouse shotput").
-		WithChannel(&channel03). // public
-		WithOwnerUserID(owner1.UserID).
-		WithTeamID(team1id).
-		WithCreateAt(222).
-		WithChecklists([]int{6}).
-		WithCurrentStatus(app.StatusFinished).
-		WithPlaybookID("playbook2").
-		WithParticipant(bob).
-		WithParticipant(john).
-		WithParticipant(jane).
-		ToPlaybookRun()
-
-	inc04 := *NewBuilder(nil).
-		WithName("pr 4 - titanic terminatoraliens").
-		WithChannel(&channel04). // private
-		WithOwnerUserID(owner3.UserID).
-		WithTeamID(team1id).
-		WithCreateAt(333).
-		WithChecklists([]int{5}).
-		WithCurrentStatus(app.StatusFinished).
-		WithParticipant(bob).
-		WithParticipant(jane).
-		ToPlaybookRun()
-
-	inc05 := *NewBuilder(nil).
-		WithName("pr 5 - titanic terminator aliens mouse").
-		WithChannel(&channel05). // private
-		WithOwnerUserID(owner3.UserID).
-		WithTeamID(team1id).
-		WithCreateAt(400).
-		WithChecklists([]int{1}).
-		WithParticipant(bob).
-		WithParticipant(jane).
-		ToPlaybookRun()
-
-	inc06 := *NewBuilder(nil).
-		WithName("pr 6 - ubik high castle electric sheep").
-		WithChannel(&channel06). // public
-		WithOwnerUserID(owner3.UserID).
-		WithTeamID(team2id).
-		WithCreateAt(444).
-		WithChecklists([]int{4}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	inc07 := *NewBuilder(nil).
-		WithName("pr 7 - ubik high castle electric sheep").
-		WithChannel(&channel07). // private
-		WithOwnerUserID(owner3.UserID).
-		WithTeamID(team2id).
-		WithCreateAt(555).
-		WithChecklists([]int{4}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	inc08 := *NewBuilder(nil).
-		WithName("pr 8 - ziggürat!").
-		WithChannel(&channel08). // private
-		WithOwnerUserID(owner4.UserID).
-		WithTeamID(team3id).
-		WithCreateAt(555).
-		WithChecklists([]int{3}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	inc09 := *NewBuilder(nil).
-		WithName("pr 9 - Ziggürat!").
-		WithChannel(&channel09). // private
-		WithOwnerUserID(owner4.UserID).
-		WithTeamID(team3id).
-		WithCreateAt(556).
-		WithChecklists([]int{2}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
-
-	createPlaybookRuns := func(store *SQLStore, playbookRunStore app.PlaybookRunStore) {
-		t.Helper()
-
-		createdPlaybookRuns := make([]app.PlaybookRun, len(playbookRuns))
-
-		for i := range playbookRuns {
-			createdPlaybookRun, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
-			require.NoError(t, err)
-
-			createdPlaybookRuns[i] = *createdPlaybookRun
-		}
-	}
-
-	testData := []struct {
-		Name          string
-		RequesterInfo app.RequesterInfo
-		Options       app.PlaybookRunFilterOptions
-		Want          app.GetPlaybookRunsResults
-		ExpectedErr   error
-	}{
-		{
-			Name: "no options - team1 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options - team1 - guest - no channels",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsGuest: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 0,
-				PageCount:  0,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options - team1 - guest - has channels",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  john.ID,
-				IsGuest: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 3,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc01, inc02, inc03},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - desc - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionDesc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc05, inc04, inc03, inc02, inc01},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team2 - sort by CreateAt desc - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team2id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionDesc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc07, inc06},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no paging, team3, sort by Name",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team3id,
-				Sort:      app.SortByName,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc08, inc09},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options, team paged by 1, admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  5,
-				HasMore:    true,
-				Items:      []app.PlaybookRun{inc01},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options, team1 - paged by 3, page 0 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   3,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  2,
-				HasMore:    true,
-				Items:      []app.PlaybookRun{inc01, inc02, inc03},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options, team1 - paged by 3, page 1 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      1,
-				PerPage:   3,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  2,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc04, inc05},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options, team1 - paged by 3, page 2 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      2,
-				PerPage:   3,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  2,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options, team1 - paged by 3, page 999 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      999,
-				PerPage:   3,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  2,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options, team1 - page 2 by 2 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      2,
-				PerPage:   2,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  3,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc05},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options, team1 - page 1 by 2 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      1,
-				PerPage:   2,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  3,
-				HasMore:    true,
-				Items:      []app.PlaybookRun{inc03, inc04},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no options, team1 - page 1 by 4 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      1,
-				PerPage:   4,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  2,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc05},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - only in progress, page 1 by 2 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      1,
-				PerPage:   2,
-				Statuses:  []string{app.StatusInProgress},
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 3,
-				PageCount:  2,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc05},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - in progress, owner3, desc - admin ",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Statuses:  []string{app.StatusInProgress},
-				OwnerID:   owner3.UserID,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionDesc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 1,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc05},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - status = finished",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Statuses:  []string{app.StatusFinished},
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc03, inc04},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - status = InProgress or Finished ",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Statuses:  []string{app.StatusFinished, app.StatusInProgress},
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - search for horse - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:     team1id,
-				SearchTerm: "horse",
-				Sort:       app.SortByCreateAt,
-				Direction:  app.DirectionAsc,
-				Page:       0,
-				PerPage:    1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc02, inc03},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - search for aliens & owner3 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:     team1id,
-				OwnerID:    owner3.UserID,
-				SearchTerm: "aliens",
-				Sort:       app.SortByCreateAt,
-				Direction:  app.DirectionAsc,
-				Page:       0,
-				PerPage:    1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc04, inc05},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "fuzzy search using starting characters -- not implemented",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:     team1id,
-				SearchTerm: "sbsm",
-				Sort:       app.SortByCreateAt,
-				Direction:  app.DirectionAsc,
-				Page:       0,
-				PerPage:    1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 0,
-				PageCount:  0,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "fuzzy search using starting characters, inProgress -- not implemented",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:     team1id,
-				SearchTerm: "sbsm",
-				Statuses:   []string{app.StatusInProgress},
-				Sort:       app.SortByCreateAt,
-				Direction:  app.DirectionAsc,
-				Page:       0,
-				PerPage:    1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 0,
-				PageCount:  0,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team3 - case-insensitive and unicode characters - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:     team3id,
-				SearchTerm: "ZiGgüRat",
-				Sort:       app.SortByCreateAt,
-				Direction:  app.DirectionAsc,
-				Page:       0,
-				PerPage:    1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc08, inc09},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "bad parameter sort",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team2id,
-				Sort:      "unknown_field",
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want:        app.GetPlaybookRunsResults{},
-			ExpectedErr: errors.New("failed to apply sort options: unsupported sort parameter 'unknown_field'"),
-		},
-		{
-			Name: "no team",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    "",
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 0,
-				PageCount:  0,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "bad parameter direction by",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team2id,
-				Sort:      app.SortByCreateAt,
-				Direction: "invalid direction",
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want:        app.GetPlaybookRunsResults{},
-			ExpectedErr: errors.New("failed to apply sort options: unsupported direction parameter 'invalid direction'"),
-		},
-		{
-			Name: "team1 - desc - Bob (in all channels)",
-			RequesterInfo: app.RequesterInfo{
-				UserID: bob.ID,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionDesc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc05, inc04, inc03, inc02, inc01},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team2 -  Bob (in all channels)",
-			RequesterInfo: app.RequesterInfo{
-				UserID: bob.ID,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team2id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc06, inc07},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - Alice (in no channels but member of team, can see all public playbook runs)",
-			RequesterInfo: app.RequesterInfo{
-				UserID: alice.ID,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 5,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team2 - Charlotte is in team2, but in no channels, should see public playbook runs",
-			RequesterInfo: app.RequesterInfo{
-				UserID: charlotte.ID,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team2id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc06, inc07},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - Admin gets playbook runs with John as member",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:        team1id,
-				ParticipantID: john.ID,
-				Sort:          app.SortByCreateAt,
-				Direction:     app.DirectionAsc,
-				Page:          0,
-				PerPage:       1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 3,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc01, inc02, inc03},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - Admin gets playbook runs with Jane as member",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:        team1id,
-				ParticipantID: jane.ID,
-				Sort:          app.SortByCreateAt,
-				Direction:     app.DirectionAsc,
-				Page:          0,
-				PerPage:       1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 3,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc03, inc04, inc05},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - John gets its own playbook runs",
-			RequesterInfo: app.RequesterInfo{
-				UserID: john.ID,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:        team1id,
-				ParticipantID: john.ID,
-				Sort:          app.SortByCreateAt,
-				Direction:     app.DirectionAsc,
-				Page:          0,
-				PerPage:       1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 3,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc01, inc02, inc03},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - Jane gets its own playbook runs",
-			RequesterInfo: app.RequesterInfo{
-				UserID: jane.ID,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:        team1id,
-				ParticipantID: jane.ID,
-				Sort:          app.SortByCreateAt,
-				Direction:     app.DirectionAsc,
-				Page:          0,
-				PerPage:       1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 3,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc03, inc04, inc05},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - playbook1 - desc - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:     team1id,
-				PlaybookID: "playbook1",
-				Sort:       app.SortByCreateAt,
-				Direction:  app.DirectionDesc,
-				Page:       0,
-				PerPage:    1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 2,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc02, inc01},
-			},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - playbook2 - desc - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:     team1id,
-				PlaybookID: "playbook2",
-				Sort:       app.SortByCreateAt,
-				Direction:  app.DirectionDesc,
-				Page:       0,
-				PerPage:    1000,
-			},
-			Want: app.GetPlaybookRunsResults{
-				TotalCount: 1,
-				PageCount:  1,
-				HasMore:    false,
-				Items:      []app.PlaybookRun{inc03},
-			},
-			ExpectedErr: nil,
-		},
-	}
-
-	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		playbookRunStore := setupPlaybookRunStore(t, db)
-
-		_, store := setupSQLStore(t, db)
-		setupUsersTable(t, db)
-		setupTeamMembersTable(t, db)
-		setupChannelMembersTable(t, db)
-		setupChannelsTable(t, db)
-		setupPostsTable(t, db)
-		addUsers(t, store, []userInfo{lucy, bob, john, jane})
-		addUsersToTeam(t, store, []userInfo{alice, charlotte, john, jane}, team1id)
-		addUsersToTeam(t, store, []userInfo{charlotte}, team2id)
-		createChannels(t, store, []model.Channel{channel01, channel02, channel03, channel04, channel05, channel06, channel07, channel08, channel09})
-		addUsersToChannels(t, store, []userInfo{bob}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel05.Id, channel06.Id, channel07.Id, channel08.Id, channel09.Id})
-		addUsersToChannels(t, store, []userInfo{john}, []string{channel01.Id, channel02.Id, channel03.Id})
-		addUsersToChannels(t, store, []userInfo{jane}, []string{channel03.Id, channel04.Id, channel05.Id})
-		makeAdmin(t, store, lucy)
-
-		t.Run("zero playbook runs", func(t *testing.T) {
-			result, err := playbookRunStore.GetPlaybookRuns(app.RequesterInfo{
-				UserID: lucy.ID,
-			},
-				app.PlaybookRunFilterOptions{
-					TeamID:    team1id,
-					Sort:      app.SortByCreateAt,
-					Direction: app.DirectionAsc,
-					Page:      0,
-					PerPage:   10,
-				})
-			require.NoError(t, err)
-
-			require.Equal(t, 0, result.TotalCount)
-			require.Equal(t, 0, result.PageCount)
-			require.False(t, result.HasMore)
-			require.Empty(t, result.Items)
-		})
-
-		createPlaybookRuns(store, playbookRunStore)
-
-		for _, testCase := range testData {
-			t.Run(driverName+" - "+testCase.Name, func(t *testing.T) {
-				result, err := playbookRunStore.GetPlaybookRuns(testCase.RequesterInfo, testCase.Options)
-
-				if testCase.ExpectedErr != nil {
-					require.Nil(t, result)
-					require.Error(t, err)
-					require.Equal(t, testCase.ExpectedErr.Error(), err.Error())
-
-					return
-				}
-
-				require.NoError(t, err)
-
-				for i, item := range result.Items {
-					require.True(t, model.IsValidId(item.ID))
-					item.ID = ""
-					result.Items[i] = item
-				}
-
-				// sort the participants so equality will work
-				for i := range result.Items {
-					sort.Strings(result.Items[i].ParticipantIDs)
-				}
-
-				require.Equal(t, testCase.Want, *result)
-			})
-		}
-	}
-}
 
 func TestCreateAndGetPlaybookRun(t *testing.T) {
 	for _, driverName := range driverNames {
@@ -1235,7 +217,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				Name:        "new description",
 				PlaybookRun: NewBuilder(t).WithDescription("old description").ToPlaybookRun(),
 				Update: func(old app.PlaybookRun) *app.PlaybookRun {
-					old.Description = "new description"
+					old.Summary = "new description"
 					return &old
 				},
 				ExpectedErr: nil,
@@ -1275,6 +257,36 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				require.Equal(t, expected, actual)
 			})
 		}
+	}
+}
+
+func TestRestorePlaybookRun(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		_, store := setupSQLStore(t, db)
+
+		now := model.GetMillis()
+		initialPlaybookRun := NewBuilder(t).
+			WithCreateAt(now - 1000).
+			WithCurrentStatus(app.StatusFinished).
+			ToPlaybookRun()
+
+		returned, err := playbookRunStore.CreatePlaybookRun(initialPlaybookRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, returned)
+
+		err = playbookRunStore.RestorePlaybookRun(returned.ID, now)
+		require.NoError(t, err)
+
+		finalPlaybookRun := *returned
+		finalPlaybookRun.CurrentStatus = app.StatusInProgress
+		finalPlaybookRun.EndAt = 0
+		finalPlaybookRun.LastStatusUpdateAt = now
+
+		actual, err := playbookRunStore.GetPlaybookRun(returned.ID)
+		require.NoError(t, err)
+		require.Equal(t, &finalPlaybookRun, actual)
 	}
 }
 
@@ -1453,310 +465,6 @@ func TestGetPlaybookRunIDForChannel(t *testing.T) {
 	}
 }
 
-func TestGetOwners(t *testing.T) {
-	team1id := model.NewId()
-	team2id := model.NewId()
-	team3id := model.NewId()
-
-	owner1 := app.OwnerInfo{
-		UserID:   model.NewId(),
-		Username: "Owner 1",
-	}
-	owner2 := app.OwnerInfo{
-		UserID:   model.NewId(),
-		Username: "Owner 2",
-	}
-	owner3 := app.OwnerInfo{
-		UserID:   model.NewId(),
-		Username: "Owner 3",
-	}
-	owner4 := app.OwnerInfo{
-		UserID:   model.NewId(),
-		Username: "Owner 4",
-	}
-
-	owners := []app.OwnerInfo{owner1, owner2, owner3, owner4}
-
-	lucy := userInfo{
-		ID:   model.NewId(),
-		Name: "Lucy",
-	}
-
-	bob := userInfo{
-		ID:   model.NewId(),
-		Name: "bob",
-	}
-
-	alice := userInfo{
-		ID:   model.NewId(),
-		Name: "alice",
-	}
-
-	charlotte := userInfo{
-		ID:   model.NewId(),
-		Name: "Charlotte",
-	}
-
-	channel01 := model.Channel{Id: model.NewId(), Type: "O"}
-	channel02 := model.Channel{Id: model.NewId(), Type: "O"}
-	channel03 := model.Channel{Id: model.NewId(), Type: "O"}
-	channel04 := model.Channel{Id: model.NewId(), Type: "P"}
-	channel05 := model.Channel{Id: model.NewId(), Type: "P"}
-	channel06 := model.Channel{Id: model.NewId(), Type: "O"}
-	channel07 := model.Channel{Id: model.NewId(), Type: "P"}
-	channel08 := model.Channel{Id: model.NewId(), Type: "P"}
-	channel09 := model.Channel{Id: model.NewId(), Type: "P"}
-
-	channels := []model.Channel{channel01, channel02, channel03, channel04, channel05, channel06, channel07, channel08, channel09}
-
-	inc01 := *NewBuilder(nil).
-		WithName("pr 1 - wheel cat aliens wheelbarrow").
-		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
-		WithChannel(&channel01). // public
-		WithOwnerUserID(owner1.UserID).
-		WithTeamID(team1id).
-		WithCreateAt(123).
-		WithChecklists([]int{8}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	inc02 := *NewBuilder(nil).
-		WithName("pr 2 - horse staple battery aliens shotgun mouse shotputmouse").
-		WithChannel(&channel02). // public
-		WithOwnerUserID(owner2.UserID).
-		WithTeamID(team1id).
-		WithCreateAt(199).
-		WithChecklists([]int{7}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	inc03 := *NewBuilder(nil).
-		WithName("pr 3 - Horse stapler battery shotgun mouse shotputmouse").
-		WithChannel(&channel03). // public
-		WithOwnerUserID(owner1.UserID).
-		WithTeamID(team1id).
-		WithCreateAt(222).
-		WithChecklists([]int{6}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	inc04 := *NewBuilder(nil).
-		WithName("pr 4 - titanic terminatoraliens").
-		WithChannel(&channel04). // private
-		WithOwnerUserID(owner3.UserID).
-		WithTeamID(team1id).
-		WithCreateAt(333).
-		WithChecklists([]int{5}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	inc05 := *NewBuilder(nil).
-		WithName("pr 5 - titanic terminator aliens mouse").
-		WithChannel(&channel05). // private
-		WithOwnerUserID(owner3.UserID).
-		WithTeamID(team1id).
-		WithCreateAt(400).
-		WithChecklists([]int{1}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	inc06 := *NewBuilder(nil).
-		WithName("pr 6 - ubik high castle electric sheep").
-		WithChannel(&channel06). // public
-		WithOwnerUserID(owner3.UserID).
-		WithTeamID(team2id).
-		WithCreateAt(444).
-		WithChecklists([]int{4}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	inc07 := *NewBuilder(nil).
-		WithName("pr 7 - ubik high castle electric sheep").
-		WithChannel(&channel07). // private
-		WithOwnerUserID(owner3.UserID).
-		WithTeamID(team2id).
-		WithCreateAt(555).
-		WithChecklists([]int{4}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	inc08 := *NewBuilder(nil).
-		WithName("pr 8 - ziggürat!").
-		WithChannel(&channel08). // private
-		WithOwnerUserID(owner4.UserID).
-		WithTeamID(team3id).
-		WithCreateAt(555).
-		WithChecklists([]int{3}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	inc09 := *NewBuilder(nil).
-		WithName("pr 9 - Ziggürat!").
-		WithChannel(&channel09). // private
-		WithOwnerUserID(owner4.UserID).
-		WithTeamID(team3id).
-		WithCreateAt(556).
-		WithChecklists([]int{2}).
-		WithParticipant(bob).
-		ToPlaybookRun()
-
-	playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05, inc06, inc07, inc08, inc09}
-
-	cases := []struct {
-		Name          string
-		RequesterInfo app.RequesterInfo
-		Options       app.PlaybookRunFilterOptions
-		Expected      []app.OwnerInfo
-		ExpectedErr   error
-	}{
-		{
-			Name: "team 1 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID: team1id,
-			},
-			Expected:    []app.OwnerInfo{owner1, owner2, owner3},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team 2 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team2id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Expected:    []app.OwnerInfo{owner3},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team 3 - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team3id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Expected:    []app.OwnerInfo{owner4},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team1 - Alice (in no channels but member of team, can see public playbook runs)",
-			RequesterInfo: app.RequesterInfo{
-				UserID: "Alice",
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team1id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Expected:    []app.OwnerInfo{owner1, owner2, owner3},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "team2 - Charlotte (in no channels but member of team, because must have made it through API team membership test)",
-			RequesterInfo: app.RequesterInfo{
-				UserID: "Charlotte",
-			},
-			Options: app.PlaybookRunFilterOptions{
-				TeamID:    team2id,
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Expected:    []app.OwnerInfo{owner3},
-			ExpectedErr: nil,
-		},
-		{
-			Name: "no team - admin",
-			RequesterInfo: app.RequesterInfo{
-				UserID:  lucy.ID,
-				IsAdmin: true,
-			},
-			Options: app.PlaybookRunFilterOptions{
-				Sort:      app.SortByCreateAt,
-				Direction: app.DirectionAsc,
-				Page:      0,
-				PerPage:   1000,
-			},
-			Expected:    []app.OwnerInfo{},
-			ExpectedErr: nil,
-		},
-	}
-
-	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		playbookRunStore := setupPlaybookRunStore(t, db)
-
-		_, store := setupSQLStore(t, db)
-		setupUsersTable(t, db)
-		setupChannelMemberHistoryTable(t, db)
-		setupTeamMembersTable(t, db)
-		setupChannelMembersTable(t, db)
-		setupChannelsTable(t, db)
-		setupPostsTable(t, db)
-		addUsers(t, store, []userInfo{lucy})
-		makeAdmin(t, store, lucy)
-		addUsersToTeam(t, store, []userInfo{alice, charlotte}, team1id)
-		addUsersToTeam(t, store, []userInfo{charlotte}, team2id)
-		addUsersToChannels(t, store, []userInfo{bob}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel05.Id, channel06.Id, channel07.Id, channel08.Id, channel09.Id})
-
-		queryBuilder := sq.StatementBuilder.PlaceholderFormat(sq.Question)
-		if driverName == model.DatabaseDriverPostgres {
-			queryBuilder = queryBuilder.PlaceholderFormat(sq.Dollar)
-		}
-
-		insertOwner := queryBuilder.Insert("Users").Columns("ID", "Username", "FirstName", "LastName", "Nickname")
-		for _, owner := range owners {
-			insertOwner = insertOwner.Values(owner.UserID, owner.Username, owner.FirstName, owner.LastName, owner.Nickname)
-		}
-
-		query, args, err := insertOwner.ToSql()
-		require.NoError(t, err)
-		_, err = db.Exec(query, args...)
-		require.NoError(t, err)
-
-		for i := range playbookRuns {
-			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
-			require.NoError(t, err)
-		}
-
-		createChannels(t, store, channels)
-
-		for _, testCase := range cases {
-			t.Run(testCase.Name, func(t *testing.T) {
-				actual, actualErr := playbookRunStore.GetOwners(testCase.RequesterInfo, testCase.Options)
-
-				if testCase.ExpectedErr != nil {
-					require.EqualError(t, actualErr, testCase.ExpectedErr.Error())
-					require.Nil(t, actual)
-					return
-				}
-
-				require.NoError(t, actualErr)
-
-				require.ElementsMatch(t, testCase.Expected, actual)
-			})
-		}
-	}
-}
-
 func TestNukeDB(t *testing.T) {
 	team1id := model.NewId()
 
@@ -1775,7 +483,6 @@ func TestNukeDB(t *testing.T) {
 		_, store := setupSQLStore(t, db)
 
 		setupChannelsTable(t, db)
-		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 
 		playbookRunStore := setupPlaybookRunStore(t, db)
@@ -1903,6 +610,198 @@ func TestCheckAndSendMessageOnJoin(t *testing.T) {
 	}
 }
 
+func TestTasksAndRunsDigest(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		_, store := setupSQLStore(t, db)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		setupTeamsTable(t, db)
+
+		userID := "testUserID"
+		testUser := userInfo{ID: userID, Name: "test.user"}
+		otherCommanderUserID := model.NewId()
+		otherCommander := userInfo{ID: otherCommanderUserID, Name: "other.commander"}
+		addUsers(t, store, []userInfo{testUser, otherCommander})
+
+		team1 := model.Team{
+			Id:   model.NewId(),
+			Name: "Team1",
+		}
+		team2 := model.Team{
+			Id:   model.NewId(),
+			Name: "Team2",
+		}
+		createTeams(t, store, []model.Team{team1, team2})
+
+		channel01 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-01"}
+		channel02 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-02"}
+		channel03 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-03"}
+		channel04 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-04"}
+		channel05 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-05"}
+		channel06 := model.Channel{Id: model.NewId(), Type: "O", Name: "channel-06"}
+		channels := []model.Channel{channel01, channel02, channel03, channel04, channel05, channel06}
+		addUsersToChannels(t, store, []userInfo{testUser}, []string{channel01.Id, channel02.Id, channel03.Id, channel04.Id, channel06.Id})
+
+		// three assigned tasks for inc01, and an overdue update
+		inc01 := *NewBuilder(nil).
+			WithName("inc01 - this is the playbook name for channel 01").
+			WithChannel(&channel01).
+			WithTeamID(team1.Id).
+			WithChecklists([]int{1, 2, 3, 4}).
+			WithUpdateOverdueBy(2 * time.Minute).
+			WithOwnerUserID(userID).
+			ToPlaybookRun()
+		inc01.Checklists[0].Items[0].AssigneeID = userID
+		inc01.Checklists[1].Items[1].AssigneeID = userID
+		inc01.Checklists[2].Items[2].AssigneeID = userID
+		inc01TaskTitles := []string{
+			inc01.Checklists[0].Items[0].Title,
+			inc01.Checklists[1].Items[1].Title,
+			inc01.Checklists[2].Items[2].Title,
+		}
+		// This should not trigger an assigned task:
+		inc01.Checklists[3].Items[0].Title = userID
+
+		// one assigned task for inc02, works cross team, with overdue update
+		inc02 := *NewBuilder(nil).
+			WithName("inc02 - this is the playbook name for channel 02").
+			WithChannel(&channel02).
+			WithTeamID(team2.Id).
+			WithUpdateOverdueBy(1 * time.Minute).
+			WithOwnerUserID(userID).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc02.Checklists[3].Items[2].AssigneeID = userID
+		inc02TaskTitles := []string{inc02.Checklists[3].Items[2].Title}
+
+		// no assigned task for inc03, with non-overdue update
+		inc03 := *NewBuilder(nil).
+			WithName("inc03 - this is the playbook name for channel 03").
+			WithChannel(&channel03).
+			WithTeamID(team1.Id).
+			WithUpdateOverdueBy(-2 * time.Minute).
+			WithOwnerUserID(userID).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc03.Checklists[3].Items[2].AssigneeID = "someotheruserid"
+
+		// one assigned task for inc04, with overdue update, but inc04 is finished
+		inc04 := *NewBuilder(nil).
+			WithName("inc04 - this is the playbook name for channel 04").
+			WithChannel(&channel04).
+			WithTeamID(team1.Id).
+			WithChecklists([]int{1, 2, 3, 4}).
+			WithUpdateOverdueBy(2 * time.Minute).
+			WithOwnerUserID(userID).
+			WithCurrentStatus(app.StatusFinished).
+			ToPlaybookRun()
+		inc04.Checklists[3].Items[2].AssigneeID = userID
+
+		// no assigned task for inc05, and not participant in inc05
+		inc05 := *NewBuilder(nil).
+			WithName("inc05 - this is the playbook name for channel 05").
+			WithChannel(&channel05).
+			WithTeamID(team1.Id).
+			WithOwnerUserID(otherCommanderUserID).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc05.Checklists[3].Items[2].AssigneeID = "someotheruserid"
+
+		// no assigned task for inc06, with overdue update, not commander but participating
+		inc06 := *NewBuilder(nil).
+			WithName("inc06 - this is the playbook name for channel 06").
+			WithChannel(&channel06).
+			WithTeamID(team1.Id).
+			WithOwnerUserID(otherCommanderUserID).
+			WithUpdateOverdueBy(2 * time.Minute).
+			WithChecklists([]int{1, 2, 3, 4}).
+			ToPlaybookRun()
+		inc03.Checklists[2].Items[2].AssigneeID = "someotheruserid"
+
+		playbookRuns := []app.PlaybookRun{inc01, inc02, inc03, inc04, inc05, inc06}
+
+		for i := range playbookRuns {
+			_, err := playbookRunStore.CreatePlaybookRun(&playbookRuns[i])
+			require.NoError(t, err)
+		}
+
+		createChannels(t, store, channels)
+
+		t.Run("gets assigned tasks only", func(t *testing.T) {
+			runs, err := playbookRunStore.GetRunsWithAssignedTasks(userID)
+			require.NoError(t, err)
+
+			total := 0
+			for _, run := range runs {
+				total += len(run.Tasks)
+			}
+
+			require.Equal(t, 4, total)
+
+			// don't make assumptions about ordering until we figure that out PM-side
+			expected := map[string][]string{
+				channel01.Name: inc01TaskTitles,
+				channel02.Name: inc02TaskTitles,
+			}
+
+			for _, run := range runs {
+				for _, task := range run.Tasks {
+					require.Contains(t, expected[run.ChannelName], task.Title)
+				}
+			}
+		})
+
+		t.Run("gets participating runs only", func(t *testing.T) {
+			runs, err := playbookRunStore.GetParticipatingRuns(userID)
+			require.NoError(t, err)
+
+			total := len(runs)
+
+			require.Equal(t, 4, total)
+
+			// don't make assumptions about ordering until we figure that out PM-side
+			expected := map[string]int{
+				channel01.Name: 1,
+				channel02.Name: 1,
+				channel03.Name: 1,
+				channel06.Name: 1,
+			}
+
+			actual := make(map[string]int)
+
+			for _, run := range runs {
+				actual[run.ChannelName]++
+			}
+
+			require.Equal(t, expected, actual)
+		})
+
+		t.Run("gets overdue updates", func(t *testing.T) {
+			runs, err := playbookRunStore.GetOverdueUpdateRuns(userID)
+			require.NoError(t, err)
+
+			total := len(runs)
+
+			require.Equal(t, 3, total)
+
+			// don't make assumptions about ordering until we figure that out PM-side
+			expected := map[string]int{
+				channel01.Name: 1,
+				channel02.Name: 1,
+				channel06.Name: 1,
+			}
+
+			actual := make(map[string]int)
+
+			for _, run := range runs {
+				actual[run.ChannelName]++
+			}
+
+			require.Equal(t, expected, actual)
+		})
+	}
+}
+
 func setupPlaybookRunStore(t *testing.T, db *sqlx.DB) app.PlaybookRunStore {
 	mockCtrl := gomock.NewController(t)
 
@@ -1951,7 +850,7 @@ func (ib *PlaybookRunBuilder) WithName(name string) *PlaybookRunBuilder {
 }
 
 func (ib *PlaybookRunBuilder) WithDescription(desc string) *PlaybookRunBuilder {
-	ib.playbookRun.Description = desc
+	ib.playbookRun.Summary = desc
 
 	return ib
 }
@@ -2034,6 +933,18 @@ func (ib *PlaybookRunBuilder) WithChannel(channel *model.Channel) *PlaybookRunBu
 
 func (ib *PlaybookRunBuilder) WithPlaybookID(id string) *PlaybookRunBuilder {
 	ib.playbookRun.PlaybookID = id
+
+	return ib
+}
+
+// WithUpdateOverdueBy sets a PreviousReminder and LastStatusUpdate such that there is an update
+// due overdueAmount ago. Set a negative number for an update due in the future.
+func (ib *PlaybookRunBuilder) WithUpdateOverdueBy(overdueAmount time.Duration) *PlaybookRunBuilder {
+	// simplify the math: set previous reminder to be the overdue amount
+	ib.playbookRun.PreviousReminder = overdueAmount
+
+	// and the lastStatusUpdateAt to be twice as much before that
+	ib.playbookRun.LastStatusUpdateAt = time.Now().Add(-2*overdueAmount).Unix() * 1000
 
 	return ib
 }

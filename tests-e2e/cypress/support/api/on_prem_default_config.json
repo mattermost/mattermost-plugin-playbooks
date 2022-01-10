@@ -186,7 +186,7 @@
         "EnableFileAttachments": true,
         "EnableMobileUpload": true,
         "EnableMobileDownload": true,
-        "MaxFileSize": 52428800,
+        "MaxFileSize": 104857600,
         "DriverName": "local",
         "Directory": "./data/",
         "EnablePublicLink": false,
@@ -476,7 +476,7 @@
             "com.mattermost.nps": {
                 "Enable": false
             },
-            "com.mattermost.plugin-incident-management": {
+            "playbooks": {
                 "Enable": true
             }
         },

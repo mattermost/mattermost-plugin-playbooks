@@ -2,10 +2,10 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
-import moment from 'moment';
 
 import {useDispatch, useSelector} from 'react-redux';
 import React from 'react';
+import {useIntl} from 'react-intl';
 
 import {Post} from 'mattermost-redux/types/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -16,11 +16,14 @@ import {displayUsername} from 'mattermost-redux/utils/user_utils';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {Client4} from 'mattermost-redux/client';
 
+import {browserHistory, Timestamp} from 'src/webapp_globals';
+
 import {isMobile} from 'src/mobile';
 import {ChannelNamesMap} from 'src/types/backstage';
-import {promptUpdateStatus, toggleRHS} from 'src/actions';
+import {toggleRHS} from 'src/actions';
 import ShowMore from 'src/components/rhs/show_more';
 import PostText from 'src/components/post_text';
+import {useEnsureProfiles} from 'src/hooks';
 
 const NoRecentUpdates = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
@@ -69,6 +72,7 @@ const EditedIndicator = styled.div`
 function useAuthorInfo(userID: string) : [string, string] {
     const teamnameNameDisplaySetting = useSelector<GlobalState, string | undefined>(getTeammateNameDisplaySetting) || '';
     const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userID));
+    useEnsureProfiles([userID]);
 
     let profileUrl = '';
     let preferredName = '';
@@ -81,26 +85,22 @@ function useAuthorInfo(userID: string) : [string, string] {
 }
 
 interface Props {
-    post: Post | null;
+    post: Post;
     team: Team;
     playbookRunId: string;
     playbookId: string
     channelId: string;
 }
 
+const REL_UNITS = [
+    'Today',
+    'Yesterday',
+];
+
 const PostCard = (props: Props) => {
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
     const [authorProfileUrl, authorUserName] = useAuthorInfo(props.post?.user_id || '');
-
-    if (!props.post) {
-        return (
-            <NoRecentUpdates>
-                {'No recent updates. '}<a onClick={() => dispatch(promptUpdateStatus(props.team.id, props.playbookRunId, props.playbookId, props.channelId))}>{'Click here'}</a>{' to update status.'}
-            </NoRecentUpdates>
-        );
-    }
-
-    const updateTimestamp = moment(props.post.create_at).calendar(undefined, {sameDay: 'LT'}); //eslint-disable-line no-undefined
 
     return (
         <UpdateSection>
@@ -109,31 +109,31 @@ const PostCard = (props: Props) => {
                 <UpdateHeader>
                     <UpdateAuthor>{authorUserName}</UpdateAuthor>
                     <UpdateTimeLink
-                        href={`/_redirect/pl/${props.post.id}`}
+                        href={`/${props.team.name}/pl/${props.post.id}`}
                         onClick={(e) => {
                             e.preventDefault();
 
-                            // @ts-ignore
-                            window.WebappUtils.browserHistory.push(`/_redirect/pl/${latestUpdate.id}`);
+                            if (props.post) {
+                                browserHistory.push(`/${props.team.name}/pl/${props.post.id}`);
+                            }
 
                             if (isMobile()) {
                                 dispatch(toggleRHS());
                             }
                         }}
                     >
-                        {updateTimestamp}
+                        <Timestamp
+                            value={props.post.create_at}
+                            units={REL_UNITS}
+                        />
                     </UpdateTimeLink>
                 </UpdateHeader>
-                <ShowMore
+                <PostText
                     text={props.post.message}
+                    team={props.team}
                 >
-                    <PostText
-                        text={props.post.message}
-                        team={props.team}
-                    >
-                        {props.post.edit_at !== 0 && <EditedIndicator>{'(edited)'}</EditedIndicator>}
-                    </PostText>
-                </ShowMore>
+                    {props.post.edit_at !== 0 && <EditedIndicator>{formatMessage({defaultMessage: '(edited)'})}</EditedIndicator>}
+                </PostText>
             </UpdateContainer>
         </UpdateSection>
     );

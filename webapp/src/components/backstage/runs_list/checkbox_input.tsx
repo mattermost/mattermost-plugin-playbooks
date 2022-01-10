@@ -10,11 +10,12 @@ const Component = styled.label`
     margin-bottom: 0;
     cursor: pointer;
     user-select: none;
+    width: fit-content;
 
     transition: background-color 0.2s;
 
     &:hover {
-        background-color: var(--button-bg-08);
+        background-color: rgba(var(--button-bg-rgb), 0.08);
     }
 
     input {
@@ -31,7 +32,7 @@ const Component = styled.label`
         margin-right: 10px;
 
         border-radius: 2px;
-        border: 1px solid var(--center-channel-color-24);
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
         background-color: var(--center-channel-bg);
         color: var(--center-channel-bg);
 
@@ -50,6 +51,8 @@ interface Props {
     text: string;
     checked: boolean;
     onChange: (checked: boolean) => void;
+    className?: string
+    disabled?: boolean;
 }
 
 const CheckboxInput = (props: Props) => {
@@ -58,11 +61,15 @@ const CheckboxInput = (props: Props) => {
     };
 
     return (
-        <Component data-testId={props.testId}>
+        <Component
+            data-testid={props.testId}
+            className={props.className}
+        >
             <input
                 type='checkbox'
                 onChange={onChange}
                 checked={props.checked}
+                disabled={props.disabled}
             />
             <span>
                 {props.text}

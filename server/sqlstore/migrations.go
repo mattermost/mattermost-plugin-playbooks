@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"encoding/json"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/blang/semver"
@@ -1192,10 +1193,16 @@ var migrations = []Migration{
 				if err := addPrimaryKey(e, sqlStore, "IR_PlaybookMember", "(MemberID, PlaybookID)"); err != nil {
 					return err
 				}
+				if err := dropIndexIfExists(e, sqlStore, "IR_StatusPosts", "posts_unique"); err != nil {
+					return err
+				}
 				if err := addPrimaryKey(e, sqlStore, "IR_StatusPosts", "(IncidentID, PostID)"); err != nil {
 					return err
 				}
 				if err := addPrimaryKey(e, sqlStore, "IR_TimelineEvent", "(ID)"); err != nil {
+					return err
+				}
+				if err := dropIndexIfExists(e, sqlStore, "IR_ViewedChannel", "IR_ViewedChannel_ChannelID_UserID"); err != nil {
 					return err
 				}
 				if err := addPrimaryKey(e, sqlStore, "IR_ViewedChannel", "(ChannelID, UserID)"); err != nil {
@@ -1214,6 +1221,471 @@ var migrations = []Migration{
 				if err := addPrimaryKey(e, sqlStore, "ir_viewedchannel", "(ChannelID, UserID)"); err != nil {
 					return err
 				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.30.0"),
+		toVersion:   semver.MustParse("0.31.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Best effort migration so we just log the error to avoid killing the plugin.
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec("UPDATE IGNORE PluginKeyValueStore SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management'"); err != nil {
+					sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to migrate KV store plugin id"))
+				}
+			} else {
+
+				if _, err := e.Exec("UPDATE PluginKeyValueStore k SET PluginId='playbooks' WHERE PluginId='com.mattermost.plugin-incident-management' AND NOT EXISTS ( SELECT 1 FROM PluginKeyValueStore WHERE PluginId='playbooks' AND PKey = k.PKey )"); err != nil {
+					sqlStore.log.Debugf("%w", errors.Wrapf(err, "failed to migrate KV store plugin id"))
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.31.0"),
+		toVersion:   semver.MustParse("0.32.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Incident", "ReminderTimerDefaultSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderTimerDefaultSeconds to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Incident", "ReminderTimerDefaultSeconds", "BIGINT NOT NULL DEFAULT 0"); err != nil {
+					return errors.Wrapf(err, "failed adding column ReminderTimerDefaultSeconds to table IR_Incident")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.32.0"),
+		toVersion:   semver.MustParse("0.33.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := renameColumnMySQL(e, "IR_Playbook", "WebhookOnCreationURL", "ConcatenatedWebhookOnCreationURLs", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnCreationURL to ConcatenatedWebhookOnCreationURLs in table IR_Playbook")
+				}
+
+				if err := renameColumnMySQL(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "ConcatenatedWebhookOnStatusUpdateURLs", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnStatusUpdateURL to ConcatenatedWebhookOnStatusUpdateURLs in table IR_Playbook")
+				}
+
+				if err := renameColumnMySQL(e, "IR_Incident", "WebhookOnCreationURL", "ConcatenatedWebhookOnCreationURLs", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnCreationURL to ConcatenatedWebhookOnCreationURLs in table IR_Incident")
+				}
+
+				if err := renameColumnMySQL(e, "IR_Incident", "WebhookOnStatusUpdateURL", "ConcatenatedWebhookOnStatusUpdateURLs", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnStatusUpdateURL to ConcatenatedWebhookOnStatusUpdateURLs in table IR_Incident")
+				}
+			} else {
+				if err := renameColumnPG(e, "IR_Playbook", "WebhookOnCreationURL", "ConcatenatedWebhookOnCreationURLs"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnCreationURL to ConcatenatedWebhookOnCreationURLs in table IR_Playbook")
+				}
+
+				if err := renameColumnPG(e, "IR_Playbook", "WebhookOnStatusUpdateURL", "ConcatenatedWebhookOnStatusUpdateURLs"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnStatusUpdateURL to ConcatenatedWebhookOnStatusUpdateURLs in table IR_Playbook")
+				}
+
+				if err := renameColumnPG(e, "IR_Incident", "WebhookOnCreationURL", "ConcatenatedWebhookOnCreationURLs"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnCreationURL to ConcatenatedWebhookOnCreationURLs in table IR_Incident")
+				}
+
+				if err := renameColumnPG(e, "IR_Incident", "WebhookOnStatusUpdateURL", "ConcatenatedWebhookOnStatusUpdateURLs"); err != nil {
+					return errors.Wrapf(err, "failed renaming column WebhookOnStatusUpdateURL to ConcatenatedWebhookOnStatusUpdateURLs in table IR_Incident")
+				}
+
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.33.0"),
+		toVersion:   semver.MustParse("0.34.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_UserInfo
+					(
+						ID                VARCHAR(26) PRIMARY KEY,
+						LastDailyTodoDMAt BIGINT
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_UserInfo")
+				}
+			} else {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_UserInfo
+					(
+						ID                TEXT PRIMARY KEY,
+						LastDailyTodoDMAt BIGINT
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_UserInfo")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.34.0"),
+		toVersion:   semver.MustParse("0.35.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_UserInfo", "DigestNotificationSettingsJSON", "JSON"); err != nil {
+					return errors.Wrapf(err, "failed adding column DigestNotificationSettings to table IR_UserInfo")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_UserInfo", "DigestNotificationSettingsJSON", "JSON"); err != nil {
+					return errors.Wrapf(err, "failed adding column DigestNotificationSettings to table IR_UserInfo")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.35.0"),
+		toVersion:   semver.MustParse("0.36.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if err := dropIndexIfExists(e, sqlStore, "IR_StatusPosts", "posts_unique"); err != nil {
+				return err
+			}
+
+			return dropIndexIfExists(e, sqlStore, "IR_ViewedChannel", "IR_ViewedChannel_ChannelID_UserID")
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.36.0"),
+		toVersion:   semver.MustParse("0.37.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Existing runs without a reminder need to have a reminder set; use 1 week from now.
+			oneWeek := 7 * 24 * time.Hour
+
+			// Get overdue runs
+			overdueQuery := sqlStore.builder.
+				Select("ID").
+				From("IR_Incident").
+				Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+				Where(sq.NotEq{"PreviousReminder": 0})
+			if sqlStore.db.DriverName() == model.DatabaseDriverMysql {
+				overdueQuery = overdueQuery.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
+			} else {
+				overdueQuery = overdueQuery.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
+			}
+
+			var runIDs []string
+			if err := sqlStore.selectBuilder(sqlStore.db, &runIDs, overdueQuery); err != nil {
+				return errors.Wrap(err, "failed to query for overdue runs")
+			}
+
+			// Get runs that never had a status update set
+			otherQuery := sqlStore.builder.
+				Select("ID").
+				From("IR_Incident").
+				Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+				Where(sq.Eq{"PreviousReminder": 0})
+
+			var otherRunIDs []string
+			if err := sqlStore.selectBuilder(sqlStore.db, &otherRunIDs, otherQuery); err != nil {
+				return errors.Wrap(err, "failed to query for overdue runs")
+			}
+
+			// Set the new reminders
+			runIDs = append(runIDs, otherRunIDs...)
+			for _, ID := range runIDs {
+				// Just in case (so we don't crash out during the migration) remove any old reminders
+				sqlStore.scheduler.Cancel(ID)
+
+				if _, err := sqlStore.scheduler.ScheduleOnce(ID, time.Now().Add(oneWeek)); err != nil {
+					return errors.Wrapf(err, "failed to set new schedule for run id: %s", ID)
+				}
+
+				// Set the PreviousReminder, and pretend that this was a LastStatusUpdateAt so that
+				// the reminder timers will show the correct time for when a status update is due.
+				updatePrevReminderAndLastUpdateAt := sqlStore.builder.
+					Update("IR_Incident").
+					SetMap(map[string]interface{}{
+						"PreviousReminder":   oneWeek,
+						"LastStatusUpdateAt": model.GetMillis(),
+					}).
+					Where(sq.Eq{"ID": ID})
+				if _, err := sqlStore.execBuilder(sqlStore.db, updatePrevReminderAndLastUpdateAt); err != nil {
+					return errors.Wrap(err, "failed to update new PreviousReminder and LastStatusUpdateAt")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.37.0"),
+		toVersion:   semver.MustParse("0.38.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_Run_Participants (
+						IncidentID VARCHAR(26) NULL REFERENCES IR_Incident(ID),
+						UserID VARCHAR(26) NOT NULL,
+						IsFollower BOOLEAN NOT NULL,
+						INDEX IR_Run_Participants_UserID (UserID),
+						INDEX IR_Run_Participants_IncidentID (IncidentID)
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Run_Participants")
+				}
+				if err := addPrimaryKey(e, sqlStore, "IR_Run_Participants", "(IncidentID, UserID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_Run_Participants")
+				}
+			} else {
+				if _, err := e.Exec(`
+				CREATE TABLE IF NOT EXISTS IR_Run_Participants (
+					UserID TEXT NOT NULL,
+					IncidentID TEXT NULL REFERENCES IR_Incident(ID),
+					IsFollower BOOLEAN NOT NULL
+				);
+			`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Run_Participants")
+				}
+
+				if err := addPrimaryKey(e, sqlStore, "ir_run_participants", "(IncidentID, UserID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for ir_run_participants")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_Run_Participants_UserID", "IR_Run_Participants", "UserID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_Run_Participants_UserID")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_Run_Participants_IncidentID", "IR_Run_Participants", "IncidentID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_Run_Participants_IncidentID")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.38.0"),
+		toVersion:   semver.MustParse("0.39.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "RunSummaryTemplate", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column RunSummaryTemplate to table IR_Playbook")
+				}
+				if _, err := e.Exec("UPDATE IR_Playbook SET RunSummaryTemplate = '' WHERE RunSummaryTemplate IS NULL"); err != nil {
+					return errors.Wrapf(err, "failed updating default value of column RunSummaryTemplate from table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "RunSummaryTemplate", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column RunSummaryTemplate to table IR_Playbook")
+				}
+			}
+
+			// Copy the values from the Description column, historically used for the run summary template, into the new RunSummaryTemplate column
+			if _, err := e.Exec("UPDATE IR_Playbook SET RunSummaryTemplate = Description, Description = '' WHERE Description <> ''"); err != nil {
+				return errors.Wrapf(err, "failed updating default value of column RunSummaryTemplate from table IR_Playbook")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.39.0"),
+		toVersion:   semver.MustParse("0.40.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_PlaybookAutoFollow (
+						PlaybookID VARCHAR(26) NULL REFERENCES IR_Playbook(ID),
+						UserID VARCHAR(26) NOT NULL
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_PlaybookAutoFollow")
+				}
+				if err := addPrimaryKey(e, sqlStore, "IR_PlaybookAutoFollow", "(PlaybookID, UserID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_PlaybookAutoFollow")
+				}
+			} else {
+				if _, err := e.Exec(`
+				CREATE TABLE IF NOT EXISTS IR_PlaybookAutoFollow (
+					PlaybookID TEXT NULL REFERENCES IR_Playbook(ID),
+					UserID TEXT NOT NULL
+				);
+			`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_PlaybookAutoFollow")
+				}
+
+				if err := addPrimaryKey(e, sqlStore, "ir_playbookautofollow", "(PlaybookID, UserID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_PlaybookAutoFollow")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.40.0"),
+		toVersion:   semver.MustParse("0.41.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "ChannelNameTemplate", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelNameTemplate to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "ChannelNameTemplate", "TEXT DEFAULT ''"); err != nil {
+					return errors.Wrapf(err, "failed adding column ChannelNameTemplate to table IR_Playbook")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.41.0"),
+		toVersion:   semver.MustParse("0.42.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "StatusUpdateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column StatusUpdateEnabled to table IR_Incident")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.42.0"),
+		toVersion:   semver.MustParse("0.43.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "RetrospectiveEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveEnabled to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Incident", "RetrospectiveEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveEnabled to table IR_Incident")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "RetrospectiveEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveEnabled to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Incident", "RetrospectiveEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RetrospectiveEnabled to table IR_Incident")
+				}
+			}
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.43.0"),
+		toVersion:   semver.MustParse("0.44.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_PlaybookMember", "Roles", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "Public", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_PlaybookMember", "Roles", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "Public", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
+				}
+			}
+
+			// Set all existing members to admins
+			if _, err := e.Exec("UPDATE IR_PlaybookMember SET Roles = 'playbook_member playbook_admin' WHERE Roles IS NULL"); err != nil {
+				return errors.Wrapf(err, "failed setting default value in column Roles of table IR_Playbook")
+			}
+
+			// Set all playbooks with no members as public
+			if _, err := e.Exec("UPDATE IR_Playbook p SET Public = true WHERE NOT EXISTS(SELECT 1 FROM IR_PlaybookMember as pm WHERE pm.PlaybookID = p.ID)"); err != nil {
+				return errors.Wrapf(err, "failed setting default value in column ConcatenatedSignalAnyKeywords of table IR_Playbook")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.44.0"),
+		toVersion:   semver.MustParse("0.45.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Existing runs without a reminder need to have a reminder set; use 1 week from now.
+			oneWeek := 7 * 24 * time.Hour
+
+			// Get runs whose reminder was dismissed (PreviousReminder was set to 0), but only for those
+			// that have status updates enabled (or else they can't fix an overdue status update)
+			dimissedQuery := sqlStore.builder.
+				Select("ID").
+				From("IR_Incident").
+				Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+				Where(sq.Eq{"PreviousReminder": 0}).
+				Where(sq.Eq{"StatusUpdateEnabled": true})
+
+			var runIDs []string
+			if err := sqlStore.selectBuilder(sqlStore.db, &runIDs, dimissedQuery); err != nil {
+				return errors.Wrap(err, "failed to query for overdue runs")
+			}
+
+			// Set the new reminders
+			for _, ID := range runIDs {
+				// Just in case (so we don't crash out during the migration) remove any old reminders
+				sqlStore.scheduler.Cancel(ID)
+
+				if _, err := sqlStore.scheduler.ScheduleOnce(ID, time.Now().Add(oneWeek)); err != nil {
+					return errors.Wrapf(err, "failed to set new schedule for run id: %s", ID)
+				}
+
+				// Set the PreviousReminder, and pretend that this was a LastStatusUpdateAt so that
+				// the reminder timers will show the correct time for when a status update is due.
+				updatePrevReminderAndLastUpdateAt := sqlStore.builder.
+					Update("IR_Incident").
+					SetMap(map[string]interface{}{
+						"PreviousReminder":   oneWeek,
+						"LastStatusUpdateAt": model.GetMillis(),
+					}).
+					Where(sq.Eq{"ID": ID})
+				if _, err := sqlStore.execBuilder(sqlStore.db, updatePrevReminderAndLastUpdateAt); err != nil {
+					return errors.Wrap(err, "failed to update new PreviousReminder and LastStatusUpdateAt")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.45.0"),
+		toVersion:   semver.MustParse("0.46.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "RunSummaryTemplateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RunSummaryTemplateEnabled to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "RunSummaryTemplateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RunSummaryTemplateEnabled to table IR_Playbook")
+				}
+			}
+
+			// All playbooks that have an empty run summary should have their run summary disabled (it defaults to enabled)
+			playbookUpdate := sqlStore.builder.
+				Update("IR_Playbook").
+				Set("RunSummaryTemplateEnabled", false).
+				Where(sq.Eq{"RunSummaryTemplate": ""})
+
+			if _, err := sqlStore.execBuilder(e, playbookUpdate); err != nil {
+				return errors.Wrap(err, "failed updating RunSummaryTemplateEnabled")
 			}
 
 			return nil

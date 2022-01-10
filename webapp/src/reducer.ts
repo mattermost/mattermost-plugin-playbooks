@@ -3,6 +3,9 @@
 
 import {combineReducers} from 'redux';
 
+import {Team} from 'mattermost-redux/types/teams';
+import {Channel} from 'mattermost-redux/types/channels';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
 import {
@@ -24,12 +27,12 @@ import {
     REMOVED_FROM_CHANNEL,
     SetRHSEventsFilter,
     SET_RHS_EVENTS_FILTER,
-    ReceivedTeamDisabled,
-    RECEIVED_TEAM_DISABLED,
     PLAYBOOK_CREATED,
     PlaybookCreated,
-    PLAYBOOK_DELETED,
-    PlaybookDeleted,
+    PLAYBOOK_ARCHIVED,
+    PlaybookArchived,
+    PLAYBOOK_RESTORED,
+    PlaybookRestored,
     ReceivedTeamNumPlaybooks,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedGlobalSettings,
@@ -45,7 +48,11 @@ import {
     SetChecklistCollapsedState,
     SetAllChecklistsCollapsedState,
     SET_CHECKLIST_COLLAPSED_STATE,
-    SET_ALL_CHECKLISTS_COLLAPSED_STATE, SetChecklistItemsFilter, SET_CHECKLIST_ITEMS_FILTER,
+    SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    SetEachChecklistCollapsedState,
+    SET_EACH_CHECKLIST_COLLAPSED_STATE,
+    SetChecklistItemsFilter,
+    SET_CHECKLIST_ITEMS_FILTER,
 } from 'src/types/actions';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
@@ -86,14 +93,17 @@ function rhsState(state = RHSState.ViewingPlaybookRun, action: SetRHSState) {
     }
 }
 
-// myPlaybookRunsByTeam is a map of teamId->{channelId->playbookRuns} for which the current user is an playbook run member. Note
-// that it is lazy loaded on team change, but will also track incremental updates as provided by
-// websocket events.
-// Aditnally it handles the plugin being disabled on the team
+type TStateMyPlaybookRunsByTeam = Record<Team['id'], null | Record<Channel['id'], PlaybookRun>>;
+
+/**
+ * @returns a map of teamId->{channelId->playbookRuns} for which the current user is a playbook run member
+ * @remarks
+ * It is lazy loaded on team change, but will also track incremental updates as provided by websocket events.
+ */
 const myPlaybookRunsByTeam = (
-    state: Record<string, Record<string, PlaybookRun>> = {},
-    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel | ReceivedTeamDisabled,
-) => {
+    state: TStateMyPlaybookRunsByTeam = {},
+    action: PlaybookRunCreated | PlaybookRunUpdated | ReceivedTeamPlaybookRuns | RemovedFromChannel
+): TStateMyPlaybookRunsByTeam => {
     switch (action.type) {
     case PLAYBOOK_RUN_CREATED: {
         const playbookRunCreatedAction = action as PlaybookRunCreated;
@@ -134,7 +144,10 @@ const myPlaybookRunsByTeam = (
         };
 
         for (const playbookRun of playbookRuns) {
-            newState[teamId][playbookRun.channel_id] = playbookRun;
+            const tx = newState[teamId];
+            if (tx) {
+                tx[playbookRun.channel_id] = playbookRun;
+            }
         }
 
         return newState;
@@ -142,7 +155,7 @@ const myPlaybookRunsByTeam = (
     case REMOVED_FROM_CHANNEL: {
         const removedFromChannelAction = action as RemovedFromChannel;
         const channelId = removedFromChannelAction.channelId;
-        const teamId = Object.keys(state).find((t) => Boolean(state[t][channelId]));
+        const teamId = Object.keys(state).find((t) => Boolean(state[t]?.[channelId]));
         if (!teamId) {
             return state;
         }
@@ -151,15 +164,11 @@ const myPlaybookRunsByTeam = (
             ...state,
             [teamId]: {...state[teamId]},
         };
-        delete newState[teamId][channelId];
+        const runMap = newState[teamId];
+        if (runMap) {
+            delete runMap[channelId];
+        }
         return newState;
-    }
-    case RECEIVED_TEAM_DISABLED: {
-        const teamDisabledAction = action as ReceivedTeamDisabled;
-        return {
-            ...state,
-            [teamDisabledAction.teamId]: false,
-        };
     }
     default:
         return state;
@@ -178,7 +187,7 @@ const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {},
     }
 };
 
-const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookDeleted | ReceivedTeamNumPlaybooks) => {
+const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookArchived | PlaybookRestored | ReceivedTeamNumPlaybooks) => {
     switch (action.type) {
     case PLAYBOOK_CREATED: {
         const playbookCreatedAction = action as PlaybookCreated;
@@ -190,7 +199,17 @@ const numPlaybooksByTeam = (state: Record<string, number> = {}, action: Playbook
             [teamID]: prevCount + 1,
         };
     }
-    case PLAYBOOK_DELETED: {
+    case PLAYBOOK_RESTORED: {
+        const playbookCreatedAction = action as PlaybookRestored;
+        const teamID = playbookCreatedAction.teamID;
+        const prevCount = state[teamID] || 0;
+
+        return {
+            ...state,
+            [teamID]: prevCount + 1,
+        };
+    }
+    case PLAYBOOK_ARCHIVED: {
         const playbookDeletedAction = action as PlaybookCreated;
         const teamID = playbookDeletedAction.teamID;
         const prevCount = state[teamID] || 0;
@@ -267,7 +286,10 @@ const rhsAboutCollapsedByChannel = (state: Record<string, boolean> = {}, action:
 // checklistCollapsedState keeps a map of channelId -> checklist number -> collapsed
 const checklistCollapsedState = (
     state: Record<string, Record<number, boolean>> = {},
-    action: SetChecklistCollapsedState | SetAllChecklistsCollapsedState,
+    action:
+    | SetChecklistCollapsedState
+    | SetAllChecklistsCollapsedState
+    | SetEachChecklistCollapsedState
 ) => {
     switch (action.type) {
     case SET_CHECKLIST_COLLAPSED_STATE: {
@@ -291,6 +313,13 @@ const checklistCollapsedState = (
             [setAction.channelId]: newState,
         };
     }
+    case SET_EACH_CHECKLIST_COLLAPSED_STATE: {
+        const setAction = action as SetEachChecklistCollapsedState;
+        return {
+            ...state,
+            [setAction.channelId]: setAction.state,
+        };
+    }
     default:
         return state;
     }
@@ -308,7 +337,7 @@ const checklistItemsFilterByChannel = (state: Record<string, ChecklistItemsFilte
     }
 };
 
-export default combineReducers({
+const reducer = combineReducers({
     toggleRHSFunction,
     rhsOpen,
     clientId,
@@ -323,3 +352,7 @@ export default combineReducers({
     checklistCollapsedState,
     checklistItemsFilterByChannel,
 });
+
+export default reducer;
+
+export type PlaybooksPluginState = ReturnType<typeof reducer>;

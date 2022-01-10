@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
+import {FormattedMessage} from 'react-intl';
 
 import {MultiSelect, SelectOption} from 'src/components/multi_select';
 import {PlaybookRunFilterButton} from '../styles';
@@ -81,7 +82,7 @@ export function StatusFilter(props: Props) {
         <MultiSelect
             target={
                 <PlaybookRunFilterButton active={filterOpen}>
-                    {'Status'}
+                    <FormattedMessage defaultMessage='Status'/>
                     {<i className='icon-chevron-down icon--small ml-2'/>}
                 </PlaybookRunFilterButton>
             }

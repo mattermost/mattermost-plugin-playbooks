@@ -83,7 +83,7 @@ func setupRudder(t *testing.T, data chan<- rudderPayload) (*RudderTelemetry, *ht
 var dummyPlaybookRun = &app.PlaybookRun{
 	ID:             "id",
 	Name:           "name",
-	Description:    "description",
+	Summary:        "description",
 	OwnerUserID:    "owner_user_id",
 	ReporterUserID: "reporter_user_id",
 	TeamID:         "team_id",
@@ -98,17 +98,15 @@ var dummyPlaybookRun = &app.PlaybookRun{
 			Title: "Checklist",
 			Items: []app.ChecklistItem{
 				{
-					ID:                     "task_id_1",
-					Title:                  "Test Item",
-					State:                  "",
-					StateModified:          1234,
-					StateModifiedPostID:    "state_modified_post_id",
-					AssigneeID:             "assignee_id",
-					AssigneeModified:       5678,
-					AssigneeModifiedPostID: "assignee_modified_post_id",
-					Command:                "command",
-					CommandLastRun:         100000,
-					Description:            "description",
+					ID:               "task_id_1",
+					Title:            "Test Item",
+					State:            "",
+					StateModified:    1234,
+					AssigneeID:       "assignee_id",
+					AssigneeModified: 5678,
+					Command:          "command",
+					CommandLastRun:   100000,
+					Description:      "description",
 				},
 			},
 		},
@@ -159,7 +157,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 		return &app.PlaybookRun{
 			ID:               properties[telemetryKeyPlaybookRunID].(string),
 			Name:             dummyPlaybookRun.Name, // not included in the tracked event
-			Description:      dummyPlaybookRun.Description,
+			Summary:          dummyPlaybookRun.Summary,
 			OwnerUserID:      properties["CommanderUserID"].(string),
 			ReporterUserID:   properties["ReporterUserID"].(string),
 			TeamID:           properties["TeamID"].(string),
@@ -191,7 +189,7 @@ func assertPayload(t *testing.T, actual rudderPayload, expectedEvent string, exp
 		require.Contains(t, properties, "Public")
 	}
 
-	if expectedEvent == eventPlaybookRun && (expectedAction == actionCreate || expectedAction == actionEnd) {
+	if expectedEvent == eventPlaybookRun && (expectedAction == actionCreate || expectedAction == actionEnd || expectedAction == actionRestore) {
 		require.Equal(t, dummyPlaybookRun, playbookRunFromProperties(properties))
 	} else {
 		require.Contains(t, properties, telemetryKeyPlaybookRunID)
@@ -216,6 +214,9 @@ func TestRudderTelemetry(t *testing.T) {
 		}},
 		"end playbook run": {eventPlaybookRun, actionEnd, func() {
 			rudderClient.FinishPlaybookRun(dummyPlaybookRun, dummyUserID)
+		}},
+		"restore playbook run": {eventPlaybookRun, actionRestore, func() {
+			rudderClient.RestorePlaybookRun(dummyPlaybookRun, dummyUserID)
 		}},
 		"add checklist item": {eventTasks, actionAddTask, func() {
 			rudderClient.AddTask(dummyPlaybookRunID, dummyUserID, dummyTask)
@@ -355,17 +356,15 @@ func TestPlaybookProperties(t *testing.T) {
 				Title: "Checklist",
 				Items: []app.ChecklistItem{
 					{
-						ID:                     "task_id_1",
-						Title:                  "Test Item",
-						State:                  "",
-						StateModified:          1234,
-						StateModifiedPostID:    "state_modified_post_id",
-						AssigneeID:             "assignee_id",
-						AssigneeModified:       5678,
-						AssigneeModifiedPostID: "assignee_modified_post_id",
-						Command:                "command",
-						CommandLastRun:         100000,
-						Description:            "description",
+						ID:               "task_id_1",
+						Title:            "Test Item",
+						State:            "",
+						StateModified:    1234,
+						AssigneeID:       "assignee_id",
+						AssigneeModified: 5678,
+						Command:          "command",
+						CommandLastRun:   100000,
+						Description:      "description",
 					},
 				},
 			},
@@ -377,7 +376,7 @@ func TestPlaybookProperties(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:                   []string{"member_1", "member_2"},
+		Members:                     []app.PlaybookMember{{}, {}},
 		ReminderMessageTemplate:     "reminder_message_template",
 		ReminderTimerDefaultSeconds: 1000,
 		InvitedUserIDs:              []string{"invited_user_id_1", "invited_user_id_2"},
@@ -387,10 +386,11 @@ func TestPlaybookProperties(t *testing.T) {
 		DefaultOwnerEnabled:         false,
 		BroadcastChannelIDs:         []string{"broadcast_channel_id"},
 		BroadcastEnabled:            true,
-		WebhookOnCreationURL:        "webhook_on_creation_url_1\nwebhook_on_creation_url_2",
+		WebhookOnCreationURLs:       []string{"webhook_on_creation_url_1", "webhook_on_creation_url_2"},
 		WebhookOnCreationEnabled:    false,
 		SignalAnyKeywordsEnabled:    true,
 		SignalAnyKeywords:           []string{"SEV1, SEV2"},
+		ChannelNameTemplate:         "channel_name_template",
 	}
 
 	properties := playbookProperties(dummyPlaybook, dummyUserID)
@@ -423,6 +423,7 @@ func TestPlaybookProperties(t *testing.T) {
 		"WebhookOnCreationEnabled":    dummyPlaybook.WebhookOnCreationEnabled,
 		"SignalAnyKeywordsEnabled":    dummyPlaybook.SignalAnyKeywordsEnabled,
 		"NumSignalAnyKeywords":        len(dummyPlaybook.SignalAnyKeywords),
+		"HasChannelNameTemplate":      true,
 	}
 
 	require.Equal(t, expectedProperties, properties)

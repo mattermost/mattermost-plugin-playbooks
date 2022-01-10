@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	playbookCreatedWSEvent = "playbook_created"
-	playbookDeletedWSEvent = "playbook_deleted"
+	playbookCreatedWSEvent  = "playbook_created"
+	playbookArchivedWSEvent = "playbook_archived"
+	playbookRestoredWSEvent = "playbook_restored"
 )
 
 type playbookService struct {
@@ -76,6 +77,10 @@ func (s *playbookService) GetNumPlaybooksForTeam(teamID string) (int, error) {
 }
 
 func (s *playbookService) Update(playbook Playbook, userID string) error {
+	if playbook.DeleteAt != 0 {
+		return errors.New("cannot update a playbook that is archived")
+	}
+
 	playbook.UpdateAt = model.GetMillis()
 
 	if err := s.store.Update(playbook); err != nil {
@@ -87,18 +92,40 @@ func (s *playbookService) Update(playbook Playbook, userID string) error {
 	return nil
 }
 
-func (s *playbookService) Delete(playbook Playbook, userID string) error {
+func (s *playbookService) Archive(playbook Playbook, userID string) error {
 	if playbook.ID == "" {
-		return errors.New("can't delete a playbook without an ID")
+		return errors.New("can't archive a playbook without an ID")
 	}
 
-	if err := s.store.Delete(playbook.ID); err != nil {
+	if err := s.store.Archive(playbook.ID); err != nil {
 		return err
 	}
 
 	s.telemetry.DeletePlaybook(playbook, userID)
 
-	s.poster.PublishWebsocketEventToTeam(playbookDeletedWSEvent, map[string]interface{}{
+	s.poster.PublishWebsocketEventToTeam(playbookArchivedWSEvent, map[string]interface{}{
+		"teamID": playbook.TeamID,
+	}, playbook.TeamID)
+
+	return nil
+}
+
+func (s *playbookService) Restore(playbook Playbook, userID string) error {
+	if playbook.ID == "" {
+		return errors.New("can't restore a playbook without an ID")
+	}
+
+	if playbook.DeleteAt == 0 {
+		return nil
+	}
+
+	if err := s.store.Restore(playbook.ID); err != nil {
+		return err
+	}
+
+	s.telemetry.RestorePlaybook(playbook, userID)
+
+	s.poster.PublishWebsocketEventToTeam(playbookRestoredWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,
 	}, playbook.TeamID)
 
@@ -128,20 +155,17 @@ func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Pos
 		return
 	}
 
-	pluginID := s.configService.GetManifest().Id
-	siteURL := model.ServiceSettingsDefaultSiteURL
-	if s.api.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-		siteURL = *s.api.Configuration.GetConfig().ServiceSettings.SiteURL
+	message := s.getPlaybookSuggestionsMessage(suggestedPlaybooks, triggers)
+	attachment := s.getPlaybookSuggestionsSlackAttachment(suggestedPlaybooks, post.Id, session.IsMobileApp())
+
+	rootID := post.RootId
+	if rootID == "" {
+		rootID = post.Id
 	}
-	playbooksURL := getPlaybooksURL(siteURL, pluginID)
-
-	message := s.getPlaybookSuggestionsMessage(suggestedPlaybooks, triggers, playbooksURL)
-	attachment := s.getPlaybookSuggestionsSlackAttachment(suggestedPlaybooks, post.Id, playbooksURL, session.IsMobileApp())
-
-	s.poster.EphemeralPostWithAttachments(post.UserId, post.ChannelId, post.Id, []*model.SlackAttachment{attachment}, message)
+	s.poster.EphemeralPostWithAttachments(post.UserId, post.ChannelId, rootID, []*model.SlackAttachment{attachment}, message)
 }
 
-func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []*CachedPlaybook, triggers []string, playbooksURL string) string {
+func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []*CachedPlaybook, triggers []string) string {
 	message := ""
 	triggerMessage := ""
 	if len(triggers) == 1 {
@@ -151,7 +175,7 @@ func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []*Ca
 	}
 
 	if len(suggestedPlaybooks) == 1 {
-		playbookURL := fmt.Sprintf("[%s](%s/%s)", suggestedPlaybooks[0].Title, playbooksURL, suggestedPlaybooks[0].ID)
+		playbookURL := fmt.Sprintf("[%s](%s)", suggestedPlaybooks[0].Title, getPlaybookDetailsRelativeURL(suggestedPlaybooks[0].ID))
 		message = fmt.Sprintf("%s for the %s playbook, would you like to run it?", triggerMessage, playbookURL)
 	} else {
 		message = fmt.Sprintf("%s for the multiple playbooks, would you like to run one of them?", triggerMessage)
@@ -160,7 +184,7 @@ func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []*Ca
 	return message
 }
 
-func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*CachedPlaybook, postID, playbooksURL string, isMobile bool) *model.SlackAttachment {
+func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*CachedPlaybook, postID string, isMobile bool) *model.SlackAttachment {
 	pluginID := s.configService.GetManifest().Id
 
 	ignoreButton := &model.PostAction{
@@ -192,11 +216,9 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 			Style: "primary",
 		}
 
-		url := fmt.Sprintf("%s/%s/edit/actions", playbooksURL, playbooks[0].ID) // actions tab
-
 		attachment := &model.SlackAttachment{
 			Actions: []*model.PostAction{yesButton, ignoreButton},
-			Text:    fmt.Sprintf("You can configure the trigger and actions for the playbook [here](%s)", url),
+			Text:    fmt.Sprintf("You can configure the trigger and actions for the playbook [here](%s)", getActionsTabRelativeURL(playbooks[0].ID)),
 		}
 		return attachment
 	}
@@ -226,7 +248,7 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 
 	attachment := &model.SlackAttachment{
 		Actions: []*model.PostAction{playbookChooser, ignoreButton},
-		Text:    fmt.Sprintf("You can access these playbooks to configure their triggers and actions [here](%s)", playbooksURL),
+		Text:    fmt.Sprintf("You can access these playbooks to configure their triggers and actions [here](%s)", PlaybooksPath),
 	}
 	return attachment
 }
@@ -285,6 +307,54 @@ func (s *playbookService) getPlaybooksAndTriggersByAccess(triggeredPlaybooks []c
 	}
 
 	return resultPlaybooks, removeDuplicates(resultTriggers)
+}
+
+// AutoFollow method lets user to auto-follow all runs of a specific playbook
+func (s *playbookService) AutoFollow(playbookID, userID string) error {
+	if err := s.store.AutoFollow(playbookID, userID); err != nil {
+		return errors.Wrapf(err, "user `%s` failed to auto-follow the playbook `%s`", userID, playbookID)
+	}
+
+	playbook, err := s.store.Get(playbookID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+	s.telemetry.AutoFollowPlaybook(playbook, userID)
+	return nil
+}
+
+// AutoUnfollow method lets user to not auto-follow the newly created playbook runs
+func (s *playbookService) AutoUnfollow(playbookID, userID string) error {
+	if err := s.store.AutoUnfollow(playbookID, userID); err != nil {
+		return errors.Wrapf(err, "user `%s` failed to auto-unfollow the playbook `%s`", userID, playbookID)
+	}
+
+	playbook, err := s.store.Get(playbookID)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve playbook run")
+	}
+	s.telemetry.AutoUnfollowPlaybook(playbook, userID)
+	return nil
+}
+
+// GetAutoFollows returns list of users who auto-follow a playbook
+func (s *playbookService) GetAutoFollows(playbookID string) ([]string, error) {
+	autoFollows, err := s.store.GetAutoFollows(playbookID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get auto-follows for the playbook `%s`", playbookID)
+	}
+
+	return autoFollows, nil
+}
+
+// IsAutoFollowing returns weather user is auto-following a playbook
+func (s *playbookService) IsAutoFollowing(playbookID, userID string) (bool, error) {
+	isAutoFollowing, err := s.store.IsAutoFollowing(playbookID, userID)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to get if user follows for the playbook `%s`", playbookID)
+	}
+
+	return isAutoFollowing, nil
 }
 
 func getPlaybookTriggersForAMessage(playbook *CachedPlaybook, message string) []string {

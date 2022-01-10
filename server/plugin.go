@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"path/filepath"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -12,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/shared/i18n"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -27,6 +29,15 @@ var (
 	rudderWriteKey     string
 )
 
+type TelemetryClient interface {
+	app.PlaybookRunTelemetry
+	app.PlaybookTelemetry
+	bot.Telemetry
+	app.UserInfoTelemetry
+	Enable() error
+	Disable() error
+}
+
 // Plugin implements the interface expected by the Mattermost server to communicate between the
 // server and plugin processes.
 type Plugin struct {
@@ -36,8 +47,11 @@ type Plugin struct {
 	config             *config.ServiceImpl
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
+	permissions        *app.PermissionsService
 	bot                *bot.Bot
 	pluginAPI          *pluginapi.Client
+	userInfoStore      app.UserInfoStore
+	telemetryClient    TelemetryClient
 }
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
@@ -47,6 +61,15 @@ func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Req
 
 // OnActivate Called when this plugin is activated.
 func (p *Plugin) OnActivate() error {
+	bundlePath, err := p.API.GetBundlePath()
+	if err != nil {
+		return errors.Wrapf(err, "unable to get bundle path")
+	}
+
+	if err := i18n.TranslationsPreInit(filepath.Join(bundlePath, "assets/i18n")); err != nil {
+		return errors.Wrapf(err, "unable to load translation files")
+	}
+
 	pluginAPIClient := pluginapi.NewClient(p.API, p.Driver)
 	p.pluginAPI = pluginAPIClient
 
@@ -54,9 +77,9 @@ func (p *Plugin) OnActivate() error {
 	pluginapi.ConfigureLogrus(logrus.New(), pluginAPIClient)
 
 	botID, err := pluginAPIClient.Bot.EnsureBot(&model.Bot{
-		Username:    "playbook",
-		DisplayName: "Playbook Bot",
-		Description: "Playbook's bot.",
+		Username:    "playbooks",
+		DisplayName: "Playbooks",
+		Description: "Playbooks bot.",
 	},
 		pluginapi.ProfileImagePath("assets/plugin_icon.png"),
 	)
@@ -72,21 +95,13 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed save bot to config")
 	}
 
-	var telemetryClient interface {
-		app.PlaybookRunTelemetry
-		app.PlaybookTelemetry
-		bot.Telemetry
-		Enable() error
-		Disable() error
-	}
-
 	if rudderDataplaneURL == "" || rudderWriteKey == "" {
 		pluginAPIClient.Log.Warn("Rudder credentials are not set. Disabling analytics.")
-		telemetryClient = &telemetry.NoopTelemetry{}
+		p.telemetryClient = &telemetry.NoopTelemetry{}
 	} else {
 		diagnosticID := pluginAPIClient.System.GetDiagnosticID()
 		serverVersion := pluginAPIClient.System.GetServerVersion()
-		telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, manifest.Version, serverVersion)
+		p.telemetryClient, err = telemetry.NewRudder(rudderDataplaneURL, rudderWriteKey, diagnosticID, manifest.Version, serverVersion)
 		if err != nil {
 			return errors.Wrapf(err, "failed init telemetry client")
 		}
@@ -97,13 +112,13 @@ func (p *Plugin) OnActivate() error {
 		telemetryEnabled := diagnosticsFlag != nil && *diagnosticsFlag
 
 		if telemetryEnabled {
-			if err = telemetryClient.Enable(); err != nil {
+			if err = p.telemetryClient.Enable(); err != nil {
 				pluginAPIClient.Log.Warn("Telemetry could not be enabled", "Error", err)
 			}
 			return
 		}
 
-		if err = telemetryClient.Disable(); err != nil {
+		if err = p.telemetryClient.Disable(); err != nil {
 			pluginAPIClient.Log.Error("Telemetry could not be disabled", "Error", err)
 		}
 	}
@@ -112,31 +127,23 @@ func (p *Plugin) OnActivate() error {
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
 	apiClient := sqlstore.NewClient(pluginAPIClient)
-	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, telemetryClient)
-	sqlStore, err := sqlstore.New(apiClient, p.bot)
+	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
+	scheduler := cluster.GetJobOnceScheduler(p.API)
+
+	sqlStore, err := sqlstore.New(apiClient, p.bot, scheduler)
 	if err != nil {
 		return errors.Wrapf(err, "failed creating the SQL store")
 	}
 
-	mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
-	if err != nil {
-		return errors.Wrapf(err, "failed creating cluster mutex")
-	}
-
-	mutex.Lock()
-	if err = sqlStore.RunMigrations(); err != nil {
-		mutex.Unlock()
-		return errors.Wrapf(err, "failed to run migrations")
-	}
-	mutex.Unlock()
-
 	playbookRunStore := sqlstore.NewPlaybookRunStore(apiClient, p.bot, sqlStore)
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
+	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
 
-	scheduler := cluster.GetJobOnceScheduler(p.API)
+	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
 
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,
@@ -145,8 +152,9 @@ func (p *Plugin) OnActivate() error {
 		p.bot,
 		p.config,
 		scheduler,
-		telemetryClient,
+		p.telemetryClient,
 		p.API,
+		p.playbookService,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
@@ -156,9 +164,19 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient.Log.Error("JobOnceScheduler could not start", "error", err.Error())
 	}
 
-	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
+	// Migrations use the scheduler, so they have to be run after playbookRunService and scheduler have started
+	mutex, err := cluster.NewMutex(p.API, "IR_dbMutex")
+	if err != nil {
+		return errors.Wrapf(err, "failed creating cluster mutex")
+	}
+	mutex.Lock()
+	if err = sqlStore.RunMigrations(); err != nil {
+		mutex.Unlock()
+		return errors.Wrapf(err, "failed to run migrations")
+	}
+	mutex.Unlock()
 
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
+	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
@@ -166,19 +184,21 @@ func (p *Plugin) OnActivate() error {
 		pluginAPIClient,
 		p.bot,
 		p.config,
+		p.permissions,
 	)
 	api.NewPlaybookRunHandler(
 		p.handler.APIRouter,
 		p.playbookRunService,
 		p.playbookService,
+		p.permissions,
 		pluginAPIClient,
 		p.bot,
 		p.bot,
 		p.config,
 	)
-	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService)
-	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config)
-	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, telemetryClient, p.playbookService, telemetryClient, telemetryClient)
+	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService, p.permissions)
+	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config, p.playbookRunService, p.userInfoStore)
+	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.permissions)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
 
@@ -195,6 +215,7 @@ func (p *Plugin) OnActivate() error {
 	go func() {
 		// Remove the prepackaged old versions of the plugin
 		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-response")
+		_ = pluginAPIClient.Plugin.Remove("com.mattermost.plugin-incident-management")
 	}()
 
 	return nil
@@ -211,10 +232,11 @@ func (p *Plugin) OnConfigurationChange() error {
 
 // ExecuteCommand executes a command that has been previously registered via the RegisterCommand.
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot, p.bot, p.playbookRunService, p.playbookService, p.config)
+	runner := command.NewCommandRunner(c, args, pluginapi.NewClient(p.API, p.Driver), p.bot, p.bot,
+		p.playbookRunService, p.playbookService, p.config, p.userInfoStore, p.telemetryClient, p.permissions)
 
 	if err := runner.Execute(); err != nil {
-		return nil, model.NewAppError("Playbooks.ExecuteCommand", "Unable to execute command.", nil, err.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("Playbooks.ExecuteCommand", "app.command.execute.error", nil, err.Error(), http.StatusInternalServerError)
 	}
 
 	return &model.CommandResponse{}, nil

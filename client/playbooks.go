@@ -66,26 +66,33 @@ func (s *PlaybooksService) List(ctx context.Context, teamId string, page, perPag
 	return result, nil
 }
 
-// Create a playbook.
-func (s *PlaybooksService) Create(ctx context.Context, opts PlaybookCreateOptions) (*Playbook, error) {
+// Create a playbook. Returns the id of the newly created playbook
+func (s *PlaybooksService) Create(ctx context.Context, opts PlaybookCreateOptions) (string, error) {
+	// For ease of use set the default if not specificed so it doesn't just error
+	if opts.ReminderTimerDefaultSeconds == 0 {
+		opts.ReminderTimerDefaultSeconds = 86400
+	}
+
 	playbookURL := "playbooks"
 	req, err := s.client.newRequest(http.MethodPost, playbookURL, opts)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	playbook := new(Playbook)
-	resp, err := s.client.do(ctx, req, playbook)
+	var result struct {
+		ID string `json:"id"`
+	}
+	resp, err := s.client.do(ctx, req, &result)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("expected status code %d", http.StatusCreated)
+		return "", fmt.Errorf("expected status code %d", http.StatusCreated)
 	}
 
-	return playbook, nil
+	return result.ID, nil
 }
 
 func (s *PlaybooksService) Update(ctx context.Context, playbook Playbook) error {
@@ -103,7 +110,7 @@ func (s *PlaybooksService) Update(ctx context.Context, playbook Playbook) error 
 	return nil
 }
 
-func (s *PlaybooksService) Delete(ctx context.Context, playbookID string) error {
+func (s *PlaybooksService) Archive(ctx context.Context, playbookID string) error {
 	updateURL := fmt.Sprintf("playbooks/%s", playbookID)
 	req, err := s.client.newRequest(http.MethodDelete, updateURL, nil)
 	if err != nil {

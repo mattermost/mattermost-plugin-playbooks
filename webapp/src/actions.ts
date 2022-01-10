@@ -3,17 +3,16 @@
 import {AnyAction, Dispatch} from 'redux';
 
 import {generateId} from 'mattermost-redux/utils/helpers';
-
 import {IntegrationTypes} from 'mattermost-redux/action_types';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {addChannelMember} from 'mattermost-redux/actions/channels';
+import {DispatchFunc, GetStateFunc} from 'mattermost-redux/types/actions';
 
-import {GetStateFunc} from 'mattermost-redux/types/actions';
+import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
-import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
-
-import {selectExperimentalFeatures, selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
+import {PlaybookRun} from 'src/types/playbook_run';
+import {selectToggleRHS, canIPostUpdateForRun} from 'src/selectors';
 import {RHSState, TimelineEventsFilter} from 'src/types/rhs';
-
 import {
     PLAYBOOK_RUN_CREATED,
     PLAYBOOK_RUN_UPDATED,
@@ -34,12 +33,12 @@ import {
     SetRHSOpen,
     SetRHSState,
     SetTriggerId,
-    RECEIVED_TEAM_DISABLED,
-    ReceivedTeamDisabled,
     PLAYBOOK_CREATED,
     PlaybookCreated,
-    PLAYBOOK_DELETED,
-    PlaybookDeleted,
+    PLAYBOOK_ARCHIVED,
+    PlaybookArchived,
+    PLAYBOOK_RESTORED,
+    PlaybookRestored,
     RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedTeamNumPlaybooks,
     RECEIVED_GLOBAL_SETTINGS,
@@ -56,15 +55,19 @@ import {
     SetChecklistCollapsedState,
     SetAllChecklistsCollapsedState,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
-    SET_CHECKLIST_ITEMS_FILTER, SetChecklistItemsFilter,
+    SET_CHECKLIST_ITEMS_FILTER,
+    SetChecklistItemsFilter,
+    SetEachChecklistCollapsedState,
+    SET_EACH_CHECKLIST_COLLAPSED_STATE,
 } from 'src/types/actions';
 import {clientExecuteCommand} from 'src/client';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter} from 'src/types/playbook';
-
 import {modals} from 'src/webapp_globals';
-
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
+import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbook_access_modal';
+
+import {makePlaybookCreateModal, PlaybookCreateModalProps} from './components/create_playbook_modal';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -81,7 +84,7 @@ export function startPlaybookRun(teamId: string, postId?: string) {
     };
 }
 
-export function startPlaybookRunById(teamId: string, playbookId: string) {
+export function startPlaybookRunById(teamId: string, playbookId: string, timeout = 0) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
         // Add unique id
         const clientId = generateId();
@@ -89,26 +92,58 @@ export function startPlaybookRunById(teamId: string, playbookId: string) {
 
         const command = `/playbook run-playbook ${playbookId} ${clientId}`;
 
-        await clientExecuteCommand(dispatch, getState, command, teamId);
+        // When dispatching from the playbooks product, the switch to channels resets the websocket
+        // connection, losing the event that opens this dialog. Allow the caller to specify a
+        // timeout as a gross workaround.
+        await new Promise((resolve) => setTimeout(() => {
+            clientExecuteCommand(dispatch, getState, command, teamId);
+            // eslint-disable-next-line no-undefined
+            resolve(undefined);
+        }, timeout));
     };
 }
 
 export function promptUpdateStatus(
     teamId: string,
     playbookRunId: string,
-    playbookId: string,
     channelId: string,
 ) {
-    return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
+    return async (dispatch: Dispatch, getState: GetStateFunc) => {
         const state = getState();
-        const experimentalFeaturesEnabled = selectExperimentalFeatures(state);
         const hasPermission = canIPostUpdateForRun(state, channelId, teamId);
+        dispatch(openUpdateRunStatusModal(playbookRunId, channelId, hasPermission));
+    };
+}
 
-        if (experimentalFeaturesEnabled) {
-            dispatch(modals.openModal(makeUpdateRunStatusModalDefinition({playbookId, playbookRunId, channelId, hasPermission})));
-        } else {
-            await clientExecuteCommand(dispatch, getState, '/playbook update', teamId);
-        }
+export function openUpdateRunStatusModal(
+    playbookRunId: string,
+    channelId: string,
+    hasPermission: boolean,
+    message?: string,
+    reminderInSeconds?: number,
+    finishRunChecked?: boolean
+) {
+    return modals.openModal(makeUpdateRunStatusModalDefinition({
+        playbookRunId,
+        channelId,
+        hasPermission,
+        message,
+        reminderInSeconds,
+        finishRunChecked,
+    }));
+}
+
+export function displayEditPlaybookAccessModal(
+    playbookId: string
+) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        dispatch(modals.openModal(makePlaybookAccessModalDefinition({playbookId})));
+    };
+}
+
+export function displayPlaybookCreateModal(props: PlaybookCreateModalProps) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        dispatch(modals.openModal(makePlaybookCreateModal(props)));
     };
 }
 
@@ -131,6 +166,14 @@ export function addNewTask(checklist: number) {
         const currentTeamId = getCurrentTeamId(getState());
 
         await clientExecuteCommand(dispatch, getState, `/playbook checkadd ${checklist}`, currentTeamId);
+    };
+}
+
+export function addToCurrentChannel(userId: string) {
+    return async (dispatch: DispatchFunc, getState: GetStateFunc) => {
+        const currentChannelId = getCurrentChannelId(getState());
+
+        dispatch(addChannelMember(currentChannelId, userId));
     };
 }
 
@@ -201,8 +244,13 @@ export const playbookCreated = (teamID: string): PlaybookCreated => ({
     teamID,
 });
 
-export const playbookDeleted = (teamID: string): PlaybookDeleted => ({
-    type: PLAYBOOK_DELETED,
+export const playbookArchived = (teamID: string): PlaybookArchived => ({
+    type: PLAYBOOK_ARCHIVED,
+    teamID,
+});
+
+export const playbookRestored = (teamID: string): PlaybookRestored => ({
+    type: PLAYBOOK_RESTORED,
     teamID,
 });
 
@@ -215,11 +263,6 @@ export const receivedTeamNumPlaybooks = (teamID: string, numPlaybooks: number): 
 export const receivedTeamPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedTeamPlaybookRuns => ({
     type: RECEIVED_TEAM_PLAYBOOK_RUNS,
     playbookRuns,
-});
-
-export const receivedDisabledOnTeam = (teamId: string): ReceivedTeamDisabled => ({
-    type: RECEIVED_TEAM_DISABLED,
-    teamId,
 });
 
 export const removedFromPlaybookRunChannel = (channelId: string): RemovedFromChannel => ({
@@ -263,6 +306,12 @@ export const setChecklistCollapsedState = (channelId: string, checklistIndex: nu
     channelId,
     checklistIndex,
     collapsed,
+});
+
+export const setEachChecklistCollapsedState = (channelId: string, state: Record<number, boolean>): SetEachChecklistCollapsedState => ({
+    type: SET_EACH_CHECKLIST_COLLAPSED_STATE,
+    channelId,
+    state,
 });
 
 export const setAllChecklistsCollapsedState = (channelId: string, collapsed: boolean, numOfChecklists: number): SetAllChecklistsCollapsedState => ({

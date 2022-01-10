@@ -11,6 +11,8 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 
+import {FormattedMessage, useIntl} from 'react-intl';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import RHSWelcomeView from 'src/components/rhs/rhs_welcome_view';
@@ -38,7 +40,7 @@ const Header = styled.div`
     height: 47px;
     letter-spacing: 0;
     text-align: center;
-    box-shadow: inset 0px -1px 0px var(--center-channel-color-24);
+    box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.24);
 `;
 
 const CenterCell = styled.div`
@@ -73,6 +75,7 @@ const Footer = styled.div`
 
 const RHSListView = () => {
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
     const currentChannelId = useSelector<GlobalState, string>(getCurrentChannelId);
     const playbookRunList = useSelector<GlobalState, PlaybookRun[]>(myActivePlaybookRunsList);
@@ -105,7 +108,7 @@ const RHSListView = () => {
                     <Header>
                         <CenterCell>
                             <Link onClick={() => dispatch(startPlaybookRun(currentTeam.id))}>
-                                <PlusIcon/>{'Run playbook'}
+                                <PlusIcon/><FormattedMessage defaultMessage='Run playbook'/>
                             </Link>
                         </CenterCell>
                         <RightCell>
@@ -128,8 +131,9 @@ const RHSListView = () => {
                     })}
 
                     <Footer>
-                        <a onClick={viewBackstagePlaybookRunList}>{'Click here'}</a>
-                        {' to see all runs in the team.'}
+                        {formatMessage({defaultMessage: '<Link>Click here</Link> to see all runs in the team.'}, {
+                            Link: (chunks) => <a onClick={viewBackstagePlaybookRunList}>{chunks}</a>,
+                        })}
                     </Footer>
                 </Scrollbars>
             </RHSContent>
@@ -150,12 +154,12 @@ const ThreeDotMenu = (props: ThreeDotMenuProps) => (
         <DropdownMenuItem
             onClick={props.onCreatePlaybook}
         >
-            {'Create playbook'}
+            <FormattedMessage defaultMessage='Create playbook'/>
         </DropdownMenuItem>
         <DropdownMenuItem
             onClick={props.onSeeAllPlaybookRuns}
         >
-            {'See all runs'}
+            <FormattedMessage defaultMessage='See all runs'/>
         </DropdownMenuItem>
     </DotMenu>
 );

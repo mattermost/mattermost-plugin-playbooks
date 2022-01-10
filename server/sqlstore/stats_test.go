@@ -92,9 +92,9 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 		statsStore := setupStatsStore(t, db)
 
 		_, store := setupSQLStore(t, db)
-		setupUsersTable(t, db)
 		setupTeamMembersTable(t, db)
 		setupChannelMembersTable(t, db)
+		setupChannelMemberHistoryTable(t, db)
 		setupChannelsTable(t, db)
 
 		addUsers(t, store, []userInfo{lucy, bob, john, jane, notInvolved, phil, quincy, bot1, bot2})
@@ -267,5 +267,26 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 			result := statsStore.AverageDurationActivePlaybookRunsMinutes()
 			assert.Equal(t, 26912080, result)
 		})*/
+
+		t.Run(driverName+" RunsStartedPerWeekLastXWeeks for a playbook with no runs", func(t *testing.T) {
+			runsStartedPerWeek, _ := statsStore.RunsStartedPerWeekLastXWeeks(4, &StatsFilters{
+				PlaybookID: "playbook101test123123",
+			})
+			assert.Equal(t, []int{0, 0, 0, 0}, runsStartedPerWeek)
+		})
+
+		t.Run(driverName+" ActiveRunsPerDayLastXDays for a playbook with no runs", func(t *testing.T) {
+			activeRunsPerDay, _ := statsStore.ActiveRunsPerDayLastXDays(4, &StatsFilters{
+				PlaybookID: "playbook101test1234",
+			})
+			assert.Equal(t, []int{0, 0, 0, 0}, activeRunsPerDay)
+		})
+
+		t.Run(driverName+" ActiveParticipantsPerDayLastXDays for a playbook with no runs", func(t *testing.T) {
+			activeParticipantsPerDay, _ := statsStore.ActiveParticipantsPerDayLastXDays(4, &StatsFilters{
+				PlaybookID: "playbook101test32412",
+			})
+			assert.Equal(t, []int{0, 0, 0, 0}, activeParticipantsPerDay)
+		})
 	}
 }

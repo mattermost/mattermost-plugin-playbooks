@@ -3,16 +3,22 @@
 
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {Redirect, Route, useRouteMatch, NavLink, Switch, useHistory} from 'react-router-dom';
+import {useIntl} from 'react-intl';
+import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
-import {GlobalState} from 'mattermost-redux/types/store';
-import {Channel} from 'mattermost-redux/types/channels';
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+
+import Following from 'src/components/backstage/playbook_runs/playbook_run_backstage/following';
+import {copyToClipboard} from 'src/utils';
 
 import {
     Badge,
-    SecondaryButtonLargerRight,
+    ExpandRight,
+    Icon16,
+    PrimaryButtonLarger,
+    SecondaryButtonLarger,
 } from 'src/components/backstage/playbook_runs/shared';
 
 import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
@@ -23,16 +29,25 @@ import {
     clientRemoveTimelineEvent,
     fetchPlaybookRun,
     fetchPlaybookRunMetadata,
+    followPlaybookRun,
+    unfollowPlaybookRun,
+    getSiteUrl,
 } from 'src/client';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
-import {ErrorPageTypes} from 'src/constants';
+import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
-
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {PlaybookWithChecklist} from 'src/types/playbook';
 import ExportLink from '../playbook_run_details/export_link';
+import {BadgeType} from 'src/components/backstage/status_badge';
+
+declare module 'react-bootstrap/esm/OverlayTrigger' {
+    interface OverlayTriggerProps {
+        shouldUpdatePosition?: boolean;
+    }
+}
 
 const OuterContainer = styled.div`
     background: var(center-channel-bg);
@@ -62,7 +77,7 @@ const SecondRow = styled.div`
     height: 60px;
     margin: 0;
     padding: 10px 0 0 80px;
-    box-shadow: inset 0px -1px 0px var(--center-channel-color-16);
+    box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
 `;
 
 const BottomContainer = styled.div`
@@ -82,20 +97,41 @@ const InnerContainer = styled.div`
     font-weight: 600;
 `;
 
-const LeftArrow = styled.button`
+const Icon = styled.button`
     display: block;
     padding: 0;
     border: none;
     background: transparent;
-    font-size: 24px;
     line-height: 24px;
     cursor: pointer;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const LeftArrow = styled(Icon)`
+    font-size: 24px;
 
     &:hover {
-        background: var(--button-bg-08);
+        background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     }
+`;
+
+export const CopyIcon = styled(Icon)<{clicked: boolean}>`
+    font-size: 18px;
+    margin-left: 8px;
+    border-radius: 4px;
+
+    ${({clicked}) => !clicked && css`
+        &:hover {
+            background: var(--center-channel-color-08);
+            color: var(--center-channel-color-72);
+        }
+    `}
+
+    ${({clicked}) => clicked && css`
+        background: var(--button-bg-08);
+        color: var(--button-bg);
+    `}
 `;
 
 const VerticalBlock = styled.div`
@@ -106,7 +142,8 @@ const VerticalBlock = styled.div`
 `;
 
 const Title = styled.div`
-    ${RegularHeading}
+    ${RegularHeading} {
+    }
 
     font-size: 20px;
     color: var(--center-channel-color);
@@ -115,7 +152,7 @@ const Title = styled.div`
 const PlaybookDiv = styled.div`
     display: flex;
     flex-direction: row;
-    color: var(--center-channel-color-64);
+    color: rgba(var(--center-channel-color-rgb), 0.64);
     cursor: pointer;
 
     &:hover {
@@ -152,6 +189,15 @@ const TabItem = styled(NavLink)`
     }
 `;
 
+const TitleWithBadgeAndLink = styled.div`
+    display: flex;
+    flex-direction: row;
+`;
+
+const StyledBadge = styled(Badge)`
+    margin-left: 8px;
+`;
+
 interface MatchParams {
     playbookRunId: string
 }
@@ -167,13 +213,33 @@ const PositionedUpgradeBadge = styled(UpgradeBadge)`
     vertical-align: sub;
 `;
 
+const Line = styled.hr`
+    border: 1px solid;
+    margin: 0px 0px 0px 12px;
+    height: 32px;
+`;
+
+const Button = styled(SecondaryButtonLarger)`
+    margin-left: 12px;
+`;
+
+const FollowingButton = styled(Button)`
+    background: rgba(var(--button-bg-rgb), 0.12);
+    &&:hover {
+        background: rgba(var(--button-bg-rgb), 0.24);
+    }
+`;
+
 const PlaybookRunBackstage = () => {
     const [playbookRun, setPlaybookRun] = useState<PlaybookRun | null>(null);
     const [playbookRunMetadata, setPlaybookRunMetadata] = useState<PlaybookRunMetadata | null>(null);
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
-    const channel = useSelector<GlobalState, Channel | null>((state) => (playbookRun ? getChannel(state, playbookRun.channel_id) : null));
+    const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
     const history = useHistory();
+    const currentUserID = useSelector(getCurrentUserId);
+    const [following, setFollowing] = useState<string[]>([]);
+    const [runLinkCopied, setRunLinkCopied] = useState(false);
 
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
 
@@ -188,6 +254,7 @@ const PlaybookRunBackstage = () => {
             setPlaybookRun(playbookRunResult);
             setPlaybookRunMetadata(playbookRunMetadataResult);
             setFetchingState(FetchingStateType.fetched);
+            setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
         }).catch(() => {
             setFetchingState(FetchingStateType.notFound);
         });
@@ -215,6 +282,13 @@ const PlaybookRunBackstage = () => {
         });
     };
 
+    const setRetrospective = (retrospective: string) => {
+        setPlaybookRun((run) => ({
+            ...run,
+            retrospective,
+        } as PlaybookRun));
+    };
+
     if (fetchingState === FetchingStateType.loading) {
         return null;
     }
@@ -227,14 +301,59 @@ const PlaybookRunBackstage = () => {
         navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
     };
 
-    let channelIcon = 'icon-mattermost';
-    if (channel) {
-        channelIcon = channel.type === 'O' ? 'icon-globe' : 'icon-lock-outline';
-    }
+    const onFollow = () => {
+        if (following.includes(currentUserID)) {
+            return;
+        }
+        followPlaybookRun(playbookRun.id);
+        const followingCopy = [...following, currentUserID];
+        setFollowing(followingCopy);
+    };
+
+    const onUnfollow = () => {
+        unfollowPlaybookRun(playbookRun.id);
+        const followingCopy = following.filter((item) => item !== currentUserID);
+        setFollowing(followingCopy);
+    };
 
     const closePlaybookRunDetails = () => {
         history.goBack();
     };
+
+    let followButton = (<Button onClick={onFollow}>{formatMessage({defaultMessage: 'Follow'})}</Button>);
+    if (following.includes(currentUserID)) {
+        followButton = (<FollowingButton onClick={onUnfollow}>{formatMessage({defaultMessage: 'Following'})}</FollowingButton>);
+    }
+
+    const copyRunLink = () => {
+        copyToClipboard(getSiteUrl() + '/playbooks/runs/' + playbookRun.id);
+        setRunLinkCopied(true);
+    };
+
+    let copyRunLinkTooltipMessage = formatMessage({defaultMessage: 'Copy link to run'});
+    if (runLinkCopied) {
+        copyRunLinkTooltipMessage = formatMessage({defaultMessage: 'Copied!'});
+    }
+
+    const runLink = (
+        <OverlayTrigger
+            placement='bottom'
+            delay={OVERLAY_DELAY}
+            onExit={() => setRunLinkCopied(false)}
+            shouldUpdatePosition={true}
+            overlay={
+                <Tooltip id='copy-run-link-tooltip'>
+                    {copyRunLinkTooltipMessage}
+                </Tooltip>
+            }
+        >
+            <CopyIcon
+                className='icon-link-variant'
+                onClick={copyRunLink}
+                clicked={runLinkCopied}
+            />
+        </OverlayTrigger>
+    );
 
     return (
         <OuterContainer>
@@ -245,31 +364,44 @@ const PlaybookRunBackstage = () => {
                         onClick={closePlaybookRunDetails}
                     />
                     <VerticalBlock>
-                        <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
-                        <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
-                            <SmallPlaybookIcon/>
-                            <SubTitle>{playbook?.title}</SubTitle>
-                        </PlaybookDiv>
+                        <TitleWithBadgeAndLink>
+                            <Title data-testid='playbook-run-title'>{playbookRun.name}</Title>
+                            <StyledBadge status={BadgeType[playbookRun.current_status]}/>
+                            {runLink}
+                        </TitleWithBadgeAndLink>
+                        {
+                            playbook &&
+                            <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
+                                <SmallPlaybookIcon/>
+                                <SubTitle>{playbook?.title}</SubTitle>
+                            </PlaybookDiv>
+                        }
                     </VerticalBlock>
-                    <Badge status={playbookRun.current_status}/>
-                    <SecondaryButtonLargerRight onClick={goToChannel}>
-                        <i className={'icon ' + channelIcon}/>
-                        {'Go to channel'}
-                    </SecondaryButtonLargerRight>
+                    <ExpandRight/>
+                    <Following userIds={following}/>
+                    {followButton}
+                    <Line/>
                     <ExportLink playbookRun={playbookRun}/>
+                    <PrimaryButtonLarger
+                        onClick={goToChannel}
+                        style={{marginLeft: 12}}
+                    >
+                        <Icon16 className={'icon icon-message-text-outline mr-1'}/>
+                        {formatMessage({defaultMessage: 'Go to channel'})}
+                    </PrimaryButtonLarger>
                 </FirstRow>
                 <SecondRow>
                     <TabItem
                         to={`${match.url}/overview`}
                         activeClassName={'active'}
                     >
-                        {'Overview'}
+                        {formatMessage({defaultMessage: 'Overview'})}
                     </TabItem>
                     <TabItem
                         to={`${match.url}/retrospective`}
                         activeClassName={'active'}
                     >
-                        {'Retrospective'}
+                        {formatMessage({defaultMessage: 'Retrospective'})}
                         {!allowRetrospectiveAccess && <PositionedUpgradeBadge/>}
                     </TabItem>
                 </SecondRow>
@@ -284,6 +416,7 @@ const PlaybookRunBackstage = () => {
                             <Retrospective
                                 playbookRun={playbookRun}
                                 deleteTimelineEvent={deleteTimelineEvent}
+                                setRetrospective={setRetrospective}
                             />
                         </Route>
                         <Redirect to={`${match.url}/overview`}/>

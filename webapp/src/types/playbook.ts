@@ -8,6 +8,8 @@ export interface Playbook {
     team_id: string;
     create_public_playbook_run: boolean;
     delete_at: number;
+    run_summary_template_enabled: boolean;
+    public: boolean;
 
     /** @alias num_checklists */
     num_stages: number;
@@ -15,14 +17,21 @@ export interface Playbook {
     num_runs: number;
     num_actions: number;
     last_run_at: number;
-    member_ids: string[];
+    members: PlaybookMember[];
+    default_playbook_member_role: string;
+}
+
+export interface PlaybookMember {
+    user_id: string
+    roles: string[]
+    scheme_roles?: string[]
 }
 
 export interface PlaybookWithChecklist extends Playbook {
     checklists: Checklist[];
-    broadcast_channel_id: string;
     reminder_message_template: string;
     reminder_timer_default_seconds: number;
+    status_update_enabled: boolean;
     invited_user_ids: string[];
     invited_group_ids: string[];
     invite_users_enabled: boolean;
@@ -30,19 +39,21 @@ export interface PlaybookWithChecklist extends Playbook {
     default_owner_enabled: boolean;
     broadcast_channel_ids: string[];
     broadcast_enabled: boolean;
-    webhook_on_creation_url: string;
+    webhook_on_creation_urls: string[];
     webhook_on_creation_enabled: boolean;
-    webhook_on_status_update_url: string;
+    webhook_on_status_update_urls: string[];
     webhook_on_status_update_enabled: boolean;
     message_on_join: string;
     message_on_join_enabled: boolean;
     retrospective_reminder_interval_seconds: number;
     retrospective_template: string;
-    export_channel_on_finished_enabled: boolean;
+    retrospective_enabled: boolean
     signal_any_keywords_enabled: boolean;
     signal_any_keywords: string[];
     category_name: string;
     categorize_channel_enabled: boolean;
+    run_summary_template: string;
+    channel_name_template: string;
 }
 
 export interface FetchPlaybooksParams {
@@ -51,6 +62,7 @@ export interface FetchPlaybooksParams {
     per_page?: number;
     sort?: 'title' | 'stages' | 'steps' | 'runs';
     direction?: 'asc' | 'desc';
+    search_term?: string;
 }
 
 export interface FetchPlaybooksReturn {
@@ -73,6 +85,7 @@ export enum ChecklistItemState {
     Open = '',
     InProgress = 'in_progress',
     Closed = 'closed',
+    Skip = 'skipped',
 }
 
 export interface ChecklistItem {
@@ -80,10 +93,8 @@ export interface ChecklistItem {
     description: string;
     state: ChecklistItemState;
     state_modified?: number;
-    state_modified_post_id?: string;
     assignee_id?: string;
     assignee_modified?: number;
-    assignee_modified_post_id?: string;
     command: string;
     command_last_run: number;
 }
@@ -97,6 +108,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         title: '',
         description: '',
         team_id: '',
+        public: true,
         create_public_playbook_run: false,
         delete_at: 0,
         num_stages: 0,
@@ -105,10 +117,10 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         num_actions: 0,
         last_run_at: 0,
         checklists: [emptyChecklist()],
-        member_ids: [],
-        broadcast_channel_id: '',
+        members: [],
         reminder_message_template: '',
-        reminder_timer_default_seconds: 0,
+        reminder_timer_default_seconds: 7 * 24 * 60 * 60, // 7 days
+        status_update_enabled: true,
         invited_user_ids: [],
         invited_group_ids: [],
         invite_users_enabled: false,
@@ -116,19 +128,23 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         default_owner_enabled: false,
         broadcast_channel_ids: [],
         broadcast_enabled: false,
-        webhook_on_creation_url: '',
+        webhook_on_creation_urls: [],
         webhook_on_creation_enabled: false,
-        webhook_on_status_update_url: '',
+        webhook_on_status_update_urls: [],
         webhook_on_status_update_enabled: false,
         message_on_join: defaultMessageOnJoin,
         message_on_join_enabled: false,
         retrospective_reminder_interval_seconds: 0,
         retrospective_template: defaultRetrospectiveTemplate,
-        export_channel_on_finished_enabled: false,
+        retrospective_enabled: true,
         signal_any_keywords: [],
         signal_any_keywords_enabled: false,
         category_name: '',
         categorize_channel_enabled: false,
+        run_summary_template_enabled: true,
+        run_summary_template: '',
+        channel_name_template: '',
+        default_playbook_member_role: '',
     };
 }
 
@@ -167,43 +183,11 @@ export interface ChecklistItemsFilter extends Record<string, boolean> {
 
 export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
     all: false,
-    checked: false,
+    checked: true,
     me: true,
     unassigned: true,
     others: true,
 };
-
-// eslint-disable-next-line
-export function isPlaybook(arg: any): arg is PlaybookWithChecklist {
-    return (
-        arg &&
-        typeof arg.id === 'string' &&
-        typeof arg.title === 'string' &&
-        typeof arg.team_id === 'string' &&
-        typeof arg.create_public_playbook_run === 'boolean' &&
-        typeof arg.delete_at === 'number' &&
-        arg.checklists && Array.isArray(arg.checklists) && arg.checklists.every(isChecklist) &&
-        arg.member_ids && Array.isArray(arg.member_ids) && arg.checklists.every((id: any) => typeof id === 'string') &&
-        typeof arg.broadcast_channel_id === 'string' &&
-        typeof arg.reminder_message_template == 'string' &&
-        typeof arg.reminder_timer_default_seconds == 'number' &&
-        arg.invited_user_ids && Array.isArray(arg.invited_user_ids) && arg.invited_user_ids.every((id: any) => typeof id === 'string') &&
-        arg.invited_group_ids && Array.isArray(arg.invited_group_ids) && arg.invited_group_ids.every((id: any) => typeof id === 'string') &&
-        typeof arg.invite_users_enabled === 'boolean' &&
-        typeof arg.default_owner_id === 'string' &&
-        typeof arg.default_owner_enabled === 'boolean' &&
-        typeof arg.announcement_channel_id === 'string' &&
-        typeof arg.announcement_channel_enabled === 'boolean' &&
-        typeof arg.webhook_on_creation_url === 'string' &&
-        typeof arg.webhook_on_creation_enabled === 'boolean' &&
-        typeof arg.webhook_on_status_update_url === 'string' &&
-        typeof arg.webhook_on_status_update_enabled === 'boolean' &&
-        typeof arg.message_on_join === 'string' &&
-        typeof arg.message_on_join_enabled === 'boolean' &&
-        typeof arg.signal_any_keywords && Array.isArray(arg.signal_any_keywords) && arg.signal_any_keywords.every((id: any) => typeof id === 'string') &&
-        typeof arg.signal_any_keywords_enabled === 'boolean'
-    );
-}
 
 // eslint-disable-next-line
 export function isChecklist(arg: any): arg is Checklist {
@@ -217,10 +201,8 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
     return arg &&
         typeof arg.title === 'string' &&
         typeof arg.state_modified === 'number' &&
-        typeof arg.state_modified_post_id === 'string' &&
         typeof arg.assignee_id === 'string' &&
         typeof arg.assignee_modified === 'number' &&
-        typeof arg.assignee_modified_post_id === 'string' &&
         typeof arg.state === 'string' &&
         typeof arg.command === 'string' &&
         typeof arg.command_last_run === 'number';

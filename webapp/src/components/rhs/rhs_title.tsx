@@ -8,6 +8,8 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 
+import {useIntl} from 'react-intl';
+
 import {PlaybookRun} from 'src/types/playbook_run';
 
 import LeftChevron from 'src/components/assets/icons/left_chevron';
@@ -22,13 +24,15 @@ import {OVERLAY_DELAY} from 'src/constants';
 
 const RHSTitle = () => {
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
+
     const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>(currentPlaybookRun);
     const rhsState = useSelector<GlobalState, RHSState>(currentRHSState);
 
     if (rhsState === RHSState.ViewingPlaybookRun) {
         const tooltip = (
             <Tooltip id={'view-run-overview'}>
-                {'View run overview'}
+                {formatMessage({defaultMessage: 'View run overview'})}
             </Tooltip>
         );
 
@@ -59,7 +63,7 @@ const RHSTitle = () => {
                             }
                         }}
                     >
-                        {'Run details'}
+                        {formatMessage({defaultMessage: 'Run details'})}
                         <StyledButtonIcon>
                             <ExternalLink/>
                         </StyledButtonIcon>
@@ -71,6 +75,7 @@ const RHSTitle = () => {
 
     return (
         <RHSTitleText>
+            {/* product name; don't translate */}
             {'Playbooks'}
         </RHSTitleText>
     );
@@ -98,7 +103,7 @@ const RHSTitleText = styled.div<{ clickable?: boolean }>`
     ${(props) => props.clickable && css`
         &:hover {
             background: rgba(var(--center-channel-color-rgb), 0.08);
-            fill: var(--center-channel-color-72);
+            fill: rgba(var(--center-channel-color-rgb), 0.72);
         }
 
         &:active,

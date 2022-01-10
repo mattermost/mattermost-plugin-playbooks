@@ -129,9 +129,13 @@ func (s *PlaybookRunService) UpdateStatus(ctx context.Context, playbookRunID str
 		return err
 	}
 
-	_, err = s.client.do(ctx, req, nil)
+	resp, err := s.client.do(ctx, req, nil)
 	if err != nil {
 		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected status code %d", http.StatusOK)
 	}
 
 	return nil
@@ -150,4 +154,82 @@ func (s *PlaybookRunService) Finish(ctx context.Context, playbookRunID string) e
 	}
 
 	return nil
+}
+
+func (s *PlaybookRunService) CreateChecklist(ctx context.Context, playbookRunID string, checklist Checklist) error {
+	createURL := fmt.Sprintf("runs/%s/checklists", playbookRunID)
+	req, err := s.client.newRequest(http.MethodPost, createURL, checklist)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
+func (s *PlaybookRunService) RemoveChecklist(ctx context.Context, playbookRunID string, checklistNumber int) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/%d", playbookRunID, checklistNumber)
+	req, err := s.client.newRequest(http.MethodDelete, createURL, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
+func (s *PlaybookRunService) RenameChecklist(ctx context.Context, playbookRunID string, checklistNumber int, newTitle string) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/%d/rename", playbookRunID, checklistNumber)
+	req, err := s.client.newRequest(http.MethodPut, createURL, struct{ Title string }{newTitle})
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
+func (s *PlaybookRunService) AddChecklistItem(ctx context.Context, playbookRunID string, checklistNumber int, checklistItem ChecklistItem) error {
+	addURL := fmt.Sprintf("runs/%s/checklists/%d/add", playbookRunID, checklistNumber)
+	req, err := s.client.newRequest(http.MethodPost, addURL, checklistItem)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
+func (s *PlaybookRunService) MoveChecklist(ctx context.Context, playbookRunID string, sourceChecklistIdx, destChecklistIdx int) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/move", playbookRunID)
+	body := struct {
+		SourceChecklistIdx int `json:"source_checklist_idx"`
+		DestChecklistIdx   int `json:"dest_checklist_idx"`
+	}{sourceChecklistIdx, destChecklistIdx}
+
+	req, err := s.client.newRequest(http.MethodPost, createURL, body)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
+}
+
+func (s *PlaybookRunService) MoveChecklistItem(ctx context.Context, playbookRunID string, sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx int) error {
+	createURL := fmt.Sprintf("runs/%s/checklists/move-item", playbookRunID)
+	body := struct {
+		SourceChecklistIdx int `json:"source_checklist_idx"`
+		SourceItemIdx      int `json:"source_item_idx"`
+		DestChecklistIdx   int `json:"dest_checklist_idx"`
+		DestItemIdx        int `json:"dest_item_idx"`
+	}{sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx}
+
+	req, err := s.client.newRequest(http.MethodPost, createURL, body)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.client.do(ctx, req, nil)
+	return err
 }

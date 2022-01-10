@@ -1,6 +1,10 @@
 import React from 'react';
 
-import moment from 'moment';
+import {DateTime} from 'luxon';
+
+import {FormattedMessage} from 'react-intl';
+
+import styled from 'styled-components';
 
 import ConvertEnterpriseNotice from 'src/components/backstage/convert_enterprise_notice';
 
@@ -11,7 +15,7 @@ import {AdminNotificationType} from 'src/constants';
 type HandlerType = undefined | (() => (Promise<void> | void));
 
 export interface ModalContents {
-    titleText: string;
+    titleText: React.ReactNode;
     helpText: React.ReactNode;
 }
 
@@ -44,18 +48,18 @@ export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: bo
     switch (state) {
     case ModalActionState.Uninitialized:
         if (isAdmin) {
-            const confirmButtonText = isCloud ? 'Upgrade now' : 'Start trial';
+            const confirmButtonText = isCloud ? <FormattedMessage defaultMessage='Upgrade now'/> : <FormattedMessage defaultMessage='Start trial'/>;
 
             return {
                 confirmButtonText,
-                cancelButtonText: 'Not right now',
+                cancelButtonText: <FormattedMessage defaultMessage='Not right now'/>,
                 handleConfirm: adminMainAction,
                 handleCancel: onHide,
             };
         }
         return {
-            confirmButtonText: 'Notify System Admin',
-            cancelButtonText: 'Not right now',
+            confirmButtonText: <FormattedMessage defaultMessage='Notify System Admin'/>,
+            cancelButtonText: <FormattedMessage defaultMessage='Not right now'/>,
             handleConfirm: endUserMainAction,
             handleCancel: onHide,
         };
@@ -71,7 +75,7 @@ export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: bo
 
     case ModalActionState.Success:
         return {
-            confirmButtonText: 'Done',
+            confirmButtonText: <FormattedMessage defaultMessage='Done'/>,
             cancelButtonText: '',
             handleConfirm: onHide,
             // eslint-disable-next-line no-undefined
@@ -81,7 +85,7 @@ export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: bo
     default:
         if (isAdmin) {
             return {
-                confirmButtonText: 'Contact support',
+                confirmButtonText: <FormattedMessage defaultMessage='Contact support'/>,
                 cancelButtonText: '',
                 handleConfirm: () => {
                     window.open('https://mattermost.com/support/');
@@ -92,7 +96,7 @@ export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: bo
         }
 
         return {
-            confirmButtonText: 'Done',
+            confirmButtonText: <FormattedMessage defaultMessage='Done'/>,
             cancelButtonText: '',
             handleConfirm: onHide,
             // eslint-disable-next-line no-undefined
@@ -101,68 +105,78 @@ export const getUpgradeModalButtons = (isAdmin: boolean, isServerTeamEdition: bo
     }
 };
 
+const PortalLink = styled.a.attrs(() => {
+    return {
+        href: 'https://customers.mattermost.com/signup',
+        target: '_blank',
+        rel: 'noreferrer',
+    };
+})``;
+
 export const getUpgradeModalCopy = (
     isAdmin: boolean,
     isServerTeamEdition: boolean,
     state: ModalActionState,
     messageType: AdminNotificationType,
-) : ModalContents => {
-    let titleText = '';
-    let helpText : React.ReactNode = '';
+): ModalContents => {
+    let titleText: React.ReactNode = '';
+    let helpText: React.ReactNode = '';
 
     switch (state) {
     case ModalActionState.Success:
         if (isAdmin) {
-            const expiryDate = moment().add('days', 30).format('MMMM D, YYYY');
+            const expiryDate = DateTime.now().plus({days: 30}).toLocaleString(DateTime.DATE_FULL);
             return {
-                titleText: 'Your 30-day trial has started',
+                titleText: <FormattedMessage defaultMessage='Your 30-day trial has started'/>,
                 helpText: (
                     <span>
-                        {`Your trial license expires on ${expiryDate}. You can purchase a license at any time through the `}
-                        <a
-                            href='https://customers.mattermost.com/signup'
-                            target={'_blank'}
-                            rel='noreferrer'
-                        >{'Customer Portal'}</a>
-                        {' to avoid any disruption.'}
+                        <FormattedMessage
+                            defaultMessage='Your trial license expires on {expiryDate}. You can purchase a license at any time through the <PortalLink>Customer Portal</PortalLink> to avoid any disruption.'
+                            values={{expiryDate, PortalLink}}
+                        />
                     </span>
                 ),
             };
         }
 
         return {
-            titleText: 'Thank you!',
-            helpText: 'Your System Admin has been notified',
+            titleText: <FormattedMessage defaultMessage='Thank you!'/>,
+            helpText: <FormattedMessage defaultMessage='Your System Admin has been notified'/>,
         };
 
     case ModalActionState.Uninitialized:
     case ModalActionState.Loading:
         switch (messageType) {
         case AdminNotificationType.PLAYBOOK:
-            titleText = 'A playbook for every process';
-            helpText = 'Your subscription allows one playbook per team. Upgrade your subscription and create multiple playbooks with unique workflows for each team.';
+            titleText = <FormattedMessage defaultMessage='A playbook for every process'/>;
+            helpText = <FormattedMessage defaultMessage='Your subscription allows one playbook per team. Upgrade your subscription and create multiple playbooks with unique workflows for each team.'/>;
             break;
         case AdminNotificationType.VIEW_TIMELINE:
         case AdminNotificationType.MESSAGE_TO_TIMELINE:
-            titleText = 'Add more to your timeline';
-            helpText = 'Save important messages for a complete picture that streamlines retrospectives.';
+            titleText = <FormattedMessage defaultMessage='Add more to your timeline'/>;
+            helpText = <FormattedMessage defaultMessage='Save important messages for a complete picture that streamlines retrospectives.'/>;
             break;
         case AdminNotificationType.PLAYBOOK_GRANULAR_ACCESS:
-            titleText = 'Put your team in control';
-            helpText = 'Manage permission for who can view, modify, and run this playbook.';
+            titleText = <FormattedMessage defaultMessage='Put your team in control'/>;
+            helpText = <FormattedMessage defaultMessage='Manage permission for who can view, modify, and run this playbook.'/>;
             break;
         case AdminNotificationType.PLAYBOOK_CREATION_RESTRICTION:
-            titleText = 'Put your team in control';
-            helpText = 'Every team\'s structure is different. You can manage which users in the team can create playbooks.';
+            titleText = <FormattedMessage defaultMessage='Put your team in control'/>;
+            helpText = <FormattedMessage defaultMessage="Every team's structure is different. You can manage which users in the team can create playbooks."/>;
             break;
         case AdminNotificationType.EXPORT_CHANNEL:
-            titleText = 'Save your playbook run history';
-            helpText = 'Export the channel of your playbook run and save it for later analysis.';
+            titleText = <FormattedMessage defaultMessage='Save your playbook run history'/>;
+            helpText = <FormattedMessage defaultMessage='Export the channel of your playbook run and save it for later analysis.'/>;
             break;
         }
 
         if (!isAdmin) {
-            helpText += ' Notify your System Admin to upgrade.';
+            helpText = (
+                <>
+                    {helpText}
+                    <FormattedMessage defaultMessage='Notify your System Admin to upgrade.'/>
+                </>
+            );
         } else if (isServerTeamEdition) {
             helpText = (
                 <>
@@ -178,11 +192,11 @@ export const getUpgradeModalCopy = (
         };
     default:
         if (isAdmin) {
-            titleText = 'Your license could not be generated';
-            helpText = 'Please check the system logs for more information.';
+            titleText = <FormattedMessage defaultMessage='Your license could not be generated'/>;
+            helpText = <FormattedMessage defaultMessage='Please check the system logs for more information.'/>;
         } else {
-            titleText = 'There was an error';
-            helpText = 'We weren\'t able to notify the System Admin.';
+            titleText = <FormattedMessage defaultMessage='There was an error'/>;
+            helpText = <FormattedMessage defaultMessage="We weren't able to notify the System Admin."/>;
         }
 
         return {

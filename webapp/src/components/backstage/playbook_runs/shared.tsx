@@ -3,9 +3,9 @@
 
 import styled, {css} from 'styled-components';
 
-import StatusBadge from 'src/components/backstage/playbook_runs/status_badge';
+import StatusBadge from 'src/components/backstage/status_badge';
 
-import {PrimaryButton, SecondaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';
 
 export const Container = styled.div`
@@ -29,7 +29,8 @@ export const TabPageContainer = styled.div`
 `;
 
 export const Title = styled.div`
-    ${SemiBoldHeading}
+    ${SemiBoldHeading} {
+    }
 
     color: var(--button-bg);
     font-size: 18px;
@@ -41,7 +42,7 @@ export const Content = styled.div`
     color: var(--center-channel-color);
     margin: 8px 0 0 0;
     padding: 0 8px 4px;
-    border: 1px solid var(--center-channel-color-08);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 8px;
 `;
 
@@ -70,10 +71,28 @@ export const SecondaryButtonLargerRight = styled(SecondaryButtonLarger)`
     margin-left: auto;
 `;
 
+export const ExpandRight = styled.div`
+    margin-left: auto;
+`;
+
+export const HorizontalSpacer = styled.div<{ size: number }>`
+    margin-left: ${(props) => props.size}px;
+`;
+
+export const VerticalSpacer = styled.div<{ size: number }>`
+    margin-top: ${(props) => props.size}px;
+`;
+
 export const PrimaryButtonRight = styled(PrimaryButton)`
     height: 26px;
     padding: 0 14px;
     margin-left: auto;
+    font-size: 12px;
+`;
+
+export const PrimaryButtonLarger = styled(PrimaryButton)`
+    padding: 0 16px;
+    height: 36px;
     font-size: 12px;
 `;
 
@@ -82,4 +101,10 @@ export const Badge = styled(StatusBadge)`
     position: unset;
     height: unset;
     white-space: nowrap;
+`;
+
+export const Icon16 = styled.i`
+    && {
+        font-size: 16px;
+    }
 `;

@@ -12,22 +12,26 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels'
 import {getUsers} from 'mattermost-redux/selectors/entities/common';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
-import {$ID, IDMappedObjects, Dictionary} from 'mattermost-redux/types/utilities';
+import {IDMappedObjects} from 'mattermost-redux/types/utilities';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
-import {haveIChannelPermission, haveISystemPermission} from 'mattermost-redux/selectors/entities/roles';
+import {
+    haveIChannelPermission,
+    haveISystemPermission,
+} from 'mattermost-redux/selectors/entities/roles';
 
 import Permissions from 'mattermost-redux/constants/permissions';
 
 import {pluginId} from 'src/manifest';
-import {PlaybookRun, playbookRunIsActive} from 'src/types/playbook_run';
+import {playbookRunIsActive} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter, TimelineEventsFilterDefault} from 'src/types/rhs';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
 import {ChecklistItemsFilter, ChecklistItemsFilterDefault} from 'src/types/playbook';
+import {PlaybooksPluginState} from 'src/reducer';
 
-//@ts-ignore GlobalState is not complete
-const pluginState = (state: GlobalState) => state['plugins-' + pluginId] || {};
+// Assert known typing
+const pluginState = (state: GlobalState): PlaybooksPluginState => state['plugins-' + pluginId as keyof GlobalState] as unknown as PlaybooksPluginState || {} as PlaybooksPluginState;
 
 export const selectToggleRHS = (state: GlobalState): () => void => pluginState(state).toggleRHSFunction;
 
@@ -35,24 +39,19 @@ export const isPlaybookRunRHSOpen = (state: GlobalState): boolean => pluginState
 
 export const getIsRhsExpanded = (state: WebGlobalState): boolean => state.views.rhs.isSidebarExpanded;
 
-export const getAdminAnalytics = (state: GlobalState): Dictionary<number> => state.entities.admin.analytics as Dictionary<number>;
+export const getAdminAnalytics = (state: GlobalState): Record<string, number> => state.entities.admin.analytics as Record<string, number>;
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
-export const isDisabledOnCurrentTeam = (state: GlobalState): boolean => pluginState(state).myPlaybookRunsByTeam[getCurrentTeamId(state)] === false;
-
 export const globalSettings = (state: GlobalState): GlobalSettings | null => pluginState(state).globalSettings;
 
-// reminder: myPlaybookRunsByTeam indexes teamId->channelId->playbookRun
-const myPlaybookRunsByTeam = (state: GlobalState): Record<string, Record<string, PlaybookRun>> =>
-    pluginState(state).myPlaybookRunsByTeam;
+/**
+ * @returns runs indexed by teamId->{channelId->playbookRun}
+ */
+export const myPlaybookRunsByTeam = (state: GlobalState) => pluginState(state).myPlaybookRunsByTeam;
 
 export const canIPostUpdateForRun = (state: GlobalState, channelId: string, teamId: string) => {
-    const canPost = haveIChannelPermission(state, {
-        channel: channelId,
-        team: teamId,
-        permission: Permissions.READ_CHANNEL,
-    });
+    const canPost = haveIChannelPermission(state, teamId, channelId, Permissions.READ_CHANNEL);
 
     const canManageSystem = haveISystemPermission(state, {
         channel: channelId,
@@ -64,6 +63,7 @@ export const canIPostUpdateForRun = (state: GlobalState, channelId: string, team
 };
 
 export const inPlaybookRunChannel = createSelector(
+    'inPlaybookRunChannel',
     getCurrentTeamId,
     getCurrentChannelId,
     myPlaybookRunsByTeam,
@@ -73,6 +73,7 @@ export const inPlaybookRunChannel = createSelector(
 );
 
 export const currentPlaybookRun = createSelector(
+    'currentPlaybookRun',
     getCurrentTeamId,
     getCurrentChannelId,
     myPlaybookRunsByTeam,
@@ -84,6 +85,7 @@ export const currentPlaybookRun = createSelector(
 const emptyChecklistState = {} as Record<number, boolean>;
 
 export const currentChecklistCollapsedState = createSelector(
+    'currentChecklistCollapsedState',
     getCurrentChannelId,
     pluginState,
     (channelId, plugin) => {
@@ -92,10 +94,14 @@ export const currentChecklistCollapsedState = createSelector(
 );
 
 export const currentChecklistAllCollapsed = createSelector(
+    'currentChecklistAllCollapsed',
     currentPlaybookRun,
     currentChecklistCollapsedState,
     (playbookRun, checklistsState) => {
-        for (let i = 0; i < playbookRun?.checklists.length; i++) {
+        if (!playbookRun) {
+            return true;
+        }
+        for (let i = 0; i < playbookRun.checklists.length; i++) {
             if (!checklistsState[i]) {
                 return false;
             }
@@ -110,15 +116,17 @@ export const currentChecklistItemsFilter = (state: GlobalState): ChecklistItemsF
 };
 
 export const myActivePlaybookRunsList = createSelector(
+    'myActivePlaybookRunsList',
     getCurrentTeamId,
     myPlaybookRunsByTeam,
     (teamId, playbookRunMapByTeam) => {
-        if (!playbookRunMapByTeam[teamId]) {
+        const runMap = playbookRunMapByTeam[teamId];
+        if (!runMap) {
             return [];
         }
 
         // return active playbook runs, sorted descending by create_at
-        return Object.values(playbookRunMapByTeam[teamId])
+        return Object.values(runMap)
             .filter((i) => playbookRunIsActive(i))
             .sort((a, b) => b.create_at - a.create_at);
     },
@@ -141,6 +149,7 @@ export const rhsEventsFilterForChannel = (state: GlobalState, channelId: string)
 };
 
 export const lastUpdatedByPlaybookRunId = createSelector(
+    'lastUpdatedByPlaybookRunId',
     getCurrentTeamId,
     myPlaybookRunsByTeam,
     (teamId, playbookRunsMapByTeam) => {
@@ -161,7 +170,7 @@ const PROFILE_SET_ALL = 'all';
 // sortAndInjectProfiles is an unexported function copied from mattermost-redux, it is called
 // whenever a function returns a populated list of UserProfiles. Since getProfileSetForChannel is
 // new, we have to sort and inject profiles before returning the list.
-function sortAndInjectProfiles(profiles: IDMappedObjects<UserProfile>, profileSet?: 'all' | Array<$ID<UserProfile>> | Set<$ID<UserProfile>>): Array<UserProfile> {
+function sortAndInjectProfiles(profiles: IDMappedObjects<UserProfile>, profileSet?: 'all' | Array<UserProfile['id']> | Set<UserProfile['id']>): Array<UserProfile> {
     let currentProfiles: UserProfile[] = [];
 
     if (typeof profileSet === 'undefined') {
@@ -187,6 +196,7 @@ export const numPlaybooksByTeam = (state: GlobalState): Record<string, number> =
     pluginState(state).numPlaybooksByTeam;
 
 export const currentTeamNumPlaybooks = createSelector(
+    'currentTeamNumPlaybooks',
     getCurrentTeamId,
     numPlaybooksByTeam,
     (teamId, playbooksPerTeamMap) => {
@@ -198,6 +208,7 @@ export const isPostMenuModalVisible = (state: GlobalState): boolean =>
     pluginState(state).postMenuModalVisibility;
 
 export const isCurrentUserAdmin = createSelector(
+    'isCurrentUserAdmin',
     getCurrentUser,
     (user) => {
         const rolesArray = user.roles.split(' ');
@@ -208,6 +219,7 @@ export const isCurrentUserAdmin = createSelector(
 export const hasViewedByChannelID = (state: GlobalState) => pluginState(state).hasViewedByChannel;
 
 export const isTeamEdition = createSelector(
+    'isTeamEdition',
     getConfig,
     (config) => config.BuildEnterpriseReady !== 'true',
 );
@@ -215,6 +227,7 @@ export const isTeamEdition = createSelector(
 const rhsAboutCollapsedState = (state: GlobalState): Record<string, boolean> => pluginState(state).rhsAboutCollapsedByChannel;
 
 export const currentRHSAboutCollapsedState = createSelector(
+    'currentRHSAboutCollapsedState',
     getCurrentChannelId,
     rhsAboutCollapsedState,
     (channelId, stateByChannel) => {

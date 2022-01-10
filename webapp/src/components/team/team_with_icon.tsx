@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {useIntl} from 'react-intl';
 
 import {Team} from 'mattermost-redux/types/teams';
 import {Client4} from 'mattermost-redux/client';
@@ -16,6 +17,7 @@ interface Props {
  * otherwise shows team initials
  */
 const TeamWithIcon = (props: Props) => {
+    const {formatMessage} = useIntl();
     function imageURLForTeam(team: any) {
         return team.last_team_icon_update ? Client4.getTeamIconUrl(team.id, team.last_team_icon_update) : null;
     }
@@ -26,7 +28,7 @@ const TeamWithIcon = (props: Props) => {
         icon = (
             <ImageWrapper
                 data-testid='teamIconImage'
-                aria-label={'Team Icon'}
+                aria-label={formatMessage({defaultMessage: 'Team Icon'})}
                 style={{backgroundImage: `url('${teamIconUrl}')`}}
             />
         );
@@ -34,7 +36,7 @@ const TeamWithIcon = (props: Props) => {
         icon = (
             <InitialWrapper
                 data-testid='teamIconInitial'
-                aria-label={'Team Initials'}
+                aria-label={formatMessage({defaultMessage: 'Team Initials'})}
             >
                 {props.team.display_name ? props.team.display_name.replace(/\s/g, '').substring(0, 2) : '??'}
             </InitialWrapper>
@@ -60,7 +62,7 @@ const TeamWrapper = styled.div`
     display: flex;
     flex-direction: row;
     align-items: center;
-    
+
     &.active {
         cursor: pointer;
         color: var(--center-channel-color);
@@ -74,7 +76,7 @@ const NameWrapper = styled.div`
     text-overflow: ellipsis;
 
     .description {
-        color: var(--center-channel-color-56);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
         margin-left: 4px;
     }
 `;
@@ -108,7 +110,7 @@ const ImageWrapper = styled.div`
 const InitialWrapper = styled.div`
     font-size: 14px;
     font-weight: 600;
-    color: #3D3C40;    
+    color: #3D3C40;
     text-align: center;
     text-transform: uppercase;
     display: flex;

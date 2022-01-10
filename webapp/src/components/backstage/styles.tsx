@@ -1,11 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled, {css} from 'styled-components';
+import styled, {css, createGlobalStyle} from 'styled-components';
 import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
+import Creatable from 'react-select/creatable';
 
 import {RegularHeading} from 'src/styles/headings';
+import MarkdownTextbox from 'src/components/markdown_textbox';
+import {pluginId} from 'src/manifest';
 
 export const Banner = styled.div`
     color: var(--button-color);
@@ -21,7 +24,8 @@ export const Banner = styled.div`
 `;
 
 export const BackstageHeader = styled.div`
-    ${RegularHeading}
+    ${RegularHeading} {
+    }
 
     display: flex;
     font-size: 2.8rem;
@@ -73,35 +77,28 @@ export const StyledTextarea = styled.textarea`
     }
 `;
 
-const commonSelectStyle = css`
-    flex-grow: 1;
-    background-color: var(--center-channel-bg);
-
-    .channel-selector__menu-list {
+export const StyledMarkdownTextbox = styled(MarkdownTextbox)`
+    .custom-textarea {
         background-color: var(--center-channel-bg);
-        border: none;
+        border-radius: 4px;
+        padding: 10px 25px 0 16px;
+        font-size: 14px;
+        line-height: 20px;
     }
 
-    .channel-selector__input {
-        color: var(--center-channel-color);
+    .textbox-preview-area {
+        z-index: auto;
     }
+`;
 
-    .channel-selector__option--is-selected {
-        background-color: var(--center-channel-color-08);
-        color: inherit;
-    }
-
-    .channel-selector__option--is-focused {
-        background-color: var(--center-channel-color-16);
-    }
-
-    .channel-selector__control {
+export const GlobalSelectStyle = createGlobalStyle`
+    .playbooks-rselect__control.playbooks-rselect__control {
         transition: all 0.15s ease;
         transition-delay: 0s;
         background-color: transparent;
         border-radius: 4px;
         border: none;
-        box-shadow: inset 0 0 0 1px var(--center-channel-color-16);
+        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
         width: 100%;
         font-size: 14px;
 
@@ -110,36 +107,83 @@ const commonSelectStyle = css`
         }
     }
 
-    .channel-selector__option {
-        &:active {
-            background-color: var(--center-channel-color-08);
-        }
+    .playbooks-rselect--is-disabled {
+        opacity: 0.56;
     }
 
-    .channel-selector__single-value {
-        color: var(--center-channel-color);
-    }
-
-    .channel-selector__multi-value {
-        height: 20px;
-        line-height: 19px;
-
-        border-radius: 10px;
-        padding-left: 8px;
-
-        .channel-selector__multi-value__label {
-            padding: 0;
+    .playbooks-rselect__control,
+    .playbooks-rselect__menu {
+        .playbooks-rselect__menu-list {
+            background-color: var(--center-channel-bg);
+            border: none;
         }
-        .channel-selector__multi-value__remove {
+
+        .playbooks-rselect__input {
+            color: var(--center-channel-color);
+        }
+
+        .playbooks-rselect__option--is-selected {
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
+            color: inherit;
+        }
+
+        .playbooks-rselect__option--is-focused {
+            background-color: rgba(var(--center-channel-color-rgb), 0.16);
+        }
+
+        .playbooks-rselect__option {
+            &:active {
+                background-color: rgba(var(--center-channel-color-rgb), 0.08);
+            }
+        }
+
+        .playbooks-rselect__single-value {
+            color: var(--center-channel-color);
+        }
+
+        .playbooks-rselect__multi-value {
+            height: 20px;
+            line-height: 19px;
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
+            border-radius: 10px;
+            padding-left: 8px;
+
+            .playbooks-rselect__multi-value__label {
+                padding: 0;
+                color: var(--center-channel-color);
+            }
+
+            .playbooks-rselect__multi-value__remove {
+                color: rgba(var(--center-channel-bg-rgb), 0.80);
+            }
         }
     }
 `;
 
-export const StyledAsyncSelect = styled(AsyncSelect)`
+const commonSelectStyle = css`
+    flex-grow: 1;
+    background-color: var(--center-channel-bg);
+`;
+
+export const StyledAsyncSelect = styled(AsyncSelect).attrs((props) => {
+    return {
+        classNamePrefix: 'playbooks-rselect',
+        ...props,
+    };
+})`
     ${commonSelectStyle}
 `;
 
-export const StyledSelect = styled(Select)`
+export const StyledSelect = styled(Select).attrs((props) => {
+    return {
+        classNamePrefix: 'playbooks-rselect',
+        ...props,
+    };
+})`
+    ${commonSelectStyle}
+`;
+
+export const StyledCreatable = styled(Creatable)`
     ${commonSelectStyle}
 `;
 
@@ -186,7 +230,7 @@ export const InfoLine = styled.div`
     font-weight: normal;
     font-size: 11px;
     line-height: 16px;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 interface PlaybookRunFilterButtonProps {
@@ -194,11 +238,12 @@ interface PlaybookRunFilterButtonProps {
 }
 
 export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProps>`
+	flex-grow: 1;
     display: flex;
     align-items: center;
     border: none;
     border-radius: 4px;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
     background: transparent;
     cursor: pointer;
     font-weight: 600;
@@ -213,12 +258,12 @@ export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProp
     height: 4rem;
 
     :hover {
-        background: var(--center-channel-color-08);
-        color: var(--center-channel-color-72);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
     :active {
-        background: var(--button-bg-08);
+        background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     }
 
@@ -230,7 +275,7 @@ export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProp
 
     ${(props) => props.active && css`
         cursor: pointer;
-        background: var(--button-bg-08);
+        background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     `}
 `;

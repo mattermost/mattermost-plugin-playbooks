@@ -2,6 +2,9 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {useIntl} from 'react-intl';
+
+import styled from 'styled-components';
 
 import UpgradeRetrospectiveSvg from 'src/components/assets/upgrade_retrospective_svg';
 import {Container, Left, Right} from 'src/components/backstage/playbook_runs/shared';
@@ -17,27 +20,35 @@ import TimelineRetro from './timeline_retro';
 interface Props {
     playbookRun: PlaybookRun;
     deleteTimelineEvent: (id: string) => void;
+    setRetrospective: (retrospective: string) => void;
 }
 
 export const Retrospective = (props: Props) => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
+    const {formatMessage} = useIntl();
 
     if (!allowRetrospectiveAccess) {
         return (
             <UpgradeBanner
                 background={<UpgradeRetrospectiveSvg/>}
-                titleText={'Publish retrospective report and access the timeline'}
-                helpText={'Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes.'}
+                titleText={formatMessage({defaultMessage: 'Publish retrospective report and access the timeline'})}
+                helpText={formatMessage({defaultMessage: 'Celebrate success and learn from mistakes with retrospective reports. Filter timeline events for process review, stakeholder engagement, and auditing purposes.'})}
                 notificationType={AdminNotificationType.RETROSPECTIVE}
                 verticalAdjustment={650}
             />
         );
     }
-
     return (
         <Container>
             <Left>
-                <Report playbookRun={props.playbookRun}/>
+                {props.playbookRun.retrospective_enabled ?
+                    <Report
+                        playbookRun={props.playbookRun}
+                        setRetrospective={props.setRetrospective}
+                    /> :
+                    <RetrospectiveDisabledText id={'retrospective-disabled-msg'}>
+                        {formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}
+                    </RetrospectiveDisabledText>}
             </Left>
             <Right>
                 <TimelineRetro
@@ -48,3 +59,10 @@ export const Retrospective = (props: Props) => {
         </Container>
     );
 };
+
+const RetrospectiveDisabledText = styled.div`
+    font-weight: normal;
+    font-size: 20px;
+    color: var(--center-channel-color);
+    text-align: left;
+`;

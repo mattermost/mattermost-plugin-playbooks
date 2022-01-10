@@ -6,24 +6,32 @@ import classNames from 'classnames';
 import React from 'react';
 import {Modal} from 'react-bootstrap';
 
-import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
+import {FormattedMessage} from 'react-intl';
+
+import {PrimaryButton, TertiaryButton, DestructiveButton} from 'src/components/assets/buttons';
 
 type Props = {
     className?: string;
     onHide: () => void;
     modalHeaderText: React.ReactNode;
     show?: boolean;
+    showCancel?: boolean;
     handleCancel?: (() => void) | null;
     handleConfirm?: (() => void) | null;
     confirmButtonText?: React.ReactNode;
     confirmButtonClassName?: string;
     cancelButtonText?: React.ReactNode;
     isConfirmDisabled?: boolean;
+    isConfirmDestructive?: boolean;
     id: string;
     autoCloseOnCancelButton?: boolean;
     autoCloseOnConfirmButton?: boolean;
     enforceFocus?: boolean;
     footer?: React.ReactNode;
+    components?: Partial<{
+        Header: typeof Modal.Header;
+        FooterContainer: typeof DefaultFooterContainer;
+    }>;
 };
 
 type State = {
@@ -44,7 +52,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         this.setState({show: false}, () => {
             setTimeout(this.props.onHide, 150);
         });
-    }
+    };
 
     handleCancel = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
@@ -52,7 +60,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
             this.onHide();
         }
         this.props.handleCancel?.();
-    }
+    };
 
     handleConfirm = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
@@ -61,33 +69,35 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         }
 
         this.props.handleConfirm?.();
-    }
+    };
 
     render() {
         let confirmButton;
         if (this.props.handleConfirm) {
-            let confirmButtonText: React.ReactNode = 'Confirm';
+            let confirmButtonText: React.ReactNode = <FormattedMessage defaultMessage='Confirm'/>;
             if (this.props.confirmButtonText) {
                 confirmButtonText = this.props.confirmButtonText;
             }
 
+            const ButtonComponent = this.props.isConfirmDestructive ? DestructiveButton : PrimaryButton;
+
             confirmButton = (
-                <PrimaryButton
+                <ButtonComponent
                     type='submit'
-                    className={classNames(`confirm ${this.props.confirmButtonClassName}`, {
+                    className={classNames('confirm', this.props.confirmButtonClassName, {
                         disabled: this.props.isConfirmDisabled,
                     })}
                     onClick={this.handleConfirm}
                     disabled={this.props.isConfirmDisabled}
                 >
                     {confirmButtonText}
-                </PrimaryButton>
+                </ButtonComponent>
             );
         }
 
         let cancelButton;
-        if (this.props.handleCancel) {
-            let cancelButtonText: React.ReactNode = 'Cancel';
+        if (this.props.handleCancel || this.props.showCancel) {
+            let cancelButtonText: React.ReactNode = <FormattedMessage defaultMessage='Cancel'/>;
             if (this.props.cancelButtonText) {
                 cancelButtonText = this.props.cancelButtonText;
             }
@@ -103,6 +113,9 @@ export default class GenericModal extends React.PureComponent<Props, State> {
             );
         }
 
+        const Header = this.props.components?.Header || Modal.Header;
+        const FooterContainer = this.props.components?.FooterContainer || DefaultFooterContainer;
+
         return (
             <StyledModal
                 dialogClassName={classNames('a11y__modal GenericModal', this.props.className)}
@@ -115,14 +128,14 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 aria-labelledby={`${this.props.id}_heading`}
                 id={this.props.id}
             >
-                <Modal.Header
+                <Header
                     className='GenericModal__header'
                     closeButton={true}
                 >
                     <ModalHeading id={`${this.props.id}_heading`}>
                         {this.props.modalHeaderText}
                     </ModalHeading>
-                </Modal.Header>
+                </Header>
                 <form>
                     <Modal.Body>
                         {this.props.children}
@@ -142,7 +155,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
     }
 }
 
-const StyledModal = styled(Modal)`
+export const StyledModal = styled(Modal)`
     &&& {
         /* content-spacing */
         .modal-header {
@@ -160,7 +173,12 @@ const StyledModal = styled(Modal)`
         .close {
             margin: 12px 12px 0 0;
         }
+        .modal-dialog {
+            margin-top: calc(50vh - 260px);
+        }
     }
+
+	z-index: 1040;
 
     &&&& {
         /* control correction-overrides */
@@ -173,20 +191,20 @@ const StyledModal = styled(Modal)`
     }
 `;
 
-const Buttons = styled.div`
+export const Buttons = styled.div`
     display: flex;
     flex-direction: row;
     justify-content: center;
     gap: 10px;
 `;
 
-const FooterContainer = styled.div`
+export const DefaultFooterContainer = styled.div`
     display: flex;
     flex-direction: column;
     align-items: flex-end;
 `;
 
-const ModalHeading = styled.h1`
+export const ModalHeading = styled.h1`
     font-size: 22px;
     line-height: 28px;
     color: var(--center-channel-color);
@@ -211,3 +229,16 @@ export const Label = styled.label`
     margin-bottom: 8px;
 `;
 
+export const InlineLabel = styled.label`
+    z-index: 1;
+
+    width: max-content;
+    margin: 0 0 -8px 12px;
+    padding: 0 3px;
+    background: var(--center-channel-bg);
+
+    font-weight: normal;
+    font-size: 10px;
+    line-height: 14px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+`;

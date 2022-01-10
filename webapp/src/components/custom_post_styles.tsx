@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 export const CustomPostContainer = styled.div`
     max-width: 640px;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.04);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
     border-radius: 4px;
     display: flex;

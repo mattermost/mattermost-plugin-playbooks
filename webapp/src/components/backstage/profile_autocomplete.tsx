@@ -1,4 +1,5 @@
 import React from 'react';
+import {useIntl} from 'react-intl';
 
 import {debounce} from 'debounce';
 import AsyncSelect from 'react-select/async';
@@ -24,24 +25,20 @@ const StyledAsyncSelect = styled(AsyncSelect)`
     }
 
     .profile-autocomplete__option--is-selected {
-        background-color: var(--center-channel-color-08);
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     .profile-autocomplete__option--is-focused {
-        background-color: var(--center-channel-color-16);
+        background-color: rgba(var(--center-channel-color-rgb), 0.16);
     }
 
     .profile-autocomplete__control {
-        -webkit-transition: all 0.15s ease;
-        -webkit-transition-delay: 0s;
-        -moz-transition: all 0.15s ease;
-        -o-transition: all 0.15s ease;
         transition: all 0.15s ease;
         transition-delay: 0s;
         background-color: transparent;
         border-radius: 4px;
         border: none;
-        box-shadow: inset 0 0 0 1px var(--center-channel-color-16);
+        box-shadow: inset 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
         width: 100%;
         height: 4rem;
         font-size: 14px;
@@ -55,7 +52,7 @@ const StyledAsyncSelect = styled(AsyncSelect)`
             left: 16px;
             top: 8px;
             position: absolute;
-            color: var(--center-channel-color-56);
+            color: rgba(var(--center-channel-color-rgb), 0.56);
             content: '\f349';
             font-size: 18px;
             font-family: 'compass-icons', mattermosticons;
@@ -66,7 +63,7 @@ const StyledAsyncSelect = styled(AsyncSelect)`
 
     .profile-autocomplete__option {
         &:active {
-            background-color: var(--center-channel-color-08);
+            background-color: rgba(var(--center-channel-color-rgb), 0.08);
         }
     }
 `;
@@ -80,6 +77,8 @@ interface Props {
 }
 
 const ProfileAutocomplete = (props: Props) => {
+    const {formatMessage} = useIntl();
+
     const onChange = (userAdded: UserProfile) => {
         props.onAddUser(userAdded.id);
     };
@@ -140,7 +139,7 @@ const ProfileAutocomplete = (props: Props) => {
             openMenuOnClick={true}
             isClearable={false}
             value={null}
-            placeholder={'Add People'}
+            placeholder={formatMessage({defaultMessage: 'Add People'})}
             components={{DropdownIndicator: () => null, IndicatorSeparator: () => null}}
             styles={customStyles}
             classNamePrefix='profile-autocomplete'
@@ -151,7 +150,7 @@ const ProfileAutocomplete = (props: Props) => {
 export default ProfileAutocomplete;
 
 const customStyles = {
-    control: (provided: ControlProps<UserProfile>) => ({
+    control: (provided: ControlProps<UserProfile, boolean>) => ({
         ...provided,
         minHeight: 34,
     }),

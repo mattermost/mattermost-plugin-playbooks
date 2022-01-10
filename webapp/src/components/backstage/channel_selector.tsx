@@ -1,11 +1,13 @@
 import React from 'react';
 import {SelectComponentsConfig, components as defaultComponents} from 'react-select';
 import {useSelector} from 'react-redux';
-import {getMyChannels, getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getMyChannels} from 'mattermost-redux/selectors/entities/channels';
 import General from 'mattermost-redux/constants/general';
 
 import {Channel} from 'mattermost-redux/types/channels';
 import {GlobalState} from 'mattermost-redux/types/store';
+
+import {useIntl} from 'react-intl';
 
 import {StyledSelect} from './styles';
 
@@ -14,7 +16,7 @@ export interface Props {
     onChannelsSelected: (channelIds: string[]) => void;
     channelIds: string[];
     isClearable?: boolean;
-    selectComponents?: SelectComponentsConfig<Channel>;
+    selectComponents?: SelectComponentsConfig<Channel, boolean>;
     isDisabled: boolean;
     captureMenuScroll: boolean;
     shouldRenderValue: boolean;
@@ -22,15 +24,34 @@ export interface Props {
 }
 
 const getMyPublicAndPrivateChannels = (state: GlobalState) => getMyChannels(state).filter((channel) =>
-    channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL,
+    channel.type !== General.DM_CHANNEL && channel.type !== General.GM_CHANNEL && channel.delete_at === 0,
 );
 
-type GetChannelType = (channelID: string) => Channel
+const filterChannels = (channelIDs: string[], channels: Channel[]): Channel[] => {
+    if (!channelIDs || !channels) {
+        return [];
+    }
 
-const ChannelSelector = (props: Props & { className?: string }) => {
+    const channelsMap = new Map<string, Channel>();
+    channels.forEach((channel: Channel) => channelsMap.set(channel.id, channel));
+
+    const result: Channel[] = [];
+    channelIDs.forEach((id: string) => {
+        let filteredChannel: Channel;
+        const channel = channelsMap.get(id);
+        if (channel && channel.delete_at === 0) {
+            filteredChannel = channel;
+        } else {
+            filteredChannel = {display_name: '', id} as Channel;
+        }
+        result.push(filteredChannel);
+    });
+    return result;
+};
+
+const ChannelSelector = (props: Props & {className?: string}) => {
+    const {formatMessage} = useIntl();
     const selectableChannels = useSelector(getMyPublicAndPrivateChannels);
-
-    const getChannelFromID = useSelector<GlobalState, GetChannelType>((state) => (channelID) => getChannel(state, channelID) || {display_name: 'Unknown Channel', id: channelID});
 
     const onChange = (channels: Channel[], {action}: {action: string}) => {
         if (action === 'clear') {
@@ -47,7 +68,7 @@ const ChannelSelector = (props: Props & { className?: string }) => {
     const formatOptionLabel = (channel: Channel) => {
         return (
             <React.Fragment>
-                {channel.display_name}
+                {channel.display_name || formatMessage({defaultMessage: 'Unknown Channel'})}
             </React.Fragment>
         );
     };
@@ -64,7 +85,7 @@ const ChannelSelector = (props: Props & { className?: string }) => {
                channel.id.toLowerCase() === term.toLowerCase();
     };
 
-    const values = props.channelIds?.map(getChannelFromID);
+    const values = filterChannels(props.channelIds, selectableChannels);
 
     const components = props.selectComponents || defaultComponents;
 
@@ -83,8 +104,7 @@ const ChannelSelector = (props: Props & { className?: string }) => {
             openMenuOnClick={true}
             isClearable={props.isClearable}
             value={values}
-            placeholder={props.placeholder || 'Select a channel'}
-            classNamePrefix='channel-selector'
+            placeholder={props.placeholder || formatMessage({defaultMessage: 'Select a channel'})}
             components={components}
             isDisabled={props.isDisabled}
             captureMenuScroll={props.captureMenuScroll}

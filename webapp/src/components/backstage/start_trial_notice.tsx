@@ -1,34 +1,29 @@
-import React, {FC} from 'react';
+import React from 'react';
+import {FormattedMessage} from 'react-intl';
+import styled from 'styled-components';
+
+const EXT = {target: '_blank', rel: 'noreferrer'};
+
+const AgreementLink = styled.a.attrs(() => ({
+    ...EXT,
+    href: 'https://mattermost.com/software-evaluation-agreement/',
+}))``;
+
+const PrivacyLink = styled.a.attrs(() => ({
+    ...EXT,
+    href: 'https://mattermost.com/privacy-policy/',
+}))``;
 
 const StartTrialNotice = () => {
-    const agreement = (
-        <a
-            href={'https://mattermost.com/software-evaluation-agreement/'}
-            target={'_blank'}
-            rel='noreferrer'
-        >
-            {'Mattermost Software Evaluation Agreement'}
-        </a>
-    );
-
-    const policy = (
-        <a
-            href={'https://mattermost.com/privacy-policy/'}
-            target={'_blank'}
-            rel='noreferrer'
-        >
-            {'Privacy Policy'}
-        </a>
-    );
-
-    const startTrial = (
-        <b>{'Start trial'}</b>
-    );
-
     return (
-        <p>
-            {'By clicking '}{startTrial}{', I agree to the '}{agreement}{', '}{policy}{', and receiving product emails.'}
-        </p>
+        <FormattedMessage
+            defaultMessage='By clicking <b>Start trial</b>, I agree to the <AgreementLink>Mattermost Software Evaluation Agreement</AgreementLink>, <PrivacyLink>Privacy Policy</PrivacyLink>, and receiving product emails.'
+            values={{
+                b: (inner: React.ReactNode) => <b>{inner}</b>,
+                AgreementLink: (inner: React.ReactNode) => <AgreementLink>{inner}</AgreementLink>,
+                PrivacyLink: (inner: React.ReactNode) => <PrivacyLink>{inner}</PrivacyLink>,
+            }}
+        />
     );
 };
 

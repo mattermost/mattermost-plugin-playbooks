@@ -85,23 +85,6 @@ Cypress.Commands.add('startPlaybookRunFromPostMenu', (playbookName, playbookRunN
     cy.startPlaybookRun(playbookName, playbookRunName);
 });
 
-Cypress.Commands.add('openBackstage', () => {
-    cy.get('#lhsHeader', {timeout: 120000}).should('exist').within(() => {
-        // # Wait until the channel loads enough to show the post textbox.
-        cy.get('#post-create').should('exist');
-        cy.wait(2000);
-
-        // # Click hamburger main menu
-        cy.get('#sidebarHeaderDropdownButton').click();
-
-        // * Dropdown menu should be visible
-        cy.get('.dropdown-menu').should('exist').within(() => {
-            // Click main menu option
-            cy.findByText('Playbooks').should('exist').click();
-        });
-    });
-});
-
 // Create playbook
 Cypress.Commands.add('createPlaybook', (teamName, playbookName) => {
     cy.visit('/playbooks/playbooks/new');
@@ -161,6 +144,10 @@ Cypress.Commands.add('openChannelSelector', () => {
     cy.findByText('Select a channel').click({force: true});
 });
 
+Cypress.Commands.add('openCategorySelector', () => {
+    cy.get('#playbook-automation-categorize-playbook-run input').click({force: true});
+});
+
 Cypress.Commands.add('addInvitedUser', (userName) => {
     cy.get('.invite-users-selector__menu').within(() => {
         cy.findByText(userName).click({force: true});
@@ -174,38 +161,51 @@ Cypress.Commands.add('selectOwner', (userName) => {
 });
 
 Cypress.Commands.add('selectChannel', (channelName) => {
-    cy.get('.channel-selector__menu').within(() => {
+    cy.get('#playbook-automation-broadcast .playbooks-rselect__menu').within(() => {
         cy.findByText(channelName).click({force: true});
+    });
+});
+
+Cypress.Commands.add('selectCategory', (categoryName) => {
+    cy.get('#playbook-automation-categorize-playbook-run .channel-selector__menu').within(() => {
+        cy.findByText(categoryName).click({force: true});
+    });
+});
+
+Cypress.Commands.add('openReminderSelector', () => {
+    cy.get('#reminder_timer_datetime input').click({force: true});
+});
+
+Cypress.Commands.add('selectReminderTime', (timeText) => {
+    cy.get('#reminder_timer_datetime .playbooks-rselect__menu').within(() => {
+        cy.findByText(timeText).click({force: true});
     });
 });
 
 /**
  * Update the status of the current playbook run through the slash command.
  */
-Cypress.Commands.add('updateStatus', (message, reminder) => {
+Cypress.Commands.add('updateStatus', (message, reminderQuery) => {
     // # Run the slash command to update status.
     cy.executeSlashCommand('/playbook update');
 
     // # Get the interactive dialog modal.
-    cy.get('#interactiveDialogModal').within(() => {
-        // # remove what's there (if this is a second update)
-        cy.findByTestId('messageinput').clear();
+    cy.get('.GenericModal').within(() => {
+        // # remove what's there if applicable, and type the new update in the textbox.
+        cy.findByTestId('update_run_status_textbox').clear().type(message);
 
-        // # Type the new update in the text box.
-        cy.findByTestId('messageinput').type(message);
-
-        if (reminder) {
-            cy.findAllByTestId('autoCompleteSelector').eq(0).within(() => {
-                cy.get('input').type(reminder, {delay: 200}).type('{enter}');
+        if (reminderQuery) {
+            cy.get('#reminder_timer_datetime').within(() => {
+                cy.get('input').type(reminderQuery, {delay: 200, force: true}).type('{enter}', {force: true});
             });
         }
 
         // # Submit the dialog.
-        cy.get('#interactiveDialogSubmit').click();
+        cy.get('button.confirm').click();
     });
 
     // * Verify that the interactive dialog has gone.
-    cy.get('#interactiveDialogModal').should('not.exist');
+    cy.get('.GenericModal').should('not.exist');
 
     // # Return the post ID of the status update.
     return cy.getLastPostId();

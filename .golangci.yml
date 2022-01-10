@@ -41,6 +41,7 @@ linters-settings:
 issues:
   exclude:
     - G404
+    - 'shadow: declaration of "err" shadows declaration at'
   exclude-rules:
     # Exclude some linters from running on tests files.
     - path: _test\.go

@@ -7,7 +7,7 @@ info:
     url: https://mattermost.com/
     email: support@mattermost.com
 servers:
-  - url: http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0
+  - url: http://localhost:8065/plugins/playbooks/api/v0
 paths:
   /runs:
     get:
@@ -110,7 +110,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs' \
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -172,7 +172,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs' \
+            curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/runs' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
             -d '{"name": "Server down in EU cluster", "description": "There is one server in the EU cluster that is not responding since April 12.", "owner_user_id": "bqnbdf8uc0a8yz4i39qrpgkvtg", "team_id": "61ji2mpflefup3cnuif80r5rde", "playbook_id": "0y4a0ntte97cxvfont8y84wa7x"}'
@@ -199,7 +199,7 @@ paths:
   /runs/dialog:
     post:
       summary: Create a new playbook run from dialog
-      description: This is an internal endpoint to create an playbook run from the submission of an interactive dialog, filled by a user in the webapp. See [Interactive Dialogs](https://docs.mattermost.com/developer/interactive-dialogs.html) for more information.
+      description: This is an internal endpoint to create a playbook run from the submission of an interactive dialog, filled by a user in the webapp. See [Interactive Dialogs](https://docs.mattermost.com/developer/interactive-dialogs.html) for more information.
       operationId: createPlaybookRunFromDialog
       security:
         - BearerAuth: []
@@ -294,7 +294,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/owners?team_id=ni8duypfe7bamprxqeffd563gy' \
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs/owners?team_id=ni8duypfe7bamprxqeffd563gy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -315,7 +315,7 @@ paths:
   /runs/channels:
     get:
       summary: Get playbook run channels
-      description: Get all channels associated with an playbook run, filtered by team, status, owner, name and/or members, and sorted by ID, name, status, creation date, end date, team, or owner ID.
+      description: Get all channels associated with a playbook run, filtered by team, status, owner, name and/or members, and sorted by ID, name, status, creation date, end date, team, or owner ID.
       operationId: getChannels
       security:
         - BearerAuth: []
@@ -376,7 +376,7 @@ paths:
             type: string
         - name: search_term
           in: query
-          description: The returned list will contain only the channels associated to an playbook run whose name contains the search term.
+          description: The returned list will contain only the channels associated to a playbook run whose name contains the search term.
           required: false
           example: "server down"
           schema:
@@ -391,7 +391,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/channels?team_id=ni8duypfe7bamprxqeffd563gy' \
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs/channels?team_id=ni8duypfe7bamprxqeffd563gy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -476,7 +476,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/channel/hwrmiyzj3kadcilh3ukfcnsbt6' \
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs/channel/hwrmiyzj3kadcilh3ukfcnsbt6' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -492,7 +492,7 @@ paths:
 
   /runs/{id}:
     get:
-      summary: Get an playbook run
+      summary: Get a playbook run
       operationId: getPlaybookRun
       security:
         - BearerAuth: []
@@ -509,7 +509,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme' \
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -523,7 +523,7 @@ paths:
         500:
           $ref: "#/components/schemas/500"
     patch:
-      summary: Update an playbook run
+      summary: Update a playbook run
       operationId: updatePlaybookRun
       security:
         - BearerAuth: []
@@ -551,7 +551,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PATCH 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme' \
+            curl -X PATCH 'http://localhost:8065/plugins/playbooks/api/v0/runs/mx3xyzdojfgyfdx8sc8of1gdme' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -H 'Content-Type: application/json'\
             -d '{"active_stage": 2}'
@@ -582,7 +582,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/details' \
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/runs/1igmynxs77ywmcbwbsujzktter/details' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -598,7 +598,7 @@ paths:
 
   /runs/{id}/end:
     put:
-      summary: End an playbook run
+      summary: End a playbook run
       operationId: endPlaybookRun
       security:
         - BearerAuth: []
@@ -615,7 +615,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/end' \
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/1igmynxs77ywmcbwbsujzktter/end' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -623,8 +623,8 @@ paths:
         500:
           $ref: "#/components/schemas/500"
     post:
-      summary: End an playbook run from dialog
-      description: This is an internal endpoint to end an playbook run via a confirmation dialog, submitted by a user in the webapp.
+      summary: End a playbook run from dialog
+      description: This is an internal endpoint to end a playbook run via a confirmation dialog, submitted by a user in the webapp.
       operationId: endPlaybookRunDialog
       security:
         - BearerAuth: []
@@ -641,7 +641,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/end' \
+            curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/runs/1igmynxs77ywmcbwbsujzktter/end' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -651,7 +651,7 @@ paths:
 
   /runs/{id}/restart:
     put:
-      summary: Restart an playbook run
+      summary: Restart a playbook run
       operationId: restartPlaybookRun
       security:
         - BearerAuth: []
@@ -668,7 +668,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/end' \
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/1igmynxs77ywmcbwbsujzktter/end' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -678,7 +678,7 @@ paths:
 
   /runs/{id}/status:
     post:
-      summary: Update an playbook run's status
+      summary: Update a playbook run's status
       operationId: status
       security:
         - BearerAuth: []
@@ -713,7 +713,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/update-status' \
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/1igmynxs77ywmcbwbsujzktter/update-status' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
             -d '{"message": "Finishing playbook run because the issue was solved."}'
       responses:
@@ -745,7 +745,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/finish' \
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/1igmynxs77ywmcbwbsujzktter/finish' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -785,7 +785,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/1igmynxs77ywmcbwbsujzktter/owner' \
+            curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/runs/1igmynxs77ywmcbwbsujzktter/owner' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"owner_id": "hx7fqtqxp7nn8129t7e505ls6s"}'
       responses:
@@ -835,7 +835,7 @@ paths:
 
   /runs/{id}/checklists/{checklist}/add:
     put:
-      summary: Add an item to an playbook run's checklist
+      summary: Add an item to a playbook run's checklist
       description: The most common pattern to add a new item is to only send its title as the request payload. By default, it is an open item, with no assignee and no slash command.
       operationId: addChecklistItem
       security:
@@ -883,10 +883,6 @@ paths:
                   format: int64
                   description: The timestamp for the latest modification of the item's state, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item was never modified.
                   example: 1607774621321
-                state_modified_post_id:
-                  type: string
-                  description: The identifier of the message posted by the PlaybookRun Response bot that informs of the latest modification of the item's state.
-                  example: 8nmjfgrkwvokrg13urvo10bx9j
                 assignee_id:
                   type: string
                   description: The identifier of the user that has been assigned to complete this item. If the item has no assignee, this is an empty string.
@@ -896,10 +892,6 @@ paths:
                   format: int64
                   description: The timestamp for the latest modification of the item's assignee, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item never got an assignee.
                   example: 1608897821125
-                assignee_modified_post_id:
-                  type: string
-                  description: The identifier of the message posted by the PlaybookRun Response bot that informs of the latest modification of the item's assignee.
-                  example: ol7h83caow11xfbydhqvyg16b4
                 command:
                   type: string
                   description: The slash command associated with this item. If the item has no slash command associated, this is an empty string
@@ -916,7 +908,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/twcqg0a2m37ydi6ebge3j9ev5z/checklists/1/add' \
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/twcqg0a2m37ydi6ebge3j9ev5z/checklists/1/add' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"title": "Gather information from customer."}'
       responses:
@@ -931,7 +923,7 @@ paths:
 
   /runs/{id}/checklists/{checklist}/reorder:
     put:
-      summary: Reorder an item in an playbook run's checklist
+      summary: Reorder an item in a playbook run's checklist
       operationId: reoderChecklistItem
       security:
         - BearerAuth: []
@@ -973,7 +965,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/yj74zsk7dvtsv6ndsynsps3g5s/checklists/1/reorder' \
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/yj74zsk7dvtsv6ndsynsps3g5s/checklists/1/reorder' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"item_num": 0, "new_location": 2}'
       responses:
@@ -986,7 +978,7 @@ paths:
 
   /runs/{id}/checklists/{checklist}/item/{item}:
     put:
-      summary: Update an item of an playbook run's checklist
+      summary: Update an item of a playbook run's checklist
       description: Update the title and the slash command of an item in one of the playbook run's checklists.
       operationId: itemRename
       security:
@@ -1036,7 +1028,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/6t7jdgyqr7b5sk24zkauhmrb06/checklists/1/item/0' \
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/6t7jdgyqr7b5sk24zkauhmrb06/checklists/1/item/0' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"title": "Gather information from server's logs.", "command": "/jira update ticket"}'
       responses:
@@ -1048,7 +1040,7 @@ paths:
           $ref: "#/components/schemas/500"
 
     delete:
-      summary: Delete an item of an playbook run's checklist
+      summary: Delete an item of a playbook run's checklist
       operationId: itemDelete
       security:
         - BearerAuth: []
@@ -1079,7 +1071,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/zjy2q2iy2jafl0lo2oddos5xn7/checklists/1/item/2' \
+            curl -X DELETE 'http://localhost:8065/plugins/playbooks/api/v0/runs/zjy2q2iy2jafl0lo2oddos5xn7/checklists/1/item/2' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         204:
@@ -1140,7 +1132,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/7l37isroz4e63giev62hs318bn/checklists/1/item/2/state' \
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/7l37isroz4e63giev62hs318bn/checklists/1/item/2/state' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
             -d '{"new_state": "closed"}'
       responses:
@@ -1197,7 +1189,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/7l37isroz4e63giev62hs318bn/checklists/1/item/2/assignee' \
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/runs/7l37isroz4e63giev62hs318bn/checklists/1/item/2/assignee' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
             -d '{"asignee_id": "ruu86intseidqdxjojia41u7l1"}'
       responses:
@@ -1241,7 +1233,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/7l37isroz4e63giev62hs318bn/checklists/1/item/2/run' \
+            curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/runs/7l37isroz4e63giev62hs318bn/checklists/1/item/2/run' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -1281,7 +1273,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/runs/zjy2q2iy2jafl0lo2oddos5xn7/timeline/craxgf4r4trgzrtues3a1t74ac' \
+            curl -X DELETE 'http://localhost:8065/plugins/playbooks/api/v0/runs/zjy2q2iy2jafl0lo2oddos5xn7/timeline/craxgf4r4trgzrtues3a1t74ac' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         204:
@@ -1352,7 +1344,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks?team_id=08fmfasq5wit3qyfmq4mjk0rto&sort=title&direction=asc' \
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/playbooks?team_id=08fmfasq5wit3qyfmq4mjk0rto&sort=title&direction=asc' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -1394,7 +1386,7 @@ paths:
                 description:
                   type: string
                   description: The description of the playbook.
-                  example: A playbook to follow when there is an playbook run regarding the availability of the cloud service.
+                  example: A playbook to follow when there is a playbook run regarding the availability of the cloud service.
                 team_id:
                   type: string
                   description: The identifier of the team where the playbook is in.
@@ -1443,10 +1435,13 @@ paths:
                     type: string
                     description: User ID of the playbook member.
                     example: ilh6s1j4yefbdhxhtlzt179i6m
-                broadcast_channel_id:
-                  description: The ID of the channel where all the status updates will be broadcasted. The team of the broadcast channel must be the same as the playbook's team.
-                  type: string
-                  example: 2zh7rpashwfwapwaqyslmhwbax
+                broadcast_channel_ids:
+                  description: The IDs of the channels where all the status updates will be broadcasted. The team of the broadcast channel must be the same as the playbook's team.
+                  type: array
+                  items:
+                    type: string
+                    description: ID of the broadcast channel.
+                    example: 2zh7rpashwfwapwaqyslmhwbax
                 invited_user_ids:
                   description: A list with the IDs of the members to be automatically invited to the playbook run's channel as soon as the playbook run is created.
                   type: array
@@ -1493,15 +1488,15 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X POST 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks' \
+            curl -X POST 'http://localhost:8065/plugins/playbooks/api/v0/playbooks' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
-            -d '{"title": "Cloud PlaybookRuns", "description": "A playbook to follow when there is an playbook run regarding the availability of the cloud service.", "team_id": "p03rbi6viyztysbqnkvcqyel2i","create_public_playbook_run": true,"checklists": [{"title": "Triage issue","items": [{"title": "Gather information from customer."}]}]}'
+            -d '{"title": "Cloud PlaybookRuns", "description": "A playbook to follow when there is a playbook run regarding the availability of the cloud service.", "team_id": "p03rbi6viyztysbqnkvcqyel2i","create_public_playbook_run": true,"checklists": [{"title": "Triage issue","items": [{"title": "Gather information from customer."}]}]}'
       callbacks:
         playbookRunCreation:
           "{$request.body#/webhook_on_creation_url}":
             post:
               summary: PlaybookRun's creation outgoing webhook.
-              description: When an playbook run is created with this playbook, a POST request is sent to the URL configured in webhook_on_creation_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the playbook run's channel. No retries are made.
+              description: When a playbook run is created with this playbook, a POST request is sent to the URL configured in webhook_on_creation_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the playbook run's channel. No retries are made.
               operationId: webhookOncreation
               requestBody:
                 required: true
@@ -1516,7 +1511,7 @@ paths:
           "{$request.body#/webhook_on_status_update_url}":
             post:
               summary: PlaybookRun's status update outgoing webhook.
-              description: When an playbook run's status is updated, a POST request is sent to the URL configured in webhook_on_status_update_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the playbook run's channel. No retries are made.
+              description: When a playbook run's status is updated, a POST request is sent to the URL configured in webhook_on_status_update_url. The webhook is considered successful if your server returns a response code within the 200-299 range. Otherwise, the webhook is considered failed, and a warning message is posted in the playbook run's channel. No retries are made.
               operationId: webhookOnStatusUpdate
               requestBody:
                 required: true
@@ -1572,7 +1567,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X GET 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy' \
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
@@ -1609,7 +1604,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X PUT 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy' \
+            curl -X PUT 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'\
             -d '{"title": "Playbook","team_id": "ni8duypfe7bamprxqeffd563gy","create_public_playbook_run": true,"checklists": [{"title": "Title","items": [{"title": "Title"}]}]}'
       responses:
@@ -1639,7 +1634,7 @@ paths:
       x-codeSamples:
         - lang: curl
           source: |
-            curl -X DELETE 'http://localhost:8065/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy' \
+            curl -X DELETE 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy' \
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         204:
@@ -1830,7 +1825,7 @@ components:
         description:
           type: string
           description: The description of the playbook.
-          example: A playbook to follow when there is an playbook run regarding the availability of the cloud service.
+          example: A playbook to follow when there is a playbook run regarding the availability of the cloud service.
         team_id:
           type: string
           description: The identifier of the team where the playbook is in.
@@ -1933,10 +1928,6 @@ components:
           format: int64
           description: The timestamp for the latest modification of the item's state, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item was never modified.
           example: 1607774621321
-        state_modified_post_id:
-          type: string
-          description: The identifier of the message posted by the PlaybookRun Response bot that informs of the latest modification of the item's state.
-          example: 8nmjfgrkwvokrg13urvo10bx9j
         assignee_id:
           type: string
           description: The identifier of the user that has been assigned to complete this item. If the item has no assignee, this is an empty string.
@@ -1946,10 +1937,6 @@ components:
           format: int64
           description: The timestamp for the latest modification of the item's assignee, formatted as the number of milliseconds since the Unix epoch. It equals 0 if the item never got an assignee.
           example: 1608897821125
-        assignee_modified_post_id:
-          type: string
-          description: The identifier of the message posted by the PlaybookRun Response bot that informs of the latest modification of the item's assignee.
-          example: ol7h83caow11xfbydhqvyg16b4
         command:
           type: string
           description: The slash command associated with this item. If the item has no slash command associated, this is an empty string
@@ -1989,7 +1976,7 @@ components:
             details_url:
               type: string
               description: Absolute URL to the playbook run's details.
-              example: http://example.com/ad-1/com.mattermost.plugin-incident-management/runs/playbookRunID
+              example: http://example.com/ad-1/playbooks/runs/playbookRunID
     WebhookOnStatusUpdatePayload:
       allOf:
         - $ref: '#/components/schemas/PlaybookRun'
@@ -2002,4 +1989,4 @@ components:
             details_url:
               type: string
               description: Absolute URL to the playbook run's details.
-              example: http://example.com/ad-1/com.mattermost.plugin-incident-management/runs/playbookRunID
+              example: http://example.com/ad-1/playbooks/runs/playbookRunID

@@ -7,37 +7,36 @@ import {
     useMemo,
 } from 'react';
 import {useDispatch, useSelector} from 'react-redux';
-import moment from 'moment';
+import {DateTime} from 'luxon';
 
-import {getCurrentTeam, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeam, getMyTeams, getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
+import {Team} from 'mattermost-redux/types/teams';
 import {
     getProfilesInCurrentChannel,
     getCurrentUserId,
     getUser,
+    getProfilesInCurrentTeam,
 } from 'mattermost-redux/selectors/entities/users';
-import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentChannelId, getChannelsNameMapInTeam, getChannel as getChannelFromState} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
-import {
-    getProfilesByIds,
-    getProfilesInChannel,
-} from 'mattermost-redux/actions/users';
+import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
-import {Post} from 'mattermost-redux/types/posts';
 import {getPost as getPostFromState} from 'mattermost-redux/selectors/entities/posts';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
 import {useHistory, useLocation} from 'react-router-dom';
-
 import qs from 'qs';
+import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
+import {EmptyPlaybookStats} from 'src/types/stats';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';
-import {clientFetchPlaybooksCount, fetchPlaybookRuns, clientFetchPlaybook} from 'src/client';
+import {clientFetchPlaybooksCount, fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookStats} from 'src/client';
 import {receivedTeamNumPlaybooks} from 'src/actions';
 
 import {
@@ -50,6 +49,7 @@ import {
     globalSettings,
     isCurrentUserAdmin,
     numPlaybooksByTeam,
+    myPlaybookRunsByTeam,
 } from '../selectors';
 
 /**
@@ -178,6 +178,31 @@ export function useProfilesInCurrentChannel() {
     return profilesInChannel;
 }
 
+export function useCanCreatePlaybooksOnAnyTeam() {
+    const teams = useSelector(getMyTeams);
+    return useSelector((state: GlobalState) => (
+        teams.some((team: Team) => (
+            haveITeamPermission(state, team.id, 'playbook_public_create') ||
+			haveITeamPermission(state, team.id, 'playbook_private_create')
+        ))
+    ));
+}
+
+export function useProfilesInTeam() {
+    const dispatch = useDispatch() as DispatchFunc;
+    const profilesInTeam = useSelector(getProfilesInCurrentTeam);
+    const currentTeamId = useSelector(getCurrentTeamId);
+    useEffect(() => {
+        if (profilesInTeam.length > 0) {
+            return;
+        }
+
+        dispatch(getProfilesInTeam(currentTeamId, 0, PROFILE_CHUNK_SIZE));
+    }, [currentTeamId, profilesInTeam]);
+
+    return profilesInTeam;
+}
+
 export function useCanCreatePlaybooks() {
     const settings = useSelector(globalSettings);
     const currentUserID = useSelector(getCurrentUserId);
@@ -234,32 +259,53 @@ export function useProfilesInChannel(channelId: string) {
     return profilesInChannel;
 }
 
-export function usePost(postId: string) {
-    const postFromState = useSelector<GlobalState, Post | null>((state) =>
-        getPostFromState(state, postId || ''),
-    );
-    const [post, setPost] = useState<Post | null>(null);
+/**
+ * Use thing from API and/or Store
+ *
+ * @param fetch required thing fetcher
+ * @param select thing from store if available
+ */
+function useThing<T extends NonNullable<any>>(
+    id: string,
+    fetch: (id: string) => Promise<T>,
+    select?: (state: GlobalState, id: string) => T,
+) {
+    const [thing, setThing] = useState<T | null>(null);
+    const thingFromState = useSelector<GlobalState, T | null>((state) => select?.(state, id || '') ?? null);
 
     useEffect(() => {
-        const updateLatestUpdate = async () => {
-            if (postFromState) {
-                setPost(postFromState);
-                return;
-            }
+        if (thingFromState) {
+            setThing(thingFromState);
+            return;
+        }
 
-            if (postId) {
-                const fromServer = await Client4.getPost(postId);
-                setPost(fromServer);
-                return;
-            }
+        if (id) {
+            fetch(id).then(setThing);
+            return;
+        }
+        setThing(null);
+    }, [thingFromState, id]);
 
-            setPost(null);
-        };
+    return thing;
+}
 
-        updateLatestUpdate();
-    }, [postFromState, postId]);
+export function usePost(postId: string) {
+    return useThing(postId, Client4.getPost, getPostFromState);
+}
 
-    return post;
+export function useRun(runId: string, teamId?: string, channelId?: string) {
+    return useThing(runId, fetchPlaybookRun, (state) => {
+        const runsByTeam = myPlaybookRunsByTeam(state);
+        if (teamId && channelId) {
+            // use efficient path
+            return runsByTeam[teamId]?.[channelId];
+        }
+        return Object.values(runsByTeam).flatMap((x) => x && Object.values(x)).find((run) => run?.id === runId);
+    });
+}
+
+export function useChannel(channelId: string) {
+    return useThing(channelId, Client4.getChannel, getChannelFromState);
 }
 
 export function useNumPlaybooksInCurrentTeam() {
@@ -304,10 +350,25 @@ export function useAllowPlaybookCreationInTeams() {
     return allowPlaybookCreationInTeams;
 }
 
-export function useDropdownPosition() {
+export function useDropdownPosition(numOptions: number, optionWidth = 264) {
     const [dropdownPosition, setDropdownPosition] = useState({x: 0, y: 0, isOpen: false});
+
     const toggleOpen = (x: number, y: number) => {
-        setDropdownPosition({x, y, isOpen: !dropdownPosition.isOpen});
+        // height of the dropdown:
+        const numOptionsShown = Math.min(6, numOptions);
+        const selectBox = 56;
+        const spacePerOption = 40;
+        const bottomPadding = 12;
+        const extraSpace = 20;
+        const dropdownBottom = y + selectBox + spacePerOption + (numOptionsShown * spacePerOption) + bottomPadding + extraSpace;
+        const deltaY = Math.max(0, dropdownBottom - window.innerHeight);
+
+        const dropdownRight = x + optionWidth + extraSpace;
+        const deltaX = Math.max(0, dropdownRight - window.innerWidth);
+
+        const shiftedX = x - deltaX;
+        const shiftedY = y - deltaY;
+        setDropdownPosition({x: shiftedX, y: shiftedY, isOpen: !dropdownPosition.isOpen});
     };
     return [dropdownPosition, toggleOpen] as const;
 }
@@ -436,11 +497,11 @@ export function useFormattedUsernameByID(userId: string) {
 }
 
 export function useNow(refreshIntervalMillis = 1000) {
-    const [now, setNow] = useState(moment());
+    const [now, setNow] = useState(DateTime.now());
 
     useEffect(() => {
         const tick = () => {
-            setNow(moment());
+            setNow(DateTime.now());
         };
         const timerId = setInterval(tick, refreshIntervalMillis);
 
@@ -515,4 +576,53 @@ export const usePlaybookName = (playbookId: string) => {
     }, [playbookId]);
 
     return playbookName;
+};
+
+export const useDefaultMarkdownOptions = (team: Team) => {
+    const channelNamesMap = useSelector((state: GlobalState) => getChannelsNameMapInTeam(state, team.id));
+
+    return {
+        atMentions: true,
+        mentionHighlight: true,
+        team,
+        channelNamesMap,
+    };
+};
+
+export const useDefaultMarkdownOptionsByTeamId = (teamId: string) => {
+    const team = useSelector((state: GlobalState) => getTeam(state, teamId));
+
+    return useDefaultMarkdownOptions(team);
+};
+
+export const useStats = (playbookId: string) => {
+    const [stats, setStats] = useState(EmptyPlaybookStats);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const ret = await fetchPlaybookStats(playbookId);
+                setStats(ret);
+            } catch {
+                setStats(EmptyPlaybookStats);
+            }
+        };
+
+        fetchStats();
+    }, [playbookId]);
+
+    return stats;
+};
+
+/**
+ * Hook that returns the previous value of the prop passed as argument
+ */
+export const usePrevious = (value: any) => {
+    const ref = useRef();
+
+    useEffect(() => {
+        ref.current = value;
+    });
+
+    return ref.current;
 };

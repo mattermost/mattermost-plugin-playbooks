@@ -2,10 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useState} from 'react';
+import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
-import classNames from 'classnames';
 import styled from 'styled-components';
 import {Team} from 'mattermost-redux/types/teams';
+
+import Dropdown from 'src/components/dropdown';
 
 import {useClientRect} from 'src/hooks';
 
@@ -13,7 +15,7 @@ import {PlaybookRunFilterButton} from '../backstage/styles';
 
 import TeamWithIcon from './team_with_icon';
 
-interface Option {
+export interface Option {
     value: string;
     label: JSX.Element | string;
     teamId: string;
@@ -31,17 +33,23 @@ interface Props {
     onlyPlaceholder?: boolean;
     enableEdit: boolean;
     isClearable?: boolean;
-    customControl?: (props: ControlProps<any>) => React.ReactElement;
+    customControl?: (props: ControlProps<Option, boolean>) => React.ReactElement;
     controlledOpenToggle?: boolean;
     teams: Team[];
-    onSelectedChange?: (teamId?: string) => void;
+    onSelectedChange?: (teamId: string) => void;
     customControlProps?: any;
     showOnRight?: boolean;
 }
 
 const dropdownYShift = 27;
 
+const RightAlign = styled.div`
+	flex-grow: 1;
+	text-align: right;
+`;
+
 export default function TeamSelector(props: Props) {
+    const {formatMessage} = useIntl();
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         if (!isOpen) {
@@ -114,7 +122,7 @@ export default function TeamSelector(props: Props) {
             return;
         }
         if (props.onSelectedChange) {
-            props.onSelectedChange(value?.teamId);
+            props.onSelectedChange(value?.teamId || '');
         }
     };
 
@@ -139,7 +147,9 @@ export default function TeamSelector(props: Props) {
     let target;
     if (props.selectedTeamId) {
         target = (
-            <TeamButton
+            <SelectedButton
+                data-testid={props.testId}
+                ref={ref}
                 onClick={() => {
                     if (props.enableEdit) {
                         toggleOpen();
@@ -151,12 +161,16 @@ export default function TeamSelector(props: Props) {
                     showNotLicensedIcon={false}
                 />
 
-                {<i className='icon-chevron-down ml-1 mr-2'/>}
-            </TeamButton>
+                <RightAlign>
+                    {<i className='icon-chevron-down ml-1 mr-2'/>}
+                </RightAlign>
+            </SelectedButton>
         );
     } else if (props.placeholderButtonClass) {
         target = (
             <button
+                data-testid={props.testId}
+                ref={ref}
                 onClick={() => {
                     if (props.enableEdit) {
                         toggleOpen();
@@ -165,12 +179,16 @@ export default function TeamSelector(props: Props) {
                 className={props.placeholderButtonClass}
             >
                 {selected === null ? props.placeholder : selected.label}
-                {<i className='icon-chevron-down icon--small ml-2'/>}
+                <RightAlign>
+                    {<i className='icon-chevron-down icon--small ml-2'/>}
+                </RightAlign>
             </button>
         );
     } else {
         target = (
             <PlaybookRunFilterButton
+                data-testid={props.testId}
+                ref={ref}
                 active={isOpen}
                 onClick={() => {
                     if (props.enableEdit) {
@@ -179,7 +197,9 @@ export default function TeamSelector(props: Props) {
                 }}
             >
                 {selected === null ? props.placeholder : selected.label}
-                {<i className='icon-chevron-down icon--small ml-2'/>}
+                <RightAlign>
+                    {<i className='icon-chevron-down icon--small ml-2'/>}
+                </RightAlign>
             </PlaybookRunFilterButton>
         );
     }
@@ -187,20 +207,14 @@ export default function TeamSelector(props: Props) {
     if (props.onlyPlaceholder) {
         target = (
             <div
+                data-testid={props.testId}
+                ref={ref}
                 onClick={toggleOpen}
             >
                 {props.placeholder}
             </div>
         );
     }
-    const targetWrapped = (
-        <div
-            data-testid={props.testId}
-            ref={ref}
-        >
-            {target}
-        </div>
-    );
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
     const components = props.customControl ? {
@@ -212,7 +226,7 @@ export default function TeamSelector(props: Props) {
         <Dropdown
             isOpen={isOpen}
             onClose={toggleOpen}
-            target={targetWrapped}
+            target={target}
             showOnRight={props.showOnRight}
             moveUp={moveUp}
         >
@@ -225,7 +239,7 @@ export default function TeamSelector(props: Props) {
                 isClearable={props.isClearable}
                 menuIsOpen={true}
                 options={teamOptions}
-                placeholder={'Search'}
+                placeholder={formatMessage({defaultMessage: 'Search'})}
                 styles={selectStyles}
                 tabSelectsValue={false}
                 value={selected}
@@ -239,7 +253,7 @@ export default function TeamSelector(props: Props) {
 }
 
 // styles for the select component
-const selectStyles: StylesConfig = {
+const selectStyles: StylesConfig<Option, boolean> = {
     control: (provided) => ({...provided, minWidth: 240, margin: 8}),
     menu: () => ({boxShadow: 'none'}),
     option: (provided, state) => {
@@ -253,62 +267,8 @@ const selectStyles: StylesConfig = {
     },
 };
 
-// styled components
-interface DropdownProps {
-    children: JSX.Element;
-    isOpen: boolean;
-    showOnRight?: boolean;
-    moveUp?: number;
-    target: JSX.Element;
-    onClose: () => void;
-}
-
-const ProfileDropdown = styled.div`
-    position: relative;
-`;
-
-const Blanket = styled.div`
-    bottom: 0;
-    left: 0;
-    top: 0;
-    right: 0;
-    position: fixed;
-    z-index: 1;
-`;
-
-interface ChildContainerProps {
-    moveUp?: number
-}
-
-const ChildContainer = styled.div<ChildContainerProps>`
-    margin: 4px 0 0;
-    min-width: 20rem;
-    top: ${(props) => dropdownYShift - (props.moveUp || 0)}px;
-`;
-
-const Dropdown = ({children, isOpen, showOnRight, moveUp, target, onClose}: DropdownProps) => {
-    if (!isOpen) {
-        return target;
-    }
-
-    const classes = classNames('PlaybookRunFilter', 'profile-dropdown',
-        'PlaybookRunFilter--active', 'profile-dropdown--active', {'show-on-right': showOnRight});
-
-    return (
-        <ProfileDropdown className={classes}>
-            {target}
-            <ChildContainer
-                className='playbook-run-user-select__container'
-                moveUp={moveUp}
-            >
-                {children}
-            </ChildContainer>
-            <Blanket onClick={onClose}/>
-        </ProfileDropdown>
-    );
-};
-
-const TeamButton = styled.button`
+export const SelectedButton = styled.button`
+	flex-grow: 1;
     font-weight: 600;
     height: 40px;
     padding: 0 4px 0 12px;
@@ -323,19 +283,18 @@ const TeamButton = styled.button`
 
     border: none;
     background-color: unset;
-    cursor: unset;
     display: flex;
     align-items: center;
     text-align: center;
 
     &:hover {
-        background: var(--center-channel-color-08);
-        color: var(--center-channel-color-72);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
     .PlaybookRunProfile {
         &:active {
-            background: var(--button-bg-08);
+            background: rgba(var(--button-bg-rgb), 0.08);
             color: var(--button-bg);
         }
 
@@ -344,7 +303,7 @@ const TeamButton = styled.button`
             color: var(--center-channel-color);
         }
     }
-    
+
 
     .NoAssignee-button, .Assigned-button {
         background-color: transparent;
@@ -352,7 +311,7 @@ const TeamButton = styled.button`
         padding: 4px;
         margin-top: 4px;
         border-radius: 100px;
-        color: var(--center-channel-color-64);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
         cursor: pointer;
         font-weight: normal;
         font-size: 12px;
@@ -364,12 +323,12 @@ const TeamButton = styled.button`
         transition: all 0.15s ease;
 
         &:hover {
-            background: var(--center-channel-color-08);
-            color: var(--center-channel-color-72);
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+            color: rgba(var(--center-channel-color-rgb), 0.72);
         }
 
         &:active {
-            background: var(--button-bg-08);
+            background: rgba(var(--button-bg-rgb), 0.08);
             color: var(--button-bg);
         }
 

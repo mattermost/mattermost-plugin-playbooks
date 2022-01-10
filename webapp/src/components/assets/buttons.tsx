@@ -40,7 +40,7 @@ export const PrimaryButton = styled(Button)`
     color: var(--button-color);
     transition: background 0.15s ease-out;
 
-    &:active  {
+    &:active:not([disabled])  {
         background: rgba(var(--button-bg-rgb), 0.8);
     }
 
@@ -52,7 +52,7 @@ export const PrimaryButton = styled(Button)`
         height: 100%;
         transition: all 0.15s ease-out;
         position: absolute;
-        background: var(--center-channel-color-16);
+        background: rgba(var(--center-channel-color-rgb), 0.16);
         opacity: 0;
         border-radius: 4px;
     }
@@ -78,7 +78,6 @@ export const TertiaryButton = styled.button`
     display: inline-flex;
     align-items: center;
     height: 40px;
-    color: var(--button-bg);
     border-radius: 4px;
     border: 0px;
     font-weight: 600;
@@ -87,18 +86,20 @@ export const TertiaryButton = styled.button`
     padding: 0 20px;
     transition: all 0.15s ease-out;
 
+    color: var(--button-bg);
     background: rgba(var(--button-bg-rgb), 0.08);
+
+    &:disabled {
+        color: rgba(var(--center-channel-color-rgb), 0.32);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
 
     &:hover:enabled {
         background: rgba(var(--button-bg-rgb), 0.12);
     }
 
-    &:active  {
+    &:active:enabled  {
         background: rgba(var(--button-bg-rgb), 0.16);
-    }
-
-    &:disabled {
-        color: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     i {
@@ -128,12 +129,20 @@ export const GrayTertiaryButton = styled.button`
 export const SecondaryButton = styled(TertiaryButton)`
     background: var(--button-color-rgb);
     border: 1px solid var(--button-bg);
+
+
+    &:disabled {
+        color: rgba(var(--center-channel-color-rgb), 0.32);
+        background: transparent;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.32);
+    }
 `;
 
 export const DestructiveButton = styled.button`
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
 
     font-weight: 600;
     font-size: 14px;
@@ -184,14 +193,14 @@ export const ButtonIcon = styled.button`
     border: none;
     background: transparent;
     border-radius: 4px;
-    color: var(--center-channel-color-56);
-    fill: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    fill: rgba(var(--center-channel-color-rgb), 0.56);
     font-size: 1.6rem;
 
     &:hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
-        color: var(--center-channel-color-72);
-        fill: var(--center-channel-color-72);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+        fill: rgba(var(--center-channel-color-rgb), 0.72);
     }
 
     &:active,

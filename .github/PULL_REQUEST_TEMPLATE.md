@@ -5,6 +5,7 @@
 3. Take a look at other repository-specific documentation at https://developers.mattermost.com/contribute/getting-started/
 
 REMEMBER TO:
+- Run `make i18n-extract` and commit changes to synchronize any new or removed messages
 - Run `make check-style` to check for style errors (required for all pull requests)
 - Run `make test` to ensure unit tests passed
 -->

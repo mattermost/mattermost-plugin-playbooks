@@ -24,7 +24,7 @@ import {
 import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
 import {
-    ChecklistItem,
+    Checklist,
     ChecklistItemState,
     FetchPlaybooksParams,
     FetchPlaybooksReturn,
@@ -40,17 +40,24 @@ import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
 import {pluginId} from './manifest';
 import {GlobalSettings, globalSettingsSetDefaults} from './types/settings';
 
+let siteURL = '';
 let basePath = '';
 let apiUrl = `${basePath}/plugins/${pluginId}/api/v0`;
 
-export const setSiteUrl = (siteUrl?: string): void => {
-    if (siteUrl) {
-        basePath = new URL(siteUrl).pathname.replace(/\/+$/, '');
+export const setSiteUrl = (url?: string): void => {
+    if (url) {
+        basePath = new URL(url).pathname.replace(/\/+$/, '');
+        siteURL = url;
     } else {
         basePath = '';
+        siteURL = '';
     }
 
     apiUrl = `${basePath}/plugins/${pluginId}/api/v0`;
+};
+
+export const getSiteUrl = (): string => {
+    return siteURL;
 };
 
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
@@ -70,7 +77,7 @@ export async function fetchPlaybookRun(id: string) {
     if (process.env.NODE_ENV !== 'production') {
         if (!isPlaybookRun(data)) {
             // eslint-disable-next-line no-console
-            console.error('expected an PlaybookRun in fetchPlaybookRun, received:', data);
+            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
         }
     }
 
@@ -81,12 +88,13 @@ export async function postStatusUpdate(
     playbookRunId: string,
     payload: {
         message: string,
-        reminder?: number
+        reminder?: number,
+        finishRun: boolean,
     },
     ids: {
-        user_id: string;
-        channel_id: string;
-        team_id: string;
+        user_id: string,
+        channel_id: string,
+        team_id: string,
     },
 ) {
     const base = {
@@ -102,6 +110,7 @@ export async function postStatusUpdate(
         submission: {
             ...payload,
             reminder: payload.reminder?.toFixed() ?? '',
+            finish_run: payload.finishRun,
         },
     });
 
@@ -132,7 +141,7 @@ export async function fetchPlaybookRunByChannel(channelId: string) {
     if (process.env.NODE_ENV !== 'production') {
         if (!isPlaybookRun(data)) {
             // eslint-disable-next-line no-console
-            console.error('expected an PlaybookRun in fetchPlaybookRun, received:', data);
+            console.error('expected a PlaybookRun in fetchPlaybookRun, received:', data);
         }
     }
 
@@ -222,7 +231,7 @@ export async function savePlaybook(playbook: PlaybookWithChecklist | DraftPlaybo
     return {id: playbook.id};
 }
 
-export async function deletePlaybook(playbookId: Playbook['id']) {
+export async function archivePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}`, {
         method: 'delete',
     });
@@ -278,17 +287,23 @@ export async function setChecklistItemState(playbookRunID: string, checklistNum:
     );
 }
 
-export async function clientAddChecklistItem(playbookRunID: string, checklistNum: number, checklistItem: ChecklistItem) {
-    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/add`,
-        JSON.stringify(checklistItem),
-    );
-
-    return data;
-}
-
 export async function clientRemoveChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}`, {
         method: 'delete',
+        body: '',
+    });
+}
+
+export async function clientSkipChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/skip`, {
+        method: 'put',
+        body: '',
+    });
+}
+
+export async function clientRestoreChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number) {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/restore`, {
+        method: 'put',
         body: '',
     });
 }
@@ -310,11 +325,48 @@ export async function clientEditChecklistItem(playbookRunID: string, checklistNu
     return data;
 }
 
-export async function clientReorderChecklist(playbookRunID: string, checklistNum: number, itemNum: number, newLocation: number) {
-    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/reorder`,
+export async function clientAddChecklist(playbookRunID: string, checklist: Checklist) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists`,
+        JSON.stringify(checklist),
+    );
+
+    return data;
+}
+
+export async function clientRemoveChecklist(playbookRunID: string, checklistNum: number) {
+    const data = await doDelete(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}`);
+
+    return data;
+}
+
+export async function clientRenameChecklist(playbookRunID: string, checklistNum: number, newTitle: string) {
+    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/rename`,
         JSON.stringify({
-            item_num: itemNum,
-            new_location: newLocation,
+            title: newTitle,
+        }),
+    );
+
+    return data;
+}
+
+export async function clientMoveChecklist(playbookRunID: string, sourceChecklistIdx: number, destChecklistIdx: number) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists/move`,
+        JSON.stringify({
+            source_checklist_idx: sourceChecklistIdx,
+            dest_checklist_idx: destChecklistIdx,
+        }),
+    );
+
+    return data;
+}
+
+export async function clientMoveChecklistItem(playbookRunID: string, sourceChecklistIdx: number, sourceItemIdx: number, destChecklistIdx: number, destItemIdx: number) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists/move-item`,
+        JSON.stringify({
+            source_checklist_idx: sourceChecklistIdx,
+            source_item_idx: sourceItemIdx,
+            dest_checklist_idx: destChecklistIdx,
+            dest_item_idx: destItemIdx,
         }),
     );
 
@@ -436,8 +488,8 @@ export const requestTrialLicense = async (users: number, action: string) => {
     }
 };
 
-export const postMessageToAdmins = async (messageType: AdminNotificationType, isServerTeamEdition: boolean) => {
-    const body = `{"message_type": "${messageType}", "is_team_edition": ${isServerTeamEdition}}`;
+export const postMessageToAdmins = async (messageType: AdminNotificationType) => {
+    const body = `{"message_type": "${messageType}"}`;
     try {
         const response = await doPost(`${apiUrl}/bot/notify-admins`, body);
         return {data: response};
@@ -469,6 +521,57 @@ export const updatePlaybookRunDescription = async (playbookRunId: string, newDes
     });
 };
 
+export const notifyConnect = async () => {
+    await doFetchWithoutResponse(`${apiUrl}/bot/connect`, {
+        method: 'GET',
+        headers: {
+            'X-Timezone-Offset': -new Date().getTimezoneOffset() / 60,
+        },
+    });
+};
+
+export const followPlaybookRun = async (playbookRunId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/followers`, {
+        method: 'PUT',
+    });
+};
+
+export const unfollowPlaybookRun = async (playbookRunId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/followers`, {
+        method: 'DELETE',
+    });
+};
+
+export const autoFollowPlaybook = async (playbookId: string, userId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`, {
+        method: 'PUT',
+    });
+};
+
+export const autoUnfollowPlaybook = async (playbookId: string, userId: string) => {
+    await doFetchWithoutResponse(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`, {
+        method: 'DELETE',
+    });
+};
+
+export async function clientFetchIsPlaybookFollower(playbookId: string, userId: string): Promise<boolean> {
+    const data = await doGet(`${apiUrl}/playbooks/${playbookId}/autofollows/${userId}`);
+    if (!data) {
+        return false;
+    }
+
+    return data as boolean;
+}
+
+export const resetReminder = async (playbookRunId: string, newReminderSeconds: number) => {
+    await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/reminder`, {
+        method: 'POST',
+        body: JSON.stringify({
+            new_reminder_seconds: newReminderSeconds,
+        }),
+    });
+};
+
 export const doGet = async <TData = any>(url: string) => {
     const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 
@@ -478,6 +581,15 @@ export const doGet = async <TData = any>(url: string) => {
 export const doPost = async <TData = any>(url: string, body = {}) => {
     const {data} = await doFetchWithResponse<TData>(url, {
         method: 'POST',
+        body,
+    });
+
+    return data;
+};
+
+export const doDelete = async <TData = any>(url: string, body = {}) => {
+    const {data} = await doFetchWithResponse<TData>(url, {
+        method: 'DELETE',
         body,
     });
 

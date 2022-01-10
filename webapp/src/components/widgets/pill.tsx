@@ -1,13 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 
 import ClearIcon from 'src/components/assets/icons/clear_icon';
 
 interface Props {
-    text: string;
+    text: ReactNode;
     onClose: () => void;
 }
 
@@ -33,7 +33,7 @@ const CloseIcon = styled(ClearIcon)`
     height: 18px;
     width: auto;
     margin-left: 7px;
-    color: var(--center-channel-color-32);
+    color: rgba(var(--center-channel-color-rgb), 0.32);
 
     &:hover {
         cursor: pointer;

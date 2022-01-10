@@ -12,7 +12,7 @@ export const BackstageNavbar = styled.div`
     background: var(--center-channel-bg);
     color: var(--center-channel-color);
     font-family: 'compass-icons';
-    box-shadow: inset 0px -1px 0px var(--center-channel-color-16);
+    box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
 
     font-family: 'Open Sans';
     font-style: normal;

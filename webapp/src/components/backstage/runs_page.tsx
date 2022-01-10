@@ -3,15 +3,19 @@
 
 import React, {useEffect, useState} from 'react';
 
+import {FormattedMessage} from 'react-intl';
+
+import styled from 'styled-components';
+
 import {fetchPlaybookRuns} from 'src/client';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
 import {useRunsList} from 'src/hooks';
-import {PlaybookRunStatus} from 'src/types/playbook_run';
 import {BackstageHeader} from 'src/components/backstage/styles';
 
 import RunList from './runs_list/runs_list';
+import {statusOptions} from './runs_list/status_filter';
 import NoContentPage from './runs_page_no_content';
 
 const defaultPlaybookFetchParams = {
@@ -19,8 +23,17 @@ const defaultPlaybookFetchParams = {
     per_page: BACKSTAGE_LIST_PER_PAGE,
     sort: 'last_status_update_at',
     direction: 'desc',
-    statuses: [PlaybookRunStatus.InProgress],
+    participant_or_follower_id: 'me',
+    statuses: statusOptions
+        .filter((opt) => opt.value !== 'Finished' && opt.value !== '')
+        .map((opt) => opt.value),
 };
+
+const RunListContainer = styled.div`
+	margin: 0 auto;
+	max-width: 1160px;
+	padding: 0 20px;
+`;
 
 const RunsPage = () => {
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
@@ -49,9 +62,9 @@ const RunsPage = () => {
     }
 
     return (
-        <div className='PlaybookRunList container-medium'>
+        <RunListContainer>
             <BackstageHeader data-testid='titlePlaybookRun'>
-                {'Runs'}
+                <FormattedMessage defaultMessage='Runs'/>
             </BackstageHeader>
             <RunList
                 playbookRuns={playbookRuns}
@@ -60,7 +73,7 @@ const RunsPage = () => {
                 setFetchParams={setFetchParams}
                 filterPill={null}
             />
-        </div>
+        </RunListContainer>
     );
 };
 

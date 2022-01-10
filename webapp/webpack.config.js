@@ -48,6 +48,8 @@ let config = {
     resolve: {
         alias: {
             src: path.resolve(__dirname, './src/'),
+            'mattermost-redux': path.resolve(__dirname, './node_modules/mattermost-webapp/packages/mattermost-redux/src/'),
+            reselect: path.resolve(__dirname, './node_modules/mattermost-webapp/packages/reselect/src/index'),
         },
         modules: [
             'src',
@@ -59,7 +61,7 @@ let config = {
         rules: [
             {
                 test: /\.(js|jsx|ts|tsx)$/,
-                exclude: /node_modules/,
+                exclude: /node_modules\/(?!(mattermost-webapp)\/).*/,
                 use: {
                     loader: 'babel-loader',
                     options: {
@@ -81,11 +83,38 @@ let config = {
                     },
                 ],
             },
+            {
+                test: /\.(png|eot|tiff|svg|woff2|woff|ttf|gif|mp3|jpg)$/,
+                use: [
+                    {
+                        loader: 'file-loader',
+                        options: {
+                            name: 'files/[contenthash].[ext]',
+                        },
+                    },
+                    {
+                        loader: 'image-webpack-loader',
+                        options: {},
+                    },
+                ],
+            },
+            {
+                test: /\.apng$/,
+                use: [
+                    {
+                        loader: 'file-loader',
+                        options: {
+                            name: 'files/[contenthash].[ext]',
+                        },
+                    },
+                ],
+            },
         ],
     },
     externals: {
         react: 'React',
         redux: 'Redux',
+        luxon: 'Luxon',
         'react-redux': 'ReactRedux',
         'prop-types': 'PropTypes',
         'react-bootstrap': 'ReactBootstrap',
@@ -114,7 +143,7 @@ if (targetIsDevServer) {
             proxy: [{
                 context: () => true,
                 bypass(req) {
-                    if (req.url.indexOf('/static/plugins/com.mattermost.plugin-incident-management/') === 0) {
+                    if (req.url.indexOf('/static/plugins/playbooks/') === 0) {
                         return '/main.js'; // return the webpacked asset
                     }
                     return null;

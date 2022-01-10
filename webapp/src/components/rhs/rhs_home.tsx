@@ -11,6 +11,8 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import Icon from '@mdi/react';
 import {mdiArrowDown, mdiArrowRight, mdiPlus} from '@mdi/js';
 
+import {FormattedMessage} from 'react-intl';
+
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
 import {SemiBoldHeading} from 'src/styles/headings';
 
@@ -31,7 +33,7 @@ import {
     usePlaybooksCrud,
     getPlaybookOrFetch,
     usePlaybooksRouting,
-    useCanCreatePlaybooks,
+    useCanCreatePlaybooksOnAnyTeam,
     useAllowPlaybookCreationInCurrentTeam,
 } from 'src/hooks';
 import {navigateToUrl} from 'src/browser_routing';
@@ -109,6 +111,9 @@ const RunDetail = styled.div<RunDetailProps>`
             rgba(var(--center-channel-bg-rgb), 0.25) 100%
         ),
         rgba(var(${({exists}) => (exists ? '--button-bg-rgb' : '--center-channel-color-rgb')}), 0.08);
+    mask-mode: alpha;
+    mask-size: cover;
+    mask-repeat: round;
     mask-image: url('${RunDetailMaskSvg}');
 
     > div {
@@ -207,7 +212,7 @@ const RHSHome = () => {
     const [playbooks, {hasMore, isLoading}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
     const {create} = usePlaybooksRouting<Playbook>();
 
-    const canCreatePlaybooks = useCanCreatePlaybooks();
+    const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
     const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
 
@@ -216,7 +221,7 @@ const RHSHome = () => {
             telemetryEventForTemplate(template.title, 'use_template_option');
         }
         if (allowPlaybookCreation) {
-            create(currentTeam, template?.title);
+            create({teamId: currentTeam.id, template: template?.title});
         } else {
             showUpgradeModal();
         }
@@ -229,8 +234,10 @@ const RHSHome = () => {
     }, [currentRun, playbooks]);
 
     const viewCurrentPlaybookRun = () => {
-        dispatch(setRHSViewingPlaybookRun());
-        navigateToUrl(`/${currentTeam.name}/channels/${currentRun.channel_id}`);
+        if (currentRun) {
+            dispatch(setRHSViewingPlaybookRun());
+            navigateToUrl(`/${currentTeam.name}/channels/${currentRun.channel_id}`);
+        }
     };
 
     let headerContent;
@@ -239,11 +246,13 @@ const RHSHome = () => {
             <WelcomeBlock>
                 <PageRunCollaborationSvg/>
                 <Heading>
-                    {'Welcome to Playbooks!'}
+                    <FormattedMessage defaultMessage='Welcome to Playbooks!'/>
                 </Heading>
                 <WelcomeDesc>
-                    {'A playbook prescribes the checklists, automations, and templates for any repeatable procedures.'}
-                    {'It helps teams reduce errors, earn trust with stakeholders, and become more effective with every iteration.'}
+                    <FormattedMessage
+                        defaultMessage='A playbook prescribes the checklists, automations, and templates for any repeatable procedures. {br} It helps teams reduce errors, earn trust with stakeholders, and become more effective with every iteration.'
+                        values={{br: <br/>}}
+                    />
                 </WelcomeDesc>
                 {canCreatePlaybooks ? (
                     <div>
@@ -255,10 +264,10 @@ const RHSHome = () => {
                                 path={mdiPlus}
                                 size={1}
                             />
-                            {'Create playbook'}
+                            <FormattedMessage defaultMessage='Create playbook'/>
                         </WelcomeButtonCreate>
                         <WelcomeCreateAlt>
-                            {'...or start with a template'}
+                            <FormattedMessage defaultMessage='…or start with a template'/>
                             <Icon
                                 path={mdiArrowDown}
                                 size={1}
@@ -266,7 +275,9 @@ const RHSHome = () => {
                         </WelcomeCreateAlt>
                     </div>
                 ) : (
-                    <WelcomeWarn>{"There are no playbooks to view. You don't have permission to create playbooks in this workspace."}</WelcomeWarn>
+                    <WelcomeWarn>
+                        <FormattedMessage defaultMessage="There are no playbooks to view. You don't have permission to create playbooks in this workspace."/>
+                    </WelcomeWarn>
                 )}
             </WelcomeBlock>
         );
@@ -279,13 +290,17 @@ const RHSHome = () => {
                         {
                             hasCurrentRun ? (
                                 <>
-                                    <span>{'Currently running the '}</span>
-                                    <strong>{currentPlaybook?.title}</strong>
-                                    <span>{' playbook'}</span>
+                                    <FormattedMessage
+                                        defaultMessage='Currently running the <strong>{playbookTitle}</strong> playbook'
+                                        values={{
+                                            strong: (x: React.ReactNode) => <strong>{x}</strong>,
+                                            playbookTitle: currentPlaybook?.title,
+                                        }}
+                                    />
                                 </>
                             ) : (
                                 <span>
-                                    {'This channel is not running any playbook.'}
+                                    <FormattedMessage defaultMessage='This channel is not running any playbook.'/>
                                 </span>
                             )
                         }
@@ -293,7 +308,8 @@ const RHSHome = () => {
                     {hasCurrentRun && (
                         <RunDetailButton onClick={viewCurrentPlaybookRun}>
                             <span>
-                                {'View run details '}
+                                <FormattedMessage defaultMessage='View run details'/>
+                                {' '}
                             </span>
                             <Icon
                                 path={mdiArrowRight}

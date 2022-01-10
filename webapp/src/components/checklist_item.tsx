@@ -3,31 +3,35 @@
 
 import React, {useRef, useState} from 'react';
 import ReactDOM from 'react-dom';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {getChannelsNameMapInCurrentTeam} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentRelativeTeamUrl, getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
+import {UserProfile} from 'mattermost-redux/types/users';
 import {Overlay, Popover, PopoverProps} from 'react-bootstrap';
 import Scrollbars from 'react-custom-scrollbars';
 import {useDispatch, useSelector} from 'react-redux';
 import {components, ControlProps} from 'react-select';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
 
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {
-    clientRemoveChecklistItem, clientRunChecklistItemSlashCommand,
+    clientSkipChecklistItem,
+    clientRestoreChecklistItem,
+    clientRunChecklistItemSlashCommand,
     setAssignee,
     clientEditChecklistItem,
 } from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import {ChecklistItemButton} from 'src/components/checklist_item_input';
 import Profile from 'src/components/profile/profile';
-import ProfileSelector from 'src/components/profile/profile_selector';
+import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import {useClickOutsideRef, useProfilesInCurrentChannel, useTimeout} from 'src/hooks';
+import {useClickOutsideRef, useProfilesInCurrentChannel, useTimeout, useProfilesInTeam} from 'src/hooks';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
@@ -45,9 +49,10 @@ interface ChecklistItemDetailsProps {
     channelId: string;
     playbookRunId: string;
     onChange?: (item: ChecklistItemState) => void;
-    onRedirect?: () => void;
-    draggableProvided: DraggableProvided;
+    draggableProvided?: DraggableProvided;
     dragging: boolean;
+    disabled: boolean;
+    collapsibleDescription: boolean;
 }
 
 const RunningTimeout = 1000;
@@ -131,7 +136,7 @@ export const CheckboxContainer = styled.div`
     button:disabled {
         border: 0px;
         color: var(--button-color);
-        background: var(--center-channel-color-56);
+        background: rgba(var(--center-channel-color-rgb), 0.56);
         cursor: default;
     }
 
@@ -153,7 +158,7 @@ export const CheckboxContainer = styled.div`
         min-width: 20px;
         height: 20px;
         background: #ffffff;
-        border: 2px solid var(--center-channel-color-24);
+        border: 2px solid rgba(var(--center-channel-color-rgb), 0.24);
         border-radius: 4px;
         margin: 0;
         cursor: pointer;
@@ -187,6 +192,10 @@ export const CheckboxContainer = styled.div`
         transform: scale(1) rotate(0deg);
     }
 
+    input[type="checkbox"]:disabled {
+        opacity: 0.38;
+    }
+
     label {
         font-weight: normal;
         word-break: break-word;
@@ -195,6 +204,43 @@ export const CheckboxContainer = styled.div`
         margin-right: 8px;
         flex-grow: 1;
     }
+`;
+
+const ChecklistItemLabel = styled.div<{clickable: boolean}>`
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    ${({clickable}) => clickable && css`
+        cursor: pointer;
+
+        // This is somehow needed to override the
+        // cursor style in the item title
+        label {
+            cursor: pointer;
+        }
+    `}
+`;
+
+const ChecklistItemDescription = styled.div<{height: string}>`
+    font-size: 12px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+
+    max-width: 630px;
+    margin: 4px 0 0 2px;
+
+    // Fix default markdown styling in the paragraphs
+    p {
+        :last-child {
+            margin-bottom: 0;
+        }
+
+        white-space: pre-wrap;
+    }
+    height: ${({height}) => height};
+
+    transition: height 0.2s ease-in-out;
+    overflow: hidden;
 `;
 
 const Command = styled.div`
@@ -225,7 +271,7 @@ const Run = styled.div<RunProps>`
     }
 
     ${({running}) => running && `
-        color: var(--center-channel-color-64);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
         cursor: default;
 
         &:hover {
@@ -242,6 +288,7 @@ interface StepDescriptionProps {
 
 const StepDescription = (props: StepDescriptionProps): React.ReactElement<StepDescriptionProps> => {
     const [showTooltip, setShowTooltip] = useState(false);
+    const {formatMessage} = useIntl();
     const target = useRef(null);
     const popoverRef = useRef(null);
     useClickOutsideRef(popoverRef, () => {
@@ -256,7 +303,7 @@ const StepDescription = (props: StepDescriptionProps): React.ReactElement<StepDe
     return (
         <>
             <HoverMenuButton
-                title={'Description'}
+                title={formatMessage({defaultMessage: 'Description'})}
                 tabIndex={0}
                 className={'icon-information-outline icon-16 btn-icon'}
                 ref={target}
@@ -301,12 +348,12 @@ const ControlComponentAnchor = styled.a`
     top: -4px;
 `;
 
-const ControlComponent = (ownProps: ControlProps<any>) => (
+const ControlComponent = (ownProps: ControlProps<ProfileOption, boolean>) => (
     <div>
         <components.Control {...ownProps}/>
         {ownProps.selectProps.showCustomReset && (
             <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
-                {'No Assignee'}
+                <FormattedMessage defaultMessage='No Assignee'/>
             </ControlComponentAnchor>
         )}
     </div>
@@ -318,10 +365,13 @@ document.body.appendChild(portal);
 export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
     const commandRef = useRef(null);
     const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
     const relativeTeamUrl = useSelector<GlobalState, string>(getCurrentRelativeTeamUrl);
     const profilesInChannel = useProfilesInCurrentChannel();
+    const profilesInTeam = useProfilesInTeam();
+    const [showDescription, setShowDescription] = useState(true);
 
     const markdownOptions = {
         singleline: true,
@@ -334,7 +384,8 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const [running, setRunning] = useState(false);
     const [lastRun, setLastRun] = useState(props.checklistItem.command_last_run);
     const [showMenu, setShowMenu] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showSkipConfirm, setShowSkipConfirm] = useState(false);
+    const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
 
     // Immediately stop the running indicator when we get notified of a more recent execution.
@@ -350,11 +401,15 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
         return profilesInChannel;
     };
 
-    const onAssigneeChange = async (userId?: string) => {
+    const fetchUsersInTeam = async () => {
+        return profilesInTeam;
+    };
+
+    const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
         if (!props.playbookRunId) {
             return;
         }
-        const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, userId);
+        const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, user?.id);
         if (response.error) {
             // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console
@@ -365,74 +420,90 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const assignee_id = props.checklistItem.assignee_id; // to make typescript happy
 
     const title = props.checklistItem.title;
+    const labelText = messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions), true, {});
 
     const resetAssignee = () => {
         onAssigneeChange();
         setProfileSelectorToggle(!profileSelectorToggle);
     };
 
+    const toggleDescription = () => setShowDescription(!showDescription);
+
     const content = (
         <>
             <ItemContainer
-                ref={props.draggableProvided.innerRef}
-                {...props.draggableProvided.draggableProps}
+                ref={props.draggableProvided?.innerRef}
+                {...props.draggableProvided?.draggableProps}
                 onMouseEnter={() => setShowMenu(true)}
                 onMouseLeave={() => setShowMenu(false)}
                 data-testid='checkbox-item-container'
             >
                 <CheckboxContainer>
-                    {showMenu &&
+                    {showMenu && (!props.disabled || props.checklistItem.description !== '') &&
                     <HoverMenu>
-                        <HoverMenuButton
-                            title={'Drag me to reorder'}
-                            className={'icon icon-menu'}
-                            {...props.draggableProvided.dragHandleProps}
-                        />
-                        {props.checklistItem.description !== '' &&
-                        <StepDescription
-                            text={props.checklistItem.description}
-                            channelNames={channelNamesMap}
-                            team={team}
-                        />
+                        {props.collapsibleDescription && props.checklistItem.description !== '' &&
+                            <ToggleDescriptionButton
+                                title={formatMessage({defaultMessage: 'Toggle description'})}
+                                className={'icon icon-chevron-up'}
+                                showDescription={showDescription}
+                                onClick={toggleDescription}
+                            />
                         }
-                        <ProfileSelector
-                            selectedUserId={props.checklistItem.assignee_id}
-                            onlyPlaceholder={true}
-                            placeholder={
-                                <HoverMenuButton
-                                    title={'Assign'}
-                                    className={'icon-account-plus-outline icon-16 btn-icon'}
+                        {!props.disabled &&
+                            <HoverMenuButton
+                                title={formatMessage({defaultMessage: 'Drag me to reorder'})}
+                                className={'icon icon-menu'}
+                                {...props.draggableProvided?.dragHandleProps}
+                            />
+                        }
+                        {!props.disabled &&
+                            <>
+                                <ProfileSelector
+                                    selectedUserId={props.checklistItem.assignee_id}
+                                    onlyPlaceholder={true}
+                                    placeholder={
+                                        <HoverMenuButton
+                                            title={formatMessage({defaultMessage: 'Assign'})}
+                                            className={'icon-account-plus-outline icon-16 btn-icon'}
+                                        />
+                                    }
+                                    enableEdit={true}
+                                    getUsers={fetchUsers}
+                                    getUsersInTeam={fetchUsersInTeam}
+                                    onSelectedChange={onAssigneeChange}
+                                    selfIsFirstOption={true}
+                                    customControl={ControlComponent}
+                                    customControlProps={{
+                                        showCustomReset: Boolean(assignee_id),
+                                        onCustomReset: resetAssignee,
+                                    }}
+                                    controlledOpenToggle={profileSelectorToggle}
+                                    showOnRight={true}
                                 />
-                            }
-                            enableEdit={true}
-                            getUsers={fetchUsers}
-                            onSelectedChange={onAssigneeChange}
-                            selfIsFirstOption={true}
-                            customControl={ControlComponent}
-                            customControlProps={{
-                                showCustomReset: Boolean(assignee_id),
-                                onCustomReset: resetAssignee,
-                            }}
-                            controlledOpenToggle={profileSelectorToggle}
-                            showOnRight={true}
-                        />
-                        <HoverMenuButton
-                            title={'Edit'}
-                            className={'icon-pencil-outline icon-16 btn-icon'}
-                            onClick={() => {
-                                setShowEditDialog(true);
-                            }}
-                        />
-                        <HoverMenuButton
-                            title={'Delete'}
-                            className={'icon-trash-can-outline icon-16 btn-icon'}
-                            onClick={() => {
-                                setShowDeleteConfirm(true);
-                            }}
-                        />
+                                <HoverMenuButton
+                                    title={formatMessage({defaultMessage: 'Edit'})}
+                                    className={'icon-pencil-outline icon-16 btn-icon'}
+                                    onClick={() => {
+                                        setShowEditDialog(true);
+                                    }}
+                                />
+                                <HoverMenuButton
+                                    title={(props.checklistItem.state === ChecklistItemState.Skip) ? formatMessage({defaultMessage: 'Restore'}) : formatMessage({defaultMessage: 'Skip'})}
+                                    className={(props.checklistItem.state === ChecklistItemState.Skip) ? 'icon-refresh icon-16 btn-icon' : 'icon-close-circle-outline icon-16 btn-icon'}
+                                    onClick={() => {
+                                        if (props.checklistItem.state === ChecklistItemState.Skip) {
+                                            setShowRestoreConfirm(true);
+                                        } else {
+                                            setShowSkipConfirm(true);
+                                        }
+                                    }}
+                                />
+                            </>
+                        }
                     </HoverMenu>
                     }
                     <ChecklistItemButton
+                        disabled={props.disabled || props.checklistItem.state === ChecklistItemState.Skip}
                         item={props.checklistItem}
                         onChange={(item: ChecklistItemState) => {
                             if (props.onChange) {
@@ -440,13 +511,21 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             }
                         }}
                     />
-                    <label title={title}>
-                        <div
-                            onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
-                        >
-                            {messageHtmlToComponent(formatText(title, markdownOptions), true, {})}
-                        </div>
-                    </label>
+                    <ChecklistItemLabel
+                        onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
+                        clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
+                    >
+                        <label title={title}>
+                            <div
+                                onClick={((e) => handleFormattedTextClick(e, relativeTeamUrl))}
+                            >
+                                {(props.checklistItem.state === ChecklistItemState.Skip) ? <StrikeThrough data-cy={'skipped'}>{labelText}</StrikeThrough> : labelText}
+                            </div>
+                        </label>
+                        <CollapsibleChecklistItemDescription expanded={showDescription}>
+                            {messageHtmlToComponent(formatText(props.checklistItem.description, {...markdownOptions, singleline: false}), true, {})}
+                        </CollapsibleChecklistItemDescription>
+                    </ChecklistItemLabel>
                 </CheckboxContainer>
                 <ExtrasRow>
                     {props.checklistItem.assignee_id &&
@@ -457,18 +536,20 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     {
                         props.checklistItem.command !== '' &&
                         <div ref={commandRef}>
-                            <Run
-                                data-testid={'run'}
-                                running={running}
-                                onClick={() => {
-                                    if (!running) {
-                                        setRunning(true);
-                                        clientRunChecklistItemSlashCommand(dispatch, props.playbookRunId, props.checklistNum, props.itemNum);
-                                    }
-                                }}
-                            >
-                                {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
-                            </Run>
+                            {!props.disabled &&
+                                <Run
+                                    data-testid={'run'}
+                                    running={running}
+                                    onClick={() => {
+                                        if (!running) {
+                                            setRunning(true);
+                                            clientRunChecklistItemSlashCommand(dispatch, props.playbookRunId, props.checklistNum, props.itemNum);
+                                        }
+                                    }}
+                                >
+                                    {props.checklistItem.command_last_run ? 'Rerun' : 'Run'}
+                                </Run>
+                            }
                             <Command>
                                 <TextWithTooltipWhenEllipsis
                                     id={props.checklistNum.toString(10)}
@@ -482,14 +563,34 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 </ExtrasRow>
             </ItemContainer>
             <ConfirmModal
-                show={showDeleteConfirm}
-                title={'Delete task'}
-                message={'Are you sure you want to delete this task? This will be removed from this run but will not affect the playbook.'}
-                confirmButtonText={'Delete'}
-                onConfirm={() =>
-                    clientRemoveChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum)
+                show={showSkipConfirm}
+                title={formatMessage({defaultMessage: 'Skip task'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to skip this task? This will be crossed from this run but will not affect the playbook.'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Skip'})}
+                onConfirm={() => {
+                    clientSkipChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
+                    if (props.onChange) {
+                        props.onChange(ChecklistItemState.Skip);
+                    }
+                    setShowSkipConfirm(false);
                 }
-                onCancel={() => setShowDeleteConfirm(false)}
+                }
+                onCancel={() => setShowSkipConfirm(false)}
+            />
+            <ConfirmModal
+                show={showRestoreConfirm}
+                title={formatMessage({defaultMessage: 'Restore task'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to Restore this task? This Task will be added to this run'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Restore'})}
+                onConfirm={() => {
+                    clientRestoreChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
+                    if (props.onChange) {
+                        props.onChange(ChecklistItemState.Open);
+                    }
+                    setShowRestoreConfirm(false);
+                }
+                }
+                onCancel={() => setShowRestoreConfirm(false)}
             />
             <ChecklistItemEditModal
                 show={showEditDialog}
@@ -510,6 +611,29 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     }
 
     return content;
+};
+
+const ToggleDescriptionButton = styled(HoverMenuButton)<{showDescription: boolean}>`
+    transition: all 0.2s linear;
+    transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
+`;
+
+const CollapsibleChecklistItemDescription = (props: {expanded: boolean, children: React.ReactNode}) => {
+    const ref = useRef<HTMLDivElement|null>(null);
+
+    let computedHeight = 'auto';
+    if (ref?.current) {
+        computedHeight = ref.current.scrollHeight + 'px';
+    }
+
+    return (
+        <ChecklistItemDescription
+            ref={ref}
+            height={props.expanded ? computedHeight : '0'}
+        >
+            {props.children}
+        </ChecklistItemDescription>
+    );
 };
 
 interface ChecklistItemEditModalProps {
@@ -538,7 +662,12 @@ const FormContainer = styled.div`
     }
 `;
 
+const StrikeThrough = styled.text`
+    text-decoration: line-through;
+`;
+
 const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {
+    const {formatMessage} = useIntl();
     const [title, setTitle] = useState(props.taskTitle);
     const [description, setDescription] = useState<string>(props.taskDescription);
     const [command, setCommand] = useState(props.taskCommand);
@@ -556,16 +685,16 @@ const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {
         <GenericModal
             id={'taskEditModalc' + props.checklistNum + 'i' + props.itemNum}
             show={props.show}
-            modalHeaderText={'Edit task'}
+            modalHeaderText={formatMessage({defaultMessage: 'Edit task'})}
             onHide={props.onDone}
-            confirmButtonText={'Edit task'}
-            cancelButtonText={'Cancel'}
+            confirmButtonText={formatMessage({defaultMessage: 'Edit task'})}
+            cancelButtonText={formatMessage({defaultMessage: 'Cancel'})}
             handleCancel={props.onDone}
             handleConfirm={submit}
         >
             <FormContainer>
                 <ModalField
-                    placeholder={'Task name'}
+                    placeholder={formatMessage({defaultMessage: 'Task name'})}
                     type='text'
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
@@ -582,6 +711,7 @@ const ChecklistItemEditModal = (props: ChecklistItemEditModalProps) => {
                     value={description ?? ''}
                     setValue={setDescription}
                     channelId={props.channelId}
+                    createMessage={formatMessage({defaultMessage: 'Task description'})}
                 />
             </FormContainer>
         </GenericModal>

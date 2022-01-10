@@ -4,6 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector, useStore} from 'react-redux';
 import styled from 'styled-components';
+import {useIntl} from 'react-intl';
 
 import {GlobalState} from 'mattermost-redux/types/store';
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -33,15 +34,15 @@ const FakeButton = styled.div`
     background: var(--button-color-rgb);
     border: 1px solid var(--button-bg);
     border-radius: 4px;
-    padding: 0 14px;
-    height: 26px;
+    padding: 0 20px;
+    height: 32px;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 14px;
     transition: all 0.15s ease-out;
     margin-left: auto;
 
     &:hover {
-        background: rgba(var(--button-bg-rgb), 0.08);
+        background: rgba(var(--button-bg-rgb), 0.12);
     }
 
     &:active  {
@@ -56,6 +57,10 @@ const FakeButton = styled.div`
             margin: 0 7px 0 0;
         }
     }
+`;
+
+const TextContainer = styled.span`
+    display: flex;
 `;
 
 type IdToUserFn = (userId: string) => UserProfile;
@@ -74,31 +79,43 @@ const TimelineRetro = (props: Props) => {
     const getStateFn = useStore().getState;
     const getUserFn = (userId: string) => getUserAction(userId)(dispatch as DispatchFunc, getStateFn);
     const selectUser = useSelector<GlobalState, IdToUserFn>((state) => (userId: string) => getUser(state, userId));
+    const {formatMessage} = useIntl();
 
     useEffect(() => {
         setFilteredEvents(allEvents.filter((e) => showEvent(e.event_type, eventsFilter)));
     }, [eventsFilter, allEvents]);
 
     useEffect(() => {
-        Promise.all(props.playbookRun.timeline_events.map(async (e) => {
-            let user = selectUser(e.subject_user_id) as UserProfile | undefined;
+        const {
+            status_posts: statuses,
+            timeline_events: events,
+        } = props.playbookRun;
+        const statusDeleteAtByPostId = statuses.reduce<{[id: string]: number}>((map, post) => {
+            if (post.delete_at !== 0) {
+                map[post.id] = post.delete_at;
+            }
+
+            return map;
+        }, {});
+        Promise.all(events.map(async (event) => {
+            let user = selectUser(event.subject_user_id) as UserProfile | undefined;
 
             if (!user) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const ret = await getUserFn(e.subject_user_id) as { data?: UserProfile, error?: any };
+                const ret = await getUserFn(event.subject_user_id) as { data?: UserProfile, error?: any };
                 if (!ret.data) {
                     return null;
                 }
                 user = ret.data;
             }
             return {
-                ...e,
+                ...event,
+                status_delete_at: statusDeleteAtByPostId[event.post_id] ?? 0,
                 subject_display_name: displayUsername(user, displayPreference),
             } as TimelineEvent;
         })).then((eventArray) => {
             setAllEvents(eventArray.filter((e) => e) as TimelineEvent[]);
         });
-    }, [props.playbookRun.timeline_events, displayPreference]);
+    }, [props.playbookRun.timeline_events, displayPreference, props.playbookRun.status_posts]);
 
     const selectOption = (value: string, checked: boolean) => {
         if (eventsFilter.all && value !== 'all') {
@@ -113,7 +130,7 @@ const TimelineRetro = (props: Props) => {
 
     const filterOptions = [
         {
-            display: 'All events',
+            display: formatMessage({defaultMessage: 'All events'}),
             value: 'all',
             selected: eventsFilter.all,
             disabled: false,
@@ -122,37 +139,37 @@ const TimelineRetro = (props: Props) => {
             value: 'divider',
         } as CheckboxOption,
         {
-            display: 'Role changes',
+            display: formatMessage({defaultMessage: 'Role changes'}),
             value: TimelineEventType.OwnerChanged,
             selected: eventsFilter.owner_changed,
             disabled: eventsFilter.all,
         },
         {
-            display: 'Status updates',
+            display: formatMessage({defaultMessage: 'Status updates'}),
             value: TimelineEventType.StatusUpdated,
             selected: eventsFilter.status_updated,
             disabled: eventsFilter.all,
         },
         {
-            display: 'Saved messages',
+            display: formatMessage({defaultMessage: 'Saved messages'}),
             value: TimelineEventType.EventFromPost,
             selected: eventsFilter.event_from_post,
             disabled: eventsFilter.all,
         },
         {
-            display: 'Task state changes',
+            display: formatMessage({defaultMessage: 'Task state changes'}),
             value: TimelineEventType.TaskStateModified,
             selected: eventsFilter.task_state_modified,
             disabled: eventsFilter.all,
         },
         {
-            display: 'Task assignments',
+            display: formatMessage({defaultMessage: 'Task assignments'}),
             value: TimelineEventType.AssigneeChanged,
             selected: eventsFilter.assignee_changed,
             disabled: eventsFilter.all,
         },
         {
-            display: 'Slash commands',
+            display: formatMessage({defaultMessage: 'Slash commands'}),
             value: TimelineEventType.RanSlashCommand,
             selected: eventsFilter.ran_slash_command,
             disabled: eventsFilter.all,
@@ -162,14 +179,18 @@ const TimelineRetro = (props: Props) => {
     return (
         <TabPageContainer>
             <Header>
-                <Title>{'Timeline'}</Title>
-                <FakeButton>
-                    <MultiCheckbox
-                        options={filterOptions}
-                        onselect={selectOption}
-                    />
-                    {'Filter'}
-                </FakeButton>
+                <Title>{formatMessage({defaultMessage: 'Timeline'})}</Title>
+                <MultiCheckbox
+                    dotMenuButton={FakeButton}
+                    options={filterOptions}
+                    onselect={selectOption}
+                    icon={
+                        <TextContainer>
+                            <i className='icon icon-filter-variant'/>
+                            {formatMessage({defaultMessage: 'Filter'})}
+                        </TextContainer>
+                    }
+                />
                 {/*
                     <PrimaryButtonNotRight>
                     <i className='icon-download-outline'/>
@@ -197,5 +218,6 @@ const showEvent = (eventType: string, filter: TimelineEventsFilter) => {
     const filterRecord = filter as unknown as Record<string, boolean>;
     return filterRecord[eventType] ||
         (eventType === TimelineEventType.RunCreated && filterRecord[TimelineEventType.StatusUpdated]) ||
-        (eventType === TimelineEventType.RunFinished && filterRecord[TimelineEventType.StatusUpdated]);
+        (eventType === TimelineEventType.RunFinished && filterRecord[TimelineEventType.StatusUpdated]) ||
+        (eventType === TimelineEventType.RunRestored && filterRecord[TimelineEventType.StatusUpdated]);
 };

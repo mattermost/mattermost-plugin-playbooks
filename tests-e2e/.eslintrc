@@ -4,7 +4,7 @@
     "plugin:cypress/recommended",
     "plugin:react/recommended"
   ],
-  "plugins": ["mattermost", "import", "cypress"],
+  "plugins": ["mattermost", "import", "cypress", "@typescript-eslint"],
   "globals": {
     "Cypress": true,
     "cy": true
@@ -50,7 +50,8 @@
         "import/no-unresolved": 0,
         "max-nested-callbacks": 0,
         "no-process-env": 0,
-        "no-unused-expressions": 0
+        "no-unused-expressions": 0,
+        "max-lines": 0,
       }
     }
   ]

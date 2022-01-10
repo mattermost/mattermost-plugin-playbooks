@@ -3,7 +3,7 @@ import {useSelector} from 'react-redux';
 
 import styled from 'styled-components';
 
-import GenericModal from 'src/components/widgets/generic_modal';
+import GenericModal, {DefaultFooterContainer} from 'src/components/widgets/generic_modal';
 import {requestTrialLicense, postMessageToAdmins} from 'src/client';
 import UpgradeModalFooter from 'src/components/backstage/upgrade_modal_footer';
 
@@ -72,7 +72,7 @@ const UpgradeModal = (props: Props) => {
 
         setActionState(ModalActionState.Loading);
 
-        const response = await postMessageToAdmins(props.messageType, isServerTeamEdition);
+        const response = await postMessageToAdmins(props.messageType);
         if (response.error) {
             setActionState(ModalActionState.Error);
         } else {
@@ -102,6 +102,7 @@ const UpgradeModal = (props: Props) => {
                     isCloud={isServerCloud}
                 />
             )}
+            components={{FooterContainer}}
         >
             <Content>
                 <UpgradeModalIllustrationWrapper
@@ -142,6 +143,10 @@ const SizedGenericModal = styled(GenericModal)`
         margin-bottom: 48px;
         padding: 0;
     }
+`;
+
+const FooterContainer = styled(DefaultFooterContainer)`
+    align-items: center;
 `;
 
 export default UpgradeModal;

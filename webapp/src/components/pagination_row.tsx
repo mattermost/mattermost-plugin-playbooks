@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
 const PaginationRowDiv = styled.div`
@@ -11,7 +12,7 @@ const PaginationRowDiv = styled.div`
 
 const CountDiv = styled.div`
     padding-top: 8px;
-    color: var(--center-channel-color-56);
+    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 const Button = styled.button`
@@ -34,15 +35,11 @@ export function PaginationRow(props: Props) {
         props.setPage(props.page + 1);
     }
 
-    function countInfo() {
-        const startCount = props.page * props.perPage;
-        const endCount = Math.min(startCount + props.perPage, props.totalCount);
-        const firstNumber = props.totalCount === 0 ? 0 : startCount + 1;
-
-        return firstNumber + ' - ' + endCount + ' of ' + props.totalCount + ' total';
-    }
-
     const showNextPage = ((props.page + 1) * props.perPage) < props.totalCount;
+
+    const start = props.page * props.perPage;
+    const to = Math.min(start + props.perPage, props.totalCount);
+    const from = props.totalCount === 0 ? 0 : start + 1;
 
     return (
         <PaginationRowDiv>
@@ -54,11 +51,16 @@ export function PaginationRow(props: Props) {
                             className='btn btn-link'
                             onClick={onPrevPage}
                         >
-                            {'Previous'}
+                            <FormattedMessage defaultMessage='Previous'/>
                         </Button>
                     }
                 </div>
-                <CountDiv className='text-center col-sm-8'>{countInfo()}</CountDiv>
+                <CountDiv className='text-center col-sm-8'>
+                    <FormattedMessage
+                        defaultMessage='{from, number}–{to, number} of {total, number} total'
+                        values={{from, to, total: props.totalCount}}
+                    />
+                </CountDiv>
                 <div className='text-center col-sm-2'>
                     {
                         showNextPage &&
@@ -66,7 +68,7 @@ export function PaginationRow(props: Props) {
                             className='btn btn-link'
                             onClick={onNextPage}
                         >
-                            {'Next'}
+                            <FormattedMessage defaultMessage='Next'/>
                         </Button>}
                 </div>
             </div>

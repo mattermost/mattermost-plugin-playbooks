@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useState, useRef, useEffect, Dispatch, SetStateAction} from 'react';
 import styled, {css} from 'styled-components';
 
 import {useSelector} from 'react-redux';
@@ -9,18 +9,22 @@ import {Team} from 'mattermost-redux/types/teams';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 
+import {useIntl} from 'react-intl';
+
 import PostText from 'src/components/post_text';
 import {useClickOutsideRef, useKeyPress} from 'src/hooks/general';
 
 interface DescriptionProps {
     value: string;
     onEdit: (value: string) => void;
+    editing: boolean;
+    setEditing: (editing: boolean) => void;
 }
 
 const RHSAboutDescription = (props: DescriptionProps) => {
-    const placeholder = 'Add a description...';
+    const {formatMessage} = useIntl();
+    const placeholder = formatMessage({defaultMessage: 'Add a run summary…'});
 
-    const [editing, setEditing] = useState(false);
     const [editedValue, setEditedValue] = useState(props.value);
 
     const currentTeam = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -31,7 +35,7 @@ const RHSAboutDescription = (props: DescriptionProps) => {
         const newValue = editedValue.trim();
         setEditedValue(newValue);
         props.onEdit(newValue);
-        setEditing(false);
+        props.setEditing(false);
     };
 
     useClickOutsideRef(textareaRef, saveAndClose);
@@ -41,15 +45,16 @@ const RHSAboutDescription = (props: DescriptionProps) => {
         setEditedValue(props.value);
     }, [props.value]);
 
-    if (!editing) {
+    if (!props.editing) {
         return (
 
             <RenderedDescription
+                data-testid='rendered-description'
                 onClick={(event) => {
                     // Enter edit mode only if the user is not clicking a link
                     const targetNode = event.target as Node;
                     if (targetNode.nodeName !== 'A') {
-                        setEditing(true);
+                        props.setEditing(true);
                     }
                 }}
             >
@@ -72,6 +77,7 @@ const RHSAboutDescription = (props: DescriptionProps) => {
 
     return (
         <DescriptionTextArea
+            data-testid='textarea-description'
             value={editedValue}
             placeholder={placeholder}
             ref={textareaRef}
@@ -122,7 +128,8 @@ const RenderedDescription = styled.div`
 `;
 
 const DescriptionTextArea = styled.textarea`
-    ${commonDescriptionStyle}
+    ${commonDescriptionStyle} {
+    }
 
     display: block;
     resize: none;

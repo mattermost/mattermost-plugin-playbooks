@@ -1,7 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-const playbookRunsEndpoint = '/plugins/com.mattermost.plugin-incident-management/api/v0/runs';
+const playbookRunsEndpoint = '/plugins/playbooks/api/v0/runs';
+
+const StatusOK = 200;
 
 /**
  * Get all playbook runs directly via API
@@ -9,11 +11,11 @@ const playbookRunsEndpoint = '/plugins/com.mattermost.plugin-incident-management
 Cypress.Commands.add('apiGetAllPlaybookRuns', (teamId) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
+        url: '/plugins/playbooks/api/v0/runs',
         qs: {team_id: teamId, per_page: 10000},
         method: 'GET',
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response);
     });
 });
@@ -24,11 +26,11 @@ Cypress.Commands.add('apiGetAllPlaybookRuns', (teamId) => {
 Cypress.Commands.add('apiGetAllInProgressPlaybookRuns', (teamId, userId = '') => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
+        url: '/plugins/playbooks/api/v0/runs',
         qs: {team_id: teamId, status: 'InProgress', participant_id: userId},
         method: 'GET',
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response);
     });
 });
@@ -39,17 +41,17 @@ Cypress.Commands.add('apiGetAllInProgressPlaybookRuns', (teamId, userId = '') =>
 Cypress.Commands.add('apiGetPlaybookRunByName', (teamId, name) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/runs',
+        url: '/plugins/playbooks/api/v0/runs',
         qs: {team_id: teamId, search_term: name},
         method: 'GET',
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response);
     });
 });
 
 /**
- * Get an playbook run directly via API
+ * Get a playbook run directly via API
  * @param {String} playbookRunId
  * All parameters required
  */
@@ -59,13 +61,13 @@ Cypress.Commands.add('apiGetPlaybookRun', (playbookRunId) => {
         url: `${playbookRunsEndpoint}/${playbookRunId}`,
         method: 'GET',
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response);
     });
 });
 
 /**
- * Start an playbook run directly via API.
+ * Start a playbook run directly via API.
  */
 Cypress.Commands.add('apiRunPlaybook', (
     {
@@ -100,43 +102,34 @@ Cypress.Commands.add('apiFinishRun', (playbookRunId) => {
         url: `${playbookRunsEndpoint}/${playbookRunId}/finish`,
         method: 'PUT',
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response.body);
     });
 });
 
-// Update an playbook run's status programmatically.
+// Update a playbook run's status programmatically.
 Cypress.Commands.add('apiUpdateStatus', (
     {
         playbookRunId,
-        userId,
-        channelId,
-        teamId,
         message,
-        description,
+        reminder = 300,
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: `${playbookRunsEndpoint}/${playbookRunId}/update-status-dialog`,
+        url: `${playbookRunsEndpoint}/${playbookRunId}/status`,
         method: 'POST',
         body: {
-            type: 'dialog_submission',
-            callback_id: '',
-            state: '',
-            user_id: userId,
-            channel_id: channelId,
-            team_id: teamId,
-            submission: {message, description, reminder: '15'},
-            cancelled: false,
+            message,
+            reminder,
         },
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response.body);
     });
 });
 
 /**
- * Change the owner of an playbook run directly via API
+ * Change the owner of a playbook run directly via API
  * @param {String} playbookRunId
  * @param {String} userId
  * All parameters required
@@ -150,7 +143,50 @@ Cypress.Commands.add('apiChangePlaybookRunOwner', (playbookRunId, userId) => {
             owner_id: userId,
         },
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response);
+    });
+});
+
+/**
+ * Change the assignee of a checklist item directly via API
+ * @param {String} playbookRunId
+ * @param {String} checklistId
+ * @param {String} itemId
+ * @param {String} userId
+ * All parameters required
+ */
+Cypress.Commands.add('apiChangeChecklistItemAssignee', (playbookRunId, checklistId, itemId, userId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: playbookRunsEndpoint + `/${playbookRunId}/checklists/${checklistId}/item/${itemId}/assignee`,
+        method: 'PUT',
+        body: {
+            assignee_id: userId,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response);
+    });
+});
+
+/**
+ * Check a checklist item directly via API
+ * @param {String} playbookRunId
+ * @param {String} checklistId
+ * @param {String} itemId
+ * @param {String} state ('' or 'closed')
+ */
+Cypress.Commands.add('apiSetChecklistItemState', (playbookRunId, checklistId, itemId, state) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: playbookRunsEndpoint + `/${playbookRunId}/checklists/${checklistId}/item/${itemId}/state`,
+        method: 'PUT',
+        body: {
+            new_state: state,
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
         cy.wrap(response);
     });
 });
@@ -189,60 +225,81 @@ Cypress.Commands.add('apiCreatePlaybook', (
     {
         teamId,
         title,
+        description,
         createPublicPlaybookRun,
         checklists,
         memberIDs,
+        makePublic = true,
         broadcastEnabled,
         broadcastChannelIds,
         reminderMessageTemplate,
-        reminderTimerDefaultSeconds,
+        reminderTimerDefaultSeconds = 24 * 60 * 60, // 24 hours
+        statusUpdateEnabled = true,
+        retrospectiveReminderIntervalSeconds,
+        retrospectiveTemplate,
+        retrospectiveEnabled = true,
         invitedUserIds,
         inviteUsersEnabled,
         defaultOwnerId,
         defaultOwnerEnabled,
         announcementChannelId,
         announcementChannelEnabled,
-        webhookOnCreationURL,
+        webhookOnCreationURLs,
         webhookOnCreationEnabled,
-        webhookOnStatusUpdateURL,
+        webhookOnStatusUpdateURLs,
         webhookOnStatusUpdateEnabled,
         messageOnJoin,
         messageOnJoinEnabled,
         signalAnyKeywords,
         signalAnyKeywordsEnabled,
+        channelNameTemplate,
     }) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
+        url: '/plugins/playbooks/api/v0/playbooks',
         method: 'POST',
         body: {
             title,
+            description,
             team_id: teamId,
             create_public_playbook_run: createPublicPlaybookRun,
             checklists,
-            member_ids: memberIDs,
+            public: makePublic,
+            members: memberIDs?.map((val) => ({user_id: val, roles: ['playbook_member', 'playbook_admin']})),
             broadcast_enabled: broadcastEnabled,
             broadcast_channel_ids: broadcastChannelIds,
             reminder_message_template: reminderMessageTemplate,
             reminder_timer_default_seconds: reminderTimerDefaultSeconds,
+            status_update_enabled: statusUpdateEnabled,
+            retrospective_reminder_interval_seconds: retrospectiveReminderIntervalSeconds,
+            retrospective_template: retrospectiveTemplate,
+            retrospective_enabled: retrospectiveEnabled,
             invited_user_ids: invitedUserIds,
             invite_users_enabled: inviteUsersEnabled,
             default_owner_id: defaultOwnerId,
             default_owner_enabled: defaultOwnerEnabled,
             announcement_channel_id: announcementChannelId,
             announcement_channel_enabled: announcementChannelEnabled,
-            webhook_on_creation_url: webhookOnCreationURL,
+            webhook_on_creation_urls: webhookOnCreationURLs,
             webhook_on_creation_enabled: webhookOnCreationEnabled,
-            webhook_on_status_update_url: webhookOnStatusUpdateURL,
+            webhook_on_status_update_urls: webhookOnStatusUpdateURLs,
             webhook_on_status_update_enabled: webhookOnStatusUpdateEnabled,
             message_on_join: messageOnJoin,
             message_on_join_enabled: messageOnJoinEnabled,
             signal_any_keywords: signalAnyKeywords,
             signal_any_keywords_enabled: signalAnyKeywordsEnabled,
+            channel_name_template: channelNameTemplate,
         },
     }).then((response) => {
         expect(response.status).to.equal(201);
-        cy.wrap(response.body);
+        cy.wrap(response.headers.location);
+    }).then((location) => {
+        cy.request({
+            url: location,
+            method: 'GET',
+        }).then((response) => {
+            cy.wrap(response.body);
+        });
     });
 });
 
@@ -255,9 +312,10 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         broadcastEnabled,
         broadcastChannelIds,
         reminderMessageTemplate,
-        reminderTimerDefaultSeconds,
+        reminderTimerDefaultSeconds = 24 * 60 * 60, // 24 hours
         otherMembers = [],
         invitedUserIds = [],
+        channelNameTemplate = '',
     }) => (
     cy.apiCreatePlaybook({
         teamId,
@@ -278,6 +336,7 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
         reminderMessageTemplate,
         reminderTimerDefaultSeconds,
         invitedUserIds,
+        channelNameTemplate,
     })
 ));
 
@@ -285,13 +344,74 @@ Cypress.Commands.add('apiCreateTestPlaybook', (
 Cypress.Commands.add('verifyPlaybookCreated', (teamId, playbookTitle) => (
     cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
-        url: '/plugins/com.mattermost.plugin-incident-management/api/v0/playbooks',
+        url: '/plugins/playbooks/api/v0/playbooks',
         qs: {team_id: teamId, sort: 'title', direction: 'asc'},
         method: 'GET'
     }).then((response) => {
-        expect(response.status).to.equal(200);
+        expect(response.status).to.equal(StatusOK);
         const playbookResults = response.body;
         const playbook = playbookResults.items.find((p) => p.title === playbookTitle);
         assert.isDefined(playbook);
     })
 ));
+
+// Get a playbook
+Cypress.Commands.add('apiGetPlaybook', (playbookId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/playbooks/${playbookId}`,
+        method: 'GET',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
+// Update a playbook
+Cypress.Commands.add('apiUpdatePlaybook', (playbook, expectedHttpCode = StatusOK) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/playbooks/${playbook.id}`,
+        method: 'PUT',
+        body: JSON.stringify(playbook),
+        failOnStatusCode: false,
+    }).then((response) => {
+        expect(response.status).to.equal(expectedHttpCode);
+        cy.wrap(response.body);
+    });
+});
+
+// Archive a playbook
+Cypress.Commands.add('apiArchivePlaybook', (playbookId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/playbooks/${playbookId}`,
+        method: 'DELETE',
+    }).then((response) => {
+        expect(response.status).to.equal(204);
+    });
+});
+
+// Follow a playbook run
+Cypress.Commands.add('apiFollowPlaybookRun', (playbookRunId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/runs/${playbookRunId}/followers`,
+        method: 'PUT',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});
+
+// Unfollow a playbook run
+Cypress.Commands.add('apiUnfollowPlaybookRun', (playbookRunId) => {
+    return cy.request({
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        url: `/plugins/playbooks/api/v0/runs/${playbookRunId}/followers`,
+        method: 'DELETE',
+    }).then((response) => {
+        expect(response.status).to.equal(StatusOK);
+        cy.wrap(response.body);
+    });
+});

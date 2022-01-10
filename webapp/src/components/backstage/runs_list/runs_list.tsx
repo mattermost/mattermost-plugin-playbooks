@@ -5,6 +5,8 @@ import React from 'react';
 
 import styled from 'styled-components';
 
+import {FormattedMessage} from 'react-intl';
+
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 
 import PaginationRow from './pagination_row';
@@ -12,26 +14,28 @@ import Row from './row';
 import RunListHeader from './run_list_header';
 import Filters from './filters';
 
-import './runs_list.scss';
-
 interface Props {
     playbookRuns: PlaybookRun[]
     totalCount: number
     fetchParams: FetchPlaybookRunsParams
     setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>
-    filterPill: React.ReactNode
+    filterPill: React.ReactNode | null
     fixedTeam?: boolean
+    fixedPlaybook?: boolean
 }
 
-const PlaybookRunListContainer = styled.div`
+const PlaybookRunList = styled.div`
+    font-family: 'Open Sans', sans-serif;
+    color: rgba(var(--center-channel-color-rgb), 0.90);
 `;
 
-const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterPill, fixedTeam}: Props) => {
+const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterPill, fixedTeam, fixedPlaybook}: Props) => {
     const isFiltering = (
         (fetchParams?.search_term?.length ?? 0) > 0 ||
-        (fetchParams?.statuses?.length ?? 0) > 0 ||
+        (fetchParams?.statuses?.length ?? 0) > 1 ||
         (fetchParams?.owner_user_id?.length ?? 0) > 0 ||
-        (fetchParams?.participant_id?.length ?? 0) > 0
+        (fetchParams?.participant_id?.length ?? 0) > 0 ||
+        (fetchParams?.participant_or_follower_id?.length ?? 0) > 0
     );
 
     const setPage = (page: number) => {
@@ -39,7 +43,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
     };
 
     return (
-        <PlaybookRunListContainer className='PlaybookRunList'>
+        <PlaybookRunList className='PlaybookRunList'>
             <div
                 id='playbookRunList'
                 className='list'
@@ -48,6 +52,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
                     fetchParams={fetchParams}
                     setFetchParams={setFetchParams}
                     fixedTeam={fixedTeam}
+                    fixedPlaybook={fixedPlaybook}
                 />
                 {filterPill}
                 <RunListHeader
@@ -56,7 +61,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
                 />
                 {playbookRuns.length === 0 && !isFiltering &&
                 <div className='text-center pt-8'>
-                    {'There are no runs for this playbook.'}
+                    <FormattedMessage defaultMessage='There are no runs for this playbook.'/>
                 </div>
                 }
                 {playbookRuns.length === 0 && isFiltering &&
@@ -78,7 +83,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
                     setPage={setPage}
                 />
             </div>
-        </PlaybookRunListContainer>
+        </PlaybookRunList>
     );
 };
 

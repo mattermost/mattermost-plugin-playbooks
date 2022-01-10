@@ -142,7 +142,7 @@ const prepackagedPlugins = [
     'com.mattermost.custom-attributes',
     'github',
     'com.github.manland.mattermost-plugin-gitlab',
-    'com.mattermost.plugin-incident-management',
+    'playbooks',
     'jenkins',
     'jira',
     'com.mattermost.nps',

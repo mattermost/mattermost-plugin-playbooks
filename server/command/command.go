@@ -29,6 +29,8 @@ const helpText = "###### Mattermost Playbooks Plugin - Slash Command Help\n" +
 	"* `/playbook list` - List all your playbook runs. \n" +
 	"* `/playbook info` - Show a summary of the current playbook run. \n" +
 	"* `/playbook timeline` - Show the timeline for the current playbook run. \n" +
+	"* `/playbook todo` - Get a list of your assigned tasks. \n" +
+	"* `/playbook settings digest [on/off]` - turn daily digest on/off. \n" +
 	"\n" +
 	"Learn more [in our documentation](https://mattermost.com/pl/default-incident-response-app-documentation). \n" +
 	""
@@ -50,7 +52,7 @@ func getCommand(addTestCommands bool) *model.Command {
 		DisplayName:      "Playbook",
 		Description:      "Playbooks",
 		AutoComplete:     true,
-		AutoCompleteDesc: "Available commands: run, finish, update, check, list, owner, info",
+		AutoCompleteDesc: "Available commands: run, finish, update, check, list, owner, info, todo, settings",
 		AutoCompleteHint: "[command]",
 		AutocompleteData: getAutocompleteData(addTestCommands),
 	}
@@ -58,7 +60,7 @@ func getCommand(addTestCommands bool) *model.Command {
 
 func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	command := model.NewAutocompleteData("playbook", "[command]",
-		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline")
+		"Available commands: run, finish, update, check, checkadd, checkremove, list, owner, info, timeline, todo, settings")
 
 	run := model.NewAutocompleteData("run", "", "Starts a new playbook run")
 	command.AddCommand(run)
@@ -107,6 +109,25 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	timeline := model.NewAutocompleteData("timeline", "", "Shows the timeline for the current playbook run")
 	command.AddCommand(timeline)
 
+	todo := model.NewAutocompleteData("todo", "", "Get a list of your assigned tasks")
+	command.AddCommand(todo)
+
+	settings := model.NewAutocompleteData("settings", "digest [on/off]", "Change personal playbook settings")
+	display := model.NewAutocompleteData(" ", "Display current settings", "")
+	settings.AddCommand(display)
+
+	digest := model.NewAutocompleteData("digest", "[on/off]", "Turn digest on/off")
+	digestValue := []model.AutocompleteListItem{{
+		HelpText: "Turn daily digest on",
+		Item:     "on",
+	}, {
+		HelpText: "Turn daily digest off",
+		Item:     "off",
+	}}
+	digest.AddStaticListArgument("", true, digestValue)
+	settings.AddCommand(digest)
+	command.AddCommand(settings)
+
 	if addTestCommands {
 		test := model.NewAutocompleteData("test", "", "Commands for testing and debugging.")
 
@@ -146,11 +167,24 @@ type Runner struct {
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
 	configService      config.Service
+	userInfoStore      app.UserInfoStore
+	userInfoTelemetry  app.UserInfoTelemetry
+	permissions        *app.PermissionsService
 }
 
 // NewCommandRunner creates a command runner.
-func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *pluginapi.Client,
-	logger bot.Logger, poster bot.Poster, playbookRunService app.PlaybookRunService, playbookService app.PlaybookService, configService config.Service) *Runner {
+func NewCommandRunner(ctx *plugin.Context,
+	args *model.CommandArgs,
+	api *pluginapi.Client,
+	logger bot.Logger,
+	poster bot.Poster,
+	playbookRunService app.PlaybookRunService,
+	playbookService app.PlaybookService,
+	configService config.Service,
+	userInfoStore app.UserInfoStore,
+	userInfoTelemetry app.UserInfoTelemetry,
+	permissions *app.PermissionsService,
+) *Runner {
 	return &Runner{
 		context:            ctx,
 		args:               args,
@@ -160,6 +194,9 @@ func NewCommandRunner(ctx *plugin.Context, args *model.CommandArgs, api *plugina
 		playbookRunService: playbookRunService,
 		playbookService:    playbookService,
 		configService:      configService,
+		userInfoStore:      userInfoStore,
+		userInfoTelemetry:  userInfoTelemetry,
+		permissions:        permissions,
 	}
 }
 
@@ -195,15 +232,10 @@ func (r *Runner) actionRun(args []string) {
 		postID = args[1]
 	}
 
-	if !app.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI) {
-		r.postCommandResponse("Must be a member of the team to run playbooks.")
-		return
-	}
-
 	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.pluginAPI),
 	}
 
 	playbooksResults, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId,
@@ -241,15 +273,10 @@ func (r *Runner) actionRunPlaybook(args []string) {
 	playbookID := args[0]
 	clientID := args[1]
 
-	if !app.CanViewTeam(r.args.UserId, r.args.TeamId, r.pluginAPI) {
-		r.postCommandResponse("Must be a member of the team to run playbooks.")
-		return
-	}
-
 	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.pluginAPI),
 	}
 
 	// Using the GetPlaybooksForTeam so that requesterInfo and the expected security restrictions
@@ -636,7 +663,7 @@ func (r *Runner) actionFinish() {
 		return
 	}
 
-	if err = app.EditPlaybookRun(r.args.UserId, r.args.ChannelId, r.pluginAPI); err != nil {
+	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunID); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
@@ -663,7 +690,7 @@ func (r *Runner) actionUpdate() {
 		return
 	}
 
-	if err = app.EditPlaybookRun(r.args.UserId, r.args.ChannelId, r.pluginAPI); err != nil {
+	if err = r.permissions.RunManageProperties(r.args.UserId, playbookRunID); err != nil {
 		if errors.Is(err, app.ErrNoPermissions) {
 			r.postCommandResponse(fmt.Sprintf("userID `%s` is not an admin or channel member", r.args.UserId))
 			return
@@ -695,16 +722,10 @@ func (r *Runner) actionAdd(args []string) {
 		return
 	}
 
-	isGuest, err := app.IsGuest(r.args.UserId, r.pluginAPI)
+	requesterInfo, err := app.GetRequesterInfo(r.args.UserId, r.pluginAPI)
 	if err != nil {
 		r.warnUserAndLogErrorf("Error: %v", err)
 		return
-	}
-
-	requesterInfo := app.RequesterInfo{
-		UserID:  r.args.UserId,
-		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
-		IsGuest: isGuest,
 	}
 
 	if err := r.playbookRunService.OpenAddToTimelineDialog(requesterInfo, postID, r.args.TeamId, r.args.TriggerId); err != nil {
@@ -813,6 +834,72 @@ func (r *Runner) timeSince(event app.TimelineEvent, reported time.Time) string {
 	return "-" + timeutils.DurationString(eventAt, reported)
 }
 
+func (r *Runner) actionTodo() {
+	if err := r.playbookRunService.DMTodoDigestToUser(r.args.UserId, true); err != nil {
+		r.warnUserAndLogErrorf("Error getting tasks and runs digest: %v", err)
+	}
+}
+
+func (r *Runner) actionSettings(args []string) {
+	settingsHelpText := "###### Playbooks Personal Settings - Slash Command Help\n" +
+		"* `/playbook settings` - display current settings. \n" +
+		"* `/playbook settings digest on` - turn daily digest on. \n" +
+		"* `/playbook settings digest off` - turn daily digest off."
+
+	if len(args) == 0 {
+		r.displayCurrentSettings()
+		return
+	}
+
+	if len(args) != 2 || args[0] != "digest" || (args[1] != "on" && args[1] != "off") {
+		r.postCommandResponse(settingsHelpText)
+		return
+	}
+
+	info, err := r.userInfoStore.Get(r.args.UserId)
+	if errors.Is(err, app.ErrNotFound) {
+		info = app.UserInfo{
+			ID: r.args.UserId,
+		}
+	} else if err != nil {
+		r.warnUserAndLogErrorf("Error getting userInfo: %v", err)
+		return
+	}
+
+	oldInfo := info
+
+	if args[1] == "off" {
+		info.DisableDailyDigest = true
+	} else {
+		info.DisableDailyDigest = false
+	}
+
+	if err = r.userInfoStore.Upsert(info); err != nil {
+		r.warnUserAndLogErrorf("Error updating userInfo: %v", err)
+		return
+	}
+
+	r.userInfoTelemetry.ChangeDigestSettings(r.args.UserId, oldInfo.DigestNotificationSettings, info.DigestNotificationSettings)
+
+	r.displayCurrentSettings()
+}
+
+func (r *Runner) displayCurrentSettings() {
+	info, err := r.userInfoStore.Get(r.args.UserId)
+	if err != nil {
+		if !errors.Is(err, app.ErrNotFound) {
+			r.warnUserAndLogErrorf("Error getting userInfo: %v", err)
+			return
+		}
+	}
+
+	dailyDigestSetting := "Daily digest: on"
+	if info.DisableDailyDigest {
+		dailyDigestSetting = "Daily digest: off"
+	}
+	r.postCommandResponse(fmt.Sprintf("###### Playbooks Personal Settings\n- %s", dailyDigestSetting))
+}
+
 func (r *Runner) actionTestSelf(args []string) {
 	if r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting == nil ||
 		!*r.pluginAPI.Configuration.GetConfig().ServiceSettings.EnableTesting {
@@ -837,7 +924,7 @@ func (r *Runner) actionTestSelf(args []string) {
 	}
 
 	shortDescription := "A short description."
-	longDescription := `A very long description describing the item in a very descriptive way. Now with Markdown syntax! We have *italics* and **bold**. We have [external](http://example.com) and [internal links](/ad-1/com.mattermost.plugin-incident-management/playbooks). We have even links to channels: ~town-square. And links to users: @sysadmin, @user-1. We do have the usual headings and lists, of course:
+	longDescription := `A very long description describing the item in a very descriptive way. Now with Markdown syntax! We have *italics* and **bold**. We have [external](http://example.com) and [internal links](/ad-1/playbooks/playbooks). We have even links to channels: ~town-square. And links to users: @sysadmin, @user-1. We do have the usual headings and lists, of course:
 ## Unordered List
 - One
 - Two
@@ -966,7 +1053,7 @@ And... yes, of course, we have emojis
 		return
 	}
 	testPlaybook.ID = todeleteid
-	if err = r.playbookService.Delete(testPlaybook, r.args.UserId); err != nil {
+	if err = r.playbookService.Archive(testPlaybook, r.args.UserId); err != nil {
 		r.postCommandResponse("There was an error while deleting playbook. Err: " + err.Error())
 		return
 	}
@@ -1032,7 +1119,7 @@ And... yes, of course, we have emojis
 		return
 	}
 
-	if err := r.playbookRunService.MoveChecklistItem(playbookRun.ID, r.args.UserId, 0, 0, 1); err != nil {
+	if err := r.playbookRunService.MoveChecklistItem(playbookRun.ID, r.args.UserId, 0, 0, 0, 1); err != nil {
 		r.postCommandResponse("Unable to remove checklist item: " + err.Error())
 		return
 	}
@@ -1609,7 +1696,7 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 	requesterInfo := app.RequesterInfo{
 		UserID:  r.args.UserId,
 		TeamID:  r.args.TeamId,
-		IsAdmin: app.IsAdmin(r.args.UserId, r.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(r.args.UserId, r.pluginAPI),
 	}
 
 	playbooksResult, err := r.playbookService.GetPlaybooksForTeam(requesterInfo, r.args.TeamId, app.PlaybookFilterOptions{
@@ -1760,11 +1847,6 @@ func (r *Runner) Execute() error {
 		return nil
 	}
 
-	if !app.IsOnEnabledTeam(r.args.TeamId, r.configService) {
-		r.postCommandResponse("Not enabled on this team.")
-		return nil
-	}
-
 	switch cmd {
 	case "run":
 		r.actionRun(parameters)
@@ -1790,6 +1872,10 @@ func (r *Runner) Execute() error {
 		r.actionAdd(parameters)
 	case "timeline":
 		r.actionTimeline()
+	case "todo":
+		r.actionTodo()
+	case "settings":
+		r.actionSettings(parameters)
 	case "nuke-db":
 		r.actionNukeDB(parameters)
 	case "test":

@@ -16,9 +16,14 @@ const (
 	StatusFinished   = "Finished"
 )
 
-// PlaybookRun holds the detailed information of an playbook run.
+const (
+	RunRoleMember = "run_member"
+	RunRoleAdmin  = "run_admin"
+)
+
+// PlaybookRun holds the detailed information of a playbook run.
 //
-// NOTE: When adding a column to the db, search for "When adding an Playbook Run column" to see where
+// NOTE: When adding a column to the db, search for "When adding a PlaybookRun column" to see where
 // that column needs to be added in the sqlstore code.
 type PlaybookRun struct {
 	// ID is the unique identifier of the playbook run.
@@ -27,8 +32,8 @@ type PlaybookRun struct {
 	// Name is the name of the playbook run's channel.
 	Name string `json:"name"`
 
-	// Description is a short string, in Markdown, describing what the run is.
-	Description string `json:"description"`
+	// Summary is a short string, in Markdown, describing what the run is.
+	Summary string `json:"summary"`
 
 	// OwnerUserID is the user identifier of the playbook run's owner.
 	OwnerUserID string `json:"owner_user_id"`
@@ -71,7 +76,7 @@ type PlaybookRun struct {
 	StatusPosts []StatusPost `json:"status_posts"`
 
 	// CurrentStatus is the current status of the playbook run.
-	// It can be Reported, Active, Resolved or Archived.
+	// It can be StatusInProgress ("InProgress") or StatusFinished ("Finished")
 	CurrentStatus string `json:"current_status"`
 
 	// LastStatusUpdateAt is the timestamp, in milliseconds since epoch, of the time the last
@@ -89,6 +94,13 @@ type PlaybookRun struct {
 	// ReminderMessageTemplate, if not empty, is the template shown when updating the status of the
 	// playbook run for the first time.
 	ReminderMessageTemplate string `json:"reminder_message_template"`
+
+	// ReminderTimerDefaultSeconds is the expected default interval, in seconds,
+	// between every status update
+	ReminderTimerDefaultSeconds int64 `json:"reminder_timer_default_seconds"`
+
+	//Defines if status update functionality is enabled
+	StatusUpdateEnabled bool `json:"status_update_enabled"`
 
 	// InvitedUserIDs, if not empty, is an array containing the identifiers of the users that were
 	// automatically invited to the playbook run when it was created.
@@ -109,13 +121,13 @@ type PlaybookRun struct {
 	// creation and status updates are announced.
 	BroadcastChannelIDs []string `json:"broadcast_channel_ids"`
 
-	// WebhookOnCreationURL, if not empty, is the URL to which a POST request is made with the whole
+	// WebhookOnCreationURLs, if not empty, is the URL to which a POST request is made with the whole
 	// playbook run as payload when the run is created.
-	WebhookOnCreationURL string `json:"webhook_on_creation_url"`
+	WebhookOnCreationURLs []string `json:"webhook_on_creation_urls"`
 
-	// WebhookOnStatusUpdateURL, if not empty, is the URL to which a POST request is made with the
+	// WebhookOnStatusUpdateURLs, if not empty, is the URL to which a POST request is made with the
 	// whole playbook run as payload every time the status of the playbook run is updated.
-	WebhookOnStatusUpdateURL string `json:"webhook_on_status_update_url"`
+	WebhookOnStatusUpdateURLs []string `json:"webhook_on_status_update_urls"`
 
 	// Retrospective is a string containing the currently saved retrospective.
 	// If RetrospectivePublishedAt is different than 0, this is the final published retrospective.
@@ -132,13 +144,12 @@ type PlaybookRun struct {
 	// to fill the retrospective.
 	RetrospectiveReminderIntervalSeconds int64 `json:"retrospective_reminder_interval_seconds"`
 
+	// Defines if retrospective functionality is enabled
+	RetrospectiveEnabled bool `json:"retrospective_enabled"`
+
 	// MessageOnJoin, if not empty, is the message shown to every user that joins the channel of
 	// the playbook run.
 	MessageOnJoin string `json:"message_on_join"`
-
-	// ExportChannelOnArchiveEnabled is true if the channel is exported when the status is updated
-	// to "Archived", false otherwise.
-	ExportChannelOnFinishedEnabled bool `json:"export_channel_on_finished_enabled"`
 
 	// ParticipantIDs is an array of the identifiers of all the participants in the playbook run.
 	// A participant is any member of the playbook run channel that isn't a bot.
@@ -161,6 +172,8 @@ func (i *PlaybookRun) Clone() *PlaybookRun {
 	newPlaybookRun.InvitedUserIDs = append([]string(nil), i.InvitedUserIDs...)
 	newPlaybookRun.InvitedGroupIDs = append([]string(nil), i.InvitedGroupIDs...)
 	newPlaybookRun.ParticipantIDs = append([]string(nil), i.ParticipantIDs...)
+	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), i.WebhookOnCreationURLs...)
+	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), i.WebhookOnStatusUpdateURLs...)
 
 	return &newPlaybookRun
 }
@@ -196,6 +209,12 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	if old.BroadcastChannelIDs == nil {
 		old.BroadcastChannelIDs = []string{}
 	}
+	if old.WebhookOnCreationURLs == nil {
+		old.WebhookOnCreationURLs = []string{}
+	}
+	if old.WebhookOnStatusUpdateURLs == nil {
+		old.WebhookOnStatusUpdateURLs = []string{}
+	}
 
 	return json.Marshal(old)
 }
@@ -216,20 +235,22 @@ type StatusPost struct {
 type UpdateOptions struct {
 }
 
-// StatusUpdateOptions encapsulates the fields that can be set when updating an playbook run's status
+// StatusUpdateOptions encapsulates the fields that can be set when updating a playbook run's status
 // NOTE: changes made to this should be reflected in the client package.
 type StatusUpdateOptions struct {
-	Message  string        `json:"message"`
-	Reminder time.Duration `json:"reminder"`
+	Message   string        `json:"message"`
+	Reminder  time.Duration `json:"reminder"`
+	FinishRun bool          `json:"finish_run"`
 }
 
 // Metadata tracks ancillary metadata about a playbook run.
 type Metadata struct {
-	ChannelName        string `json:"channel_name"`
-	ChannelDisplayName string `json:"channel_display_name"`
-	TeamName           string `json:"team_name"`
-	NumParticipants    int64  `json:"num_participants"`
-	TotalPosts         int64  `json:"total_posts"`
+	ChannelName        string   `json:"channel_name"`
+	ChannelDisplayName string   `json:"channel_display_name"`
+	TeamName           string   `json:"team_name"`
+	NumParticipants    int64    `json:"num_participants"`
+	TotalPosts         int64    `json:"total_posts"`
+	Followers          []string `json:"followers"`
 }
 
 type timelineEventType string
@@ -246,6 +267,7 @@ const (
 	PublishedRetrospective timelineEventType = "published_retrospective"
 	CanceledRetrospective  timelineEventType = "canceled_retrospective"
 	RunFinished            timelineEventType = "run_finished"
+	RunRestored            timelineEventType = "run_restored"
 )
 
 type TimelineEvent struct {
@@ -348,6 +370,32 @@ type DialogStateAddToTimeline struct {
 	PostID string `json:"post_id"`
 }
 
+// RunLink represents the info needed to display and link to a run
+type RunLink struct {
+	PlaybookRunID      string
+	TeamName           string
+	ChannelName        string
+	ChannelDisplayName string
+	OwnerUserName      string
+}
+
+// AssignedRun represents all the info needed to display a Run & ChecklistItem to a user
+type AssignedRun struct {
+	RunLink
+	Tasks []AssignedTask
+}
+
+// AssignedTask represents a ChecklistItem + extra info needed to display to a user
+type AssignedTask struct {
+	// ID is the identifier of the containing checklist.
+	ChecklistID string
+
+	// Title is the name of the containing checklist.
+	ChecklistTitle string
+
+	ChecklistItem
+}
+
 // PlaybookRunService is the playbook run service interface.
 type PlaybookRunService interface {
 	// GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -423,11 +471,20 @@ type PlaybookRunService interface {
 	// RemoveChecklistItem removes an item from the specified checklist
 	RemoveChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
 
+	// SkipChecklistItem removes an item from the specified checklist
+	SkipChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
+
+	// RestoreChecklistItem restores a skipped item from the specified checklist
+	RestoreChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int) error
+
 	// EditChecklistItem changes the title, command and description of a specified checklist item.
 	EditChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int, newTitle, newCommand, newDescription string) error
 
-	// MoveChecklistItem moves a checklist item from one position to anouther
-	MoveChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int, newLocation int) error
+	// MoveChecklistItem moves a checklist item from one position to another.
+	MoveChecklist(playbookRunID, userID string, sourceChecklistIdx, destChecklistIdx int) error
+
+	// MoveChecklistItem moves a checklist item from one position to another.
+	MoveChecklistItem(playbookRunID, userID string, sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx int) error
 
 	// GetChecklistItemAutocomplete returns the list of checklist items for playbookRunID to be used in autocomplete
 	GetChecklistItemAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error)
@@ -435,12 +492,21 @@ type PlaybookRunService interface {
 	// GetChecklistAutocomplete returns the list of checklists for playbookRunID to be used in autocomplete
 	GetChecklistAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error)
 
+	// AddChecklist prepends a new checklist to the specified run
+	AddChecklist(playbookRunID, userID string, checklist Checklist) error
+
+	// RemoveChecklist removes the specified checklist.
+	RemoveChecklist(playbookRunID, userID string, checklistNumber int) error
+
+	// RenameChecklist renames the specified checklist
+	RenameChecklist(playbookRunID, userID string, checklistNumber int, newTitle string) error
+
 	// NukeDB removes all playbook run related data.
 	NukeDB() error
 
-	// SetReminder sets a reminder. After timeInMinutes in the future, the owner will be
-	// reminded to update the playbook run's status.
-	SetReminder(playbookRunID string, timeInMinutes time.Duration) error
+	// SetReminder sets a reminder. After time.Now().Add(fromNow) in the future,
+	// the owner will be reminded to update the playbook run's status.
+	SetReminder(playbookRunID string, fromNow time.Duration) error
 
 	// RemoveReminder removes the pending reminder for playbookRunID (if any).
 	RemoveReminder(playbookRunID string)
@@ -448,11 +514,10 @@ type PlaybookRunService interface {
 	// HandleReminder is the handler for all reminder events.
 	HandleReminder(key string)
 
-	// RemoveReminderPost will remove the reminder in the playbook run channel (if any).
-	RemoveReminderPost(playbookRunID string) error
-
-	// ResetReminderTimer sets the previous reminder timer to 0.
-	ResetReminderTimer(playbookRunID string) error
+	// SetNewReminder sets a new reminder for playbookRunID, removes any pending reminder, removes the
+	// reminder post in the playbookRun's channel, and resets the PreviousReminder and
+	// LastStatusUpdateAt (so the countdown timer to "update due" shows the correct time)
+	SetNewReminder(playbookRunID string, newReminder time.Duration) error
 
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
@@ -480,6 +545,31 @@ type PlaybookRunService interface {
 
 	// UpdateDescription updates the description of the specified playbook run.
 	UpdateDescription(playbookRunID, description string) error
+
+	// DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
+	// and DMs the message to userID. Use force = true to DM even if there are no items.
+	DMTodoDigestToUser(userID string, force bool) error
+
+	// GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
+	GetRunsWithAssignedTasks(userID string) ([]AssignedRun, error)
+
+	// GetParticipatingRuns returns the list of active runs with userID as participant
+	GetParticipatingRuns(userID string) ([]RunLink, error)
+
+	// GetOverdueUpdateRuns returns the list of userID's runs that have overdue updates
+	GetOverdueUpdateRuns(userID string) ([]RunLink, error)
+
+	// Follow method lets user follow a specific playbook run
+	Follow(playbookRunID, userID string) error
+
+	// UnFollow method lets user unfollow a specific playbook run
+	Unfollow(playbookRunID, userID string) error
+
+	// GetFollowers returns list of followers for a specific playbook run
+	GetFollowers(playbookRunID string) ([]string, error)
+
+	// RestorePlaybookRun reverts a run from the Finished state. If run was not in Finished state, the call is a noop.
+	RestorePlaybookRun(playbookRunID, userID string) error
 }
 
 // PlaybookRunStore defines the methods the PlaybookRunServiceImpl needs from the interfaceStore.
@@ -498,6 +588,9 @@ type PlaybookRunStore interface {
 
 	// FinishPlaybookRun finishes a run at endAt (in millis)
 	FinishPlaybookRun(playbookRunID string, endAt int64) error
+
+	// RestorePlaybookRun restores a run at restoreAt (in millis)
+	RestorePlaybookRun(playbookRunID string, restoreAt int64) error
 
 	// GetTimelineEvent returns the timeline event for playbookRunID by the timeline event ID.
 	GetTimelineEvent(playbookRunID, eventID string) (*TimelineEvent, error)
@@ -542,6 +635,24 @@ type PlaybookRunStore interface {
 
 	// SetBroadcastChannelIDsToRootID sets the broadcastChannelID->rootID mappings for playbookRunID
 	SetBroadcastChannelIDsToRootID(playbookRunID string, channelIDsToRootIDs map[string]string) error
+
+	// GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
+	GetRunsWithAssignedTasks(userID string) ([]AssignedRun, error)
+
+	// GetParticipatingRuns returns the list of active runs with userID as a participant
+	GetParticipatingRuns(userID string) ([]RunLink, error)
+
+	// GetOverdueUpdateRuns returns the list of runs that userID is participating in that have overdue updates
+	GetOverdueUpdateRuns(userID string) ([]RunLink, error)
+
+	// Follow method lets user follow a specific playbook run
+	Follow(playbookRunID, userID string) error
+
+	// UnFollow method lets user unfollow a specific playbook run
+	Unfollow(playbookRunID, userID string) error
+
+	// GetFollowers returns list of followers for a specific playbook run
+	GetFollowers(playbookRunID string) ([]string, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
@@ -552,6 +663,9 @@ type PlaybookRunTelemetry interface {
 
 	// FinishPlaybookRun tracks the end of a playbook run.
 	FinishPlaybookRun(playbookRun *PlaybookRun, userID string)
+
+	// RestorePlaybookRun tracks the restoration of a playbook run.
+	RestorePlaybookRun(playbookRun *PlaybookRun, userID string)
 
 	// RestartPlaybookRun tracks the restart of a playbook run.
 	RestartPlaybookRun(playbookRun *PlaybookRun, userID string)
@@ -583,21 +697,45 @@ type PlaybookRunTelemetry interface {
 	// RemoveTask tracks the removal of a checklist item.
 	RemoveTask(playbookRunID, userID string, task ChecklistItem)
 
+	// SkipTask tracks the skipping of a checklist item.
+	SkipTask(playbookRunID, userID string, task ChecklistItem)
+
+	// RestoreTask tracks the restoring of a checklist item.
+	RestoreTask(playbookRunID, userID string, task ChecklistItem)
+
 	// RenameTask tracks the update of a checklist item.
 	RenameTask(playbookRunID, userID string, task ChecklistItem)
 
-	// MoveTask tracks the unchecking of checked item.
+	// MoveChecklist tracks the movement of a checklist
+	MoveChecklist(playbookRunID, userID string, task Checklist)
+
+	// MoveTask tracks the movement of a checklist item
 	MoveTask(playbookRunID, userID string, task ChecklistItem)
 
 	// RunTaskSlashCommand tracks the execution of a slash command attached to
 	// a checklist item.
 	RunTaskSlashCommand(playbookRunID, userID string, task ChecklistItem)
 
+	// AddChecklsit tracks the creation of a new checklist.
+	AddChecklist(playbookRunID, userID string, checklist Checklist)
+
+	// RemoveChecklist tracks the removal of a checklist.
+	RemoveChecklist(playbookRunID, userID string, checklist Checklist)
+
+	// RenameChecklsit tracks the creation of a new checklist.
+	RenameChecklist(playbookRunID, userID string, checklist Checklist)
+
 	// UpdateRetrospective event
 	UpdateRetrospective(playbookRun *PlaybookRun, userID string)
 
 	// PublishRetrospective event
 	PublishRetrospective(playbookRun *PlaybookRun, userID string)
+
+	// Follow tracks userID following a playbook run.
+	Follow(playbookRun *PlaybookRun, userID string)
+
+	// Unfollow tracks userID following a playbook run.
+	Unfollow(playbookRun *PlaybookRun, userID string)
 }
 
 type JobOnceScheduler interface {
@@ -634,6 +772,9 @@ type PlaybookRunFilterOptions struct {
 
 	// ParticipantID filters playbook runs that have this member. Defaults to blank (no filter).
 	ParticipantID string `url:"participant_id,omitempty"`
+
+	// ParticipantOrFollowerID filters playbook runs that have this user as member or as follower. Defaults to blank (no filter).
+	ParticipantOrFollowerID string `url:"participant_or_follower,omitempty"`
 
 	// SearchTerm returns results of the search term and respecting the other header filter options.
 	// The search term acts as a filter and respects the Sort and Direction fields (i.e., results are
@@ -715,6 +856,10 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 
 	if options.ParticipantID != "" && !model.IsValidId(options.ParticipantID) {
 		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'participant_id': must be 26 characters or blank")
+	}
+
+	if options.ParticipantOrFollowerID != "" && !model.IsValidId(options.ParticipantOrFollowerID) {
+		return PlaybookRunFilterOptions{}, errors.New("bad parameter 'participant_or_follower_id': must be 26 characters or blank")
 	}
 
 	if options.PlaybookID != "" && !model.IsValidId(options.PlaybookID) {

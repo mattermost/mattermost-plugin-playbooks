@@ -2,22 +2,14 @@
   "extends": [
       "eslint:recommended",
       "plugin:react-hooks/recommended"
+
   ],
-  "parserOptions": {
-    "ecmaVersion": 8,
-    "sourceType": "module",
-    "ecmaFeatures": {
-      "jsx": true,
-      "impliedStrict": true,
-      "modules": true,
-      "experimentalObjectRestSpread": true
-    }
-  },
-  "parser": "babel-eslint",
+  "parser": "@typescript-eslint/parser",
   "plugins": [
     "react",
     "import",
-    "formatjs"
+    "formatjs",
+    "@typescript-eslint"
   ],
   "env": {
     "browser": true,
@@ -134,7 +126,7 @@
     "global-require": 2,
     "guard-for-in": 2,
     "id-blacklist": 0,
-    "import/no-unresolved": 2,
+    "import/no-unresolved": 0, // ts handles this better
     "import/order": [
       "error",
       {
@@ -190,7 +182,7 @@
       }
     ],
     "max-lines": [
-      1,
+      0,
       {
         "max": 450,
         "skipBlankLines": true,
@@ -544,7 +536,8 @@
         "ignore": [
           "location",
           "history",
-          "component"
+          "component",
+		  "className"
         ]
       }
     ],
@@ -620,7 +613,12 @@
         "exceptRange": false,
         "onlyEquality": false
       }
-    ]
+    ],
+    "formatjs/no-id": 2,
+    "formatjs/enforce-default-message": 2,
+    "formatjs/no-multiple-whitespaces": 1,
+    "formatjs/no-multiple-plurals": 2,
+    "formatjs/enforce-placeholders": 2
   },
   "overrides": [
     {

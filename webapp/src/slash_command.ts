@@ -17,7 +17,6 @@ import {
     inPlaybookRunChannel,
     isPlaybookRunRHSOpen,
     currentRHSState,
-    selectExperimentalFeatures,
     currentPlaybookRun,
 } from 'src/selectors';
 
@@ -28,9 +27,7 @@ type SlashCommandObj = {message?: string; args?: string[];} | {error: string;} |
 export function makeSlashCommandHook(store: Store) {
     return async (inMessage: any, args: any): Promise<SlashCommandObj> => {
         const state = store.getState();
-        const isInPlaybookRunChannel = inPlaybookRunChannel(state);
         const message = inMessage && typeof inMessage === 'string' ? inMessage.trim() : null;
-        const experimentalFeaturesEnabled = selectExperimentalFeatures(store.getState());
 
         if (message?.startsWith('/playbook run')) {
             const clientId = generateId();
@@ -39,12 +36,14 @@ export function makeSlashCommandHook(store: Store) {
             return {message: `/playbook run ${clientId}`, args};
         }
 
-        if (experimentalFeaturesEnabled && message?.startsWith('/playbook update') && isInPlaybookRunChannel) {
-            const clientId = generateId();
+        if (message?.startsWith('/playbook update') && inPlaybookRunChannel(state)) {
             const currentRun = currentPlaybookRun(state);
-            store.dispatch(setClientId(clientId));
-            store.dispatch(promptUpdateStatus(currentRun.team_id, currentRun.id, currentRun.playbook_id, currentRun.channel_id));
-            return {};
+            if (currentRun) {
+                const clientId = generateId();
+                store.dispatch(setClientId(clientId));
+                store.dispatch(promptUpdateStatus(currentRun.team_id, currentRun.id, currentRun.channel_id));
+                return {};
+            }
         }
 
         if (message?.startsWith('/playbook info')) {

@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import {CenteredRow} from 'src/components/backstage/styles';
 
 interface Props {
-    titleText: string;
+    titleText: React.ReactNode;
     helpText: React.ReactNode;
 }
 

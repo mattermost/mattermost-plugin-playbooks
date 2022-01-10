@@ -23,6 +23,10 @@ func (t *NoopTelemetry) CreatePlaybookRun(*app.PlaybookRun, string, bool) {
 func (t *NoopTelemetry) FinishPlaybookRun(*app.PlaybookRun, string) {
 }
 
+// RestorePlaybookRun does nothing
+func (t *NoopTelemetry) RestorePlaybookRun(*app.PlaybookRun, string) {
+}
+
 // RestartPlaybookRun does nothing
 func (t *NoopTelemetry) RestartPlaybookRun(*app.PlaybookRun, string) {
 }
@@ -55,12 +59,24 @@ func (t *NoopTelemetry) RemoveTask(string, string, app.ChecklistItem) {
 func (t *NoopTelemetry) RenameTask(string, string, app.ChecklistItem) {
 }
 
+// SkipTask does nothing.
+func (t *NoopTelemetry) SkipTask(string, string, app.ChecklistItem) {
+}
+
+// RestoreTask does nothing.
+func (t *NoopTelemetry) RestoreTask(string, string, app.ChecklistItem) {
+}
+
 // ModifyCheckedState does nothing.
 func (t *NoopTelemetry) ModifyCheckedState(string, string, app.ChecklistItem, bool) {
 }
 
 // SetAssignee does nothing.
 func (t *NoopTelemetry) SetAssignee(string, string, app.ChecklistItem) {
+}
+
+// MoveChecklist does nothing.
+func (t *NoopTelemetry) MoveChecklist(string, string, app.Checklist) {
 }
 
 // MoveTask does nothing.
@@ -79,12 +95,28 @@ func (t *NoopTelemetry) UpdatePlaybook(app.Playbook, string) {
 func (t *NoopTelemetry) DeletePlaybook(app.Playbook, string) {
 }
 
+// RestorePlaybook does nothing either.
+func (t *NoopTelemetry) RestorePlaybook(app.Playbook, string) {
+}
+
 // ChangeOwner does nothing
 func (t *NoopTelemetry) ChangeOwner(*app.PlaybookRun, string) {
 }
 
 // RunTaskSlashCommand does nothing
 func (t *NoopTelemetry) RunTaskSlashCommand(string, string, app.ChecklistItem) {
+}
+
+// AddChecklist does nothing
+func (t *NoopTelemetry) AddChecklist(playbookRunID, userID string, checklist app.Checklist) {
+}
+
+// RemoveChecklist does nothing
+func (t *NoopTelemetry) RemoveChecklist(playbookRunID, userID string, checklist app.Checklist) {
+}
+
+// RenameChecklist does nothing
+func (t *NoopTelemetry) RenameChecklist(playbookRunID, userID string, checklist app.Checklist) {
 }
 
 func (t *NoopTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, userID string) {
@@ -107,4 +139,24 @@ func (t *NoopTelemetry) FrontendTelemetryForPlaybook(playbook app.Playbook, user
 
 // FrontendTelemetryForPlaybookTemplate does nothing.
 func (t *NoopTelemetry) FrontendTelemetryForPlaybookTemplate(templateName string, userID, action string) {
+}
+
+// ChangeDigestSettings does nothing
+func (t *NoopTelemetry) ChangeDigestSettings(userID string, old app.DigestNotificationSettings, new app.DigestNotificationSettings) {
+}
+
+// Follow tracks userID following a playbook run.
+func (t *NoopTelemetry) Follow(playbookRun *app.PlaybookRun, userID string) {
+}
+
+// Unfollow tracks userID following a playbook run.
+func (t *NoopTelemetry) Unfollow(playbookRun *app.PlaybookRun, userID string) {
+}
+
+// AutoFollowPlaybook tracks the auto-follow of a playbook.
+func (t *NoopTelemetry) AutoFollowPlaybook(playbook app.Playbook, userID string) {
+}
+
+// AutoUnfollowPlaybook tracks the auto-unfollow of a playbook.
+func (t *NoopTelemetry) AutoUnfollowPlaybook(playbook app.Playbook, userID string) {
 }
