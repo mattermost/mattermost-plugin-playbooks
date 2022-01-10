@@ -157,25 +157,6 @@ func getAutocompleteData(addTestCommands bool) *model.AutocompleteData {
 	return command
 }
 
-// Returns list of unique random numbers, with values in range [minVal, maxVal).
-func getRandomUniqueNumbers(minVal, maxVal, count int, seed int64) []int {
-	rand.Seed(seed)
-	allValues := make([]int, maxVal-minVal)
-	for i := range allValues {
-		allValues[i] = minVal + i
-	}
-	if len(allValues) < count {
-		count = len(allValues)
-	}
-	randValues := make([]int, count)
-	for i := 0; i < count; i++ {
-		r := rand.Intn(len(allValues) - i)
-		randValues[i] = allValues[r]
-		allValues[r] = allValues[len(allValues)-i-1]
-	}
-	return randValues
-}
-
 // Runner handles commands.
 type Runner struct {
 	context            *plugin.Context
@@ -1202,10 +1183,13 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 		return
 	}
 
+	rand.Shuffle(len(dummyListPlaybooks), func(i, j int) {
+		dummyListPlaybooks[i], dummyListPlaybooks[j] = dummyListPlaybooks[j], dummyListPlaybooks[i]
+	})
+
 	playbookIds := make([]string, 0, numPlaybooks)
-	randPlaybooksIndexes := getRandomUniqueNumbers(0, len(dummyListPlaybooks), numPlaybooks, time.Now().UTC().UnixNano())
 	for i := 0; i < numPlaybooks; i++ {
-		dummyPlaybook := dummyListPlaybooks[randPlaybooksIndexes[i]]
+		dummyPlaybook := dummyListPlaybooks[i]
 		dummyPlaybook.TeamID = r.args.TeamId
 		dummyPlaybook.Members = []app.PlaybookMember{
 			{
@@ -1225,7 +1209,7 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 	msg := "Playbooks successfully created"
 	for i, playbookID := range playbookIds {
 		url := fmt.Sprintf("/playbooks/playbooks/%s", playbookID)
-		msg += fmt.Sprintf("\n- [%s](%s)", dummyListPlaybooks[randPlaybooksIndexes[i]].Title, url)
+		msg += fmt.Sprintf("\n- [%s](%s)", dummyListPlaybooks[i].Title, url)
 	}
 
 	r.postCommandResponse(msg)
