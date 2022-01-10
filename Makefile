@@ -248,7 +248,7 @@ endif
 
 i18n-extract-server:
 ifneq ($(HAS_SERVER),)
-	$(GO) get -d -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
+	$(GO) install -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
 	mkdir -p server/i18n
 	cp assets/i18n/en.json server/i18n/en.json
 	cd server && $(GOBIN)/mmgotool i18n extract --portal-dir="" --skip-dynamic
@@ -259,7 +259,7 @@ endif
 ## Exit on empty translation strings and translation source strings
 i18n-check:
 ifneq ($(HAS_SERVER),)
-	$(GO) get -d -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
+	$(GO) install -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
 	mkdir -p server/i18n
 	cp assets/i18n/en.json server/i18n/en.json
 	cd server && $(GOBIN)/mmgotool i18n clean-empty --portal-dir="" --check

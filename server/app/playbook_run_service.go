@@ -1271,8 +1271,8 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			return errors.Wrapf(err, "failed to get team")
 		}
 
-		channelURL := fmt.Sprintf("[%s](/%s/channels/%s?telem=dm_assignedtask_clicked&forceRHSOpen)",
-			channel.DisplayName, team.Name, channel.Name)
+		channelURL := fmt.Sprintf("[%s](/%s/channels/%s?telem_action=dm_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)",
+			channel.DisplayName, team.Name, channel.Name, playbookRunID)
 		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
 			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, channelURL)
 
@@ -2613,8 +2613,8 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, locale string) string 
 	msg += T("app.user.digest.tasks.num_outstanding", total) + "\n\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("[%s](/%s/channels/%s?telem=todo_assignedtask_clicked&forceRHSOpen)\n",
-			run.ChannelDisplayName, run.TeamName, run.ChannelName)
+		msg += fmt.Sprintf("[%s](/%s/channels/%s?telem_action=todo_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)\n",
+			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID)
 
 		for _, task := range run.Tasks {
 			msg += fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
@@ -2638,8 +2638,8 @@ func buildRunsInProgressMessage(runs []RunLink, locale string) string {
 	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem=todo_runsinprogress_clicked&forceRHSOpen)\n",
-			run.ChannelDisplayName, run.TeamName, run.ChannelName)
+		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem_action=todo_runsinprogress_clicked&telem_run_id=%s&forceRHSOpen)\n",
+			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID)
 	}
 
 	return msg
@@ -2661,8 +2661,8 @@ func buildRunsOverdueMessage(runs []RunLink, locale string) string {
 			"Username": run.OwnerUserName,
 		}
 		appended := " " + T("app.user.digest.overdue_status_updates.md_link_item_appended", values)
-		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen)",
-			run.ChannelDisplayName, run.TeamName, run.ChannelName) + appended + "\n"
+		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen)",
+			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID) + appended + "\n"
 	}
 
 	return msg
