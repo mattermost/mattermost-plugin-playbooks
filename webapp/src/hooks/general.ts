@@ -380,28 +380,10 @@ export function useAllowPlaybookCreationInCurrentTeam() {
     return isLicensed || numPlaybooks === 0;
 }
 
-// useAllowTimelineViewInCurrentTeam returns whether a user can view the RHS
-// timeline in the current team
-export function useAllowTimelineViewInCurrentTeam() {
-    return useSelector(isE10LicensedOrDevelopment);
-}
-
 // useAllowAddMessageToTimelineInCurrentTeam returns whether a user can add a
 // post to the timeline in the current team
 export function useAllowAddMessageToTimelineInCurrentTeam() {
     return useSelector(isE10LicensedOrDevelopment);
-}
-
-// useAllowPlaybookGranularAccess returns whether the access to specific playbooks
-// can be restricted to a subset of users
-export function useAllowPlaybookGranularAccess() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowPlaybookCreationRestriction returns whether the global feature to
-// restrict the playbook creation to a subset of users is allowed
-export function useAllowPlaybookCreationRestriction() {
-    return useSelector(isE20LicensedOrDevelopment);
 }
 
 // useAllowChannelExport returns whether exporting the channel is allowed
