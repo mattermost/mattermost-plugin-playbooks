@@ -56,7 +56,10 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
     };
 
     return (
-        <PlaybookRunList className='PlaybookRunList'>
+        <PlaybookRunList
+            id='playbookRunList'
+            className='PlaybookRunList'
+        >
             <Filters
                 fetchParams={fetchParams}
                 setFetchParams={setFetchParams}
