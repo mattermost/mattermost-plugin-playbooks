@@ -8,6 +8,7 @@ export interface Playbook {
     team_id: string;
     create_public_playbook_run: boolean;
     delete_at: number;
+    run_summary_template_enabled: boolean;
     public: boolean;
 
     /** @alias num_checklists */
@@ -140,6 +141,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         signal_any_keywords_enabled: false,
         category_name: '',
         categorize_channel_enabled: false,
+        run_summary_template_enabled: true,
         run_summary_template: '',
         channel_name_template: '',
         default_playbook_member_role: '',

@@ -7,12 +7,16 @@ import styled from 'styled-components';
 
 import {ActionFunc} from 'mattermost-redux/types/actions';
 
-import {FormattedMessage, useIntl} from 'react-intl';
+import {FormattedMessage} from 'react-intl';
 
 import Profile from 'src/components/profile/profile';
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
-import AssignOwnerSelector from 'src/components/backstage/automation/assign_owner_selector';
-import {Toggle} from 'src/components/backstage/automation/toggle';
+import {
+    AutomationHeader,
+    AutomationTitle,
+    SelectorWrapper,
+} from 'src/components/backstage/playbook_edit/automation/styles';
+import AssignOwnerSelector from 'src/components/backstage/playbook_edit/automation/assign_owner_selector';
+import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
 interface Props {
     enabled: boolean;
@@ -25,26 +29,24 @@ interface Props {
 
 export const AutoAssignOwner = (props: Props) => {
     return (
-        <>
-            <AutomationHeader>
-                <AutomationTitle>
-                    <Toggle
-                        isChecked={props.enabled}
-                        onChange={props.onToggle}
-                    />
-                    <div><FormattedMessage defaultMessage='Assign the owner role'/></div>
-                </AutomationTitle>
-                <SelectorWrapper>
-                    <AssignOwnerSelector
-                        ownerID={props.ownerID}
-                        onAddUser={props.onAssignOwner}
-                        searchProfiles={props.searchProfiles}
-                        getProfiles={props.getProfiles}
-                        isDisabled={!props.enabled}
-                    />
-                </SelectorWrapper>
-            </AutomationHeader>
-        </>
+        <AutomationHeader>
+            <AutomationTitle>
+                <Toggle
+                    isChecked={props.enabled}
+                    onChange={props.onToggle}
+                />
+                <div><FormattedMessage defaultMessage='Assign the owner role'/></div>
+            </AutomationTitle>
+            <SelectorWrapper>
+                <AssignOwnerSelector
+                    ownerID={props.ownerID}
+                    onAddUser={props.onAssignOwner}
+                    searchProfiles={props.searchProfiles}
+                    getProfiles={props.getProfiles}
+                    isDisabled={!props.enabled}
+                />
+            </SelectorWrapper>
+        </AutomationHeader>
     );
 };
 
@@ -95,6 +97,7 @@ const UserPic = styled.div`
 
     position: relative;
     transition: transform .4s;
+
     :hover {
         z-index: 1;
         transform: translateY(-8px);

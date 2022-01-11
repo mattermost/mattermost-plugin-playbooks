@@ -103,6 +103,7 @@ Cypress.Commands.add('apiDeleteLicense', () => {
 });
 
 export const getDefaultConfig = () => {
+    const siteUrl = Cypress.config('baseUrl');
     const cypressEnv = Cypress.env();
 
     const fromCypressEnv = {
@@ -115,8 +116,7 @@ export const getDefaultConfig = () => {
         },
         ServiceSettings: {
             AllowedUntrustedInternalConnections: cypressEnv.allowedUntrustedInternalConnections,
-            SiteURL: Cypress.config('baseUrl'),
-            EnableOnboardingFlow: Cypress.config('enableOnboardingFlow'),
+            SiteURL: siteUrl,
         },
     };
 

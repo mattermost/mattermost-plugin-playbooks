@@ -50,6 +50,7 @@ type Playbook struct {
 	SignalAnyKeywordsEnabled             bool             `json:"signal_any_keywords_enabled"`
 	CategorizeChannelEnabled             bool             `json:"categorize_channel_enabled"`
 	CategoryName                         string           `json:"category_name"`
+	RunSummaryTemplateEnabled            bool             `json:"run_summary_template_enabled"`
 	RunSummaryTemplate                   string           `json:"run_summary_template"`
 	ChannelNameTemplate                  string           `json:"channel_name_template"`
 	DefaultPlaybookAdminRole             string           `json:"default_playbook_admin_role"`

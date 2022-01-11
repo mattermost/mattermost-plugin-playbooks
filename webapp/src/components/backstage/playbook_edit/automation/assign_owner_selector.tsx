@@ -12,8 +12,8 @@ import {getUser} from 'mattermost-redux/selectors/entities/users';
 import {useIntl} from 'react-intl';
 
 import Profile from 'src/components/profile/profile';
-import ClearIndicator from 'src/components/backstage/automation/clear_indicator';
-import MenuList from 'src/components/backstage/automation/menu_list';
+import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
+import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 
 interface Props {
     ownerID: string;
