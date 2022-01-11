@@ -537,7 +537,12 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
             const playbookRunsReturn = await fetchPlaybookRuns(fetchParams);
 
             if (!isCanceled) {
-                setPlaybookRuns(playbookRunsReturn.items);
+                setPlaybookRuns((existingRuns: PlaybookRun[]) => {
+                    if (fetchParams.page === 0) {
+                        return playbookRunsReturn.items;
+                    }
+                    return [...existingRuns, ...playbookRunsReturn.items];
+                });
                 setTotalCount(playbookRunsReturn.total_count);
             }
         }
@@ -551,7 +556,10 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
 
     // Update the query string when the fetchParams change
     useEffect(() => {
-        history.replace({search: qs.stringify(fetchParams, {addQueryPrefix: false, indices: false})});
+        const newFetchParams: Record<string, unknown> = {...fetchParams};
+        delete newFetchParams.page;
+        delete newFetchParams.per_page;
+        history.replace({search: qs.stringify(newFetchParams, {addQueryPrefix: false, indices: false})});
     }, [fetchParams, history]);
 
     return [playbookRuns, totalCount, fetchParams, setFetchParams];
