@@ -1664,4 +1664,31 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.45.0"),
+		toVersion:   semver.MustParse("0.46.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "RunSummaryTemplateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RunSummaryTemplateEnabled to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "RunSummaryTemplateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RunSummaryTemplateEnabled to table IR_Playbook")
+				}
+			}
+
+			// All playbooks that have an empty run summary should have their run summary disabled (it defaults to enabled)
+			playbookUpdate := sqlStore.builder.
+				Update("IR_Playbook").
+				Set("RunSummaryTemplateEnabled", false).
+				Where(sq.Eq{"RunSummaryTemplate": ""})
+
+			if _, err := sqlStore.execBuilder(e, playbookUpdate); err != nil {
+				return errors.Wrap(err, "failed updating RunSummaryTemplateEnabled")
+			}
+
+			return nil
+		},
+	},
 }

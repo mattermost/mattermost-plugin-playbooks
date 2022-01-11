@@ -2,17 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-
 import styled, {css} from 'styled-components';
 
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
-import {Toggle} from 'src/components/backstage/automation/toggle';
+import {SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
 
 interface Props {
     enabled: boolean;
-    disableToggle?: boolean;
-    onToggle: () => void;
-    textOnToggle: string;
     placeholderText: string;
     errorText: string;
     input: string;
@@ -23,31 +18,21 @@ interface Props {
 }
 
 export const PatternedInput = (props: Props) => (
-    <AutomationHeader>
-        <AutomationTitle>
-            <Toggle
-                isChecked={props.enabled}
-                disabled={props.disableToggle}
-                onChange={props.onToggle}
-            />
-            <div>{props.textOnToggle}</div>
-        </AutomationTitle>
-        <SelectorWrapper>
-            <TextBox
-                disabled={!props.enabled}
-                type={props.type}
-                required={true}
-                value={props.enabled ? props.input : ''}
-                onChange={(e) => props.onChange(e.target.value)}
-                pattern={props.pattern}
-                placeholder={props.placeholderText}
-                maxLength={props.maxLength}
-            />
-            <ErrorMessage>
-                {props.errorText}
-            </ErrorMessage>
-        </SelectorWrapper>
-    </AutomationHeader>
+    <SelectorWrapper>
+        <TextBox
+            disabled={!props.enabled}
+            type={props.type}
+            required={true}
+            value={props.enabled ? props.input : ''}
+            onChange={(e) => props.onChange(e.target.value)}
+            pattern={props.pattern}
+            placeholder={props.placeholderText}
+            maxLength={props.maxLength}
+        />
+        <ErrorMessage>
+            {props.errorText}
+        </ErrorMessage>
+    </SelectorWrapper>
 );
 
 const ErrorMessage = styled.div`
