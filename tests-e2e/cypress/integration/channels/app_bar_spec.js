@@ -97,7 +97,7 @@ describe('channels > App Bar', () => {
                 cy.get(getAppBarImageSelector(siteURL)).trigger('mouseover');
 
                 // * Verify tooltip text
-                cy.get('body > div[role="tooltip"]').contains('Toggle Playbook List');
+                cy.findByRole('tooltip', {name: 'Toggle Playbook List'}).should('be.visible');
             });
 
             it('should show "Toggle Run Details" inside a playbook run channel', () => {
@@ -111,7 +111,7 @@ describe('channels > App Bar', () => {
                 cy.wait(TIMEOUTS.HALF_SEC);
 
                 // * Verify tooltip text
-                cy.get('body > div[role="tooltip"]').contains('Toggle Run Details');
+                cy.findByRole('tooltip', {name: 'Toggle Run Details'}).should('be.visible');
             });
         });
     });
