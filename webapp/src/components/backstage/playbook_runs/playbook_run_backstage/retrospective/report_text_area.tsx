@@ -16,11 +16,12 @@ import PostText from 'src/components/post_text';
 interface Props {
     teamId: string;
     text: string;
+    isEditable: boolean;
     onEdit: (text: string) => void;
     flushChanges: () => void;
 }
 
-const ReportTextArea = ({text, onEdit, flushChanges, teamId}: Props) => {
+const ReportTextArea = ({text, isEditable, onEdit, flushChanges, teamId}: Props) => {
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, teamId));
     const textareaRef = useRef(null);
     const [editing, setEditing] = useState(false);
@@ -29,7 +30,7 @@ const ReportTextArea = ({text, onEdit, flushChanges, teamId}: Props) => {
         setEditing(false);
     });
 
-    if (editing) {
+    if (isEditable && editing) {
         return (
             <StyledTextArea
                 ref={textareaRef}
@@ -51,7 +52,12 @@ const ReportTextArea = ({text, onEdit, flushChanges, teamId}: Props) => {
     return (
         <PostTextContainer
             data-testid={'retro-report-text'}
-            onClick={() => setEditing(true)}
+            onClick={() => {
+                if (isEditable) {
+                    setEditing(true);
+                }
+            }}
+
         >
             <PostText
                 text={text}

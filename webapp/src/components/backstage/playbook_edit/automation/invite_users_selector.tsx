@@ -17,7 +17,7 @@ import {useIntl} from 'react-intl';
 import Profile from 'src/components/profile/profile';
 import {useEnsureProfiles} from 'src/hooks';
 
-import MenuList from 'src/components/backstage/automation/menu_list';
+import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 
 interface Props {
     userIds: string[];

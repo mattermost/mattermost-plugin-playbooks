@@ -15,11 +15,12 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
-import {usePlaybooksRouting, useAllowPlaybookCreationInCurrentTeam} from 'src/hooks';
+import {usePlaybooksRouting, useAllowPlaybookCreationInCurrentTeam, useHasPlaybookPermission} from 'src/hooks';
 import {startPlaybookRunById} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
+import {PlaybookPermissionGeneral} from 'src/types/permissions';
 
 const Item = styled.div`
     display: flex;
@@ -156,8 +157,14 @@ type RHSHomePlaybookProps = {
     playbook: Playbook;
 }
 
-export const RHSHomePlaybook = ({
-    playbook: {
+export const RHSHomePlaybook = ({playbook}: RHSHomePlaybookProps) => {
+    const dispatch = useDispatch();
+    const {formatMessage} = useIntl();
+    const {view} = usePlaybooksRouting({urlOnly: true});
+    const linkRef = useRef(null);
+    const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
+
+    const {
         id,
         title,
         num_runs,
@@ -165,12 +172,7 @@ export const RHSHomePlaybook = ({
         num_actions,
         last_run_at,
         team_id,
-    },
-}: RHSHomePlaybookProps) => {
-    const dispatch = useDispatch();
-    const {formatMessage} = useIntl();
-    const {view} = usePlaybooksRouting({urlOnly: true});
-    const linkRef = useRef(null);
+    } = playbook;
 
     return (
         <Item data-testid='rhs-home-item'>
@@ -238,6 +240,7 @@ export const RHSHomePlaybook = ({
                     </MetaItem>
                 </Meta>
             </div>
+            {hasPermissionToRunPlaybook &&
             <RunButton
                 data-testid={'run-playbook'}
                 onClick={() => dispatch(startPlaybookRunById(team_id, id))}
@@ -248,6 +251,7 @@ export const RHSHomePlaybook = ({
                 />
                 <FormattedMessage defaultMessage='Run'/>
             </RunButton>
+            }
         </Item>
     );
 };
@@ -273,7 +277,7 @@ export const RHSHomeTemplate = ({
             <div data-testid='template-details'>
                 <Title ref={linkRef}>
                     <Link
-                        to={allowPlaybookCreation ? create(currentTeam, template.title) : ''}
+                        to={allowPlaybookCreation ? create({teamId: currentTeam.id, template: template.title}) : ''}
                         onClick={(e) => {
                             e.preventDefault();
                             onUse(template);

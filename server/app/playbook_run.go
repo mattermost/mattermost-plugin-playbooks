@@ -16,6 +16,11 @@ const (
 	StatusFinished   = "Finished"
 )
 
+const (
+	RunRoleMember = "run_member"
+	RunRoleAdmin  = "run_admin"
+)
+
 // PlaybookRun holds the detailed information of a playbook run.
 //
 // NOTE: When adding a column to the db, search for "When adding a PlaybookRun column" to see where
@@ -475,8 +480,11 @@ type PlaybookRunService interface {
 	// EditChecklistItem changes the title, command and description of a specified checklist item.
 	EditChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int, newTitle, newCommand, newDescription string) error
 
-	// MoveChecklistItem moves a checklist item from one position to anouther
-	MoveChecklistItem(playbookRunID, userID string, checklistNumber int, itemNumber int, newLocation int) error
+	// MoveChecklistItem moves a checklist item from one position to another.
+	MoveChecklist(playbookRunID, userID string, sourceChecklistIdx, destChecklistIdx int) error
+
+	// MoveChecklistItem moves a checklist item from one position to another.
+	MoveChecklistItem(playbookRunID, userID string, sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx int) error
 
 	// GetChecklistItemAutocomplete returns the list of checklist items for playbookRunID to be used in autocomplete
 	GetChecklistItemAutocomplete(playbookRunID string) ([]model.AutocompleteListItem, error)
@@ -505,12 +513,6 @@ type PlaybookRunService interface {
 
 	// HandleReminder is the handler for all reminder events.
 	HandleReminder(key string)
-
-	// RemoveReminderPost will remove the reminder in the playbook run channel (if any).
-	RemoveReminderPost(playbookRunID string) error
-
-	// ResetReminderTimer sets the previous reminder timer to 0.
-	ResetReminderTimer(playbookRunID string) error
 
 	// SetNewReminder sets a new reminder for playbookRunID, removes any pending reminder, removes the
 	// reminder post in the playbookRun's channel, and resets the PreviousReminder and
@@ -704,7 +706,10 @@ type PlaybookRunTelemetry interface {
 	// RenameTask tracks the update of a checklist item.
 	RenameTask(playbookRunID, userID string, task ChecklistItem)
 
-	// MoveTask tracks the unchecking of checked item.
+	// MoveChecklist tracks the movement of a checklist
+	MoveChecklist(playbookRunID, userID string, task Checklist)
+
+	// MoveTask tracks the movement of a checklist item
 	MoveTask(playbookRunID, userID string, task ChecklistItem)
 
 	// RunTaskSlashCommand tracks the execution of a slash command attached to

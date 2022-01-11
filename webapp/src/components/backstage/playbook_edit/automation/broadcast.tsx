@@ -9,12 +9,12 @@ import {Channel} from 'mattermost-redux/types/channels';
 
 import {FormattedMessage} from 'react-intl';
 
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
-import {Toggle} from 'src/components/backstage/automation/toggle';
+import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
+import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import ChannelSelector from 'src/components/backstage/channel_selector';
 import ClearIcon from 'src/components/assets/icons/clear_icon';
-import ClearIndicator from 'src/components/backstage/automation/clear_indicator';
-import MenuList from 'src/components/backstage/automation/menu_list';
+import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
+import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 
 interface Props {
     enabled: boolean;

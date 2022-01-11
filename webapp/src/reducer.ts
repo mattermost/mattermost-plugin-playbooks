@@ -49,6 +49,8 @@ import {
     SetAllChecklistsCollapsedState,
     SET_CHECKLIST_COLLAPSED_STATE,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    SetEachChecklistCollapsedState,
+    SET_EACH_CHECKLIST_COLLAPSED_STATE,
     SetChecklistItemsFilter,
     SET_CHECKLIST_ITEMS_FILTER,
 } from 'src/types/actions';
@@ -284,7 +286,10 @@ const rhsAboutCollapsedByChannel = (state: Record<string, boolean> = {}, action:
 // checklistCollapsedState keeps a map of channelId -> checklist number -> collapsed
 const checklistCollapsedState = (
     state: Record<string, Record<number, boolean>> = {},
-    action: SetChecklistCollapsedState | SetAllChecklistsCollapsedState,
+    action:
+    | SetChecklistCollapsedState
+    | SetAllChecklistsCollapsedState
+    | SetEachChecklistCollapsedState
 ) => {
     switch (action.type) {
     case SET_CHECKLIST_COLLAPSED_STATE: {
@@ -306,6 +311,13 @@ const checklistCollapsedState = (
         return {
             ...state,
             [setAction.channelId]: newState,
+        };
+    }
+    case SET_EACH_CHECKLIST_COLLAPSED_STATE: {
+        const setAction = action as SetEachChecklistCollapsedState;
+        return {
+            ...state,
+            [setAction.channelId]: setAction.state,
         };
     }
     default:

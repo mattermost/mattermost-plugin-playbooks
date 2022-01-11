@@ -3,7 +3,7 @@
 
 import styled, {css} from 'styled-components';
 import React, {useEffect, useState} from 'react';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {Switch, Route, Redirect, NavLink, useRouteMatch} from 'react-router-dom';
 
 import Icon from '@mdi/react';
@@ -16,10 +16,10 @@ import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
-import {useForceDocumentTitle, useStats} from 'src/hooks';
+import {useForceDocumentTitle, useHasPlaybookPermission, useStats} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
 
@@ -42,6 +42,10 @@ import StatusBadge, {BadgeType} from 'src/components/backstage/status_badge';
 import {copyToClipboard} from 'src/utils';
 
 import {CopyIcon} from '../playbook_runs/playbook_run_backstage/playbook_run_backstage';
+import {displayEditPlaybookAccessModal} from 'src/actions';
+import {PlaybookPermissionGeneral} from 'src/types/permissions';
+import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
+import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 
 interface MatchParams {
     playbookId: string
@@ -53,16 +57,51 @@ const FetchingStateType = {
     notFound: 'notfound',
 };
 
+const MembersIcon = styled.div`
+    display: inline-block;
+    font-size: 12px;
+    border-radius: 4px;
+    padding: 0 8px;
+    font-weight: 600;
+    margin: 2px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    height: 28px;
+    line-height: 28px;
+	cursor: pointer;
+    &:hover {
+       background: rgba(var(--center-channel-color-rgb), 0.08);
+       color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
+`;
+
+const TitleButton = styled.div`
+	margin-left: 20px;
+    display: inline-flex;
+    border-radius: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    fill: rgba(var(--center-channel-color-rgb), 0.64);
+    &:hover {
+       background: rgba(var(--link-color-rgb), 0.08);
+       color: rgba(var(--link-color-rgb), 0.72);
+    }
+`;
+
+const RedText = styled.div`
+	color: var(--error-text);
+`;
+
 const Playbook = () => {
+    const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
-    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
+    const [playbook, setPlaybook] = useState<PlaybookWithChecklist>();
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
     const stats = useStats(match.params.playbookId);
     const [isFollowed, setIsFollowed] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
     const [playbookLinkCopied, setPlaybookLinkCopied] = useState(false);
+    const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal();
 
     const changeFollowing = (check: boolean) => {
         if (playbook?.id) {
@@ -74,6 +113,9 @@ const Playbook = () => {
             setIsFollowed(check);
         }
     };
+
+    const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
+
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
     const activeNavItemStyle = {
@@ -116,27 +158,16 @@ const Playbook = () => {
         return null;
     }
 
-    if (fetchingState === FetchingStateType.notFound || playbook === null) {
+    if (fetchingState === FetchingStateType.notFound || !playbook) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOKS)}/>;
     }
 
-    let subTitle;
     let accessIconClass;
-    if (playbook.member_ids.length === 1) {
-        subTitle = formatMessage({defaultMessage: 'Only you can access this playbook'});
-        accessIconClass = 'icon-lock-outline';
-    } else if (playbook.member_ids.length > 1) {
-        subTitle = formatMessage({defaultMessage: '{members, plural, =0 {No one} =1 {One person} other {# people}} can access this playbook'}, {members: playbook.member_ids.length});
-        accessIconClass = 'icon-lock-outline';
-    } else if (team) {
+    if (playbook.public) {
         accessIconClass = 'icon-globe';
-        subTitle = formatMessage({defaultMessage: 'Everyone in {team} can access this playbook'}, {team: team.display_name});
     } else {
-        accessIconClass = 'icon-globe';
-        subTitle = formatMessage({defaultMessage: 'Everyone in this team can access this playbook'});
+        accessIconClass = 'icon-lock-outline';
     }
-
-    const archived = playbook?.delete_at !== 0;
 
     let toolTipText = formatMessage({defaultMessage: 'Select this to automatically receive updates when this playbook is run.'});
     if (isFollowed) {
@@ -179,6 +210,9 @@ const Playbook = () => {
         </OverlayTrigger>
     );
 
+    const archived = playbook?.delete_at !== 0;
+    const enableRunPlaybook = !archived && hasPermissionToRunPlaybook;
+
     return (
         <>
             <TopContainer>
@@ -187,13 +221,38 @@ const Playbook = () => {
                         className='icon-arrow-left'
                         onClick={goToPlaybooks}
                     />
-                    <VerticalBlock>
-                        <Title>{playbook.title}</Title>
-                        <HorizontalBlock data-testid='playbookPermissionsDescription'>
-                            <i className={'icon ' + accessIconClass}/>
-                            <SubTitle>{subTitle}</SubTitle>
-                        </HorizontalBlock>
-                    </VerticalBlock>
+                    <DotMenu
+                        dotMenuButton={TitleButton}
+                        left={true}
+                        icon={
+                            <>
+                                <i className={'icon ' + accessIconClass}/>
+                                <Title>{playbook.title}</Title>
+                                <i className={'icon icon-chevron-down'}/>
+                            </>
+                        }
+                    >
+                        <DropdownMenuItem
+                            onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
+                        >
+                            <FormattedMessage defaultMessage='Manage access'/>
+                        </DropdownMenuItem>
+                        {!archived &&
+                        <DropdownMenuItem
+                            onClick={() => openDeletePlaybookModal(playbook)}
+                        >
+                            <RedText>
+                                <FormattedMessage defaultMessage='Archive playbook'/>
+                            </RedText>
+                        </DropdownMenuItem>
+                        }
+                    </DotMenu>
+                    <MembersIcon
+                        onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
+                    >
+                        <i className={'icon icon-account-multiple-outline'}/>
+                        {playbook.members.length}
+                    </MembersIcon>
                     {
                         archived &&
                         <StatusBadge
@@ -224,7 +283,8 @@ const Playbook = () => {
                     </SecondaryButtonLargerRightStyled>
                     <PrimaryButtonLarger
                         onClick={runPlaybook}
-                        disabled={archived}
+                        disabled={!enableRunPlaybook}
+                        title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
                         data-testid='run-playbook'
                     >
                         <RightMarginedIcon
@@ -271,6 +331,7 @@ const Playbook = () => {
                     />
                 </Route>
             </Switch>
+            {modal}
         </>
     );
 };
@@ -331,6 +392,8 @@ const Title = styled.div`
     font-size: 20px;
     line-height: 28px;
     color: var(--center-channel-color);
+	margin-left: 6px;
+	margin-right: 6px;
 `;
 
 const SubTitle = styled.div`

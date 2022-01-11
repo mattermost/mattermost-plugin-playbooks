@@ -80,15 +80,6 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 							playbookRunToModify.ID),
 					},
 				},
-				{
-					Type: "button",
-					Name: "Dismiss",
-					Integration: &model.PostActionIntegration{
-						URL: fmt.Sprintf("/plugins/%s/api/v0/runs/%s/reminder/button-dismiss",
-							s.configService.GetManifest().Id,
-							playbookRunToModify.ID),
-					},
-				},
 			},
 		},
 	}
@@ -113,9 +104,7 @@ func (s *PlaybookRunServiceImpl) handleStatusUpdateReminder(playbookRunID string
 	if err != nil {
 		s.pluginAPI.Log.Warn("failed to build overdue status update message", "PlaybookRunID", playbookRunToModify.ID, "error", err)
 	} else {
-		if err := s.broadcastPostToRunFollowers(&model.Post{Message: message}, playbookRunToModify.ID, ""); err != nil {
-			s.pluginAPI.Log.Warn("error broadcasting overdue status update to run followers", "PlaybookRunID", playbookRunToModify.ID, "error", err)
-		}
+		s.dmPostToRunFollowers(&model.Post{Message: message}, overdueStatusUpdateMessage, playbookRunToModify.ID, "")
 	}
 
 	playbookRunToModify.ReminderPostID = post.Id
@@ -135,8 +124,8 @@ func (s *PlaybookRunServiceImpl) buildOverdueStatusUpdateMessage(playbookRun *Pl
 		return "", errors.Wrapf(err, "can't get team - %s", channel.TeamId)
 	}
 
-	message := fmt.Sprintf("Status update is overdue for [%s](/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen) (Owner: @%s)\n",
-		channel.DisplayName, team.Name, channel.Name, ownerUserName)
+	message := fmt.Sprintf("Status update is overdue for [%s](/%s/channels/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen) (Owner: @%s)\n",
+		channel.DisplayName, team.Name, channel.Name, playbookRun.ID, ownerUserName)
 
 	return message, nil
 }
@@ -156,31 +145,8 @@ func (s *PlaybookRunServiceImpl) RemoveReminder(playbookRunID string) {
 	s.scheduler.Cancel(playbookRunID)
 }
 
-// RemoveReminderPost removes the reminder post in the channel for the given playbook run, if any.
-func (s *PlaybookRunServiceImpl) RemoveReminderPost(playbookRunID string) error {
-	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to retrieve playbook run")
-	}
-
-	if playbookRunToModify.ReminderPostID == "" {
-		return nil
-	}
-
-	if err = s.removePost(playbookRunToModify.ReminderPostID); err != nil {
-		return err
-	}
-
-	playbookRunToModify.ReminderPostID = ""
-	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
-		return errors.Wrapf(err, "failed to update playbook run after removing reminder post id")
-	}
-
-	return nil
-}
-
-// ResetReminderTimer sets the previous reminder timer to 0.
-func (s *PlaybookRunServiceImpl) ResetReminderTimer(playbookRunID string) error {
+// resetReminderTimer sets the previous reminder timer to 0.
+func (s *PlaybookRunServiceImpl) resetReminderTimer(playbookRunID string) error {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve playbook run")

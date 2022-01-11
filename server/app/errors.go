@@ -8,9 +8,6 @@ var ErrNotFound = errors.New("not found")
 // ErrChannelDisplayNameInvalid is used when a channel name is too long.
 var ErrChannelDisplayNameInvalid = errors.New("channel name is invalid or too long")
 
-// ErrPermission occurs when a user does not have permissions.
-var ErrPermission = errors.New("permissions error")
-
 // ErrPlaybookRunNotActive occurs when trying to run a command on a playbook run that has ended.
 var ErrPlaybookRunNotActive = errors.New("already ended")
 

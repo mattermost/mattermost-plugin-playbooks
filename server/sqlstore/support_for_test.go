@@ -74,6 +74,9 @@ func setupSQLStore(t *testing.T, db *sqlx.DB) (bot.Logger, *SQLStore) {
 	setupChannelMembersTable(t, db)
 	setupKVStoreTable(t, db)
 	setupUsersTable(t, db)
+	setupTeamsTable(t, db)
+	setupRolesTable(t, db)
+	setupSchemesTable(t, db)
 
 	if currentSchemaVersion.LT(LatestVersion()) {
 		err = sqlStore.Migrate(currentSchemaVersion)
@@ -347,65 +350,6 @@ func setupChannelsTable(t *testing.T, db *sqlx.DB) {
 	require.NoError(t, err)
 }
 
-func setupTeamsTable(t *testing.T, db *sqlx.DB) {
-	t.Helper()
-
-	// Statements copied from mattermost-server/scripts/mattermost-postgresql-5.0.sql
-	if db.DriverName() == model.DatabaseDriverPostgres {
-		_, err := db.Exec(`
-			CREATE TABLE public.teams (
-				id character varying(26) NOT NULL,
-				createat bigint,
-				updateat bigint,
-				deleteat bigint,
-				displayname character varying(64),
-				name character varying(64),
-				description character varying(255),
-				email character varying(128),
-				type text,
-				companyname character varying(64),
-				alloweddomains character varying(500),
-				inviteid character varying(32),
-				schemeid text,
-				allowopeninvite boolean,
-				lastteamiconupdate bigint
-			);
-		`)
-		require.NoError(t, err)
-
-		return
-	}
-
-	// Statements copied from mattermost-server/scripts/mattermost-mysql-5.0.sql
-	_, err := db.Exec(`
-			CREATE TABLE Teams (
-			  Id varchar(26) NOT NULL,
-			  CreateAt bigint(20) DEFAULT NULL,
-			  UpdateAt bigint(20) DEFAULT NULL,
-			  DeleteAt bigint(20) DEFAULT NULL,
-			  DisplayName varchar(64) DEFAULT NULL,
-			  Name varchar(64) DEFAULT NULL,
-			  Description varchar(255) DEFAULT NULL,
-			  Email varchar(128) DEFAULT NULL,
-			  Type varchar(255) DEFAULT NULL,
-			  CompanyName varchar(64) DEFAULT NULL,
-			  AllowedDomains text,
-			  InviteId varchar(32) DEFAULT NULL,
-			  SchemeId varchar(255) DEFAULT NULL,
-			  AllowOpenInvite tinyint(1) DEFAULT NULL,
-			  LastTeamIconUpdate bigint(20) DEFAULT NULL,
-			  PRIMARY KEY (Id),
-			  UNIQUE KEY Name (Name),
-			  KEY idx_teams_name (Name),
-			  KEY idx_teams_invite_id (InviteId),
-			  KEY idx_teams_update_at (UpdateAt),
-			  KEY idx_teams_create_at (CreateAt),
-			  KEY idx_teams_delete_at (DeleteAt)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-		`)
-	require.NoError(t, err)
-}
-
 func setupPostsTable(t testing.TB, db *sqlx.DB) {
 	t.Helper()
 
@@ -472,6 +416,177 @@ func setupPostsTable(t testing.TB, db *sqlx.DB) {
 			  KEY idx_posts_channel_id_delete_at_create_at (ChannelId,DeleteAt,CreateAt),
 			  FULLTEXT KEY idx_posts_message_txt (Message),
 			  FULLTEXT KEY idx_posts_hashtags_txt (Hashtags)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
+func setupTeamsTable(t testing.TB, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-6.0.sql
+	if db.DriverName() == model.DatabaseDriverPostgres {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.teams (
+				id character varying(26) NOT NULL,
+				PRIMARY KEY (Id),
+				createat bigint,
+				updateat bigint,
+				deleteat bigint,
+				displayname character varying(64),
+				name character varying(64),
+				description character varying(255),
+				email character varying(128),
+				type character varying(255),
+				companyname character varying(64),
+				alloweddomains character varying(1000),
+				inviteid character varying(32),
+				schemeid character varying(26),
+				allowopeninvite boolean,
+				lastteamiconupdate bigint,
+				groupconstrained boolean
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-6.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS Teams (
+			  Id varchar(26) NOT NULL,
+			  CreateAt bigint(20) DEFAULT NULL,
+			  UpdateAt bigint(20) DEFAULT NULL,
+			  DeleteAt bigint(20) DEFAULT NULL,
+			  DisplayName varchar(64) DEFAULT NULL,
+			  Name varchar(64) DEFAULT NULL,
+			  Description varchar(255) DEFAULT NULL,
+			  Email varchar(128) DEFAULT NULL,
+			  Type varchar(255) DEFAULT NULL,
+			  CompanyName varchar(64) DEFAULT NULL,
+			  AllowedDomains text,
+			  InviteId varchar(32) DEFAULT NULL,
+			  SchemeId varchar(26) DEFAULT NULL,
+			  AllowOpenInvite tinyint(1) DEFAULT NULL,
+			  LastTeamIconUpdate bigint(20) DEFAULT NULL,
+			  GroupConstrained tinyint(1) DEFAULT NULL,
+			  PRIMARY KEY (Id),
+			  UNIQUE KEY Name (Name),
+			  KEY idx_teams_invite_id (InviteId),
+			  KEY idx_teams_update_at (UpdateAt),
+			  KEY idx_teams_create_at (CreateAt),
+			  KEY idx_teams_delete_at (DeleteAt),
+			  KEY idx_teams_scheme_id (SchemeId)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
+func setupRolesTable(t testing.TB, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-6.0.sql
+	if db.DriverName() == model.DatabaseDriverPostgres {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.roles (
+				id character varying(26) NOT NULL,
+				PRIMARY KEY (Id),
+				name character varying(64),
+				displayname character varying(128),
+				description character varying(1024),
+				createat bigint,
+				updateat bigint,
+				deleteat bigint,
+				permissions text,
+				schememanaged boolean,
+				builtin boolean
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-6.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS Roles (
+			  Id varchar(26) NOT NULL,
+			  Name varchar(64) DEFAULT NULL,
+			  DisplayName varchar(128) DEFAULT NULL,
+			  Description text,
+			  CreateAt bigint(20) DEFAULT NULL,
+			  UpdateAt bigint(20) DEFAULT NULL,
+			  DeleteAt bigint(20) DEFAULT NULL,
+			  Permissions text,
+			  SchemeManaged tinyint(1) DEFAULT NULL,
+			  BuiltIn tinyint(1) DEFAULT NULL,
+			  PRIMARY KEY (Id),
+			  UNIQUE KEY Name (Name)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`)
+	require.NoError(t, err)
+}
+
+func setupSchemesTable(t testing.TB, db *sqlx.DB) {
+	t.Helper()
+
+	// Statements copied from mattermost-server/scripts/mattermost-postgresql-6.0.sql
+	if db.DriverName() == model.DatabaseDriverPostgres {
+		_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS public.schemes (
+				id character varying(26) NOT NULL,
+				PRIMARY KEY (Id),
+				name character varying(64),
+				displayname character varying(128),
+				description character varying(1024),
+				createat bigint,
+				updateat bigint,
+				deleteat bigint,
+				scope character varying(32),
+				defaultteamadminrole character varying(64),
+				defaultteamuserrole character varying(64),
+				defaultchanneladminrole character varying(64),
+				defaultchanneluserrole character varying(64),
+				defaultteamguestrole character varying(64),
+				defaultchannelguestrole character varying(64),
+				defaultplaybookadminrole character varying(64),
+				defaultplaybookmemberrole character varying(64),
+				defaultrunadminrole character varying(64),
+				defaultrunmemberrole character varying(64)
+			);
+		`)
+		require.NoError(t, err)
+
+		return
+	}
+
+	// Statements copied from mattermost-server/scripts/mattermost-mysql-6.0.sql
+	_, err := db.Exec(`
+			CREATE TABLE IF NOT EXISTS Schemes (
+			  Id varchar(26) NOT NULL,
+			  Name varchar(64) DEFAULT NULL,
+			  DisplayName varchar(128) DEFAULT NULL,
+			  Description text,
+			  CreateAt bigint(20) DEFAULT NULL,
+			  UpdateAt bigint(20) DEFAULT NULL,
+			  DeleteAt bigint(20) DEFAULT NULL,
+			  Scope varchar(32) DEFAULT NULL,
+			  DefaultTeamAdminRole varchar(64) DEFAULT NULL,
+			  DefaultTeamUserRole varchar(64) DEFAULT NULL,
+			  DefaultChannelAdminRole varchar(64) DEFAULT NULL,
+			  DefaultChannelUserRole varchar(64) DEFAULT NULL,
+			  DefaultTeamGuestRole varchar(64) DEFAULT NULL,
+			  DefaultChannelGuestRole varchar(64) DEFAULT NULL,
+			  DefaultPlaybookAdminRole varchar(64) DEFAULT NULL,
+			  DefaultPlaybookMemberRole varchar(64) DEFAULT NULL,
+			  DefaultRunAdminRole varchar(64) DEFAULT NULL,
+			  DefaultRunMemberRole varchar(64) DEFAULT NULL,
+			  PRIMARY KEY (Id),
+			  UNIQUE KEY Name (Name),
+			  KEY idx_schemes_channel_guest_role (DefaultChannelGuestRole),
+			  KEY idx_schemes_channel_user_role (DefaultChannelUserRole),
+			  KEY idx_schemes_channel_admin_role (DefaultChannelAdminRole)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 		`)
 	require.NoError(t, err)

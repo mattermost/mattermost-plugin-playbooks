@@ -25,19 +25,21 @@ type PlaybookHandler struct {
 	pluginAPI       *pluginapi.Client
 	log             bot.Logger
 	config          config.Service
+	permissions     *app.PermissionsService
 }
 
 const SettingsKey = "global_settings"
 const maxPlaybooksToAutocomplete = 15
 
 // NewPlaybookHandler returns a new playbook api handler
-func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, api *pluginapi.Client, log bot.Logger, configService config.Service) *PlaybookHandler {
+func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService, api *pluginapi.Client, log bot.Logger, configService config.Service, permissions *app.PermissionsService) *PlaybookHandler {
 	handler := &PlaybookHandler{
 		ErrorHandler:    &ErrorHandler{log: log},
 		playbookService: playbookService,
 		pluginAPI:       api,
 		log:             log,
 		config:          configService,
+		permissions:     permissions,
 	}
 
 	playbooksRouter := router.PathPrefix("/playbooks").Subrouter()
@@ -52,7 +54,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
 	playbookRouter.HandleFunc("", handler.updatePlaybook).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("", handler.archivePlaybook).Methods(http.MethodDelete)
-	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPost)
+	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPut)
 
 	autoFollowsRouter := playbookRouter.PathPrefix("/autofollows").Subrouter()
 	autoFollowRouter := autoFollowsRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
@@ -65,7 +67,6 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 
 func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
-
 	var playbook app.Playbook
 	if err := json.NewDecoder(r.Body).Decode(&playbook); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook", err)
@@ -82,9 +83,18 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := app.CreatePlaybook(userID, playbook, h.config, h.pluginAPI, h.playbookService); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+	if !h.PermissionsCheck(w, h.permissions.PlaybookCreate(userID, playbook)) {
 		return
+	}
+
+	// If not specified make the creator the sole admin
+	if len(playbook.Members) == 0 {
+		playbook.Members = []app.PlaybookMember{
+			{
+				UserID: userID,
+				Roles:  []string{app.PlaybookRoleMember, app.PlaybookRoleAdmin},
+			},
+		}
 	}
 
 	if playbook.WebhookOnCreationEnabled {
@@ -142,6 +152,21 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		playbook.SignalAnyKeywords = removeDuplicates(playbook.SignalAnyKeywords)
 	}
 
+	if playbook.BroadcastEnabled {
+		for _, channelID := range playbook.BroadcastChannelIDs {
+			channel, err := h.pluginAPI.Channel.Get(channelID)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "broadcasting to invalid channel ID", err)
+				return
+			}
+			// check if channel is archived
+			if channel.DeleteAt != 0 {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "broadcasting to archived channel", err)
+				return
+			}
+		}
+	}
+
 	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -163,8 +188,7 @@ func (h *PlaybookHandler) getPlaybook(w http.ResponseWriter, r *http.Request) {
 	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+	if !h.PermissionsCheck(w, h.permissions.PlaybookView(userID, playbookID)) {
 		return
 	}
 
@@ -194,13 +218,7 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err = app.PlaybookModify(userID, playbook, oldPlaybook, h.config, h.pluginAPI, h.playbookService); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
-		return
-	}
-
-	if err = doPlaybookModificationChecks(&playbook, userID, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
+	if !h.PermissionsCheck(w, h.permissions.PlaybookModifyWithFixes(userID, &playbook, oldPlaybook)) {
 		return
 	}
 
@@ -263,59 +281,18 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 }
 
-// doPlaybookModificationChecks performs permissions checks that can be resolved though modification of the input.
-// This function modifies the playbook argument.
-func doPlaybookModificationChecks(playbook *app.Playbook, userID string, pluginAPI *pluginapi.Client) error {
-	filteredUsers := []string{}
-	for _, userID := range playbook.InvitedUserIDs {
-		if !pluginAPI.User.HasPermissionToTeam(userID, playbook.TeamID, model.PermissionViewTeam) {
-			pluginAPI.Log.Warn("user does not have permissions to playbook's team, removing from automated invite list", "teamID", playbook.TeamID, "userID", userID)
-			continue
-		}
-		filteredUsers = append(filteredUsers, userID)
-	}
-	playbook.InvitedUserIDs = filteredUsers
-
-	filteredGroups := []string{}
-	for _, groupID := range playbook.InvitedGroupIDs {
-		var group *model.Group
-		group, err := pluginAPI.Group.Get(groupID)
-		if err != nil {
-			pluginAPI.Log.Warn("failed to query group", "group_id", groupID)
-			continue
-		}
-
-		if !group.AllowReference {
-			pluginAPI.Log.Warn("group does not allow references, removing from automated invite list", "group_id", groupID)
-			continue
-		}
-
-		filteredGroups = append(filteredGroups, groupID)
-	}
-	playbook.InvitedGroupIDs = filteredGroups
-
-	if playbook.DefaultOwnerID != "" && !app.IsMemberOfTeam(playbook.DefaultOwnerID, playbook.TeamID, pluginAPI) {
-		pluginAPI.Log.Warn("owner is not a member of the playbook's team, disabling default owner", "teamID", playbook.TeamID, "userID", playbook.DefaultOwnerID)
-		playbook.DefaultOwnerID = ""
-		playbook.DefaultOwnerEnabled = false
-	}
-
-	return nil
-}
-
 func (h *PlaybookHandler) archivePlaybook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
-		return
-	}
-
 	playbookToArchive, err := h.playbookService.Get(playbookID)
 	if err != nil {
 		h.HandleError(w, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, h.permissions.DeletePlaybook(userID, playbookToArchive)) {
 		return
 	}
 
@@ -333,14 +310,13 @@ func (h *PlaybookHandler) restorePlaybook(w http.ResponseWriter, r *http.Request
 	playbookID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", err)
-		return
-	}
-
 	playbookToRestore, err := h.playbookService.Get(playbookID)
 	if err != nil {
 		h.HandleError(w, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, h.permissions.DeletePlaybook(userID, playbookToRestore)) {
 		return
 	}
 
@@ -363,32 +339,14 @@ func (h *PlaybookHandler) getPlaybooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if teamID != "" && !app.CanViewTeam(userID, teamID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to get playbooks on teamID %s",
-			userID,
-			teamID,
-		))
-		return
-	}
-
-	// Exclude guest users
-	if isGuest, errg := app.IsGuest(userID, h.pluginAPI); errg != nil {
-		h.HandleError(w, errg)
-		return
-	} else if isGuest {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", errors.Errorf(
-			"userID %s does not have permission to get playbooks on teamID %s because they are a guest",
-			userID,
-			teamID,
-		))
+	if teamID != "" && !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
 		return
 	}
 
 	requesterInfo := app.RequesterInfo{
 		UserID:  userID,
 		TeamID:  teamID,
-		IsAdmin: app.IsAdmin(userID, h.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(userID, h.pluginAPI),
 	}
 
 	playbookResults, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, opts)
@@ -405,15 +363,14 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 	teamID := query.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if teamID != "" && !app.CanViewTeam(userID, teamID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
+	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
 		return
 	}
 
 	requesterInfo := app.RequesterInfo{
 		UserID:  userID,
 		TeamID:  teamID,
-		IsAdmin: app.IsAdmin(userID, h.pluginAPI),
+		IsAdmin: app.IsSystemAdmin(userID, h.pluginAPI),
 	}
 
 	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, app.PlaybookFilterOptions{
@@ -442,8 +399,7 @@ func (h *PlaybookHandler) getPlaybookCount(w http.ResponseWriter, r *http.Reques
 	teamID := query.Get("team_id")
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	if teamID != "" && !app.CanViewTeam(userID, teamID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "user does not have permissions to view team", nil)
+	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
 		return
 	}
 
@@ -552,13 +508,12 @@ func (h *PlaybookHandler) autoFollow(w http.ResponseWriter, r *http.Request) {
 	currentUserID := r.Header.Get("Mattermost-User-ID")
 	userID := mux.Vars(r)["userID"]
 
-	if currentUserID != userID && !app.IsAdmin(currentUserID, h.pluginAPI) {
+	if currentUserID != userID && !app.IsSystemAdmin(currentUserID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
 		return
 	}
 
-	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook.", err)
+	if !h.PermissionsCheck(w, h.permissions.PlaybookView(userID, playbookID)) {
 		return
 	}
 
@@ -575,13 +530,12 @@ func (h *PlaybookHandler) autoUnfollow(w http.ResponseWriter, r *http.Request) {
 	currentUserID := r.Header.Get("Mattermost-User-ID")
 	userID := mux.Vars(r)["userID"]
 
-	if currentUserID != userID && !app.IsAdmin(currentUserID, h.pluginAPI) {
+	if currentUserID != userID && !app.IsSystemAdmin(currentUserID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to make another user autofollow the playbook.", nil)
 		return
 	}
 
-	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook.", err)
+	if !h.PermissionsCheck(w, h.permissions.PlaybookView(userID, playbookID)) {
 		return
 	}
 
@@ -598,13 +552,12 @@ func (h *PlaybookHandler) isAutoFollowing(w http.ResponseWriter, r *http.Request
 	currentUserID := r.Header.Get("Mattermost-User-ID")
 	userID := mux.Vars(r)["userID"]
 
-	if currentUserID != userID && !app.IsAdmin(currentUserID, h.pluginAPI) {
+	if currentUserID != userID && !app.IsSystemAdmin(currentUserID, h.pluginAPI) {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "Current user doesn't have permissions to check whether user is autofollowing or not.", nil)
 		return
 	}
 
-	if err := app.PlaybookAccess(userID, playbookID, h.playbookService, h.pluginAPI); err != nil {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "User doesn't have permissions to playbook.", err)
+	if !h.PermissionsCheck(w, h.permissions.PlaybookView(userID, playbookID)) {
 		return
 	}
 

@@ -177,11 +177,15 @@ jobs:
           name: Checking diff of generated manifest files
           command: |
             git --no-pager diff --exit-code *manifest.* || (echo "Please run \"make apply\" and commit the changes in the generated manifests." && exit 1)
-      - run: make i18n-extract
+      - run: make i18n-extract-webapp
       - run:
-          name: Checking diff of i18n files
+          name: Checking diff of webapp i18n files
           command: |
-            git --no-pager diff --exit-code webapp/i18n/en.json || (echo "Please run \"make i18n-extract\" and commit the changes in en.json." && exit 1)
+            git --no-pager diff --exit-code webapp/i18n/en.json || (echo "Please run \"make i18n-extract\" and commit the changes in webapp/i18n/en.json." && exit 1)
+      # - run:
+      #     name: Checking diff of server i18n files
+      #     command: |
+      #       make i18n-check || (echo "Please run \"make i18n-extract\", add messages to any empty translations, and commit the changes in server/i18n/en.json." && exit 1)
 
       - *save_go_cache
 
@@ -384,6 +388,7 @@ jobs:
           MM_ANNOUNCEMENTSETTINGS_ADMINNOTICESENABLED: false
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
+          MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW: false
     environment:
       MM_DOCKER_IMAGE_TAG: prerelease
       TYPE: NONE
@@ -458,6 +463,7 @@ jobs:
           MM_SERVICESETTINGS_ENABLELEGACYSIDEBAR: true
           MM_TEAMSETTINGS_MAXUSERSPERTEAM: 10000
           MM_FEATUREFLAGS_GLOBALHEADER: true
+          MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW: false
     environment:
       MM_DOCKER_IMAGE_TAG: master
       TYPE: NONE
