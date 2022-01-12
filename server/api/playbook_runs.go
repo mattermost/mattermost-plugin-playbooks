@@ -154,6 +154,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(w http.ResponseWriter, r 
 		app.PlaybookRun{
 			OwnerUserID: playbookRunCreateOptions.OwnerUserID,
 			TeamID:      playbookRunCreateOptions.TeamID,
+			ChannelID:   playbookRunCreateOptions.ChannelID,
 			Name:        playbookRunCreateOptions.Name,
 			Summary:     playbookRunCreateOptions.Description,
 			PostID:      playbookRunCreateOptions.PostID,
@@ -365,15 +366,26 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
 	}
 
-	if playbookRun.ChannelID != "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run channel already has an id")
-	}
-
 	if playbookRun.CreateAt != 0 {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run channel already has created at date")
 	}
 
-	if playbookRun.TeamID == "" {
+	var channel *model.Channel
+	var err error
+	if playbookRun.TeamID == "" && playbookRun.ChannelID == "" {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing channel or team id of playbook run")
+	} else if playbookRun.ChannelID != "" {
+		channel, err = h.pluginAPI.Channel.Get(playbookRun.ChannelID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get channel")
+		}
+
+		if playbookRun.TeamID == "" {
+			playbookRun.TeamID = channel.TeamId
+		} else if channel.TeamId != playbookRun.TeamID {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run channel not in given team")
+		}
+	} else if playbookRun.TeamID == "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing team id of playbook run")
 	}
 
@@ -381,7 +393,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
 	}
 
-	if strings.TrimSpace(playbookRun.Name) == "" {
+	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
@@ -454,14 +466,30 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbook = &pb
 	}
 
-	permission := model.PermissionCreatePrivateChannel
-	permissionMessage := "You are not able to create a private channel"
-	if public {
-		permission = model.PermissionCreatePublicChannel
-		permissionMessage = "You are not able to create a public channel"
-	}
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, permission) {
-		return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
+	if channel == nil {
+		permission := model.PermissionCreatePrivateChannel
+		permissionMessage := "You are not able to create a private channel"
+		if public {
+			permission = model.PermissionCreatePublicChannel
+			permissionMessage = "You are not able to create a public channel"
+		}
+		if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, permission) {
+			return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
+		}
+	} else {
+		permission := model.PermissionManagePublicChannelProperties
+		permissionMessage := "You are not able to manage public channel properties"
+		if channel.Type == model.ChannelTypePrivate {
+			permission = model.PermissionManagePrivateChannelProperties
+			permissionMessage = "You are not able to manage private channel properties"
+		} else if channel.Type == model.ChannelTypeDirect || channel.Type == model.ChannelTypeGroup {
+			permission = model.PermissionReadChannel
+			permissionMessage = "You do not have access to this channel"
+		}
+
+		if !h.pluginAPI.User.HasPermissionToChannel(userID, channel.Id, permission) {
+			return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
+		}
 	}
 
 	if playbookRun.PostID != "" {
@@ -473,6 +501,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, errors.New("user does not have access to the channel containing the playbook run's original post")
 		}
 	}
+
 	return h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
 }
 

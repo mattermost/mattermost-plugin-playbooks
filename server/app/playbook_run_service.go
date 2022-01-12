@@ -219,26 +219,46 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookRun.ReporterUserID = userID
 	playbookRun.ID = model.NewId()
 
-	header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
-	if pb != nil {
-		overviewURL := getRunDetailsRelativeURL(playbookRun.ID)
-		playbookURL := getPlaybookDetailsRelativeURL(pb.ID)
-		header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
-			pb.Title, playbookURL, overviewURL)
-	}
+	var err error
+	var channel *model.Channel
 
-	if playbookRun.Name == "" {
-		playbookRun.Name = pb.ChannelNameTemplate
-	}
+	if playbookRun.ChannelID == "" {
+		header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
+		if pb != nil {
+			overviewURL := getRunDetailsRelativeURL(playbookRun.ID)
+			playbookURL := getPlaybookDetailsRelativeURL(pb.ID)
+			header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
+				pb.Title, playbookURL, overviewURL)
+		}
 
-	// Try to create the channel first
-	channel, err := s.createPlaybookRunChannel(playbookRun, header, public)
-	if err != nil {
-		return nil, err
+		if playbookRun.Name == "" {
+			playbookRun.Name = pb.ChannelNameTemplate
+		}
+
+		// Try to create the channel first
+		channel, err = s.createPlaybookRunChannel(playbookRun, header, public)
+		if err != nil {
+			return nil, err
+		}
+
+		playbookRun.ChannelID = channel.Id
+	} else {
+		existingPlaybookRunID, err := s.GetPlaybookRunIDForChannel(playbookRun.ChannelID)
+		if err != nil && !errors.Is(err, ErrNotFound) {
+			return nil, err
+		} else if existingPlaybookRunID != "" {
+			return nil, errors.Wrapf(ErrMalformedPlaybookRun, "playbook run %s already exists for channel %s", existingPlaybookRunID, playbookRun.ChannelID)
+		}
+
+		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+		if err != nil {
+			return nil, err
+		}
+
+		playbookRun.Name = channel.Name
 	}
 
 	now := model.GetMillis()
-	playbookRun.ChannelID = channel.Id
 	playbookRun.CreateAt = now
 	playbookRun.LastStatusUpdateAt = now
 	playbookRun.CurrentStatus = StatusInProgress
