@@ -11,6 +11,8 @@ import InfiniteScroll from 'react-infinite-scroll-component';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 
+import Spinner from 'src/components/assets/icons/spinner';
+
 import Row from './row';
 import RunListHeader from './run_list_header';
 import Filters from './filters';
@@ -40,6 +42,12 @@ const Count = styled.div`
 	width: 100%;
 	text-align: center;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const StyledSpinner = styled(Spinner)`
+	width: 100%;
+	text-align:center;
+	margin-top: 10px;
 `;
 
 const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterPill, fixedTeam, fixedPlaybook}: Props) => {
@@ -85,7 +93,7 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
                 dataLength={playbookRuns.length}
                 next={nextPage}
                 hasMore={playbookRuns.length < totalCount}
-                loader={'loading...'}
+                loader={<StyledSpinner/>}
                 scrollableTarget={'playbooks-backstageRoot'}
             >
                 {playbookRuns.map((playbookRun) => (
