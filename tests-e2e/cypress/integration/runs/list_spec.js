@@ -6,8 +6,6 @@
 // - [*] indicates an assertion (e.g. * Check the title)
 // ***************************************************************
 
-const LIST_PER_PAGE = 15;
-
 describe('runs > list', () => {
     let testTeam;
     let testUser;
@@ -211,63 +209,6 @@ describe('runs > list', () => {
 
             // # Verify finished run is visible
             cy.findByText('testUsers Run to be finished').should('be.visible');
-        });
-    });
-
-    describe('resets pagination when filtering', () => {
-        const playbookRunTimestamps = [];
-
-        before(() => {
-            // # Login as testUser
-            cy.apiLogin(testUser);
-
-            // # Start sufficient playbook runs to ensure pagination is possible.
-            for (let i = 0; i < LIST_PER_PAGE + 1; i++) {
-                const now = Date.now();
-                cy.apiRunPlaybook({
-                    teamId: testTeam.id,
-                    playbookId: testPlaybook.id,
-                    playbookRunName: 'Playbook Run (' + now + ')',
-                    ownerUserId: testUser.id,
-                });
-                playbookRunTimestamps.push(now);
-            }
-        });
-
-        beforeEach(() => {
-            // # Login as testUser
-            cy.apiLogin(testUser);
-
-            // # Open the product
-            cy.visit('/playbooks');
-
-            // # Switch to runs
-            cy.findByTestId('playbookRunsLHSButton').click();
-
-            // # Switch to page 2
-            cy.findByText('Next').click();
-
-            // * Verify "Previous" now shown
-            cy.findByText('Previous').should('exist');
-        });
-
-        it('by playbook run name', () => {
-            // # Search for a playbook run by name
-            cy.findByTestId('search-filter').type(playbookRunTimestamps[0]);
-
-            // * Verify "Previous" no longer shown
-            cy.findByText('Previous').should('not.exist');
-        });
-
-        it('by owner', () => {
-            // # Expose the owner list
-            cy.findByTestId('owner-filter').click();
-
-            // # Find the list and chose the first owner in the list
-            cy.get('.PlaybookRunProfile').first().parent().click({force: true});
-
-            // * Verify "Previous" no longer shown
-            cy.findByText('Previous').should('not.exist');
         });
     });
 });
