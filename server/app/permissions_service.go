@@ -103,33 +103,12 @@ func (p *PermissionsService) checkPlaybookNotUsingE20Features(playbook Playbook)
 	return nil
 }
 
-func (p *PermissionsService) checkPlaybookNotUsingE10Features(playbook Playbook) error {
-	num, err := p.playbookService.GetNumPlaybooksForTeam(playbook.TeamID)
-	if err != nil {
-		return err
-	}
-
-	if num > 0 {
-		return errors.Wrap(ErrLicensedFeature, "creating more than one playbook per team is not available with your current subscription")
-	}
-
-	return nil
-}
-
 func (p *PermissionsService) checkPlaybookLicenceRequirements(playbook Playbook) error {
 	if p.configService.IsAtLeastE20Licensed() {
 		return nil
 	}
 
-	if err := p.checkPlaybookNotUsingE20Features(playbook); err != nil {
-		return err
-	}
-
-	if p.configService.IsAtLeastE10Licensed() {
-		return nil
-	}
-
-	return p.checkPlaybookNotUsingE10Features(playbook)
+	return p.checkPlaybookNotUsingE20Features(playbook)
 }
 
 func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) error {

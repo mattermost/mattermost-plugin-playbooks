@@ -48,7 +48,6 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 
 	playbooksRouter.HandleFunc("", handler.getPlaybooks).Methods(http.MethodGet)
 	playbooksRouter.HandleFunc("/autocomplete", handler.getPlaybooksAutoComplete).Methods(http.MethodGet)
-	playbooksRouter.HandleFunc("/count", handler.getPlaybookCount).Methods(http.MethodGet)
 
 	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
@@ -392,28 +391,6 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 	}
 
 	ReturnJSON(w, list, http.StatusOK)
-}
-
-func (h *PlaybookHandler) getPlaybookCount(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	teamID := query.Get("team_id")
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	if !h.PermissionsCheck(w, h.permissions.PlaybookList(userID, teamID)) {
-		return
-	}
-
-	count, err := h.playbookService.GetNumPlaybooksForTeam(teamID)
-	if err != nil {
-		h.HandleError(w, err)
-		return
-	}
-
-	countStruct := struct {
-		Count int `json:"count"`
-	}{count}
-
-	ReturnJSON(w, countStruct, http.StatusOK)
 }
 
 func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
