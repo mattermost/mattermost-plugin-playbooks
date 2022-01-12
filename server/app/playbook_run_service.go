@@ -131,7 +131,7 @@ func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessage(playbookTitle, 
 	}
 
 	announcementMsg := fmt.Sprintf(
-		"### New run started: [%s](%s)\n",
+		"**[%s](%s)**\n",
 		playbookRun.Name,
 		getRunDetailsRelativeURL(playbookRun.ID),
 	)
