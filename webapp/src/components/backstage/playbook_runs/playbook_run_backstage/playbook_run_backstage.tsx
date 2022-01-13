@@ -4,7 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
-import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
+import {Redirect, Route, useRouteMatch, NavLink, Switch, useHistory} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
@@ -236,6 +236,7 @@ const PlaybookRunBackstage = () => {
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
+    const history = useHistory();
     const currentUserID = useSelector(getCurrentUserId);
     const [following, setFollowing] = useState<string[]>([]);
     const [runLinkCopied, setRunLinkCopied] = useState(false);
@@ -316,7 +317,7 @@ const PlaybookRunBackstage = () => {
     };
 
     const closePlaybookRunDetails = () => {
-        navigateToPluginUrl('/runs');
+        history.goBack();
     };
 
     let followButton = (<Button onClick={onFollow}>{formatMessage({defaultMessage: 'Follow'})}</Button>);
