@@ -9,7 +9,7 @@ import {
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getCurrentTeam, getMyTeams, getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getMyTeams, getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {
@@ -34,8 +34,7 @@ import {EmptyPlaybookStats} from 'src/types/stats';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';
-import {clientFetchPlaybooksCount, fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookStats} from 'src/client';
-import {receivedTeamNumPlaybooks} from 'src/actions';
+import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookStats} from 'src/client';
 
 import {
     isCloud,
@@ -43,10 +42,8 @@ import {
     isE20LicensedOrDevelopment,
 } from '../license';
 import {
-    currentTeamNumPlaybooks,
     globalSettings,
     isCurrentUserAdmin,
-    numPlaybooksByTeam,
     myPlaybookRunsByTeam,
 } from '../selectors';
 
@@ -306,48 +303,6 @@ export function useChannel(channelId: string) {
     return useThing(channelId, Client4.getChannel, getChannelFromState);
 }
 
-export function useNumPlaybooksInCurrentTeam() {
-    const dispatch = useDispatch();
-    const team = useSelector(getCurrentTeam);
-    const numPlaybooks = useSelector(currentTeamNumPlaybooks);
-
-    useEffect(() => {
-        const fetch = async () => {
-            const response = await clientFetchPlaybooksCount(team.id);
-            dispatch(receivedTeamNumPlaybooks(team.id, response?.count ?? 0));
-        };
-
-        fetch();
-    }, [team.id]);
-
-    return numPlaybooks;
-}
-
-export function useAllowPlaybookCreationInTeams() {
-    const dispatch = useDispatch();
-    const numPlaybooks = useSelector(numPlaybooksByTeam);
-    const myTeams = useSelector(getMyTeams);
-    const isLicensed = useSelector(isE10LicensedOrDevelopment);
-
-    useEffect(() => {
-        for (const team of myTeams) {
-            const fetch = async () => {
-                const response = await clientFetchPlaybooksCount(team.id);
-                dispatch(receivedTeamNumPlaybooks(team.id, response?.count ?? 0));
-            };
-            fetch();
-        }
-    }, []);
-
-    const allowPlaybookCreationInTeams = new Map<string, boolean>();
-    for (const team of myTeams) {
-        const num = numPlaybooks[team.id] || 0;
-        allowPlaybookCreationInTeams.set(team.id, isLicensed || num === 0);
-    }
-
-    return allowPlaybookCreationInTeams;
-}
-
 export function useDropdownPosition(numOptions: number, optionWidth = 264) {
     const [dropdownPosition, setDropdownPosition] = useState({x: 0, y: 0, isOpen: false});
 
@@ -371,37 +326,10 @@ export function useDropdownPosition(numOptions: number, optionWidth = 264) {
     return [dropdownPosition, toggleOpen] as const;
 }
 
-// useAllowPlaybookCreationInCurrentTeam returns whether a user can create
-// a playbook in the current team
-export function useAllowPlaybookCreationInCurrentTeam() {
-    const numPlaybooks = useNumPlaybooksInCurrentTeam();
-    const isLicensed = useSelector(isE10LicensedOrDevelopment);
-
-    return isLicensed || numPlaybooks === 0;
-}
-
-// useAllowTimelineViewInCurrentTeam returns whether a user can view the RHS
-// timeline in the current team
-export function useAllowTimelineViewInCurrentTeam() {
-    return useSelector(isE10LicensedOrDevelopment);
-}
-
 // useAllowAddMessageToTimelineInCurrentTeam returns whether a user can add a
 // post to the timeline in the current team
 export function useAllowAddMessageToTimelineInCurrentTeam() {
     return useSelector(isE10LicensedOrDevelopment);
-}
-
-// useAllowPlaybookGranularAccess returns whether the access to specific playbooks
-// can be restricted to a subset of users
-export function useAllowPlaybookGranularAccess() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowPlaybookCreationRestriction returns whether the global feature to
-// restrict the playbook creation to a subset of users is allowed
-export function useAllowPlaybookCreationRestriction() {
-    return useSelector(isE20LicensedOrDevelopment);
 }
 
 // useAllowChannelExport returns whether exporting the channel is allowed

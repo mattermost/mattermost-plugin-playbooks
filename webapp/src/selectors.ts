@@ -192,18 +192,6 @@ export const getProfileSetForChannel = (state: GlobalState, channelId: string) =
     return sortAndInjectProfiles(profiles, profileSet);
 };
 
-export const numPlaybooksByTeam = (state: GlobalState): Record<string, number> =>
-    pluginState(state).numPlaybooksByTeam;
-
-export const currentTeamNumPlaybooks = createSelector(
-    'currentTeamNumPlaybooks',
-    getCurrentTeamId,
-    numPlaybooksByTeam,
-    (teamId, playbooksPerTeamMap) => {
-        return playbooksPerTeamMap[teamId] || 0;
-    },
-);
-
 export const isPostMenuModalVisible = (state: GlobalState): boolean =>
     pluginState(state).postMenuModalVisibility;
 

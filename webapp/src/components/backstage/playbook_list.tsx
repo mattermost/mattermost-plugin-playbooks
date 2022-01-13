@@ -30,7 +30,6 @@ import {PaginationRow} from 'src/components/pagination_row';
 import {SortableColHeader} from 'src/components/sortable_col_header';
 import {AdminNotificationType, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {
-    useAllowPlaybookCreationInTeams,
     useCanCreatePlaybooksOnAnyTeam,
     usePlaybooksCrud,
     usePlaybooksRouting,
@@ -59,8 +58,6 @@ const PlaybookList = () => {
     const {formatMessage} = useIntl();
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal();
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
-    const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
-    const allowPlaybookCreationInTeams = useAllowPlaybookCreationInTeams();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
     const bottomHalf = useRef<JSX.Element | null>(null);
     const dispatch = useDispatch();
@@ -104,7 +101,6 @@ const PlaybookList = () => {
                 <>
                     <NoContentPage
                         canCreatePlaybooks={canCreatePlaybooks}
-                        allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
                     />
                     <NoContentPlaybookSvg/>
                 </>
@@ -130,10 +126,7 @@ const PlaybookList = () => {
                         {canCreatePlaybooks &&
                         <>
                             <HorizontalSpacer size={12}/>
-                            <PlaybookModalButton
-                                allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
-                                showUpgradeModal={showUpgradeModal}
-                            />
+                            <PlaybookModalButton/>
                         </>
                         }
                     </PlaybooksHeader>
@@ -197,45 +190,24 @@ const PlaybookList = () => {
         <PlaybookContainer>
             {
                 canCreatePlaybooks &&
-                <TemplateSelector
-                    allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
-                    showUpgradeModal={showUpgradeModal}
-                />
+                <TemplateSelector/>
             }
             {bottomHalf.current}
-            <UpgradeModal
-                messageType={AdminNotificationType.PLAYBOOK}
-                show={isUpgradeModalShown}
-                onHide={hideUpgradeModal}
-            />
             {confirmArchiveModal}
         </PlaybookContainer>
     );
 };
 
-type PlaybookModalButtonProps = UpgradeButtonProps & {allowPlaybookCreationInTeams:Map<string, boolean>, showUpgradeModal?: () => void};
-
-const PlaybookModalButton = (props: PlaybookModalButtonProps) => {
+const PlaybookModalButton = () => {
     const {formatMessage} = useIntl();
-    const {allowPlaybookCreationInTeams, showUpgradeModal} = props;
     const dispatch = useDispatch();
-    if (isPlaybookCreationAllowed(allowPlaybookCreationInTeams)) {
-        return (
-            <CreatePlaybookButton
-                onClick={() => dispatch(displayPlaybookCreateModal({}))}
-            >
-                <i className='icon-plus mr-2'/>
-                {formatMessage({defaultMessage: 'Create playbook'})}
-            </CreatePlaybookButton>
-        );
-    }
+
     return (
         <CreatePlaybookButton
-            onClick={showUpgradeModal}
+            onClick={() => dispatch(displayPlaybookCreateModal({}))}
         >
             <i className='icon-plus mr-2'/>
             {formatMessage({defaultMessage: 'Create playbook'})}
-            <NotAllowedIcon className='icon icon-key-variant-circle'/>
         </CreatePlaybookButton>
     );
 };
@@ -301,7 +273,7 @@ const DescriptionWarn = styled(Description)`
     color: rgba(var(--error-text-color-rgb), 0.72);
 `;
 
-const NoContentPage = (props: { canCreatePlaybooks: boolean, allowPlaybookCreationInTeams: Map<string, boolean> }) => {
+const NoContentPage = (props: { canCreatePlaybooks: boolean }) => {
     return (
         <Container>
             <Title><FormattedMessage defaultMessage='What is a playbook?'/></Title>
@@ -311,10 +283,7 @@ const NoContentPage = (props: { canCreatePlaybooks: boolean, allowPlaybookCreati
                 />
             </Description>
             {props.canCreatePlaybooks &&
-            <PlaybookModalButton
-                className='mt-6'
-                allowPlaybookCreationInTeams={props.allowPlaybookCreationInTeams}
-            />
+            <PlaybookModalButton/>
             }
             {!props.canCreatePlaybooks &&
             <DescriptionWarn>

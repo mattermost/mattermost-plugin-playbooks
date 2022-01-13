@@ -39,8 +39,6 @@ import {
     PlaybookArchived,
     PLAYBOOK_RESTORED,
     PlaybookRestored,
-    RECEIVED_TEAM_NUM_PLAYBOOKS,
-    ReceivedTeamNumPlaybooks,
     RECEIVED_GLOBAL_SETTINGS,
     ReceivedGlobalSettings,
     SHOW_POST_MENU_MODAL,
@@ -252,12 +250,6 @@ export const playbookArchived = (teamID: string): PlaybookArchived => ({
 export const playbookRestored = (teamID: string): PlaybookRestored => ({
     type: PLAYBOOK_RESTORED,
     teamID,
-});
-
-export const receivedTeamNumPlaybooks = (teamID: string, numPlaybooks: number): ReceivedTeamNumPlaybooks => ({
-    type: RECEIVED_TEAM_NUM_PLAYBOOKS,
-    teamID,
-    numPlaybooks,
 });
 
 export const receivedTeamPlaybookRuns = (playbookRuns: PlaybookRun[]): ReceivedTeamPlaybookRuns => ({

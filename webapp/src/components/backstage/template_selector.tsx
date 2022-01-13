@@ -473,8 +473,6 @@ const TemplateItemDiv = styled.div`
 
 interface Props {
     templates?: PresetTemplate[];
-    allowPlaybookCreationInTeams: Map<string, boolean>;
-    showUpgradeModal: () => void;
 }
 
 export function isPlaybookCreationAllowed(allowPlaybookCreationInTeams: Map<string, boolean>) {
@@ -512,8 +510,7 @@ export const TemplateDropdown = (props: TemplateDropdownProps) => {
     );
 };
 
-const TemplateSelector = ({templates = PresetTemplates, allowPlaybookCreationInTeams, showUpgradeModal}: Props) => {
-    const allowPlaybookCreation = isPlaybookCreationAllowed(allowPlaybookCreationInTeams);
+const TemplateSelector = ({templates = PresetTemplates}: Props) => {
     const dispatch = useDispatch();
     return (
         <BackgroundColorContainer>
@@ -521,36 +518,20 @@ const TemplateSelector = ({templates = PresetTemplates, allowPlaybookCreationInT
                 <InnerContainer>
                     <Title>
                         <FormattedMessage defaultMessage='Create a playbook'/>
-                        {!allowPlaybookCreation && <NotAllowedIcon className='icon icon-key-variant-circle'/>}
                     </Title>
                     <TemplateItemDiv>
-                        {templates.map((template: PresetTemplate) => {
-                            if (allowPlaybookCreation) {
-                                return (
-                                    <TemplateItem
-                                        key={template.title}
-                                        title={template.title}
-                                        onClick={() => {
-                                            telemetryEventForTemplate(template.title, 'click_template_icon');
-                                            dispatch(displayPlaybookCreateModal({startingTemplate: template.title}));
-                                        }}
-                                    >
-                                        {template.icon}
-                                    </TemplateItem>
-                                );
-                            }
-                            return (
-                                <TemplateItem
-                                    key={template.title}
-                                    title={template.title}
-                                    onClick={() => {
-                                        showUpgradeModal();
-                                    }}
-                                >
-                                    {template.icon}
-                                </TemplateItem>
-                            );
-                        })}
+                        {templates.map((template: PresetTemplate) => (
+                            <TemplateItem
+                                key={template.title}
+                                title={template.title}
+                                onClick={() => {
+                                    telemetryEventForTemplate(template.title, 'click_template_icon');
+                                    dispatch(displayPlaybookCreateModal({startingTemplate: template.title}));
+                                }}
+                            >
+                                {template.icon}
+                            </TemplateItem>
+                        ))}
                     </TemplateItemDiv>
                 </InnerContainer>
             </RootContainer>
