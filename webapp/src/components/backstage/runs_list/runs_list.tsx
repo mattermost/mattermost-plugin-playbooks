@@ -39,15 +39,15 @@ const Footer = styled.div`
 
 const Count = styled.div`
     padding-top: 8px;
-	width: 100%;
-	text-align: center;
+    width: 100%;
+    text-align: center;
     color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
 const StyledSpinner = styled(Spinner)`
-	width: 100%;
-	text-align:center;
-	margin-top: 10px;
+    width: 100%;
+    text-align:center;
+    margin-top: 10px;
 `;
 
 const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterPill, fixedTeam, fixedPlaybook}: Props) => {
