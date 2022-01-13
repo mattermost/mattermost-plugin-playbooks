@@ -370,11 +370,15 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run channel already has created at date")
 	}
 
+	if playbookRun.TeamID == "" && playbookRun.ChannelID == "" {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "must provide team or channel to create playbook run")
+	}
+
+	// If a channel is specified, ensure it's from the given team (if one provided), or
+	// just grab the team for that channel.
 	var channel *model.Channel
 	var err error
-	if playbookRun.TeamID == "" && playbookRun.ChannelID == "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing channel or team id of playbook run")
-	} else if playbookRun.ChannelID != "" {
+	if playbookRun.ChannelID != "" {
 		channel, err = h.pluginAPI.Channel.Get(playbookRun.ChannelID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get channel")
@@ -383,10 +387,8 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		if playbookRun.TeamID == "" {
 			playbookRun.TeamID = channel.TeamId
 		} else if channel.TeamId != playbookRun.TeamID {
-			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run channel not in given team")
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "channel not in given team")
 		}
-	} else if playbookRun.TeamID == "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing team id of playbook run")
 	}
 
 	if playbookRun.OwnerUserID == "" {

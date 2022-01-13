@@ -235,7 +235,6 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 			playbookRun.Name = pb.ChannelNameTemplate
 		}
 
-		// Try to create the channel first
 		channel, err = s.createPlaybookRunChannel(playbookRun, header, public)
 		if err != nil {
 			return nil, err
