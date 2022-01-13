@@ -72,10 +72,6 @@ func (s *playbookService) GetPlaybooksForTeam(requesterInfo RequesterInfo, teamI
 	return s.store.GetPlaybooksForTeam(requesterInfo, teamID, opts)
 }
 
-func (s *playbookService) GetNumPlaybooksForTeam(teamID string) (int, error) {
-	return s.store.GetNumPlaybooksForTeam(teamID)
-}
-
 func (s *playbookService) Update(playbook Playbook, userID string) error {
 	if playbook.DeleteAt != 0 {
 		return errors.New("cannot update a playbook that is archived")

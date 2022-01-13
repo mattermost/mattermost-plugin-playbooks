@@ -232,9 +232,6 @@ type PlaybookService interface {
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
 
-	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
-	GetNumPlaybooksForTeam(teamID string) (int, error)
-
 	// GetSuggestedPlaybooks returns suggested playbooks and triggers for the user message
 	GetSuggestedPlaybooks(teamID, userID, message string) ([]*CachedPlaybook, []string)
 
@@ -275,9 +272,6 @@ type PlaybookStore interface {
 
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
-
-	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
-	GetNumPlaybooksForTeam(teamID string) (int, error)
 
 	// GetPlaybooksWithKeywords retrieves all playbooks with keywords enabled
 	GetPlaybooksWithKeywords(opts PlaybookFilterOptions) ([]Playbook, error)

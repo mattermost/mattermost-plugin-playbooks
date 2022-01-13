@@ -211,13 +211,6 @@ export function clientFetchPlaybook(playbookID: string) {
     return doGet<PlaybookWithChecklist>(`${apiUrl}/playbooks/${playbookID}`);
 }
 
-export async function clientFetchPlaybooksCount(teamID: string) {
-    const queryParams = qs.stringify({
-        team_id: teamID,
-    }, {addQueryPrefix: true});
-    return doGet<FetchPlaybooksCountReturn>(`${apiUrl}/playbooks/count${queryParams}`);
-}
-
 export async function savePlaybook(playbook: PlaybookWithChecklist | DraftPlaybookWithChecklist) {
     if (!playbook.id) {
         const data = await doPost(`${apiUrl}/playbooks`, JSON.stringify(playbook));

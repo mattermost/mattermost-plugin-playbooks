@@ -15,7 +15,7 @@ import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {SubtlePrimaryButton} from 'src/components/assets/buttons';
 
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
-import {usePlaybooksRouting, useAllowPlaybookCreationInCurrentTeam, useHasPlaybookPermission} from 'src/hooks';
+import {usePlaybooksRouting, useHasPlaybookPermission} from 'src/hooks';
 import {startPlaybookRunById} from 'src/actions';
 import {PillBox} from 'src/components/widgets/pill';
 import {Timestamp} from 'src/webapp_globals';
@@ -269,7 +269,6 @@ export const RHSHomeTemplate = ({
 }: RHSHomeTemplateProps) => {
     const {formatMessage} = useIntl();
     const currentTeam = useSelector(getCurrentTeam);
-    const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
     const {create} = usePlaybooksRouting({urlOnly: true});
     const linkRef = useRef(null);
     return (
@@ -277,7 +276,7 @@ export const RHSHomeTemplate = ({
             <div data-testid='template-details'>
                 <Title ref={linkRef}>
                     <Link
-                        to={allowPlaybookCreation ? create({teamId: currentTeam.id, template: template.title}) : ''}
+                        to={create({teamId: currentTeam.id, template: template.title})}
                         onClick={(e) => {
                             e.preventDefault();
                             onUse(template);

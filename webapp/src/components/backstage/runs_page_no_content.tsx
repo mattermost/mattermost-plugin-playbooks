@@ -13,18 +13,15 @@ import {Team} from 'mattermost-redux/types/teams';
 
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 
-import {AdminNotificationType, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
+import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {Playbook} from 'src/types/playbook';
 
 import NoContentPlaybookRunSvg from 'src/components/assets/no_content_playbook_runs_svg';
 import {startPlaybookRun} from 'src/actions';
 import {navigateToUrl} from 'src/browser_routing';
-import {usePlaybooksRouting, useAllowPlaybookCreationInTeams, usePlaybooksCrud, useCanCreatePlaybooksOnAnyTeam} from 'src/hooks';
+import {usePlaybooksRouting, usePlaybooksCrud, useCanCreatePlaybooksOnAnyTeam} from 'src/hooks';
 
 import {clientHasPlaybooks} from 'src/client';
-
-import UpgradeModal from './upgrade_modal';
-import {useUpgradeModalVisibility} from './playbook_list';
 
 const NoContentContainer = styled.div`
     display: flex;
@@ -95,7 +92,6 @@ const NoContentPlaybookRunSvgContainer = styled.div`
 const NoContentPage = () => {
     const dispatch = useDispatch();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
-    const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
     const goToMattermost = () => {
         navigateToUrl('');
     };
@@ -116,14 +112,9 @@ const NoContentPage = () => {
         {setSelectedPlaybook},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
     const {create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
-    const allowPlaybookCreationInTeams = useAllowPlaybookCreationInTeams();
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const newPlaybook = (team: Team, templateTitle?: string | undefined) => {
-        if (allowPlaybookCreationInTeams.get(team.id)) {
-            create({teamId: team.id, template: templateTitle});
-        } else {
-            showUpgradeModal();
-        }
+        create({teamId: team.id, template: templateTitle});
     };
     const handleClick = () => {
         if (playbookExist) {
@@ -135,11 +126,6 @@ const NoContentPage = () => {
     };
     return (
         <NoContentContainer>
-            <UpgradeModal
-                messageType={AdminNotificationType.PLAYBOOK}
-                show={isUpgradeModalShown}
-                onHide={hideUpgradeModal}
-            />
             <NoContentTextContainer>
                 <NoContentTitle><FormattedMessage defaultMessage='What are playbook runs?'/></NoContentTitle>
                 <NoContentDescription><FormattedMessage defaultMessage='Running a playbook orchestrates workflows for your team and tools.'/></NoContentDescription>
