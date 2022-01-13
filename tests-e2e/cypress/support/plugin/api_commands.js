@@ -77,12 +77,8 @@ Cypress.Commands.add('apiRunPlaybook', (
         playbookRunName,
         ownerUserId,
         channelId,
-        description = ''
-    },
-    {
-        expectedStatusCode = StatusCreated,
-        failOnStatusCode = true,
-    } = {}) => {
+        description,
+    }, options) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: playbookRunsEndpoint,
@@ -95,9 +91,10 @@ Cypress.Commands.add('apiRunPlaybook', (
             channel_id: channelId,
             description,
         },
-        failOnStatusCode,
+        failOnStatusCode: !(options?.expectedStatusCode)
     }).then((response) => {
-        expect(response.status).to.equal(expectedStatusCode);
+        const statusCode = options?.expectedStatusCode || StatusCreated;
+        expect(response.status).to.equal(statusCode);
         cy.wrap(response.body);
     });
 });

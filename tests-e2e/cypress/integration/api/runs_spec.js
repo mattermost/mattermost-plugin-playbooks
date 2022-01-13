@@ -85,7 +85,7 @@ describe('api > runs', () => {
                         channelId: channel.id,
                         playbookId: testPlaybook.id,
                         teamId: 'other_team_id',
-                    }, {expectedStatusCode: 400, failOnStatusCode: false}).then((body) => {
+                    }, {expectedStatusCode: 400}).then((body) => {
                         expect(body).to.have.property('error', 'unable to create playbook run');
                     });
                 });
@@ -139,7 +139,7 @@ describe('api > runs', () => {
                         channelId: channel.id,
                         playbookId: testPlaybook.id,
                         teamId: 'other_team_id',
-                    }, {expectedStatusCode: 400, failOnStatusCode: false}).then((body) => {
+                    }, {expectedStatusCode: 400}).then((body) => {
                         expect(body).to.have.property('error', 'unable to create playbook run');
                     });
                 });
@@ -158,7 +158,7 @@ describe('api > runs', () => {
                     channelId: channel.id,
                     playbookId: testPlaybook.id,
                     teamId: testTeam.id,
-                }, {expectedStatusCode: 403, failOnStatusCode: false}).then((body) => {
+                }, {expectedStatusCode: 403}).then((body) => {
                     expect(body).to.have.property('error', 'unable to create playbook run');
                 });
             });
@@ -177,7 +177,7 @@ describe('api > runs', () => {
                     owner_user_id: testUser.id,
                     channel_id: playbookRun.channel_id,
                     playbook_id: testPlaybook.id,
-                }, {expectedStatusCode: 400, failOnStatusCode: false}).then((body) => {
+                }, {expectedStatusCode: 400}).then((body) => {
                     expect(body).to.have.property('error', 'unable to create playbook run');
                 });
             });
