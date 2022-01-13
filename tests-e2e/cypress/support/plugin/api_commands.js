@@ -4,6 +4,7 @@
 const playbookRunsEndpoint = '/plugins/playbooks/api/v0/runs';
 
 const StatusOK = 200;
+const StatusCreated = 201;
 
 /**
  * Get all playbook runs directly via API
@@ -75,8 +76,13 @@ Cypress.Commands.add('apiRunPlaybook', (
         playbookId,
         playbookRunName,
         ownerUserId,
+        channelId,
         description = ''
-    }) => {
+    },
+    {
+        expectedStatusCode = StatusCreated,
+        failOnStatusCode = true,
+    } = {}) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: playbookRunsEndpoint,
@@ -86,10 +92,12 @@ Cypress.Commands.add('apiRunPlaybook', (
             owner_user_id: ownerUserId,
             team_id: teamId,
             playbook_id: playbookId,
+            channel_id: channelId,
             description,
         },
+        failOnStatusCode,
     }).then((response) => {
-        expect(response.status).to.equal(201);
+        expect(response.status).to.equal(expectedStatusCode);
         cy.wrap(response.body);
     });
 });

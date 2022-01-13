@@ -7,7 +7,6 @@
 // ***************************************************************
 
 describe('api > runs', () => {
-    const baseUrl = Cypress.config('baseUrl') + '/plugins/playbooks/api/v0';
     let testTeam;
     let testUser;
     let testPlaybook;
@@ -28,7 +27,7 @@ describe('api > runs', () => {
                 createPublicPlaybookRun: true,
             }).then((playbook) => {
                 testPlaybook = playbook;
-            })
+            });
         });
     });
 
@@ -43,22 +42,17 @@ describe('api > runs', () => {
                 // # Create a test channel without a playbook run
                 cy.apiCreateChannel(testTeam.id, 'channel', 'Channel').then(({channel}) => {
                     // # Run the testPlaybook in the previously created channel
-                    cy.request({
-                        headers: {'X-Requested-With': 'XMLHttpRequest'},
-                        url: `${baseUrl}/runs`,
-                        method: 'POST',
-                        body: {
-                            owner_user_id: testUser.id,
-                            channel_id: channel.id,
-                            playbook_id: testPlaybook.id,
-                        },
-                    }).then((response) => {
-                        expect(response.status).to.eq(201);
-                        expect(response.body).to.have.property('owner_user_id', testUser.id);
-                        expect(response.body).to.have.property('reporter_user_id', testUser.id);
-                        expect(response.body).to.have.property('team_id', testTeam.id);
-                        expect(response.body).to.have.property('channel_id', channel.id);
-                        expect(response.body).to.have.property('playbook_id', testPlaybook.id);
+
+                    cy.apiRunPlaybook({
+                        ownerUserId: testUser.id,
+                        channelId: channel.id,
+                        playbookId: testPlaybook.id
+                    }, {expectedStatusCode: 201}).then((body) => {
+                        expect(body).to.have.property('owner_user_id', testUser.id);
+                        expect(body).to.have.property('reporter_user_id', testUser.id);
+                        expect(body).to.have.property('team_id', testTeam.id);
+                        expect(body).to.have.property('channel_id', channel.id);
+                        expect(body).to.have.property('playbook_id', testPlaybook.id);
                     });
                 });
             });
@@ -67,23 +61,17 @@ describe('api > runs', () => {
                 // # Create a test channel without a playbook run
                 cy.apiCreateChannel(testTeam.id, 'channel', 'Channel').then(({channel}) => {
                     // # Run the testPlaybook in the previously created channel
-                    cy.request({
-                        headers: {'X-Requested-With': 'XMLHttpRequest'},
-                        url: `${baseUrl}/runs`,
-                        method: 'POST',
-                        body: {
-                            owner_user_id: testUser.id,
-                            channel_id: channel.id,
-                            playbook_id: testPlaybook.id,
-                            team_id: testTeam.id,
-                        },
-                    }).then((response) => {
-                        expect(response.status).to.eq(201);
-                        expect(response.body).to.have.property('owner_user_id', testUser.id);
-                        expect(response.body).to.have.property('reporter_user_id', testUser.id);
-                        expect(response.body).to.have.property('team_id', testTeam.id);
-                        expect(response.body).to.have.property('channel_id', channel.id);
-                        expect(response.body).to.have.property('playbook_id', testPlaybook.id);
+                    cy.apiRunPlaybook({
+                        ownerUserId: testUser.id,
+                        channelId: channel.id,
+                        playbookId: testPlaybook.id,
+                        teamId: testTeam.id,
+                    }, {expectedStatusCode: 201}).then((body) => {
+                        expect(body).to.have.property('owner_user_id', testUser.id);
+                        expect(body).to.have.property('reporter_user_id', testUser.id);
+                        expect(body).to.have.property('team_id', testTeam.id);
+                        expect(body).to.have.property('channel_id', channel.id);
+                        expect(body).to.have.property('playbook_id', testPlaybook.id);
                     });
                 });
             });
@@ -92,20 +80,13 @@ describe('api > runs', () => {
                 // # Create a test channel without a playbook run
                 cy.apiCreateChannel(testTeam.id, 'channel', 'Channel').then(({channel}) => {
                     // # Run the testPlaybook in the previously created channel
-                    cy.request({
-                        headers: {'X-Requested-With': 'XMLHttpRequest'},
-                        url: `${baseUrl}/runs`,
-                        method: 'POST',
-                        body: {
-                            owner_user_id: testUser.id,
-                            channel_id: channel.id,
-                            playbook_id: testPlaybook.id,
-                            team_id: 'other_team_id',
-                        },
-                        failOnStatusCode: false,
-                    }).then((response) => {
-                        expect(response.status).to.eq(400);
-                        expect(response.body).to.have.property('error', 'unable to create playbook run');
+                    cy.apiRunPlaybook({
+                        ownerUserId: testUser.id,
+                        channelId: channel.id,
+                        playbookId: testPlaybook.id,
+                        teamId: 'other_team_id',
+                    }, {expectedStatusCode: 400, failOnStatusCode: false}).then((body) => {
+                        expect(body).to.have.property('error', 'unable to create playbook run');
                     });
                 });
             });
@@ -116,22 +97,16 @@ describe('api > runs', () => {
                 // # Create a test channel without a playbook run
                 cy.apiCreateChannel(testTeam.id, 'channel', 'Channel', 'P').then(({channel}) => {
                     // # Run the testPlaybook in the previously created channel
-                    cy.request({
-                        headers: {'X-Requested-With': 'XMLHttpRequest'},
-                        url: `${baseUrl}/runs`,
-                        method: 'POST',
-                        body: {
-                            owner_user_id: testUser.id,
-                            channel_id: channel.id,
-                            playbook_id: testPlaybook.id,
-                        },
-                    }).then((response) => {
-                        expect(response.status).to.eq(201);
-                        expect(response.body).to.have.property('owner_user_id', testUser.id);
-                        expect(response.body).to.have.property('reporter_user_id', testUser.id);
-                        expect(response.body).to.have.property('team_id', testTeam.id);
-                        expect(response.body).to.have.property('channel_id', channel.id);
-                        expect(response.body).to.have.property('playbook_id', testPlaybook.id);
+                    cy.apiRunPlaybook({
+                        ownerUserId: testUser.id,
+                        channelId: channel.id,
+                        playbookId: testPlaybook.id,
+                    }, {expectedStatusCode: 201}).then((body) => {
+                        expect(body).to.have.property('owner_user_id', testUser.id);
+                        expect(body).to.have.property('reporter_user_id', testUser.id);
+                        expect(body).to.have.property('team_id', testTeam.id);
+                        expect(body).to.have.property('channel_id', channel.id);
+                        expect(body).to.have.property('playbook_id', testPlaybook.id);
                     });
                 });
             });
@@ -140,23 +115,17 @@ describe('api > runs', () => {
                 // # Create a test channel without a playbook run
                 cy.apiCreateChannel(testTeam.id, 'channel', 'Channel', 'P').then(({channel}) => {
                     // # Run the testPlaybook in the previously created channel
-                    cy.request({
-                        headers: {'X-Requested-With': 'XMLHttpRequest'},
-                        url: `${baseUrl}/runs`,
-                        method: 'POST',
-                        body: {
-                            owner_user_id: testUser.id,
-                            channel_id: channel.id,
-                            playbook_id: testPlaybook.id,
-                            team_id: testTeam.id,
-                        },
-                    }).then((response) => {
-                        expect(response.status).to.eq(201);
-                        expect(response.body).to.have.property('owner_user_id', testUser.id);
-                        expect(response.body).to.have.property('reporter_user_id', testUser.id);
-                        expect(response.body).to.have.property('team_id', testTeam.id);
-                        expect(response.body).to.have.property('channel_id', channel.id);
-                        expect(response.body).to.have.property('playbook_id', testPlaybook.id);
+                    cy.apiRunPlaybook({
+                        ownerUserId: testUser.id,
+                        channelId: channel.id,
+                        playbookId: testPlaybook.id,
+                        teamId: testTeam.id,
+                    }, {expectedStatusCode: 201}).then((body) => {
+                        expect(body).to.have.property('owner_user_id', testUser.id);
+                        expect(body).to.have.property('reporter_user_id', testUser.id);
+                        expect(body).to.have.property('team_id', testTeam.id);
+                        expect(body).to.have.property('channel_id', channel.id);
+                        expect(body).to.have.property('playbook_id', testPlaybook.id);
                     });
                 });
             });
@@ -165,20 +134,13 @@ describe('api > runs', () => {
                 // # Create a test channel without a playbook run
                 cy.apiCreateChannel(testTeam.id, 'channel', 'Channel', 'P').then(({channel}) => {
                     // # Run the testPlaybook in the previously created channel
-                    cy.request({
-                        headers: {'X-Requested-With': 'XMLHttpRequest'},
-                        url: `${baseUrl}/runs`,
-                        method: 'POST',
-                        body: {
-                            owner_user_id: testUser.id,
-                            channel_id: channel.id,
-                            playbook_id: testPlaybook.id,
-                            team_id: 'other_team_id',
-                        },
-                        failOnStatusCode: false,
-                    }).then((response) => {
-                        expect(response.status).to.eq(400);
-                        expect(response.body).to.have.property('error', 'unable to create playbook run');
+                    cy.apiRunPlaybook({
+                        ownerUserId: testUser.id,
+                        channelId: channel.id,
+                        playbookId: testPlaybook.id,
+                        teamId: 'other_team_id',
+                    }, {expectedStatusCode: 400, failOnStatusCode: false}).then((body) => {
+                        expect(body).to.have.property('error', 'unable to create playbook run');
                     });
                 });
             });
@@ -191,20 +153,13 @@ describe('api > runs', () => {
                 cy.apiRemoveUserFromChannel(channel.id, testUser.id);
 
                 // # Run the testPlaybook in the previously created channel
-                cy.request({
-                    headers: {'X-Requested-With': 'XMLHttpRequest'},
-                    url: `${baseUrl}/runs`,
-                    method: 'POST',
-                    body: {
-                        owner_user_id: testUser.id,
-                        channel_id: channel.id,
-                        playbook_id: testPlaybook.id,
-                        team_id: testTeam.id,
-                    },
-                    failOnStatusCode: false,
-                }).then((response) => {
-                    expect(response.status).to.eq(403);
-                    expect(response.body).to.have.property('error', 'unable to create playbook run');
+                cy.apiRunPlaybook({
+                    ownerUserId: testUser.id,
+                    channelId: channel.id,
+                    playbookId: testPlaybook.id,
+                    teamId: testTeam.id,
+                }, {expectedStatusCode: 403, failOnStatusCode: false}).then((body) => {
+                    expect(body).to.have.property('error', 'unable to create playbook run');
                 });
             });
         });
@@ -218,19 +173,12 @@ describe('api > runs', () => {
                 ownerUserId: testUser.id,
             }).then((playbookRun) => {
                 // # Run the testPlaybook in the previously created channel
-                cy.request({
-                    headers: {'X-Requested-With': 'XMLHttpRequest'},
-                    url: `${baseUrl}/runs`,
-                    method: 'POST',
-                    body: {
-                        owner_user_id: testUser.id,
-                        channel_id: playbookRun.channel_id,
-                        playbook_id: testPlaybook.id,
-                    },
-                    failOnStatusCode: false,
-                }).then((response) => {
-                    expect(response.status).to.eq(400);
-                    expect(response.body).to.have.property('error', 'unable to create playbook run');
+                cy.apiRunPlaybook({
+                    owner_user_id: testUser.id,
+                    channel_id: playbookRun.channel_id,
+                    playbook_id: testPlaybook.id,
+                }, {expectedStatusCode: 400, failOnStatusCode: false}).then((body) => {
+                    expect(body).to.have.property('error', 'unable to create playbook run');
                 });
             });
         });
