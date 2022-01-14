@@ -29,6 +29,8 @@ describe('playbooks > overview', () => {
                     teamId: testTeam.id,
                     title: 'Public Playbook',
                     memberIDs: [],
+                    retrospectiveTemplate: 'Retro template text',
+                    retrospectiveReminderIntervalSeconds: 60 * 60 * 24 * 7 // 7 days
                 }).then((playbook) => {
                     testPublicPlaybook = playbook;
                 });
@@ -70,50 +72,6 @@ describe('playbooks > overview', () => {
         cy.url().should('include', '/playbooks/error?type=playbooks');
     });
 
-    describe('permissions text', () => {
-        it('should describe public playbooks', () => {
-            // # Navigate directly to the playbook
-            cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
-
-            // # Verify permissions icon
-            cy.findByTestId('playbookPermissionsDescription').within(() => {
-                cy.get('.icon-globe').should('be.visible');
-            });
-
-            // # Verify permissions text
-            cy.findByTestId('playbookPermissionsDescription')
-                .contains(`Everyone in ${testTeam.display_name} can access this playbook`);
-        });
-
-        it('should describe playbooks private only to the current user', () => {
-            // # Navigate directly to the playbook
-            cy.visit(`/playbooks/playbooks/${testPrivateOnlyMinePlaybook.id}`);
-
-            // # Verify permissions icon
-            cy.findByTestId('playbookPermissionsDescription').within(() => {
-                cy.get('.icon-lock-outline').should('be.visible');
-            });
-
-            // # Verify permissions text
-            cy.findByTestId('playbookPermissionsDescription')
-                .contains('Only you can access this playbook');
-        });
-
-        it('should describe playbooks private to multiple users', () => {
-            // # Navigate directly to the playbook
-            cy.visit(`/playbooks/playbooks/${testPrivateSharedPlaybook.id}`);
-
-            // # Verify permissions icon
-            cy.findByTestId('playbookPermissionsDescription').within(() => {
-                cy.get('.icon-lock-outline').should('be.visible');
-            });
-
-            // # Verify permissions text
-            cy.findByTestId('playbookPermissionsDescription')
-                .contains('2 people can access this playbook');
-        });
-    });
-
     it('should switch to channels and prompt to run when clicking run', () => {
         // # Navigate directly to the playbook
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
@@ -132,7 +90,7 @@ describe('playbooks > overview', () => {
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
 
         // # trigger the tooltip
-        cy.get('.icon-link-variant').trigger('mouseover');
+        cy.get('.icon-link-variant').trigger('mouseover', {force: true});
 
         // * Verify tooltip text
         cy.get('#copy-playbook-link-tooltip').should('contain', 'Copy link to playbook');
@@ -140,12 +98,93 @@ describe('playbooks > overview', () => {
         stubClipboard().as('clipboard');
 
         // # click on copy button
-        cy.get('.icon-link-variant').click().then(() => {
+        cy.get('.icon-link-variant').click({force: true}).then(() => {
             // * Verify that tooltip text changed
             cy.get('#copy-playbook-link-tooltip').should('contain', 'Copied!');
 
             // * Verify clipboard content
             cy.get('@clipboard').its('contents').should('contain', `/playbooks/playbooks/${testPublicPlaybook.id}`);
+        });
+    });
+
+    it('shows checklists', () => {
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Playbook',
+            description: 'Cypress Playbook',
+            memberIDs: [],
+            checklists: [
+                {
+                    title: 'Stage 1',
+                    items: [
+                        {title: 'Step 1'},
+                        {title: 'Step 2'},
+                    ],
+                },
+            ],
+            retrospectiveTemplate: 'Cypress test template'
+        }).then((playbook) => {
+            cy.visit(`/playbooks/playbooks/${playbook.id}`);
+        });
+
+        cy.findByTestId('preview-content').within(() => {
+            // * Verify checklist and associated steps
+            cy.findByText('Checklists').next().within(() => {
+                cy.findByText('Stage 1').should('exist');
+                cy.findByText('Step 1').should('exist');
+                cy.findByText('Step 2').should('exist');
+            });
+        });
+    });
+
+    it('shows status update timer', () => {
+        cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
+        cy.findByTestId('preview-content').within(() => {
+            cy.findByText('Status updates').next().within(() => {
+                cy.findByText('1 day').should('exist');
+            });
+        });
+    });
+
+    it('shows correct retrospective timer and template text', () => {
+        cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
+
+        cy.findByTestId('preview-content').within(() => {
+            cy.findByText('Retrospective').next().within(() => {
+                cy.findByText('7 days').should('exist');
+                cy.findByText('Retrospective report template').click();
+                cy.findByText('Retro template text').should('exist');
+            });
+        });
+    });
+
+    it('shows statistics in usage tab', () => {
+        // # Start playbook run.
+        const now = Date.now();
+        const playbookRunName = `Run (${now})`;
+        cy.apiRunPlaybook({
+            teamId: testTeam.id,
+            playbookId: testPublicPlaybook.id,
+            playbookRunName,
+            ownerUserId: testUser.id,
+        }).then((playbookRun) => {
+            // # Go to usage view
+            cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}/usage`);
+
+            // * Verify basic information.
+            cy.findByText('Runs currently in progress').next().should('contain', '1');
+            cy.findByText('Participants currently active').next().should('contain', '1');
+            cy.findByText('Runs finished in the last 30 days').next().should('contain', '0');
+
+            // # End the run so those metrics change.
+            cy.apiFinishRun(playbookRun.id).then(() => {
+                cy.reload();
+
+                // * Verify changes.
+                cy.findByText('Runs currently in progress').next().should('contain', '0');
+                cy.findByText('Participants currently active').next().should('contain', '0');
+                cy.findByText('Runs finished in the last 30 days').next().should('contain', '1');
+            });
         });
     });
 

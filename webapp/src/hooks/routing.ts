@@ -10,13 +10,20 @@ import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {useSelector} from 'react-redux';
 
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
-import {TEMPLATE_TITLE_KEY} from 'src/constants';
 import {Playbook} from 'src/types/playbook';
-import {tabInfo} from 'src/components/backstage/playbook_edit';
+import {tabInfo} from 'src/components/backstage/playbook_edit/playbook_edit';
 
 type PlaybooksRoutingOptions<T> = {
     urlOnly?: boolean,
     onGo?: (arg: T) => void
+}
+
+export type PlaybookCreateQueryParameters = {
+    teamId?: string,
+    name?: string,
+    template?: string,
+    description?: string,
+    public?: boolean
 }
 
 function id(p: Playbook | Playbook['id']) {
@@ -58,8 +65,8 @@ export function usePlaybooksRouting<TParam extends Playbook | Playbook['id']>(
             view: (p: TParam) => {
                 return go(`/playbooks/${id(p)}`, p);
             },
-            create: (team: Team, templateTitle?: string) => {
-                const queryParams = qs.stringify({teamId: team.id, [TEMPLATE_TITLE_KEY]: templateTitle}, {addQueryPrefix: true});
+            create: (params: PlaybookCreateQueryParameters) => {
+                const queryParams = qs.stringify(params, {addQueryPrefix: true});
                 return go(`/playbooks/new${queryParams}`);
             },
         };

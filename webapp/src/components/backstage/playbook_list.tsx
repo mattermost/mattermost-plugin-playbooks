@@ -1,49 +1,45 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useRef, useState} from 'react';
-import {useSelector} from 'react-redux';
-import {FormattedMessage, useIntl} from 'react-intl';
-import styled from 'styled-components';
-
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
+import React, {useRef, useState} from 'react';
+import {FormattedMessage, useIntl} from 'react-intl';
+import {useDispatch, useSelector} from 'react-redux';
 
-import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
-import TemplateSelector, {
-    isPlaybookCreationAllowed,
-    PresetTemplate,
-} from 'src/components/backstage/template_selector';
-import {telemetryEventForTemplate} from 'src/client';
-import BackstageListHeader from 'src/components/backstage/backstage_list_header';
-import {SortableColHeader} from 'src/components/sortable_col_header';
-import {PaginationRow} from 'src/components/pagination_row';
-import {BACKSTAGE_LIST_PER_PAGE, AdminNotificationType} from 'src/constants';
-import {Banner, BackstageSubheader} from 'src/components/backstage/styles';
-import UpgradeModal from 'src/components/backstage/upgrade_modal';
-import RightDots from 'src/components/assets/right_dots';
-import RightFade from 'src/components/assets/right_fade';
+import styled from 'styled-components';
+
+import {displayPlaybookCreateModal} from 'src/actions';
+import {PrimaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
-import {PrimaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
-import CreatePlaybookTeamSelector from 'src/components/team/create_playbook_team_selector';
+import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
+import RightDots from 'src/components/assets/right_dots';
+import RightFade from 'src/components/assets/right_fade';
+import BackstageListHeader from 'src/components/backstage/backstage_list_header';
+import PlaybookListRow from 'src/components/backstage/playbook_list_row';
+import {ExpandRight, HorizontalSpacer} from 'src/components/backstage/playbook_runs/shared';
+import SearchInput from 'src/components/backstage/search_input';
+import {BackstageSubheader} from 'src/components/backstage/styles';
+import TemplateSelector, {
+    isPlaybookCreationAllowed,
+} from 'src/components/backstage/template_selector';
+import UpgradeModal from 'src/components/backstage/upgrade_modal';
+import {PaginationRow} from 'src/components/pagination_row';
+import {SortableColHeader} from 'src/components/sortable_col_header';
+import {AdminNotificationType, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {
-    useAllowPlaybookCreationInTeams,
-    useCanCreatePlaybooks,
+    useCanCreatePlaybooksOnAnyTeam,
     usePlaybooksCrud,
     usePlaybooksRouting,
 } from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
-import PlaybookListRow from 'src/components/backstage/playbook_list_row';
-import SearchInput from 'src/components/backstage/search_input';
-import {ExpandRight, Spacer} from 'src/components/backstage/playbook_runs/shared';
 
 import CheckboxInput from './runs_list/checkbox_input';
 
-const ArchiveBannerTimeout = 5000;
-const RestoreBannerTimeout = 5000;
+import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
+import useConfirmPlaybookRestoreModal from './restore_playbook_modal';
 
 const PlaybooksHeader = styled(BackstageSubheader)`
     display: flex;
@@ -63,14 +59,12 @@ const PlaybookContainer = styled.div`
 
 const PlaybookList = () => {
     const {formatMessage} = useIntl();
-    const [showArchiveConfirmation, setShowArchiveConfirmation] = useState(false);
-    const [showRestoreConfirmation, setShowRestoreConfirmation] = useState(false);
-    const [showBanner, setShowBanner] = useState(false);
-    const canCreatePlaybooks = useCanCreatePlaybooks();
-    const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
-    const allowPlaybookCreationInTeams = useAllowPlaybookCreationInTeams();
+    const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal();
+    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
+    const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
     const bottomHalf = useRef<JSX.Element | null>(null);
+    const dispatch = useDispatch();
 
     const [
         playbooks,
@@ -78,71 +72,11 @@ const PlaybookList = () => {
         {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, setSearchTerm, isFiltering, setWithArchived},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
-    const {view, edit, create} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
+    const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
-    const newPlaybook = (team: Team, templateTitle?: string | undefined) => {
-        if (allowPlaybookCreationInTeams.get(team.id)) {
-            create(team, templateTitle);
-        } else {
-            showUpgradeModal();
-        }
+    const newPlaybook = (team: Team, templateTitle?: string) => {
+        dispatch(displayPlaybookCreateModal({startingTeamId: team.id, startingTemplate: templateTitle}));
     };
-
-    const hideConfirmArchiveModal = () => {
-        setShowArchiveConfirmation(false);
-    };
-
-    const hideConfirmRestoreModal = () => {
-        setShowRestoreConfirmation(false);
-    };
-
-    const onConfirmArchive = (playbook: Playbook) => {
-        setSelectedPlaybook(playbook);
-        setShowArchiveConfirmation(true);
-    };
-
-    const onConfirmRestore = (playbook: Playbook) => {
-        setSelectedPlaybook(playbook);
-        setShowRestoreConfirmation(true);
-    };
-
-    const onArchive = async () => {
-        if (selectedPlaybook) {
-            await archivePlaybook(selectedPlaybook.id);
-
-            hideConfirmArchiveModal();
-            setShowBanner(true);
-
-            window.setTimeout(() => {
-                setShowBanner(false);
-                setSelectedPlaybook(null);
-            }, ArchiveBannerTimeout);
-        }
-    };
-
-    const onRestore = async () => {
-        if (selectedPlaybook) {
-            await restorePlaybook(selectedPlaybook.id);
-
-            hideConfirmRestoreModal();
-            setShowBanner(true);
-
-            window.setTimeout(() => {
-                setShowBanner(false);
-                setSelectedPlaybook(null);
-            }, RestoreBannerTimeout);
-        }
-    };
-
-    const archiveSuccessfulBanner = showBanner && (
-        <Banner>
-            <i className='icon icon-check mr-1'/>
-            <FormattedMessage
-                defaultMessage='The playbook {title} was successfully archived.'
-                values={{title: selectedPlaybook?.title}}
-            />
-        </Banner>
-    );
 
     const hasPlaybooks = playbooks?.length !== 0;
     let listBody: JSX.Element | JSX.Element[] | null = null;
@@ -160,8 +94,8 @@ const PlaybookList = () => {
                 displayTeam={teams.length > 1}
                 onClick={() => view(p)}
                 onEdit={() => edit(p)}
-                onArchive={() => onConfirmArchive(p)}
-                onRestore={() => onConfirmRestore(p)}
+                onRestore={() => openConfirmRestoreModal(p)}
+                onArchive={() => openConfirmArchiveModal(p)}
             />
         ));
     }
@@ -171,10 +105,7 @@ const PlaybookList = () => {
             return (
                 <>
                     <NoContentPage
-                        onNewPlaybook={newPlaybook}
                         canCreatePlaybooks={canCreatePlaybooks}
-                        teams={teams}
-                        allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
                     />
                     <NoContentPlaybookSvg/>
                 </>
@@ -205,13 +136,8 @@ const PlaybookList = () => {
                         />
                         {canCreatePlaybooks &&
                         <>
-                            <Spacer size={12}/>
-                            <TeamSelectorButton
-                                onClick={(team: Team) => newPlaybook(team)}
-                                teams={teams}
-                                allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
-                                showUpgradeModal={showUpgradeModal}
-                            />
+                            <HorizontalSpacer size={12}/>
+                            <PlaybookModalButton/>
                         </>
                         }
                     </PlaybooksHeader>
@@ -273,77 +199,27 @@ const PlaybookList = () => {
 
     return (
         <PlaybookContainer>
-            {archiveSuccessfulBanner}
             {
                 canCreatePlaybooks &&
-                <TemplateSelector
-                    onSelect={(team: Team, template: PresetTemplate) => {
-                        telemetryEventForTemplate(template.title, 'click_template_icon');
-                        newPlaybook(team, template.title);
-                    }}
-                    teams={teams}
-                    allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
-                    showUpgradeModal={showUpgradeModal}
-                />
+                <TemplateSelector/>
             }
             {bottomHalf.current}
-            <UpgradeModal
-                messageType={AdminNotificationType.PLAYBOOK}
-                show={isUpgradeModalShown}
-                onHide={hideUpgradeModal}
-            />
-            <ConfirmModal
-                show={showArchiveConfirmation}
-                title={formatMessage({defaultMessage: 'Delete playbook'})}
-                message={formatMessage({defaultMessage: 'Are you sure you want to delete the playbook {title}?'}, {title: selectedPlaybook?.title})}
-                confirmButtonText={formatMessage({defaultMessage: 'Delete'})}
-                onConfirm={onArchive}
-                onCancel={hideConfirmArchiveModal}
-            />
-            <ConfirmModal
-                show={showRestoreConfirmation}
-                title={formatMessage({defaultMessage: 'Restore playbook'})}
-                message={formatMessage({defaultMessage: 'Are you sure you want to restore the playbook {title}?'}, {title: selectedPlaybook?.title})}
-                confirmButtonText={formatMessage({defaultMessage: 'Restore'})}
-                onConfirm={onRestore}
-                onCancel={hideConfirmArchiveModal}
-            />
+            {confirmArchiveModal}
+            {confirmRestoreModal}
         </PlaybookContainer>
     );
 };
 
-type CreatePlaybookButtonProps =
-    UpgradeButtonProps
-    & { teams: Team[], allowPlaybookCreationInTeams: Map<string, boolean>, showUpgradeModal?: () => void };
-
-const TeamSelectorButton = (props: CreatePlaybookButtonProps) => {
+const PlaybookModalButton = () => {
     const {formatMessage} = useIntl();
-    const {teams, allowPlaybookCreationInTeams, showUpgradeModal, ...rest} = props;
-    if (isPlaybookCreationAllowed(allowPlaybookCreationInTeams)) {
-        return (
-            <CreatePlaybookTeamSelector
-                testId={'create-playbook-team-selector'}
-                enableEdit={true}
-                teams={teams}
-                allowPlaybookCreationInTeams={allowPlaybookCreationInTeams}
-                onSelectedChange={props.onClick}
-                withButton={true}
-                {...rest}
-            >
-                <CreatePlaybookButton>
-                    <i className='icon-plus mr-2'/>
-                    {formatMessage({defaultMessage: 'Create playbook'})}
-                </CreatePlaybookButton>
-            </CreatePlaybookTeamSelector>
-        );
-    }
+    const dispatch = useDispatch();
+
     return (
         <CreatePlaybookButton
-            onClick={showUpgradeModal}
+            onClick={() => dispatch(displayPlaybookCreateModal({}))}
         >
             <i className='icon-plus mr-2'/>
             {formatMessage({defaultMessage: 'Create playbook'})}
-            <NotAllowedIcon className='icon icon-key-variant-circle'/>
         </CreatePlaybookButton>
     );
 };
@@ -409,7 +285,7 @@ const DescriptionWarn = styled(Description)`
     color: rgba(var(--error-text-color-rgb), 0.72);
 `;
 
-const NoContentPage = (props: { onNewPlaybook: (team: Team) => void, canCreatePlaybooks: boolean, teams: Team[], allowPlaybookCreationInTeams: Map<string, boolean> }) => {
+const NoContentPage = (props: { canCreatePlaybooks: boolean }) => {
     return (
         <Container>
             <Title><FormattedMessage defaultMessage='What is a playbook?'/></Title>
@@ -419,12 +295,7 @@ const NoContentPage = (props: { onNewPlaybook: (team: Team) => void, canCreatePl
                 />
             </Description>
             {props.canCreatePlaybooks &&
-            <TeamSelectorButton
-                className='mt-6'
-                onClick={(team: Team) => props.onNewPlaybook(team)}
-                teams={props.teams}
-                allowPlaybookCreationInTeams={props.allowPlaybookCreationInTeams}
-            />
+            <PlaybookModalButton/>
             }
             {!props.canCreatePlaybooks &&
             <DescriptionWarn>

@@ -895,10 +895,9 @@ func (s *playbookRunStore) buildPermissionsExpr(info app.RequesterInfo) sq.Sqliz
 						WHERE cm.ChannelId = i.ChannelId
 						  AND cm.UserId = ?)
 			) OR (
-				  NOT EXISTS(
-						SELECT 1
-							FROM IR_PlaybookMember
-							WHERE PlaybookID = i.PlaybookID)
+				(SELECT Public
+					FROM IR_Playbook
+					WHERE ID = i.PlaybookID)
 				  OR EXISTS(
 						SELECT 1
 							FROM IR_PlaybookMember

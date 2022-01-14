@@ -25,7 +25,6 @@ import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
 import {
     Checklist,
-    ChecklistItem,
     ChecklistItemState,
     FetchPlaybooksParams,
     FetchPlaybooksReturn,
@@ -89,12 +88,13 @@ export async function postStatusUpdate(
     playbookRunId: string,
     payload: {
         message: string,
-        reminder?: number
+        reminder?: number,
+        finishRun: boolean,
     },
     ids: {
-        user_id: string;
-        channel_id: string;
-        team_id: string;
+        user_id: string,
+        channel_id: string,
+        team_id: string,
     },
 ) {
     const base = {
@@ -110,6 +110,7 @@ export async function postStatusUpdate(
         submission: {
             ...payload,
             reminder: payload.reminder?.toFixed() ?? '',
+            finish_run: payload.finishRun,
         },
     });
 
@@ -210,13 +211,6 @@ export function clientFetchPlaybook(playbookID: string) {
     return doGet<PlaybookWithChecklist>(`${apiUrl}/playbooks/${playbookID}`);
 }
 
-export async function clientFetchPlaybooksCount(teamID: string) {
-    const queryParams = qs.stringify({
-        team_id: teamID,
-    }, {addQueryPrefix: true});
-    return doGet<FetchPlaybooksCountReturn>(`${apiUrl}/playbooks/count${queryParams}`);
-}
-
 export async function savePlaybook(playbook: PlaybookWithChecklist | DraftPlaybookWithChecklist) {
     if (!playbook.id) {
         const data = await doPost(`${apiUrl}/playbooks`, JSON.stringify(playbook));
@@ -239,7 +233,7 @@ export async function archivePlaybook(playbookId: Playbook['id']) {
 
 export async function restorePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}/restore`, {
-        method: 'post',
+        method: 'put',
     });
     return data;
 }
@@ -355,11 +349,24 @@ export async function clientRenameChecklist(playbookRunID: string, checklistNum:
     return data;
 }
 
-export async function clientReorderChecklist(playbookRunID: string, checklistNum: number, itemNum: number, newLocation: number) {
-    const data = await doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/reorder`,
+export async function clientMoveChecklist(playbookRunID: string, sourceChecklistIdx: number, destChecklistIdx: number) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists/move`,
         JSON.stringify({
-            item_num: itemNum,
-            new_location: newLocation,
+            source_checklist_idx: sourceChecklistIdx,
+            dest_checklist_idx: destChecklistIdx,
+        }),
+    );
+
+    return data;
+}
+
+export async function clientMoveChecklistItem(playbookRunID: string, sourceChecklistIdx: number, sourceItemIdx: number, destChecklistIdx: number, destItemIdx: number) {
+    const data = await doPost(`${apiUrl}/runs/${playbookRunID}/checklists/move-item`,
+        JSON.stringify({
+            source_checklist_idx: sourceChecklistIdx,
+            source_item_idx: sourceItemIdx,
+            dest_checklist_idx: destChecklistIdx,
+            dest_item_idx: destItemIdx,
         }),
     );
 

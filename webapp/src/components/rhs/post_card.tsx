@@ -20,7 +20,7 @@ import {browserHistory, Timestamp} from 'src/webapp_globals';
 
 import {isMobile} from 'src/mobile';
 import {ChannelNamesMap} from 'src/types/backstage';
-import {promptUpdateStatus, toggleRHS} from 'src/actions';
+import {toggleRHS} from 'src/actions';
 import ShowMore from 'src/components/rhs/show_more';
 import PostText from 'src/components/post_text';
 import {useEnsureProfiles} from 'src/hooks';
@@ -92,6 +92,11 @@ interface Props {
     channelId: string;
 }
 
+const REL_UNITS = [
+    'Today',
+    'Yesterday',
+];
+
 const PostCard = (props: Props) => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();
@@ -119,7 +124,7 @@ const PostCard = (props: Props) => {
                     >
                         <Timestamp
                             value={props.post.create_at}
-                            useRelative={true}
+                            units={REL_UNITS}
                         />
                     </UpdateTimeLink>
                 </UpdateHeader>

@@ -1,9 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useState} from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
+
+import {PrimaryButton, TertiaryButton} from '../assets/buttons';
+
+import {DefaultFooterContainer, StyledModal, Buttons, ModalHeading} from './generic_modal';
 
 type Props = {
 
@@ -77,6 +81,31 @@ type State = {
     checked: boolean;
 }
 
+export const makeUncontrolledConfirmModalDefinition = (props: Props) => ({
+    modalId: 'confirm',
+    dialogType: UncontrolledConfirmModal,
+    dialogProps: props,
+});
+
+const UncontrolledConfirmModal = (props: Props) => {
+    const [show, setShow] = useState(true);
+
+    return (
+        <ConfirmModal
+            {...props}
+            show={show}
+            onConfirm={(checked) => {
+                setShow(false);
+                props.onConfirm(checked);
+            }}
+            onCancel={(checked) => {
+                setShow(false);
+                props.onCancel(checked);
+            }}
+        />
+    );
+};
+
 export default class ConfirmModal extends React.Component<Props, State> {
     static defaultProps = {
         title: '',
@@ -84,7 +113,7 @@ export default class ConfirmModal extends React.Component<Props, State> {
         confirmButtonClass: 'btn btn-primary',
         confirmButtonText: '',
         modalClass: '',
-    }
+    };
 
     constructor(props: Props) {
         super(props);
@@ -128,19 +157,19 @@ export default class ConfirmModal extends React.Component<Props, State> {
                 this.handleConfirm();
             }
         }
-    }
+    };
 
     handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({checked: e.target.checked});
-    }
+    };
 
     handleConfirm = () => {
         this.props.onConfirm(this.state.checked);
-    }
+    };
 
     handleCancel = () => {
         this.props.onCancel(this.state.checked);
-    }
+    };
 
     render() {
         let checkbox;
@@ -169,21 +198,19 @@ export default class ConfirmModal extends React.Component<Props, State> {
         let cancelButton;
         if (!this.props.hideCancel) {
             cancelButton = (
-                <button
+                <TertiaryButton
                     type='button'
-                    className='btn btn-link btn-cancel'
                     onClick={this.handleCancel}
                     id='cancelModalButton'
                 >
                     {cancelText}
-                </button>
+                </TertiaryButton>
             );
         }
 
         return (
-            <Modal
-                className={'modal-confirm ' + this.props.modalClass}
-                dialogClassName='a11y__modal'
+            <StyledModal
+                dialogClassName={'a11y__modal GenericModal'}
                 show={this.props.show}
                 onHide={this.props.onCancel}
                 onExited={this.props.onExited}
@@ -193,30 +220,35 @@ export default class ConfirmModal extends React.Component<Props, State> {
                 aria-labelledby='confirmModalLabel'
                 aria-describedby='confirmModalBody'
             >
-                <Modal.Header closeButton={false}>
-                    <Modal.Title
-                        id='confirmModalLabel'
-                    >
+                <Modal.Header
+                    className='GenericModal__header'
+                    closeButton={false}
+                >
+                    <ModalHeading id={'confirmModalLabel'}>
                         {this.props.title}
-                    </Modal.Title>
+                    </ModalHeading>
                 </Modal.Header>
                 <Modal.Body id='confirmModalBody'>
                     {this.props.message}
                     {checkbox}
                 </Modal.Body>
                 <Modal.Footer>
-                    {cancelButton}
-                    <button
-                        autoFocus={true}
-                        type='button'
-                        className={this.props.confirmButtonClass}
-                        onClick={this.handleConfirm}
-                        id='confirmModalButton'
-                    >
-                        {this.props.confirmButtonText}
-                    </button>
+                    <DefaultFooterContainer>
+                        <Buttons>
+                            {cancelButton}
+                            <PrimaryButton
+                                autoFocus={true}
+                                type='button'
+                                className={this.props.confirmButtonClass}
+                                onClick={this.handleConfirm}
+                                id='confirmModalButton'
+                            >
+                                {this.props.confirmButtonText}
+                            </PrimaryButton>
+                        </Buttons>
+                    </DefaultFooterContainer>
                 </Modal.Footer>
-            </Modal>
+            </StyledModal>
         );
     }
 }

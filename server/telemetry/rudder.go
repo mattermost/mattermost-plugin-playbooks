@@ -51,6 +51,7 @@ const (
 	actionAddChecklist    = "add_checklist"
 	actionRemoveChecklist = "remove_checklist"
 	actionRenameChecklist = "rename_checklist"
+	actionMoveChecklist   = "move_checklist"
 
 	eventPlaybook      = "playbook"
 	actionUpdate       = "update"
@@ -345,6 +346,13 @@ func (t *RudderTelemetry) RenameChecklist(playbookRunID, userID string, checklis
 	t.track(eventChecklists, properties)
 }
 
+// MoveChecklist tracks the movement of a checklist
+func (t *RudderTelemetry) MoveChecklist(playbookRunID, userID string, checklist app.Checklist) {
+	properties := checklistProperties(playbookRunID, userID, checklist)
+	properties["Action"] = actionMoveChecklist
+	t.track(eventChecklists, properties)
+}
+
 func (t *RudderTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionUpdateRetrospective
@@ -380,7 +388,7 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 		"NumChecklists":               len(playbook.Checklists),
 		"TotalChecklistItems":         totalChecklistItems,
 		"NumSlashCommands":            totalChecklistItemsWithCommands,
-		"NumMembers":                  len(playbook.MemberIDs),
+		"NumMembers":                  len(playbook.Members),
 		"UsesReminderMessageTemplate": playbook.ReminderMessageTemplate != "",
 		"ReminderTimerDefaultSeconds": playbook.ReminderTimerDefaultSeconds,
 		"NumInvitedUserIDs":           len(playbook.InvitedUserIDs),

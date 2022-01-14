@@ -11,46 +11,63 @@ import (
 // Playbook represents a desired business outcome, from which playbook runs are started to solve
 // a specific instance.
 type Playbook struct {
-	ID                                   string      `json:"id"`
-	Title                                string      `json:"title"`
-	Description                          string      `json:"description"`
-	TeamID                               string      `json:"team_id"`
-	CreatePublicPlaybookRun              bool        `json:"create_public_playbook_run"`
-	CreateAt                             int64       `json:"create_at"`
-	UpdateAt                             int64       `json:"update_at"`
-	DeleteAt                             int64       `json:"delete_at"`
-	NumStages                            int64       `json:"num_stages"`
-	NumSteps                             int64       `json:"num_steps"`
-	NumRuns                              int64       `json:"num_runs"`
-	NumActions                           int64       `json:"num_actions"`
-	LastRunAt                            int64       `json:"last_run_at"`
-	Checklists                           []Checklist `json:"checklists"`
-	MemberIDs                            []string    `json:"member_ids"`
-	ReminderMessageTemplate              string      `json:"reminder_message_template"`
-	ReminderTimerDefaultSeconds          int64       `json:"reminder_timer_default_seconds"`
-	StatusUpdateEnabled                  bool        `json:"status_update_enabled"`
-	InvitedUserIDs                       []string    `json:"invited_user_ids"`
-	InvitedGroupIDs                      []string    `json:"invited_group_ids"`
-	InviteUsersEnabled                   bool        `json:"invite_users_enabled"`
-	DefaultOwnerID                       string      `json:"default_owner_id"`
-	DefaultOwnerEnabled                  bool        `json:"default_owner_enabled"`
-	BroadcastChannelIDs                  []string    `json:"broadcast_channel_ids"`
-	BroadcastEnabled                     bool        `json:"broadcast_enabled"`
-	WebhookOnCreationURLs                []string    `json:"webhook_on_creation_urls"`
-	WebhookOnCreationEnabled             bool        `json:"webhook_on_creation_enabled"`
-	MessageOnJoin                        string      `json:"message_on_join"`
-	MessageOnJoinEnabled                 bool        `json:"message_on_join_enabled"`
-	RetrospectiveReminderIntervalSeconds int64       `json:"retrospective_reminder_interval_seconds"`
-	RetrospectiveTemplate                string      `json:"retrospective_template"`
-	RetrospectiveEnabled                 bool        `json:"retrospective_enabled"`
-	WebhookOnStatusUpdateURLs            []string    `json:"webhook_on_status_update_urls"`
-	WebhookOnStatusUpdateEnabled         bool        `json:"webhook_on_status_update_enabled"`
-	SignalAnyKeywords                    []string    `json:"signal_any_keywords"`
-	SignalAnyKeywordsEnabled             bool        `json:"signal_any_keywords_enabled"`
-	CategorizeChannelEnabled             bool        `json:"categorize_channel_enabled"`
-	CategoryName                         string      `json:"category_name"`
-	RunSummaryTemplate                   string      `json:"run_summary_template"`
-	ChannelNameTemplate                  string      `json:"channel_name_template"`
+	ID                                   string           `json:"id"`
+	Title                                string           `json:"title"`
+	Description                          string           `json:"description"`
+	Public                               bool             `json:"public"`
+	TeamID                               string           `json:"team_id"`
+	CreatePublicPlaybookRun              bool             `json:"create_public_playbook_run"`
+	CreateAt                             int64            `json:"create_at"`
+	UpdateAt                             int64            `json:"update_at"`
+	DeleteAt                             int64            `json:"delete_at"`
+	NumStages                            int64            `json:"num_stages"`
+	NumSteps                             int64            `json:"num_steps"`
+	NumRuns                              int64            `json:"num_runs"`
+	NumActions                           int64            `json:"num_actions"`
+	LastRunAt                            int64            `json:"last_run_at"`
+	Checklists                           []Checklist      `json:"checklists"`
+	Members                              []PlaybookMember `json:"members"`
+	ReminderMessageTemplate              string           `json:"reminder_message_template"`
+	ReminderTimerDefaultSeconds          int64            `json:"reminder_timer_default_seconds"`
+	StatusUpdateEnabled                  bool             `json:"status_update_enabled"`
+	InvitedUserIDs                       []string         `json:"invited_user_ids"`
+	InvitedGroupIDs                      []string         `json:"invited_group_ids"`
+	InviteUsersEnabled                   bool             `json:"invite_users_enabled"`
+	DefaultOwnerID                       string           `json:"default_owner_id"`
+	DefaultOwnerEnabled                  bool             `json:"default_owner_enabled"`
+	BroadcastChannelIDs                  []string         `json:"broadcast_channel_ids"`
+	BroadcastEnabled                     bool             `json:"broadcast_enabled"`
+	WebhookOnCreationURLs                []string         `json:"webhook_on_creation_urls"`
+	WebhookOnCreationEnabled             bool             `json:"webhook_on_creation_enabled"`
+	MessageOnJoin                        string           `json:"message_on_join"`
+	MessageOnJoinEnabled                 bool             `json:"message_on_join_enabled"`
+	RetrospectiveReminderIntervalSeconds int64            `json:"retrospective_reminder_interval_seconds"`
+	RetrospectiveTemplate                string           `json:"retrospective_template"`
+	RetrospectiveEnabled                 bool             `json:"retrospective_enabled"`
+	WebhookOnStatusUpdateURLs            []string         `json:"webhook_on_status_update_urls"`
+	WebhookOnStatusUpdateEnabled         bool             `json:"webhook_on_status_update_enabled"`
+	SignalAnyKeywords                    []string         `json:"signal_any_keywords"`
+	SignalAnyKeywordsEnabled             bool             `json:"signal_any_keywords_enabled"`
+	CategorizeChannelEnabled             bool             `json:"categorize_channel_enabled"`
+	CategoryName                         string           `json:"category_name"`
+	RunSummaryTemplateEnabled            bool             `json:"run_summary_template_enabled"`
+	RunSummaryTemplate                   string           `json:"run_summary_template"`
+	ChannelNameTemplate                  string           `json:"channel_name_template"`
+	DefaultPlaybookAdminRole             string           `json:"default_playbook_admin_role"`
+	DefaultPlaybookMemberRole            string           `json:"default_playbook_member_role"`
+	DefaultRunAdminRole                  string           `json:"default_run_admin_role"`
+	DefaultRunMemberRole                 string           `json:"default_run_member_role"`
+}
+
+const (
+	PlaybookRoleMember = "playbook_member"
+	PlaybookRoleAdmin  = "playbook_admin"
+)
+
+type PlaybookMember struct {
+	UserID      string   `json:"user_id"`
+	Roles       []string `json:"roles"`
+	SchemeRoles []string `json:"scheme_roles"`
 }
 
 func (p Playbook) Clone() Playbook {
@@ -60,7 +77,7 @@ func (p Playbook) Clone() Playbook {
 		newChecklists = append(newChecklists, c.Clone())
 	}
 	newPlaybook.Checklists = newChecklists
-	newPlaybook.MemberIDs = append([]string(nil), p.MemberIDs...)
+	newPlaybook.Members = append([]PlaybookMember(nil), p.Members...)
 	if len(p.InvitedUserIDs) != 0 {
 		newPlaybook.InvitedUserIDs = append([]string(nil), p.InvitedUserIDs...)
 	}
@@ -95,8 +112,8 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 			old.Checklists[j].Items = []ChecklistItem{}
 		}
 	}
-	if old.MemberIDs == nil {
-		old.MemberIDs = []string{}
+	if old.Members == nil {
+		old.Members = []PlaybookMember{}
 	}
 	if old.InvitedUserIDs == nil {
 		old.InvitedUserIDs = []string{}
@@ -216,9 +233,6 @@ type PlaybookService interface {
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
 
-	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
-	GetNumPlaybooksForTeam(teamID string) (int, error)
-
 	// GetSuggestedPlaybooks returns suggested playbooks and triggers for the user message
 	GetSuggestedPlaybooks(teamID, userID, message string) ([]*CachedPlaybook, []string)
 
@@ -259,9 +273,6 @@ type PlaybookStore interface {
 
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
-
-	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
-	GetNumPlaybooksForTeam(teamID string) (int, error)
 
 	// GetPlaybooksWithKeywords retrieves all playbooks with keywords enabled
 	GetPlaybooksWithKeywords(opts PlaybookFilterOptions) ([]Playbook, error)
@@ -328,14 +339,14 @@ const (
 	ChecklistItemStateOpen       = ""
 	ChecklistItemStateInProgress = "in_progress"
 	ChecklistItemStateClosed     = "closed"
-	CheckListItemStateSkipped    = "skipped"
+	ChecklistItemStateSkipped    = "skipped"
 )
 
 func IsValidChecklistItemState(state string) bool {
 	return state == ChecklistItemStateClosed ||
 		state == ChecklistItemStateInProgress ||
 		state == ChecklistItemStateOpen ||
-		state == CheckListItemStateSkipped
+		state == ChecklistItemStateSkipped
 }
 
 func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int) bool {

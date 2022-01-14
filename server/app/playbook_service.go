@@ -72,10 +72,6 @@ func (s *playbookService) GetPlaybooksForTeam(requesterInfo RequesterInfo, teamI
 	return s.store.GetPlaybooksForTeam(requesterInfo, teamID, opts)
 }
 
-func (s *playbookService) GetNumPlaybooksForTeam(teamID string) (int, error) {
-	return s.store.GetNumPlaybooksForTeam(teamID)
-}
-
 func (s *playbookService) Update(playbook Playbook, userID string) error {
 	if playbook.DeleteAt != 0 {
 		return errors.New("cannot update a playbook that is archived")
@@ -116,7 +112,7 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 	}
 
 	if playbook.DeleteAt == 0 {
-		return errors.New("can't restore an undeleted playbook")
+		return nil
 	}
 
 	if err := s.store.Restore(playbook.ID); err != nil {
@@ -155,14 +151,8 @@ func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Pos
 		return
 	}
 
-	siteURL := model.ServiceSettingsDefaultSiteURL
-	if s.api.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-		siteURL = *s.api.Configuration.GetConfig().ServiceSettings.SiteURL
-	}
-	playbooksURL := getPlaybooksURL(siteURL)
-
-	message := s.getPlaybookSuggestionsMessage(suggestedPlaybooks, triggers, playbooksURL)
-	attachment := s.getPlaybookSuggestionsSlackAttachment(suggestedPlaybooks, post.Id, playbooksURL, session.IsMobileApp())
+	message := s.getPlaybookSuggestionsMessage(suggestedPlaybooks, triggers)
+	attachment := s.getPlaybookSuggestionsSlackAttachment(suggestedPlaybooks, post.Id, session.IsMobileApp())
 
 	rootID := post.RootId
 	if rootID == "" {
@@ -171,7 +161,7 @@ func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Pos
 	s.poster.EphemeralPostWithAttachments(post.UserId, post.ChannelId, rootID, []*model.SlackAttachment{attachment}, message)
 }
 
-func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []*CachedPlaybook, triggers []string, playbooksURL string) string {
+func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []*CachedPlaybook, triggers []string) string {
 	message := ""
 	triggerMessage := ""
 	if len(triggers) == 1 {
@@ -181,7 +171,7 @@ func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []*Ca
 	}
 
 	if len(suggestedPlaybooks) == 1 {
-		playbookURL := fmt.Sprintf("[%s](%s/%s)", suggestedPlaybooks[0].Title, playbooksURL, suggestedPlaybooks[0].ID)
+		playbookURL := fmt.Sprintf("[%s](%s)", suggestedPlaybooks[0].Title, getPlaybookDetailsRelativeURL(suggestedPlaybooks[0].ID))
 		message = fmt.Sprintf("%s for the %s playbook, would you like to run it?", triggerMessage, playbookURL)
 	} else {
 		message = fmt.Sprintf("%s for the multiple playbooks, would you like to run one of them?", triggerMessage)
@@ -190,7 +180,7 @@ func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []*Ca
 	return message
 }
 
-func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*CachedPlaybook, postID, playbooksURL string, isMobile bool) *model.SlackAttachment {
+func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*CachedPlaybook, postID string, isMobile bool) *model.SlackAttachment {
 	pluginID := s.configService.GetManifest().Id
 
 	ignoreButton := &model.PostAction{
@@ -222,11 +212,9 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 			Style: "primary",
 		}
 
-		url := fmt.Sprintf("%s/%s/edit/actions", playbooksURL, playbooks[0].ID) // actions tab
-
 		attachment := &model.SlackAttachment{
 			Actions: []*model.PostAction{yesButton, ignoreButton},
-			Text:    fmt.Sprintf("You can configure the trigger and actions for the playbook [here](%s)", url),
+			Text:    fmt.Sprintf("You can configure the trigger and actions for the playbook [here](%s)", getActionsTabRelativeURL(playbooks[0].ID)),
 		}
 		return attachment
 	}
@@ -256,7 +244,7 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 
 	attachment := &model.SlackAttachment{
 		Actions: []*model.PostAction{playbookChooser, ignoreButton},
-		Text:    fmt.Sprintf("You can access these playbooks to configure their triggers and actions [here](%s)", playbooksURL),
+		Text:    fmt.Sprintf("You can access these playbooks to configure their triggers and actions [here](%s)", PlaybooksPath),
 	}
 	return attachment
 }

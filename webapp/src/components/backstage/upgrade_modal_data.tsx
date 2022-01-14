@@ -147,10 +147,6 @@ export const getUpgradeModalCopy = (
     case ModalActionState.Uninitialized:
     case ModalActionState.Loading:
         switch (messageType) {
-        case AdminNotificationType.PLAYBOOK:
-            titleText = <FormattedMessage defaultMessage='A playbook for every process'/>;
-            helpText = <FormattedMessage defaultMessage='Your subscription allows one playbook per team. Upgrade your subscription and create multiple playbooks with unique workflows for each team.'/>;
-            break;
         case AdminNotificationType.VIEW_TIMELINE:
         case AdminNotificationType.MESSAGE_TO_TIMELINE:
             titleText = <FormattedMessage defaultMessage='Add more to your timeline'/>;

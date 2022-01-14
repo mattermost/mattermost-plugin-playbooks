@@ -24,7 +24,8 @@ export const Banner = styled.div`
 `;
 
 export const BackstageHeader = styled.div`
-    ${RegularHeading}
+    ${RegularHeading} {
+    }
 
     display: flex;
     font-size: 2.8rem;
@@ -84,6 +85,7 @@ export const StyledMarkdownTextbox = styled(MarkdownTextbox)`
         font-size: 14px;
         line-height: 20px;
     }
+
     .textbox-preview-area {
         z-index: auto;
     }
@@ -103,6 +105,10 @@ export const GlobalSelectStyle = createGlobalStyle`
         &--is-focused {
             box-shadow: inset 0 0 0px 2px var(--button-bg);
         }
+    }
+
+    .playbooks-rselect--is-disabled {
+        opacity: 0.56;
     }
 
     .playbooks-rselect__control,
@@ -146,6 +152,7 @@ export const GlobalSelectStyle = createGlobalStyle`
                 padding: 0;
                 color: var(--center-channel-color);
             }
+
             .playbooks-rselect__multi-value__remove {
                 color: rgba(var(--center-channel-bg-rgb), 0.80);
             }
@@ -231,6 +238,7 @@ interface PlaybookRunFilterButtonProps {
 }
 
 export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProps>`
+	flex-grow: 1;
     display: flex;
     align-items: center;
     border: none;

@@ -15,6 +15,7 @@ type Props = {
     onHide: () => void;
     modalHeaderText: React.ReactNode;
     show?: boolean;
+    showCancel?: boolean;
     handleCancel?: (() => void) | null;
     handleConfirm?: (() => void) | null;
     confirmButtonText?: React.ReactNode;
@@ -51,7 +52,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         this.setState({show: false}, () => {
             setTimeout(this.props.onHide, 150);
         });
-    }
+    };
 
     handleCancel = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
@@ -59,7 +60,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
             this.onHide();
         }
         this.props.handleCancel?.();
-    }
+    };
 
     handleConfirm = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
@@ -68,7 +69,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         }
 
         this.props.handleConfirm?.();
-    }
+    };
 
     render() {
         let confirmButton;
@@ -95,7 +96,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         }
 
         let cancelButton;
-        if (this.props.handleCancel) {
+        if (this.props.handleCancel || this.props.showCancel) {
             let cancelButtonText: React.ReactNode = <FormattedMessage defaultMessage='Cancel'/>;
             if (this.props.cancelButtonText) {
                 cancelButtonText = this.props.cancelButtonText;
@@ -154,7 +155,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
     }
 }
 
-const StyledModal = styled(Modal)`
+export const StyledModal = styled(Modal)`
     &&& {
         /* content-spacing */
         .modal-header {
@@ -172,7 +173,12 @@ const StyledModal = styled(Modal)`
         .close {
             margin: 12px 12px 0 0;
         }
+        .modal-dialog {
+            margin-top: calc(50vh - 260px);
+        }
     }
+
+	z-index: 1040;
 
     &&&& {
         /* control correction-overrides */
@@ -185,7 +191,7 @@ const StyledModal = styled(Modal)`
     }
 `;
 
-const Buttons = styled.div`
+export const Buttons = styled.div`
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -198,7 +204,7 @@ export const DefaultFooterContainer = styled.div`
     align-items: flex-end;
 `;
 
-const ModalHeading = styled.h1`
+export const ModalHeading = styled.h1`
     font-size: 22px;
     line-height: 28px;
     color: var(--center-channel-color);

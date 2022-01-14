@@ -9,9 +9,6 @@ import (
 )
 
 type GlobalSettings struct {
-	// PlaybookCreatorsUserIds is an array of user ids authorized to create new playbooks.
-	PlaybookCreatorsUserIds []string `json:"playbook_creators_user_ids"`
-
 	// EnableExperimentalFeatures is a read-only field set to true when experimental features
 	// are enabled. Changing this field requires access to the system console plugin
 	// configuration.

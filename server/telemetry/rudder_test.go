@@ -376,7 +376,7 @@ func TestPlaybookProperties(t *testing.T) {
 				},
 			},
 		},
-		MemberIDs:                   []string{"member_1", "member_2"},
+		Members:                     []app.PlaybookMember{{}, {}},
 		ReminderMessageTemplate:     "reminder_message_template",
 		ReminderTimerDefaultSeconds: 1000,
 		InvitedUserIDs:              []string{"invited_user_id_1", "invited_user_id_2"},

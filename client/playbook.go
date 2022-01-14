@@ -2,26 +2,33 @@ package client
 
 // Playbook represents the planning before a playbook run is initiated.
 type Playbook struct {
-	ID                          string      `json:"id"`
-	Title                       string      `json:"title"`
-	Description                 string      `json:"description"`
-	TeamID                      string      `json:"team_id"`
-	CreatePublicPlaybookRun     bool        `json:"create_public_playbook_run"`
-	CreateAt                    int64       `json:"create_at"`
-	DeleteAt                    int64       `json:"delete_at"`
-	NumStages                   int64       `json:"num_stages"`
-	NumSteps                    int64       `json:"num_steps"`
-	Checklists                  []Checklist `json:"checklists"`
-	MemberIDs                   []string    `json:"member_ids"`
-	ReminderMessageTemplate     string      `json:"reminder_message_template"`
-	ReminderTimerDefaultSeconds int64       `json:"reminder_timer_default_seconds"`
-	InvitedUserIDs              []string    `json:"invited_user_ids"`
-	InvitedGroupIDs             []string    `json:"invited_group_ids"`
-	InvitedUsersEnabled         bool        `json:"invited_users_enabled"`
-	DefaultOwnerID              string      `json:"default_owner_id"`
-	DefaultOwnerEnabled         bool        `json:"default_owner_enabled"`
-	BroadcastChannelIDs         []string    `json:"broadcast_channel_ids"`
-	BroadcastEnabled            bool        `json:"broadcast_enabled"`
+	ID                          string           `json:"id"`
+	Title                       string           `json:"title"`
+	Description                 string           `json:"description"`
+	Public                      bool             `json:"public"`
+	TeamID                      string           `json:"team_id"`
+	CreatePublicPlaybookRun     bool             `json:"create_public_playbook_run"`
+	CreateAt                    int64            `json:"create_at"`
+	DeleteAt                    int64            `json:"delete_at"`
+	NumStages                   int64            `json:"num_stages"`
+	NumSteps                    int64            `json:"num_steps"`
+	Checklists                  []Checklist      `json:"checklists"`
+	Members                     []PlaybookMember `json:"members"`
+	ReminderMessageTemplate     string           `json:"reminder_message_template"`
+	ReminderTimerDefaultSeconds int64            `json:"reminder_timer_default_seconds"`
+	InvitedUserIDs              []string         `json:"invited_user_ids"`
+	InvitedGroupIDs             []string         `json:"invited_group_ids"`
+	InvitedUsersEnabled         bool             `json:"invited_users_enabled"`
+	DefaultOwnerID              string           `json:"default_owner_id"`
+	DefaultOwnerEnabled         bool             `json:"default_owner_enabled"`
+	BroadcastChannelIDs         []string         `json:"broadcast_channel_ids"`
+	BroadcastEnabled            bool             `json:"broadcast_enabled"`
+}
+
+type PlaybookMember struct {
+	UserID      string   `json:"user_id"`
+	Roles       []string `json:"roles"`
+	SchemeRoles []string `json:"scheme_roles"`
 }
 
 // Checklist represents a checklist in a playbook
@@ -46,22 +53,23 @@ type ChecklistItem struct {
 
 // PlaybookCreateOptions specifies the parameters for PlaybooksService.Create method.
 type PlaybookCreateOptions struct {
-	Title                       string      `json:"title"`
-	Description                 string      `json:"description"`
-	TeamID                      string      `json:"team_id"`
-	CreatePublicPlaybookRun     bool        `json:"create_public_playbook_run"`
-	Checklists                  []Checklist `json:"checklists"`
-	MemberIDs                   []string    `json:"member_ids"`
-	BroadcastChannelID          string      `json:"broadcast_channel_id"`
-	ReminderMessageTemplate     string      `json:"reminder_message_template"`
-	ReminderTimerDefaultSeconds int64       `json:"reminder_timer_default_seconds"`
-	InvitedUserIDs              []string    `json:"invited_user_ids"`
-	InvitedGroupIDs             []string    `json:"invited_group_ids"`
-	InviteUsersEnabled          bool        `json:"invite_users_enabled"`
-	DefaultOwnerID              string      `json:"default_owner_id"`
-	DefaultOwnerEnabled         bool        `json:"default_owner_enabled"`
-	BroadcastChannelIDs         []string    `json:"broadcast_channel_ids"`
-	BroadcastEnabled            bool        `json:"broadcast_enabled"`
+	Title                       string           `json:"title"`
+	Description                 string           `json:"description"`
+	TeamID                      string           `json:"team_id"`
+	Public                      bool             `json:"public"`
+	CreatePublicPlaybookRun     bool             `json:"create_public_playbook_run"`
+	Checklists                  []Checklist      `json:"checklists"`
+	Members                     []PlaybookMember `json:"members"`
+	BroadcastChannelID          string           `json:"broadcast_channel_id"`
+	ReminderMessageTemplate     string           `json:"reminder_message_template"`
+	ReminderTimerDefaultSeconds int64            `json:"reminder_timer_default_seconds"`
+	InvitedUserIDs              []string         `json:"invited_user_ids"`
+	InvitedGroupIDs             []string         `json:"invited_group_ids"`
+	InviteUsersEnabled          bool             `json:"invite_users_enabled"`
+	DefaultOwnerID              string           `json:"default_owner_id"`
+	DefaultOwnerEnabled         bool             `json:"default_owner_enabled"`
+	BroadcastChannelIDs         []string         `json:"broadcast_channel_ids"`
+	BroadcastEnabled            bool             `json:"broadcast_enabled"`
 }
 
 // PlaybookListOptions specifies the optional parameters to the

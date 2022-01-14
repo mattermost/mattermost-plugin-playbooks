@@ -94,7 +94,7 @@ describe('channels > rhs > home', () => {
         });
 
         it('without pre-populated channel name template', () => {
-            cy.findByText('Team Playbook').closest('[data-testid="rhs-home-item"]').find('[data-testid="run-playbook"]').click()
+            cy.findByText('Team Playbook').closest('[data-testid="rhs-home-item"]').find('[data-testid="run-playbook"]').click();
 
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify run name prompt
@@ -103,7 +103,7 @@ describe('channels > rhs > home', () => {
         });
 
         it('with pre-populated channel name template', () => {
-            cy.findByText('Channel Name Template').closest('[data-testid="rhs-home-item"]').find('[data-testid="run-playbook"]').click()
+            cy.findByText('Channel Name Template').closest('[data-testid="rhs-home-item"]').find('[data-testid="run-playbook"]').click();
 
             cy.get('#interactiveDialogModal').within(() => {
                 // * Verify run name prompt

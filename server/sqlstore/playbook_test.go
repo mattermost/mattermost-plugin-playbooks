@@ -14,6 +14,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func membersFromIds(ids []string) []app.PlaybookMember {
+	members := []app.PlaybookMember{}
+	for _, id := range ids {
+		members = append(members, app.PlaybookMember{
+			UserID:      id,
+			Roles:       []string{},
+			SchemeRoles: []string{},
+		})
+	}
+
+	return members
+}
+
 func newUserInfo() userInfo {
 	id := model.NewId()
 	return userInfo{
@@ -200,196 +213,6 @@ func TestGetPlaybook(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, expected, actual)
 		})
-	}
-}
-
-func TestGetPlaybooks(t *testing.T) {
-	team1id := model.NewId()
-	team2id := model.NewId()
-	team3id := model.NewId()
-
-	jon := userInfo{
-		ID:   model.NewId(),
-		Name: "jon",
-	}
-
-	andrew := userInfo{
-		ID:   model.NewId(),
-		Name: "Andrew",
-	}
-
-	matt := userInfo{
-		ID:   model.NewId(),
-		Name: "Matt",
-	}
-
-	lucia := userInfo{
-		ID:   model.NewId(),
-		Name: "Lucía",
-	}
-
-	desmond := userInfo{
-		ID:   model.NewId(),
-		Name: "Desmond",
-	}
-
-	pb01 := NewPBBuilder().
-		WithTitle("playbook 1").
-		WithDescription("this is a description, not very long, but it can be up to 4096 bytes").
-		WithTeamID(team1id).
-		WithCreateAt(500).
-		WithUpdateAt(0).
-		WithChecklists([]int{1, 2}).
-		WithMembers([]userInfo{jon, andrew, matt}).
-		ToPlaybook()
-
-	pb02 := NewPBBuilder().
-		WithTitle("playbook 2").
-		WithTeamID(team1id).
-		WithCreateAt(600).
-		WithUpdateAt(0).
-		WithCreatePublic(true).
-		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
-		WithMembers([]userInfo{andrew, matt}).
-		ToPlaybook()
-
-	pb03 := NewPBBuilder().
-		WithTitle("playbook 3").
-		WithTeamID(team1id).
-		WithChecklists([]int{1, 2, 3}).
-		WithCreateAt(700).
-		WithUpdateAt(0).
-		WithMembers([]userInfo{jon, matt, lucia}).
-		ToPlaybook()
-
-	pb04 := NewPBBuilder().
-		WithTitle("playbook 4").
-		WithDescription("this is a description, not very long, but it can be up to 2048 bytes").
-		WithTeamID(team1id).
-		WithCreateAt(800).
-		WithUpdateAt(0).
-		WithChecklists([]int{20}).
-		WithMembers([]userInfo{matt}).
-		ToPlaybook()
-
-	pb05 := NewPBBuilder().
-		WithTitle("playbook 5").
-		WithTeamID(team2id).
-		WithCreateAt(1000).
-		WithUpdateAt(0).
-		WithChecklists([]int{1}).
-		WithMembers([]userInfo{jon, andrew}).
-		ToPlaybook()
-
-	pb06 := NewPBBuilder().
-		WithTitle("playbook 6").
-		WithTeamID(team2id).
-		WithCreateAt(1100).
-		WithUpdateAt(0).
-		WithChecklists([]int{1, 2, 3}).
-		WithMembers([]userInfo{matt}).
-		ToPlaybook()
-
-	pb07 := NewPBBuilder().
-		WithTitle("playbook 7").
-		WithTeamID(team3id).
-		WithCreateAt(1200).
-		WithUpdateAt(0).
-		WithChecklists([]int{1}).
-		WithMembers([]userInfo{andrew}).
-		WithChannelNameTemplate("playbook XX").
-		ToPlaybook()
-
-	pb08 := NewPBBuilder().
-		WithTitle("playbook 8 -- so many members, but should have Desmond and Lucy").
-		WithTeamID(team3id).
-		WithCreateAt(1300).
-		WithUpdateAt(0).
-		WithChecklists([]int{1}).
-		WithMembers(append(multipleUserInfo(100), desmond, lucia)).
-		WithKeywords([]string{"keyword"}).
-		WithChannelNameTemplate("playbook YY").
-		ToPlaybook()
-
-	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08}
-
-	tests := []struct {
-		name        string
-		expected    []app.Playbook
-		expectedErr error
-	}{
-		{
-			name:        "get all playbooks",
-			expected:    playbooks,
-			expectedErr: nil,
-		},
-	}
-
-	for _, driverName := range driverNames {
-		db := setupTestDB(t, driverName)
-		playbookStore := setupPlaybookStore(t, db)
-
-		t.Run("zero playbooks", func(t *testing.T) {
-			result, err := playbookStore.GetPlaybooks()
-			require.NoError(t, err)
-			require.ElementsMatch(t, []app.Playbook{}, result)
-		})
-
-		// create playbooks, test that they were created correctly
-		all, err := playbookStore.GetPlaybooks()
-		require.NoError(t, err)
-		require.Equal(t, 0, len(all))
-
-		var inserted []app.Playbook
-		for _, p := range playbooks {
-			id, err := playbookStore.Create(p)
-			require.NoError(t, err)
-
-			tmp := p.Clone()
-			tmp.ID = id
-			inserted = append(inserted, tmp)
-		}
-
-		for _, p := range inserted {
-			got, err := playbookStore.Get(p.ID)
-			require.NoError(t, err)
-			require.Equal(t, p, got)
-		}
-		require.Equal(t, len(playbooks), len(inserted))
-
-		for _, testCase := range tests {
-			t.Run(driverName+" - "+testCase.name, func(t *testing.T) {
-				actual, err := playbookStore.GetPlaybooks()
-
-				if testCase.expectedErr != nil {
-					require.Nil(t, actual)
-					require.Error(t, err)
-					require.Equal(t, testCase.expectedErr.Error(), err.Error())
-
-					return
-				}
-
-				require.NoError(t, err)
-
-				for i, p := range actual {
-					require.True(t, model.IsValidId(p.ID))
-					actual[i].ID = ""
-				}
-
-				// remove data we don't bulk fetch from the expected playbooks
-				var expected []app.Playbook
-				for _, p := range testCase.expected {
-					tmp := p.Clone()
-					tmp.Checklists = nil
-					tmp.SignalAnyKeywords = nil
-					tmp.SignalAnyKeywordsEnabled = false
-					tmp.Clone()
-					expected = append(expected, tmp)
-				}
-
-				require.ElementsMatch(t, expected, actual)
-			})
-		}
 	}
 }
 
@@ -1018,10 +841,10 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				// remove the checklists and members from the expected playbooks--we don't return them in getPlaybooks
 				for i := range testCase.expected.Items {
 					testCase.expected.Items[i].Checklists = nil
-					testCase.expected.Items[i].MemberIDs = nil
+					testCase.expected.Items[i].Members = nil
 				}
 
-				require.Equal(t, testCase.expected.Items, actual.Items)
+				require.ElementsMatch(t, justTitles(testCase.expected.Items), justTitles(actual.Items))
 				require.Equal(t, testCase.expected.HasMore, actual.HasMore)
 				require.Equal(t, testCase.expected.PageCount, actual.PageCount)
 				require.Equal(t, testCase.expected.TotalCount, actual.TotalCount)
@@ -1029,6 +852,15 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 			})
 		}
 	}
+}
+
+func justTitles(playbooks []app.Playbook) []string {
+	titles := []string{}
+	for _, pb := range playbooks {
+		titles = append(titles, pb.Title)
+	}
+
+	return titles
 }
 
 func TestUpdatePlaybook(t *testing.T) {
@@ -1158,7 +990,7 @@ func TestUpdatePlaybook(t *testing.T) {
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
 					WithMembers([]userInfo{jon, andrew}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
-					old.MemberIDs = []string{andrew.ID}
+					old.Members = membersFromIds([]string{andrew.ID})
 					return old
 				},
 				expectedErr: nil,
@@ -1168,8 +1000,9 @@ func TestUpdatePlaybook(t *testing.T) {
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
 					WithMembers([]userInfo{jon, andrew, bob}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
-					old.MemberIDs = []string{matt.ID, bill.ID, alice.ID, jen.ID}
-					sort.Strings(old.MemberIDs)
+					oldMembers := []string{matt.ID, bill.ID, alice.ID, jen.ID}
+					sort.Strings(oldMembers)
+					old.Members = membersFromIds(oldMembers)
 					return old
 				},
 				expectedErr: nil,
@@ -1179,8 +1012,9 @@ func TestUpdatePlaybook(t *testing.T) {
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).
 					WithMembers([]userInfo{jon, andrew, bob}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
-					old.MemberIDs = []string{jon.ID, andrew.ID, bob.ID, alice.ID}
-					sort.Strings(old.MemberIDs)
+					oldMembers := []string{jon.ID, andrew.ID, bob.ID, alice.ID}
+					sort.Strings(oldMembers)
+					old.Members = membersFromIds(oldMembers)
 					return old
 				},
 				expectedErr: nil,
@@ -1189,8 +1023,9 @@ func TestUpdatePlaybook(t *testing.T) {
 				name:     "Playbook run with 0 members, go to 2",
 				playbook: NewPBBuilder().WithChecklists([]int{1, 2}).ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
-					old.MemberIDs = []string{alice.ID, jen.ID}
-					sort.Strings(old.MemberIDs)
+					oldMembers := []string{alice.ID, jen.ID}
+					sort.Strings(oldMembers)
+					old.Members = membersFromIds(oldMembers)
 					return old
 				},
 				expectedErr: nil,
@@ -1208,7 +1043,7 @@ func TestUpdatePlaybook(t *testing.T) {
 					}).
 					ToPlaybook(),
 				update: func(old app.Playbook) app.Playbook {
-					old.MemberIDs = nil
+					old.Members = nil
 					return old
 				},
 				expectedErr: nil,
@@ -1683,17 +1518,21 @@ func NewPBBuilder() *PlaybookBuilder {
 	timeNow := model.GetMillis()
 	return &PlaybookBuilder{
 		&app.Playbook{
-			Title:                   "base playbook",
-			TeamID:                  model.NewId(),
-			CreatePublicPlaybookRun: false,
-			CreateAt:                model.GetMillis(),
-			UpdateAt:                timeNow,
-			DeleteAt:                0,
-			Checklists:              []app.Checklist(nil),
-			MemberIDs:               []string(nil),
-			InvitedUserIDs:          []string(nil),
-			InvitedGroupIDs:         []string(nil),
-			NumActions:              1, // Channel creation is always on
+			Title:                     "base playbook",
+			TeamID:                    model.NewId(),
+			CreatePublicPlaybookRun:   false,
+			CreateAt:                  model.GetMillis(),
+			UpdateAt:                  timeNow,
+			DeleteAt:                  0,
+			Checklists:                []app.Checklist(nil),
+			Members:                   []app.PlaybookMember(nil),
+			InvitedUserIDs:            []string(nil),
+			InvitedGroupIDs:           []string(nil),
+			NumActions:                1, // Channel creation is always on
+			DefaultPlaybookAdminRole:  app.PlaybookRoleAdmin,
+			DefaultPlaybookMemberRole: app.PlaybookRoleMember,
+			DefaultRunAdminRole:       app.RunRoleAdmin,
+			DefaultRunMemberRole:      app.RunRoleMember,
 		},
 	}
 }
@@ -1780,12 +1619,18 @@ func sum(nums []int) int64 {
 }
 
 func (p *PlaybookBuilder) WithMembers(members []userInfo) *PlaybookBuilder {
-	p.MemberIDs = make([]string, len(members))
+	memberIDs := make([]string, len(members))
 
 	for i, member := range members {
-		p.MemberIDs[i] = member.ID
+		memberIDs[i] = member.ID
 	}
-	sort.Strings(p.MemberIDs)
+	sort.Strings(memberIDs)
+
+	p.Members = membersFromIds(memberIDs)
+
+	if len(members) == 0 {
+		p.Public = true
+	}
 
 	return p
 }

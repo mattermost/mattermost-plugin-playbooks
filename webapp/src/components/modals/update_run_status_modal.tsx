@@ -3,22 +3,16 @@
 
 import React, {ComponentProps, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
-
-import {useSelector} from 'react-redux';
-
+import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
-
 import {useIntl} from 'react-intl';
+import {DateTime, Duration} from 'luxon';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
-import {DateTime, Duration} from 'luxon';
-
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
-
 import {
     useDateTimeInput,
     makeOption,
@@ -26,7 +20,6 @@ import {
     Mode,
     Option,
 } from 'src/components/datetime_input';
-
 import {usePost, useRun} from 'src/hooks';
 import MarkdownTextbox from '../markdown_textbox';
 import {pluginUrl} from 'src/browser_routing';
@@ -36,6 +29,12 @@ import {PlaybookRun} from 'src/types/playbook_run';
 import {nearest} from 'src/utils';
 import Tooltip from 'src/components/widgets/tooltip';
 import WarningIcon from '../assets/icons/warning_icon';
+import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
+import {VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
+import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
+import {modals} from 'src/webapp_globals';
+import {Checklist, ChecklistItemState} from 'src/types/playbook';
+import {openUpdateRunStatusModal} from 'src/actions';
 
 const ID = 'playbooks_update_run_status_dialog';
 
@@ -43,6 +42,9 @@ type Props = {
     playbookRunId: string;
     channelId: string;
     hasPermission: boolean;
+    message?: string,
+    reminderInSeconds?: number,
+    finishRunChecked?: boolean,
 } & Partial<ComponentProps<typeof GenericModal>>;
 
 export const makeModalDefinition = (props: Props) => ({
@@ -55,35 +57,31 @@ const UpdateRunStatusModal = ({
     playbookRunId,
     channelId,
     hasPermission,
+    message: providedMessage,
+    reminderInSeconds: providedReminder,
+    finishRunChecked: providedFinishRunChecked,
     ...modalProps
 }: Props) => {
+    const dispatch = useDispatch();
     const {formatMessage} = useIntl();
     const currentUserId = useSelector(getCurrentUserId);
     const run = useRun(playbookRunId);
 
-    const [message, setMessage] = useState<string | null>(null);
+    const [message, setMessage] = useState(providedMessage);
     const defaultMessage = useDefaultMessage(run);
     if (message == null && defaultMessage) {
         setMessage(defaultMessage);
     }
 
-    const {input: reminderInput, reminder} = useReminderTimerOption(run);
+    const [showModal, setShowModal] = useState(true);
+    const [finishRun, setFinishRun] = useState(providedFinishRunChecked || false);
 
-    const isReminderValid = reminder && reminder > 0;
+    const {input: reminderInput, reminder} = useReminderTimerOption(run, finishRun, providedReminder);
+    const isReminderValid = finishRun || (reminder && reminder > 0);
     let warningMessage = formatMessage({defaultMessage: 'Date must be in the future.'});
     if (!reminder || reminder === 0) {
         warningMessage = formatMessage({defaultMessage: 'Please specify a future date/time for the update reminder.'});
     }
-
-    const onConfirm = () => {
-        if (hasPermission && message?.trim() && currentUserId && channelId && run?.team_id) {
-            postStatusUpdate(
-                playbookRunId,
-                {message, reminder},
-                {user_id: currentUserId, channel_id: channelId, team_id: run?.team_id}
-            );
-        }
-    };
 
     const broadcastChannelNames = useSelector((state: GlobalState) => {
         return run?.broadcast_channel_ids.reduce<string[]>((result, id) => {
@@ -95,6 +93,45 @@ const UpdateRunStatusModal = ({
             return result;
         }, [])?.join(', ');
     });
+
+    const outstanding = outstandingTasks(run?.checklists || []);
+    let confirmationMessage = formatMessage({defaultMessage: 'Are you sure you want to finish the run?'});
+    if (outstanding > 0) {
+        confirmationMessage = formatMessage(
+            {defaultMessage: 'There {outstanding, plural, =1 {is # outstanding task} other {are # outstanding tasks}}. Are you sure you want to finish the run?'},
+            {outstanding});
+    }
+
+    const onConfirm = () => {
+        if (hasPermission && message?.trim() && currentUserId && channelId && run?.team_id) {
+            postStatusUpdate(
+                playbookRunId,
+                {message, reminder, finishRun},
+                {user_id: currentUserId, channel_id: channelId, team_id: run?.team_id}
+            );
+            setShowModal(false);
+        }
+    };
+
+    const onSubmit = () => {
+        if (finishRun) {
+            setShowModal(false);
+
+            dispatch(modals.openModal(makeUncontrolledConfirmModalDefinition({
+                show: true,
+                title: formatMessage({defaultMessage: 'Confirm finish run'}),
+                message: confirmationMessage,
+                confirmButtonText: formatMessage({defaultMessage: 'Finish run'}),
+                onConfirm,
+                onCancel: () => {
+                    dispatch(openUpdateRunStatusModal(playbookRunId, channelId, hasPermission, message, reminder, finishRun));
+                    setShowModal(true);
+                },
+            })));
+        } else {
+            onConfirm();
+        }
+    };
 
     const form = (
         <FormContainer>
@@ -137,11 +174,21 @@ const UpdateRunStatusModal = ({
             </Label>
             {reminderInput}
             {!isReminderValid &&
-            <WarningLine>
-                <WarningIcon/> {warningMessage}
-            </WarningLine>
+                <WarningLine>
+                    <WarningIcon/> {warningMessage}
+                </WarningLine>
             }
+            <VerticalSpacer size={8}/>
         </FormContainer>
+    );
+
+    const footer = (
+        <StyledCheckboxInput
+            testId={'mark-run-as-finished'}
+            text={formatMessage({defaultMessage: 'Also mark the run as finished'})}
+            checked={finishRun}
+            onChange={(checked) => setFinishRun(checked)}
+        />
     );
 
     const warning = (
@@ -154,14 +201,18 @@ const UpdateRunStatusModal = ({
 
     return (
         <GenericModal
+            show={showModal}
             modalHeaderText={formatMessage({defaultMessage: 'Post update'})}
             cancelButtonText={hasPermission ? formatMessage({defaultMessage: 'Cancel'}) : formatMessage({defaultMessage: 'Close'})}
-            confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post'}) : formatMessage({defaultMessage: 'Ok'})}
+            confirmButtonText={hasPermission ? formatMessage({defaultMessage: 'Post update'}) : formatMessage({defaultMessage: 'Ok'})}
             handleCancel={() => true}
-            handleConfirm={hasPermission ? onConfirm : null}
+            handleConfirm={hasPermission ? onSubmit : null}
+            autoCloseOnConfirmButton={false}
             isConfirmDisabled={!(hasPermission && message?.trim() && currentUserId && channelId && run?.team_id && isReminderValid)}
             {...modalProps}
             id={ID}
+            footer={footer}
+            components={{FooterContainer}}
         >
             {hasPermission ? form : warning}
         </GenericModal>
@@ -193,7 +244,7 @@ export const optionFromSeconds = (seconds: number) => {
     };
 };
 
-export const useReminderTimerOption = (run: PlaybookRun | null | undefined) => {
+export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disabled?: boolean, preselectedValue?: number) => {
     const defaults = useMemo(() => {
         const options = [
             makeOption('in 60 minutes', Mode.DurationValue),
@@ -202,8 +253,11 @@ export const useReminderTimerOption = (run: PlaybookRun | null | undefined) => {
         ];
 
         let value: Option | undefined;
+        if (preselectedValue) {
+            value = optionFromSeconds(preselectedValue);
+        }
         if (run) {
-            if (run.previous_reminder) {
+            if (!value && run.previous_reminder) {
                 value = optionFromSeconds(nearest(run.previous_reminder * 1e-9, 60));
             }
 
@@ -221,19 +275,19 @@ export const useReminderTimerOption = (run: PlaybookRun | null | undefined) => {
                     value = defaultReminderOption;
                 }
             }
-
-            const matched = options.find((o) => value && ms(o.value) === ms(value.value));
-            if (matched) {
-                // don't duplicate an option that exists already
-                value = matched;
-            } else if (value) {
-                options.push(value);
-            }
-            options.sort((a, b) => ms(a.value) - ms(b.value));
         }
 
+        const matched = options.find((o) => value && ms(o.value) === ms(value.value));
+        if (matched) {
+            // don't duplicate an option that exists already
+            value = matched;
+        } else if (value) {
+            options.push(value);
+        }
+        options.sort((a, b) => ms(a.value) - ms(b.value));
+
         return {options, value};
-    }, [run]);
+    }, [run, preselectedValue]);
 
     const {input, value} = useDateTimeInput({
         mode: Mode.DateTimeValue,
@@ -241,14 +295,27 @@ export const useReminderTimerOption = (run: PlaybookRun | null | undefined) => {
         defaultOptions: defaults.options,
         defaultValue: defaults.value,
         id: 'reminder_timer_datetime',
+        disabled,
     });
 
-    let reminder;
+    let reminder = 0;
     if (value?.value) {
         reminder = (Duration.isDuration(value.value) ? value.value : value.value.diff(DateTime.now())).as('seconds');
     }
 
     return {input, reminder};
+};
+
+const outstandingTasks = (checklists: Checklist[]) => {
+    let count = 0;
+    for (const list of checklists) {
+        for (const item of list.items) {
+            if (item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) {
+                count++;
+            }
+        }
+    }
+    return count;
 };
 
 const FormContainer = styled.div`
@@ -277,6 +344,21 @@ const WarningBlock = styled.div`
 const WarningLine = styled.p`
     color: var(--error-text);
     margin-top: 0.6rem;
+`;
+
+const FooterContainer = styled.div`
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: flex-end;
+`;
+
+const StyledCheckboxInput = styled(CheckboxInput)`
+    padding: 10px 16px 10px 0;
+    margin-right: auto;
+
+    &:hover {
+        background-color: transparent;
+    }
 `;
 
 export default UpdateRunStatusModal;

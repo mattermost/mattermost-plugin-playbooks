@@ -23,3 +23,15 @@ func (h *ErrorHandler) HandleError(w http.ResponseWriter, internalErr error) {
 func (h *ErrorHandler) HandleErrorWithCode(w http.ResponseWriter, code int, publicErrorMsg string, internalErr error) {
 	HandleErrorWithCode(h.log, w, code, publicErrorMsg, internalErr)
 }
+
+// PermissionsCheck handles the output of a permisions check
+// Automatically does the proper error handling.
+// Returns true if the check passed and false on failure. Correct use is: if !h.PermissionsCheck(w, check) { return }
+func (h *ErrorHandler) PermissionsCheck(w http.ResponseWriter, checkOutput error) bool {
+	if checkOutput != nil {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "Not authorized", checkOutput)
+		return false
+	}
+
+	return true
+}

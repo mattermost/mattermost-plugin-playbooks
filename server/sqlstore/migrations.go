@@ -1584,4 +1584,111 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.43.0"),
+		toVersion:   semver.MustParse("0.44.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_PlaybookMember", "Roles", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
+				}
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "Public", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_PlaybookMember", "Roles", "TEXT"); err != nil {
+					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
+				}
+				if err := addColumnToPGTable(e, "IR_Playbook", "Public", "BOOLEAN DEFAULT FALSE"); err != nil {
+					return errors.Wrapf(err, "failed adding column Roles to table IR_Playbook")
+				}
+			}
+
+			// Set all existing members to admins
+			if _, err := e.Exec("UPDATE IR_PlaybookMember SET Roles = 'playbook_member playbook_admin' WHERE Roles IS NULL"); err != nil {
+				return errors.Wrapf(err, "failed setting default value in column Roles of table IR_Playbook")
+			}
+
+			// Set all playbooks with no members as public
+			if _, err := e.Exec("UPDATE IR_Playbook p SET Public = true WHERE NOT EXISTS(SELECT 1 FROM IR_PlaybookMember as pm WHERE pm.PlaybookID = p.ID)"); err != nil {
+				return errors.Wrapf(err, "failed setting default value in column ConcatenatedSignalAnyKeywords of table IR_Playbook")
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.44.0"),
+		toVersion:   semver.MustParse("0.45.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Existing runs without a reminder need to have a reminder set; use 1 week from now.
+			oneWeek := 7 * 24 * time.Hour
+
+			// Get runs whose reminder was dismissed (PreviousReminder was set to 0), but only for those
+			// that have status updates enabled (or else they can't fix an overdue status update)
+			dimissedQuery := sqlStore.builder.
+				Select("ID").
+				From("IR_Incident").
+				Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+				Where(sq.Eq{"PreviousReminder": 0}).
+				Where(sq.Eq{"StatusUpdateEnabled": true})
+
+			var runIDs []string
+			if err := sqlStore.selectBuilder(sqlStore.db, &runIDs, dimissedQuery); err != nil {
+				return errors.Wrap(err, "failed to query for overdue runs")
+			}
+
+			// Set the new reminders
+			for _, ID := range runIDs {
+				// Just in case (so we don't crash out during the migration) remove any old reminders
+				sqlStore.scheduler.Cancel(ID)
+
+				if _, err := sqlStore.scheduler.ScheduleOnce(ID, time.Now().Add(oneWeek)); err != nil {
+					return errors.Wrapf(err, "failed to set new schedule for run id: %s", ID)
+				}
+
+				// Set the PreviousReminder, and pretend that this was a LastStatusUpdateAt so that
+				// the reminder timers will show the correct time for when a status update is due.
+				updatePrevReminderAndLastUpdateAt := sqlStore.builder.
+					Update("IR_Incident").
+					SetMap(map[string]interface{}{
+						"PreviousReminder":   oneWeek,
+						"LastStatusUpdateAt": model.GetMillis(),
+					}).
+					Where(sq.Eq{"ID": ID})
+				if _, err := sqlStore.execBuilder(sqlStore.db, updatePrevReminderAndLastUpdateAt); err != nil {
+					return errors.Wrap(err, "failed to update new PreviousReminder and LastStatusUpdateAt")
+				}
+			}
+
+			return nil
+		},
+	},
+	{
+		fromVersion: semver.MustParse("0.45.0"),
+		toVersion:   semver.MustParse("0.46.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if err := addColumnToMySQLTable(e, "IR_Playbook", "RunSummaryTemplateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RunSummaryTemplateEnabled to table IR_Playbook")
+				}
+			} else {
+				if err := addColumnToPGTable(e, "IR_Playbook", "RunSummaryTemplateEnabled", "BOOLEAN DEFAULT TRUE"); err != nil {
+					return errors.Wrapf(err, "failed adding column RunSummaryTemplateEnabled to table IR_Playbook")
+				}
+			}
+
+			// All playbooks that have an empty run summary should have their run summary disabled (it defaults to enabled)
+			playbookUpdate := sqlStore.builder.
+				Update("IR_Playbook").
+				Set("RunSummaryTemplateEnabled", false).
+				Where(sq.Eq{"RunSummaryTemplate": ""})
+
+			if _, err := sqlStore.execBuilder(e, playbookUpdate); err != nil {
+				return errors.Wrap(err, "failed updating RunSummaryTemplateEnabled")
+			}
+
+			return nil
+		},
+	},
 }

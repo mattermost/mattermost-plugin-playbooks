@@ -96,6 +96,7 @@ endif
 ## Ensures NPM dependencies are installed without having to run this all the time.
 webapp/node_modules: $(wildcard webapp/package.json)
 ifneq ($(HAS_WEBAPP),)
+	cd webapp && node skip_integrity_check.js
 	cd webapp && $(NPM) install
 	touch $@
 endif
@@ -238,9 +239,32 @@ endif
 
 ## Extract strings for translation from the source code.
 .PHONY: i18n-extract
-i18n-extract:
+i18n-extract: i18n-extract-webapp i18n-extract-server
+
+i18n-extract-webapp:
 ifneq ($(HAS_WEBAPP),)
-	cd webapp && $(NPM) run extract;
+	cd webapp && $(NPM) run extract
+endif
+
+i18n-extract-server:
+ifneq ($(HAS_SERVER),)
+	$(GO) install -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
+	mkdir -p server/i18n
+	cp assets/i18n/en.json server/i18n/en.json
+	cd server && $(GOBIN)/mmgotool i18n extract --portal-dir="" --skip-dynamic
+	mv server/i18n/en.json assets/i18n/en.json
+	rmdir server/i18n
+endif
+
+## Exit on empty translation strings and translation source strings
+i18n-check:
+ifneq ($(HAS_SERVER),)
+	$(GO) install -modfile=go.tools.mod github.com/mattermost/mattermost-utilities/mmgotool
+	mkdir -p server/i18n
+	cp assets/i18n/en.json server/i18n/en.json
+	cd server && $(GOBIN)/mmgotool i18n clean-empty --portal-dir="" --check
+	cd server && $(GOBIN)/mmgotool i18n check-empty-src --portal-dir=""
+	rmdir server/i18n
 endif
 
 ## Disable the plugin.

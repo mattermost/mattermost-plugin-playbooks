@@ -33,8 +33,6 @@ import {
     PlaybookArchived,
     PLAYBOOK_RESTORED,
     PlaybookRestored,
-    ReceivedTeamNumPlaybooks,
-    RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedGlobalSettings,
     RECEIVED_GLOBAL_SETTINGS,
     ShowPostMenuModal,
@@ -49,6 +47,8 @@ import {
     SetAllChecklistsCollapsedState,
     SET_CHECKLIST_COLLAPSED_STATE,
     SET_ALL_CHECKLISTS_COLLAPSED_STATE,
+    SetEachChecklistCollapsedState,
+    SET_EACH_CHECKLIST_COLLAPSED_STATE,
     SetChecklistItemsFilter,
     SET_CHECKLIST_ITEMS_FILTER,
 } from 'src/types/actions';
@@ -185,58 +185,6 @@ const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {},
     }
 };
 
-const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookArchived | PlaybookRestored | ReceivedTeamNumPlaybooks) => {
-    switch (action.type) {
-    case PLAYBOOK_CREATED: {
-        const playbookCreatedAction = action as PlaybookCreated;
-        const teamID = playbookCreatedAction.teamID;
-        const prevCount = state[teamID] || 0;
-
-        return {
-            ...state,
-            [teamID]: prevCount + 1,
-        };
-    }
-    case PLAYBOOK_RESTORED: {
-        const playbookCreatedAction = action as PlaybookRestored;
-        const teamID = playbookCreatedAction.teamID;
-        const prevCount = state[teamID] || 0;
-
-        return {
-            ...state,
-            [teamID]: prevCount + 1,
-        };
-    }
-    case PLAYBOOK_ARCHIVED: {
-        const playbookDeletedAction = action as PlaybookCreated;
-        const teamID = playbookDeletedAction.teamID;
-        const prevCount = state[teamID] || 0;
-
-        return {
-            ...state,
-            [teamID]: prevCount - 1,
-        };
-    }
-    case RECEIVED_TEAM_NUM_PLAYBOOKS: {
-        const receivedNumPlaybooksAction = action as ReceivedTeamNumPlaybooks;
-        const numPlaybooks = receivedNumPlaybooksAction.numPlaybooks;
-        const teamID = receivedNumPlaybooksAction.teamID;
-        const prevCount = state[teamID] || 0;
-
-        if (prevCount === numPlaybooks) {
-            return state;
-        }
-
-        return {
-            ...state,
-            [teamID]: numPlaybooks,
-        };
-    }
-    default:
-        return state;
-    }
-};
-
 const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlobalSettings) => {
     switch (action.type) {
     case RECEIVED_GLOBAL_SETTINGS:
@@ -284,7 +232,10 @@ const rhsAboutCollapsedByChannel = (state: Record<string, boolean> = {}, action:
 // checklistCollapsedState keeps a map of channelId -> checklist number -> collapsed
 const checklistCollapsedState = (
     state: Record<string, Record<number, boolean>> = {},
-    action: SetChecklistCollapsedState | SetAllChecklistsCollapsedState,
+    action:
+    | SetChecklistCollapsedState
+    | SetAllChecklistsCollapsedState
+    | SetEachChecklistCollapsedState
 ) => {
     switch (action.type) {
     case SET_CHECKLIST_COLLAPSED_STATE: {
@@ -306,6 +257,13 @@ const checklistCollapsedState = (
         return {
             ...state,
             [setAction.channelId]: newState,
+        };
+    }
+    case SET_EACH_CHECKLIST_COLLAPSED_STATE: {
+        const setAction = action as SetEachChecklistCollapsedState;
+        return {
+            ...state,
+            [setAction.channelId]: setAction.state,
         };
     }
     default:
@@ -332,7 +290,6 @@ const reducer = combineReducers({
     myPlaybookRunsByTeam,
     rhsState,
     eventsFilterByChannel,
-    numPlaybooksByTeam,
     globalSettings,
     postMenuModalVisibility,
     hasViewedByChannel,

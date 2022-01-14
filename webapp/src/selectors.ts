@@ -12,7 +12,7 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels'
 import {getUsers} from 'mattermost-redux/selectors/entities/common';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
-import {$ID, IDMappedObjects, Dictionary} from 'mattermost-redux/types/utilities';
+import {IDMappedObjects} from 'mattermost-redux/types/utilities';
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {
@@ -39,7 +39,7 @@ export const isPlaybookRunRHSOpen = (state: GlobalState): boolean => pluginState
 
 export const getIsRhsExpanded = (state: WebGlobalState): boolean => state.views.rhs.isSidebarExpanded;
 
-export const getAdminAnalytics = (state: GlobalState): Dictionary<number> => state.entities.admin.analytics as Dictionary<number>;
+export const getAdminAnalytics = (state: GlobalState): Record<string, number> => state.entities.admin.analytics as Record<string, number>;
 
 export const clientId = (state: GlobalState): string => pluginState(state).clientId;
 
@@ -170,7 +170,7 @@ const PROFILE_SET_ALL = 'all';
 // sortAndInjectProfiles is an unexported function copied from mattermost-redux, it is called
 // whenever a function returns a populated list of UserProfiles. Since getProfileSetForChannel is
 // new, we have to sort and inject profiles before returning the list.
-function sortAndInjectProfiles(profiles: IDMappedObjects<UserProfile>, profileSet?: 'all' | Array<$ID<UserProfile>> | Set<$ID<UserProfile>>): Array<UserProfile> {
+function sortAndInjectProfiles(profiles: IDMappedObjects<UserProfile>, profileSet?: 'all' | Array<UserProfile['id']> | Set<UserProfile['id']>): Array<UserProfile> {
     let currentProfiles: UserProfile[] = [];
 
     if (typeof profileSet === 'undefined') {
@@ -191,18 +191,6 @@ export const getProfileSetForChannel = (state: GlobalState, channelId: string) =
     const profiles = getUsers(state);
     return sortAndInjectProfiles(profiles, profileSet);
 };
-
-export const numPlaybooksByTeam = (state: GlobalState): Record<string, number> =>
-    pluginState(state).numPlaybooksByTeam;
-
-export const currentTeamNumPlaybooks = createSelector(
-    'currentTeamNumPlaybooks',
-    getCurrentTeamId,
-    numPlaybooksByTeam,
-    (teamId, playbooksPerTeamMap) => {
-        return playbooksPerTeamMap[teamId] || 0;
-    },
-);
 
 export const isPostMenuModalVisible = (state: GlobalState): boolean =>
     pluginState(state).postMenuModalVisibility;

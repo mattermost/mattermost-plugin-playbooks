@@ -41,7 +41,7 @@ export function makeSlashCommandHook(store: Store) {
             if (currentRun) {
                 const clientId = generateId();
                 store.dispatch(setClientId(clientId));
-                store.dispatch(promptUpdateStatus(currentRun.team_id, currentRun.id, currentRun.playbook_id, currentRun.channel_id));
+                store.dispatch(promptUpdateStatus(currentRun.team_id, currentRun.id, currentRun.channel_id));
                 return {};
             }
         }
