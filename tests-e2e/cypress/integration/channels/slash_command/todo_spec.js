@@ -10,109 +10,162 @@ describe('channels > slash command > todo', () => {
     let team1;
     let team2;
     let testUser;
-    let runName1;
+    let testOtherUser;
     let run1;
-    let runName2;
     let run2;
-    let runName3;
     let run3;
+    let run4;
 
     before(() => {
         cy.apiInitSetup().then(({team, user}) => {
             team1 = team;
             testUser = user;
 
-            // # Login as testUser
-            cy.apiLogin(testUser);
+            cy.apiCreateUser().then(({user: otherUser}) => {
+                testOtherUser = otherUser;
 
-            // # Create a public playbook
-            cy.apiCreatePlaybook({
-                teamId: team1.id,
-                title: 'Playbook One',
-                memberIDs: [],
-                createPublicPlaybookRun: true,
-                checklists: [
-                    {
-                        title: 'Playbook One - Stage 1',
-                        items: [
-                            {title: 'Step 1'},
-                            {title: 'Step 2'},
-                        ],
-                    },
-                    {
-                        title: 'Playbook One - Stage 2',
-                        items: [
-                            {title: 'Step 1'},
-                            {title: 'Step 2'},
-                        ],
-                    },
-                ],
-            }).then(({id}) => {
-                // # Create two runs in team 1.
-                const now = Date.now();
-                runName1 = 'Playbook Run (' + now + ')';
-                cy.apiRunPlaybook({
-                    teamId: team1.id,
-                    playbookId: id,
-                    playbookRunName: runName1,
-                    ownerUserId: testUser.id,
-                }).then((run) => {
-                    run1 = run;
-                });
+                // # Add this new user to the team
+                cy.apiAddUserToTeam(team1.id, testOtherUser.id);
 
-                const now2 = Date.now() + 100;
-                runName2 = 'Playbook Run (' + now2 + ')';
-                cy.apiRunPlaybook({
-                    teamId: team1.id,
-                    playbookId: id,
-                    playbookRunName: runName2,
-                    ownerUserId: testUser.id,
-                }).then((run) => {
-                    run2 = run;
-                });
-            });
-
-            // # Create a second team to test cross-team notifications
-            cy.apiCreateTeam('team2', 'Team 2').then(({team: secondTeam}) => {
-                team2 = secondTeam;
-
-                cy.apiAdminLogin();
-                cy.apiAddUserToTeam(team2.id, testUser.id);
+                // # Login as testUser
                 cy.apiLogin(testUser);
 
                 // # Create a public playbook
                 cy.apiCreatePlaybook({
-                    teamId: team2.id,
-                    title: 'Playbook Two',
+                    teamId: team1.id,
+                    title: 'Playbook One',
                     memberIDs: [],
                     createPublicPlaybookRun: true,
                     checklists: [
                         {
-                            title: 'Playbook Two - Stage 1',
+                            title: 'Playbook One - Stage 1',
                             items: [
                                 {title: 'Step 1'},
                                 {title: 'Step 2'},
                             ],
                         },
                         {
-                            title: 'Playbook Two - Stage 2',
+                            title: 'Playbook One - Stage 2',
                             items: [
                                 {title: 'Step 1'},
                                 {title: 'Step 2'},
                             ],
                         },
                     ],
-                }).then(({id}) => {
-                    // # Create one run in team 2.
-                    const now = Date.now() + 200;
-                    runName3 = 'Playbook Run (' + now + ')';
+                }).then(({id: playbookId}) => {
+                    // # Create two runs in team 1.
+                    const now = Date.now();
                     cy.apiRunPlaybook({
-                        teamId: team2.id,
-                        playbookId: id,
-                        playbookRunName: runName3,
+                        teamId: team1.id,
+                        playbookId,
+                        playbookRunName: 'Playbook Run (' + now + ')',
                         ownerUserId: testUser.id,
                     }).then((run) => {
-                        run3 = run;
+                        run1 = run;
+                    });
+
+                    const now2 = Date.now() + 100;
+                    cy.apiRunPlaybook({
+                        teamId: team1.id,
+                        playbookId,
+                        playbookRunName: 'Playbook Run (' + now2 + ')',
+                        ownerUserId: testUser.id,
+                    }).then((run) => {
+                        run2 = run;
+                    });
+                });
+
+                // # Create a second team to test cross-team notifications
+                cy.apiCreateTeam('team2', 'Team 2').then(({team: secondTeam}) => {
+                    team2 = secondTeam;
+
+                    cy.apiAdminLogin();
+                    cy.apiAddUserToTeam(team2.id, testUser.id);
+                    cy.apiLogin(testUser);
+
+                    // # Create a public playbook
+                    cy.apiCreatePlaybook({
+                        teamId: team2.id,
+                        title: 'Playbook Two',
+                        memberIDs: [],
+                        createPublicPlaybookRun: true,
+                        checklists: [
+                            {
+                                title: 'Playbook Two - Stage 1',
+                                items: [
+                                    {title: 'Step 1'},
+                                    {title: 'Step 2'},
+                                ],
+                            },
+                            {
+                                title: 'Playbook Two - Stage 2',
+                                items: [
+                                    {title: 'Step 1'},
+                                    {title: 'Step 2'},
+                                ],
+                            },
+                        ],
+                    }).then(({id: playbookId}) => {
+                        // # Create one run in team 2.
+                        const now = Date.now() + 200;
+                        cy.apiRunPlaybook({
+                            teamId: team2.id,
+                            playbookId,
+                            playbookRunName: 'Playbook Run (' + now + ')',
+                            ownerUserId: testUser.id,
+                        }).then((run) => {
+                            run3 = run;
+                        });
+                    });
+                });
+
+                // # Create another playbook with runs owned by another user
+                cy.apiCreatePlaybook({
+                    teamId: team1.id,
+                    title: 'Playbook Other',
+                    memberIDs: [],
+                    createPublicPlaybookRun: true,
+                    checklists: [
+                        {
+                            title: 'Playbook Other - Stage 1',
+                            items: [
+                                {title: 'Step 1'},
+                                {title: 'Step 2'},
+                            ],
+                        },
+                        {
+                            title: 'Playbook Other - Stage 2',
+                            items: [
+                                {title: 'Step 1'},
+                                {title: 'Step 2'},
+                            ],
+                        },
+                    ],
+                }).then(({id: playbookId}) => {
+                    // # Login as testOtherUser
+                    cy.apiLogin(testOtherUser);
+
+                    // # Create a run in team 1, with testOtherUser as owner and inviting testUser
+                    const now = Date.now();
+                    cy.apiRunPlaybook({
+                        teamId: team1.id,
+                        playbookId,
+                        playbookRunName: 'Other Playbook Run (' + now + ')',
+                        ownerUserId: testOtherUser.id,
+                    }).then((run) => {
+                        run4 = run;
+
+                        // # Invite testUser to the channel
+                        cy.apiAddUserToChannel(run.channel_id, testUser.id);
+                    });
+
+                    // # Create a run in team 1, with testOtherUser as owner but not inviting testUser
+                    const now2 = Date.now() + 100;
+                    cy.apiRunPlaybook({
+                        teamId: team1.id,
+                        playbookId,
+                        playbookRunName: 'Other Playbook Run (' + now2 + ')',
+                        ownerUserId: testOtherUser.id,
                     });
                 });
             });
@@ -142,13 +195,14 @@ describe('channels > slash command > todo', () => {
                 // * Should show titles
                 cy.wrap(post).contains('You have 0 runs overdue.');
                 cy.wrap(post).contains('You have 0 outstanding tasks.');
-                cy.wrap(post).contains('You have 3 runs currently in progress:');
+                cy.wrap(post).contains('You have 4 runs currently in progress:');
 
                 // * Should show three active runs
                 cy.get('li').then((liItems) => {
-                    expect(liItems[0]).to.contain.text(runName1);
-                    expect(liItems[1]).to.contain.text(runName2);
-                    expect(liItems[2]).to.contain.text(runName3);
+                    expect(liItems[0]).to.contain.text(run4.name);
+                    expect(liItems[1]).to.contain.text(run1.name);
+                    expect(liItems[2]).to.contain.text(run2.name);
+                    expect(liItems[3]).to.contain.text(run3.name);
                 });
             });
         });
@@ -173,9 +227,9 @@ describe('channels > slash command > todo', () => {
 
                 // * Should show 3 runs
                 cy.get('a').then((links) => {
-                    expect(links[1]).to.contain.text(runName1);
-                    expect(links[2]).to.contain.text(runName2);
-                    expect(links[3]).to.contain.text(runName3);
+                    expect(links[1]).to.contain.text(run1.name);
+                    expect(links[2]).to.contain.text(run2.name);
+                    expect(links[3]).to.contain.text(run3.name);
                 });
 
                 cy.get('li').then((items) => {
@@ -206,8 +260,8 @@ describe('channels > slash command > todo', () => {
 
                 // * Should show 2 runs
                 cy.get('a').then((links) => {
-                    expect(links[1]).to.contain.text(runName1);
-                    expect(links[2]).to.contain.text(runName2);
+                    expect(links[1]).to.contain.text(run1.name);
+                    expect(links[2]).to.contain.text(run2.name);
                 });
 
                 cy.get('li').then((items) => {
@@ -244,8 +298,8 @@ describe('channels > slash command > todo', () => {
             // # Should show two runs overdue -- ignoring the rest
             cy.getLastPost().within(() => {
                 cy.get('li').then((liItems) => {
-                    expect(liItems[0]).to.contain.text(runName1);
-                    expect(liItems[1]).to.contain.text(runName3);
+                    expect(liItems[0]).to.contain.text(run1.name);
+                    expect(liItems[1]).to.contain.text(run3.name);
                 });
             });
         });
