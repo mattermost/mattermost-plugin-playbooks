@@ -1047,26 +1047,18 @@ func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, e
 	return ret, nil
 }
 
-// GetOverdueUpdateRuns returns the list of runs that userID is participating in that have overdue updates
+// GetOverdueUpdateRuns returns runs owned by userID and that have overdue status updates.
 func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, error) {
-	membershipClause := s.queryBuilder.
-		Select("1").
-		Prefix("EXISTS(").
-		From("ChannelMembers AS cm").
-		Where("cm.ChannelId = i.ChannelID").
-		Where(sq.Eq{"cm.UserId": userID}).
-		Suffix(")")
-
 	query := s.store.builder.
 		Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
 			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName", "u.UserName AS OwnerUserName").
 		From("IR_Incident AS i").
 		Join("Teams AS t ON (i.TeamID = t.Id)").
 		Join("Channels AS c ON (i.ChannelId = c.Id)").
-		LeftJoin("Users AS u ON i.CommanderUserID = u.Id").
+		Join("Users AS u ON i.CommanderUserID = u.Id").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		Where(sq.NotEq{"i.PreviousReminder": 0}).
-		Where(membershipClause).
+		Where(sq.Eq{"i.CommanderUserId": userID}).
 		OrderBy("ChannelDisplayName")
 
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
