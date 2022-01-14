@@ -1691,4 +1691,83 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.46.0"),
+		toVersion:   semver.MustParse("0.47.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_MetricConfig (
+					   ID VARCHAR(26) PRIMARY KEY,
+					   PlaybookID VARCHAR(26) NOT NULL REFERENCES IR_Playbook(ID),
+					   Title VARCHAR(1024) NOT NULL UNIQUE,
+					   Description VARCHAR(4096) NOT NULL,
+					   Type VARCHAR(32) NOT NULL DEFAULT '',
+					   Target BIGINT NOT NULL,
+					   Order TINYINT,
+					   INDEX IR_MetricConfig_PlaybookID (PlaybookID)
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_MetricConfig")
+				}
+
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_Metric (
+						IncidentID VARCHAR(26) NOT NULL REFERENCES IR_Incident(ID),
+						MetricConfigID VARCHAR(26) NOT NULL REFERENCES IR_MetricConfig(ID),
+						Value BIGINT NOT NULL
+						INDEX IR_Metric_IncidentID (IncidentID)
+						INDEX IR_Metric_MetricConfigID (MetricConfigID)
+				 	)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Metric")
+				}
+
+				if err := addPrimaryKey(e, sqlStore, "IR_Metric", "(IncidentID, MetricConfigID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_Metric")
+				}
+			} else {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_MetricConfig (
+						ID TEXT PRIMARY KEY,
+						PlaybookID TEXT NOT NULL REFERENCES IR_Playbook(ID),
+						Title TEXT NOT NULL UNIQUE,
+						Description TEXT NOT NULL,
+						Type TEXT NOT NULL DEFAULT '',
+						Target BIGINT NOT NULL,
+						Order SMALLINT,
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_MetricConfig")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_MetricConfig_PlaybookID", "IR_MetricConfig", "PlaybookID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_MetricConfig_PlaybookID")
+				}
+
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_Metric (
+						IncidentID TEXT NOT NULL REFERENCES IR_Incident(ID),
+						MetricConfigID TEXT NOT NULL REFERENCES IR_MetricConfig(ID),
+						Value BIGINT NOT NULL
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_Metric")
+				}
+
+				if err := addPrimaryKey(e, sqlStore, "ir_metric", "(IncidentID, MetricConfigID)"); err != nil {
+					return errors.Wrapf(err, "failed creating primary key for IR_Metric")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_Metric_IncidentID", "IR_Metric", "IncidentID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_Metric_IncidentID")
+				}
+				if _, err := e.Exec(createPGIndex("IR_Metric_MetricConfigID", "IR_Metric", "MetricConfigID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_Metric_MetricConfigID")
+				}
+			}
+
+			return nil
+		},
+	},
 }
