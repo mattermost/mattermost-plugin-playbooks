@@ -967,12 +967,11 @@ func (s *playbookRunStore) GetRunsWithAssignedTasks(userID string) ([]app.Assign
 	}
 
 	query := s.store.builder.Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
-		"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName", "u.UserName AS OwnerUserName",
+		"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName",
 		"i.ChecklistsJSON AS ChecklistsJSON").
 		From("IR_Incident AS i").
 		Join("Teams AS t ON (i.TeamID = t.Id)").
 		Join("Channels AS c ON (i.ChannelID = c.Id)").
-		Join("Users AS u ON i.CommanderUserID = u.Id").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		OrderBy("ChannelDisplayName")
 
@@ -1030,12 +1029,12 @@ func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, e
 
 	query := s.store.builder.
 		Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
-			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName", "u.UserName AS OwnerUserName").
+			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName").
 		From("IR_Incident AS i").
 		Join("Teams AS t ON (i.TeamID = t.Id)").
 		Join("Channels AS c ON (i.ChannelId = c.Id)").
-		Join("Users AS u ON i.CommanderUserID = u.Id").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
+		Where(sq.Eq{"i.CommanderUserID": userID}).
 		Where(membershipClause).
 		OrderBy("ChannelDisplayName")
 
@@ -1051,11 +1050,10 @@ func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, e
 func (s *playbookRunStore) GetOverdueUpdateRuns(userID string) ([]app.RunLink, error) {
 	query := s.store.builder.
 		Select("i.ID AS PlaybookRunID", "t.Name AS TeamName",
-			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName", "u.UserName AS OwnerUserName").
+			"c.Name AS ChannelName", "c.DisplayName AS ChannelDisplayName").
 		From("IR_Incident AS i").
 		Join("Teams AS t ON (i.TeamID = t.Id)").
 		Join("Channels AS c ON (i.ChannelId = c.Id)").
-		Join("Users AS u ON i.CommanderUserID = u.Id").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
 		Where(sq.NotEq{"i.PreviousReminder": 0}).
 		Where(sq.Eq{"i.CommanderUserId": userID}).
