@@ -157,6 +157,13 @@ describe('channels > slash command > todo', () => {
 
                         // # Invite testUser to the channel
                         cy.apiAddUserToChannel(run.channel_id, testUser.id);
+
+                        // # Force this run to be overdue
+                        cy.apiUpdateStatus({
+                            playbookRunId: run4.id,
+                            message: 'no message 4',
+                            reminder: 1,
+                        });
                     });
 
                     // # Create a run in team 1, with testOtherUser as owner but not inviting testUser
@@ -166,6 +173,13 @@ describe('channels > slash command > todo', () => {
                         playbookId,
                         playbookRunName: 'Other Playbook Run (' + now2 + ')',
                         ownerUserId: testOtherUser.id,
+                    }).then((run) => {
+                        // # Force this run to be overdue
+                        cy.apiUpdateStatus({
+                            playbookRunId: run.id,
+                            message: 'no message 5',
+                            reminder: 1,
+                        });
                     });
                 });
             });
