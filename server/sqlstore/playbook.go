@@ -144,6 +144,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 			"p.CategorizeChannelEnabled",
 			"p.ChecklistsJSON",
 			"COALESCE(p.CategoryName, '') CategoryName",
+			"p.RunSummaryTemplateEnabled",
 			"COALESCE(p.RunSummaryTemplate, '') RunSummaryTemplate",
 			"COALESCE(p.ChannelNameTemplate, '') ChannelNameTemplate",
 			"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
@@ -232,6 +233,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
 			"CategoryName":                          rawPlaybook.CategoryName,
+			"RunSummaryTemplateEnabled":             rawPlaybook.RunSummaryTemplateEnabled,
 			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
 			"ChannelNameTemplate":                   rawPlaybook.ChannelNameTemplate,
 		}))
@@ -467,23 +469,6 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 	}, nil
 }
 
-func (p *playbookStore) GetNumPlaybooksForTeam(teamID string) (int, error) {
-	query := p.store.builder.
-		Select("COUNT(*)").
-		From("IR_Playbook").
-		Where(sq.Eq{"DeleteAt": 0})
-
-	if teamID != "" {
-		query = query.Where(sq.Eq{"TeamID": teamID})
-	}
-	var total int
-	if err := p.store.getBuilder(p.store.db, &total, query); err != nil {
-		return 0, errors.Wrap(err, "failed to get number of playbooks")
-	}
-
-	return total, nil
-}
-
 // GetPlaybooksWithKeywords retrieves all playbooks with keywords enabled
 func (p *playbookStore) GetPlaybooksWithKeywords(opts app.PlaybookFilterOptions) ([]app.Playbook, error) {
 	queryForResults := p.store.builder.
@@ -618,6 +603,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
 			"CategoryName":                          rawPlaybook.CategoryName,
+			"RunSummaryTemplateEnabled":             rawPlaybook.RunSummaryTemplateEnabled,
 			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
 			"ChannelNameTemplate":                   rawPlaybook.ChannelNameTemplate,
 		}).

@@ -10,9 +10,8 @@ import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {useSelector} from 'react-redux';
 
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
-import {TEMPLATE_TITLE_KEY} from 'src/constants';
 import {Playbook} from 'src/types/playbook';
-import {tabInfo} from 'src/components/backstage/playbook_edit';
+import {tabInfo} from 'src/components/backstage/playbook_edit/playbook_edit';
 
 type PlaybooksRoutingOptions<T> = {
     urlOnly?: boolean,

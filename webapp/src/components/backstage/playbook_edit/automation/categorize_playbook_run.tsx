@@ -6,10 +6,10 @@ import {FormattedMessage} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
-import {Toggle} from 'src/components/backstage/automation/toggle';
-import ClearIndicator from 'src/components/backstage/automation/clear_indicator';
-import MenuList from 'src/components/backstage/automation/menu_list';
+import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
+import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
+import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
+import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 
 import CategorySelector from 'src/components/backstage/category_selector';
 

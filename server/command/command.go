@@ -1183,12 +1183,22 @@ func (r *Runner) actionTestGeneratePlaybooks(params []string) {
 		return
 	}
 
+	rand.Shuffle(len(dummyListPlaybooks), func(i, j int) {
+		dummyListPlaybooks[i], dummyListPlaybooks[j] = dummyListPlaybooks[j], dummyListPlaybooks[i]
+	})
+
 	playbookIds := make([]string, 0, numPlaybooks)
 	for i := 0; i < numPlaybooks; i++ {
 		dummyPlaybook := dummyListPlaybooks[i]
 		dummyPlaybook.TeamID = r.args.TeamId
-		newPlaybookID, errCreatePlayboook := r.playbookService.Create(dummyPlaybook, r.args.UserId)
-		if errCreatePlayboook != nil {
+		dummyPlaybook.Members = []app.PlaybookMember{
+			{
+				UserID: r.args.UserId,
+				Roles:  []string{app.PlaybookRoleMember, app.PlaybookRoleAdmin},
+			},
+		}
+		newPlaybookID, errCreatePlaybook := r.playbookService.Create(dummyPlaybook, r.args.UserId)
+		if errCreatePlaybook != nil {
 			r.warnUserAndLogErrorf("unable to create playbook: %v", err)
 			return
 		}
@@ -1400,7 +1410,9 @@ var dummyListPlaybooks = []app.Playbook{
 		Description: "This is an example of an empty playbook",
 	},
 	{
-		Title: "Test playbook",
+		Title:                "Test playbook",
+		RetrospectiveEnabled: true,
+		StatusUpdateEnabled:  true,
 		Checklists: []app.Checklist{
 			{
 				Title: "Identification",
@@ -1451,7 +1463,9 @@ var dummyListPlaybooks = []app.Playbook{
 		},
 	},
 	{
-		Title: "Release 2.4",
+		Title:                "Release 2.4",
+		RetrospectiveEnabled: true,
+		StatusUpdateEnabled:  true,
 		Checklists: []app.Checklist{
 			{
 				Title: "Preparation",
@@ -1516,8 +1530,10 @@ var dummyListPlaybooks = []app.Playbook{
 		},
 	},
 	{
-		Title:       "Incident #4281",
-		Description: "There is an error when accessing message from deleted channel",
+		Title:                "Incident #4281",
+		Description:          "There is an error when accessing message from deleted channel",
+		RetrospectiveEnabled: true,
+		StatusUpdateEnabled:  true,
 		Checklists: []app.Checklist{
 			{
 				Title: "Prepare the Jira card for this task",
@@ -1581,8 +1597,10 @@ var dummyListPlaybooks = []app.Playbook{
 		},
 	},
 	{
-		Title:       "Playbooks Playbook",
-		Description: "Sample playbook",
+		Title:                "Playbooks Playbook",
+		Description:          "Sample playbook",
+		RetrospectiveEnabled: true,
+		StatusUpdateEnabled:  true,
 		Checklists: []app.Checklist{
 			{
 				Title: "Triage",
@@ -1710,21 +1728,28 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 
 	var playbooks []app.Playbook
 	if len(playbooksResult.Items) == 0 {
-		dummyPlaybook := dummyListPlaybooks[rand.Intn(len(dummyListPlaybooks))]
-		dummyPlaybook.TeamID = r.args.TeamId
-		newPlaybookID, err := r.playbookService.Create(dummyPlaybook, r.args.UserId)
-		if err != nil {
-			r.warnUserAndLogErrorf("unable to create playbook: %v", err)
-			return
-		}
+		for _, dummyPlaybook := range dummyListPlaybooks {
+			dummyPlaybook.TeamID = r.args.TeamId
+			dummyPlaybook.Members = []app.PlaybookMember{
+				{
+					UserID: r.args.UserId,
+					Roles:  []string{app.PlaybookRoleMember, app.PlaybookRoleAdmin},
+				},
+			}
+			newPlaybookID, err := r.playbookService.Create(dummyPlaybook, r.args.UserId)
+			if err != nil {
+				r.warnUserAndLogErrorf("unable to create playbook: %v", err)
+				return
+			}
 
-		newPlaybook, err := r.playbookService.Get(newPlaybookID)
-		if err != nil {
-			r.warnUserAndLogErrorf("Error getting playbook: %v", err)
-			return
-		}
+			newPlaybook, err := r.playbookService.Get(newPlaybookID)
+			if err != nil {
+				r.warnUserAndLogErrorf("Error getting playbook: %v", err)
+				return
+			}
 
-		playbooks = []app.Playbook{newPlaybook}
+			playbooks = append(playbooks, newPlaybook)
+		}
 	} else {
 		playbooks = make([]app.Playbook, 0, len(playbooksResult.Items))
 		for _, thePlaybook := range playbooksResult.Items {
@@ -1752,11 +1777,13 @@ func (r *Runner) generateTestData(numActivePlaybookRuns, numEndedPlaybookRuns in
 
 		playbookRun, err := r.playbookRunService.CreatePlaybookRun(
 			&app.PlaybookRun{
-				Name:        playbookRunName,
-				OwnerUserID: r.args.UserId,
-				TeamID:      r.args.TeamId,
-				PlaybookID:  playbook.ID,
-				Checklists:  playbook.Checklists,
+				Name:                 playbookRunName,
+				OwnerUserID:          r.args.UserId,
+				TeamID:               r.args.TeamId,
+				PlaybookID:           playbook.ID,
+				Checklists:           playbook.Checklists,
+				RetrospectiveEnabled: playbook.RetrospectiveEnabled,
+				StatusUpdateEnabled:  playbook.StatusUpdateEnabled,
 			},
 			&playbook,
 			r.args.UserId,

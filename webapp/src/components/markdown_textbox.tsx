@@ -22,6 +22,7 @@ type Props = {
     placeholder?: string;
     id: string;
     className?: string;
+    disabled?: boolean;
 } & ComponentProps<typeof Textbox>;
 
 const MarkdownTextbox = ({
@@ -29,6 +30,7 @@ const MarkdownTextbox = ({
     setValue,
     className,
     placeholder = '',
+    disabled,
     ...textboxProps
 }: Props) => {
     const [showPreview, setShowPreview] = useState(false);
@@ -52,9 +54,11 @@ const MarkdownTextbox = ({
                 onKeyPress={() => true}
                 openWhenEmpty={true}
                 channelId={''}
+                disabled={disabled}
                 {...textboxProps}
             />
             <StyledTextboxLinks
+                disabled={disabled}
                 characterLimit={charLimit}
                 showPreview={showPreview}
                 updatePreview={setShowPreview}
@@ -72,9 +76,11 @@ const Wrapper = styled.div`
     &&&& {
         .custom-textarea.custom-textarea {
             background-color: var(--center-channel-bg);;
+
             &.textbox-preview-area {
                 background-color: rgba(var(--center-channel-color-rgb), 0.04);
             }
+
             height: unset;
             min-height: 104px;
             max-height: 324px;
@@ -85,8 +91,13 @@ const Wrapper = styled.div`
             box-shadow: 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.16);
 
             border: medium none;
+
             &:focus:not(.textbox-preview-area) {
                 box-shadow: 0 0 0 2px var(--button-bg);
+            }
+
+            &:disabled {
+                background: rgba(var(--center-channel-bg-rgb), 0.16);
             }
         }
     }
@@ -97,6 +108,7 @@ type TextboxLinksProps = {
     characterLimit: number;
     updatePreview: (showPreview: boolean) => void;
     message: string;
+    disabled?: boolean;
     className?: string;
 };
 
@@ -106,6 +118,7 @@ function TextboxLinks({
     showPreview,
     className,
     updatePreview,
+    disabled,
 }: TextboxLinksProps) {
     const togglePreview = (e: MouseEvent) => {
         e.preventDefault();
@@ -115,6 +128,10 @@ function TextboxLinks({
     const hasText = message?.length > 0;
 
     const {formatMessage} = useIntl();
+
+    if (disabled) {
+        return null;
+    }
 
     return (
         <div

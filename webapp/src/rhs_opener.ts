@@ -7,7 +7,7 @@ import {getCurrentChannel} from 'mattermost-redux/selectors/entities/channels';
 import {getCurrentTeam} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
-import {fetchPlaybookRuns} from 'src/client';
+import {fetchPlaybookRuns, telemetryEventForPlaybookRun} from 'src/client';
 import {currentPlaybookRun, isPlaybookRunRHSOpen, inPlaybookRunChannel} from 'src/selectors';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 
@@ -46,6 +46,19 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
             store.dispatch(receivedTeamPlaybookRuns(fetched.items));
         }
 
+        // Record and remove telemetry
+        const url = new URL(window.location.href);
+        const searchParams = new URLSearchParams(url.searchParams);
+
+        if (searchParams.has('telem_action') && searchParams.has('telem_run_id')) {
+            const action = searchParams.get('telem_action') || '';
+            const runId = searchParams.get('telem_run_id') || '';
+            telemetryEventForPlaybookRun(runId, action);
+            searchParams.delete('telem_action');
+            searchParams.delete('telem_run_id');
+            browserHistory.replace({pathname: url.pathname, search: searchParams.toString()});
+        }
+
         // Only consider opening the RHS if the channel has changed and wasn't already seen as
         // a playbook run.
         if (currentChannel.id === currentChannelId && currentChannelIsPlaybookRun) {
@@ -61,13 +74,10 @@ export function makeRHSOpener(store: Store<GlobalState>): () => Promise<void> {
 
         // Record (and remove) if we were asked to force the RHS open.
         let forceRHSOpen = false;
-        const url = new URL(window.location.href);
-        const searchParams = new URLSearchParams(url.searchParams);
         if (searchParams.has('forceRHSOpen')) {
             forceRHSOpen = true;
             searchParams.delete('forceRHSOpen');
-            url.search = searchParams.toString();
-            browserHistory.replace({pathname: url.pathname, search: url.search});
+            browserHistory.replace({pathname: url.pathname, search: searchParams.toString()});
         }
 
         // Don't do anything if the playbook run RHS is already open.

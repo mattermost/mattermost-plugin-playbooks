@@ -50,6 +50,7 @@ type Playbook struct {
 	SignalAnyKeywordsEnabled             bool             `json:"signal_any_keywords_enabled"`
 	CategorizeChannelEnabled             bool             `json:"categorize_channel_enabled"`
 	CategoryName                         string           `json:"category_name"`
+	RunSummaryTemplateEnabled            bool             `json:"run_summary_template_enabled"`
 	RunSummaryTemplate                   string           `json:"run_summary_template"`
 	ChannelNameTemplate                  string           `json:"channel_name_template"`
 	DefaultPlaybookAdminRole             string           `json:"default_playbook_admin_role"`
@@ -232,9 +233,6 @@ type PlaybookService interface {
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
 
-	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
-	GetNumPlaybooksForTeam(teamID string) (int, error)
-
 	// GetSuggestedPlaybooks returns suggested playbooks and triggers for the user message
 	GetSuggestedPlaybooks(teamID, userID, message string) ([]*CachedPlaybook, []string)
 
@@ -275,9 +273,6 @@ type PlaybookStore interface {
 
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
-
-	// GetNumPlaybooksForTeam retrieves the number of playbooks in a given team
-	GetNumPlaybooksForTeam(teamID string) (int, error)
 
 	// GetPlaybooksWithKeywords retrieves all playbooks with keywords enabled
 	GetPlaybooksWithKeywords(opts PlaybookFilterOptions) ([]Playbook, error)

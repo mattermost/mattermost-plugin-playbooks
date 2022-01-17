@@ -19,10 +19,10 @@ import {Checklist, emptyChecklist} from 'src/types/playbook';
 
 import HorizontalBar from 'src/components/backstage/horizontal_bar';
 
-import ConfirmModal from '../widgets/confirmation_modal';
+import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
-import {StageEditor} from './stage_edit';
-import DragHandle from './drag_handle';
+import {StageEditor} from 'src/components/backstage/stage_edit';
+import DragHandle from 'src/components/backstage/drag_handle';
 
 const NewStage = styled.button`
     border: none;
@@ -38,10 +38,6 @@ const NewStage = styled.button`
 
 const NewStageContainer = styled.div`
     margin: 12px 32px 0 0;
-`;
-
-const TitleContainer = styled.div`
-    padding: 20px 0 0 31px;
 `;
 
 interface Props {

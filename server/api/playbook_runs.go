@@ -79,9 +79,7 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/finish-dialog", handler.finishDialog).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/update-status-dialog", handler.updateStatusDialog).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/reminder/button-update", handler.reminderButtonUpdate).Methods(http.MethodPost)
-	playbookRunRouterAuthorized.HandleFunc("/reminder", handler.reminderDelete).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/reminder", handler.reminderReset).Methods(http.MethodPost)
-	playbookRunRouterAuthorized.HandleFunc("/reminder/button-dismiss", handler.reminderButtonDismiss).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/no-retrospective-button", handler.noRetrospectiveButton).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
 	playbookRunRouterAuthorized.HandleFunc("/check-and-send-message-on-join/{channel_id:[A-Za-z0-9]+}", handler.checkAndSendMessageOnJoin).Methods(http.MethodGet)
@@ -156,6 +154,7 @@ func (h *PlaybookRunHandler) createPlaybookRunFromPost(w http.ResponseWriter, r 
 		app.PlaybookRun{
 			OwnerUserID: playbookRunCreateOptions.OwnerUserID,
 			TeamID:      playbookRunCreateOptions.TeamID,
+			ChannelID:   playbookRunCreateOptions.ChannelID,
 			Name:        playbookRunCreateOptions.Name,
 			Summary:     playbookRunCreateOptions.Description,
 			PostID:      playbookRunCreateOptions.PostID,
@@ -367,23 +366,36 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run already has an id")
 	}
 
-	if playbookRun.ChannelID != "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run channel already has an id")
-	}
-
 	if playbookRun.CreateAt != 0 {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "playbook run channel already has created at date")
 	}
 
-	if playbookRun.TeamID == "" {
-		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing team id of playbook run")
+	if playbookRun.TeamID == "" && playbookRun.ChannelID == "" {
+		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "must provide team or channel to create playbook run")
+	}
+
+	// If a channel is specified, ensure it's from the given team (if one provided), or
+	// just grab the team for that channel.
+	var channel *model.Channel
+	var err error
+	if playbookRun.ChannelID != "" {
+		channel, err = h.pluginAPI.Channel.Get(playbookRun.ChannelID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get channel")
+		}
+
+		if playbookRun.TeamID == "" {
+			playbookRun.TeamID = channel.TeamId
+		} else if channel.TeamId != playbookRun.TeamID {
+			return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "channel not in given team")
+		}
 	}
 
 	if playbookRun.OwnerUserID == "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing owner user id of playbook run")
 	}
 
-	if strings.TrimSpace(playbookRun.Name) == "" {
+	if strings.TrimSpace(playbookRun.Name) == "" && playbookRun.ChannelID == "" {
 		return nil, errors.Wrap(app.ErrMalformedPlaybookRun, "missing name of playbook run")
 	}
 
@@ -406,7 +418,9 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.Checklists = pb.Checklists
 		public = pb.CreatePublicPlaybookRun
 
-		playbookRun.Summary = pb.RunSummaryTemplate
+		if pb.RunSummaryTemplateEnabled {
+			playbookRun.Summary = pb.RunSummaryTemplate
+		}
 		playbookRun.ReminderMessageTemplate = pb.ReminderMessageTemplate
 		playbookRun.StatusUpdateEnabled = pb.StatusUpdateEnabled
 		playbookRun.PreviousReminder = time.Duration(pb.ReminderTimerDefaultSeconds) * time.Second
@@ -454,14 +468,30 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbook = &pb
 	}
 
-	permission := model.PermissionCreatePrivateChannel
-	permissionMessage := "You are not able to create a private channel"
-	if public {
-		permission = model.PermissionCreatePublicChannel
-		permissionMessage = "You are not able to create a public channel"
-	}
-	if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, permission) {
-		return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
+	if channel == nil {
+		permission := model.PermissionCreatePrivateChannel
+		permissionMessage := "You are not able to create a private channel"
+		if public {
+			permission = model.PermissionCreatePublicChannel
+			permissionMessage = "You are not able to create a public channel"
+		}
+		if !h.pluginAPI.User.HasPermissionToTeam(userID, playbookRun.TeamID, permission) {
+			return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
+		}
+	} else {
+		permission := model.PermissionManagePublicChannelProperties
+		permissionMessage := "You are not able to manage public channel properties"
+		if channel.Type == model.ChannelTypePrivate {
+			permission = model.PermissionManagePrivateChannelProperties
+			permissionMessage = "You are not able to manage private channel properties"
+		} else if channel.Type == model.ChannelTypeDirect || channel.Type == model.ChannelTypeGroup {
+			permission = model.PermissionReadChannel
+			permissionMessage = "You do not have access to this channel"
+		}
+
+		if !h.pluginAPI.User.HasPermissionToChannel(userID, channel.Id, permission) {
+			return nil, errors.Wrap(app.ErrNoPermissions, permissionMessage)
+		}
 	}
 
 	if playbookRun.PostID != "" {
@@ -473,6 +503,7 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			return nil, errors.New("user does not have access to the channel containing the playbook run's original post")
 		}
 	}
+
 	return h.playbookRunService.CreatePlaybookRun(&playbookRun, playbook, userID, public)
 }
 
@@ -858,24 +889,6 @@ func (h *PlaybookRunHandler) reminderButtonUpdate(w http.ResponseWriter, r *http
 	ReturnJSON(w, nil, http.StatusOK)
 }
 
-// reminderButtonDismiss handles the DELETE /runs/{id}/reminder endpoint, called when a
-// user clicks on the reminder custom_update_status dismiss button
-func (h *PlaybookRunHandler) reminderDelete(w http.ResponseWriter, r *http.Request) {
-	playbookRunID := mux.Vars(r)["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-	var payload struct {
-		ChannelID string `json:"channel_id"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		h.HandleError(w, err)
-		return
-	}
-
-	h.removeReminderPost(w, userID, playbookRunID, payload.ChannelID)
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
 // reminderButtonDismiss handles the POST /runs/{id}/reminder endpoint, called when a
 // user clicks on the reminder custom_update_status time selector
 func (h *PlaybookRunHandler) reminderReset(w http.ResponseWriter, r *http.Request) {
@@ -912,53 +925,6 @@ func (h *PlaybookRunHandler) reminderReset(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-// reminderButtonDismiss handles the POST /runs/{id}/reminder/button-dismiss endpoint, called when a
-// user clicks on the reminder interactive button
-func (h *PlaybookRunHandler) reminderButtonDismiss(w http.ResponseWriter, r *http.Request) {
-	playbookRunID := mux.Vars(r)["id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-	var requestData *model.PostActionIntegrationRequest
-	err := json.NewDecoder(r.Body).Decode(&requestData)
-	if err != nil || requestData == nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "missing request data", nil)
-		return
-	}
-
-	h.removeReminderPost(w, userID, playbookRunID, requestData.ChannelId)
-
-	ReturnJSON(w, nil, http.StatusOK)
-}
-
-func (h *PlaybookRunHandler) removeReminderPost(w http.ResponseWriter, userID, playbookRunID, channelID string) {
-	storedPlaybookRunID, err := h.playbookRunService.GetPlaybookRunIDForChannel(channelID)
-	if err != nil {
-		err = errors.Wrapf(err, "reminderButtonDismiss: no playbook run for requestData's channelID: %s", channelID)
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "no playbook run for requestData's channelID", err)
-		return
-	}
-	if storedPlaybookRunID != playbookRunID {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder",
-			fmt.Errorf("storedPlaybookRunID: %s for channelID: %s did not match playbookID in url path: %s", storedPlaybookRunID, channelID, playbookRunID))
-		return
-	}
-
-	if !h.PermissionsCheck(w, h.permissions.RunManageProperties(userID, storedPlaybookRunID)) {
-		return
-	}
-
-	if err = h.playbookRunService.RemoveReminderPost(playbookRunID); err != nil {
-		err = errors.Wrapf(err, "reminderButtonDismiss: error removing reminder post for channelID: %s", channelID)
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "error removing reminder post", err)
-		return
-	}
-
-	if err = h.playbookRunService.ResetReminderTimer(playbookRunID); err != nil {
-		err = errors.Wrapf(err, "reminderButtonDismiss: error resetting reminder for channelID: %s", channelID)
-		h.HandleErrorWithCode(w, http.StatusInternalServerError, "error resetting reminder", err)
-		return
-	}
 }
 
 func (h *PlaybookRunHandler) noRetrospectiveButton(w http.ResponseWriter, r *http.Request) {

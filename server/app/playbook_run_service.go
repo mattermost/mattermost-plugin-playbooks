@@ -131,7 +131,7 @@ func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessage(playbookTitle, 
 	}
 
 	announcementMsg := fmt.Sprintf(
-		"### New run started: [%s](%s)\n",
+		"**[%s](%s)**\n",
 		playbookRun.Name,
 		getRunDetailsRelativeURL(playbookRun.ID),
 	)
@@ -219,26 +219,45 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookRun.ReporterUserID = userID
 	playbookRun.ID = model.NewId()
 
-	header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
-	if pb != nil {
-		overviewURL := getRunDetailsRelativeURL(playbookRun.ID)
-		playbookURL := getPlaybookDetailsRelativeURL(pb.ID)
-		header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
-			pb.Title, playbookURL, overviewURL)
-	}
+	var err error
+	var channel *model.Channel
 
-	if playbookRun.Name == "" {
-		playbookRun.Name = pb.ChannelNameTemplate
-	}
+	if playbookRun.ChannelID == "" {
+		header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
+		if pb != nil {
+			overviewURL := getRunDetailsRelativeURL(playbookRun.ID)
+			playbookURL := getPlaybookDetailsRelativeURL(pb.ID)
+			header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
+				pb.Title, playbookURL, overviewURL)
+		}
 
-	// Try to create the channel first
-	channel, err := s.createPlaybookRunChannel(playbookRun, header, public)
-	if err != nil {
-		return nil, err
+		if playbookRun.Name == "" {
+			playbookRun.Name = pb.ChannelNameTemplate
+		}
+
+		channel, err = s.createPlaybookRunChannel(playbookRun, header, public)
+		if err != nil {
+			return nil, err
+		}
+
+		playbookRun.ChannelID = channel.Id
+	} else {
+		existingPlaybookRunID, err := s.GetPlaybookRunIDForChannel(playbookRun.ChannelID)
+		if err != nil && !errors.Is(err, ErrNotFound) {
+			return nil, err
+		} else if existingPlaybookRunID != "" {
+			return nil, errors.Wrapf(ErrMalformedPlaybookRun, "playbook run %s already exists for channel %s", existingPlaybookRunID, playbookRun.ChannelID)
+		}
+
+		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+		if err != nil {
+			return nil, err
+		}
+
+		playbookRun.Name = channel.Name
 	}
 
 	now := model.GetMillis()
-	playbookRun.ChannelID = channel.Id
 	playbookRun.CreateAt = now
 	playbookRun.LastStatusUpdateAt = now
 	playbookRun.CurrentStatus = StatusInProgress
@@ -861,7 +880,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(playbookRunID)
 
-	err = s.ResetReminderTimer(playbookRunID)
+	err = s.resetReminderTimer(playbookRunID)
 	if err != nil {
 		s.pluginAPI.Log.Warn("failed to reset the reminder timer when updating status to Archived", "playbook ID", playbookRunToModify.ID, "error", err)
 	}
@@ -1271,8 +1290,8 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			return errors.Wrapf(err, "failed to get team")
 		}
 
-		channelURL := fmt.Sprintf("[%s](/%s/channels/%s?telem=dm_assignedtask_clicked&forceRHSOpen)",
-			channel.DisplayName, team.Name, channel.Name)
+		channelURL := fmt.Sprintf("[%s](/%s/channels/%s?telem_action=dm_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)",
+			channel.DisplayName, team.Name, channel.Name, playbookRunID)
 		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
 			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, channelURL)
 
@@ -2613,8 +2632,8 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, locale string) string 
 	msg += T("app.user.digest.tasks.num_outstanding", total) + "\n\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("[%s](/%s/channels/%s?telem=todo_assignedtask_clicked&forceRHSOpen)\n",
-			run.ChannelDisplayName, run.TeamName, run.ChannelName)
+		msg += fmt.Sprintf("[%s](/%s/channels/%s?telem_action=todo_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)\n",
+			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID)
 
 		for _, task := range run.Tasks {
 			msg += fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
@@ -2638,8 +2657,8 @@ func buildRunsInProgressMessage(runs []RunLink, locale string) string {
 	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem=todo_runsinprogress_clicked&forceRHSOpen)\n",
-			run.ChannelDisplayName, run.TeamName, run.ChannelName)
+		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem_action=todo_runsinprogress_clicked&telem_run_id=%s&forceRHSOpen)\n",
+			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID)
 	}
 
 	return msg
@@ -2661,8 +2680,8 @@ func buildRunsOverdueMessage(runs []RunLink, locale string) string {
 			"Username": run.OwnerUserName,
 		}
 		appended := " " + T("app.user.digest.overdue_status_updates.md_link_item_appended", values)
-		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen)",
-			run.ChannelDisplayName, run.TeamName, run.ChannelName) + appended + "\n"
+		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen)",
+			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID) + appended + "\n"
 	}
 
 	return msg

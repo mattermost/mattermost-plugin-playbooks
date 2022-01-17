@@ -36,14 +36,13 @@ func TestPlaybooks(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	t.Run("create public playbook, unlicensed with one pre-existing playbook in the team, should fail via licencing", func(t *testing.T) {
-		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	t.Run("create public playbook, unlicensed with one pre-existing playbook in the team, should succeed", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "test2",
 			TeamID: e.BasicTeam.Id,
 			Public: true,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Empty(t, id)
+		assert.Nil(t, err)
 	})
 
 	e.SetE10Licence()

@@ -5,8 +5,8 @@ import React, {useState} from 'react';
 
 import styled, {css} from 'styled-components';
 
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/automation/styles';
-import {Toggle} from 'src/components/backstage/automation/toggle';
+import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
+import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
 interface Props {
     enabled: boolean;
