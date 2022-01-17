@@ -86,9 +86,11 @@ const Report = (props: ReportProps) => {
         <ReportContainer>
             <Header>
                 <Title>{formatMessage({defaultMessage: 'Report'})}</Title>
-                <HeaderButtonsRight>
-                    {publishComponent}
-                </HeaderButtonsRight>
+                {!props.playbookRun.retrospective_was_canceled &&
+                    <HeaderButtonsRight>
+                        {publishComponent}
+                    </HeaderButtonsRight>
+                }
             </Header>
             <ReportTextArea
                 teamId={props.playbookRun.team_id}
