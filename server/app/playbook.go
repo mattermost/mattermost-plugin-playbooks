@@ -268,6 +268,7 @@ type PlaybookStore interface {
 
 	// Create creates a new playbook
 	Create(playbook Playbook) (string, error)
+
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 
