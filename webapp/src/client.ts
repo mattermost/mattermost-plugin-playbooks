@@ -60,6 +60,10 @@ export const getSiteUrl = (): string => {
     return siteURL;
 };
 
+export const getAPIUrl = (): string => {
+    return apiUrl;
+};
+
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
     const queryParams = qs.stringify(params, {addQueryPrefix: true, indices: false});
 
