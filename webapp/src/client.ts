@@ -392,6 +392,7 @@ export async function fetchPlaybookStats(playbookID: string): Promise<PlaybookSt
 }
 
 export async function telemetryEventForPlaybookRun(playbookRunID: string, action: string) {
+    console.log('telemetryEventForPlaybookRun', playbookRunID, action);
     await doFetchWithoutResponse(`${apiUrl}/telemetry/run/${playbookRunID}`, {
         method: 'POST',
         body: JSON.stringify({action}),

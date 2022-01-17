@@ -130,7 +130,6 @@ func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playboo
 		return "", errors.Wrap(err, "failed to get playbook run channel")
 	}
 
-	header := "### New run started: "
 	announcementMsg := fmt.Sprintf(
 		"**[%s](%s%s)**\n",
 		playbookRun.Name,
@@ -393,7 +392,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		s.broadcastPlaybookRunMessageToChannels(pb.BroadcastChannelIDs, &model.Post{Message: fmt.Sprintf(messageTemplate, "")}, creationMessage, playbookRun)
 
 		// dm to users who are auto-following the playbook
-		s.dmPostToAutoFollows(&model.Post{Message: fmt.Sprintf(messageTemplate, "?telem=follower_clicked_run_started_dm")}, pb.ID, playbookRun.ID, userID)
+		telemetryString := fmt.Sprintf("?telem_action=follower_clicked_run_started_dm&telem_run_id=%s", playbookRun.ID)
+		s.dmPostToAutoFollows(&model.Post{Message: fmt.Sprintf(messageTemplate, telemetryString)}, pb.ID, playbookRun.ID, userID)
 	}
 
 	event := &TimelineEvent{
@@ -830,16 +830,19 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, trig
 }
 
 func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRun, userName string) string {
+	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_run_finished_dm&telem_run_id=%s", playbookRun.ID)
 	announcementMsg := fmt.Sprintf(
-		"### Run finished: [%s](%s?telem=follower_clicked_run_finished_dm)\n",
+		"### Run finished: [%s](%s%s)\n",
 		playbookRun.Name,
 		getRunDetailsRelativeURL(playbookRun.ID),
+		telemetryString,
 	)
 	announcementMsg += fmt.Sprintf(
-		"@%s just marked [%s](%s?telem=follower_clicked_run_finished_dm) as finished. Visit the link above for more information.",
+		"@%s just marked [%s](%s%s) as finished. Visit the link above for more information.",
 		userName,
 		playbookRun.Name,
 		getRunDetailsRelativeURL(playbookRun.ID),
+		telemetryString,
 	)
 
 	return announcementMsg
@@ -2391,7 +2394,8 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, text, publi
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
-	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s?telem=follower_clicked_retrospective_dm).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, text)
+	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_retrospective_dm&telem_run_id=%s", playbookRunToPublish.ID)
+	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, telemetryString, text)
 	s.dmPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, retroMessage, playbookRunToPublish.ID, publisherID)
 
 	event := &TimelineEvent{
