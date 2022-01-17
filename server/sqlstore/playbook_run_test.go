@@ -751,19 +751,20 @@ func TestTasksAndRunsDigest(t *testing.T) {
 			}
 		})
 
-		t.Run("gets owned runs only", func(t *testing.T) {
+		t.Run("gets participating runs only", func(t *testing.T) {
 			runs, err := playbookRunStore.GetParticipatingRuns(userID)
 			require.NoError(t, err)
 
 			total := len(runs)
 
-			require.Equal(t, 3, total)
+			require.Equal(t, 4, total)
 
 			// don't make assumptions about ordering until we figure that out PM-side
 			expected := map[string]int{
 				channel01.Name: 1,
 				channel02.Name: 1,
 				channel03.Name: 1,
+				channel06.Name: 1,
 			}
 
 			actual := make(map[string]int)

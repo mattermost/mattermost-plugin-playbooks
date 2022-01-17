@@ -1034,7 +1034,6 @@ func (s *playbookRunStore) GetParticipatingRuns(userID string) ([]app.RunLink, e
 		Join("Teams AS t ON (i.TeamID = t.Id)").
 		Join("Channels AS c ON (i.ChannelId = c.Id)").
 		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
-		Where(sq.Eq{"i.CommanderUserID": userID}).
 		Where(membershipClause).
 		OrderBy("ChannelDisplayName")
 
