@@ -27,20 +27,20 @@ type sqlPlaybook struct {
 
 // playbookStore is a sql store for playbooks. Use NewPlaybookStore to create it.
 type playbookStore struct {
-	pluginAPI       PluginAPIClient
-	log             bot.Logger
-	store           *SQLStore
-	queryBuilder    sq.StatementBuilderType
-	playbookSelect  sq.SelectBuilder
-	memberIDsSelect sq.SelectBuilder
+	pluginAPI      PluginAPIClient
+	log            bot.Logger
+	store          *SQLStore
+	queryBuilder   sq.StatementBuilderType
+	playbookSelect sq.SelectBuilder
 }
 
 // Ensure playbookStore implements the playbook.Store interface.
 var _ app.PlaybookStore = (*playbookStore)(nil)
 
-type playbookMembers []struct {
+type playbookMember struct {
 	PlaybookID string
 	MemberID   string
+	Roles      string
 }
 
 func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.PlaybookFilterOptions) (sq.SelectBuilder, error) {
@@ -98,69 +98,83 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLStore) app.PlaybookStore {
 	playbookSelect := sqlStore.builder.
 		Select(
-			"ID",
-			"Title",
-			"Description",
-			"TeamID",
-			"CreatePublicIncident AS CreatePublicPlaybookRun",
-			"CreateAt",
-			"UpdateAt",
-			"DeleteAt",
-			"NumStages",
-			"NumSteps",
+			"p.ID",
+			"p.Title",
+			"p.Description",
+			"p.Public",
+			"p.TeamID",
+			"p.CreatePublicIncident AS CreatePublicPlaybookRun",
+			"p.CreateAt",
+			"p.UpdateAt",
+			"p.DeleteAt",
+			"p.NumStages",
+			"p.NumSteps",
 			`(
 				1 + -- Channel creation is hard-coded
-				CASE WHEN InviteUsersEnabled THEN 1 ELSE 0 END +
-				CASE WHEN DefaultCommanderEnabled THEN 1 ELSE 0 END +
-				CASE WHEN BroadcastEnabled THEN 1 ELSE 0 END +
-				CASE WHEN WebhookOnCreationEnabled THEN 1 ELSE 0 END +
-				CASE WHEN MessageOnJoinEnabled THEN 1 ELSE 0 END +
-				CASE WHEN WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
-				CASE WHEN SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
-				CASE WHEN CategorizeChannelEnabled THEN 1 ELSE 0 END
+				CASE WHEN p.InviteUsersEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.DefaultCommanderEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.BroadcastEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.WebhookOnCreationEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.MessageOnJoinEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.WebhookOnStatusUpdateEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.SignalAnyKeywordsEnabled THEN 1 ELSE 0 END +
+				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
-			"COALESCE(ReminderMessageTemplate, '') ReminderMessageTemplate",
-			"ReminderTimerDefaultSeconds",
-			"StatusUpdateEnabled",
-			"ConcatenatedInvitedUserIDs",
-			"ConcatenatedInvitedGroupIDs",
-			"InviteUsersEnabled",
-			"DefaultCommanderID AS DefaultOwnerID",
-			"DefaultCommanderEnabled AS DefaultOwnerEnabled",
-			"ConcatenatedBroadcastChannelIDs",
-			"BroadcastEnabled",
-			"ConcatenatedWebhookOnCreationURLs",
-			"WebhookOnCreationEnabled",
-			"MessageOnJoin",
-			"MessageOnJoinEnabled",
-			"RetrospectiveReminderIntervalSeconds",
-			"RetrospectiveTemplate",
-			"RetrospectiveEnabled",
-			"ConcatenatedWebhookOnStatusUpdateURLs",
-			"WebhookOnStatusUpdateEnabled",
-			"ConcatenatedSignalAnyKeywords",
-			"SignalAnyKeywordsEnabled",
-			"CategorizeChannelEnabled",
-			"COALESCE(CategoryName, '') CategoryName",
-			"COALESCE(RunSummaryTemplate, '') RunSummaryTemplate",
-			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
+			"COALESCE(p.ReminderMessageTemplate, '') ReminderMessageTemplate",
+			"p.ReminderTimerDefaultSeconds",
+			"p.StatusUpdateEnabled",
+			"p.ConcatenatedInvitedUserIDs",
+			"p.ConcatenatedInvitedGroupIDs",
+			"p.InviteUsersEnabled",
+			"p.DefaultCommanderID AS DefaultOwnerID",
+			"p.DefaultCommanderEnabled AS DefaultOwnerEnabled",
+			"p.ConcatenatedBroadcastChannelIDs",
+			"p.BroadcastEnabled",
+			"p.ConcatenatedWebhookOnCreationURLs",
+			"p.WebhookOnCreationEnabled",
+			"p.MessageOnJoin",
+			"p.MessageOnJoinEnabled",
+			"p.RetrospectiveReminderIntervalSeconds",
+			"p.RetrospectiveTemplate",
+			"p.RetrospectiveEnabled",
+			"p.ConcatenatedWebhookOnStatusUpdateURLs",
+			"p.WebhookOnStatusUpdateEnabled",
+			"p.ConcatenatedSignalAnyKeywords",
+			"p.SignalAnyKeywordsEnabled",
+			"p.CategorizeChannelEnabled",
+			"p.ChecklistsJSON",
+			"COALESCE(p.CategoryName, '') CategoryName",
+			"p.RunSummaryTemplateEnabled",
+			"COALESCE(p.RunSummaryTemplate, '') RunSummaryTemplate",
+			"COALESCE(p.ChannelNameTemplate, '') ChannelNameTemplate",
+			"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
+			"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
+			"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
+			"COALESCE(s.DefaultRunMemberRole, 'run_member') DefaultRunMemberRole",
 		).
-		From("IR_Playbook")
-
-	memberIDsSelect := sqlStore.builder.
-		Select("PlaybookID", "MemberID").
-		From("IR_PlaybookMember").
-		OrderBy("MemberID ASC") // Entirely for consistancy for the tests
+		From("IR_Playbook p").
+		LeftJoin("Teams t ON t.Id = p.TeamID").
+		LeftJoin("Schemes s ON t.SchemeId = s.Id")
 
 	newStore := &playbookStore{
-		pluginAPI:       pluginAPI,
-		log:             log,
-		store:           sqlStore,
-		queryBuilder:    sqlStore.builder,
-		playbookSelect:  playbookSelect,
-		memberIDsSelect: memberIDsSelect,
+		pluginAPI:      pluginAPI,
+		log:            log,
+		store:          sqlStore,
+		queryBuilder:   sqlStore.builder,
+		playbookSelect: playbookSelect,
 	}
 	return newStore
+}
+
+func (p *playbookStore) makeMembersSelect(teamID string) sq.SelectBuilder {
+	return p.store.builder.
+		Select(
+			"pm.PlaybookID",
+			"pm.MemberID",
+			"pm.Roles",
+		).
+		From("IR_PlaybookMember pm").
+		OrderBy("pm.MemberID ASC") // Entirely for consistancy for the tests
 }
 
 // Create creates a new playbook
@@ -188,6 +202,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"Title":                                 rawPlaybook.Title,
 			"Description":                           rawPlaybook.Description,
 			"TeamID":                                rawPlaybook.TeamID,
+			"Public":                                rawPlaybook.Public,
 			"CreatePublicIncident":                  rawPlaybook.CreatePublicPlaybookRun,
 			"CreateAt":                              rawPlaybook.CreateAt,
 			"UpdateAt":                              rawPlaybook.UpdateAt,
@@ -218,6 +233,7 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
 			"CategoryName":                          rawPlaybook.CategoryName,
+			"RunSummaryTemplateEnabled":             rawPlaybook.RunSummaryTemplateEnabled,
 			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
 			"ChannelNameTemplate":                   rawPlaybook.ChannelNameTemplate,
 		}))
@@ -248,12 +264,8 @@ func (p *playbookStore) Get(id string) (app.Playbook, error) {
 	}
 	defer p.store.finalizeTransaction(tx)
 
-	withChecklistsSelect := p.playbookSelect.
-		Columns("ChecklistsJSON").
-		From("IR_Playbook")
-
 	var rawPlaybook sqlPlaybook
-	err = p.store.getBuilder(tx, &rawPlaybook, withChecklistsSelect.Where(sq.Eq{"ID": id}))
+	err = p.store.getBuilder(tx, &rawPlaybook, p.playbookSelect.Where(sq.Eq{"p.ID": id}))
 	if err == sql.ErrNoRows {
 		return app.Playbook{}, errors.Wrapf(app.ErrNotFound, "playbook does not exist for id '%s'", id)
 	} else if err != nil {
@@ -265,8 +277,8 @@ func (p *playbookStore) Get(id string) (app.Playbook, error) {
 		return app.Playbook{}, err
 	}
 
-	var memberIDs playbookMembers
-	err = p.store.selectBuilder(tx, &memberIDs, p.memberIDsSelect.Where(sq.Eq{"PlaybookID": id}))
+	var members []playbookMember
+	err = p.store.selectBuilder(tx, &members, p.makeMembersSelect(playbook.TeamID).Where(sq.Eq{"PlaybookID": id}))
 	if err != nil && err != sql.ErrNoRows {
 		return app.Playbook{}, errors.Wrapf(err, "failed to get memberIDs for playbook with id '%s'", id)
 	}
@@ -275,14 +287,14 @@ func (p *playbookStore) Get(id string) (app.Playbook, error) {
 		return app.Playbook{}, errors.Wrap(err, "could not commit transaction")
 	}
 
-	for _, m := range memberIDs {
-		playbook.MemberIDs = append(playbook.MemberIDs, m.MemberID)
-	}
+	addMembersToPlaybook(members, &playbook)
 
 	return playbook, nil
 }
 
 // GetPlaybooks retrieves all playbooks that are not deleted.
+// Members are not retrived for this as the query would be large and we don't need it for this for nwo.
+// This is only used for the keywords feature
 func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 	tx, err := p.store.db.Beginx()
 	if err != nil {
@@ -297,6 +309,7 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 			"p.Title",
 			"p.Description",
 			"p.TeamID",
+			"p.Public",
 			"p.CreatePublicIncident AS CreatePublicPlaybookRun",
 			"p.CreateAt",
 			"p.DeleteAt",
@@ -316,29 +329,24 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
+			"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
+			"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
+			"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
+			"COALESCE(s.DefaultRunMemberRole, 'run_member') DefaultRunMemberRole",
 		).
 		From("IR_Playbook AS p").
 		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
+		LeftJoin("Teams t ON t.Id = p.TeamID").
+		LeftJoin("Schemes s ON t.SchemeId = s.Id").
 		Where(sq.Eq{"p.DeleteAt": 0}).
-		GroupBy("p.ID"))
+		GroupBy("p.ID").
+		GroupBy("s.Id"))
 
 	if err == sql.ErrNoRows {
 		return nil, errors.Wrap(app.ErrNotFound, "no playbooks found")
 	} else if err != nil {
 		return nil, errors.Wrap(err, "failed to get playbooks")
 	}
-
-	var memberIDs playbookMembers
-	err = p.store.selectBuilder(tx, &memberIDs, p.memberIDsSelect)
-	if err != nil && err != sql.ErrNoRows {
-		return nil, errors.Wrapf(err, "failed to get memberIDs")
-	}
-
-	if err = tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "could not commit transaction")
-	}
-
-	addMembersToPlaybooks(memberIDs, playbooks)
 
 	return playbooks, nil
 }
@@ -347,13 +355,11 @@ func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, teamID string, opts app.PlaybookFilterOptions) (app.GetPlaybooksResults, error) {
 	// Check that you are a playbook member or there are no restrictions.
 	permissionsAndFilter := sq.Expr(`(
-			EXISTS(SELECT 1
+			p.Public = true
+			OR EXISTS(SELECT 1
 					FROM IR_PlaybookMember as pm
 					WHERE pm.PlaybookID = p.ID
 					AND pm.MemberID = ?)
-			OR NOT EXISTS(SELECT 1
-					FROM IR_PlaybookMember as pm
-					WHERE pm.PlaybookID = p.ID)
 		)`, requesterInfo.UserID)
 	teamLimitExpr := buildTeamLimitExpr(requesterInfo.UserID, teamID, "p")
 
@@ -363,6 +369,7 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 			"p.Title",
 			"p.Description",
 			"p.TeamID",
+			"p.Public",
 			"p.CreatePublicIncident AS CreatePublicPlaybookRun",
 			"p.CreateAt",
 			"p.DeleteAt",
@@ -382,10 +389,17 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 				CASE WHEN p.CategorizeChannelEnabled THEN 1 ELSE 0 END
 			) AS NumActions`,
 			"COALESCE(ChannelNameTemplate, '') ChannelNameTemplate",
+			"COALESCE(s.DefaultPlaybookAdminRole, 'playbook_admin') DefaultPlaybookAdminRole",
+			"COALESCE(s.DefaultPlaybookMemberRole, 'playbook_member') DefaultPlaybookMemberRole",
+			"COALESCE(s.DefaultRunAdminRole, 'run_admin') DefaultRunAdminRole",
+			"COALESCE(s.DefaultRunMemberRole, 'run_member') DefaultRunMemberRole",
 		).
 		From("IR_Playbook AS p").
 		LeftJoin("IR_Incident AS i ON p.ID = i.PlaybookID").
+		LeftJoin("Teams t ON t.Id = p.TeamID").
+		LeftJoin("Schemes s ON t.SchemeId = s.Id").
 		GroupBy("p.ID").
+		GroupBy("s.Id").
 		Where(sq.Eq{"p.DeleteAt": 0}).
 		Where(permissionsAndFilter).
 		Where(teamLimitExpr)
@@ -430,6 +444,17 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get total count")
 	}
 
+	ids := make([]string, len(playbooks))
+	for _, pb := range playbooks {
+		ids = append(ids, pb.ID)
+	}
+	var members []playbookMember
+	err = p.store.selectBuilder(p.store.db, &members, p.makeMembersSelect(teamID).Where(sq.Eq{"PlaybookID": ids}))
+	if err != nil {
+		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbook members")
+	}
+	addMembersToPlaybooks(members, playbooks)
+
 	pageCount := 0
 	if opts.PerPage > 0 {
 		pageCount = int(math.Ceil(float64(total) / float64(opts.PerPage)))
@@ -442,23 +467,6 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		HasMore:    hasMore,
 		Items:      playbooks,
 	}, nil
-}
-
-func (p *playbookStore) GetNumPlaybooksForTeam(teamID string) (int, error) {
-	query := p.store.builder.
-		Select("COUNT(*)").
-		From("IR_Playbook").
-		Where(sq.Eq{"DeleteAt": 0})
-
-	if teamID != "" {
-		query = query.Where(sq.Eq{"TeamID": teamID})
-	}
-	var total int
-	if err := p.store.getBuilder(p.store.db, &total, query); err != nil {
-		return 0, errors.Wrap(err, "failed to get number of playbooks")
-	}
-
-	return total, nil
 }
 
 // GetPlaybooksWithKeywords retrieves all playbooks with keywords enabled
@@ -565,6 +573,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"Title":                                 rawPlaybook.Title,
 			"Description":                           rawPlaybook.Description,
 			"TeamID":                                rawPlaybook.TeamID,
+			"Public":                                rawPlaybook.Public,
 			"CreatePublicIncident":                  rawPlaybook.CreatePublicPlaybookRun,
 			"UpdateAt":                              rawPlaybook.UpdateAt,
 			"DeleteAt":                              rawPlaybook.DeleteAt,
@@ -594,6 +603,7 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 			"SignalAnyKeywordsEnabled":              rawPlaybook.SignalAnyKeywordsEnabled,
 			"CategorizeChannelEnabled":              rawPlaybook.CategorizeChannelEnabled,
 			"CategoryName":                          rawPlaybook.CategoryName,
+			"RunSummaryTemplateEnabled":             rawPlaybook.RunSummaryTemplateEnabled,
 			"RunSummaryTemplate":                    rawPlaybook.RunSummaryTemplate,
 			"ChannelNameTemplate":                   rawPlaybook.ChannelNameTemplate,
 		}).
@@ -654,40 +664,25 @@ func (p *playbookStore) Restore(id string) error {
 func (p *playbookStore) replacePlaybookMembers(q queryExecer, playbook app.Playbook) error {
 	// Delete existing members who are not in the new playbook.MemberIDs list
 	delBuilder := sq.Delete("IR_PlaybookMember").
-		Where(sq.Eq{"PlaybookID": playbook.ID}).
-		Where(sq.NotEq{"MemberID": playbook.MemberIDs})
+		Where(sq.Eq{"PlaybookID": playbook.ID})
 	if _, err := p.store.execBuilder(q, delBuilder); err != nil {
 		return err
 	}
 
-	if len(playbook.MemberIDs) == 0 {
+	if len(playbook.Members) == 0 {
 		return nil
 	}
 
-	insertExpr := `
-INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
-    SELECT ?, ?
-    WHERE NOT EXISTS (
-        SELECT 1 FROM IR_PlaybookMember
-            WHERE PlaybookID = ? AND MemberID = ?
-    );`
-	if p.store.db.DriverName() == model.DatabaseDriverMysql {
-		insertExpr = `
-INSERT INTO IR_PlaybookMember(PlaybookID, MemberID)
-    SELECT ?, ? FROM DUAL
-    WHERE NOT EXISTS (
-        SELECT 1 FROM IR_PlaybookMember
-            WHERE PlaybookID = ? AND MemberID = ?
-    );`
+	insert := sq.
+		Insert("IR_PlaybookMember").
+		Columns("PlaybookID", "MemberID", "Roles")
+
+	for _, m := range playbook.Members {
+		insert = insert.Values(playbook.ID, m.UserID, strings.Join(m.Roles, " "))
 	}
 
-	for _, m := range playbook.MemberIDs {
-		rawInsert := sq.Expr(insertExpr,
-			playbook.ID, m, playbook.ID, m)
-
-		if _, err := p.store.execBuilder(q, rawInsert); err != nil {
-			return err
-		}
+	if _, err := p.store.execBuilder(q, insert); err != nil {
+		return err
 	}
 
 	return nil
@@ -754,13 +749,45 @@ func (p *playbookStore) IsAutoFollowing(playbookID, userID string) (bool, error)
 	return isAutoFollowing, nil
 }
 
-func addMembersToPlaybooks(memberIDs playbookMembers, playbook []app.Playbook) {
-	pToM := make(map[string][]string)
-	for _, m := range memberIDs {
-		pToM[m.PlaybookID] = append(pToM[m.PlaybookID], m.MemberID)
+func generatePlaybookSchemeRoles(member playbookMember, playbook *app.Playbook) []string {
+	schemeRoles := []string{}
+	for _, role := range strings.Fields(member.Roles) {
+		if role == app.PlaybookRoleAdmin {
+			if playbook.DefaultPlaybookAdminRole == "" {
+				schemeRoles = append(schemeRoles, app.PlaybookRoleAdmin)
+			} else {
+				schemeRoles = append(schemeRoles, playbook.DefaultPlaybookAdminRole)
+			}
+		} else if role == app.PlaybookRoleMember {
+			if playbook.DefaultPlaybookMemberRole == "" {
+				schemeRoles = append(schemeRoles, app.PlaybookRoleMember)
+			} else {
+				schemeRoles = append(schemeRoles, playbook.DefaultPlaybookMemberRole)
+			}
+		}
 	}
-	for i, p := range playbook {
-		playbook[i].MemberIDs = pToM[p.ID]
+
+	return schemeRoles
+}
+
+func addMembersToPlaybooks(members []playbookMember, playbooks []app.Playbook) {
+	playbookToMembers := make(map[string][]playbookMember)
+	for _, member := range members {
+		playbookToMembers[member.PlaybookID] = append(playbookToMembers[member.PlaybookID], member)
+	}
+
+	for i, playbook := range playbooks {
+		addMembersToPlaybook(playbookToMembers[playbook.ID], &(playbooks[i]))
+	}
+}
+
+func addMembersToPlaybook(members []playbookMember, playbook *app.Playbook) {
+	for _, m := range members {
+		playbook.Members = append(playbook.Members, app.PlaybookMember{
+			UserID:      m.MemberID,
+			Roles:       strings.Fields(m.Roles),
+			SchemeRoles: generatePlaybookSchemeRoles(m, playbook),
+		})
 	}
 }
 

@@ -28,7 +28,8 @@
         "EnableBotAccountCreation": true,
         "EnableSVGs": true,
         "EnableLatex": false,
-        "EnableLegacySidebar": false
+        "EnableLegacySidebar": false,
+        "EnableOnboardingFlow": false
     },
     "TeamSettings": {
         "SiteName": "Mattermost",

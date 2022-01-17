@@ -13,6 +13,11 @@ jest.mock('src/hooks', () => {
     };
 });
 
+jest.mock('@mdi/react', () => ({
+    __esModule: true,
+    default: jest.fn(),
+}));
+
 import FormattedDuration, {formatDuration} from './formatted_duration';
 
 describe('formatDuration', () => {

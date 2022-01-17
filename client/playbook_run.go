@@ -84,6 +84,7 @@ type PlaybookRunCreateOptions struct {
 	Name        string `json:"name"`
 	OwnerUserID string `json:"owner_user_id"`
 	TeamID      string `json:"team_id"`
+	ChannelID   string `json:"channel_id"`
 	Description string `json:"description"`
 	PostID      string `json:"post_id"`
 	PlaybookID  string `json:"playbook_id"`

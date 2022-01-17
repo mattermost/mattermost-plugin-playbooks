@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/api4"
 	sapp "github.com/mattermost/mattermost-server/v6/app"
 	"github.com/mattermost/mattermost-server/v6/app/request"
@@ -51,6 +52,7 @@ type PermissionsHelper interface {
 	RestoreDefaultRolePermissions(data map[string][]string)
 	RemovePermissionFromRole(permission string, roleName string)
 	AddPermissionToRole(permission string, roleName string)
+	SetupChannelScheme() *model.Scheme
 }
 
 type serverPermissionsWrapper struct {
@@ -64,24 +66,30 @@ type TestEnvironment struct {
 
 	Permissions PermissionsHelper
 
-	ServerAdminClient    *model.Client4
-	PlaybooksAdminClient *client.Client
-	ServerClient         *model.Client4
-	PlaybooksClient      *client.Client
-	PlaybooksClient2     *client.Client
+	ServerAdminClient        *model.Client4
+	PlaybooksAdminClient     *client.Client
+	ServerClient             *model.Client4
+	PlaybooksClient          *client.Client
+	PlaybooksClient2         *client.Client
+	PlaybooksClientNotInTeam *client.Client
 
 	UnauthenticatedPlaybooksClient *client.Client
 
-	BasicTeam               *model.Team
-	BasicTeam2              *model.Team
-	BasicPublicChannel      *model.Channel
-	BasicPublicChannelPost  *model.Post
-	BasicPrivateChannel     *model.Channel
-	BasicPrivateChannelPost *model.Post
-	BasicPlaybook           *client.Playbook
-	AdminUser               *model.User
-	RegularUser             *model.User
-	RegularUser2            *model.User
+	BasicTeam                *model.Team
+	BasicTeam2               *model.Team
+	BasicPublicChannel       *model.Channel
+	BasicPublicChannelPost   *model.Post
+	BasicPrivateChannel      *model.Channel
+	BasicPrivateChannelPost  *model.Post
+	BasicPlaybook            *client.Playbook
+	BasicPrivatePlaybook     *client.Playbook
+	PrivatePlaybookNoMembers *client.Playbook
+	ArchivedPlaybook         *client.Playbook
+	BasicRun                 *client.PlaybookRun
+	AdminUser                *model.User
+	RegularUser              *model.User
+	RegularUser2             *model.User
+	RegularUserNotInTeam     *model.User
 }
 
 func getEnvWithDefault(name, defaultValue string) string {
@@ -116,6 +124,7 @@ func Setup(t *testing.T) *TestEnvironment {
 	config.TeamSettings.MaxUsersPerTeam = model.NewInt(10000)
 	config.LocalizationSettings.SetDefaults()
 	config.SqlSettings = *sqlSettings
+	config.ServiceSettings.SiteURL = model.NewString("http://testsiteurlplaybooks.mattermost.com/")
 	_, _, err := configStore.Set(config)
 	require.NoError(t, err)
 
@@ -199,6 +208,13 @@ func (e *TestEnvironment) CreateClients() {
 	})
 	e.RegularUser2 = user2
 
+	notInTeam, _ := e.A.CreateUser(request.EmptyContext(), &model.User{
+		Email:    "playbooksusernotinteam@test.com",
+		Username: "playbooksusenotinteam",
+		Password: userPassword,
+	})
+	e.RegularUserNotInTeam = notInTeam
+
 	siteURL := "http://localhost:9056"
 
 	serverAdminClient := model.NewAPIv4Client(siteURL)
@@ -229,10 +245,18 @@ func (e *TestEnvironment) CreateClients() {
 	playbooksClient2, err := client.New(serverClient2)
 	require.NoError(e.T, err)
 
+	serverClientNotInTeam := model.NewAPIv4Client(siteURL)
+	_, _, err = serverClientNotInTeam.Login(notInTeam.Email, userPassword)
+	require.NoError(e.T, err)
+
+	playbooksClientNotInTeam, err := client.New(serverClientNotInTeam)
+	require.NoError(e.T, err)
+
 	e.ServerClient = serverClient
 	e.PlaybooksClient = playbooksClient
 	e.PlaybooksClient2 = playbooksClient2
 	e.UnauthenticatedPlaybooksClient = unauthClient
+	e.PlaybooksClientNotInTeam = playbooksClientNotInTeam
 }
 
 func (e *TestEnvironment) CreateBasicServer() {
@@ -305,12 +329,17 @@ func (e *TestEnvironment) CreateBasicServer() {
 	e.BasicTeam2 = team2
 }
 
-func (e *TestEnvironment) CreateBasicPlaybooks() {
+func (e *TestEnvironment) CreateBasicPlaybook() {
 	e.T.Helper()
 
 	id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "TestPlaybook",
 		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
 	})
 	require.NoError(e.T, err)
 
@@ -318,6 +347,76 @@ func (e *TestEnvironment) CreateBasicPlaybooks() {
 	require.NoError(e.T, err)
 
 	e.BasicPlaybook = playbook
+
+	privateID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "TestPrivatePlaybook",
+		TeamID: e.BasicTeam.Id,
+		Public: false,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+	})
+	require.NoError(e.T, err)
+
+	privatePlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), privateID)
+	require.NoError(e.T, err)
+
+	e.BasicPrivatePlaybook = privatePlaybook
+}
+
+func (e *TestEnvironment) CreateBasicRun() {
+	e.T.Helper()
+
+	run, err := e.PlaybooksClient.PlaybookRuns.Create(context.Background(), client.PlaybookRunCreateOptions{
+		Name:        "Basic create",
+		OwnerUserID: e.RegularUser.Id,
+		TeamID:      e.BasicTeam.Id,
+		PlaybookID:  e.BasicPlaybook.ID,
+	})
+	require.NoError(e.T, err)
+	require.NotNil(e.T, run)
+
+	run, err = e.PlaybooksClient.PlaybookRuns.Get(context.Background(), run.ID)
+	require.NoError(e.T, err)
+	require.NotNil(e.T, run)
+
+	e.BasicRun = run
+}
+
+func (e *TestEnvironment) CreateAdditionalPlaybooks() {
+	e.T.Helper()
+
+	privateID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "TestPrivatePlaybookNoMembers",
+		TeamID: e.BasicTeam.Id,
+		Public: false,
+	})
+	require.NoError(e.T, err)
+
+	privatePlaybook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), privateID)
+	require.NoError(e.T, err)
+
+	e.PrivatePlaybookNoMembers = privatePlaybook
+
+	archivedID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "TestArchivedPlaybook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+	})
+	require.NoError(e.T, err)
+
+	err = e.PlaybooksAdminClient.Playbooks.Archive(context.Background(), archivedID)
+	require.NoError(e.T, err)
+
+	archivedPlaybook, err := e.PlaybooksAdminClient.Playbooks.Get(context.Background(), archivedID)
+	require.NoError(e.T, err)
+
+	e.ArchivedPlaybook = archivedPlaybook
 }
 
 func (e *TestEnvironment) SetE10Licence() {
@@ -335,7 +434,10 @@ func (e *TestEnvironment) SetE20Licence() {
 func (e *TestEnvironment) CreateBasic() {
 	e.CreateClients()
 	e.CreateBasicServer()
-	e.CreateBasicPlaybooks()
+	e.SetE20Licence()
+	e.CreateBasicPlaybook()
+	e.CreateBasicRun()
+	e.CreateAdditionalPlaybooks()
 }
 
 // TestTestFramework If this is failing you know the break is not exclusively in your test.

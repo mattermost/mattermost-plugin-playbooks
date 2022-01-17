@@ -4,6 +4,7 @@
 const playbookRunsEndpoint = '/plugins/playbooks/api/v0/runs';
 
 const StatusOK = 200;
+const StatusCreated = 201;
 
 /**
  * Get all playbook runs directly via API
@@ -75,8 +76,9 @@ Cypress.Commands.add('apiRunPlaybook', (
         playbookId,
         playbookRunName,
         ownerUserId,
-        description = ''
-    }) => {
+        channelId,
+        description,
+    }, options) => {
     return cy.request({
         headers: {'X-Requested-With': 'XMLHttpRequest'},
         url: playbookRunsEndpoint,
@@ -86,10 +88,13 @@ Cypress.Commands.add('apiRunPlaybook', (
             owner_user_id: ownerUserId,
             team_id: teamId,
             playbook_id: playbookId,
+            channel_id: channelId,
             description,
         },
+        failOnStatusCode: !(options?.expectedStatusCode)
     }).then((response) => {
-        expect(response.status).to.equal(201);
+        const statusCode = options?.expectedStatusCode || StatusCreated;
+        expect(response.status).to.equal(statusCode);
         cy.wrap(response.body);
     });
 });
@@ -229,6 +234,7 @@ Cypress.Commands.add('apiCreatePlaybook', (
         createPublicPlaybookRun,
         checklists,
         memberIDs,
+        makePublic = true,
         broadcastEnabled,
         broadcastChannelIds,
         reminderMessageTemplate,
@@ -263,7 +269,8 @@ Cypress.Commands.add('apiCreatePlaybook', (
             team_id: teamId,
             create_public_playbook_run: createPublicPlaybookRun,
             checklists,
-            member_ids: memberIDs,
+            public: makePublic,
+            members: memberIDs?.map((val) => ({user_id: val, roles: ['playbook_member', 'playbook_admin']})),
             broadcast_enabled: broadcastEnabled,
             broadcast_channel_ids: broadcastChannelIds,
             reminder_message_template: reminderMessageTemplate,

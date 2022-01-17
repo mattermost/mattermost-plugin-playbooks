@@ -73,7 +73,7 @@ export const DropdownMenu = styled.div<DropdownMenuProps>`
 `;
 
 interface DotMenuProps {
-    children: JSX.Element[] | JSX.Element;
+    children: React.ReactNode;
     icon: JSX.Element;
     top?: boolean;
     left?: boolean;

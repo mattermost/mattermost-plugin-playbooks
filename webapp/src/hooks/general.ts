@@ -9,7 +9,7 @@ import {
 import {useDispatch, useSelector} from 'react-redux';
 import {DateTime} from 'luxon';
 
-import {getCurrentTeam, getMyTeams, getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getMyTeams, getTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
 import {
@@ -27,13 +27,16 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
+import {useHistory, useLocation} from 'react-router-dom';
+import qs from 'qs';
+import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
+
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 import {EmptyPlaybookStats} from 'src/types/stats';
 
 import {PROFILE_CHUNK_SIZE} from 'src/constants';
 import {getProfileSetForChannel, selectExperimentalFeatures} from 'src/selectors';
-import {clientFetchPlaybooksCount, fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookStats} from 'src/client';
-import {receivedTeamNumPlaybooks} from 'src/actions';
+import {fetchPlaybookRuns, clientFetchPlaybook, fetchPlaybookRun, fetchPlaybookStats} from 'src/client';
 
 import {
     isCloud,
@@ -41,10 +44,8 @@ import {
     isE20LicensedOrDevelopment,
 } from '../license';
 import {
-    currentTeamNumPlaybooks,
     globalSettings,
     isCurrentUserAdmin,
-    numPlaybooksByTeam,
     myPlaybookRunsByTeam,
 } from '../selectors';
 
@@ -174,6 +175,16 @@ export function useProfilesInCurrentChannel() {
     return profilesInChannel;
 }
 
+export function useCanCreatePlaybooksOnAnyTeam() {
+    const teams = useSelector(getMyTeams);
+    return useSelector((state: GlobalState) => (
+        teams.some((team: Team) => (
+            haveITeamPermission(state, team.id, 'playbook_public_create') ||
+			haveITeamPermission(state, team.id, 'playbook_private_create')
+        ))
+    ));
+}
+
 export function useProfilesInTeam() {
     const dispatch = useDispatch() as DispatchFunc;
     const profilesInTeam = useSelector(getProfilesInCurrentTeam);
@@ -294,48 +305,6 @@ export function useChannel(channelId: string) {
     return useThing(channelId, Client4.getChannel, getChannelFromState);
 }
 
-export function useNumPlaybooksInCurrentTeam() {
-    const dispatch = useDispatch();
-    const team = useSelector(getCurrentTeam);
-    const numPlaybooks = useSelector(currentTeamNumPlaybooks);
-
-    useEffect(() => {
-        const fetch = async () => {
-            const response = await clientFetchPlaybooksCount(team.id);
-            dispatch(receivedTeamNumPlaybooks(team.id, response?.count ?? 0));
-        };
-
-        fetch();
-    }, [team.id]);
-
-    return numPlaybooks;
-}
-
-export function useAllowPlaybookCreationInTeams() {
-    const dispatch = useDispatch();
-    const numPlaybooks = useSelector(numPlaybooksByTeam);
-    const myTeams = useSelector(getMyTeams);
-    const isLicensed = useSelector(isE10LicensedOrDevelopment);
-
-    useEffect(() => {
-        for (const team of myTeams) {
-            const fetch = async () => {
-                const response = await clientFetchPlaybooksCount(team.id);
-                dispatch(receivedTeamNumPlaybooks(team.id, response?.count ?? 0));
-            };
-            fetch();
-        }
-    }, []);
-
-    const allowPlaybookCreationInTeams = new Map<string, boolean>();
-    for (const team of myTeams) {
-        const num = numPlaybooks[team.id] || 0;
-        allowPlaybookCreationInTeams.set(team.id, isLicensed || num === 0);
-    }
-
-    return allowPlaybookCreationInTeams;
-}
-
 export function useDropdownPosition(numOptions: number, optionWidth = 264) {
     const [dropdownPosition, setDropdownPosition] = useState({x: 0, y: 0, isOpen: false});
 
@@ -359,37 +328,10 @@ export function useDropdownPosition(numOptions: number, optionWidth = 264) {
     return [dropdownPosition, toggleOpen] as const;
 }
 
-// useAllowPlaybookCreationInCurrentTeam returns whether a user can create
-// a playbook in the current team
-export function useAllowPlaybookCreationInCurrentTeam() {
-    const numPlaybooks = useNumPlaybooksInCurrentTeam();
-    const isLicensed = useSelector(isE10LicensedOrDevelopment);
-
-    return isLicensed || numPlaybooks === 0;
-}
-
-// useAllowTimelineViewInCurrentTeam returns whether a user can view the RHS
-// timeline in the current team
-export function useAllowTimelineViewInCurrentTeam() {
-    return useSelector(isE10LicensedOrDevelopment);
-}
-
 // useAllowAddMessageToTimelineInCurrentTeam returns whether a user can add a
 // post to the timeline in the current team
 export function useAllowAddMessageToTimelineInCurrentTeam() {
     return useSelector(isE10LicensedOrDevelopment);
-}
-
-// useAllowPlaybookGranularAccess returns whether the access to specific playbooks
-// can be restricted to a subset of users
-export function useAllowPlaybookGranularAccess() {
-    return useSelector(isE20LicensedOrDevelopment);
-}
-
-// useAllowPlaybookCreationRestriction returns whether the global feature to
-// restrict the playbook creation to a subset of users is allowed
-export function useAllowPlaybookCreationRestriction() {
-    return useSelector(isE20LicensedOrDevelopment);
 }
 
 // useAllowChannelExport returns whether exporting the channel is allowed
@@ -504,7 +446,18 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
     const [playbookRuns, setPlaybookRuns] = useState<PlaybookRun[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [fetchParams, setFetchParams] = useState(defaultFetchParams);
+    const history = useHistory();
+    const location = useLocation();
 
+    // On first load fetch parameters from the query string
+    useEffect(() => {
+        const queryParams = qs.parse(location.search, {ignoreQueryPrefix: true});
+        setFetchParams((oldParams) => {
+            return {...oldParams, ...queryParams};
+        });
+    }, []);
+
+    // Fetch the queried runs
     useEffect(() => {
         let isCanceled = false;
 
@@ -512,7 +465,12 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
             const playbookRunsReturn = await fetchPlaybookRuns(fetchParams);
 
             if (!isCanceled) {
-                setPlaybookRuns(playbookRunsReturn.items);
+                setPlaybookRuns((existingRuns: PlaybookRun[]) => {
+                    if (fetchParams.page === 0) {
+                        return playbookRunsReturn.items;
+                    }
+                    return [...existingRuns, ...playbookRunsReturn.items];
+                });
                 setTotalCount(playbookRunsReturn.total_count);
             }
         }
@@ -523,6 +481,14 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
             isCanceled = true;
         };
     }, [fetchParams]);
+
+    // Update the query string when the fetchParams change
+    useEffect(() => {
+        const newFetchParams: Record<string, unknown> = {...fetchParams};
+        delete newFetchParams.page;
+        delete newFetchParams.per_page;
+        history.replace({search: qs.stringify(newFetchParams, {addQueryPrefix: false, indices: false})});
+    }, [fetchParams, history]);
 
     return [playbookRuns, totalCount, fetchParams, setFetchParams];
 }

@@ -156,7 +156,7 @@ describe('channels > broadcast', () => {
         cy.updateStatus(updateMessage);
 
         // * Verify the posts
-        const initialMessage = `New run started: ${playbookRunName}`;
+        const initialMessage = playbookRunName;
         verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel1.name, playbookRunName, initialMessage, updateMessage);
     });
 
@@ -180,7 +180,7 @@ describe('channels > broadcast', () => {
         cy.updateStatus(updateMessage);
 
         // * Verify the posts
-        const initialMessage = `New run started: ${playbookRunName}`;
+        const initialMessage = playbookRunName;
         verifyInitialAndStatusPostInBroadcast(testTeam, testPrivateChannel1.name, playbookRunName, initialMessage, updateMessage);
     });
 
@@ -204,7 +204,7 @@ describe('channels > broadcast', () => {
         cy.updateStatus(updateMessage, 0);
 
         // * Verify the posts
-        const initialMessage = `New run started: ${playbookRunName}`;
+        const initialMessage = playbookRunName;
         verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel1.name, playbookRunName, initialMessage, updateMessage);
         verifyInitialAndStatusPostInBroadcast(testTeam, testPrivateChannel1.name, playbookRunName, initialMessage, updateMessage);
         verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel2.name, playbookRunName, initialMessage, updateMessage);
@@ -231,7 +231,7 @@ describe('channels > broadcast', () => {
         cy.updateStatus(updateMessage, 0);
 
         // * Verify the posts
-        const initialMessage = `New run started: ${playbookRunName}`;
+        const initialMessage = playbookRunName;
         verifyInitialAndStatusPostInBroadcast(testTeam, testPublicChannel1.name, playbookRunName, initialMessage, updateMessage);
         verifyInitialAndStatusPostInBroadcast(testTeam, testPrivateChannel1.name, playbookRunName, initialMessage, updateMessage);
 

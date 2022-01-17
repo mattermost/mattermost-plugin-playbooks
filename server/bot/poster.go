@@ -183,10 +183,6 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 	var message, title, text string
 
 	switch messageType {
-	case "start_trial_to_create_playbook":
-		message = fmt.Sprintf("@%s requested access to create more playbooks.", author.Username)
-		title = "Create multiple playbooks for all your use cases"
-		text = "Playbooks are workflows that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives. Each playbook can be customized and refined over time, to improve time to resolution. When you upgrade, you can create an unlimited number of playbooks for your team.\n" + footer
 	case "start_trial_to_add_message_to_timeline", "start_trial_to_view_timeline":
 		message = fmt.Sprintf("@%s requested access to the playbook run timeline.", author.Username)
 		title = "Keep a complete record of the playbook run timeline"

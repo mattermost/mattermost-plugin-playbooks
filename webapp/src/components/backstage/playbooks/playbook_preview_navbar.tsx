@@ -13,6 +13,8 @@ import {navigateToUrl} from 'src/browser_routing';
 import {telemetryEventForPlaybook} from 'src/client';
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
 import {BackstageID} from 'src/components/backstage/backstage';
+import {useHasPlaybookPermissionById} from 'src/hooks';
+import {PlaybookPermissionGeneral} from 'src/types/permissions';
 
 const prefix = 'playbooks-playbookPreview-';
 
@@ -44,6 +46,8 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
     const {formatMessage} = useIntl();
     const match = useRouteMatch();
     const [activeId, setActiveId] = useState(SectionID.Description);
+
+    const hasEditPermissions = useHasPlaybookPermissionById(PlaybookPermissionGeneral.ManageProperties, playbookId);
 
     const updateActiveSection = () => {
         const threshold = (window.innerHeight / 2) - headersOffset;
@@ -141,8 +145,9 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
     return (
         <Wrapper>
             <EditButton
-                disabled={archived}
                 onClick={() => navigateToUrl(match.url.replace('/preview', '/edit'))}
+                disabled={!hasEditPermissions || archived}
+                title={hasEditPermissions ? formatMessage({defaultMessage: 'Edit'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
                 data-testid='edit-playbook'
             >
                 <i className={'icon-pencil-outline icon-16'}/>

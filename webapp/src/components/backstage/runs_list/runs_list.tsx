@@ -7,9 +7,12 @@ import styled from 'styled-components';
 
 import {FormattedMessage} from 'react-intl';
 
+import InfiniteScroll from 'react-infinite-scroll-component';
+
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
 
-import PaginationRow from './pagination_row';
+import Spinner from 'src/components/assets/icons/spinner';
+
 import Row from './row';
 import RunListHeader from './run_list_header';
 import Filters from './filters';
@@ -29,6 +32,24 @@ const PlaybookRunList = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.90);
 `;
 
+const Footer = styled.div`
+    margin: 10px 0 20px;
+    font-size: 14px;
+`;
+
+const Count = styled.div`
+    padding-top: 8px;
+    width: 100%;
+    text-align: center;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const StyledSpinner = styled(Spinner)`
+    width: 100%;
+    text-align:center;
+    margin-top: 10px;
+`;
+
 const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterPill, fixedTeam, fixedPlaybook}: Props) => {
     const isFiltering = (
         (fetchParams?.search_term?.length ?? 0) > 0 ||
@@ -38,37 +59,43 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
         (fetchParams?.participant_or_follower_id?.length ?? 0) > 0
     );
 
-    const setPage = (page: number) => {
-        setFetchParams({...fetchParams, page});
+    const nextPage = () => {
+        setFetchParams((oldParam: FetchPlaybookRunsParams) => ({...oldParam, page: oldParam.page + 1}));
     };
 
     return (
-        <PlaybookRunList className='PlaybookRunList'>
-            <div
-                id='playbookRunList'
-                className='list'
-            >
-                <Filters
-                    fetchParams={fetchParams}
-                    setFetchParams={setFetchParams}
-                    fixedTeam={fixedTeam}
-                    fixedPlaybook={fixedPlaybook}
-                />
-                {filterPill}
-                <RunListHeader
-                    fetchParams={fetchParams}
-                    setFetchParams={setFetchParams}
-                />
-                {playbookRuns.length === 0 && !isFiltering &&
+        <PlaybookRunList
+            id='playbookRunList'
+            className='PlaybookRunList'
+        >
+            <Filters
+                fetchParams={fetchParams}
+                setFetchParams={setFetchParams}
+                fixedTeam={fixedTeam}
+                fixedPlaybook={fixedPlaybook}
+            />
+            {filterPill}
+            <RunListHeader
+                fetchParams={fetchParams}
+                setFetchParams={setFetchParams}
+            />
+            {playbookRuns.length === 0 && !isFiltering &&
                 <div className='text-center pt-8'>
                     <FormattedMessage defaultMessage='There are no runs for this playbook.'/>
                 </div>
-                }
-                {playbookRuns.length === 0 && isFiltering &&
+            }
+            {playbookRuns.length === 0 && isFiltering &&
                 <div className='text-center pt-8'>
                     {'There are no runs matching those filters.'}
                 </div>
-                }
+            }
+            <InfiniteScroll
+                dataLength={playbookRuns.length}
+                next={nextPage}
+                hasMore={playbookRuns.length < totalCount}
+                loader={<StyledSpinner/>}
+                scrollableTarget={'playbooks-backstageRoot'}
+            >
                 {playbookRuns.map((playbookRun) => (
                     <Row
                         key={playbookRun.id}
@@ -76,13 +103,15 @@ const RunList = ({playbookRuns, totalCount, fetchParams, setFetchParams, filterP
                         fixedTeam={fixedTeam}
                     />
                 ))}
-                <PaginationRow
-                    page={fetchParams.page}
-                    perPage={fetchParams.per_page}
-                    totalCount={totalCount}
-                    setPage={setPage}
-                />
-            </div>
+            </InfiniteScroll>
+            <Footer>
+                <Count>
+                    <FormattedMessage
+                        defaultMessage='{total, number} total'
+                        values={{total: totalCount}}
+                    />
+                </Count>
+            </Footer>
         </PlaybookRunList>
     );
 };

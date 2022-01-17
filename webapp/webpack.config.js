@@ -137,9 +137,7 @@ if (targetIsDevServer) {
         ...config,
         devServer: {
             hot: true,
-            injectHot: true,
             liveReload: false,
-            overlay: false,
             proxy: [{
                 context: () => true,
                 bypass(req) {
@@ -154,8 +152,6 @@ if (targetIsDevServer) {
                 ws: true,
             }],
             port: 9005,
-            watchContentBase: true,
-            writeToDisk: false,
         },
         performance: false,
         optimization: {

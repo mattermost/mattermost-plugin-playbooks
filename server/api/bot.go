@@ -70,9 +70,17 @@ func (h *BotHandler) notifyAdmins(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func CanStartTrialLicense(userID string, pluginAPI *pluginapi.Client) error {
+	if !pluginAPI.User.HasPermissionTo(userID, model.PermissionManageLicenseInformation) {
+		return errors.Wrap(app.ErrNoPermissions, "no permission to manage license information")
+	}
+
+	return nil
+}
+
 func (h *BotHandler) startTrial(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
-	if err := app.CanStartTrialLicense(userID, h.pluginAPI); err != nil {
+	if err := CanStartTrialLicense(userID, h.pluginAPI); err != nil {
 		h.HandleErrorWithCode(w, http.StatusForbidden, "no permission to start a trial license", err)
 		return
 	}

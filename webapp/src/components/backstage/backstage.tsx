@@ -20,7 +20,7 @@ import {promptForFeedback} from 'src/client';
 import PlaybookRunBackstage
     from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
 import PlaybookList from 'src/components/backstage/playbook_list';
-import PlaybookEdit from 'src/components/backstage/playbook_edit';
+import PlaybookEdit from 'src/components/backstage/playbook_edit/playbook_edit';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
 import {ErrorPageTypes} from 'src/constants';
 import {pluginErrorUrl} from 'src/browser_routing';
@@ -28,18 +28,16 @@ import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
 import {useForceDocumentTitle} from 'src/hooks';
 import CloudModal from 'src/components/cloud_modal';
 import ErrorPage from 'src/components/error_page';
-import SettingsView from 'src/components/backstage/settings';
 import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
 import RunsPage from 'src/components/backstage/runs_page';
 import {applyTheme} from 'src/components/backstage/css_utils';
 
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
-    // The container should take up all vertical real estate, less the height of the global header.
-    height: calc(100% - 40px);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    height: 100%;
 `;
 
 const BackstageTitlebarItem = styled(NavLink)`
@@ -137,14 +135,6 @@ const Backstage = () => {
                                 <PlaybookIcon/>
                                 {formatMessage({defaultMessage: 'Playbooks'})}
                             </BackstageTitlebarItem>
-                            <BackstageTitlebarItem
-                                to={`${match.url}/settings`}
-                                activeClassName={'active'}
-                                data-testid='settingsLHSButton'
-                            >
-                                <div className={'fa fa-gear'}/>
-                                {formatMessage({defaultMessage: 'Settings'})}
-                            </BackstageTitlebarItem>
                         </div>
                         <div className='d-flex items-center'>
                             {npsAvailable &&
@@ -194,9 +184,6 @@ const Backstage = () => {
                     />
                     <Route path={`${match.url}/runs`}>
                         <RunsPage/>
-                    </Route>
-                    <Route path={`${match.url}/settings`}>
-                        <SettingsView/>
                     </Route>
                     <Route path={`${match.url}/error`}>
                         <ErrorPage/>

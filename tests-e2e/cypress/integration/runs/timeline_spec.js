@@ -22,7 +22,7 @@ describe('runs > timeline', () => {
             cy.apiCreatePlaybook({
                 teamId: testTeam.id,
                 title: playbookName,
-                memberIDs: [],
+                memberIDs: [testUser.id],
             }).then((playbook) => {
                 testPublicPlaybook = playbook;
             });

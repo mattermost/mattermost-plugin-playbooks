@@ -27,14 +27,11 @@ import {setRHSViewingPlaybookRun} from 'src/actions';
 import {currentPlaybookRun} from 'src/selectors';
 import {telemetryEventForTemplate} from 'src/client';
 
-import {AdminNotificationType} from 'src/constants';
-
 import {
     usePlaybooksCrud,
     getPlaybookOrFetch,
     usePlaybooksRouting,
-    useCanCreatePlaybooks,
-    useAllowPlaybookCreationInCurrentTeam,
+    useCanCreatePlaybooksOnAnyTeam,
 } from 'src/hooks';
 import {navigateToUrl} from 'src/browser_routing';
 
@@ -42,12 +39,9 @@ import {RHSHomePlaybook, RHSHomeTemplate} from 'src/components/rhs/rhs_home_item
 import BoxOpenSvg from 'src/components/assets/box_open_svg';
 import PageRunSvg from 'src/components/assets/page_run_svg';
 import PageRunCollaborationSvg from 'src/components/assets/page_run_collaboration_svg';
-import {PrimaryButton, TertiaryButton, UpgradeButton, UpgradeButtonProps} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 import {PresetTemplates} from 'src/components/backstage/template_selector';
-
-import UpgradeModal from 'src/components/backstage/upgrade_modal';
-import {useUpgradeModalVisibility} from 'src/components/backstage/playbook_list';
 
 const WelcomeBlock = styled.div`
     padding: 4rem 3rem 2rem;
@@ -71,19 +65,7 @@ const WelcomeCreateAlt = styled.span`
     }
 `;
 
-type CreatePlaybookButtonProps = UpgradeButtonProps & {allowPlaybookCreation: boolean};
-
-const UpgradeOrPrimaryButton = (props: CreatePlaybookButtonProps) => {
-    const {children, allowPlaybookCreation, ...rest} = props;
-
-    if (allowPlaybookCreation) {
-        return <PrimaryButton {...rest}>{children}</PrimaryButton>;
-    }
-
-    return <UpgradeButton {...rest}>{children}</UpgradeButton>;
-};
-
-const WelcomeButtonCreate = styled(UpgradeOrPrimaryButton)`
+const WelcomeButtonCreate = styled(PrimaryButton)`
     margin-right: 2rem;
     margin-bottom: 1rem;
     padding: 0 2rem;
@@ -212,19 +194,14 @@ const RHSHome = () => {
     const [playbooks, {hasMore, isLoading}, {setPage}] = usePlaybooksCrud({team_id: currentTeam.id}, {infinitePaging: true});
     const {create} = usePlaybooksRouting<Playbook>();
 
-    const canCreatePlaybooks = useCanCreatePlaybooks();
-    const allowPlaybookCreation = useAllowPlaybookCreationInCurrentTeam();
-    const [isUpgradeModalShown, showUpgradeModal, hideUpgradeModal] = useUpgradeModalVisibility(false);
+    const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
 
     const newPlaybook = (template?: DraftPlaybookWithChecklist) => {
         if (template) {
             telemetryEventForTemplate(template.title, 'use_template_option');
         }
-        if (allowPlaybookCreation) {
-            create(currentTeam, template?.title);
-        } else {
-            showUpgradeModal();
-        }
+
+        create({teamId: currentTeam.id, template: template?.title});
     };
 
     useEffect(() => {
@@ -258,7 +235,6 @@ const RHSHome = () => {
                     <div>
                         <WelcomeButtonCreate
                             onClick={() => newPlaybook()}
-                            allowPlaybookCreation={allowPlaybookCreation}
                         >
                             <Icon
                                 path={mdiPlus}
@@ -324,11 +300,6 @@ const RHSHome = () => {
 
     return (
         <RHSContainer>
-            <UpgradeModal
-                messageType={AdminNotificationType.PLAYBOOK}
-                show={isUpgradeModalShown}
-                onHide={hideUpgradeModal}
-            />
             <RHSContent>
                 <Scrollbars
                     autoHide={true}

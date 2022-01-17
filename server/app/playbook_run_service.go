@@ -42,6 +42,7 @@ type PlaybookRunServiceImpl struct {
 	telemetry       PlaybookRunTelemetry
 	api             plugin.API
 	playbookService PlaybookService
+	permissions     *PermissionsService
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -91,7 +92,7 @@ func NewPlaybookRunService(
 	api plugin.API,
 	playbookService PlaybookService,
 ) *PlaybookRunServiceImpl {
-	return &PlaybookRunServiceImpl{
+	service := &PlaybookRunServiceImpl{
 		pluginAPI:       pluginAPI,
 		store:           store,
 		poster:          poster,
@@ -103,6 +104,10 @@ func NewPlaybookRunService(
 		api:             api,
 		playbookService: playbookService,
 	}
+
+	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService)
+
+	return service
 }
 
 // GetPlaybookRuns returns filtered playbook runs and the total count before paging.
@@ -127,8 +132,7 @@ func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playboo
 
 	header := "### New run started: "
 	announcementMsg := fmt.Sprintf(
-		"%s[%s](%s%s)\n",
-		header,
+		"**[%s](%s%s)**\n",
 		playbookRun.Name,
 		getRunDetailsRelativeURL(playbookRun.ID),
 		"%s", // for the telemetry data injection
@@ -218,33 +222,45 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	playbookRun.ReporterUserID = userID
 	playbookRun.ID = model.NewId()
 
-	siteURL := model.ServiceSettingsDefaultSiteURL
-	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	}
-	overviewURL := ""
-	playbookURL := ""
+	var err error
+	var channel *model.Channel
 
-	header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
-	if pb != nil {
-		overviewURL = getRunDetailsRelativeURL(playbookRun.ID)
-		playbookURL = getPlaybookDetailsRelativeURL(pb.ID)
-		header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
-			pb.Title, playbookURL, overviewURL)
-	}
+	if playbookRun.ChannelID == "" {
+		header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
+		if pb != nil {
+			overviewURL := getRunDetailsRelativeURL(playbookRun.ID)
+			playbookURL := getPlaybookDetailsRelativeURL(pb.ID)
+			header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
+				pb.Title, playbookURL, overviewURL)
+		}
 
-	if playbookRun.Name == "" {
-		playbookRun.Name = pb.ChannelNameTemplate
-	}
+		if playbookRun.Name == "" {
+			playbookRun.Name = pb.ChannelNameTemplate
+		}
 
-	// Try to create the channel first
-	channel, err := s.createPlaybookRunChannel(playbookRun, header, public)
-	if err != nil {
-		return nil, err
+		channel, err = s.createPlaybookRunChannel(playbookRun, header, public)
+		if err != nil {
+			return nil, err
+		}
+
+		playbookRun.ChannelID = channel.Id
+	} else {
+		existingPlaybookRunID, err := s.GetPlaybookRunIDForChannel(playbookRun.ChannelID)
+		if err != nil && !errors.Is(err, ErrNotFound) {
+			return nil, err
+		} else if existingPlaybookRunID != "" {
+			return nil, errors.Wrapf(ErrMalformedPlaybookRun, "playbook run %s already exists for channel %s", existingPlaybookRunID, playbookRun.ChannelID)
+		}
+
+		channel, err = s.pluginAPI.Channel.Get(playbookRun.ChannelID)
+		if err != nil {
+			return nil, err
+		}
+
+		playbookRun.Name = channel.Name
 	}
 
 	now := model.GetMillis()
-	playbookRun.ChannelID = channel.Id
 	playbookRun.CreateAt = now
 	playbookRun.LastStatusUpdateAt = now
 	playbookRun.CurrentStatus = StatusInProgress
@@ -421,7 +437,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		return nil, errors.Wrapf(err, "failed to get original post")
 	}
 
-	postURL := fmt.Sprintf("%s/_redirect/pl/%s", siteURL, playbookRun.PostID)
+	postURL := fmt.Sprintf("/_redirect/pl/%s", playbookRun.PostID)
 	postMessage := fmt.Sprintf("[Original Post](%s)\n > %s", postURL, post.Message)
 
 	_, err = s.poster.PostMessage(channel.Id, postMessage)
@@ -433,8 +449,16 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 }
 
 // OpenCreatePlaybookRunDialog opens a interactive dialog to start a new playbook run.
-func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error {
-	dialog, err := s.newPlaybookRunDialog(teamID, ownerID, postID, clientID, playbooks, isMobileApp)
+func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error {
+
+	filteredPlaybooks := make([]Playbook, 0, len(playbooks))
+	for _, playbook := range playbooks {
+		if err := s.permissions.RunCreate(requesterID, playbook); err == nil {
+			filteredPlaybooks = append(filteredPlaybooks, playbook)
+		}
+	}
+
+	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, isMobileApp)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new playbook run dialog")
 	}
@@ -784,7 +808,7 @@ func (s *PlaybookRunServiceImpl) OpenFinishPlaybookRunDialog(playbookRunID, trig
 	numOutstanding := 0
 	for _, c := range currentPlaybookRun.Checklists {
 		for _, item := range c.Items {
-			if item.State != ChecklistItemStateClosed {
+			if item.State == ChecklistItemStateOpen || item.State == ChecklistItemStateInProgress {
 				numOutstanding++
 			}
 		}
@@ -859,7 +883,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	// Remove pending reminder (if any), even if current reminder was set to "none" (0 minutes)
 	s.RemoveReminder(playbookRunID)
 
-	err = s.ResetReminderTimer(playbookRunID)
+	err = s.resetReminderTimer(playbookRunID)
 	if err != nil {
 		s.pluginAPI.Log.Warn("failed to reset the reminder timer when updating status to Archived", "playbook ID", playbookRunToModify.ID, "error", err)
 	}
@@ -1147,10 +1171,10 @@ func (s *PlaybookRunServiceImpl) ModifyCheckedState(playbookRunID, userID, newSt
 	if newState == ChecklistItemStateOpen {
 		modifyMessage = fmt.Sprintf("unchecked checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
-	if newState == CheckListItemStateSkipped {
+	if newState == ChecklistItemStateSkipped {
 		modifyMessage = fmt.Sprintf("skipped checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
-	if itemToCheck.State == CheckListItemStateSkipped && newState == ChecklistItemStateOpen {
+	if itemToCheck.State == ChecklistItemStateSkipped && newState == ChecklistItemStateOpen {
 		modifyMessage = fmt.Sprintf("restored checklist item **%v**", stripmd.Strip(itemToCheck.Title))
 	}
 
@@ -1251,11 +1275,6 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 
 	// Do we send a DM to the new assignee?
 	if itemToCheck.AssigneeID != "" && itemToCheck.AssigneeID != userID {
-		siteURL := model.ServiceSettingsDefaultSiteURL
-		if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-			siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-		}
-
 		var subjectUser *model.User
 		subjectUser, err = s.pluginAPI.User.Get(userID)
 		if err != nil {
@@ -1274,8 +1293,8 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 			return errors.Wrapf(err, "failed to get team")
 		}
 
-		channelURL := fmt.Sprintf("[%s](%s/%s/channels/%s?telem=dm_assignedtask_clicked&forceRHSOpen)",
-			channel.DisplayName, siteURL, team.Name, channel.Name)
+		channelURL := fmt.Sprintf("[%s](/%s/channels/%s?telem_action=dm_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)",
+			channel.DisplayName, team.Name, channel.Name, playbookRunID)
 		modifyMessage := fmt.Sprintf("@%s assigned you the task **%s** (previously assigned to %s) for the run: %s   #taskassigned",
 			subjectUser.Username, stripmd.Strip(itemToCheck.Title), oldAssigneeUserAtMention, channelURL)
 
@@ -1485,7 +1504,7 @@ func (s *PlaybookRunServiceImpl) SkipChecklistItem(playbookRunID, userID string,
 	}
 
 	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].LastSkipped = model.GetMillis()
-	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = CheckListItemStateSkipped
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].State = ChecklistItemStateSkipped
 
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
@@ -1542,27 +1561,79 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 	return nil
 }
 
-// MoveChecklistItem moves a checklist item to a new location
-func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber, newLocation int) error {
-	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+// MoveChecklist moves a checklist to a new location
+func (s *PlaybookRunServiceImpl) MoveChecklist(playbookRunID, userID string, sourceChecklistIdx, destChecklistIdx int) error {
+	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, sourceChecklistIdx)
 	if err != nil {
 		return err
 	}
 
-	if newLocation >= len(playbookRunToModify.Checklists[checklistNumber].Items) {
-		return errors.New("invalid targetNumber")
+	if destChecklistIdx < 0 || destChecklistIdx >= len(playbookRunToModify.Checklists) {
+		return errors.New("invalid destChecklist")
 	}
 
-	// Move item
-	checklist := playbookRunToModify.Checklists[checklistNumber].Items
-	itemMoved := checklist[itemNumber]
+	// Get checklist to move
+	checklistMoved := playbookRunToModify.Checklists[sourceChecklistIdx]
+
+	// Delete checklist to move
+	copy(playbookRunToModify.Checklists[sourceChecklistIdx:], playbookRunToModify.Checklists[sourceChecklistIdx+1:])
+	playbookRunToModify.Checklists[len(playbookRunToModify.Checklists)-1] = Checklist{}
+
+	// Insert checklist in new location
+	copy(playbookRunToModify.Checklists[destChecklistIdx+1:], playbookRunToModify.Checklists[destChecklistIdx:])
+	playbookRunToModify.Checklists[destChecklistIdx] = checklistMoved
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.MoveChecklist(playbookRunID, userID, checklistMoved)
+
+	return nil
+}
+
+// MoveChecklistItem moves a checklist item to a new location
+func (s *PlaybookRunServiceImpl) MoveChecklistItem(playbookRunID, userID string, sourceChecklistIdx, sourceItemIdx, destChecklistIdx, destItemIdx int) error {
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, sourceChecklistIdx, sourceItemIdx)
+	if err != nil {
+		return err
+	}
+
+	if destChecklistIdx < 0 || destChecklistIdx >= len(playbookRunToModify.Checklists) {
+		return errors.New("invalid destChecklist")
+	}
+
+	lenDestItems := len(playbookRunToModify.Checklists[destChecklistIdx].Items)
+	if (destItemIdx < 0) || (sourceChecklistIdx == destChecklistIdx && destItemIdx >= lenDestItems) || (destItemIdx > lenDestItems) {
+		return errors.New("invalid destItem")
+	}
+
+	// Moved item
+	sourceChecklist := playbookRunToModify.Checklists[sourceChecklistIdx].Items
+	itemMoved := sourceChecklist[sourceItemIdx]
+
 	// Delete item to move
-	checklist = append(checklist[:itemNumber], checklist[itemNumber+1:]...)
+	sourceChecklist = append(sourceChecklist[:sourceItemIdx], sourceChecklist[sourceItemIdx+1:]...)
+
 	// Insert item in new location
-	checklist = append(checklist, ChecklistItem{})
-	copy(checklist[newLocation+1:], checklist[newLocation:])
-	checklist[newLocation] = itemMoved
-	playbookRunToModify.Checklists[checklistNumber].Items = checklist
+	destChecklist := playbookRunToModify.Checklists[destChecklistIdx].Items
+	if sourceChecklistIdx == destChecklistIdx {
+		destChecklist = sourceChecklist
+	}
+
+	destChecklist = append(destChecklist, ChecklistItem{})
+	copy(destChecklist[destItemIdx+1:], destChecklist[destItemIdx:])
+	destChecklist[destItemIdx] = itemMoved
+
+	// Update the playbookRunToModify checklists. If the source and destination indices
+	// are the same, we only need to update the checklist to its final state (destChecklist)
+	if sourceChecklistIdx == destChecklistIdx {
+		playbookRunToModify.Checklists[sourceChecklistIdx].Items = destChecklist
+	} else {
+		playbookRunToModify.Checklists[sourceChecklistIdx].Items = sourceChecklist
+		playbookRunToModify.Checklists[destChecklistIdx].Items = destChecklist
+	}
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrapf(err, "failed to update playbook run")
@@ -1617,11 +1688,6 @@ func (s *PlaybookRunServiceImpl) GetChecklistItemAutocomplete(playbookRunID stri
 // DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
 // and DMs the message to userID. Use force = true to DM even if there are no items.
 func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) error {
-	siteURL := model.ServiceSettingsDefaultSiteURL
-	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	}
-
 	runsOverdue, err := s.GetOverdueUpdateRuns(userID)
 	if err != nil {
 		return err
@@ -1631,20 +1697,20 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 	if err != nil {
 		return err
 	}
-	part1 := buildRunsOverdueMessage(runsOverdue, siteURL, user.Locale)
+	part1 := buildRunsOverdueMessage(runsOverdue, user.Locale)
 
 	runsAssigned, err := s.GetRunsWithAssignedTasks(userID)
 	if err != nil {
 		return err
 	}
-	part2 := buildAssignedTaskMessageAndTotal(runsAssigned, siteURL, user.Locale)
+	part2 := buildAssignedTaskMessageAndTotal(runsAssigned, user.Locale)
 
 	if force {
 		runsInProgress, err := s.GetParticipatingRuns(userID)
 		if err != nil {
 			return err
 		}
-		part3 := buildRunsInProgressMessage(runsInProgress, siteURL, user.Locale)
+		part3 := buildRunsInProgressMessage(runsInProgress, user.Locale)
 
 		return s.poster.DM(userID, &model.Post{Message: part1 + part2 + part3})
 	}
@@ -1688,7 +1754,7 @@ func (s *PlaybookRunServiceImpl) checklistParamsVerify(playbookRunID, userID str
 		return nil, errors.New("user does not have permission to modify playbook run")
 	}
 
-	if checklistNumber >= len(playbookRunToModify.Checklists) {
+	if checklistNumber < 0 || checklistNumber >= len(playbookRunToModify.Checklists) {
 		return nil, errors.New("invalid checklist number")
 	}
 
@@ -1701,7 +1767,7 @@ func (s *PlaybookRunServiceImpl) checklistItemParamsVerify(playbookRunID, userID
 		return nil, err
 	}
 
-	if itemNumber >= len(playbookRunToModify.Checklists[checklistNumber].Items) {
+	if itemNumber < 0 || itemNumber >= len(playbookRunToModify.Checklists[checklistNumber].Items) {
 		return nil, errors.New("invalid item number")
 	}
 
@@ -2090,13 +2156,9 @@ func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, c
 		})
 	}
 
-	siteURL := model.ServiceSettingsDefaultSiteURL
-	if s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL != nil {
-		siteURL = *s.pluginAPI.Configuration.GetConfig().ServiceSettings.SiteURL
-	}
 	newPlaybookMarkdown := ""
-	if siteURL != "" && !isMobileApp {
-		url := getPlaybooksNewURL(siteURL)
+	if !isMobileApp {
+		url := getPlaybooksNewRelativeURL()
 		newPlaybookMarkdown = fmt.Sprintf("[Click here](%s) to create your own playbook.", url)
 	}
 
@@ -2475,14 +2537,6 @@ func getUserDisplayName(user *model.User) string {
 	return fmt.Sprintf("@%s", user.Username)
 }
 
-func getChannelURL(siteURL string, teamName string, channelName string) string {
-	return fmt.Sprintf("%s/%s/channels/%s",
-		siteURL,
-		teamName,
-		channelName,
-	)
-}
-
 func cleanChannelName(channelName string) string {
 	// Lower case only
 	channelName = strings.ToLower(channelName)
@@ -2565,7 +2619,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 }
 
-func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string, locale string) string {
+func buildAssignedTaskMessageAndTotal(runs []AssignedRun, locale string) string {
 	T := i18n.GetUserTranslations(locale)
 	total := 0
 	for _, run := range runs {
@@ -2581,8 +2635,8 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string, locale
 	msg += T("app.user.digest.tasks.num_outstanding", total) + "\n\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("[%s](%s/%s/channels/%s?telem=todo_assignedtask_clicked&forceRHSOpen)\n",
-			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+		msg += fmt.Sprintf("[%s](/%s/channels/%s?telem_action=todo_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)\n",
+			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID)
 
 		for _, task := range run.Tasks {
 			msg += fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title)
@@ -2592,7 +2646,7 @@ func buildAssignedTaskMessageAndTotal(runs []AssignedRun, siteURL string, locale
 	return msg
 }
 
-func buildRunsInProgressMessage(runs []RunLink, siteURL string, locale string) string {
+func buildRunsInProgressMessage(runs []RunLink, locale string) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 
@@ -2606,14 +2660,14 @@ func buildRunsInProgressMessage(runs []RunLink, siteURL string, locale string) s
 	msg += T("app.user.digest.runs_in_progress.num_in_progress", total) + "\n"
 
 	for _, run := range runs {
-		msg += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_runsinprogress_clicked&forceRHSOpen)\n",
-			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName)
+		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem_action=todo_runsinprogress_clicked&telem_run_id=%s&forceRHSOpen)\n",
+			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID)
 	}
 
 	return msg
 }
 
-func buildRunsOverdueMessage(runs []RunLink, siteURL string, locale string) string {
+func buildRunsOverdueMessage(runs []RunLink, locale string) string {
 	T := i18n.GetUserTranslations(locale)
 	total := len(runs)
 	msg := "\n"
@@ -2629,8 +2683,8 @@ func buildRunsOverdueMessage(runs []RunLink, siteURL string, locale string) stri
 			"Username": run.OwnerUserName,
 		}
 		appended := " " + T("app.user.digest.overdue_status_updates.md_link_item_appended", values)
-		msg += fmt.Sprintf("- [%s](%s/%s/channels/%s?telem=todo_overduestatus_clicked&forceRHSOpen)",
-			run.ChannelDisplayName, siteURL, run.TeamName, run.ChannelName) + appended + "\n"
+		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen)",
+			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID) + appended + "\n"
 	}
 
 	return msg
@@ -2702,8 +2756,9 @@ func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, pos
 		if user == authorID {
 			continue
 		}
+
 		// Check for access permissions
-		if err := UserCanViewPlaybookRun(user, playbookRunID, s.playbookService, s, s.pluginAPI); err != nil {
+		if err := s.permissions.RunView(user, playbookRunID); err != nil {
 			continue
 		}
 
