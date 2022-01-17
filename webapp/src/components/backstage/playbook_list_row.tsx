@@ -109,10 +109,11 @@ const PlaybookListRow = (props: Props) => {
                 />
                 {infos.length > 0 &&
                     <InfoLine>
-                        {infos.map((info, i) => (<Fragment key={props.playbook.id + '-infoline' + i}>
-                            {i > 0 && ' - '}
-                            {info}
-                        </Fragment>))}
+                        {infos.map((info, i) => (
+                            <Fragment key={props.playbook.id + '-infoline' + i}>
+                                {i > 0 && ' - '}
+                                {info}
+                            </Fragment>))}
                     </InfoLine>
                 }
             </PlaybookItemTitle>
