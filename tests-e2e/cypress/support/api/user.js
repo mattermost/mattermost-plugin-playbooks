@@ -246,6 +246,7 @@ Cypress.Commands.add('apiCreateUser', ({
 
         if (hideOnboarding) {
             cy.apiSaveOnboardingPreference(createdUser.id, 'hide', 'true');
+            cy.apiSaveOnboardingPreference(createdUser.id, 'skip', 'true');
         }
 
         if (bypassWhatsNewModal) {

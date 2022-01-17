@@ -782,13 +782,12 @@ func TestTasksAndRunsDigest(t *testing.T) {
 
 			total := len(runs)
 
-			require.Equal(t, 3, total)
+			require.Equal(t, 2, total)
 
 			// don't make assumptions about ordering until we figure that out PM-side
 			expected := map[string]int{
 				channel01.Name: 1,
 				channel02.Name: 1,
-				channel06.Name: 1,
 			}
 
 			actual := make(map[string]int)

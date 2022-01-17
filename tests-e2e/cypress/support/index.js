@@ -189,6 +189,7 @@ function sysadminSetup(user) {
     cy.apiSaveClockDisplayModeTo24HourPreference(false);
     cy.apiSaveTutorialStep(user.id, '999');
     cy.apiSaveOnboardingPreference(user.id, 'hide', 'true');
+    cy.apiSaveOnboardingPreference(user.id, 'skip', 'true');
     cy.apiUpdateUserStatus('online');
     cy.apiPatchMe({
         locale: 'en',

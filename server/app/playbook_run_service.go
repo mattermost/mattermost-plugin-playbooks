@@ -2676,12 +2676,8 @@ func buildRunsOverdueMessage(runs []RunLink, locale string) string {
 	msg += T("app.user.digest.overdue_status_updates.num_overdue", total) + "\n"
 
 	for _, run := range runs {
-		values := map[string]interface{}{
-			"Username": run.OwnerUserName,
-		}
-		appended := " " + T("app.user.digest.overdue_status_updates.md_link_item_appended", values)
-		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen)",
-			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID) + appended + "\n"
+		msg += fmt.Sprintf("- [%s](/%s/channels/%s?telem_action=todo_overduestatus_clicked&telem_run_id=%s&forceRHSOpen)\n",
+			run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID)
 	}
 
 	return msg
