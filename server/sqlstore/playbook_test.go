@@ -1076,7 +1076,7 @@ func TestDeletePlaybook(t *testing.T) {
 		})
 
 		t.Run(driverName+" - create and delete playbook", func(t *testing.T) {
-			before := model.GetMillis()
+			now := model.GetMillis()
 
 			id, err := playbookStore.Create(pb02)
 			require.NoError(t, err)
@@ -1088,7 +1088,7 @@ func TestDeletePlaybook(t *testing.T) {
 
 			actual, err := playbookStore.Get(id)
 			require.NoError(t, err)
-			require.Greater(t, actual.DeleteAt, before)
+			require.GreaterOrEqual(t, actual.DeleteAt, now)
 
 			expected.DeleteAt = actual.DeleteAt
 			require.Equal(t, expected, actual)
