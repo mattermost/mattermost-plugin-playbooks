@@ -789,9 +789,9 @@ func TestPlaybooksImportExport(t *testing.T) {
 	t.Run("Import", func(t *testing.T) {
 		result, err := e.PlaybooksClient.Playbooks.Export(context.Background(), e.BasicPlaybook.ID)
 		require.NoError(t, err)
-		newPlaybookId, err := e.PlaybooksClient.Playbooks.Import(context.Background(), result, e.BasicTeam.Id)
+		newPlaybookID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), result, e.BasicTeam.Id)
 		require.NoError(t, err)
-		newPlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newPlaybookId)
+		newPlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newPlaybookID)
 		require.NoError(t, err)
 
 		assert.Equal(t, e.BasicPlaybook.Title, newPlaybook.Title)
