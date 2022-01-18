@@ -54,6 +54,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("", handler.updatePlaybook).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("", handler.archivePlaybook).Methods(http.MethodDelete)
 	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPut)
+	playbookRouter.HandleFunc("/export", handler.exportPlaybook).Methods(http.MethodGet)
 
 	autoFollowsRouter := playbookRouter.PathPrefix("/autofollows").Subrouter()
 	autoFollowRouter := autoFollowsRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
@@ -545,4 +546,30 @@ func (h *PlaybookHandler) isAutoFollowing(w http.ResponseWriter, r *http.Request
 	}
 
 	ReturnJSON(w, isAutoFollowing, http.StatusOK)
+}
+
+func (h *PlaybookHandler) exportPlaybook(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, h.permissions.PlaybookViewWithPlaybook(userID, playbook)) {
+		return
+	}
+
+	export, err := app.GeneratePlaybookExport(playbook)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(export)
 }

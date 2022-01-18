@@ -6,6 +6,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -123,4 +124,28 @@ func (s *PlaybooksService) Archive(ctx context.Context, playbookID string) error
 	}
 
 	return nil
+}
+
+func (s *PlaybooksService) Export(ctx context.Context, playbookID string) ([]byte, error) {
+	url := fmt.Sprintf("playbooks/%s/export", playbookID)
+	req, err := s.client.newRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.client.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	result, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("expected status code %d", http.StatusOK)
+	}
+
+	return result, nil
 }
