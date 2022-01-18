@@ -1704,7 +1704,7 @@ var migrations = []Migration{
 					   Description VARCHAR(4096) NOT NULL,
 					   Type VARCHAR(32) NOT NULL,
 					   Target BIGINT NOT NULL,
-					   Order TINYINT NOT NULL DEFAULT 0,
+					   Sort TINYINT NOT NULL DEFAULT 0,
 					   DeleteAt BIGINT NOT NULL DEFAULT 0,
 					   CONSTRAINT metrics_unique UNIQUE (PlaybookID, Title),
 					   INDEX IR_MetricConfig_PlaybookID (PlaybookID)
@@ -1737,7 +1737,7 @@ var migrations = []Migration{
 						Description TEXT NOT NULL,
 						Type TEXT NOT NULL,
 						Target BIGINT NOT NULL,
-						Order SMALLINT NOT NULL DEFAULT 0,
+						Sort SMALLINT NOT NULL DEFAULT 0,
 						DeleteAt BIGINT NOT NULL DEFAULT 0,
 						UNIQUE (PlaybookID, Title)
 					)

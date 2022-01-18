@@ -712,7 +712,7 @@ func (p *playbookStore) makeMetricsSelect(playbookID string) sq.SelectBuilder {
 			"mc.Target",
 		).
 		From("IR_MetricConfig mc").
-		OrderBy("mc.Order ASC")
+		OrderBy("mc.Sort ASC")
 }
 
 // replacePlaybookMetrics replaces the metric configs of a playbook
@@ -732,7 +732,7 @@ func (p *playbookStore) replacePlaybookMetrics(q queryExecer, playbook app.Playb
 		if m.ID == "" {
 			_, err = p.store.execBuilder(q, sq.
 				Insert("IR_MetricConfig").
-				Columns("ID", "PlaybookID", "Title", "Description", "Type", "Target", "Order").
+				Columns("ID", "PlaybookID", "Title", "Description", "Type", "Target", "Sort").
 				Values(model.NewId(), playbook.ID, m.Title, m.Description, m.Type, m.Target, i))
 		} else {
 			_, err = p.store.execBuilder(q, sq.
@@ -742,7 +742,7 @@ func (p *playbookStore) replacePlaybookMetrics(q queryExecer, playbook app.Playb
 					"Description": m.Description,
 					"Type":        m.Type,
 					"Target":      m.Target,
-					"Order":       i,
+					"Sort":        i,
 					"DeleteAt":    0,
 				}).
 				Where(sq.Eq{"ID": m.ID}),
