@@ -174,7 +174,7 @@ func (p *playbookStore) makeMembersSelect(teamID string) sq.SelectBuilder {
 			"pm.Roles",
 		).
 		From("IR_PlaybookMember pm").
-		OrderBy("pm.MemberID ASC") // Entirely for consistancy for the tests
+		OrderBy("pm.MemberID ASC") // Entirely for consistency for the tests
 }
 
 // Create creates a new playbook
@@ -245,6 +245,10 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 		return "", errors.Wrap(err, "failed to replace playbook members")
 	}
 
+	if err = p.replacePlaybookMetrics(tx, rawPlaybook.Playbook); err != nil {
+		return "", errors.Wrap(err, "failed to replace playbook metrics configs")
+	}
+
 	if err = tx.Commit(); err != nil {
 		return "", errors.Wrap(err, "could not commit transaction")
 	}
@@ -283,12 +287,18 @@ func (p *playbookStore) Get(id string) (app.Playbook, error) {
 		return app.Playbook{}, errors.Wrapf(err, "failed to get memberIDs for playbook with id '%s'", id)
 	}
 
+	var metrics []app.PlaybookMetric
+	err = p.store.selectBuilder(tx, &metrics, p.makeMetricsSelect(playbook.ID).Where(sq.Eq{"PlaybookID": id}))
+	if err != nil && err != sql.ErrNoRows {
+		return app.Playbook{}, errors.Wrapf(err, "failed to get metrics configs for playbook with id '%s'", id)
+	}
+
 	if err = tx.Commit(); err != nil {
 		return app.Playbook{}, errors.Wrap(err, "could not commit transaction")
 	}
 
 	addMembersToPlaybook(members, &playbook)
-
+	addMetricsToPlaybook(metrics, &playbook)
 	return playbook, nil
 }
 
@@ -617,6 +627,10 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 		return errors.Wrapf(err, "failed to replace playbook members for playbook with id '%s'", rawPlaybook.ID)
 	}
 
+	if err = p.replacePlaybookMetrics(tx, rawPlaybook.Playbook); err != nil {
+		return errors.Wrapf(err, "failed to replace playbook metrics configs for playbook with id '%s'", rawPlaybook.ID)
+	}
+
 	if err = tx.Commit(); err != nil {
 		return errors.Wrap(err, "could not commit transaction")
 	}
@@ -683,6 +697,60 @@ func (p *playbookStore) replacePlaybookMembers(q queryExecer, playbook app.Playb
 
 	if _, err := p.store.execBuilder(q, insert); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (p *playbookStore) makeMetricsSelect(playbookID string) sq.SelectBuilder {
+	return p.store.builder.
+		Select(
+			"mc.ID",
+			"mc.Title",
+			"mc.Description",
+			"mc.Type",
+			"mc.Target",
+		).
+		From("IR_MetricConfig mc").
+		OrderBy("mc.Order ASC")
+}
+
+// replacePlaybookMetrics replaces the metric configs of a playbook
+func (p *playbookStore) replacePlaybookMetrics(q queryExecer, playbook app.Playbook) error {
+	// Mark as deleted all metrics for this playbook
+	updateBuilder := sq.Update("IR_MetricConfig").
+		Set("DeleteAt", model.GetMillis()).
+		Where(sq.Eq{"PlaybookID": playbook.ID}).
+		Where(sq.Eq{"DeleteAt": 0})
+
+	if _, err := p.store.execBuilder(q, updateBuilder); err != nil {
+		return err
+	}
+
+	var err error
+	for i, m := range playbook.Metrics {
+		if m.ID == "" {
+			_, err = p.store.execBuilder(q, sq.
+				Insert("IR_MetricConfig").
+				Columns("ID", "PlaybookID", "Title", "Description", "Type", "Target", "Order").
+				Values(model.NewId(), playbook.ID, m.Title, m.Description, m.Type, m.Target, i))
+		} else {
+			_, err = p.store.execBuilder(q, sq.
+				Update("IR_MetricConfig").
+				SetMap(map[string]interface{}{
+					"Title":       m.Title,
+					"Description": m.Description,
+					"Type":        m.Type,
+					"Target":      m.Target,
+					"Order":       i,
+					"DeleteAt":    0,
+				}).
+				Where(sq.Eq{"ID": m.ID}),
+			)
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -787,6 +855,18 @@ func addMembersToPlaybook(members []playbookMember, playbook *app.Playbook) {
 			UserID:      m.MemberID,
 			Roles:       strings.Fields(m.Roles),
 			SchemeRoles: generatePlaybookSchemeRoles(m, playbook),
+		})
+	}
+}
+
+func addMetricsToPlaybook(metrics []app.PlaybookMetric, playbook *app.Playbook) {
+	for _, m := range metrics {
+		playbook.Metrics = append(playbook.Metrics, app.PlaybookMetric{
+			ID:          m.ID,
+			Title:       m.Title,
+			Description: m.Description,
+			Type:        m.Type,
+			Target:      m.Target,
 		})
 	}
 }
