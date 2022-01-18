@@ -1700,7 +1700,7 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_MetricConfig (
 					   ID VARCHAR(26) PRIMARY KEY,
 					   PlaybookID VARCHAR(26) NOT NULL REFERENCES IR_Playbook(ID),
-					   Title VARCHAR(1024) NOT NULL,
+					   Title VARCHAR(512) NOT NULL,
 					   Description VARCHAR(4096) NOT NULL,
 					   Type VARCHAR(32) NOT NULL,
 					   Target BIGINT NOT NULL,
