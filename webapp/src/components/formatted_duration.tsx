@@ -1,15 +1,15 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {DateTime, Duration, Interval} from 'luxon';
+import {DateTime, Duration, Interval, DurationUnit, DurationLike} from 'luxon';
 import React from 'react';
 
 import {useNow} from 'src/hooks';
 
 /** See {@link Intl.RelativeTimeFormatStyle} */
-type FormatStyle = 'long' | 'narrow';
+type FormatStyle = Intl.NumberFormatOptions['unitDisplay'];
 
-type TruncateBehavior = 'none' | 'truncate'; // | 'round'
+type TruncateBehavior = 'none' | 'truncate';
 
 interface DurationProps {
     from: number | DateTime;
@@ -18,7 +18,6 @@ interface DurationProps {
      * @default 0 - refers to now
      */
     to?: 0 | number | DateTime;
-    ago?: boolean;
     style?: FormatStyle;
     truncate?: TruncateBehavior;
 }
@@ -31,13 +30,33 @@ const label = (num: number, style: FormatStyle, narrow: string, singular: string
     return num >= 2 ? plural : singular;
 };
 
-export const formatDuration = (value: Duration, style: FormatStyle = 'narrow', truncate: TruncateBehavior = 'none') => {
-    const duration = value.shiftTo('years', 'days', 'hours', 'minutes');
+const UNITS: DurationUnit[] = ['years', 'days', 'hours', 'minutes'];
+
+export const formatDuration = (value: DurationLike, style: FormatStyle = 'narrow', truncate: TruncateBehavior = 'none') => {
+    const duration = Duration.fromDurationLike(value).shiftTo(...UNITS).normalize();
 
     if (duration.as('seconds') < 60) {
-        return style === 'narrow' ? '< 1m' : 'less than 1 minute';
+        switch (style) {
+        case 'narrow':
+            return '< 1m';
+        case 'short':
+            return '< 1 min';
+        case 'long':
+            return 'less than 1 minute';
+        }
     }
 
+    const formatUnits = truncate === 'truncate' ? [UNITS.find((unit) => duration.get(unit) > 0)!] : UNITS.filter((unit) => duration.get(unit) > 0);
+
+    // @ts-ignore luxon 2.3 path
+    if (duration.toHuman) {
+        return duration
+            .shiftTo(...formatUnits)
+            .mapUnits(Math.floor)
+            .toHuman({unitDisplay: style});
+    }
+
+    //! start:backwards-compat luxon < 2.3
     const formatParts = [];
     if (duration.years >= 1) {
         formatParts.push(`y'${label(duration.years, style, 'y', ' year', ' years')}'`);
@@ -53,9 +72,11 @@ export const formatDuration = (value: Duration, style: FormatStyle = 'narrow', t
     }
 
     return duration.toFormat(truncate === 'truncate' ? formatParts[0] : formatParts.join(' '));
+
+    //! end:backwards-compat
 };
 
-const FormattedDuration = ({from, to = 0, ago, style, truncate}: DurationProps) => {
+const FormattedDuration = ({from, to = 0, style, truncate}: DurationProps) => {
     const now = useNow();
 
     if (!from) {
@@ -65,9 +86,8 @@ const FormattedDuration = ({from, to = 0, ago, style, truncate}: DurationProps) 
     const start = typeof from === 'number' ? DateTime.fromMillis(from) : from;
     const end = typeof to === 'number' ? DateTime.fromMillis(to || now.valueOf()) : to;
     const duration = Interval.fromDateTimes(start, end).toDuration(['years', 'days', 'hours', 'minutes']);
-    const postfix = ago ? ' ago' : '';
     return (
-        <div className='time'>{formatDuration(duration, style, truncate) + postfix}</div>
+        <div className='time'>{formatDuration(duration, style, truncate)}</div>
     );
 };
 

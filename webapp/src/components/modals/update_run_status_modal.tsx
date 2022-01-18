@@ -15,7 +15,7 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import GenericModal, {Description, Label} from 'src/components/widgets/generic_modal';
 import {
     useDateTimeInput,
-    makeOption,
+    useMakeOption,
     ms,
     Mode,
     Option,
@@ -245,11 +245,14 @@ export const optionFromSeconds = (seconds: number) => {
 };
 
 export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disabled?: boolean, preselectedValue?: number) => {
+    const {locale, formatMessage} = useIntl();
+    const makeOption = useMakeOption(Mode.DurationValue, 'en');
+
     const defaults = useMemo(() => {
         const options = [
-            makeOption('in 60 minutes', Mode.DurationValue),
-            makeOption('in 24 hours', Mode.DurationValue),
-            makeOption('in 7 days', Mode.DurationValue),
+            makeOption('in 60 minutes', formatMessage({defaultMessage: 'in 60 minutes'})),
+            makeOption('in 24 hours', formatMessage({defaultMessage: 'in 24 hours'})),
+            makeOption('in 7 days', formatMessage({defaultMessage: 'in 7 days'})),
         ];
 
         let value: Option | undefined;
@@ -287,7 +290,7 @@ export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disa
         options.sort((a, b) => ms(a.value) - ms(b.value));
 
         return {options, value};
-    }, [run, preselectedValue]);
+    }, [run, preselectedValue, locale]);
 
     const {input, value} = useDateTimeInput({
         mode: Mode.DateTimeValue,

@@ -2,8 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, ComponentProps, useMemo, useEffect} from 'react';
-import styled from 'styled-components';
-import {parse, parseDate, ParsingOption} from 'chrono-node';
+import {Chrono, ParsingOption, en, nl, de, fr, ja, pt} from 'chrono-node';
 import parseDuration from 'parse-duration';
 
 import {debounce} from 'debounce';
@@ -18,6 +17,8 @@ import {StyledSelect} from 'src/components/backstage/styles';
 import {Timestamp} from 'src/webapp_globals';
 import {formatDuration} from 'src/components/formatted_duration';
 
+const ChronoLocales: {[key: string]: Pick<Chrono, 'parse' | 'parseDate'>} = {nl, de, fr, ja, pt};
+
 export enum Mode {
     DateTimeValue = 'DateTimeValue',
 
@@ -28,16 +29,16 @@ export enum Mode {
 
 const chronoParsingOptions: ParsingOption = {forwardDate: true};
 
-const durationFromQuery = (query: string): Duration | null => {
+const durationFromQuery = (locale: string, query: string): Duration | null => {
     const ms = parseDuration(query);
     return (ms && Duration.fromMillis(ms)) || null;
 };
 
-const dateTimeFromQuery = (query: string, acceptDurationInput = false): DateTime | null => {
+const dateTimeFromQuery = (locale: string, query: string, acceptDurationInput = false): DateTime | null => {
     // eslint-disable-next-line no-undefined
-    const date: Date = parseDate(query, undefined, chronoParsingOptions);
+    const date: Date = ChronoLocales[locale.split('-')[0]]?.parseDate(query, undefined, chronoParsingOptions) ?? en.parseDate(query, undefined, chronoParsingOptions);
     if (date == null && acceptDurationInput) {
-        const duration = durationFromQuery(query);
+        const duration = durationFromQuery(locale, query);
 
         if (duration?.isValid) {
             return DateTime.now().plus(duration);
@@ -46,27 +47,33 @@ const dateTimeFromQuery = (query: string, acceptDurationInput = false): DateTime
     return (date && DateTime.fromJSDate(date)) || null;
 };
 
-export function infer(query: string, mode: Mode.DateTimeValue): DateTime | null;
-export function infer(query: string, mode: Mode.DurationValue): Duration | null;
-export function infer(query: string, mode?: Mode): Option['value'];
-export function infer(query: string, mode = Mode.AutoValue): Option['value'] {
+export function infer(locale: string, query: string, mode: Mode.DateTimeValue): DateTime | null;
+export function infer(locale: string, query: string, mode: Mode.DurationValue): Duration | null;
+export function infer(locale: string, query: string, mode?: Mode): Option['value'];
+export function infer(locale: string, query: string, mode = Mode.AutoValue): Option['value'] {
     switch (mode) {
     case Mode.DateTimeValue:
-        return dateTimeFromQuery(query, true);
+        return dateTimeFromQuery(locale, query, true);
     case Mode.DurationValue:
-        return durationFromQuery(query);
+        return durationFromQuery(locale, query);
     case Mode.AutoValue:
     default:
-        return dateTimeFromQuery(query) ?? durationFromQuery(query);
+        return dateTimeFromQuery(locale, query) ?? durationFromQuery(locale, query);
     }
 }
 
 export const ms = (value: Option['value']): number => value?.valueOf() ?? 0;
 
-export const makeOption = (input: string, mode = Mode.AutoValue): Option => ({
-    label: input,
-    value: infer(input, mode),
-});
+export const useMakeOption = (mode = Mode.AutoValue, parseLocale?: string): (input: string, label: string) => Option => {
+    const intl = useIntl();
+    return useMemo(() => (input: string, label = input) => {
+        return {
+            label,
+            value: infer(parseLocale ?? intl.locale, input, mode),
+        };
+    }, [mode, parseLocale]);
+};
+
 export type Option = {
     value: DateTime | Duration | null;
     label?: string | null;
@@ -121,14 +128,19 @@ const DateTimeInput = ({
     ...selectProps
 }: Props) => {
     const [options, setOptions] = useState<Option[] | null>(null);
-    const {formatMessage} = useIntl();
+    const {locale, formatMessage} = useIntl();
 
     const updateOptions = useMemo(() => debounce((query: string) => {
-        // eslint-disable-next-line no-undefined
-        const datetimes = parse(query, undefined, chronoParsingOptions).map(({start}) => DateTime.fromJSDate(start.date()));
-        const duration = infer(query, Mode.DurationValue);
+        const datetimes = (
+            // eslint-disable-next-line no-undefined
+            ChronoLocales[locale.split('-')[0]]?.parse(query, undefined, chronoParsingOptions) ??
+            // eslint-disable-next-line no-undefined
+            en.parse(query, undefined, chronoParsingOptions)
+        ).map(({start}) => DateTime.fromJSDate(start.date()));
+
+        const duration = infer(locale, query, Mode.DurationValue);
         setOptions(makeOptions(query, datetimes, duration ? [duration] : [], mode) || null);
-    }, 150), [setOptions, makeOptions]);
+    }, 150), [locale, setOptions, makeOptions]);
 
     return (
         <StyledSelect

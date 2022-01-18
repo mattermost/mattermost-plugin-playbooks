@@ -20,7 +20,7 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
 import {resetReminder} from 'src/client';
 import {CustomPostContainer} from 'src/components/custom_post_styles';
-import {makeOption, Mode, ms, Option} from 'src/components/datetime_input';
+import {useMakeOption, Mode, ms, Option} from 'src/components/datetime_input';
 import {nearest} from 'src/utils';
 import {optionFromSeconds} from 'src/components/modals/update_run_status_modal';
 import {StyledSelect} from 'src/components/backstage/styles';
@@ -49,14 +49,16 @@ export const UpdateRequestPost = (props: Props) => {
         setSnoozeMenuPos((rect.top < 250) ? 'bottom' : 'top');
     }, [rect]);
 
+    const makeOption = useMakeOption(Mode.DurationValue, 'en');
+
     if (!currentRun) {
         return null;
     }
 
     const options = [
-        makeOption('in 60 minutes', Mode.DurationValue),
-        makeOption('in 24 hours', Mode.DurationValue),
-        makeOption('in 7 days', Mode.DurationValue),
+        makeOption('in 60 minutes', formatMessage({defaultMessage: 'in 60 minutes'})),
+        makeOption('in 24 hours', formatMessage({defaultMessage: 'in 24 hours'})),
+        makeOption('in 7 days', formatMessage({defaultMessage: 'in 7 days'})),
     ];
     const pushIfNotIn = (option: Option) => {
         if (!options.find((o) => ms(option.value) === ms(o.value))) {

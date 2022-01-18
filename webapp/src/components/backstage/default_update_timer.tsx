@@ -16,7 +16,7 @@ import {
 
 import {
     useDateTimeInput,
-    makeOption,
+    useMakeOption,
     ms,
     Mode,
     Option,
@@ -39,12 +39,13 @@ const optionFromSeconds = (seconds: number) => {
 
 const DefaultUpdateTimer = (props: Props) => {
     const {formatMessage} = useIntl();
+    const makeOption = useMakeOption(Mode.DurationValue, 'en');
 
     const defaults = useMemo(() => {
         const options = [
-            makeOption('60 minutes', Mode.DurationValue),
-            makeOption('24 hours', Mode.DurationValue),
-            makeOption('7 days', Mode.DurationValue),
+            makeOption('60 minutes', formatMessage({defaultMessage: '60 minutes'})),
+            makeOption('24 hours', formatMessage({defaultMessage: '24 hours'})),
+            makeOption('7 days', formatMessage({defaultMessage: '7 days'})),
         ];
 
         let value: Option | undefined;
