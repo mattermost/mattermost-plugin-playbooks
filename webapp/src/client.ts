@@ -235,6 +235,11 @@ export async function archivePlaybook(playbookId: Playbook['id']) {
     return data;
 }
 
+export async function importFile(file: any, teamId: string) {
+    const data = await doPost(`${apiUrl}/playbooks/import?team_id=${teamId}`, file);
+    return data;
+}
+
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
     return Client4.getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE);
 }

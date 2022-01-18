@@ -8,10 +8,10 @@ import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {displayPlaybookCreateModal} from 'src/actions';
-import {PrimaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
+import {GrayTertiaryButton, PrimaryButton, TertiaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
 import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
@@ -35,6 +35,12 @@ import {
     usePlaybooksRouting,
 } from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
+
+import {importFile} from 'src/client';
+
+import Spinner from '../assets/icons/spinner';
+
+import TeamSelector from '../team/team_selector';
 
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 
@@ -61,6 +67,9 @@ const PlaybookList = () => {
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
     const bottomHalf = useRef<JSX.Element | null>(null);
     const dispatch = useDispatch();
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [importUploading, setImportUploading] = useState(false);
+    const [importTargetTeam, setImportTargetTeam] = useState('');
 
     const [
         playbooks,
@@ -107,6 +116,25 @@ const PlaybookList = () => {
             );
         }
 
+        const importUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                let teamId = teams[0].id;
+
+                if (teams.length !== 1) {
+                    teamId = importTargetTeam;
+                }
+
+                setImportUploading(true);
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    importFile(ev?.target?.result, teamId);
+                    setImportUploading(false);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        };
+
         return (
             <>
                 <RightDots/>
@@ -123,6 +151,41 @@ const PlaybookList = () => {
                             onSearch={setSearchTerm}
                             placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
                         />
+                        <HorizontalSpacer size={12}/>
+                        <input
+                            type='file'
+                            onChange={importUpload}
+                            ref={fileInputRef}
+                            style={{display: 'none'}}
+                        />
+                        { teams.length > 1 &&
+                        <TeamSelector
+                            placeholder={
+                                <ImportButton
+                                    spin={importUploading}
+                                />
+                            }
+                            onlyPlaceholder={true}
+                            enableEdit={true}
+                            teams={teams}
+                            onSelectedChange={(teamId: string) => {
+                                setImportTargetTeam(teamId);
+                                if (fileInputRef && fileInputRef.current) {
+                                    fileInputRef.current.click();
+                                }
+                            }}
+                        />
+                        }
+                        { teams.length <= 1 &&
+                        <ImportButton
+                            onClick={() => {
+                                if (fileInputRef && fileInputRef.current) {
+                                    fileInputRef.current.click();
+                                }
+                            }}
+                            spin={importUploading}
+                        />
+                        }
                         {canCreatePlaybooks &&
                         <>
                             <HorizontalSpacer size={12}/>
@@ -195,6 +258,19 @@ const PlaybookList = () => {
             {bottomHalf.current}
             {confirmArchiveModal}
         </PlaybookContainer>
+    );
+};
+
+const ImportButton = (props: {onClick?: () => void, spin: boolean}) => {
+    return (
+        <TertiaryButton
+            onClick={props.onClick}
+        >
+            <FormattedMessage defaultMessage='Import'/>
+            { props.spin &&
+            <Spinner/>
+            }
+        </TertiaryButton>
     );
 };
 
