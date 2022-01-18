@@ -1700,11 +1700,13 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_MetricConfig (
 					   ID VARCHAR(26) PRIMARY KEY,
 					   PlaybookID VARCHAR(26) NOT NULL REFERENCES IR_Playbook(ID),
-					   Title VARCHAR(1024) NOT NULL UNIQUE,
+					   Title VARCHAR(1024) NOT NULL,
 					   Description VARCHAR(4096) NOT NULL,
-					   Type VARCHAR(32) NOT NULL DEFAULT '',
+					   Type VARCHAR(32) NOT NULL,
 					   Target BIGINT NOT NULL,
-					   Order TINYINT,
+					   Order TINYINT NOT NULL DEFAULT 0,
+					   DeleteAt BIGINT NOT NULL DEFAULT 0,
+					   CONSTRAINT metrics_unique UNIQUE (PlaybookID, Title),
 					   INDEX IR_MetricConfig_PlaybookID (PlaybookID)
 					)
 				` + MySQLCharset); err != nil {
@@ -1715,8 +1717,8 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_Metric (
 						IncidentID VARCHAR(26) NOT NULL REFERENCES IR_Incident(ID),
 						MetricConfigID VARCHAR(26) NOT NULL REFERENCES IR_MetricConfig(ID),
-						Value BIGINT NOT NULL
-						INDEX IR_Metric_IncidentID (IncidentID)
+						Value BIGINT NOT NULL,
+						INDEX IR_Metric_IncidentID (IncidentID),
 						INDEX IR_Metric_MetricConfigID (MetricConfigID)
 				 	)
 				` + MySQLCharset); err != nil {
@@ -1731,11 +1733,13 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_MetricConfig (
 						ID TEXT PRIMARY KEY,
 						PlaybookID TEXT NOT NULL REFERENCES IR_Playbook(ID),
-						Title TEXT NOT NULL UNIQUE,
+						Title TEXT NOT NULL,
 						Description TEXT NOT NULL,
-						Type TEXT NOT NULL DEFAULT '',
+						Type TEXT NOT NULL,
 						Target BIGINT NOT NULL,
-						Order SMALLINT,
+						Order SMALLINT NOT NULL DEFAULT 0,
+						DeleteAt BIGINT NOT NULL DEFAULT 0,
+						UNIQUE (PlaybookID, Title)
 					)
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_MetricConfig")
