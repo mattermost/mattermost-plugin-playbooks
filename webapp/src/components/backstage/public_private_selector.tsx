@@ -107,8 +107,8 @@ const PublicPrivateSelector = (props: Props) => {
                     className={'icon-lock-outline'}
                 />
                 <StackedText>
-                    <BigText>{'Private playbook'}</BigText>
-                    <SmallText>{'Only invited members'}</SmallText>
+                    <BigText>{formatMessage({defaultMessage: 'Private playbook'})}</BigText>
+                    <SmallText>{formatMessage({defaultMessage: 'Only invited members'})}</SmallText>
                 </StackedText>
                 {!props.public &&
                 <CheckIcon
