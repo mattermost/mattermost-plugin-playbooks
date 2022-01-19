@@ -33,8 +33,6 @@ import {
     PlaybookArchived,
     PLAYBOOK_RESTORED,
     PlaybookRestored,
-    ReceivedTeamNumPlaybooks,
-    RECEIVED_TEAM_NUM_PLAYBOOKS,
     ReceivedGlobalSettings,
     RECEIVED_GLOBAL_SETTINGS,
     ShowPostMenuModal,
@@ -187,58 +185,6 @@ const eventsFilterByChannel = (state: Record<string, TimelineEventsFilter> = {},
     }
 };
 
-const numPlaybooksByTeam = (state: Record<string, number> = {}, action: PlaybookCreated | PlaybookArchived | PlaybookRestored | ReceivedTeamNumPlaybooks) => {
-    switch (action.type) {
-    case PLAYBOOK_CREATED: {
-        const playbookCreatedAction = action as PlaybookCreated;
-        const teamID = playbookCreatedAction.teamID;
-        const prevCount = state[teamID] || 0;
-
-        return {
-            ...state,
-            [teamID]: prevCount + 1,
-        };
-    }
-    case PLAYBOOK_RESTORED: {
-        const playbookCreatedAction = action as PlaybookRestored;
-        const teamID = playbookCreatedAction.teamID;
-        const prevCount = state[teamID] || 0;
-
-        return {
-            ...state,
-            [teamID]: prevCount + 1,
-        };
-    }
-    case PLAYBOOK_ARCHIVED: {
-        const playbookDeletedAction = action as PlaybookCreated;
-        const teamID = playbookDeletedAction.teamID;
-        const prevCount = state[teamID] || 0;
-
-        return {
-            ...state,
-            [teamID]: prevCount - 1,
-        };
-    }
-    case RECEIVED_TEAM_NUM_PLAYBOOKS: {
-        const receivedNumPlaybooksAction = action as ReceivedTeamNumPlaybooks;
-        const numPlaybooks = receivedNumPlaybooksAction.numPlaybooks;
-        const teamID = receivedNumPlaybooksAction.teamID;
-        const prevCount = state[teamID] || 0;
-
-        if (prevCount === numPlaybooks) {
-            return state;
-        }
-
-        return {
-            ...state,
-            [teamID]: numPlaybooks,
-        };
-    }
-    default:
-        return state;
-    }
-};
-
 const globalSettings = (state: GlobalSettings | null = null, action: ReceivedGlobalSettings) => {
     switch (action.type) {
     case RECEIVED_GLOBAL_SETTINGS:
@@ -344,7 +290,6 @@ const reducer = combineReducers({
     myPlaybookRunsByTeam,
     rhsState,
     eventsFilterByChannel,
-    numPlaybooksByTeam,
     globalSettings,
     postMenuModalVisibility,
     hasViewedByChannel,
