@@ -60,6 +60,7 @@ const WelcomeCreateAlt = styled.span`
     align-items: center;
     vertical-align: top;
     padding: 1rem 0;
+
     > svg {
         margin-left: 0.5em;
     }
@@ -69,6 +70,7 @@ const WelcomeButtonCreate = styled(PrimaryButton)`
     margin-right: 2rem;
     margin-bottom: 1rem;
     padding: 0 2rem;
+
     > svg {
         margin-right: 0.5rem;
     }
@@ -79,20 +81,17 @@ const WelcomeWarn = styled(WelcomeDesc)`
 `;
 
 const RunDetailMaskSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="calc(100% - 15px)" viewBox="0 0 400 137" preserveAspectRatio="none"><path d="M0 0H400V122.629C400 122.629 312 137 200 137C101.5 137 0 122.629 0 122.629V0Z"/></svg>';
-type RunDetailProps = {exists: boolean;};
+type RunDetailProps = { exists: boolean; };
 
 const RunDetail = styled.div<RunDetailProps>`
     display: flex;
     place-content: flex-start;
     place-items: center;
     padding: 2rem 2rem 2rem 4rem;
-    background:
-        linear-gradient(
-            180deg,
-            rgba(var(--center-channel-bg-rgb), 0.85) 0%,
-            rgba(var(--center-channel-bg-rgb), 0.25) 100%
-        ),
-        rgba(var(${({exists}) => (exists ? '--button-bg-rgb' : '--center-channel-color-rgb')}), 0.08);
+    background: linear-gradient(180deg,
+    rgba(var(--center-channel-bg-rgb), 0.85) 0%,
+    rgba(var(--center-channel-bg-rgb), 0.25) 100%),
+    rgba(var(${({exists}) => (exists ? '--button-bg-rgb' : '--center-channel-color-rgb')}), 0.08);
     mask-mode: alpha;
     mask-size: cover;
     mask-repeat: round;
@@ -146,7 +145,8 @@ const Heading = styled.h4`
 `;
 
 const ListHeading = styled(Heading)`
-    ${SemiBoldHeading}
+    ${SemiBoldHeading} {
+    }
 
     padding-left: 2.75rem;
 `;
@@ -173,7 +173,7 @@ const ListSection = styled.div`
     grid-template-rows: repeat(auto-fill, minmax(100px, 1fr));
     position: relative;
 
-    &::after{
+    &::after {
         content: '';
         display: block;
         position: absolute;
@@ -314,7 +314,7 @@ const RHSHome = () => {
 
                     {Boolean(playbooks?.length) && (
                         <>
-                            <ListHeading>{'Your Playbooks'}</ListHeading>
+                            <ListHeading><FormattedMessage defaultMessage='Your Playbooks'/></ListHeading>
                             <ListSection>
                                 {playbooks?.map((p) => (
                                     <RHSHomePlaybook
@@ -337,7 +337,7 @@ const RHSHome = () => {
 
                     {canCreatePlaybooks && (
                         <>
-                            <ListHeading>{'Playbook Templates'}</ListHeading>
+                            <ListHeading><FormattedMessage defaultMessage='Playbook Templates'/></ListHeading>
                             <ListSection>
                                 {PresetTemplates.map(({title, template}) => (
                                     <RHSHomeTemplate

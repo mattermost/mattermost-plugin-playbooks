@@ -128,7 +128,8 @@ export const MetaItem = styled(PillBox)`
 `;
 
 const RunButton = styled(SubtlePrimaryButton)`
-    width: 7.25rem;
+    min-width: 7.25rem;
+    max-width: 10rem;
     height: 7.25rem;
     justify-content: center;
     flex-direction: column;
