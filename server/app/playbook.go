@@ -79,6 +79,7 @@ type PlaybookMember struct {
 
 type PlaybookMetric struct {
 	ID          string `json:"id"`
+	PlaybookID  string `json:"playbook_id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Type        string `json:"type"`

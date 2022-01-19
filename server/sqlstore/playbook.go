@@ -288,7 +288,7 @@ func (p *playbookStore) Get(id string) (app.Playbook, error) {
 	}
 
 	var metrics []app.PlaybookMetric
-	err = p.store.selectBuilder(tx, &metrics, p.makeMetricsSelect(playbook.ID).Where(sq.Eq{"PlaybookID": id}))
+	err = p.store.selectBuilder(tx, &metrics, p.makeMetricsSelect().Where(sq.Eq{"PlaybookID": id}))
 	if err != nil && err != sql.ErrNoRows {
 		return app.Playbook{}, errors.Wrapf(err, "failed to get metrics configs for playbook with id '%s'", id)
 	}
@@ -463,7 +463,14 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 	if err != nil {
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbook members")
 	}
+	var metrics []app.PlaybookMetric
+	err = p.store.selectBuilder(p.store.db, &metrics, p.makeMetricsSelect().Where(sq.Eq{"PlaybookID": ids}))
+	if err != nil {
+		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbooks metrics")
+	}
+
 	addMembersToPlaybooks(members, playbooks)
+	addMetricsToPlaybooks(metrics, playbooks)
 
 	pageCount := 0
 	if opts.PerPage > 0 {
@@ -702,10 +709,11 @@ func (p *playbookStore) replacePlaybookMembers(q queryExecer, playbook app.Playb
 	return nil
 }
 
-func (p *playbookStore) makeMetricsSelect(playbookID string) sq.SelectBuilder {
+func (p *playbookStore) makeMetricsSelect() sq.SelectBuilder {
 	return p.store.builder.
 		Select(
 			"mc.ID",
+			"mc.PlaybookID",
 			"mc.Title",
 			"mc.Description",
 			"mc.Type",
@@ -859,10 +867,22 @@ func addMembersToPlaybook(members []playbookMember, playbook *app.Playbook) {
 	}
 }
 
+func addMetricsToPlaybooks(metrics []app.PlaybookMetric, playbooks []app.Playbook) {
+	playbookToMetrics := make(map[string][]app.PlaybookMetric)
+	for _, metric := range metrics {
+		playbookToMetrics[metric.PlaybookID] = append(playbookToMetrics[metric.PlaybookID], metric)
+	}
+
+	for i, playbook := range playbooks {
+		addMetricsToPlaybook(playbookToMetrics[playbook.ID], &(playbooks[i]))
+	}
+}
+
 func addMetricsToPlaybook(metrics []app.PlaybookMetric, playbook *app.Playbook) {
 	for _, m := range metrics {
 		playbook.Metrics = append(playbook.Metrics, app.PlaybookMetric{
 			ID:          m.ID,
+			PlaybookID:  m.PlaybookID,
 			Title:       m.Title,
 			Description: m.Description,
 			Type:        m.Type,
