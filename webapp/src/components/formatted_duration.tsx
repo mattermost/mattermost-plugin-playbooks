@@ -32,20 +32,15 @@ const label = (num: number, style: FormatStyle, narrow: string, singular: string
 
 const UNITS: DurationUnit[] = ['years', 'days', 'hours', 'minutes'];
 
-export const formatDuration = (value: DurationLike, style: FormatStyle = 'narrow', truncate: TruncateBehavior = 'none') => {
-    const duration = Duration.fromDurationLike(value).shiftTo(...UNITS).normalize();
-
-    if (duration.as('seconds') < 60) {
-        switch (style) {
-        case 'narrow':
-            return '< 1m';
-        case 'short':
-            return '< 1 min';
-        case 'long':
-            return 'less than 1 minute';
-        }
+export const formatDuration = (value: Duration, style: FormatStyle = 'narrow', truncate: TruncateBehavior = 'none') => {
+    if (value.as('seconds') < 60 && value.toHuman) {
+        return value
+            .shiftTo('seconds')
+            .mapUnits(Math.floor)
+            .toHuman({unitDisplay: style});
     }
 
+    const duration = value.shiftTo(...UNITS).normalize();
     const formatUnits = truncate === 'truncate' ? [UNITS.find((unit) => duration.get(unit) > 0)!] : UNITS.filter((unit) => duration.get(unit) > 0);
 
     // @ts-ignore luxon 2.3 path

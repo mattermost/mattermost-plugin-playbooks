@@ -239,20 +239,20 @@ export const optionFromSeconds = (seconds: number) => {
     const duration = Duration.fromObject({seconds});
 
     return {
-        label: `in ${formatDuration(duration, 'long')}`,
+        label: `${formatDuration(duration, 'long')}`,
         value: duration,
     };
 };
 
 export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disabled?: boolean, preselectedValue?: number) => {
-    const {locale, formatMessage} = useIntl();
+    const {locale} = useIntl();
     const makeOption = useMakeOption(Mode.DurationValue, 'en');
 
     const defaults = useMemo(() => {
         const options = [
-            makeOption('in 60 minutes', formatMessage({defaultMessage: 'in 60 minutes'})),
-            makeOption('in 24 hours', formatMessage({defaultMessage: 'in 24 hours'})),
-            makeOption('in 7 days', formatMessage({defaultMessage: 'in 7 days'})),
+            makeOption('60 minutes'),
+            makeOption('24 hours'),
+            makeOption('7 days'),
         ];
 
         let value: Option | undefined;

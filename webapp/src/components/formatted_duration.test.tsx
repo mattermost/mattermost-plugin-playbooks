@@ -22,8 +22,9 @@ import FormattedDuration, {formatDuration} from './formatted_duration';
 
 describe('formatDuration', () => {
     test.each<[arg: DurationObjectUnits, narrowOut: string, longOut: string]>([
-        [{seconds: 0}, '< 1m', 'less than 1 minute'],
-        [{seconds: 59}, '< 1m', 'less than 1 minute'],
+        [{seconds: 0}, '0s', '0 seconds'],
+        [{seconds: 59}, '59s', '59 seconds'],
+        [{seconds: 60}, '1m', '1 minute'],
         [{minutes: 1}, '1m', '1 minute'],
         [{minutes: 1, seconds: 30}, '1m', '1 minute'],
         [{minutes: 59}, '59m', '59 minutes'],

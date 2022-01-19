@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, ComponentProps, useMemo, useEffect} from 'react';
+import React, {memo, useState, ComponentProps, useMemo, useEffect, ReactNode} from 'react';
 import {Chrono, ParsingOption, en, nl, de, fr, ja, pt} from 'chrono-node';
 import parseDuration from 'parse-duration';
 
@@ -17,7 +17,7 @@ import {StyledSelect} from 'src/components/backstage/styles';
 import {Timestamp} from 'src/webapp_globals';
 import {formatDuration} from 'src/components/formatted_duration';
 
-const ChronoLocales: {[key: string]: Pick<Chrono, 'parse' | 'parseDate'>} = {nl, de, fr, ja, pt};
+const ChronoLocales: {[locale: string]: Pick<Chrono, 'parse' | 'parseDate'>} = {nl, de, fr, ja, pt};
 
 export enum Mode {
     DateTimeValue = 'DateTimeValue',
@@ -30,6 +30,7 @@ export enum Mode {
 const chronoParsingOptions: ParsingOption = {forwardDate: true};
 
 const durationFromQuery = (locale: string, query: string): Duration | null => {
+    localizeParseDuration(locale);
     const ms = parseDuration(query);
     return (ms && Duration.fromMillis(ms)) || null;
 };
@@ -64,19 +65,32 @@ export function infer(locale: string, query: string, mode = Mode.AutoValue): Opt
 
 export const ms = (value: Option['value']): number => value?.valueOf() ?? 0;
 
-export const useMakeOption = (mode = Mode.AutoValue, parseLocale?: string): (input: string, label: string) => Option => {
-    const intl = useIntl();
-    return useMemo(() => (input: string, label = input) => {
-        return {
-            label,
-            value: infer(parseLocale ?? intl.locale, input, mode),
-        };
-    }, [mode, parseLocale]);
+export const useMakeOption = (mode = Mode.AutoValue, parseLocale?: string): (input: string, customLabel?: ReactNode) => Option => {
+    const {locale} = useIntl();
+    return (input, customLabel) => {
+        let label = customLabel;
+        const value = infer(parseLocale ?? locale, input, mode);
+
+        if (label == null) {
+            if (DateTime.isDateTime(value)) {
+                label = (
+                    <Timestamp
+                        value={value}
+                        {...TIME_SPEC}
+                    />
+                );
+            } else if (Duration.isDuration(value)) {
+                label = formatDuration(value, 'long');
+            }
+        }
+
+        return {label, value};
+    };
 };
 
 export type Option = {
     value: DateTime | Duration | null;
-    label?: string | null;
+    label?: ReactNode | null;
     mode?: Mode.DateTimeValue | Mode.DurationValue;
 }
 
@@ -219,3 +233,30 @@ export const useDateTimeInput = ({defaultValue, ...props}: Partial<Exclude<Props
 };
 
 export default DateTimeInput;
+
+const parseDurationLocales: {[locale: string]: boolean} = {};
+const localizeParseDuration = (locale: string): void => {
+    if (parseDurationLocales[locale]) {
+        return;
+    }
+    Object.entries(baseUnits).forEach(([unit, ratio]) => {
+        [0, 1, 2]
+            .forEach((plural) => getUnits(unit, plural, locale).forEach((unitLabel) => {
+                if (unitLabel) {
+                    parseDuration[unitLabel.toLowerCase().replace(/[.\s]/g, '')] = ratio;
+                }
+            }));
+    });
+    parseDurationLocales[locale] = true;
+};
+
+const baseUnits = (() => {
+    const {nanosecond, microsecond, millisecond, second, minute, hour, day, week, month, year} = parseDuration;
+    return {millisecond, second, minute, hour, day, week, month, year};
+})();
+
+function getUnits(unit: string, value: number, locale: string) {
+    return ['narrow', 'short', 'long']
+        .map((unitDisplay) => new Intl.NumberFormat(locale, {style: 'unit', unit, unitDisplay})
+            .formatToParts(value).find((x) => x.type === 'unit')?.value);
+}
