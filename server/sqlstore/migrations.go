@@ -1691,4 +1691,24 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.46.0"),
+		toVersion:   semver.MustParse("0.47.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// set CurrentStatus = Finished for runs with EndAt > 0 || IsActive == true
+			updateOldStatuses := sqlStore.builder.
+				Update("IR_Incident").
+				Set("CurrentStatus", app.StatusFinished).
+				Where(sq.Or{
+					sq.Gt{"EndAt": 0},
+					sq.Eq{"IsActive": false},
+				})
+
+			if _, err := sqlStore.execBuilder(sqlStore.db, updateOldStatuses); err != nil {
+				return errors.Wrap(err, "failed to update new CurrentStatus for old runs")
+			}
+
+			return nil
+		},
+	},
 }
