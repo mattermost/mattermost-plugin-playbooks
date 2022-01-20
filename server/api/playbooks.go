@@ -590,6 +590,10 @@ func (h *PlaybookHandler) duplicatePlaybook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if !h.PermissionsCheck(w, h.permissions.PlaybookCreate(userID, playbook)) {
+		return
+	}
+
 	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
