@@ -103,7 +103,7 @@ const Report = (props: ReportProps) => {
             />
             <ConfirmModalLight
                 show={showConfirmation}
-                title={formatMessage({defaultMessage: 'Are you sure you want to publish'})}
+                title={formatMessage({defaultMessage: 'Are you sure you want to publish?'})}
                 message={formatMessage({defaultMessage: 'You will not be able to edit the retrospective report after publishing it. Do you want to publish the retrospective report?'})}
                 confirmButtonText={formatMessage({defaultMessage: 'Publish'})}
                 onConfirm={confirmedPublish}
