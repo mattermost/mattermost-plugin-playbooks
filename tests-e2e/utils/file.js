@@ -6,8 +6,9 @@
 const chalk = require('chalk');
 const intersection = require('lodash.intersection');
 const without = require('lodash.without');
-const shell = require('shelljs');
 const argv = require('yargs').argv;
+
+// const shell = require('shelljs');
 
 const TEST_DIR = 'cypress';
 
@@ -19,11 +20,11 @@ const grepCommand = (word = '') => {
     return `grep -rIlw '${word}' ${TEST_DIR}`;
 };
 
-const grepFiles = (command) => {
-    return shell.exec(command, {silent: true}).stdout
-        .split('\n')
-        .filter((f) => f.includes('spec.js'));
-};
+// const grepFiles = (command) => {
+//     return shell.exec(command, {silent: true}).stdout
+//         .split('\n')
+//         .filter((f) => f.includes('spec.js'));
+// };
 
 function getTestFiles() {
     const {invert, excludeGroup, group, stage} = argv;
