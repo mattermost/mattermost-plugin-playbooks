@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -765,5 +767,22 @@ func TestPlaybooksConversions(t *testing.T) {
 		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		require.NoError(t, err)
 
+	})
+}
+
+func TestPlaybooksImportExport(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+	e.SetE20Licence()
+	e.CreateBasicPlaybook()
+
+	t.Run("Export", func(t *testing.T) {
+		result, err := e.PlaybooksClient.Playbooks.Export(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		var exportedPlaybook app.Playbook
+		err = json.Unmarshal(result, &exportedPlaybook)
+		require.NoError(t, err)
+		assert.Equal(t, e.BasicPlaybook.Title, exportedPlaybook.Title)
 	})
 }
