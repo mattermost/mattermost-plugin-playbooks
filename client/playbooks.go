@@ -149,3 +149,27 @@ func (s *PlaybooksService) Export(ctx context.Context, playbookID string) ([]byt
 
 	return result, nil
 }
+
+// Duplicate a playbook. Returns the id of the newly created playbook
+func (s *PlaybooksService) Duplicate(ctx context.Context, playbookID string) (string, error) {
+	url := fmt.Sprintf("playbooks/%s/duplicate", playbookID)
+	req, err := s.client.newRequest(http.MethodPost, url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var result struct {
+		ID string `json:"id"`
+	}
+	resp, err := s.client.do(ctx, req, &result)
+	if err != nil {
+		return "", err
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("expected status code %d", http.StatusCreated)
+	}
+
+	return result.ID, nil
+}

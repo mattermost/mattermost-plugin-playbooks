@@ -353,6 +353,15 @@ func (s *playbookService) IsAutoFollowing(playbookID, userID string) (bool, erro
 	return isAutoFollowing, nil
 }
 
+// Duplicate duplicates a playbook
+func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, error) {
+	newPlaybook := playbook.Clone()
+	newPlaybook.ID = ""
+	newPlaybook.Title = "Copy of " + playbook.Title
+
+	return s.Create(newPlaybook, userID)
+}
+
 func getPlaybookTriggersForAMessage(playbook *CachedPlaybook, message string) []string {
 	triggers := []string{}
 	for _, keyword := range playbook.SignalAnyKeywords {

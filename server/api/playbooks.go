@@ -55,6 +55,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("", handler.archivePlaybook).Methods(http.MethodDelete)
 	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("/export", handler.exportPlaybook).Methods(http.MethodGet)
+	playbookRouter.HandleFunc("/duplicate", handler.duplicatePlaybook).Methods(http.MethodPost)
 
 	autoFollowsRouter := playbookRouter.PathPrefix("/autofollows").Subrouter()
 	autoFollowRouter := autoFollowsRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
@@ -572,4 +573,34 @@ func (h *PlaybookHandler) exportPlaybook(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(export)
+}
+
+func (h *PlaybookHandler) duplicatePlaybook(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, h.permissions.PlaybookViewWithPlaybook(userID, playbook)) {
+		return
+	}
+
+	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	result := struct {
+		ID string `json:"id"`
+	}{
+		ID: newPlaybookID,
+	}
+
+	ReturnJSON(w, &result, http.StatusCreated)
 }
