@@ -1695,7 +1695,7 @@ var migrations = []Migration{
 		fromVersion: semver.MustParse("0.46.0"),
 		toVersion:   semver.MustParse("0.47.0"),
 		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
-			// set CurrentStatus = Finished for runs with EndAt > 0 || IsActive == true
+			// set CurrentStatus = Finished for runs with EndAt > 0 || IsActive == false
 			updateOldStatuses := sqlStore.builder.
 				Update("IR_Incident").
 				Set("CurrentStatus", app.StatusFinished).
