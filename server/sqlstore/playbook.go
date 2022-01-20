@@ -720,6 +720,7 @@ func (p *playbookStore) makeMetricsSelect() sq.SelectBuilder {
 			"mc.Target",
 		).
 		From("IR_MetricConfig mc").
+		Where(sq.Eq{"DeleteAt": 0}).
 		OrderBy("mc.Sort ASC")
 }
 

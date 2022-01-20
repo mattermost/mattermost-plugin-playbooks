@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -41,6 +42,28 @@ func multipleUserInfo(n int) []userInfo {
 		list = append(list, newUserInfo())
 	}
 	return list
+}
+
+func cleanMetricsIDs(metrics []app.PlaybookMetric) {
+	for i := range metrics {
+		metrics[i].ID = ""
+		metrics[i].PlaybookID = ""
+	}
+}
+
+func metricsFromNames(names []string) []app.PlaybookMetric {
+	metrics := make([]app.PlaybookMetric, len(names))
+	types := []string{app.MetricTypeCurrency, app.MetricTypeDuration, app.MetricTypeInteger}
+
+	for i := range names {
+		metrics[i] = app.PlaybookMetric{
+			Title:       names[i],
+			Description: "description: " + strconv.Itoa(i),
+			Type:        types[i%len(types)],
+			Target:      int64(i),
+		}
+	}
+	return metrics
 }
 
 func TestGetPlaybook(t *testing.T) {
@@ -89,6 +112,7 @@ func TestGetPlaybook(t *testing.T) {
 		WithCreatePublic(true).
 		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
 		WithMembers([]userInfo{andrew, matt}).
+		WithMetrics([]string{"name11", "name12"}).
 		ToPlaybook()
 
 	pb03 := NewPBBuilder().
@@ -97,6 +121,7 @@ func TestGetPlaybook(t *testing.T) {
 		WithChecklists([]int{1, 2, 3}).
 		WithCreateAt(700).
 		WithMembers([]userInfo{jon, matt, lucia}).
+		WithMetrics([]string{"name14", "name12", "name13", "name11"}).
 		ToPlaybook()
 
 	pb04 := NewPBBuilder().
@@ -106,6 +131,7 @@ func TestGetPlaybook(t *testing.T) {
 		WithCreateAt(800).
 		WithChecklists([]int{20}).
 		WithMembers([]userInfo{matt}).
+		WithMetrics([]string{"name17"}).
 		ToPlaybook()
 
 	pb05 := NewPBBuilder().
@@ -114,6 +140,7 @@ func TestGetPlaybook(t *testing.T) {
 		WithCreateAt(1000).
 		WithChecklists([]int{1}).
 		WithMembers([]userInfo{jon, andrew}).
+		WithMetrics([]string{"name21", "name22", "name20", "name24"}).
 		ToPlaybook()
 
 	pb06 := NewPBBuilder().
@@ -122,6 +149,7 @@ func TestGetPlaybook(t *testing.T) {
 		WithCreateAt(1100).
 		WithChecklists([]int{1, 2, 3}).
 		WithMembers([]userInfo{matt}).
+		WithMetrics([]string{"name27", "name29"}).
 		ToPlaybook()
 
 	pb07 := NewPBBuilder().
@@ -164,6 +192,11 @@ func TestGetPlaybook(t *testing.T) {
 
 			actual, err := playbookStore.Get(id)
 			require.NoError(t, err)
+
+			for _, m := range actual.Metrics {
+				require.Equal(t, m.PlaybookID, id)
+			}
+			cleanMetricsIDs(actual.Metrics)
 			require.Equal(t, expected, actual)
 		})
 
@@ -180,6 +213,7 @@ func TestGetPlaybook(t *testing.T) {
 
 			for _, p := range inserted {
 				got, err := playbookStore.Get(p.ID)
+				cleanMetricsIDs(got.Metrics)
 				require.NoError(t, err)
 				require.Equal(t, p, got)
 			}
@@ -193,6 +227,7 @@ func TestGetPlaybook(t *testing.T) {
 			expected.ID = id
 
 			actual, err := playbookStore.Get("nonexisting")
+			cleanMetricsIDs(actual.Metrics)
 			require.Error(t, err)
 			require.EqualError(t, err, "playbook does not exist for id 'nonexisting': not found")
 			require.Equal(t, app.Playbook{}, actual)
@@ -212,6 +247,20 @@ func TestGetPlaybook(t *testing.T) {
 			actual, err := playbookStore.Get(id)
 			require.NoError(t, err)
 			require.Equal(t, expected, actual)
+		})
+
+		t.Run(driverName+" - playbook with duplicates metrics names", func(t *testing.T) {
+			pb11 := NewPBBuilder().
+				WithTitle("playbook 11").
+				WithTeamID(team1id).
+				WithCreateAt(800).
+				WithMetrics([]string{"name4", "name1", "name2", "name4"}).
+				ToPlaybook()
+			id, err := playbookStore.Create(pb11)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), duplicateKeyError[driverName])
+			require.Equal(t, id, "")
+
 		})
 	}
 }
@@ -271,6 +320,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithUpdateAt(0).
 		WithChecklists([]int{1, 2}).
 		WithMembers([]userInfo{jon, andrew, matt}).
+		WithMetrics([]string{"name4", "name1", "name3"}).
 		ToPlaybook()
 
 	pb02 := NewPBBuilder().
@@ -281,6 +331,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithCreatePublic(true).
 		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
 		WithMembers([]userInfo{andrew, matt}).
+		WithMetrics([]string{"name4", "name1", "name3", "name5"}).
 		ToPlaybook()
 
 	pb03 := NewPBBuilder().
@@ -290,6 +341,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithCreateAt(700).
 		WithUpdateAt(0).
 		WithMembers([]userInfo{jon, matt, lucia}).
+		WithMetrics([]string{"name3"}).
 		ToPlaybook()
 
 	pb04 := NewPBBuilder().
@@ -804,6 +856,8 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				for i, p := range actual.Items {
 					require.True(t, model.IsValidId(p.ID))
 					actual.Items[i].ID = ""
+					cleanMetricsIDs(actual.Items[i].Metrics)
+					require.Equal(t, p.Metrics, testCase.expected.Items[i].Metrics)
 				}
 
 				// remove the checklists and members from the expected playbooks--we don't return them in getPlaybooks
@@ -876,6 +930,7 @@ func TestUpdatePlaybook(t *testing.T) {
 			playbook    app.Playbook
 			update      func(app.Playbook) app.Playbook
 			expectedErr error
+			clean       func(app.Playbook, app.Playbook) (app.Playbook, app.Playbook)
 		}{
 			{
 				name:     "id should not be empty",
@@ -1016,6 +1071,68 @@ func TestUpdatePlaybook(t *testing.T) {
 				},
 				expectedErr: nil,
 			},
+			{
+				name:     "playbook with 0 metrics, go to 3",
+				playbook: NewPBBuilder().ToPlaybook(),
+				update: func(old app.Playbook) app.Playbook {
+					old, err := playbookStore.Get(old.ID)
+					require.NoError(t, err)
+					old.Title = "new title"
+					old.Metrics = metricsFromNames([]string{"name3", "name1", "name2"})
+					return old
+				},
+				expectedErr: nil,
+				clean: func(old, updated app.Playbook) (app.Playbook, app.Playbook) {
+					cleanMetricsIDs(updated.Metrics)
+					return old, updated
+				},
+			},
+			{
+				name:     "playbook with 4 metrics, go to 0",
+				playbook: NewPBBuilder().WithMetrics([]string{"name3", "name1", "name2", "name4"}).ToPlaybook(),
+				update: func(old app.Playbook) app.Playbook {
+					old, err := playbookStore.Get(old.ID)
+					require.NoError(t, err)
+					old.Title = "new title"
+					old.Metrics = nil
+					return old
+				},
+				expectedErr: nil,
+			},
+			{
+				name:     "playbook with 4 metrics, go to 3 and reorder",
+				playbook: NewPBBuilder().WithMetrics([]string{"name3", "name1", "name2", "name4"}).ToPlaybook(),
+				update: func(old app.Playbook) app.Playbook {
+					old, err := playbookStore.Get(old.ID)
+					require.NoError(t, err)
+
+					old.Title = "new title"
+					old.Metrics = old.Metrics[1:]
+					old.Metrics[0], old.Metrics[1] = old.Metrics[1], old.Metrics[0]
+					return old
+				},
+				expectedErr: nil,
+			},
+			{
+				name:     "playbook with 4 metrics, go to 3. reorder and replacement",
+				playbook: NewPBBuilder().WithMetrics([]string{"name3", "name1", "name2", "name4"}).ToPlaybook(),
+				update: func(old app.Playbook) app.Playbook {
+					old, err := playbookStore.Get(old.ID)
+					require.NoError(t, err)
+
+					old.Title = "new title"
+					old.Metrics = old.Metrics[2:]
+					old.Metrics[0], old.Metrics[1] = old.Metrics[1], old.Metrics[0]
+					old.Metrics = append(old.Metrics, metricsFromNames([]string{"name10"})...)
+					return old
+				},
+				expectedErr: nil,
+				clean: func(old, updated app.Playbook) (app.Playbook, app.Playbook) {
+					cleanMetricsIDs(old.Metrics)
+					cleanMetricsIDs(updated.Metrics)
+					return old, updated
+				},
+			},
 		}
 
 		for _, testCase := range tests {
@@ -1037,6 +1154,9 @@ func TestUpdatePlaybook(t *testing.T) {
 
 				actual, err := playbookStore.Get(expected.ID)
 				require.NoError(t, err)
+				if testCase.clean != nil {
+					expected, actual = testCase.clean(expected, actual)
+				}
 				require.Equal(t, expected, actual)
 			})
 		}
@@ -1063,6 +1183,7 @@ func TestDeletePlaybook(t *testing.T) {
 		WithCreatePublic(true).
 		WithChecklists([]int{1, 4, 6, 7, 1}). // 19
 		WithMembers([]userInfo{andrew, matt}).
+		WithMetrics([]string{"name1", "name2"}).
 		ToPlaybook()
 
 	for _, driverName := range driverNames {
@@ -1091,6 +1212,7 @@ func TestDeletePlaybook(t *testing.T) {
 			require.Greater(t, actual.DeleteAt, before)
 
 			expected.DeleteAt = actual.DeleteAt
+			cleanMetricsIDs(actual.Metrics)
 			require.Equal(t, expected, actual)
 		})
 	}
@@ -1614,6 +1736,11 @@ func (p *PlaybookBuilder) WithKeywords(keywords []string) *PlaybookBuilder {
 func (p *PlaybookBuilder) WithUpdateAt(updateAt int64) *PlaybookBuilder {
 	p.UpdateAt = updateAt
 
+	return p
+}
+
+func (p *PlaybookBuilder) WithMetrics(names []string) *PlaybookBuilder {
+	p.Metrics = metricsFromNames(names)
 	return p
 }
 
