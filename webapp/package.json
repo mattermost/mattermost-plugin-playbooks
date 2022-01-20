@@ -88,7 +88,7 @@
     "core-js": "3.20.2",
     "debounce": "1.2.1",
     "luxon": "2.0.2",
-    "mattermost-webapp": "github:mattermost/mattermost-webapp#fc13e7e224a8b05e660e585f78febcc975921efd",
+    "mattermost-webapp": "github:mattermost/mattermost-webapp#4d7dc89146d33bc833c9926d296e8738fc7b7b0f",
     "parse-duration": "1.0.2",
     "qs": "6.10.2",
     "react": "16.13.1",
