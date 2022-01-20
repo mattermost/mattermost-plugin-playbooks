@@ -231,6 +231,13 @@ export async function archivePlaybook(playbookId: Playbook['id']) {
     return data;
 }
 
+export async function duplicatePlaybook(playbookId: Playbook['id']) {
+    const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}/duplicate`, {
+        method: 'POST',
+    });
+    return data;
+}
+
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
     return Client4.getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE);
 }
