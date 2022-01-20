@@ -80,7 +80,7 @@ const editAndPublishRetro = (runId) => {
     cy.findByRole('button', {name: 'Publish'}).click();
 
     // * Verify we're showing the publish retro confirmation modal
-    cy.get('#confirm-modal-light').contains('Are you sure you want to publish');
+    cy.get('#confirm-modal-light').contains('Are you sure you want to publish?');
 
     // # Publish
     cy.findByRole('button', {name: 'Publish'}).click();
