@@ -82,6 +82,10 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if len(playbook.Metrics) > app.MaxMetricsPerPlaybook {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, fmt.Sprintf("a playbook cannot have more than %d key metrics", app.MaxMetricsPerPlaybook), nil)
+	}
+
 	if !h.PermissionsCheck(w, h.permissions.PlaybookCreate(userID, playbook)) {
 		return
 	}

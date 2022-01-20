@@ -71,6 +71,8 @@ const (
 	MetricTypeInteger  = "metric_integer"
 )
 
+const MaxMetricsPerPlaybook = 4
+
 type PlaybookMember struct {
 	UserID      string   `json:"user_id"`
 	Roles       []string `json:"roles"`
@@ -94,6 +96,7 @@ func (p Playbook) Clone() Playbook {
 	}
 	newPlaybook.Checklists = newChecklists
 	newPlaybook.Members = append([]PlaybookMember(nil), p.Members...)
+	newPlaybook.Metrics = append([]PlaybookMetric(nil), p.Metrics...)
 	if len(p.InvitedUserIDs) != 0 {
 		newPlaybook.InvitedUserIDs = append([]string(nil), p.InvitedUserIDs...)
 	}
@@ -130,6 +133,9 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	}
 	if old.Members == nil {
 		old.Members = []PlaybookMember{}
+	}
+	if old.Metrics == nil {
+		old.Metrics = []PlaybookMetric{}
 	}
 	if old.InvitedUserIDs == nil {
 		old.InvitedUserIDs = []string{}
