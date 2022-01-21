@@ -22,6 +22,8 @@ const editDebounceDelayMilliseconds = 2000;
 interface ReportProps {
     playbookRun: PlaybookRun;
     setRetrospective: (report: string) => void;
+    setPublishedAt: (publishedAt: number) => void;
+    setCanceled: (canceled: boolean) => void;
 }
 
 const PUB_TIME = {
@@ -37,17 +39,13 @@ const PUB_TIME = {
 };
 
 const Report = (props: ReportProps) => {
-    // we are creating the local state for this session to avoid get request
-    const [publishedThisSession, setPublishedThisSession] = useState(false);
-    const [publishedAtThisSession, setPublishedAtThisSession] = useState(0);
-
     const [showConfirmation, setShowConfirmation] = useState(false);
     const {formatMessage} = useIntl();
 
     const confirmedPublish = () => {
         publishRetrospective(props.playbookRun.id, props.playbookRun.retrospective);
-        setPublishedThisSession(true);
-        setPublishedAtThisSession(DateTime.now().valueOf());
+        props.setPublishedAt(DateTime.now().valueOf());
+        props.setCanceled(false);
         setShowConfirmation(false);
     };
 
@@ -60,11 +58,11 @@ const Report = (props: ReportProps) => {
         </PrimaryButtonSmaller>
     );
 
-    const isPublished = publishedThisSession || props.playbookRun.retrospective_published_at > 0;
+    const isPublished = props.playbookRun.retrospective_published_at > 0 && !props.playbookRun.retrospective_was_canceled;
     if (isPublished) {
         const publishedAt = (
             <Timestamp
-                value={publishedAtThisSession || props.playbookRun.retrospective_published_at}
+                value={props.playbookRun.retrospective_published_at}
                 {...PUB_TIME}
             />
         );
