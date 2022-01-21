@@ -4,7 +4,7 @@ exports[`FormattedDuration renders correctly 1`] = `
 <div
   className="time"
 >
-  &lt; 1m
+  59s
 </div>
 `;
 
