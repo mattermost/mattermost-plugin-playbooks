@@ -139,6 +139,7 @@ const PlaybookEdit = (props: Props) => {
                     const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
                     if (fetchedPlaybook) {
                         fetchedPlaybook.members ??= [{user_id: currentUserId, roles: [PlaybookRole.Member, PlaybookRole.Admin]}];
+                        fetchedPlaybook.metrics ??= [];
                         setPlaybook(fetchedPlaybook);
                     }
                     setFetchingState(FetchingStateType.fetched);
@@ -310,7 +311,7 @@ const PlaybookEdit = (props: Props) => {
             </Container>
             <RouteLeavingGuard
                 navigate={(path) => WebappUtils.browserHistory.push(path)}
-                shouldBlockNavigation={() => changesMade}
+                shouldBlockNavigation={(newLoc) => location.pathname !== newLoc.pathname && changesMade}
             />
         </OuterContainer>
     );

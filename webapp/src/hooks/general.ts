@@ -18,7 +18,11 @@ import {
     getUser,
     getProfilesInCurrentTeam,
 } from 'mattermost-redux/selectors/entities/users';
-import {getCurrentChannelId, getChannelsNameMapInTeam, getChannel as getChannelFromState} from 'mattermost-redux/selectors/entities/channels';
+import {
+    getCurrentChannelId,
+    getChannelsNameMapInTeam,
+    getChannel as getChannelFromState,
+} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
@@ -180,7 +184,7 @@ export function useCanCreatePlaybooksOnAnyTeam() {
     return useSelector((state: GlobalState) => (
         teams.some((team: Team) => (
             haveITeamPermission(state, team.id, 'playbook_public_create') ||
-			haveITeamPermission(state, team.id, 'playbook_private_create')
+            haveITeamPermission(state, team.id, 'playbook_private_create')
         ))
     ));
 }
@@ -441,8 +445,7 @@ export function useNow(refreshIntervalMillis = 1000) {
     return now;
 }
 
-export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
-[PlaybookRun[], number, FetchPlaybookRunsParams, React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>] {
+export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams): [PlaybookRun[], number, FetchPlaybookRunsParams, React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>] {
     const [playbookRuns, setPlaybookRuns] = useState<PlaybookRun[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [fetchParams, setFetchParams] = useState(defaultFetchParams);
