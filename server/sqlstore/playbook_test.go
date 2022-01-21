@@ -193,6 +193,7 @@ func TestGetPlaybook(t *testing.T) {
 			actual, err := playbookStore.Get(id)
 			require.NoError(t, err)
 
+			//check if playbookID was set correctly
 			for _, m := range actual.Metrics {
 				require.Equal(t, m.PlaybookID, id)
 			}
@@ -1727,6 +1728,7 @@ func (p *PlaybookBuilder) WithUpdateAt(updateAt int64) *PlaybookBuilder {
 
 func (p *PlaybookBuilder) WithMetrics(names []string) *PlaybookBuilder {
 	p.Metrics = metricsFromNames(names)
+
 	return p
 }
 

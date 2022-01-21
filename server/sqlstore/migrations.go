@@ -1737,6 +1737,7 @@ var migrations = []Migration{
 						IncidentID VARCHAR(26) NOT NULL REFERENCES IR_Incident(ID),
 						MetricConfigID VARCHAR(26) NOT NULL REFERENCES IR_MetricConfig(ID),
 						Value BIGINT NOT NULL,
+						Published BOOLEAN NOT NULL,
 						INDEX IR_Metric_IncidentID (IncidentID),
 						INDEX IR_Metric_MetricConfigID (MetricConfigID)
 				 	)
@@ -1771,7 +1772,8 @@ var migrations = []Migration{
 					CREATE TABLE IF NOT EXISTS IR_Metric (
 						IncidentID TEXT NOT NULL REFERENCES IR_Incident(ID),
 						MetricConfigID TEXT NOT NULL REFERENCES IR_MetricConfig(ID),
-						Value BIGINT NOT NULL
+						Value BIGINT NOT NULL,
+						Published BOOLEAN NOT NULL
 					)
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_Metric")
