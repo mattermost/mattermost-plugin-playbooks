@@ -138,7 +138,7 @@ describe('channels > rhs > status update', () => {
 
         it('confirms finishing the run, and remembers changes and reminder when canceled', () => {
             const updateMessage = 'This is the update text to test with.';
-            const reminderTime = 'in 24 hours';
+            const reminderTime = '1 day';
 
             // # Run the `/playbook update` slash command.
             cy.executeSlashCommand('/playbook update');
