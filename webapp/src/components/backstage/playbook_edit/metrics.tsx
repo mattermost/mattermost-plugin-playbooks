@@ -12,6 +12,17 @@ import MetricEdit from 'src/components/backstage/playbook_edit/metric_edit';
 import MetricView from 'src/components/backstage/playbook_edit/metric_view';
 import {DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 
+enum TaskType {
+    add,
+    edit,
+}
+
+interface Task {
+    type: TaskType;
+    addType?: MetricType;
+    editIndex?: number;
+}
+
 interface Props {
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
     setPlaybook: React.Dispatch<React.SetStateAction<DraftPlaybookWithChecklist | PlaybookWithChecklist>>;
@@ -22,27 +33,41 @@ const Metrics = ({playbook, setPlaybook, setChangesMade}: Props) => {
     const {formatMessage} = useIntl();
     const [curEditingIdx, setCurEditingIdx] = useState(-1);
     const [saveMetricToggle, setSaveMetricToggle] = useState(false);
-    const [requested, setRequested] = useState(false);
-    const [requestedType, setRequestedType] = useState(MetricType.Duration);
+    const [nextTask, setNextTask] = useState<Task | null>(null);
 
-    const requestAddMetric = (type: MetricType) => {
-        setRequestedType(type);
-
+    const requestAddMetric = (addType: MetricType) => {
         // Only add a new metric if we aren't currently editing.
         if (curEditingIdx === -1) {
-            addMetric();
+            addMetric(addType);
         }
 
-        // If we're editing, try to close it, and if successful add the new metric.
-        setRequested(true);
+        // We're editing. Try to close it, and if successful add the new metric.
+        setNextTask({type: TaskType.add, addType});
         setSaveMetricToggle((prevState) => !prevState);
     };
 
-    const addMetric = () => {
+    const requestEditMetric = (idx: number) => {
+        // Edit a metric immediately if we aren't currently editing.
+        if (curEditingIdx === -1) {
+            setCurEditingIdx(idx);
+        }
+
+        // We're editing. Try to close it, and if successful edit the metric.
+        setNextTask({type: TaskType.edit, editIndex: idx});
+        setSaveMetricToggle((prevState) => !prevState);
+    };
+
+    const addMetric = (metricType?: MetricType) => {
+        const addType = metricType || nextTask?.addType;
+
+        if (!addType) {
+            return;
+        }
+
         const newIdx = playbook.metrics.length;
         setPlaybook((pb) => ({
             ...pb,
-            metrics: [...pb.metrics, newMetric(requestedType, newIdx)],
+            metrics: [...pb.metrics, newMetric(addType, newIdx)],
         }));
         setChangesMade(true);
         setCurEditingIdx(newIdx);
@@ -61,33 +86,41 @@ const Metrics = ({playbook, setPlaybook, setChangesMade}: Props) => {
         setChangesMade(true);
         setCurEditingIdx(-1);
 
-        if (requested) {
-            setRequested(false);
+        // Do we have a requested task ready to do next?
+        if (nextTask?.type === TaskType.add) {
+            setNextTask(null);
             addMetric();
+        } else if (nextTask?.type === TaskType.edit) {
+            setNextTask(null);
+
+            // The following is because if editIndex === 0, 0 is falsey
+            // eslint-disable-next-line no-undefined
+            const index = nextTask.editIndex === undefined ? -1 : nextTask.editIndex;
+            setCurEditingIdx(index);
         }
     };
 
     return (
         <div>
             {
-                playbook.metrics.map((metric, idx) => {
-                    if (idx === curEditingIdx) {
+                playbook.metrics.map((metric) => {
+                    if (metric.order === curEditingIdx) {
                         return (
                             <MetricEdit
-                                key={idx}
+                                key={metric.order}
                                 metric={metric}
-                                otherTitles={playbook.metrics.flatMap((m, i) => (i === idx ? [] : m.title))}
+                                otherTitles={playbook.metrics.flatMap((m) => (m.order === metric.order ? [] : m.title))}
                                 onAdd={saveMetric}
                                 saveToggle={saveMetricToggle}
-                                saveFailed={() => setRequested(false)}
+                                saveFailed={() => setNextTask(null)}
                             />
                         );
                     }
                     return (
                         <MetricView
-                            key={idx}
+                            key={metric.order}
                             metric={metric}
-                            editClick={() => setCurEditingIdx(idx)}
+                            editClick={() => requestEditMetric(metric.order)}
                         />
                     );
                 })
