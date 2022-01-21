@@ -296,6 +296,13 @@ const PlaybookRunBackstage = () => {
         } as PlaybookRun));
     };
 
+    const setCanceled = (retrospective_was_canceled: boolean) => {
+        setPlaybookRun((run) => ({
+            ...run,
+            retrospective_was_canceled,
+        } as PlaybookRun));
+    };
+
     if (fetchingState === FetchingStateType.loading) {
         return null;
     }
@@ -425,6 +432,7 @@ const PlaybookRunBackstage = () => {
                                 deleteTimelineEvent={deleteTimelineEvent}
                                 setRetrospective={setRetrospective}
                                 setPublishedAt={setPublishedAt}
+                                setCanceled={setCanceled}
                             />
                         </Route>
                         <Redirect to={`${match.url}/overview`}/>
