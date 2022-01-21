@@ -250,7 +250,7 @@ describe('channels > rhs > status update', () => {
             cy.get('.GenericModal').within(() => {
                 // * Verify the default is as expected
                 cy.get('#reminder_timer_datetime').within(() => {
-                    cy.get('[class$=singleValue]').should('have.text', '60 minutes');
+                    cy.get('[class$=singleValue]').should('have.text', '1 hour');
                 });
             });
         });
