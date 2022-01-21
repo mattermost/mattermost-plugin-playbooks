@@ -398,7 +398,8 @@
     "3Ls2m+": "Playbook Member",
     "0tznw6": "Convert to private playbook",
     "0Vvpht": "Make Playbook Member",
-    "qsr3Zk": "",
-    "0q+hj2": "",
-    "FXCLuZ": ""
+    "qsr3Zk": "Update the Run Summary",
+    "0q+hj2": "Define a template for a concise description that explains each run to its stakeholders.",
+    "FXCLuZ": "{total, number} total",
+    "3PoGhY": "Are you sure you want to publish?"
 }
