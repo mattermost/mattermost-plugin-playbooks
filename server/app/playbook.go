@@ -60,7 +60,7 @@ type Playbook struct {
 	DefaultPlaybookMemberRole            string           `json:"default_playbook_member_role" export:"-"`
 	DefaultRunAdminRole                  string           `json:"default_run_admin_role" export:"-"`
 	DefaultRunMemberRole                 string           `json:"default_run_member_role" export:"-"`
-	Metrics                              []PlaybookMetric `json:"metrics"`
+	Metrics                              []PlaybookMetric `json:"metrics" export:"-"`
 }
 
 const (

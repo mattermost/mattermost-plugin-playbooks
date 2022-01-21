@@ -1706,7 +1706,6 @@ var migrations = []Migration{
 					   Target BIGINT NOT NULL,
 					   Sort TINYINT NOT NULL DEFAULT 0,
 					   DeleteAt BIGINT NOT NULL DEFAULT 0,
-					   CONSTRAINT metrics_unique UNIQUE (PlaybookID, Title),
 					   INDEX IR_MetricConfig_PlaybookID (PlaybookID)
 					)
 				` + MySQLCharset); err != nil {
@@ -1738,8 +1737,7 @@ var migrations = []Migration{
 						Type TEXT NOT NULL,
 						Target BIGINT NOT NULL,
 						Sort SMALLINT NOT NULL DEFAULT 0,
-						DeleteAt BIGINT NOT NULL DEFAULT 0,
-						UNIQUE (PlaybookID, Title)
+						DeleteAt BIGINT NOT NULL DEFAULT 0
 					)
 				`); err != nil {
 					return errors.Wrapf(err, "failed creating table IR_MetricConfig")

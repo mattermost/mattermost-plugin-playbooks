@@ -749,7 +749,6 @@ func (p *playbookStore) replacePlaybookMetrics(q queryExecer, playbook app.Playb
 				SetMap(map[string]interface{}{
 					"Title":       m.Title,
 					"Description": m.Description,
-					"Type":        m.Type,
 					"Target":      m.Target,
 					"Sort":        i,
 					"DeleteAt":    0,

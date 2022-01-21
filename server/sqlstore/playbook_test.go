@@ -248,20 +248,6 @@ func TestGetPlaybook(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, expected, actual)
 		})
-
-		t.Run(driverName+" - playbook with duplicates metrics names", func(t *testing.T) {
-			pb11 := NewPBBuilder().
-				WithTitle("playbook 11").
-				WithTeamID(team1id).
-				WithCreateAt(800).
-				WithMetrics([]string{"name4", "name1", "name2", "name4"}).
-				ToPlaybook()
-			id, err := playbookStore.Create(pb11)
-			require.Error(t, err)
-			require.Contains(t, err.Error(), duplicateKeyError[driverName])
-			require.Equal(t, id, "")
-
-		})
 	}
 }
 
