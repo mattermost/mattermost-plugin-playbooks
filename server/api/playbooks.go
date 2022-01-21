@@ -48,6 +48,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 
 	playbooksRouter.HandleFunc("", handler.getPlaybooks).Methods(http.MethodGet)
 	playbooksRouter.HandleFunc("/autocomplete", handler.getPlaybooksAutoComplete).Methods(http.MethodGet)
+	playbooksRouter.HandleFunc("/import", handler.importPlaybook).Methods(http.MethodPost)
 
 	playbookRouter := playbooksRouter.PathPrefix("/{id:[A-Za-z0-9]+}").Subrouter()
 	playbookRouter.HandleFunc("", handler.getPlaybook).Methods(http.MethodGet)
@@ -63,6 +64,80 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	autoFollowRouter.HandleFunc("", handler.isAutoFollowing).Methods(http.MethodGet)
 
 	return handler
+}
+
+func (h *PlaybookHandler) validPlaybookCreation(w http.ResponseWriter, playbook *app.Playbook) bool {
+	if playbook.WebhookOnCreationEnabled {
+		if len(playbook.WebhookOnCreationURLs) > 64 {
+			msg := "too many registered creation webhook urls, limit to less than 64"
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return false
+		}
+
+		for _, webhook := range playbook.WebhookOnCreationURLs {
+			url, err := url.ParseRequestURI(webhook)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
+				return false
+			}
+
+			if url.Scheme != "http" && url.Scheme != "https" {
+				msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+				return false
+			}
+		}
+	}
+
+	if playbook.WebhookOnStatusUpdateEnabled {
+		if len(playbook.WebhookOnStatusUpdateURLs) > 64 {
+			msg := "too many registered update webhook urls, limit to less than 64"
+			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+			return false
+		}
+
+		for _, webhook := range playbook.WebhookOnStatusUpdateURLs {
+			url, err := url.ParseRequestURI(webhook)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
+				return false
+			}
+
+			if url.Scheme != "http" && url.Scheme != "https" {
+				msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
+				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
+				return false
+			}
+		}
+	}
+
+	if playbook.CategorizeChannelEnabled {
+		if err := h.validateCategoryName(playbook.CategoryName); err != nil {
+			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
+			return false
+		}
+	}
+
+	if len(playbook.SignalAnyKeywords) != 0 {
+		playbook.SignalAnyKeywords = removeDuplicates(playbook.SignalAnyKeywords)
+	}
+
+	if playbook.BroadcastEnabled {
+		for _, channelID := range playbook.BroadcastChannelIDs {
+			channel, err := h.pluginAPI.Channel.Get(channelID)
+			if err != nil {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "broadcasting to invalid channel ID", err)
+				return false
+			}
+			// check if channel is archived
+			if channel.DeleteAt != 0 {
+				h.HandleErrorWithCode(w, http.StatusBadRequest, "broadcasting to archived channel", err)
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request) {
@@ -83,11 +158,6 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := h.validateMetrics(playbook); err != nil {
-		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid metrics configs", err)
-		return
-	}
-
 	if !h.PermissionsCheck(w, h.permissions.PlaybookCreate(userID, playbook)) {
 		return
 	}
@@ -102,74 +172,13 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if playbook.WebhookOnCreationEnabled {
-		if len(playbook.WebhookOnCreationURLs) > 64 {
-			msg := "too many registered creation webhook urls, limit to less than 64"
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-			return
-		}
-
-		for _, webhook := range playbook.WebhookOnCreationURLs {
-			url, err := url.ParseRequestURI(webhook)
-			if err != nil {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
-				return
-			}
-
-			if url.Scheme != "http" && url.Scheme != "https" {
-				msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
-				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-				return
-			}
-		}
+	if !h.validPlaybookCreation(w, &playbook) {
+		return
 	}
 
-	if playbook.WebhookOnStatusUpdateEnabled {
-		if len(playbook.WebhookOnStatusUpdateURLs) > 64 {
-			msg := "too many registered update webhook urls, limit to less than 64"
-			h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-			return
-		}
-
-		for _, webhook := range playbook.WebhookOnStatusUpdateURLs {
-			url, err := url.ParseRequestURI(webhook)
-			if err != nil {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
-				return
-			}
-
-			if url.Scheme != "http" && url.Scheme != "https" {
-				msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", url.Scheme)
-				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-				return
-			}
-		}
-	}
-
-	if playbook.CategorizeChannelEnabled {
-		if err := h.validateCategoryName(playbook.CategoryName); err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
-			return
-		}
-	}
-
-	if len(playbook.SignalAnyKeywords) != 0 {
-		playbook.SignalAnyKeywords = removeDuplicates(playbook.SignalAnyKeywords)
-	}
-
-	if playbook.BroadcastEnabled {
-		for _, channelID := range playbook.BroadcastChannelIDs {
-			channel, err := h.pluginAPI.Channel.Get(channelID)
-			if err != nil {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "broadcasting to invalid channel ID", err)
-				return
-			}
-			// check if channel is archived
-			if channel.DeleteAt != 0 {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "broadcasting to archived channel", err)
-				return
-			}
-		}
+	if err := h.validateMetrics(playbook); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid metrics configs", err)
+		return
 	}
 
 	id, err := h.playbookService.Create(playbook, userID)
@@ -582,6 +591,66 @@ func (h *PlaybookHandler) exportPlaybook(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(export)
+}
+
+func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request) {
+	params := r.URL.Query()
+	teamID := params.Get("team_id")
+	userID := r.Header.Get("Mattermost-User-ID")
+	var importBlock struct {
+		app.Playbook
+		Version int `json:"version"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&importBlock); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode playbook import", err)
+		return
+	}
+	playbook := importBlock.Playbook
+
+	if playbook.ID != "" {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "playbook import should not have ID field", nil)
+		return
+	}
+
+	if importBlock.Version != app.CurrentPlaybookExportVersion {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "Unsupported import version", nil)
+		return
+	}
+
+	// Make the importer the sole admin of the playbook.
+	playbook.Members = []app.PlaybookMember{
+		{
+			UserID: userID,
+			Roles:  []string{app.PlaybookRoleMember, app.PlaybookRoleAdmin},
+		},
+	}
+
+	if teamID != "" {
+		playbook.TeamID = teamID
+	}
+
+	if !h.PermissionsCheck(w, h.permissions.PlaybookCreate(userID, playbook)) {
+		return
+	}
+
+	if !h.validPlaybookCreation(w, &playbook) {
+		return
+	}
+
+	id, err := h.playbookService.Create(playbook, userID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	result := struct {
+		ID string `json:"id"`
+	}{
+		ID: id,
+	}
+	w.Header().Add("Location", makeAPIURL(h.pluginAPI, "playbooks/%s", id))
+
+	ReturnJSON(w, &result, http.StatusCreated)
 }
 
 func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
