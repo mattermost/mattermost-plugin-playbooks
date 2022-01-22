@@ -1,4 +1,4 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
@@ -18,6 +18,7 @@ interface ChecklistItemCommandProps {
 
 const SlashCommandContainer = styled.div`
     flex: 0.5;
+    margin-left: 16px;
 `;
 
 export const ChecklistItemCommand = (props: ChecklistItemCommandProps) => {
