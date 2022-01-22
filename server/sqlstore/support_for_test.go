@@ -19,10 +19,6 @@ import (
 )
 
 var driverNames = []string{model.DatabaseDriverPostgres, model.DatabaseDriverMysql}
-var duplicateKeyError = map[string]string{
-	model.DatabaseDriverPostgres: "duplicate key value",
-	model.DatabaseDriverMysql:    "Duplicate entry",
-}
 
 func setupTestDB(t testing.TB, driverName string) *sqlx.DB {
 	t.Helper()
