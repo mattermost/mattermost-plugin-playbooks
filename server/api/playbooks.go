@@ -659,12 +659,12 @@ func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
 	}
 
 	//check if titles are unique
-	set := make(map[string]bool)
+	titles := make(map[string]bool)
 	for _, m := range pb.Metrics {
-		set[m.Title] = true
-	}
-	if len(set) < len(pb.Metrics) {
-		return errors.Errorf("metrics names must be unique")
+		if titles[m.Title] {
+			return errors.Errorf("metrics names must be unique")
+		}
+		titles[m.Title] = true
 	}
 	return nil
 }
