@@ -1472,16 +1472,14 @@ func (h *PlaybookRunHandler) updateRetrospective(w http.ResponseWriter, r *http.
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	var retroUpdate struct {
-		Retrospective string `json:"retrospective"`
-	}
+	var retroUpdate app.RetrospectiveUpdate
 
 	if err := json.NewDecoder(r.Body).Decode(&retroUpdate); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
 		return
 	}
 
-	if err := h.playbookRunService.UpdateRetrospective(playbookRunID, userID, retroUpdate.Retrospective); err != nil {
+	if err := h.playbookRunService.UpdateRetrospective(playbookRunID, userID, retroUpdate); err != nil {
 		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to update retrospective", err)
 		return
 	}
@@ -1494,16 +1492,14 @@ func (h *PlaybookRunHandler) publishRetrospective(w http.ResponseWriter, r *http
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	var retroUpdate struct {
-		Retrospective string `json:"retrospective"`
-	}
+	var retroUpdate app.RetrospectiveUpdate
 
 	if err := json.NewDecoder(r.Body).Decode(&retroUpdate); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
 		return
 	}
 
-	if err := h.playbookRunService.PublishRetrospective(playbookRunID, retroUpdate.Retrospective, userID); err != nil {
+	if err := h.playbookRunService.PublishRetrospective(playbookRunID, userID, retroUpdate); err != nil {
 		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to publish retrospective", err)
 		return
 	}

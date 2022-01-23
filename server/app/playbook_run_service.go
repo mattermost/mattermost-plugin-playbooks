@@ -2350,13 +2350,14 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunToClient(playbookRunID string) e
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID, newRetrospective string) error {
+func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID string, retrospective RetrospectiveUpdate) error {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	playbookRunToModify.Retrospective = newRetrospective
+	playbookRunToModify.Retrospective = retrospective.Text
+	playbookRunToModify.MetricsData = retrospective.Metrics
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrap(err, "failed to update playbook run")
@@ -2368,7 +2369,7 @@ func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID, n
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, text, publisherID string) error {
+func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID string, retrospective RetrospectiveUpdate) error {
 	playbookRunToPublish, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
@@ -2377,7 +2378,8 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, text, publi
 	now := model.GetMillis()
 
 	// Update the text to keep syncronized
-	playbookRunToPublish.Retrospective = text
+	playbookRunToPublish.Retrospective = retrospective.Text
+	playbookRunToPublish.MetricsData = retrospective.Metrics
 	playbookRunToPublish.RetrospectivePublishedAt = now
 	playbookRunToPublish.RetrospectiveWasCanceled = false
 	if err = s.store.UpdatePlaybookRun(playbookRunToPublish); err != nil {
@@ -2390,12 +2392,12 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, text, publi
 	}
 
 	retrospectiveURL := getRunRetrospectiveURL("", playbookRunToPublish.ID)
-	if _, err = s.poster.PostMessage(playbookRunToPublish.ChannelID, "@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n%s", publisherUser.Username, retrospectiveURL, text); err != nil {
+	if _, err = s.poster.PostMessage(playbookRunToPublish.ChannelID, "@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n%s", publisherUser.Username, retrospectiveURL, retrospective.Text); err != nil {
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
 	telemetryString := fmt.Sprintf("?telem_action=follower_clicked_retrospective_dm&telem_run_id=%s", playbookRunToPublish.ID)
-	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, telemetryString, text)
+	retrospectivePublishedMessage := fmt.Sprintf("@%s published the retrospective report for [%s](%s%s).\n%s", publisherUser.Username, playbookRunToPublish.Name, retrospectiveURL, telemetryString, retrospective.Text)
 	s.dmPostToRunFollowers(&model.Post{Message: retrospectivePublishedMessage}, retroMessage, playbookRunToPublish.ID, publisherID)
 
 	event := &TimelineEvent{
