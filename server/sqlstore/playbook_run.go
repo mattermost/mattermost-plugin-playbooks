@@ -689,7 +689,8 @@ func (s *playbookRunStore) getMetricsDataForPlaybookRun(q sqlx.Queryer, playbook
 			"Value",
 		).
 		From("IR_Metric pm").
-		Where(sq.Eq{"IncidentID": playbookRunID})
+		Where(sq.Eq{"IncidentID": playbookRunID}).
+		OrderBy("MetricConfigID") // Entirely for consistency for the tests
 
 	err := s.store.selectBuilder(q, &metricsData, query)
 	if err != nil && err != sql.ErrNoRows {
@@ -1198,16 +1199,16 @@ func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.Playb
 		}
 		if s.store.db.DriverName() == model.DatabaseDriverMysql {
 			_, err = s.store.execBuilder(q, sq.
-				Insert("IR_Metrics").
+				Insert("IR_Metric").
 				Columns("IncidentID", "MetricConfigID", "Value", "Published").
 				Values(playbookRun.ID, m.MetricConfigID, m.Value, retrospectivePublished).
 				Suffix("ON DUPLICATE KEY UPDATE Value = ?, Published = ?", m.Value, retrospectivePublished))
 		} else {
 			_, err = s.store.execBuilder(q, sq.
-				Insert("IR_Metrics").
+				Insert("IR_Metric").
 				Columns("IncidentID", "MetricConfigID", "Value", "Published").
 				Values(playbookRun.ID, m.MetricConfigID, m.Value, retrospectivePublished).
-				Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET Value = ?, Published = ?", m.Value, retrospectivePublished))
+				Suffix("ON CONFLICT (IncidentID,MetricConfigID) DO UPDATE SET Value = ?, Published = ?", m.Value, retrospectivePublished))
 		}
 		if err != nil {
 			return errors.Wrapf(err, "failed to upsert metric value '%s'", m.MetricConfigID)
