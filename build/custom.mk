@@ -13,10 +13,11 @@ ifneq ($(HAS_SERVER),)
 	mockgen -destination server/app/mocks/mock_playbook_service.go github.com/mattermost/mattermost-plugin-playbooks/server/app PlaybookService
 	mockgen -destination server/app/mocks/mock_playbook_store.go github.com/mattermost/mattermost-plugin-playbooks/server/app PlaybookStore
 	mockgen -destination server/app/mocks/mock_keywords_ignorer.go github.com/mattermost/mattermost-plugin-playbooks/server/app KeywordsThreadIgnorer
+	mockgen -destination server/app/mocks/mock_user_info_store.go github.com/mattermost/mattermost-plugin-playbooks/server/app UserInfoStore
+	mockgen -destination server/app/mocks/mock_license_checker.go github.com/mattermost/mattermost-plugin-playbooks/server/app LicenseChecker
 	mockgen -destination server/sqlstore/mocks/mock_kvapi.go github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore KVAPI
 	mockgen -destination server/sqlstore/mocks/mock_storeapi.go github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore StoreAPI
 	mockgen -destination server/sqlstore/mocks/mock_configurationapi.go github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore ConfigurationAPI
-	mockgen -destination server/app/mocks/mock_user_info_store.go github.com/mattermost/mattermost-plugin-playbooks/server/app UserInfoStore
 endif
 
 ## Runs the redocly server.
