@@ -124,7 +124,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 	}, nil
 }
 
-func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, owner *model.User) (string, error) {
+func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
 	playbookRunChannel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get playbook run channel")
@@ -139,7 +139,7 @@ func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playboo
 
 	announcementMsg += fmt.Sprintf(
 		"@%s just ran the [%s](%s) playbook.",
-		owner.Username,
+		reporter.Username,
 		playbookTitle,
 		getPlaybookDetailsRelativeURL(playbookID),
 	)
@@ -360,14 +360,14 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 	}
 
+	var reporter *model.User
+	reporter, err = s.pluginAPI.User.Get(playbookRun.ReporterUserID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to resolve user %s", playbookRun.ReporterUserID)
+	}
+
 	// Do we send a DM to the new owner?
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
-		var reporter *model.User
-		reporter, err = s.pluginAPI.User.Get(playbookRun.ReporterUserID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to resolve user %s", playbookRun.ReporterUserID)
-		}
-
 		startMessage := fmt.Sprintf("You have been assigned ownership of the run: [%s](%s), reported by @%s.",
 			playbookRun.Name, getRunDetailsRelativeURL(playbookRun.ID), reporter.Username)
 
@@ -377,14 +377,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	if pb != nil {
-		var owner *model.User
-		owner, err = s.pluginAPI.User.Get(playbookRun.OwnerUserID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to resolve user %s", playbookRun.OwnerUserID)
-		}
-
 		var messageTemplate string
-		messageTemplate, err = s.buildPlaybookRunCreationMessageTemplate(pb.Title, pb.ID, playbookRun, owner)
+		messageTemplate, err = s.buildPlaybookRunCreationMessageTemplate(pb.Title, pb.ID, playbookRun, reporter)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to build the playbook run creation message")
 		}
