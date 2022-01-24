@@ -121,21 +121,6 @@ func (mr *MockPlaybookServiceMockRecorder) GetAutoFollows(arg0 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAutoFollows", reflect.TypeOf((*MockPlaybookService)(nil).GetAutoFollows), arg0)
 }
 
-// GetNumPlaybooksForTeam mocks base method
-func (m *MockPlaybookService) GetNumPlaybooksForTeam(arg0 string) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNumPlaybooksForTeam", arg0)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNumPlaybooksForTeam indicates an expected call of GetNumPlaybooksForTeam
-func (mr *MockPlaybookServiceMockRecorder) GetNumPlaybooksForTeam(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumPlaybooksForTeam", reflect.TypeOf((*MockPlaybookService)(nil).GetNumPlaybooksForTeam), arg0)
-}
-
 // GetPlaybooks mocks base method
 func (m *MockPlaybookService) GetPlaybooks() ([]app.Playbook, error) {
 	m.ctrl.T.Helper()

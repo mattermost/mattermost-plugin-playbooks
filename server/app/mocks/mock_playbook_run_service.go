@@ -575,20 +575,6 @@ func (mr *MockPlaybookRunServiceMockRecorder) RemoveReminder(arg0 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveReminder", reflect.TypeOf((*MockPlaybookRunService)(nil).RemoveReminder), arg0)
 }
 
-// RemoveReminderPost mocks base method
-func (m *MockPlaybookRunService) RemoveReminderPost(arg0 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveReminderPost", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RemoveReminderPost indicates an expected call of RemoveReminderPost
-func (mr *MockPlaybookRunServiceMockRecorder) RemoveReminderPost(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveReminderPost", reflect.TypeOf((*MockPlaybookRunService)(nil).RemoveReminderPost), arg0)
-}
-
 // RemoveTimelineEvent mocks base method
 func (m *MockPlaybookRunService) RemoveTimelineEvent(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
@@ -615,20 +601,6 @@ func (m *MockPlaybookRunService) RenameChecklist(arg0, arg1 string, arg2 int, ar
 func (mr *MockPlaybookRunServiceMockRecorder) RenameChecklist(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameChecklist", reflect.TypeOf((*MockPlaybookRunService)(nil).RenameChecklist), arg0, arg1, arg2, arg3)
-}
-
-// ResetReminderTimer mocks base method
-func (m *MockPlaybookRunService) ResetReminderTimer(arg0 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResetReminderTimer", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ResetReminderTimer indicates an expected call of ResetReminderTimer
-func (mr *MockPlaybookRunServiceMockRecorder) ResetReminderTimer(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetReminderTimer", reflect.TypeOf((*MockPlaybookRunService)(nil).ResetReminderTimer), arg0)
 }
 
 // RestoreChecklistItem mocks base method
