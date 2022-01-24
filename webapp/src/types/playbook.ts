@@ -58,9 +58,9 @@ export interface PlaybookWithChecklist extends Playbook {
 }
 
 export enum MetricType {
-    Duration = 'duration',
-    Currency = 'currency',
-    Integer = 'integer',
+    Duration = 'metric_duration',
+    Currency = 'metric_currency',
+    Integer = 'metric_integer',
 }
 
 export interface Metric {
