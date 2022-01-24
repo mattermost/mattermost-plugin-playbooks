@@ -44,19 +44,19 @@ func multipleUserInfo(n int) []userInfo {
 	return list
 }
 
-func cleanMetricsIDs(metrics []app.PlaybookMetric) {
+func cleanMetricsIDs(metrics []app.PlaybookMetricConfig) {
 	for i := range metrics {
 		metrics[i].ID = ""
 		metrics[i].PlaybookID = ""
 	}
 }
 
-func metricsFromNames(names []string) []app.PlaybookMetric {
-	metrics := make([]app.PlaybookMetric, len(names))
+func metricsFromNames(names []string) []app.PlaybookMetricConfig {
+	metrics := make([]app.PlaybookMetricConfig, len(names))
 	types := []string{app.MetricTypeCurrency, app.MetricTypeDuration, app.MetricTypeInteger}
 
 	for i := range names {
-		metrics[i] = app.PlaybookMetric{
+		metrics[i] = app.PlaybookMetricConfig{
 			Title:       names[i],
 			Description: "description: " + strconv.Itoa(i),
 			Type:        types[i%len(types)],
