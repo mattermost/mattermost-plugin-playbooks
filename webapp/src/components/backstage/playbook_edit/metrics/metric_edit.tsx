@@ -88,11 +88,11 @@ const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props)
 
     return (
         <>
-            <Header>
+            <EditHeader>
                 {'Type: '}
                 {typeTitle}
-            </Header>
-            <Container>
+            </EditHeader>
+            <EditContainer>
                 <Title>{'Title'}</Title>
                 <StyledInput
                     error={titleError !== ''}
@@ -143,12 +143,12 @@ const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props)
                 <HelpText>{formatMessage({defaultMessage: 'Add details on what this metric is about and how it should be filled in. This description will be available on the retrospective page for each run where values for these metrics will be input.'})}</HelpText>
                 <VerticalSpacer size={16}/>
                 <PrimaryButton onClick={verifyAndSave}>{'Add'}</PrimaryButton>
-            </Container>
+            </EditContainer>
         </>
     );
 };
 
-const Header = styled.div`
+const EditHeader = styled.div`
     font-size: 14px;
     line-height: 20px;
     padding: 12px 24px;
@@ -157,7 +157,7 @@ const Header = styled.div`
     border-radius: 4px 4px 0 0;
 `;
 
-const Container = styled.div`
+const EditContainer = styled.div`
     font-size: 14px;
     line-height: 20px;
     padding: 16px 24px 24px;

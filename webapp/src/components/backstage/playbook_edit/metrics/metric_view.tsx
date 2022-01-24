@@ -34,7 +34,7 @@ const MetricView = ({metric, editClick}: Props) => {
     const target = metric.target ? <>{': '}<TargetText>{smallIcon}{`${targetStr} ${perRun}`}</TargetText></> : noTarget;
 
     return (
-        <MetricContainer>
+        <ViewContainer>
             <Lhs>{icon}</Lhs>
             <Centre>
                 <Title>{metric.title}</Title>
@@ -55,11 +55,11 @@ const MetricView = ({metric, editClick}: Props) => {
                     <i className='icon-pencil-outline'/>
                 </Button>
             </Rhs>
-        </MetricContainer>
+        </ViewContainer>
     );
 };
 
-const MetricContainer = styled.div`
+const ViewContainer = styled.div`
     display: flex;
     font-size: 14px;
     line-height: 20px;
