@@ -14,7 +14,7 @@ import {
 } from 'src/components/backstage/styles';
 import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playbook';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-import Metrics from 'src/components/backstage/playbook_edit/metrics';
+import Metrics from 'src/components/backstage/playbook_edit/metrics/metrics';
 
 const retrospectiveReminderOptions = [
     {value: 0, label: 'Once'},

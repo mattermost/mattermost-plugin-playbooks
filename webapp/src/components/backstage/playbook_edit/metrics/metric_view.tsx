@@ -7,6 +7,7 @@ import {useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
 import {DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
+import {targetToString} from 'src/components/backstage/playbook_edit/metrics/shared';
 
 interface Props {
     metric: Metric;
@@ -15,13 +16,22 @@ interface Props {
 
 const MetricView = ({metric, editClick}: Props) => {
     const {formatMessage} = useIntl();
+    const noTarget = formatMessage({defaultMessage: ': No target set.'});
+    const noDescription = formatMessage({defaultMessage: 'No description.'});
+    const perRun = formatMessage({defaultMessage: 'per run'});
 
     let icon = <DollarSign size={1.2}/>;
+    let smallIcon = <DollarSign size={1}/>;
     if (metric.type === MetricType.Integer) {
         icon = <PoundSign size={1.2}/>;
+        smallIcon = <PoundSign size={1}/>;
     } else if (metric.type === MetricType.Duration) {
         icon = <i className='icon-clock-outline'/>;
+        smallIcon = <i className='icon-clock-outline'/>;
     }
+
+    const targetStr = targetToString(metric.target, metric.type);
+    const target = metric.target ? <>{': '}<TargetText>{smallIcon}{`${targetStr} ${perRun}`}</TargetText></> : noTarget;
 
     return (
         <Container>
@@ -30,11 +40,11 @@ const MetricView = ({metric, editClick}: Props) => {
                 <Title>{metric.title}</Title>
                 <Detail>
                     <Bold>{formatMessage({defaultMessage: 'Target'})}</Bold>
-                    {`: ${metric.target} per run`}
+                    {target}
                 </Detail>
                 <Detail>
                     <Bold>{formatMessage({defaultMessage: 'Description'})}</Bold>
-                    {`: ${metric.description}`}
+                    {`: ${metric.description || noDescription}`}
                 </Detail>
             </Centre>
             <Rhs>
@@ -79,6 +89,22 @@ const Centre = styled.div`
 
 const Detail = styled.div`
     margin-top: 4px;
+`;
+
+const TargetText = styled.span`
+    padding-left: 20px;
+    position: relative;
+
+    > i {
+        position: absolute;
+        left: 0;
+    }
+
+    > svg {
+        position: absolute;
+        margin-top: 2px;
+        left: 0;
+    }
 `;
 
 const Title = styled.div`
