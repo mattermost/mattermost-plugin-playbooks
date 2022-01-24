@@ -12,11 +12,13 @@ import {useSelector} from 'react-redux';
 
 import {FormattedMessage} from 'react-intl';
 
-import {Playbook, playbookExportProps} from 'src/types/playbook';
+import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from '../widgets/text_with_tooltip';
 
 import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
 import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
+
+import {playbookExportProps} from 'src/client';
 
 import {InfoLine} from './styles';
 

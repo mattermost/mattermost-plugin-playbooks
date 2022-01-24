@@ -30,9 +30,10 @@ import {
     autoUnfollowPlaybook,
     telemetryEventForPlaybook,
     getSiteUrl,
+    playbookExportProps,
 } from 'src/client';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
-import {playbookExportProps, PlaybookWithChecklist} from 'src/types/playbook';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {RegularHeading} from 'src/styles/headings';
 import CheckboxInput from '../runs_list/checkbox_input';

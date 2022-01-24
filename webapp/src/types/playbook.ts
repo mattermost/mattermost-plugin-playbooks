@@ -1,8 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {getAPIUrl} from 'src/client';
-
 export interface Playbook {
     id: string;
     title: string;
@@ -237,8 +235,3 @@ This section lists the action items to turn learnings into changes that help the
 ### Timeline highlights
 This section is a curated log that details the most important moments. It can contain key communications, screen shots, or other artifacts. Use the built-in timeline feature to help you retrace and replay the sequence of events.`;
 
-export const playbookExportProps = (playbook: Playbook) => {
-    const href = `${getAPIUrl()}/playbooks/${playbook.id}/export`;
-    const filename = playbook.title.split(/\s+/).join('_').toLowerCase() + '_export.json';
-    return [href, filename];
-};
