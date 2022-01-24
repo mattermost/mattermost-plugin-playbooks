@@ -425,9 +425,14 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 	if err != nil {
 		return err
 	}
+	tx, err := s.store.db.Beginx()
+	if err != nil {
+		return errors.Wrap(err, "could not begin transaction")
+	}
+	defer s.store.finalizeTransaction(tx)
 
 	// When adding a PlaybookRun column #3: add to this SetMap (if it is a column that can be updated)
-	_, err = s.store.execBuilder(s.store.db, sq.
+	_, err = s.store.execBuilder(tx, sq.
 		Update("IR_Incident").
 		SetMap(map[string]interface{}{
 			"Name":                                  "",
@@ -453,6 +458,14 @@ func (s *playbookRunStore) UpdatePlaybookRun(playbookRun *app.PlaybookRun) error
 
 	if err != nil {
 		return errors.Wrapf(err, "failed to update playbook run with id '%s'", rawPlaybookRun.ID)
+	}
+
+	if err = s.updateRunMetrics(tx, rawPlaybookRun.PlaybookRun); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run metrics for run with id '%s'", rawPlaybookRun.PlaybookRun.ID)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return errors.Wrap(err, "could not commit transaction")
 	}
 
 	return nil
@@ -633,6 +646,11 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 		return nil, err
 	}
 
+	metricsData, err := s.getMetricsDataForPlaybookRun(tx, playbookRunID)
+	if err != nil {
+		return nil, err
+	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "could not commit transaction")
 	}
@@ -642,6 +660,7 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 	}
 
 	playbookRun.TimelineEvents = append(playbookRun.TimelineEvents, timelineEvents...)
+	playbookRun.MetricsData = metricsData
 
 	return playbookRun, nil
 }
@@ -659,6 +678,25 @@ func (s *playbookRunStore) getTimelineEventsForPlaybookRun(q sqlx.Queryer, playb
 	}
 
 	return timelineEvents, nil
+}
+
+func (s *playbookRunStore) getMetricsDataForPlaybookRun(q sqlx.Queryer, playbookRunID string) ([]app.RunMetricData, error) {
+	var metricsData []app.RunMetricData
+
+	query := s.store.builder.
+		Select(
+			"MetricConfigID",
+			"Value",
+		).
+		From("IR_Metric pm").
+		Where(sq.Eq{"IncidentID": playbookRunID})
+
+	err := s.store.selectBuilder(q, &metricsData, query)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, errors.Wrapf(err, "failed to get metrics data for run with id `%s`", playbookRunID)
+	}
+
+	return metricsData, nil
 }
 
 // GetTimelineEvent returns the timeline event by id for the given playbook run.
@@ -1129,6 +1167,53 @@ func (s *playbookRunStore) GetFollowers(playbookRunID string) ([]string, error) 
 	}
 
 	return followers, nil
+}
+
+func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.PlaybookRun) error {
+	if len(playbookRun.MetricsData) == 0 {
+		return nil
+	}
+
+	query := s.queryBuilder.
+		Select("ID").
+		From("IR_MetricConfig").
+		Where(sq.Eq{"PlaybookID": playbookRun.PlaybookID}).
+		Where(sq.Eq{"DeleteAt": 0})
+
+	var metricsConfigsIDs []string
+	err := s.store.selectBuilder(q, &metricsConfigsIDs, query)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get metric configs ids for playbook '%s'", playbookRun.PlaybookID)
+	}
+	validIDs := make(map[string]bool)
+	for _, id := range metricsConfigsIDs {
+		validIDs[id] = true
+	}
+
+	retrospectivePublished := !playbookRun.RetrospectiveWasCanceled && playbookRun.RetrospectivePublishedAt > 0
+
+	for _, m := range playbookRun.MetricsData {
+		if !validIDs[m.MetricConfigID] {
+			continue
+		}
+		if s.store.db.DriverName() == model.DatabaseDriverMysql {
+			_, err = s.store.execBuilder(q, sq.
+				Insert("IR_Metrics").
+				Columns("IncidentID", "MetricConfigID", "Value", "Published").
+				Values(playbookRun.ID, m.MetricConfigID, m.Value, retrospectivePublished).
+				Suffix("ON DUPLICATE KEY UPDATE Value = ?, Published = ?", m.Value, retrospectivePublished))
+		} else {
+			_, err = s.store.execBuilder(q, sq.
+				Insert("IR_Metrics").
+				Columns("IncidentID", "MetricConfigID", "Value", "Published").
+				Values(playbookRun.ID, m.MetricConfigID, m.Value, retrospectivePublished).
+				Suffix("ON CONFLICT (IncidentID,UserID) DO UPDATE SET Value = ?, Published = ?", m.Value, retrospectivePublished))
+		}
+		if err != nil {
+			return errors.Wrapf(err, "failed to upsert metric value '%s'", m.MetricConfigID)
+		}
+	}
+	return nil
 }
 
 func toSQLPlaybookRun(playbookRun app.PlaybookRun) (*sqlPlaybookRun, error) {

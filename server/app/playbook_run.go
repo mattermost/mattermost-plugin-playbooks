@@ -158,9 +158,6 @@ type PlaybookRun struct {
 	// CategoryName, if not empty, is the name of the category where the run channel will live.
 	CategoryName string `json:"category_name"`
 
-	// Playbook metric configurations
-	MetricsConfigs []PlaybookMetric `json:"metrics_configs"`
-
 	// Playbook run metric values
 	MetricsData []RunMetricData `json:"metrics_data"`
 }
@@ -180,7 +177,6 @@ func (i *PlaybookRun) Clone() *PlaybookRun {
 	newPlaybookRun.ParticipantIDs = append([]string(nil), i.ParticipantIDs...)
 	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), i.WebhookOnCreationURLs...)
 	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), i.WebhookOnStatusUpdateURLs...)
-	newPlaybookRun.MetricsConfigs = append([]PlaybookMetric(nil), i.MetricsConfigs...)
 	newPlaybookRun.MetricsData = append([]RunMetricData(nil), i.MetricsData...)
 
 	return &newPlaybookRun
@@ -222,9 +218,6 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	}
 	if old.WebhookOnStatusUpdateURLs == nil {
 		old.WebhookOnStatusUpdateURLs = []string{}
-	}
-	if old.MetricsConfigs == nil {
-		old.MetricsConfigs = []PlaybookMetric{}
 	}
 	if old.MetricsData == nil {
 		old.MetricsData = []RunMetricData{}
@@ -341,8 +334,8 @@ type SQLStatusPost struct {
 }
 
 type RunMetricData struct {
-	MetricID string
-	Value    int64
+	MetricConfigID string
+	Value          int64
 }
 
 type RetrospectiveUpdate struct {
