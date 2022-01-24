@@ -39,6 +39,7 @@ const Metrics = ({playbook, setPlaybook, setChangesMade}: Props) => {
         // Only add a new metric if we aren't currently editing.
         if (curEditingIdx === -1) {
             addMetric(addType);
+            return;
         }
 
         // We're editing. Try to close it, and if successful add the new metric.
@@ -50,6 +51,7 @@ const Metrics = ({playbook, setPlaybook, setChangesMade}: Props) => {
         // Edit a metric immediately if we aren't currently editing.
         if (curEditingIdx === -1) {
             setCurEditingIdx(idx);
+            return;
         }
 
         // We're editing. Try to close it, and if successful edit the metric.

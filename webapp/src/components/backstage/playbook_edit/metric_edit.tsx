@@ -4,6 +4,7 @@
 import React, {useState} from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
+import {Duration} from 'luxon';
 
 import {Metric, MetricType} from 'src/types/playbook';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
@@ -22,24 +23,47 @@ interface Props {
 const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props) => {
     const {formatMessage} = useIntl();
     const [curState, setCurState] = useState(metric);
+    const [curTargetString, setCurTargetString] = useState(targetToString(metric.target, metric.type));
     const [curSaveToggle, setCurSaveToggle] = useState(saveToggle);
     const [titleError, setTitleError] = useState('');
+    const [targetError, setTargetError] = useState('');
 
     const errorTitleDuplicate = formatMessage({defaultMessage: 'A metric with the same name already exists. Please add a unique name for each metric.'});
     const errorTitleMissing = formatMessage({defaultMessage: 'Please add a title for your metric.'});
+    const errorTargetCurrencyInteger = formatMessage({defaultMessage: 'Please enter a number, or leave the target blank.'});
+    const errorTargetDuration = formatMessage({defaultMessage: 'Please enter a duration in the format: dd:mm:ss (e.g., 12:00:00), or leave the target blank.'});
 
     const verifyAndSave = (): boolean => {
+        // Is the title unique?
         if (otherTitles.includes(curState.title)) {
             setTitleError(errorTitleDuplicate);
             return false;
         }
 
+        // Is the title set?
         if (curState.title === '') {
             setTitleError(errorTitleMissing);
             return false;
         }
 
-        onAdd(curState);
+        // Is the target valid?
+        if (metric.type === MetricType.Duration) {
+            const regex = /(^$|^\d{1,2}:\d{1,2}:\d{1,2}$)/;
+            if (!regex.test(curTargetString)) {
+                setTargetError(errorTargetDuration);
+                return false;
+            }
+        } else {
+            const regex = /^\d*$/;
+            if (!regex.test(curTargetString)) {
+                setTargetError(errorTargetCurrencyInteger);
+                return false;
+            }
+        }
+
+        // target is valid. Convert it, add it to the metric, and save the metric.
+        const target = stringToTarget(curTargetString, metric.type);
+        onAdd({...curState, target});
         return true;
     };
 
@@ -53,12 +77,13 @@ const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props)
     }
 
     let typeTitle = <Bold><DollarSign size={1.2}/>{' Dollars'}</Bold>;
-    let targetType = 'number';
+    let searchIcon = <DollarSign size={1}/>;
     if (metric.type === MetricType.Integer) {
         typeTitle = <Bold><PoundSign size={1.2}/>{' Integer'}</Bold>;
+        searchIcon = <PoundSign size={1}/>;
     } else if (metric.type === MetricType.Duration) {
         typeTitle = <Bold><i className='icon-clock-outline'/>{' Duration (in dd:hh:mm)'}</Bold>;
-        targetType = 'text';
+        searchIcon = <i className='icon-clock-outline'/>;
     }
 
     return (
@@ -87,15 +112,22 @@ const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props)
                 }
                 <VerticalSpacer size={16}/>
                 <Title>{'Target per run'}</Title>
-                <StyledInput
-                    placeholder={formatMessage({defaultMessage: 'Target value for each run'})}
-                    type={targetType}
-                    value={curState.target}
-                    onChange={(e) => {
-                        const target = Number(e.target.value);
-                        setCurState((prevState) => ({...prevState, target}));
-                    }}
-                />
+                <InputWithIcon>
+                    {searchIcon}
+                    <StyledInput
+                        placeholder={formatMessage({defaultMessage: 'Target value for each run'})}
+                        type='text'
+                        value={curTargetString}
+                        onChange={(e) => {
+                            setCurTargetString(e.target.value.trim());
+                            setTargetError('');
+                        }}
+                    />
+                </InputWithIcon>
+                {
+                    targetError !== '' &&
+                    <ErrorText>{targetError}</ErrorText>
+                }
                 <HelpText>{formatMessage({defaultMessage: 'We’ll show you how close or far from the target each run’s value is and also plot it on a chart.'})}</HelpText>
                 <VerticalSpacer size={16}/>
                 <Title>{'Description'}</Title>
@@ -114,6 +146,43 @@ const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props)
             </Container>
         </>
     );
+};
+
+const targetToString = (target: number, type: MetricType) => {
+    if (!target) {
+        if (type === MetricType.Integer || type === MetricType.Currency) {
+            return '0';
+        }
+        return '00:00:00';
+    }
+
+    if (type === MetricType.Integer || type === MetricType.Currency) {
+        return target.toString();
+    }
+
+    const dur = Duration.fromMillis(target).shiftTo('days', 'hours', 'minutes');
+    const dd = dur.days.toString().padStart(2, '0');
+    const hh = dur.hours.toString().padStart(2, '0');
+    const mm = dur.minutes.toString().padStart(2, '0');
+    return `${dd}:${hh}:${mm}`;
+};
+
+const stringToTarget = (target: string, type: MetricType) => {
+    if (target === '') {
+        return 0;
+    }
+
+    if (type === MetricType.Integer || type === MetricType.Currency) {
+        return parseInt(target, 10);
+    }
+
+    // assuming we've verified this is a duration in the format dd:mm:ss
+    const ddmmss = target.split(':').map((c) => parseInt(c, 10));
+    return Duration.fromObject({
+        days: ddmmss[0],
+        hours: ddmmss[1],
+        minutes: ddmmss[2],
+    }).as('milliseconds');
 };
 
 const Header = styled.div`
@@ -163,7 +232,7 @@ const ErrorText = styled.div`
     color: var(--error-text);
 `;
 
-const StyledInput = styled(BaseInput)<{error?: boolean}>`
+const StyledInput = styled(BaseInput)<{ error?: boolean }>`
     height: 32px;
     width: 100%;
 
@@ -176,6 +245,29 @@ const StyledInput = styled(BaseInput)<{error?: boolean}>`
             }
         `
     )}
+`;
+
+const InputWithIcon = styled.span`
+    position: relative;
+
+    i, svg {
+        position: absolute;
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+    }
+
+    i {
+        left: 10px;
+        top: 0;
+    }
+
+    svg {
+        left: 14px;
+        top: 2px;
+    }
+
+    input {
+        padding-left: 36px;
+    }
 `;
 
 const StyledTextarea = styled(BaseTextArea)`
