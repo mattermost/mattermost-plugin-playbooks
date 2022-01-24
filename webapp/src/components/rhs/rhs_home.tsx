@@ -88,10 +88,13 @@ const RunDetail = styled.div<RunDetailProps>`
     place-content: flex-start;
     place-items: center;
     padding: 2rem 2rem 2rem 4rem;
-    background: linear-gradient(180deg,
-    rgba(var(--center-channel-bg-rgb), 0.85) 0%,
-    rgba(var(--center-channel-bg-rgb), 0.25) 100%),
-    rgba(var(${({exists}) => (exists ? '--button-bg-rgb' : '--center-channel-color-rgb')}), 0.08);
+    background:
+        linear-gradient(
+            180deg,
+            rgba(var(--center-channel-bg-rgb), 0.85) 0%,
+            rgba(var(--center-channel-bg-rgb), 0.25) 100%
+        ),
+        rgba(var(${({exists}) => (exists ? '--button-bg-rgb' : '--center-channel-color-rgb')}), 0.08);
     mask-mode: alpha;
     mask-size: cover;
     mask-repeat: round;
@@ -328,7 +331,7 @@ const RHSHome = () => {
                                     <TertiaryButton
                                         onClick={() => setPage()}
                                     >
-                                        {'Show more'}
+                                        <FormattedMessage defaultMessage='Show more'/>
                                     </TertiaryButton>
                                 </PaginationContainer>
                             )}
