@@ -56,7 +56,6 @@ const PlaybookContainer = styled.div`
 
 const PlaybookList = () => {
     const {formatMessage} = useIntl();
-    const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal();
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
     const bottomHalf = useRef<JSX.Element | null>(null);
@@ -67,6 +66,8 @@ const PlaybookList = () => {
         {isLoading, totalCount, params, selectedPlaybook},
         {setPage, sortBy, setSelectedPlaybook, archivePlaybook, setSearchTerm, isFiltering},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
+
+    const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
 
     const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
