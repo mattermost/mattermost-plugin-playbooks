@@ -28,29 +28,20 @@ interface Props {
     disabled?: boolean;
 }
 
-const optionFromSeconds = (seconds: number) => {
-    const duration = Duration.fromObject({seconds});
-
-    return {
-        label: formatDuration(duration, 'long'),
-        value: duration,
-    };
-};
-
 const DefaultUpdateTimer = (props: Props) => {
     const {formatMessage} = useIntl();
-    const makeOption = useMakeOption(Mode.DurationValue, 'en');
+    const makeOption = useMakeOption(Mode.DurationValue);
 
     const defaults = useMemo(() => {
         const options = [
-            makeOption('60 minutes', formatMessage({defaultMessage: '60 minutes'})),
-            makeOption('24 hours', formatMessage({defaultMessage: '24 hours'})),
-            makeOption('7 days', formatMessage({defaultMessage: '7 days'})),
+            makeOption({hours: 1}),
+            makeOption({days: 1}),
+            makeOption({days: 7}),
         ];
 
         let value: Option | undefined;
         if (props.seconds) {
-            value = optionFromSeconds(props.seconds);
+            value = makeOption({seconds: (props.seconds)});
 
             const matched = options.find((o) => value && ms(o.value) === ms(value.value));
             if (matched) {

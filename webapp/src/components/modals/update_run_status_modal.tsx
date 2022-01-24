@@ -235,37 +235,28 @@ const useDefaultMessage = (run: PlaybookRun | null | undefined) => {
     return null;
 };
 
-export const optionFromSeconds = (seconds: number) => {
-    const duration = Duration.fromObject({seconds});
-
-    return {
-        label: `${formatDuration(duration, 'long')}`,
-        value: duration,
-    };
-};
-
 export const useReminderTimerOption = (run: PlaybookRun | null | undefined, disabled?: boolean, preselectedValue?: number) => {
     const {locale} = useIntl();
-    const makeOption = useMakeOption(Mode.DurationValue, 'en');
+    const makeOption = useMakeOption(Mode.DurationValue);
 
     const defaults = useMemo(() => {
         const options = [
-            makeOption('60 minutes'),
-            makeOption('24 hours'),
-            makeOption('7 days'),
+            makeOption({hours: 1}),
+            makeOption({days: 1}),
+            makeOption({days: 7}),
         ];
 
         let value: Option | undefined;
         if (preselectedValue) {
-            value = optionFromSeconds(preselectedValue);
+            value = makeOption({seconds: preselectedValue});
         }
         if (run) {
             if (!value && run.previous_reminder) {
-                value = optionFromSeconds(nearest(run.previous_reminder * 1e-9, 60));
+                value = makeOption({seconds: nearest(run.previous_reminder * 1e-9, 60)});
             }
 
             if (run.reminder_timer_default_seconds) {
-                const defaultReminderOption = optionFromSeconds(run.reminder_timer_default_seconds);
+                const defaultReminderOption = makeOption({seconds: run.reminder_timer_default_seconds});
                 if (!options.find((o) => ms(o.value) === ms(defaultReminderOption.value))) {
                     // don't duplicate an option that exists already
                     options.push(defaultReminderOption);

@@ -8,7 +8,7 @@ import parseDuration from 'parse-duration';
 import {debounce} from 'debounce';
 import Select from 'react-select';
 
-import {DateTime, Duration} from 'luxon';
+import {DateTime, Duration, DurationLikeObject, DateObjectUnits} from 'luxon';
 
 import {useIntl} from 'react-intl';
 
@@ -24,20 +24,34 @@ export enum Mode {
 
     DurationValue = 'DurationValue',
 
+    /** DateTime takes priority, or duration if parsable */
     AutoValue = 'AutoValue'
 }
 
 const chronoParsingOptions: ParsingOption = {forwardDate: true};
 
-const durationFromQuery = (locale: string, query: string): Duration | null => {
+const durationFromQuery = (locale: string, query: string | DurationLikeObject): Duration | null => {
+    if (typeof query !== 'string') {
+        return Duration.fromObject(query);
+    }
+
     localizeParseDuration(locale);
+
     const ms = parseDuration(query);
     return (ms && Duration.fromMillis(ms)) || null;
 };
 
-const dateTimeFromQuery = (locale: string, query: string, acceptDurationInput = false): DateTime | null => {
+const parseDateTime = (locale: string, query: string) => {
     // eslint-disable-next-line no-undefined
-    const date: Date = ChronoLocales[locale.split('-')[0]]?.parseDate(query, undefined, chronoParsingOptions) ?? en.parseDate(query, undefined, chronoParsingOptions);
+    return ChronoLocales[locale.split('-')[0]]?.parseDate(query, undefined, chronoParsingOptions) ?? en.parseDate(query, undefined, chronoParsingOptions);
+};
+const dateTimeFromQuery = (locale: string, query: string | DateObjectUnits, acceptDurationInput = false): DateTime | null => {
+    if (typeof query !== 'string') {
+        return DateTime.fromObject(query);
+    }
+
+    const date = parseDateTime(locale, query);
+
     if (date == null && acceptDurationInput) {
         const duration = durationFromQuery(locale, query);
 
@@ -48,10 +62,14 @@ const dateTimeFromQuery = (locale: string, query: string, acceptDurationInput = 
     return (date && DateTime.fromJSDate(date)) || null;
 };
 
-export function infer(locale: string, query: string, mode: Mode.DateTimeValue): DateTime | null;
-export function infer(locale: string, query: string, mode: Mode.DurationValue): Duration | null;
-export function infer(locale: string, query: string, mode?: Mode): Option['value'];
-export function infer(locale: string, query: string, mode = Mode.AutoValue): Option['value'] {
+export function infer(locale: string, query: string, mode?: Mode.DateTimeValue): DateTime | null;
+export function infer(locale: string, query: DateObjectUnits, mode?: Mode.DateTimeValue): DateTime;
+
+export function infer(locale: string, query: string, mode?: Mode.DurationValue): Duration | null;
+export function infer(locale: string, query: DurationLikeObject, mode?: Mode.DurationValue): Duration;
+
+export function infer(locale: string, query: string | DateObjectUnits | DurationLikeObject, mode?: Mode): Option['value'];
+export function infer(locale: string, query: string | DateObjectUnits | DurationLikeObject, mode = Mode.AutoValue): Option['value'] {
     switch (mode) {
     case Mode.DateTimeValue:
         return dateTimeFromQuery(locale, query, true);
@@ -65,9 +83,9 @@ export function infer(locale: string, query: string, mode = Mode.AutoValue): Opt
 
 export const ms = (value: Option['value']): number => value?.valueOf() ?? 0;
 
-export const useMakeOption = (mode = Mode.AutoValue, parseLocale?: string): (input: string, customLabel?: ReactNode) => Option => {
+export const useMakeOption = (mode: Mode, parseLocale?: string) => {
     const {locale} = useIntl();
-    return (input, customLabel) => {
+    return (input: string | DateObjectUnits | DurationLikeObject, customLabel?: ReactNode): Option => {
         let label = customLabel;
         const value = infer(parseLocale ?? locale, input, mode);
 
