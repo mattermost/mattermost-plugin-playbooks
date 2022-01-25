@@ -25,6 +25,7 @@ import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview
 
 import {
     clientFetchPlaybook,
+    duplicatePlaybook as clientDuplicatePlaybook,
     clientFetchIsPlaybookFollower,
     autoFollowPlaybook,
     autoUnfollowPlaybook,
@@ -236,6 +237,14 @@ const Playbook = () => {
                             onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
                         >
                             <FormattedMessage defaultMessage='Manage access'/>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={async () => {
+                                const newID = await clientDuplicatePlaybook(playbook.id);
+                                navigateToPluginUrl(`/playbooks/${newID}`);
+                            }}
+                        >
+                            <FormattedMessage defaultMessage='Duplicate'/>
                         </DropdownMenuItem>
                         {!archived &&
                         <DropdownMenuItem

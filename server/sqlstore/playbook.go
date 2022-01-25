@@ -32,6 +32,8 @@ type playbookStore struct {
 	store          *SQLStore
 	queryBuilder   sq.StatementBuilderType
 	playbookSelect sq.SelectBuilder
+	membersSelect  sq.SelectBuilder
+	metricsSelect  sq.SelectBuilder
 }
 
 // Ensure playbookStore implements the playbook.Store interface.
@@ -156,25 +158,38 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		LeftJoin("Teams t ON t.Id = p.TeamID").
 		LeftJoin("Schemes s ON t.SchemeId = s.Id")
 
+	membersSelect := sqlStore.builder.
+		Select(
+			"PlaybookID",
+			"MemberID",
+			"Roles",
+		).
+		From("IR_PlaybookMember").
+		OrderBy("MemberID ASC") // Entirely for consistency for the tests
+
+	metricsSelect := sqlStore.builder.
+		Select(
+			"ID",
+			"PlaybookID",
+			"Title",
+			"Description",
+			"Type",
+			"Target",
+		).
+		From("IR_MetricConfig").
+		Where(sq.Eq{"DeleteAt": 0}).
+		OrderBy("Sort ASC")
+
 	newStore := &playbookStore{
 		pluginAPI:      pluginAPI,
 		log:            log,
 		store:          sqlStore,
 		queryBuilder:   sqlStore.builder,
 		playbookSelect: playbookSelect,
+		membersSelect:  membersSelect,
+		metricsSelect:  metricsSelect,
 	}
 	return newStore
-}
-
-func (p *playbookStore) makeMembersSelect(teamID string) sq.SelectBuilder {
-	return p.store.builder.
-		Select(
-			"pm.PlaybookID",
-			"pm.MemberID",
-			"pm.Roles",
-		).
-		From("IR_PlaybookMember pm").
-		OrderBy("pm.MemberID ASC") // Entirely for consistency for the tests
 }
 
 // Create creates a new playbook
@@ -282,13 +297,13 @@ func (p *playbookStore) Get(id string) (app.Playbook, error) {
 	}
 
 	var members []playbookMember
-	err = p.store.selectBuilder(tx, &members, p.makeMembersSelect(playbook.TeamID).Where(sq.Eq{"PlaybookID": id}))
+	err = p.store.selectBuilder(tx, &members, p.membersSelect.Where(sq.Eq{"PlaybookID": id}))
 	if err != nil && err != sql.ErrNoRows {
 		return app.Playbook{}, errors.Wrapf(err, "failed to get memberIDs for playbook with id '%s'", id)
 	}
 
 	var metrics []app.PlaybookMetricConfig
-	err = p.store.selectBuilder(tx, &metrics, p.makeMetricsSelect().Where(sq.Eq{"PlaybookID": id}))
+	err = p.store.selectBuilder(tx, &metrics, p.metricsSelect.Where(sq.Eq{"PlaybookID": id}))
 	if err != nil && err != sql.ErrNoRows {
 		return app.Playbook{}, errors.Wrapf(err, "failed to get metrics configs for playbook with id '%s'", id)
 	}
@@ -459,12 +474,12 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		ids = append(ids, pb.ID)
 	}
 	var members []playbookMember
-	err = p.store.selectBuilder(p.store.db, &members, p.makeMembersSelect(teamID).Where(sq.Eq{"PlaybookID": ids}))
+	err = p.store.selectBuilder(p.store.db, &members, p.membersSelect.Where(sq.Eq{"PlaybookID": ids}))
 	if err != nil {
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbook members")
 	}
 	var metrics []app.PlaybookMetricConfig
-	err = p.store.selectBuilder(p.store.db, &metrics, p.makeMetricsSelect().Where(sq.Eq{"PlaybookID": ids}))
+	err = p.store.selectBuilder(p.store.db, &metrics, p.metricsSelect.Where(sq.Eq{"PlaybookID": ids}))
 	if err != nil {
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbooks metrics")
 	}
@@ -709,24 +724,9 @@ func (p *playbookStore) replacePlaybookMembers(q queryExecer, playbook app.Playb
 	return nil
 }
 
-func (p *playbookStore) makeMetricsSelect() sq.SelectBuilder {
-	return p.store.builder.
-		Select(
-			"mc.ID",
-			"mc.PlaybookID",
-			"mc.Title",
-			"mc.Description",
-			"mc.Type",
-			"mc.Target",
-		).
-		From("IR_MetricConfig mc").
-		Where(sq.Eq{"DeleteAt": 0}).
-		OrderBy("mc.Sort ASC")
-}
-
 // replacePlaybookMetrics replaces the metric configs of a playbook
 func (p *playbookStore) replacePlaybookMetrics(q queryExecer, playbook app.Playbook) error {
-	// Mark as deleted all metrics for this playbook
+	// First, we mark as deleted all existing metrics for this playbook, then restore those which are in the playbook object.
 	updateBuilder := sq.Update("IR_MetricConfig").
 		Set("DeleteAt", model.GetMillis()).
 		Where(sq.Eq{"PlaybookID": playbook.ID}).
@@ -736,6 +736,7 @@ func (p *playbookStore) replacePlaybookMetrics(q queryExecer, playbook app.Playb
 		return err
 	}
 
+	// Restore and update existing metric configs. Insert a new ones.
 	var err error
 	for i, m := range playbook.Metrics {
 		if m.ID == "" {
