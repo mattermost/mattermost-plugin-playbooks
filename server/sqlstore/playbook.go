@@ -178,7 +178,7 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		).
 		From("IR_MetricConfig").
 		Where(sq.Eq{"DeleteAt": 0}).
-		OrderBy("Sort ASC")
+		OrderBy("Ordering ASC")
 
 	newStore := &playbookStore{
 		pluginAPI:      pluginAPI,
@@ -742,7 +742,7 @@ func (p *playbookStore) replacePlaybookMetrics(q queryExecer, playbook app.Playb
 		if m.ID == "" {
 			_, err = p.store.execBuilder(q, sq.
 				Insert("IR_MetricConfig").
-				Columns("ID", "PlaybookID", "Title", "Description", "Type", "Target", "Sort").
+				Columns("ID", "PlaybookID", "Title", "Description", "Type", "Target", "Ordering").
 				Values(model.NewId(), playbook.ID, m.Title, m.Description, m.Type, m.Target, i))
 		} else {
 			_, err = p.store.execBuilder(q, sq.
@@ -751,7 +751,7 @@ func (p *playbookStore) replacePlaybookMetrics(q queryExecer, playbook app.Playb
 					"Title":       m.Title,
 					"Description": m.Description,
 					"Target":      m.Target,
-					"Sort":        i,
+					"Ordering":    i,
 					"DeleteAt":    0,
 				}).
 				Where(sq.Eq{"ID": m.ID}),
