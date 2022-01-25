@@ -60,10 +60,6 @@ export const getSiteUrl = (): string => {
     return siteURL;
 };
 
-export const getAPIUrl = (): string => {
-    return apiUrl;
-};
-
 export async function fetchPlaybookRuns(params: FetchPlaybookRunsParams) {
     const queryParams = qs.stringify(params, {addQueryPrefix: true, indices: false});
 
@@ -682,7 +678,7 @@ export const doFetchWithoutResponse = async (url: string, options = {}) => {
 };
 
 export const playbookExportProps = (playbook: Playbook) => {
-    const href = `${getAPIUrl()}/playbooks/${playbook.id}/export`;
+    const href = `${apiUrl}/playbooks/${playbook.id}/export`;
     const filename = playbook.title.split(/\s+/).join('_').toLowerCase() + '_export.json';
     return [href, filename];
 };
