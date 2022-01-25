@@ -49,6 +49,7 @@ describe('channels > rhs > home', () => {
 
             // * Verify the playbook is shown
             cy.findByText('Your Playbooks')
+                .parent()
                 .next()
                 .within(() => {
                     cy.findByText('Team Playbook').should('exist');
@@ -72,6 +73,7 @@ describe('channels > rhs > home', () => {
 
             // * Verify the templates are shown
             cy.findByText('Playbook Templates')
+                .parent()
                 .next()
                 .within(() => {
                     cy.findAllByTestId('template-details').each(($templateElement, index) => {
