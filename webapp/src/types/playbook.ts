@@ -141,7 +141,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         signal_any_keywords_enabled: false,
         category_name: '',
         categorize_channel_enabled: false,
-        run_summary_template_enabled: true,
+        run_summary_template_enabled: false,
         run_summary_template: '',
         channel_name_template: '',
         default_playbook_member_role: '',
