@@ -26,6 +26,7 @@ interface Props {
     onClick: () => void
     onEdit: () => void
     onArchive: () => void
+    onDuplicate: () => void
 }
 
 const ActionCol = styled.div`
@@ -93,6 +94,7 @@ const PlaybookListRow = (props: Props) => {
                 <PlaybookActionMenu
                     onEdit={props.onEdit}
                     onArchive={props.onArchive}
+                    onDuplicate={props.onDuplicate}
                 />
             </ActionCol>
         </PlaybookItem>
@@ -102,6 +104,7 @@ const PlaybookListRow = (props: Props) => {
 interface PlaybookActionMenuProps {
     onEdit: () => void;
     onArchive: () => void;
+    onDuplicate: () => void;
 }
 
 const IconWrapper = styled.div`
@@ -122,6 +125,11 @@ const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
                 onClick={props.onEdit}
             >
                 <FormattedMessage defaultMessage='Edit'/>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+                onClick={props.onDuplicate}
+            >
+                <FormattedMessage defaultMessage='Duplicate'/>
             </DropdownMenuItem>
             <DropdownMenuItem
                 onClick={props.onArchive}

@@ -231,6 +231,11 @@ export async function archivePlaybook(playbookId: Playbook['id']) {
     return data;
 }
 
+export async function duplicatePlaybook(playbookId: Playbook['id']) {
+    const {id} = await doPost(`${apiUrl}/playbooks/${playbookId}/duplicate`, '');
+    return id;
+}
+
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
     return Client4.getProfilesInChannel(channelId, 0, PROFILE_CHUNK_SIZE);
 }
@@ -609,7 +614,6 @@ export const doPatch = async <TData = any>(url: string, body = {}) => {
 
 export const doFetchWithResponse = async <TData = any>(url: string, options = {}) => {
     const response = await fetch(url, Client4.getOptions(options));
-
     let data;
     if (response.ok) {
         const contentType = response.headers.get('content-type');

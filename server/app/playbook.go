@@ -91,6 +91,17 @@ type PlaybookMetricConfig struct {
 	Target      int64  `json:"Target"`
 }
 
+func (pm PlaybookMember) Clone() PlaybookMember {
+	newPlaybookMember := pm
+	if len(pm.Roles) != 0 {
+		newPlaybookMember.Roles = append([]string(nil), pm.Roles...)
+	}
+	if len(pm.SchemeRoles) != 0 {
+		newPlaybookMember.SchemeRoles = append([]string(nil), pm.SchemeRoles...)
+	}
+	return newPlaybookMember
+}
+
 func (p Playbook) Clone() Playbook {
 	newPlaybook := p
 	var newChecklists []Checklist
@@ -98,8 +109,12 @@ func (p Playbook) Clone() Playbook {
 		newChecklists = append(newChecklists, c.Clone())
 	}
 	newPlaybook.Checklists = newChecklists
-	newPlaybook.Members = append([]PlaybookMember(nil), p.Members...)
 	newPlaybook.Metrics = append([]PlaybookMetricConfig(nil), p.Metrics...)
+	var newMembers []PlaybookMember
+	for _, m := range p.Members {
+		newMembers = append(newMembers, m.Clone())
+	}
+	newPlaybook.Members = newMembers
 	if len(p.InvitedUserIDs) != 0 {
 		newPlaybook.InvitedUserIDs = append([]string(nil), p.InvitedUserIDs...)
 	}
@@ -284,6 +299,9 @@ type PlaybookService interface {
 
 	// IsAutoFollowing returns weather user is auto-following a playbook
 	IsAutoFollowing(playbookID, userID string) (bool, error)
+
+	// Duplicate duplicates a playbook
+	Duplicate(playbook Playbook, userID string) (string, error)
 }
 
 // PlaybookStore is an interface for storing playbooks
