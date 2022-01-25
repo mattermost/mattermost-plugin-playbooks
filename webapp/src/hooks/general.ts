@@ -441,19 +441,23 @@ export function useNow(refreshIntervalMillis = 1000) {
     return now;
 }
 
+const combineQueryParameters = (oldParams: FetchPlaybookRunsParams, searchString: string) => {
+    const queryParams = qs.parse(searchString, {ignoreQueryPrefix: true, parseArrays: true});
+    return {...oldParams, ...queryParams};
+};
+
 export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
 [PlaybookRun[], number, FetchPlaybookRunsParams, React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>] {
     const [playbookRuns, setPlaybookRuns] = useState<PlaybookRun[]>([]);
     const [totalCount, setTotalCount] = useState(0);
-    const [fetchParams, setFetchParams] = useState(defaultFetchParams);
     const history = useHistory();
     const location = useLocation();
+    const [fetchParams, setFetchParams] = useState(combineQueryParameters(defaultFetchParams, location.search));
 
     // On first load fetch parameters from the query string
     useEffect(() => {
-        const queryParams = qs.parse(location.search, {ignoreQueryPrefix: true});
         setFetchParams((oldParams) => {
-            return {...oldParams, ...queryParams};
+            return combineQueryParameters(oldParams, location.search);
         });
     }, []);
 
@@ -487,7 +491,7 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
         const newFetchParams: Record<string, unknown> = {...fetchParams};
         delete newFetchParams.page;
         delete newFetchParams.per_page;
-        history.replace({search: qs.stringify(newFetchParams, {addQueryPrefix: false, indices: false})});
+        history.replace({search: qs.stringify(newFetchParams, {addQueryPrefix: false, arrayFormat: 'brackets'})});
     }, [fetchParams, history]);
 
     return [playbookRuns, totalCount, fetchParams, setFetchParams];
