@@ -42,4 +42,21 @@ describe('playbooks > list', () => {
         // * Assert contents of heading.
         cy.findByTestId('titlePlaybook').should('exist').contains('Playbooks');
     });
+
+    it('can duplicate playbook', () => {
+        // # Open the product
+        cy.visit('/playbooks');
+
+        // # Switch to Playbooks
+        cy.findByTestId('playbooksLHSButton').click();
+
+        // # Click on the dot menu
+        cy.get('.icon-dots-horizontal').click();
+
+        // # Click on duplicate
+        cy.findByText('Duplicate').click();
+
+        // * Verify that playbook got duplicated
+        cy.findByText('Copy of Playbook').should('exist');
+    });
 });

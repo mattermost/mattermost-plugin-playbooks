@@ -28,6 +28,7 @@ interface Props {
     onClick: () => void
     onEdit: () => void
     onArchive: () => void
+    onDuplicate: () => void
 }
 
 const ActionCol = styled.div`
@@ -111,9 +112,9 @@ const PlaybookListRow = (props: Props) => {
                         <FormattedMessage defaultMessage='Edit'/>
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                        onClick={props.onArchive}
+                        onClick={props.onDuplicate}
                     >
-                        <FormattedMessage defaultMessage='Archive'/>
+                        <FormattedMessage defaultMessage='Duplicate'/>
                     </DropdownMenuItem>
                     <DropdownMenuItemStyled
                         href={exportHref}
@@ -122,6 +123,11 @@ const PlaybookListRow = (props: Props) => {
                     >
                         <FormattedMessage defaultMessage='Export'/>
                     </DropdownMenuItemStyled>
+                    <DropdownMenuItem
+                        onClick={props.onArchive}
+                    >
+                        <FormattedMessage defaultMessage='Archive'/>
+                    </DropdownMenuItem>
                 </DotMenu>
             </ActionCol>
         </PlaybookItem>

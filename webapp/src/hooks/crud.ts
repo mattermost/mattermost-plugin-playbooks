@@ -3,6 +3,7 @@ import debounce from 'debounce';
 
 import {
     archivePlaybook as clientArchivePlaybook,
+    duplicatePlaybook as clientDuplicatePlaybook,
     clientFetchPlaybook,
     clientFetchPlaybooks,
     savePlaybook,
@@ -121,6 +122,11 @@ export function usePlaybooksCrud(
         }
     };
 
+    const duplicatePlaybook = async (playbookId: Playbook['id']) => {
+        await clientDuplicatePlaybook(playbookId);
+        await fetchPlaybooks();
+    };
+
     const sortBy = (colName: FetchPlaybooksParams['sort']) => {
         if (params.sort === colName) {
             // we're already sorting on this column; reverse the direction
@@ -149,6 +155,7 @@ export function usePlaybooksCrud(
             sortBy,
             setSelectedPlaybook,
             archivePlaybook,
+            duplicatePlaybook,
             setSearchTerm: setSearchTermDebounced,
             isFiltering,
         },

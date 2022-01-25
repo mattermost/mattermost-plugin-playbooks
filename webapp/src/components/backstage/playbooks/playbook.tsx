@@ -25,12 +25,14 @@ import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview
 
 import {
     clientFetchPlaybook,
+    duplicatePlaybook as clientDuplicatePlaybook,
     clientFetchIsPlaybookFollower,
     autoFollowPlaybook,
     autoUnfollowPlaybook,
     telemetryEventForPlaybook,
     getSiteUrl,
     playbookExportProps,
+    archivePlaybook,
 } from 'src/client';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -102,7 +104,12 @@ const Playbook = () => {
     const [isFollowed, setIsFollowed] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
     const [playbookLinkCopied, setPlaybookLinkCopied] = useState(false);
-    const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal();
+    const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal(() => {
+        if (playbook) {
+            archivePlaybook(playbook.id);
+            navigateToPluginUrl('/playbooks');
+        }
+    });
 
     const changeFollowing = (check: boolean) => {
         if (playbook?.id) {
@@ -238,6 +245,14 @@ const Playbook = () => {
                             onClick={() => dispatch(displayEditPlaybookAccessModal(playbook.id))}
                         >
                             <FormattedMessage defaultMessage='Manage access'/>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={async () => {
+                                const newID = await clientDuplicatePlaybook(playbook.id);
+                                navigateToPluginUrl(`/playbooks/${newID}`);
+                            }}
+                        >
+                            <FormattedMessage defaultMessage='Duplicate'/>
                         </DropdownMenuItem>
                         <DropdownMenuItemStyled
                             href={exportHref}
