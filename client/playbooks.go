@@ -4,10 +4,13 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 // PlaybooksService handles communication with the playbook related
@@ -157,6 +160,35 @@ func (s *PlaybooksService) Duplicate(ctx context.Context, playbookID string) (st
 	if err != nil {
 		return "", err
 	}
+
+	var result struct {
+		ID string `json:"id"`
+	}
+	resp, err := s.client.do(ctx, req, &result)
+	if err != nil {
+		return "", err
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("expected status code %d", http.StatusCreated)
+	}
+
+	return result.ID, nil
+}
+
+// Imports a playbook. Returns the id of the newly created playbook
+func (s *PlaybooksService) Import(ctx context.Context, toImport []byte, team string) (string, error) {
+	url := "playbooks/import?team_id=" + team
+	u, err := s.client.BaseURL.Parse(buildAPIURL(url))
+	if err != nil {
+		return "", errors.Wrapf(err, "invalid endpoint %s", url)
+	}
+	req, err := http.NewRequest(http.MethodPost, u.String(), bytes.NewReader(toImport))
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to create http request for import")
+	}
+	req.Header.Set("Content-Type", "application/json")
 
 	var result struct {
 		ID string `json:"id"`

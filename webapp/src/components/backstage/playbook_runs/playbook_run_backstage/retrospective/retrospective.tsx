@@ -21,6 +21,8 @@ interface Props {
     playbookRun: PlaybookRun;
     deleteTimelineEvent: (id: string) => void;
     setRetrospective: (retrospective: string) => void;
+    setPublishedAt: (publishedAt: number) => void;
+    setCanceled: (canceled: boolean) => void;
 }
 
 export const Retrospective = (props: Props) => {
@@ -45,6 +47,8 @@ export const Retrospective = (props: Props) => {
                     <Report
                         playbookRun={props.playbookRun}
                         setRetrospective={props.setRetrospective}
+                        setPublishedAt={props.setPublishedAt}
+                        setCanceled={props.setCanceled}
                     /> :
                     <RetrospectiveDisabledText id={'retrospective-disabled-msg'}>
                         {formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}

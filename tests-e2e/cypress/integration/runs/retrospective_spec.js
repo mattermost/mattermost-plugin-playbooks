@@ -56,6 +56,17 @@ describe('runs > retrospective', () => {
 
     it('prevents repeated publishing', () => {
         editAndPublishRetro(runId);
+
+        // * Verify that can't publish
+        cy.findByText('Publish').should('not.be.enabled');
+
+        // # Navigate to the overview tab
+        cy.findByText('Overview').click();
+
+        // # Navigate directly to the retro tab
+        cy.findByText('Retrospective').click();
+
+        // * Verify that can't publish
         cy.findByText('Publish').should('not.be.enabled');
     });
 });
@@ -80,7 +91,7 @@ const editAndPublishRetro = (runId) => {
     cy.findByRole('button', {name: 'Publish'}).click();
 
     // * Verify we're showing the publish retro confirmation modal
-    cy.get('#confirm-modal-light').contains('Are you sure you want to publish');
+    cy.get('#confirm-modal-light').contains('Are you sure you want to publish?');
 
     // # Publish
     cy.findByRole('button', {name: 'Publish'}).click();
