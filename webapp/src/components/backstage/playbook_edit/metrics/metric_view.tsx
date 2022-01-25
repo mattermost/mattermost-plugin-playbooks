@@ -6,7 +6,6 @@ import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
-import {DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {targetToString} from 'src/components/backstage/playbook_edit/metrics/shared';
 
 interface Props {
@@ -19,18 +18,15 @@ const MetricView = ({metric, editClick, disabled}: Props) => {
     const {formatMessage} = useIntl();
     const perRun = formatMessage({defaultMessage: 'per run'});
 
-    let icon = <DollarSign size={1.2}/>;
-    let smallIcon = <DollarSign size={1}/>;
+    let icon = <i className='icon-currency-usd'/>;
     if (metric.type === MetricType.Integer) {
-        icon = <PoundSign size={1.2}/>;
-        smallIcon = <PoundSign size={1}/>;
+        icon = <i className='icon-pound'/>;
     } else if (metric.type === MetricType.Duration) {
         icon = <i className='icon-clock-outline'/>;
-        smallIcon = <i className='icon-clock-outline'/>;
     }
 
     const targetStr = targetToString(metric.target, metric.type);
-    const target = metric.target ? <>{': '}<TargetText>{smallIcon}{`${targetStr} ${perRun}`}</TargetText></> : '';
+    const target = metric.target ? <>{': '}<TargetText>{icon}{`${targetStr} ${perRun}`}</TargetText></> : '';
     const description = metric.description ? `: ${metric.description}` : '';
 
     return (
@@ -77,7 +73,7 @@ const Lhs = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
     padding: 0 6px 0 0;
 
-    > i, > svg {
+    > i {
         margin-top: 2px;
     }
 `;
@@ -113,12 +109,6 @@ const TargetText = styled.span`
 
     > i {
         position: absolute;
-        left: 0;
-    }
-
-    > svg {
-        position: absolute;
-        margin-top: 2px;
         left: 0;
     }
 `;
