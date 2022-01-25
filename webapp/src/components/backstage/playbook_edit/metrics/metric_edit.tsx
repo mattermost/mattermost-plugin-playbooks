@@ -9,7 +9,6 @@ import {Metric, MetricType} from 'src/types/playbook';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
-import {DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {stringToTarget, targetToString} from 'src/components/backstage/playbook_edit/metrics/shared';
 
 type SetState = (prevState: Metric) => Metric;
@@ -78,11 +77,11 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, saveToggle, saveFail
         }
     }
 
-    let typeTitle = <Bold><DollarSign size={1.2}/>{' Dollars'}</Bold>;
-    let searchIcon = <DollarSign size={1.07}/>;
+    let typeTitle = <Bold><i className='icon-currency-usd'/>{' Dollars'}</Bold>;
+    let searchIcon = <i className='icon-currency-usd'/>;
     if (metric.type === MetricType.Integer) {
-        typeTitle = <Bold><PoundSign size={1.2}/>{' Integer'}</Bold>;
-        searchIcon = <PoundSign size={1.07}/>;
+        typeTitle = <Bold><i className='icon-pound'/>{' Integer'}</Bold>;
+        searchIcon = <i className='icon-pound'/>;
     } else if (metric.type === MetricType.Duration) {
         typeTitle = <Bold><i className='icon-clock-outline'/>{' Duration (in dd:hh:mm)'}</Bold>;
         searchIcon = <i className='icon-clock-outline'/>;
@@ -167,11 +166,6 @@ const EditContainer = styled.div`
 
 const Bold = styled.span`
     font-weight: 600;
-
-    > svg {
-        position: relative;
-        top: 3px;
-    }
 `;
 
 const Title = styled.div`
@@ -215,7 +209,7 @@ const StyledInput = styled(BaseInput)<{ error?: boolean }>`
 const InputWithIcon = styled.span`
     position: relative;
 
-    i, svg {
+    i {
         position: absolute;
         color: rgba(var(--center-channel-color-rgb), 0.64);
     }
@@ -224,11 +218,6 @@ const InputWithIcon = styled.span`
         font-size: 16px;
         left: 10px;
         top: -1px;
-    }
-
-    svg {
-        left: 14px;
-        top: 2px;
     }
 
     input {
