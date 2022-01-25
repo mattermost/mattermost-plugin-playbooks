@@ -422,55 +422,6 @@ export const PresetTemplates: PresetTemplate[] = [
 
 const presetTemplateOptions = PresetTemplates.map((template: PresetTemplate) => ({label: template.title, value: template.title}));
 
-const RootContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    overflow-x: auto;
-    padding: 32px 20px;
-    background: rgba(var(--center-channel-color-rgb), 0.03);
-`;
-
-// BackgroundColorContainer hides the left dots from showing over the template selector.
-const BackgroundColorContainer = styled.div`
-    position: relative;
-    background: var(--center-channel-bg);
-`;
-
-const InnerContainer = styled.div`
-    max-width: 1120px;
-    width: 100%;
-    margin: 0 auto;
-`;
-
-const Title = styled.div`
-    display: flex;
-    align-items: center;
-
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
-    color: var(--center-channel-color);
-`;
-
-const TemplateItemContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    min-width: 198px;
-`;
-
-const TemplateItemDiv = styled.div`
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    padding: 20px 0;
-    > ${TemplateItemContainer.selector}:nth-child(n+1) {
-        margin-right: 24px;
-    }
-`;
-
 interface Props {
     templates?: PresetTemplate[];
 }
@@ -510,42 +461,11 @@ export const TemplateDropdown = (props: TemplateDropdownProps) => {
     );
 };
 
-const TemplateSelector = ({templates = PresetTemplates}: Props) => {
-    const dispatch = useDispatch();
-    return (
-        <BackgroundColorContainer>
-            <RootContainer>
-                <InnerContainer>
-                    <Title>
-                        <FormattedMessage defaultMessage='Create a playbook'/>
-                    </Title>
-                    <TemplateItemDiv>
-                        {templates.map((template: PresetTemplate) => (
-                            <TemplateItem
-                                key={template.title}
-                                title={template.title}
-                                onClick={() => {
-                                    telemetryEventForTemplate(template.title, 'click_template_icon');
-                                    dispatch(displayPlaybookCreateModal({startingTemplate: template.title}));
-                                }}
-                            >
-                                {template.icon}
-                            </TemplateItem>
-                        ))}
-                    </TemplateItemDiv>
-                </InnerContainer>
-            </RootContainer>
-        </BackgroundColorContainer>
-    );
-};
-
-const NotAllowedIcon = styled.i`
-    margin: 8px;
-    color: var(--online-indicator);
-    width: 16px;
-    height: 16px;
-    background-color: white;
-    border-radius: 50%;
+const TemplateItemContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    min-width: 198px;
 `;
 
 interface TemplateItemProps {
@@ -579,12 +499,42 @@ const TemplateTitle = styled.div`
 
 const TemplateItem = (props: TemplateItemProps) => {
     return (
-        <TemplateItemContainer
-            onClick={props.onClick}
-        >
+        <TemplateItemContainer onClick={props.onClick}>
             <IconContainer>{props.children}</IconContainer>
             <TemplateTitle>{props.title}</TemplateTitle>
         </TemplateItemContainer>
+    );
+};
+
+const SelectorGrid = styled.div`
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	grid-auto-rows: 300px;
+	grid-gap: 2rem;
+
+    overflow-y: auto;
+    padding: 20px 0;
+`;
+
+const TemplateSelector = ({templates = PresetTemplates}: Props) => {
+    const dispatch = useDispatch();
+    return (
+        <SelectorGrid>
+
+            {templates.map((template: PresetTemplate) => (
+                <TemplateItem
+                    key={template.title}
+                    title={template.title}
+                    onClick={() => {
+                        telemetryEventForTemplate(template.title, 'click_template_icon');
+                        dispatch(displayPlaybookCreateModal({startingTemplate: template.title}));
+                    }}
+                >
+                    {template.icon}
+                </TemplateItem>
+            ))}
+
+        </SelectorGrid>
     );
 };
 

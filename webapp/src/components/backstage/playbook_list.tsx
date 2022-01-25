@@ -36,14 +36,17 @@ import {
 } from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 
+import {RegularHeading} from 'src/styles/headings';
+
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 
 const PlaybooksHeader = styled(BackstageSubheader)`
     display: flex;
     padding: 4rem 0 3.2rem;
+    align-items: center;
 `;
 
-const ContainerMedium = styled.div`
+const ContainerMedium = styled.article`
     margin: 0 auto;
     max-width: 1160px;
     padding: 0 20px;
@@ -54,12 +57,32 @@ const PlaybookContainer = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.90);
 `;
 
+export const Heading = styled.h1`
+    ${RegularHeading} {
+    }
+    font-size: 2.8rem;
+    line-height: 3.6rem;
+    margin: 0;
+`;
+
+const CreatePlaybookHeader = styled(BackstageSubheader)`
+    margin-top: 8rem;
+    padding: 4rem 0 3.2rem;
+`;
+
+const Sub = styled.p`
+    font-size: 16px;
+    line-height: 24px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-weight: 400;
+`;
+
 const PlaybookList = () => {
     const {formatMessage} = useIntl();
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal();
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
-    const bottomHalf = useRef<JSX.Element | null>(null);
+    const content = useRef<JSX.Element | null>(null);
     const dispatch = useDispatch();
 
     const [
@@ -95,7 +118,7 @@ const PlaybookList = () => {
         ));
     }
 
-    const makeBottomHalf = () => {
+    const makeContent = () => {
         if (!hasPlaybooks && !isFiltering) {
             return (
                 <>
@@ -115,7 +138,9 @@ const PlaybookList = () => {
                 <LeftFade/>
                 <ContainerMedium>
                     <PlaybooksHeader data-testid='titlePlaybook'>
-                        <FormattedMessage defaultMessage='Playbooks'/>
+                        <Heading>
+                            {formatMessage({defaultMessage: 'Playbooks'})}
+                        </Heading>
                         <ExpandRight/>
                         <SearchInput
                             testId={'search-filter'}
@@ -182,17 +207,29 @@ const PlaybookList = () => {
     };
 
     // If we don't have a bottomHalf, create it. Or if we're loading new playbooks, use the previous body.
-    if (!bottomHalf.current || !isLoading) {
-        bottomHalf.current = makeBottomHalf();
+    if (!content.current || !isLoading) {
+        content.current = makeContent();
     }
 
     return (
         <PlaybookContainer>
+            {content.current}
             {
                 canCreatePlaybooks &&
-                <TemplateSelector/>
+                <>
+                    <ContainerMedium>
+                        <CreatePlaybookHeader>
+                            <Heading>
+                                {formatMessage({defaultMessage: 'Do more with Playbooks'})}
+                            </Heading>
+                            <Sub>
+                                {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
+                            </Sub>
+                        </CreatePlaybookHeader>
+                        <TemplateSelector/>
+                    </ContainerMedium>
+                </>
             }
-            {bottomHalf.current}
             {confirmArchiveModal}
         </PlaybookContainer>
     );
@@ -216,18 +253,6 @@ const CreatePlaybookButton = styled(PrimaryButton)`
     display: flex;
     align-items: center;
 `;
-
-const NotAllowedIcon = styled.i`
-    color: var(--online-indicator);
-    position: absolute;
-    top: -4px;
-    right: -6px;
-    width: 16px;
-    height: 16px;
-    background-color: white;
-    border-radius: 50%;
-`;
-
 export const useUpgradeModalVisibility = (initialState: boolean): [boolean, () => void, () => void] => {
     const [isModalShown, setShowModal] = useState(initialState);
 

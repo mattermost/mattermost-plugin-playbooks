@@ -23,7 +23,7 @@ export const Banner = styled.div`
     text-align: center;
 `;
 
-export const BackstageHeader = styled.div`
+export const BackstageHeader = styled.header`
     ${RegularHeading} {
     }
 
@@ -39,7 +39,7 @@ export const TeamContainer = styled.div`
     margin-left: 1rem;
 `;
 
-export const BackstageSubheader = styled.div`
+export const BackstageSubheader = styled.header`
     font-weight: 600;
     font-size: 16px;
     line-height: 24px;
