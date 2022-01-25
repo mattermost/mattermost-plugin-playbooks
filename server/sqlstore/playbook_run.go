@@ -688,7 +688,7 @@ func (s *playbookRunStore) getMetricsDataForPlaybookRun(q sqlx.Queryer, playbook
 			"MetricConfigID",
 			"Value",
 		).
-		From("IR_Metric pm").
+		From("IR_Metric").
 		Where(sq.Eq{"IncidentID": playbookRunID}).
 		OrderBy("MetricConfigID") // Entirely for consistency for the tests
 
@@ -1170,11 +1170,13 @@ func (s *playbookRunStore) GetFollowers(playbookRunID string) ([]string, error) 
 	return followers, nil
 }
 
+// updateRunMetrics updates run metrics values.
 func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.PlaybookRun) error {
 	if len(playbookRun.MetricsData) == 0 {
 		return nil
 	}
 
+	//retrieve metrics configs ids for this run's playbook, to validate received metrics
 	query := s.queryBuilder.
 		Select("ID").
 		From("IR_MetricConfig").
@@ -1194,6 +1196,7 @@ func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.Playb
 	retrospectivePublished := !playbookRun.RetrospectiveWasCanceled && playbookRun.RetrospectivePublishedAt > 0
 
 	for _, m := range playbookRun.MetricsData {
+		//do not store if id is not in playbooks configuration
 		if !validIDs[m.MetricConfigID] {
 			continue
 		}
