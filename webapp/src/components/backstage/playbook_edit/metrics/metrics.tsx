@@ -10,6 +10,7 @@ import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {DraftPlaybookWithChecklist, Metric, MetricType, newMetric, PlaybookWithChecklist} from 'src/types/playbook';
 import MetricEdit from 'src/components/backstage/playbook_edit/metrics/metric_edit';
 import MetricView from 'src/components/backstage/playbook_edit/metrics/metric_view';
+import {DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 
 enum TaskType {
     add,
@@ -147,14 +148,14 @@ const Metrics = ({playbook, setPlaybook, setChangesMade}: Props) => {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Currency)}>
                     <MetricTypeOption
-                        icon={<i className='icon-currency-usd'/>}
+                        icon={<DollarSign size={1.2}/>}
                         title={formatMessage({defaultMessage: 'Dollars'})}
                         description={formatMessage({defaultMessage: 'e.g., Cost, Purchases'})}
                     />
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Integer)}>
                     <MetricTypeOption
-                        icon={<i className='icon-pound'/>}
+                        icon={<PoundSign size={1.2}/>}
                         title={formatMessage({defaultMessage: 'Integer'})}
                         description={formatMessage({defaultMessage: 'e.g., Resource count, Customers affected'})}
                     />
@@ -187,6 +188,11 @@ const HorizontalContainer = styled.div`
     > i {
         color: rgba(var(--center-channel-color-rgb), 0.56);
         margin-top: 2px;
+    }
+
+    > svg {
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        margin: 2px 7px 0 0;
     }
 `;
 
