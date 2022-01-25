@@ -798,3 +798,24 @@ func TestPlaybooksImportExport(t *testing.T) {
 		assert.NotEqual(t, e.BasicPlaybook.ID, newPlaybook.ID)
 	})
 }
+
+func TestPlaybooksDuplicate(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+	e.SetE20Licence()
+	e.CreateBasicPlaybook()
+
+	t.Run("Duplicate", func(t *testing.T) {
+		newID, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		require.NotEqual(t, e.BasicPlaybook.ID, newID)
+
+		duplicatedPlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+
+		assert.Equal(t, "Copy of "+e.BasicPlaybook.Title, duplicatedPlaybook.Title)
+		assert.Equal(t, e.BasicPlaybook.Description, duplicatedPlaybook.Description)
+		assert.Equal(t, e.BasicPlaybook.TeamID, duplicatedPlaybook.TeamID)
+	})
+}
