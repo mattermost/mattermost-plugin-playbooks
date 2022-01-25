@@ -152,7 +152,7 @@ function TextboxLinks({
                     <span>{'>'}{formatMessage({defaultMessage: 'quote'})}</span>
                 </HelpText>
             </div>
-            <div>
+            <NoWrap>
                 <button
                     onClick={togglePreview}
                     className='style--none textbox-preview-link color--link'
@@ -167,7 +167,7 @@ function TextboxLinks({
                 >
                     {formatMessage({defaultMessage: 'Help'})}
                 </Link>
-            </div>
+            </NoWrap>
         </div>
     );
 }
@@ -223,6 +223,10 @@ const HelpText = styled.span`
         padding: 0;
         background: transparent;
     }
+`;
+
+const NoWrap = styled.div`
+    white-space: nowrap;
 `;
 
 export default MarkdownTextbox;

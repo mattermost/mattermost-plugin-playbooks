@@ -1,14 +1,13 @@
 import React, {useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
-import {archivePlaybook} from 'src/client';
 import {Banner} from 'src/components/backstage/styles';
 import {Playbook} from 'src/types/playbook';
 import ConfirmModal from '../widgets/confirmation_modal';
 
 const ArchiveBannerTimeout = 5000;
 
-const useConfirmPlaybookArchiveModal = (): [React.ReactNode, (pb: Playbook) => void] => {
+const useConfirmPlaybookArchiveModal = (archivePlaybook: (id: Playbook['id']) => void): [React.ReactNode, (pb: Playbook) => void] => {
     const {formatMessage} = useIntl();
     const [open, setOpen] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
@@ -21,7 +20,7 @@ const useConfirmPlaybookArchiveModal = (): [React.ReactNode, (pb: Playbook) => v
 
     const onArchive = async () => {
         if (playbook) {
-            await archivePlaybook(playbook.id);
+            archivePlaybook(playbook.id);
 
             setOpen(false);
             setShowBanner(true);
