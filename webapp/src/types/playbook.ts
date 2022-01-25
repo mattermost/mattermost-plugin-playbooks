@@ -69,7 +69,6 @@ export interface Metric {
     title: string;
     description: string;
     target: number;
-    order: number;
 }
 
 export interface FetchPlaybooksParams {
@@ -225,13 +224,12 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
         typeof arg.command_last_run === 'number';
 }
 
-export const newMetric = (type: MetricType, order: number, title = '', description = '', target = 0): Metric => ({
+export const newMetric = (type: MetricType, title = '', description = '', target = 0): Metric => ({
     id: '',
     type,
     title,
     description,
     target,
-    order,
 });
 
 export const defaultMessageOnJoin = `Welcome! This channel was automatically created as part of a playbook run. You can [learn more about playbooks here](https://docs.mattermost.com/administration/devops-command-center.html?highlight=playbook#playbooks). To see information about this run, such as current owner and checklist of tasks, select the shield icon in the channel header.

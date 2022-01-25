@@ -42,6 +42,9 @@ describe('playbooks > edit_metrics', () => {
             }).then((playbook) => {
                 testPlaybook = playbook;
             });
+
+            // # Set a bigger viewport so the action don't scroll out of view
+            cy.viewport('macbook-16');
         });
 
         describe('adding metrics pt1', () => {
@@ -70,6 +73,9 @@ describe('playbooks > edit_metrics', () => {
 
                 // * Verify Add Metric button is inactive
                 cy.findByRole('button', {name: 'Add Metric'}).should('be.disabled');
+
+                // * Verify we have four valid metrics and are editing none.
+                verifyViewsAndEdits(4, 0);
             });
 
             it('verifies when clicking "Add", for duration type', () => {
@@ -88,7 +94,7 @@ describe('playbooks > edit_metrics', () => {
                     .contains('A metric with the same name already exists. Please add a unique name for each metric.');
 
                 // * A duration target needs to be in the correct format (no letters)
-                cy.get('input[type=text]').eq(1).clear().type('test duration again');
+                cy.get('input[type=text]').eq(1).clear().wait(100).type('test duration again');
                 cy.get('input[type=text]').eq(2).clear().type('a');
                 cy.findByRole('button', {name: 'Add'}).click();
                 cy.getStyledComponent('ErrorText')
@@ -104,6 +110,9 @@ describe('playbooks > edit_metrics', () => {
                 cy.get('input[type=text]').eq(2).clear().type('2:12:1');
                 cy.findByRole('button', {name: 'Add'}).click();
                 verifyViewMetric(0, 'test duration', '02:12:01 per run', 'test description');
+
+                // * Verify we have four valid metrics and are editing none.
+                verifyViewsAndEdits(4, 0);
             });
 
             it('on clicking edit, closes & saves current editing metric, and switches', () => {
@@ -133,6 +142,9 @@ describe('playbooks > edit_metrics', () => {
 
                 // * Verify the title on the third metric (the second in view mode) was saved on switching
                 verifyViewMetric(1, 'test integer222', '4 per run', 'test descr 3');
+
+                // * Verify we have three valid metrics and are editing one.
+                verifyViewsAndEdits(3, 1);
             });
         });
 
@@ -196,8 +208,7 @@ describe('playbooks > edit_metrics', () => {
                 verifyViewMetric(1, 'test currency!', 'No target set.', 'No description.');
 
                 // * Verify we have two valid metrics and are editing next one.
-                cy.getStyledComponent('ViewContainer').should('have.length', 2);
-                cy.getStyledComponent('EditContainer').should('have.length', 1);
+                verifyViewsAndEdits(2, 1);
             });
 
             it('verifies when clicking edit button, for Currency type, and switches to next edit', () => {
@@ -240,8 +251,7 @@ describe('playbooks > edit_metrics', () => {
                 verifyViewMetric(2, 'test integer #2!!', 'No target set.', 'No description.');
 
                 // * Verify we have three valid metrics and are editing none.
-                cy.getStyledComponent('ViewContainer').should('have.length', 3);
-                cy.getStyledComponent('EditContainer').should('have.length', 0);
+                verifyViewsAndEdits(3, 0);
             });
         });
     });
@@ -271,4 +281,9 @@ const verifyViewMetric = (index, title, target, description) => {
         cy.getStyledComponent('Detail').eq(0).contains(target);
         cy.getStyledComponent('Detail').eq(1).contains(description);
     });
+};
+
+const verifyViewsAndEdits = (numViews, numEdits) => {
+    cy.getStyledComponent('ViewContainer').should('have.length', numViews);
+    cy.getStyledComponent('EditContainer').should('have.length', numEdits);
 };

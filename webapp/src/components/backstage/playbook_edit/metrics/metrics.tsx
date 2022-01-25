@@ -69,16 +69,16 @@ const Metrics = ({playbook, setPlaybook, setChangesMade}: Props) => {
         const newIdx = playbook.metrics.length;
         setPlaybook((pb) => ({
             ...pb,
-            metrics: [...pb.metrics, newMetric(addType, newIdx)],
+            metrics: [...pb.metrics, newMetric(addType)],
         }));
         setChangesMade(true);
         setCurEditingIdx(newIdx);
     };
 
-    const saveMetric = (metric: Metric) => {
+    const saveMetric = (metric: Metric, idx: number) => {
         setPlaybook((pb) => {
             const metrics = [...pb.metrics];
-            metrics.splice(metric.order, 1, metric);
+            metrics.splice(idx, 1, metric);
 
             return {
                 ...pb,
@@ -105,14 +105,14 @@ const Metrics = ({playbook, setPlaybook, setChangesMade}: Props) => {
     return (
         <div>
             {
-                playbook.metrics.map((metric) => {
-                    if (metric.order === curEditingIdx) {
+                playbook.metrics.map((metric, idx) => {
+                    if (idx === curEditingIdx) {
                         return (
                             <MetricEdit
-                                key={metric.order}
+                                key={idx}
                                 metric={metric}
-                                otherTitles={playbook.metrics.flatMap((m) => (m.order === metric.order ? [] : m.title))}
-                                onAdd={saveMetric}
+                                otherTitles={playbook.metrics.flatMap((m, i) => (i === idx ? [] : m.title))}
+                                onAdd={(m) => saveMetric(m, idx)}
                                 saveToggle={saveMetricToggle}
                                 saveFailed={() => setNextTask(null)}
                             />
@@ -120,9 +120,9 @@ const Metrics = ({playbook, setPlaybook, setChangesMade}: Props) => {
                     }
                     return (
                         <MetricView
-                            key={metric.order}
+                            key={idx}
                             metric={metric}
-                            editClick={() => requestEditMetric(metric.order)}
+                            editClick={() => requestEditMetric(idx)}
                         />
                     );
                 })
