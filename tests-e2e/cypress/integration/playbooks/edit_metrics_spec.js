@@ -48,7 +48,7 @@ describe('playbooks > edit_metrics', () => {
         });
 
         describe('adding metrics pt1', () => {
-            it('can add 4, but not 5 metrics', () => {
+            it('can add 4, but not 5 metrics; can save and re-edit with metrics saved', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
 
@@ -76,9 +76,58 @@ describe('playbooks > edit_metrics', () => {
 
                 // * Verify we have four valid metrics and are editing none.
                 verifyViewsAndEdits(4, 0);
+
+                // # Save -- for the next batch of tests
+                cy.findByTestId('save_playbook').click();
+
+                // # Go back to editing
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Retrospective tab
+                cy.get('#root').findByText('Retrospective').click();
+
+                // * Verify we saved the metrics
+                verifyViewMetric(0, 'test duration', '00:00:01 per run', 'test description');
+                verifyViewMetric(1, 'test dollars', '2 per run', 'test description 2');
+                verifyViewMetric(2, 'test integer', '4 per run', 'test descr 3');
+                verifyViewMetric(3, 'test duration 2', '00:00:02 per run', 'test description 4');
+
+                // # Edit all 4 metrics and repeat the test
+                cy.findAllByTestId('edit-metric').eq(0).click();
+                cy.get('input[type=text]').eq(2).clear().type('12:8:97');
+                cy.findByRole('button', {name: 'Add'}).click();
+                cy.findAllByTestId('edit-metric').eq(1).click();
+                cy.get('textarea').eq(0).clear().type('a new description');
+                cy.findByRole('button', {name: 'Add'}).click();
+                cy.findAllByTestId('edit-metric').eq(2).click();
+                cy.get('input[type=text]').eq(2).clear().type('7777777');
+                cy.findByRole('button', {name: 'Add'}).click();
+                cy.findAllByTestId('edit-metric').eq(3).click();
+                cy.get('input[type=text]').eq(1).clear().type('test duration 2!!!');
+                cy.findByRole('button', {name: 'Add'}).click();
+
+                // # Save
+                cy.findByTestId('save_playbook').click();
+
+                // * Verify we're back in the main page
+                cy.getStyledComponent('Title').contains('Checklists');
+
+                // # Go back to editing
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Retrospective tab
+                cy.get('#root').findByText('Retrospective').click();
+
+                // * Verify we saved the metrics
+                verifyViewMetric(0, 'test duration', '12:09:37 per run', 'test description');
+                verifyViewMetric(1, 'test dollars', '2 per run', 'a new description');
+                verifyViewMetric(2, 'test integer', '7777777 per run', 'test descr 3');
+                verifyViewMetric(3, 'test duration 2!!!', '00:00:02 per run', 'test description 4');
             });
 
             it('verifies when clicking "Add", for duration type', () => {
+                // Continuing from previous state
+
                 // # Edit the first metric
                 cy.findAllByTestId('edit-metric').eq(0).click();
 
@@ -116,6 +165,8 @@ describe('playbooks > edit_metrics', () => {
             });
 
             it('on clicking edit, closes & saves current editing metric, and switches', () => {
+                // Continuing from previous state
+
                 // # Edit the second metric
                 cy.findAllByTestId('edit-metric').eq(1).click();
 
@@ -141,7 +192,7 @@ describe('playbooks > edit_metrics', () => {
                 cy.findAllByTestId('edit-metric').eq(0).click();
 
                 // * Verify the title on the third metric (the second in view mode) was saved on switching
-                verifyViewMetric(1, 'test integer222', '4 per run', 'test descr 3');
+                verifyViewMetric(1, 'test integer222', '7777777 per run', 'test descr 3');
 
                 // * Verify we have three valid metrics and are editing one.
                 verifyViewsAndEdits(3, 1);

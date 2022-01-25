@@ -88,7 +88,7 @@ type PlaybookMetricConfig struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Type        string `json:"type"`
-	Target      int64  `json:"Target"`
+	Target      int64  `json:"target"`
 }
 
 func (pm PlaybookMember) Clone() PlaybookMember {
