@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React, {ReactNode, useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
@@ -12,10 +12,13 @@ import MetricEdit from 'src/components/backstage/playbook_edit/metrics/metric_ed
 import MetricView from 'src/components/backstage/playbook_edit/metrics/metric_view';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {EditingMetric} from 'src/components/backstage/playbook_edit/playbook_edit';
+import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
+import {Rhs, Button} from 'src/components/backstage/playbook_edit/metrics/shared';
 
 enum TaskType {
     add,
     edit,
+    delete,
 }
 
 interface Task {
@@ -44,6 +47,10 @@ const Metrics = ({
     const {formatMessage} = useIntl();
     const [saveMetricToggle, setSaveMetricToggle] = useState(false);
     const [nextTask, setNextTask] = useState<Task | null>(null);
+    const [deletingIdx, setDeletingIdx] = useState(-1);
+
+    const deleteMessage = formatMessage({defaultMessage: 'If you delete this metric, the values for it will not be collected for any future runs.'});
+    const deleteExistingMessage = deleteMessage + ' ' + formatMessage({defaultMessage: 'You will still be able to access historical data for this metric.'});
 
     const requestAddMetric = (addType: MetricType) => {
         // Only add a new metric if we aren't currently editing.
@@ -69,6 +76,18 @@ const Metrics = ({
 
         // We're editing. Try to close it, and if successful edit the metric.
         setNextTask({type: TaskType.edit, index});
+        setSaveMetricToggle((prevState) => !prevState);
+    };
+
+    const requestDeleteMetric = (index: number) => {
+        // Confirm delete immediately if we aren't currently editing, or editing the requested idx.
+        if (!curEditingMetric || curEditingMetric.index === index) {
+            setDeletingIdx(index);
+            return;
+        }
+
+        // We're editing. Try to close it, and if successful delete the metric.
+        setNextTask({type: TaskType.delete, index});
         setSaveMetricToggle((prevState) => !prevState);
     };
 
@@ -108,11 +127,30 @@ const Metrics = ({
             // eslint-disable-next-line no-undefined
             const index = nextTask.index === undefined ? -1 : nextTask.index;
             setCurEditingMetric({index, metric: playbook.metrics[index]});
+        } else if (nextTask?.type === TaskType.delete) {
+            // The following is because if editIndex === 0, 0 is falsey
+            // eslint-disable-next-line no-undefined
+            const index = nextTask.index === undefined ? -1 : nextTask.index;
+            setDeletingIdx(index);
         } else {
             setCurEditingMetric(null);
         }
 
         setNextTask(null);
+    };
+
+    const confirmedDelete = () => {
+        setPlaybook((pb) => {
+            const metrics = [...pb.metrics];
+            metrics.splice(deletingIdx, 1);
+
+            return {
+                ...pb,
+                metrics,
+            };
+        });
+        setChangesMade(true);
+        setDeletingIdx(-1);
     };
 
     // If we're editing a metric, we need to add (or replace) the curEditing metric into the metrics array
@@ -124,36 +162,36 @@ const Metrics = ({
     return (
         <div>
             {
-                metrics.map((metric, idx) => {
-                    if (idx === curEditingMetric?.index) {
-                        return (
-                            <MetricEdit
-                                key={idx}
-                                metric={curEditingMetric.metric}
-                                setMetric={(setState) => setCurEditingMetric((prevState) => {
-                                    if (prevState) {
-                                        return {index: prevState.index, metric: setState(prevState.metric)};
-                                    }
+                metrics.map((metric, idx) => (
+                    <DeleteWrapper
+                        key={idx}
+                        deleteClick={() => requestDeleteMetric(idx)}
+                    >
+                        {
+                            idx === curEditingMetric?.index ?
+                                <MetricEdit
+                                    metric={curEditingMetric.metric}
+                                    setMetric={(setState) => setCurEditingMetric((prevState) => {
+                                        if (prevState) {
+                                            return {index: prevState.index, metric: setState(prevState.metric)};
+                                        }
 
-                                    // This can't happen
-                                    return {index: -1, metric: {} as Metric};
-                                })}
-                                otherTitles={playbook.metrics.flatMap((m, i) => (i === idx ? [] : m.title))}
-                                onAdd={saveMetric}
-                                saveToggle={saveMetricToggle}
-                                saveFailed={() => setNextTask(null)}
-                            />
-                        );
-                    }
-                    return (
-                        <MetricView
-                            key={idx}
-                            metric={metric}
-                            editClick={() => requestEditMetric(idx)}
-                            disabled={disabled}
-                        />
-                    );
-                })
+                                        // This can't happen
+                                        return {index: -1, metric: {} as Metric};
+                                    })}
+                                    otherTitles={playbook.metrics.flatMap((m, i) => (i === idx ? [] : m.title))}
+                                    onAdd={saveMetric}
+                                    saveToggle={saveMetricToggle}
+                                    saveFailed={() => setNextTask(null)}
+                                /> :
+                                <MetricView
+                                    metric={metric}
+                                    editClick={() => requestEditMetric(idx)}
+                                    disabled={disabled}
+                                />
+                        }
+                    </DeleteWrapper>
+                ))
             }
             <DotMenu
                 dotMenuButton={TertiaryButton}
@@ -189,9 +227,39 @@ const Metrics = ({
                     />
                 </DropdownMenuItem>
             </DotMenu>
+            <ConfirmModalLight
+                show={deletingIdx >= 0}
+                title={formatMessage({defaultMessage: 'Are you sure you want to delete?'})}
+                message={deletingIdx >= 0 && playbook.metrics[deletingIdx].id === '' ? deleteMessage : deleteExistingMessage}
+                confirmButtonText={formatMessage({defaultMessage: 'Delete metric'})}
+                onConfirm={confirmedDelete}
+                onCancel={() => setDeletingIdx(-1)}
+            />
         </div>
     );
 };
+
+const DeleteWrapper = ({children, deleteClick}: { children: ReactNode, deleteClick: () => void }) => (
+    <DeleteContainer>
+        {children}
+        <Rhs>
+            <StyledButton
+                data-testid={'delete-metric'}
+                onClick={deleteClick}
+            >
+                <i className={'icon-trash-can-outline'}/>
+            </StyledButton>
+        </Rhs>
+    </DeleteContainer>
+);
+
+const DeleteContainer = styled.div`
+    display: flex;
+`;
+
+const StyledButton = styled(Button)`
+    margin-left: 2px;
+`;
 
 interface MetricTypeProps {
     icon: JSX.Element;

@@ -89,7 +89,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, saveToggle, saveFail
     }
 
     return (
-        <>
+        <Container>
             <EditHeader>
                 {'Type: '}
                 {typeTitle}
@@ -142,9 +142,13 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, saveToggle, saveFail
                 <VerticalSpacer size={16}/>
                 <PrimaryButton onClick={verifyAndSave}>{'Add'}</PrimaryButton>
             </EditContainer>
-        </>
+        </Container>
     );
 };
+
+const Container = styled.div`
+    flex: 1;
+`;
 
 const EditHeader = styled.div`
     font-size: 14px;
