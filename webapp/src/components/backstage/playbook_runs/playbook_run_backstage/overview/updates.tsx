@@ -85,9 +85,6 @@ const PostContent = (props: PostContentProps) => {
         <StyledContent>
             <PostCard
                 post={post}
-                channelId={props.channelId}
-                playbookRunId={props.playbookRunId}
-                playbookId={props.playbookId}
                 team={props.team}
             />
         </StyledContent>

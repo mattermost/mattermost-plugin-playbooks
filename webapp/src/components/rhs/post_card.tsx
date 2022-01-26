@@ -19,15 +19,9 @@ import {Client4} from 'mattermost-redux/client';
 import {browserHistory, Timestamp} from 'src/webapp_globals';
 
 import {isMobile} from 'src/mobile';
-import {ChannelNamesMap} from 'src/types/backstage';
 import {toggleRHS} from 'src/actions';
-import ShowMore from 'src/components/rhs/show_more';
 import PostText from 'src/components/post_text';
 import {useEnsureProfiles} from 'src/hooks';
-
-const NoRecentUpdates = styled.div`
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-`;
 
 const UpdateSection = styled.div`
     display: flex;
@@ -87,9 +81,6 @@ function useAuthorInfo(userID: string) : [string, string] {
 interface Props {
     post: Post;
     team: Team;
-    playbookRunId: string;
-    playbookId: string
-    channelId: string;
 }
 
 const REL_UNITS = [
