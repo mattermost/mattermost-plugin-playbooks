@@ -42,6 +42,8 @@ import Spinner from '../assets/icons/spinner';
 
 import TeamSelector from '../team/team_selector';
 
+import {navigateToPluginUrl} from 'src/browser_routing';
+
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 
 const PlaybooksHeader = styled(BackstageSubheader)`
@@ -129,9 +131,10 @@ const PlaybookList = () => {
 
                 setImportUploading(true);
                 const reader = new FileReader();
-                reader.onload = (ev) => {
-                    importFile(ev?.target?.result, teamId);
+                reader.onload = async (ev) => {
+                    const {id} = await importFile(ev?.target?.result, teamId);
                     setImportUploading(false);
+                    navigateToPluginUrl(`/playbooks/${id}`);
                 };
                 reader.readAsArrayBuffer(file);
             }
@@ -156,6 +159,7 @@ const PlaybookList = () => {
                         <HorizontalSpacer size={12}/>
                         <input
                             type='file'
+                            accept='*.json,application/JSON'
                             onChange={importUpload}
                             ref={fileInputRef}
                             style={{display: 'none'}}
