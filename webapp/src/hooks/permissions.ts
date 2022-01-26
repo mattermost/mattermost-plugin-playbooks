@@ -32,7 +32,19 @@ export const useHasPlaybookPermissionById = (permission: PlaybookPermissionGener
     return useHasPlaybookPermission(permission, playbook);
 };
 
-export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, playbook?: Playbook) => {
+export interface PlaybookPermissionsMember {
+    user_id: string
+    scheme_roles?: string[]
+}
+
+export interface PlaybookPermissionsParams {
+    public: boolean
+    team_id: string
+    default_playbook_member_role: string
+    members: PlaybookPermissionsMember[]
+}
+
+export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, playbook?: PlaybookPermissionsParams) => {
     const dispatch = useDispatch();
     const currentUserId = useSelector(getCurrentUserId);
     const roles = useSelector(getRoles);
@@ -47,7 +59,7 @@ export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, 
         return false;
     }
 
-    const member = playbook?.members.find((val: PlaybookMember) => val.user_id === currentUserId);
+    const member = playbook?.members.find((val: PlaybookPermissionsMember) => val.user_id === currentUserId);
 
     let userRoles: string[] = [];
     if (member) {

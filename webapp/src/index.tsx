@@ -15,6 +15,8 @@ import WebsocketEvents from 'mattermost-redux/constants/websocket';
 
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 
+import {ApolloClient, InMemoryCache, gql, ApolloProvider, NormalizedCacheObject} from '@apollo/client';
+
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
 
 import {makeRHSOpener} from 'src/rhs_opener';
@@ -82,13 +84,21 @@ const OldRoutesRedirect = () => {
     );
 };
 
+const ApolloWrapped = (props: {component: React.ReactNode, client: ApolloClient<NormalizedCacheObject>}) => {
+    return (
+        <ApolloProvider client={props.client}>
+            {props.component}
+        </ApolloProvider>
+    );
+};
+
 export default class Plugin {
     removeRHSListener?: Unsubscribe;
     activityFunc?: () => void;
 
     stylesContainer?: Element;
 
-    doRegistrations(registry: PluginRegistry, store: Store<GlobalState>): void {
+    doRegistrations(registry: PluginRegistry, store: Store<GlobalState>, graphqlClient: ApolloClient<NormalizedCacheObject>): void {
         registry.registerReducer(reducer);
 
         registry.registerTranslations((locale: string) => {
@@ -100,12 +110,19 @@ export default class Plugin {
             }
         });
 
+        const BackstageWrapped = () => (
+            <ApolloWrapped
+                component={<Backstage/>}
+                client={graphqlClient}
+            />
+        );
+
         registry.registerProduct(
             '/playbooks',
             'product-playbooks',
             'Playbooks',
             '/playbooks',
-            Backstage,
+            BackstageWrapped,
             GlobalHeaderCenter,
         );
 
@@ -182,7 +199,6 @@ export default class Plugin {
     }
 
     public initialize(registry: PluginRegistry, store: Store<GlobalState>): void {
-        this.doRegistrations(registry, store);
         this.stylesContainer = document.createElement('div');
         document.body.appendChild(this.stylesContainer);
         render(<><GlobalSelectStyle/></>, this.stylesContainer);
@@ -192,6 +208,23 @@ export default class Plugin {
         const siteUrl = getConfig(store.getState())?.SiteURL || '';
         setSiteUrl(siteUrl);
         Client4.setUrl(siteUrl);
+
+        // Setup our graphql client
+        const graphqlClient = new ApolloClient({
+            uri: `${siteUrl}/plugins/${pluginId}/api/v1/query`,
+            cache: new InMemoryCache(),
+            defaultOptions: {
+                watchQuery: {
+                    context: {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    },
+                },
+            },
+        });
+
+        this.doRegistrations(registry, store, graphqlClient);
 
         // Grab global settings
         const getGlobalSettings = async () => {

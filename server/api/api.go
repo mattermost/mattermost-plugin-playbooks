@@ -17,10 +17,11 @@ import (
 // Handler Root API handler.
 type Handler struct {
 	*ErrorHandler
-	pluginAPI *pluginapi.Client
-	APIRouter *mux.Router
-	root      *mux.Router
-	config    config.Service
+	pluginAPI  *pluginapi.Client
+	APIRouter  *mux.Router
+	APIQRouter *mux.Router
+	root       *mux.Router
+	config     config.Service
 }
 
 // NewHandler constructs a new handler.
@@ -38,7 +39,14 @@ func NewHandler(pluginAPI *pluginapi.Client, config config.Service, log bot.Logg
 	api.Handle("{anything:.*}", http.NotFoundHandler())
 	api.NotFoundHandler = http.NotFoundHandler()
 
+	apiq := root.PathPrefix("/api/v1").Subrouter()
+	apiq.Use(MattermostAuthorizationRequired)
+
+	apiq.Handle("{anything:.*}", http.NotFoundHandler())
+	apiq.NotFoundHandler = http.NotFoundHandler()
+
 	handler.APIRouter = api
+	handler.APIQRouter = apiq
 	handler.root = root
 	handler.config = config
 

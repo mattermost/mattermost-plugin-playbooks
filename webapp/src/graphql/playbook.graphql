@@ -1,0 +1,18 @@
+query Playbook($id: String!) {
+    playbook(id: $id) {
+        id
+        title
+		description
+		team_id: teamID
+		public
+		delete_at: deleteAt
+		default_playbook_member_role: defaultPlaybookMemberRole
+		checklists {
+			title
+        }
+		members {
+			user_id: userID
+			roles
+		}
+    }
+}

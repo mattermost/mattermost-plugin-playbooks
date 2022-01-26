@@ -105,6 +105,7 @@ endif
 .PHONY: webapp
 webapp: webapp/node_modules
 ifneq ($(HAS_WEBAPP),)
+	cd webapp && $(NPM) run graphql;
 ifeq ($(MM_DEBUG),)
 	cd webapp && $(NPM) run build;
 else

@@ -334,6 +334,9 @@ type PlaybookStore interface {
 	// Update updates a playbook
 	Update(playbook Playbook) error
 
+	// GraphqlUpdate taking a setmap for graphql
+	GraphqlUpdate(id string, setmap map[string]interface{}) error
+
 	// Archive archives a playbook
 	Archive(id string) error
 

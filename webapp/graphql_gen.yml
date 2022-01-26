@@ -1,0 +1,13 @@
+overwrite: true
+schema: "../server/api/schema.graphqls"
+documents: "src/graphql/*.graphql"
+generates:
+  src/graphql/generated_types.ts:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-react-apollo"
+      - "fragment-matcher"
+hooks:
+  afterAllFileWrite:
+    - eslint --fix
