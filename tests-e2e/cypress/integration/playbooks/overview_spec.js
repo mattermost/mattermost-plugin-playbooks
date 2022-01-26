@@ -107,6 +107,20 @@ describe('playbooks > overview', () => {
         });
     });
 
+    it('should duplicate playbook', () => {
+        // # Navigate directly to the playbook
+        cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
+
+        // # Click on playbook title
+        cy.get('.icon-chevron-down').click();
+
+        // # Click on duplicate
+        cy.findByText('Duplicate').click();
+
+        // * Verify that playbook got duplicated
+        cy.findByText(`Copy of ${testPublicPlaybook.title}`).should('exist');
+    });
+
     it('shows checklists', () => {
         cy.apiCreatePlaybook({
             teamId: testTeam.id,

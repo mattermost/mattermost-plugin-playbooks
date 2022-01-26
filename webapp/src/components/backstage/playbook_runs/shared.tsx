@@ -15,6 +15,7 @@ export const Container = styled.div`
 
 export const Left = styled.div`
     flex: 2;
+    min-width: 0;
 `;
 
 export const Right = styled.div`

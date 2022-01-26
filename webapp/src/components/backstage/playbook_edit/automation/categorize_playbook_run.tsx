@@ -49,6 +49,7 @@ const StyledCategorySelector = styled(CategorySelector)`
 
     .channel-selector__control {
         padding: 4px 16px 4px 3.2rem;
+        background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
 
         &:before {
             left: 16px;
