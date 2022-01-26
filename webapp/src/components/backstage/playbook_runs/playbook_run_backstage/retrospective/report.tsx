@@ -152,7 +152,9 @@ const DisabledPrimaryButtonSmaller = styled(PrimaryButtonSmaller)`
 
     &:hover:enabled {
         background: rgba(var(--center-channel-color-rgb),0.08);
-        cursor: default;
+        &:before {
+            opacity: 0;
+        }
     }
 `;
 
