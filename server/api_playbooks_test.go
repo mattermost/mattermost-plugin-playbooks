@@ -19,14 +19,13 @@ func TestPlaybooks(t *testing.T) {
 	e.CreateClients()
 	e.CreateBasicServer()
 
-	t.Run("unlicenced servers can't create a private playbook", func(t *testing.T) {
-		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	t.Run("unlicenced servers can create a private playbook", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "test1",
 			TeamID: e.BasicTeam.Id,
 			Public: false,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Empty(t, id)
+		assert.Nil(t, err)
 	})
 
 	t.Run("create public playbook, unlicensed with zero pre-existing playbooks in the team, should succeed", func(t *testing.T) {
@@ -58,14 +57,13 @@ func TestPlaybooks(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	t.Run("e10 licenced servers can't create private playbooks", func(t *testing.T) {
-		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	t.Run("e10 licenced servers can create private playbooks", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "test3",
 			TeamID: e.BasicTeam.Id,
 			Public: false,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Empty(t, id)
+		assert.Nil(t, err)
 	})
 
 	e.SetE20Licence()
