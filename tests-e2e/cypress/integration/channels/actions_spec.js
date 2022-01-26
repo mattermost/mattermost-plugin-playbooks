@@ -461,7 +461,8 @@ describe('channels > actions', () => {
                     cy.visit(`/${testTeam.name}/channels/${testPublicChannel.name}`);
 
                     cy.getLastPostId().then((lastPostId) => {
-                        cy.get(`#postMessageText_${lastPostId}`).contains(`@${testUser.username} just ran the ${playbookName} playbook. Visit the link above for more information or join ~${playbookRunName} to participate.`);
+                        cy.get(`#postMessageText_${lastPostId}`).contains(`${playbookRunName}`);
+                        cy.get(`#postMessageText_${lastPostId}`).contains(`@${testUser.username} ran the ${playbookName} playbook.`);
                     });
                 });
             });
