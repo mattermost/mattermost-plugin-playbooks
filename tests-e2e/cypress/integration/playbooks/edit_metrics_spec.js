@@ -345,6 +345,16 @@ describe('playbooks > edit_metrics', () => {
                 cy.findAllByTestId('delete-metric').eq(0).click();
                 cy.getStyledComponent('ErrorText').contains('Please enter a number, or leave the target blank.');
 
+                // # Remove error text and type another invalid entry
+                cy.get('input[type=text]').eq(2).clear().type('invalid');
+
+                // * Verify that we're allowed to delete a metric we are currently editing (even if it's invalid)
+                cy.findAllByTestId('delete-metric').eq(1).click();
+                cy.get('#confirm-modal-light').should('be.visible').contains('Are you sure you want to delete?');
+
+                // # Dismiss
+                cy.findByRole('button', {name: 'Cancel'}).click();
+
                 // * A Currency target /can/ be blank, so can the description, try to delete first metric
                 cy.get('input[type=text]').eq(2).clear();
                 cy.findAllByTestId('delete-metric').eq(0).click();
