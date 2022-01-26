@@ -442,7 +442,7 @@ export function useNow(refreshIntervalMillis = 1000) {
 }
 
 const combineQueryParameters = (oldParams: FetchPlaybookRunsParams, searchString: string) => {
-    const queryParams = qs.parse(searchString, {ignoreQueryPrefix: true, parseArrays: true});
+    const queryParams = qs.parse(searchString, {ignoreQueryPrefix: true});
     return {...oldParams, ...queryParams};
 };
 
@@ -453,13 +453,6 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
     const history = useHistory();
     const location = useLocation();
     const [fetchParams, setFetchParams] = useState(combineQueryParameters(defaultFetchParams, location.search));
-
-    // On first load fetch parameters from the query string
-    useEffect(() => {
-        setFetchParams((oldParams) => {
-            return combineQueryParameters(oldParams, location.search);
-        });
-    }, []);
 
     // Fetch the queried runs
     useEffect(() => {
