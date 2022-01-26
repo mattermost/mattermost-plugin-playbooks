@@ -157,8 +157,6 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
         template: {
             ...emptyPlaybook(),
             title: 'Customer Onboarding',
-            description: 'Customize this playbook to reflect your own customer onboarding process.',
-
             description: mtrim`New Mattermost customers are onboarded following a process similar to this playbook.
 
             Customize this playbook to reflect your own customer onboarding process.`,
@@ -582,28 +580,32 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                 {
                     title: 'Setup Testing Environment (Before Meeting)',
                     items: [
-                        {
-                            title: 'Deploy the build in question to community-daily',
-                        },
-                        {
-                            title: 'Spin up a cloud instance running T0',
-                            command: '/cloud create playbooks-bug-bash-t0 --license te --image mattermost/mattermost-team-edition --test-data --version master',
-                        },
-                        {
-                            title: 'Spin up a cloud instance running E0',
-                            command: '/cloud create playbooks-bug-bash-e0 --license te --test-data --version master',
-                        },
-                        {
-                            title: 'Spin up a cloud instance running E10',
-                            command: '/cloud create playbooks-bug-bash-e10 --license e10 --test-data --version master',
-                        },
-                        {
-                            title: 'Spin up a cloud instance running E20',
-                            command: '/cloud create playbooks-bug-bash-e20 --license e20 --test-data --version master',
-                        },
-                        {
-                            title: 'Enable Open Servers & CRT for all Cloud Instances',
-                            description: mtrim`From a command line, login to each server in turn via [\`mmctl\`](https://github.com/mattermost/mmctl), and configure, e.g.:
+                        newChecklistItem(
+                            'Deploy the build in question to community-daily',
+                        ),
+                        newChecklistItem(
+                            'Spin up a cloud instance running T0',
+                            '',
+                            '/cloud create playbooks-bug-bash-t0 --license te --image mattermost/mattermost-team-edition --test-data --version master',
+                        ),
+                        newChecklistItem(
+                            'Spin up a cloud instance running E0',
+                            '',
+                            '/cloud create playbooks-bug-bash-e0 --license te --test-data --version master',
+                        ),
+                        newChecklistItem(
+                            'Spin up a cloud instance running E10',
+                            '',
+                            '/cloud create playbooks-bug-bash-e10 --license e10 --test-data --version master',
+                        ),
+                        newChecklistItem(
+                            'Spin up a cloud instance running E20',
+                            '',
+                            '/cloud create playbooks-bug-bash-e20 --license e20 --test-data --version master',
+                        ),
+                        newChecklistItem(
+                            'Enable Open Servers & CRT for all Cloud Instances',
+                            mtrim`From a command line, login to each server in turn via [\`mmctl\`](https://github.com/mattermost/mmctl), and configure, e.g.:
                                 \`\`\`
                                 for server in playbooks-bug-bash-t0 playbooks-bug-bash-e0 playbooks-bug-bash-e10 playbooks-bug-bash-e20; do
                                     mmctl auth login https://$server.test.mattermost.cloud --name $server --username sysadmin --password-file <(echo "Sys@dmin123");
@@ -611,76 +613,81 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                                     mmctl config set ServiceSettings.CollapsedThreads default_on;
                                 done
                                 \`\`\``,
-                        },
-                        {
-                            title: 'Install the plugin to each instance',
-                            description: mtrim`From a command line, login to each server in turn via [\`mmctl\`](https://github.com/mattermost/mmctl), and configure, e.g.:
+                        ),
+                        newChecklistItem(
+                            'Install the plugin to each instance',
+                            mtrim`From a command line, login to each server in turn via [\`mmctl\`](https://github.com/mattermost/mmctl), and configure, e.g.:
                                 \`\`\`
                                 for server in playbooks-bug-bash-t0 playbooks-bug-bash-e0 playbooks-bug-bash-e10 playbooks-bug-bash-e20; do
                                     mmctl auth login https://$server.test.mattermost.cloud --name $server --username sysadmin --password-file <(echo "Sys@dmin123");
                                     mmctl plugin install-url --force https://github.com/mattermost/mattermost-plugin-playbooks/releases/download/v1.22.0%2Balpha.3/playbooks-1.22.0+alpha.3.tar.gz
                                 done
                                 \`\`\``,
-                        },
-                        {
-                            title: 'Announce Bug Bash',
-                            description: 'Make sure the team and community is aware of the upcoming bug bash.',
-                        },
+                        ),
+                        newChecklistItem(
+                            'Announce Bug Bash',
+                            'Make sure the team and community is aware of the upcoming bug bash.',
+                        ),
                     ],
                 },
                 {
                     title: 'Define Scope (10 Minutes)',
                     items: [
-                        {
-                            title: 'Review GitHub commit diff',
-                        },
-                        {
-                            title: 'Identify new features to add to target testing areas checklist',
-                        },
-                        {
-                            title: 'Identify existing functionality to add to target testing areas checklist',
-                        },
-                        {
-                            title: 'Add relvant T0/E0/E10/E20 permutations',
-                        },
-                        {
-                            title: 'Assign owners',
-                        },
+                        newChecklistItem(
+                            'Review GitHub commit diff',
+                        ),
+                        newChecklistItem(
+                            'Identify new features to add to target testing areas checklist',
+                        ),
+                        newChecklistItem(
+                            'Identify existing functionality to add to target testing areas checklist',
+                        ),
+                        newChecklistItem(
+                            'Add relvant T0/E0/E10/E20 permutations',
+                        ),
+                        newChecklistItem(
+                            'Assign owners',
+                        ),
                     ],
                 },
                 {
                     title: 'Target Testing Areas (30 Minutes)',
+                    items: [],
                 },
                 {
                     title: 'Triage (10 Minutes)',
                     items: [
-                        {
-                            title: 'Review issues to identify what to fix for the upcoming release',
-                        },
-                        {
-                            title: 'Assign owners for all required bug fixes',
-                        },
+                        newChecklistItem(
+                            'Review issues to identify what to fix for the upcoming release',
+                        ),
+                        newChecklistItem(
+                            'Assign owners for all required bug fixes',
+                        ),
                     ],
                 },
                 {
                     title: 'Clean Up',
                     items: [
-                        {
-                            title: 'Clean up cloud instance running T0',
-                            command: '/cloud delete playbooks-bug-bash-t0',
-                        },
-                        {
-                            title: 'Clean up cloud instance running E0',
-                            command: '/cloud delete playbooks-bug-bash-e0',
-                        },
-                        {
-                            title: 'Clean up cloud instance running E10',
-                            command: '/cloud delete playbooks-bug-bash-e10',
-                        },
-                        {
-                            title: 'Clean up cloud instance running E20',
-                            command: '/cloud delete playbooks-bug-bash-e20',
-                        },
+                        newChecklistItem(
+                            'Clean up cloud instance running T0',
+                            '',
+                            '/cloud delete playbooks-bug-bash-t0',
+                        ),
+                        newChecklistItem(
+                            'Clean up cloud instance running E0',
+                            '',
+                            '/cloud delete playbooks-bug-bash-e0',
+                        ),
+                        newChecklistItem(
+                            'Clean up cloud instance running E10',
+                            '',
+                            '/cloud delete playbooks-bug-bash-e10',
+                        ),
+                        newChecklistItem(
+                            'Clean up cloud instance running E20',
+                            '',
+                            '/cloud delete playbooks-bug-bash-e20',
+                        ),
                     ],
                 },
             ],
