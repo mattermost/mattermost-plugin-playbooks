@@ -31,6 +31,7 @@ import {
     autoUnfollowPlaybook,
     telemetryEventForPlaybook,
     getSiteUrl,
+    archivePlaybook,
 } from 'src/client';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -102,7 +103,12 @@ const Playbook = () => {
     const [isFollowed, setIsFollowed] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
     const [playbookLinkCopied, setPlaybookLinkCopied] = useState(false);
-    const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal();
+    const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal(() => {
+        if (playbook) {
+            archivePlaybook(playbook.id);
+            navigateToPluginUrl('/playbooks');
+        }
+    });
 
     const changeFollowing = (check: boolean) => {
         if (playbook?.id) {

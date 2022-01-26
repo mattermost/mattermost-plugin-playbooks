@@ -60,7 +60,7 @@ type Playbook struct {
 	DefaultPlaybookMemberRole            string                 `json:"default_playbook_member_role" export:"-"`
 	DefaultRunAdminRole                  string                 `json:"default_run_admin_role" export:"-"`
 	DefaultRunMemberRole                 string                 `json:"default_run_member_role" export:"-"`
-	Metrics                              []PlaybookMetricConfig `json:"metrics" export:"-"`
+	Metrics                              []PlaybookMetricConfig `json:"metrics" export:"metrics"`
 }
 
 const (
@@ -88,7 +88,7 @@ type PlaybookMetricConfig struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Type        string `json:"type"`
-	Target      int64  `json:"Target"`
+	Target      int64  `json:"target"`
 }
 
 func (pm PlaybookMember) Clone() PlaybookMember {
