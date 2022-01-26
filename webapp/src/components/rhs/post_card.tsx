@@ -30,6 +30,7 @@ const UpdateSection = styled.div`
 
 const UpdateContainer = styled.div`
     display: inline;
+    min-width: 0;
 `;
 
 const ProfilePic = styled.img`
