@@ -177,6 +177,11 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if err := h.validateMetrics(playbook); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid metrics configs", err)
+		return
+	}
+
 	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -225,6 +230,11 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	oldPlaybook, err := h.playbookService.Get(playbook.ID)
 	if err != nil {
 		h.HandleError(w, err)
+		return
+	}
+
+	if err := h.validateMetrics(playbook); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid metrics configs", err)
 		return
 	}
 
@@ -675,4 +685,20 @@ func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request)
 	w.Header().Add("Location", makeAPIURL(h.pluginAPI, "playbooks/%s", id))
 
 	ReturnJSON(w, &result, http.StatusCreated)
+}
+
+func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
+	if len(pb.Metrics) > app.MaxMetricsPerPlaybook {
+		return errors.Errorf(fmt.Sprintf("playbook cannot have more than %d key metrics", app.MaxMetricsPerPlaybook))
+	}
+
+	//check if titles are unique
+	titles := make(map[string]bool)
+	for _, m := range pb.Metrics {
+		if titles[m.Title] {
+			return errors.Errorf("metrics names must be unique")
+		}
+		titles[m.Title] = true
+	}
+	return nil
 }
