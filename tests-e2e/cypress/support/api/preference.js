@@ -252,6 +252,17 @@ Cypress.Commands.add('apiGetUserPreference', (userId) => {
     });
 });
 
+Cypress.Commands.add('apiSaveCRTPreference', (userId, value = 'on') => {
+    const preference = {
+        user_id: userId,
+        category: 'display_settings',
+        name: 'collapsed_reply_threads',
+        value,
+    };
+
+    return cy.apiSaveUserPreference([preference]);
+});
+
 /**
  * Saves Join/Leave messages preference of a user directly via API
  * This API assume that the user is logged in and has cookie to access
