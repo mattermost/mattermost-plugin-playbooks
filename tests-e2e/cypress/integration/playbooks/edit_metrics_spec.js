@@ -304,6 +304,91 @@ describe('playbooks > edit_metrics', () => {
                 verifyViewsAndEdits(3, 0);
             });
         });
+
+        describe('delete metric', () => {
+            it('verifies when clicking delete button; saved metrics have different confirmation text; deleted metrics are deleted', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Retrospective tab
+                cy.get('#root').findByText('Retrospective').click();
+
+                // # Add and verify 1st metric
+                addMetric('Integer', 'test integer!', '12314123', 'test description');
+                verifyViewMetric(0, 'test integer!', '12314123 per run', 'test description');
+
+                // # Add metric
+                cy.findByRole('button', {name: 'Add Metric'}).click();
+                cy.findByTestId('dropdownmenu').within(() => {
+                    cy.findByText('Dollars').click();
+                });
+
+                // # Don't fill in the metric's details
+                cy.get('input[type=text]').eq(1).clear();
+
+                // * Metrics need a title
+                cy.get('input[type=text]').eq(1).clear();
+                cy.findAllByTestId('delete-metric').eq(0).click();
+                cy.getStyledComponent('ErrorText').contains('Please add a title for your metric.');
+
+                // * Metrics need a unique title
+                cy.get('input[type=text]').eq(1).type('test integer!');
+                cy.findAllByTestId('delete-metric').eq(0).click();
+                cy.getStyledComponent('ErrorText')
+                    .contains('A metric with the same name already exists. Please add a unique name for each metric.');
+
+                // # Fill in title
+                cy.get('input[type=text]').eq(1).clear().type('test currency!');
+
+                // * A Currency target cannot be text
+                cy.get('input[type=text]').eq(2).clear().type('z');
+                cy.findAllByTestId('delete-metric').eq(0).click();
+                cy.getStyledComponent('ErrorText').contains('Please enter a number, or leave the target blank.');
+
+                // * A Currency target /can/ be blank, so can the description, try to delete first metric
+                cy.get('input[type=text]').eq(2).clear();
+                cy.findAllByTestId('delete-metric').eq(0).click();
+
+                // # Should see the confirmation /without/ extra text because we haven't saved this metric yet
+                cy.get('#confirm-modal-light')
+                    .should('contain.text', 'If you delete this metric, the values for it will not be collected for any future runs.');
+                cy.get('#confirm-modal-light')
+                    .should('not.contain.text', 'You will still be able to access historical data for this metric.');
+
+                // # Delete first metric
+                cy.findByRole('button', {name: 'Delete metric'}).click();
+
+                // * Verify metric
+                verifyViewsAndEdits(1, 0);
+                verifyViewMetric(0, 'test currency!', 'No target set.', 'No description.');
+
+                // # Save and verify one is saved
+                cy.findByTestId('save_playbook').click();
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+                cy.get('#root').findByText('Retrospective').click();
+                verifyViewsAndEdits(1, 0);
+                verifyViewMetric(0, 'test currency!', 'No target set.', 'No description.');
+
+                // # Delete metric
+                cy.findAllByTestId('delete-metric').eq(0).click();
+
+                // # Should see the confirmation /with/ extra text because we haven't saved this metric yet
+                cy.get('#confirm-modal-light')
+                    .should('contain.text', 'If you delete this metric, the values for it will not be collected for any future runs. You will still be able to access historical data for this metric.');
+
+                // # Delete first metric
+                cy.findByRole('button', {name: 'Delete metric'}).click();
+
+                // * Verify
+                verifyViewsAndEdits(0, 0);
+
+                // # Save and verify deleted
+                cy.findByTestId('save_playbook').click();
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+                cy.get('#root').findByText('Retrospective').click();
+                verifyViewsAndEdits(0, 0);
+            });
+        });
     });
 });
 
