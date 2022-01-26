@@ -167,13 +167,13 @@ const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
                 <FormattedMessage defaultMessage='Duplicate'/>
             </DropdownMenuItem>
             {props.playbookIsArchived ? (
-            <DropdownMenuItem onClick={props.onRestore}>
-                <FormattedMessage defaultMessage='Restore'/>
-            </DropdownMenuItem>
+                <DropdownMenuItem onClick={props.onRestore}>
+                    <FormattedMessage defaultMessage='Restore'/>
+                </DropdownMenuItem>
             ) : (
-            <DropdownMenuItem onClick={props.onArchive}>
-                <FormattedMessage defaultMessage='Archive'/>
-            </DropdownMenuItem>
+                <DropdownMenuItem onClick={props.onArchive}>
+                    <FormattedMessage defaultMessage='Archive'/>
+                </DropdownMenuItem>
             )}
         </DotMenu>
     );
