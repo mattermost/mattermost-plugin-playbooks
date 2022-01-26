@@ -2344,14 +2344,14 @@ func (s *PlaybookRunServiceImpl) sendPlaybookRunToClient(playbookRunID string) e
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID string, retrospective RetrospectiveUpdate) error {
+func (s *PlaybookRunServiceImpl) UpdateRetrospective(playbookRunID, updaterID string, newRetrospective RetrospectiveUpdate) error {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve playbook run")
 	}
 
-	playbookRunToModify.Retrospective = retrospective.Text
-	playbookRunToModify.MetricsData = retrospective.Metrics
+	playbookRunToModify.Retrospective = newRetrospective.Text
+	playbookRunToModify.MetricsData = newRetrospective.Metrics
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
 		return errors.Wrap(err, "failed to update playbook run")

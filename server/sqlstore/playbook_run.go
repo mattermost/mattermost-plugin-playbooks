@@ -45,6 +45,7 @@ type playbookRunStore struct {
 	playbookRunSelect    sq.SelectBuilder
 	statusPostsSelect    sq.SelectBuilder
 	timelineEventsSelect sq.SelectBuilder
+	metricsDataSelect    sq.SelectBuilder
 }
 
 // Ensure playbookRunStore implements the app.PlaybookRunStore interface.
@@ -183,6 +184,14 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 		).
 		From("IR_TimelineEvent as te")
 
+	metricsDataSelect := sqlStore.builder.
+		Select(
+			"MetricConfigID",
+			"Value",
+		).
+		From("IR_Metric").
+		OrderBy("MetricConfigID") // Entirely for consistency for the tests
+
 	return &playbookRunStore{
 		pluginAPI:            pluginAPI,
 		log:                  log,
@@ -191,6 +200,7 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 		playbookRunSelect:    playbookRunSelect,
 		statusPostsSelect:    statusPostsSelect,
 		timelineEventsSelect: timelineEventsSelect,
+		metricsDataSelect:    metricsDataSelect,
 	}
 }
 
@@ -646,9 +656,11 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 		return nil, err
 	}
 
-	metricsData, err := s.getMetricsDataForPlaybookRun(tx, playbookRunID)
-	if err != nil {
-		return nil, err
+	var metricsData []app.RunMetricData
+
+	err = s.store.selectBuilder(tx, &metricsData, s.metricsDataSelect.Where(sq.Eq{"IncidentID": playbookRunID}))
+	if err != nil && err != sql.ErrNoRows {
+		return nil, errors.Wrapf(err, "failed to get metrics data for run with id `%s`", playbookRunID)
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -678,26 +690,6 @@ func (s *playbookRunStore) getTimelineEventsForPlaybookRun(q sqlx.Queryer, playb
 	}
 
 	return timelineEvents, nil
-}
-
-func (s *playbookRunStore) getMetricsDataForPlaybookRun(q sqlx.Queryer, playbookRunID string) ([]app.RunMetricData, error) {
-	var metricsData []app.RunMetricData
-
-	query := s.store.builder.
-		Select(
-			"MetricConfigID",
-			"Value",
-		).
-		From("IR_Metric").
-		Where(sq.Eq{"IncidentID": playbookRunID}).
-		OrderBy("MetricConfigID") // Entirely for consistency for the tests
-
-	err := s.store.selectBuilder(q, &metricsData, query)
-	if err != nil && err != sql.ErrNoRows {
-		return nil, errors.Wrapf(err, "failed to get metrics data for run with id `%s`", playbookRunID)
-	}
-
-	return metricsData, nil
 }
 
 // GetTimelineEvent returns the timeline event by id for the given playbook run.
@@ -1176,7 +1168,7 @@ func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.Playb
 		return nil
 	}
 
-	//retrieve metrics configs ids for this run's playbook, to validate received metrics
+	//retrieve metrics configurations ids for this run to validate received data
 	query := s.queryBuilder.
 		Select("ID").
 		From("IR_MetricConfig").
@@ -1196,7 +1188,7 @@ func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.Playb
 	retrospectivePublished := !playbookRun.RetrospectiveWasCanceled && playbookRun.RetrospectivePublishedAt > 0
 
 	for _, m := range playbookRun.MetricsData {
-		//do not store if id is not in playbooks configuration
+		//do not store if id is not in run's playbook configuration
 		if !validIDs[m.MetricConfigID] {
 			continue
 		}
