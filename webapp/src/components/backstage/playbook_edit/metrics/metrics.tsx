@@ -151,6 +151,7 @@ const Metrics = ({
         });
         setChangesMade(true);
         setDeletingIdx(-1);
+        setCurEditingIdx(-1);
     };
 
     // If we're editing a metric, we need to add (or replace) the curEditing metric into the metrics array

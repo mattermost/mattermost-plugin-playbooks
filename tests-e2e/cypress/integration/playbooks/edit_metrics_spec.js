@@ -372,12 +372,53 @@ describe('playbooks > edit_metrics', () => {
                 verifyViewsAndEdits(1, 0);
                 verifyViewMetric(0, 'test currency!', 'No target set.', 'No description.');
 
+                // # Make sure we can still edit and add a metric after deleting one (testing that the metrics
+                //   component's state isn't broken)
+                addMetric('Integer', 'test integer 2!', '123', 'test description');
+                verifyViewMetric(1, 'test integer 2!', '123 per run', 'test description');
+                cy.findAllByTestId('delete-metric').eq(1).click();
+                cy.findByRole('button', {name: 'Delete metric'}).click();
+                cy.findAllByTestId('edit-metric').eq(0).click();
+                cy.get('input[type=text]').eq(1).clear().type('test currency 2!');
+                cy.findByRole('button', {name: 'Add'}).click();
+                verifyViewsAndEdits(1, 0);
+                verifyViewMetric(0, 'test currency 2!', 'No target set.', 'No description.');
+
+                // # Make sure we can add a metric and then delete it, then can keep editing
+                cy.findByRole('button', {name: 'Add Metric'}).click();
+                cy.findByTestId('dropdownmenu').within(() => {
+                    cy.findByText('Dollars').click();
+                });
+                cy.findAllByTestId('delete-metric').eq(1).click();
+                cy.findByRole('button', {name: 'Delete metric'}).click();
+                cy.findAllByTestId('edit-metric').eq(0).click();
+                cy.get('input[type=text]').eq(1).clear().type('test currency 3!');
+                cy.findByRole('button', {name: 'Add'}).click();
+                verifyViewsAndEdits(1, 0);
+                verifyViewMetric(0, 'test currency 3!', 'No target set.', 'No description.');
+
+                // # Make sure we can add a metric and then delete it, then can keep adding
+                cy.findByRole('button', {name: 'Add Metric'}).click();
+                cy.findByTestId('dropdownmenu').within(() => {
+                    cy.findByText('Dollars').click();
+                });
+                cy.findAllByTestId('delete-metric').eq(1).click();
+                cy.findByRole('button', {name: 'Delete metric'}).click();
+                cy.findByRole('button', {name: 'Add Metric'}).click();
+                cy.findByTestId('dropdownmenu').within(() => {
+                    cy.findByText('Dollars').click();
+                });
+                cy.findAllByTestId('delete-metric').eq(1).click();
+                cy.findByRole('button', {name: 'Delete metric'}).click();
+                verifyViewsAndEdits(1, 0);
+                verifyViewMetric(0, 'test currency 3!', 'No target set.', 'No description.');
+
                 // # Save and verify one is saved
                 cy.findByTestId('save_playbook').click();
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
                 cy.get('#root').findByText('Retrospective').click();
                 verifyViewsAndEdits(1, 0);
-                verifyViewMetric(0, 'test currency!', 'No target set.', 'No description.');
+                verifyViewMetric(0, 'test currency 3!', 'No target set.', 'No description.');
 
                 // # Delete metric
                 cy.findAllByTestId('delete-metric').eq(0).click();
