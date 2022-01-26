@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -17,14 +19,13 @@ func TestPlaybooks(t *testing.T) {
 	e.CreateClients()
 	e.CreateBasicServer()
 
-	t.Run("unlicenced servers can't create a private playbook", func(t *testing.T) {
-		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	t.Run("unlicenced servers can create a private playbook", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "test1",
 			TeamID: e.BasicTeam.Id,
 			Public: false,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Empty(t, id)
+		assert.Nil(t, err)
 	})
 
 	t.Run("create public playbook, unlicensed with zero pre-existing playbooks in the team, should succeed", func(t *testing.T) {
@@ -56,14 +57,13 @@ func TestPlaybooks(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
-	t.Run("e10 licenced servers can't create private playbooks", func(t *testing.T) {
-		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+	t.Run("e10 licenced servers can create private playbooks", func(t *testing.T) {
+		_, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 			Title:  "test3",
 			TeamID: e.BasicTeam.Id,
 			Public: false,
 		})
-		requireErrorWithStatusCode(t, err, http.StatusForbidden)
-		assert.Empty(t, id)
+		assert.Nil(t, err)
 	})
 
 	e.SetE20Licence()
@@ -799,5 +799,55 @@ func TestPlaybooksConversions(t *testing.T) {
 		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		require.NoError(t, err)
 
+	})
+}
+
+func TestPlaybooksImportExport(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+	e.SetE20Licence()
+	e.CreateBasicPlaybook()
+
+	t.Run("Export", func(t *testing.T) {
+		result, err := e.PlaybooksClient.Playbooks.Export(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		var exportedPlaybook app.Playbook
+		err = json.Unmarshal(result, &exportedPlaybook)
+		require.NoError(t, err)
+		assert.Equal(t, e.BasicPlaybook.Title, exportedPlaybook.Title)
+	})
+
+	t.Run("Import", func(t *testing.T) {
+		result, err := e.PlaybooksClient.Playbooks.Export(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		newPlaybookID, err := e.PlaybooksClient.Playbooks.Import(context.Background(), result, e.BasicTeam.Id)
+		require.NoError(t, err)
+		newPlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newPlaybookID)
+		require.NoError(t, err)
+
+		assert.Equal(t, e.BasicPlaybook.Title, newPlaybook.Title)
+		assert.NotEqual(t, e.BasicPlaybook.ID, newPlaybook.ID)
+	})
+}
+
+func TestPlaybooksDuplicate(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+	e.SetE20Licence()
+	e.CreateBasicPlaybook()
+
+	t.Run("Duplicate", func(t *testing.T) {
+		newID, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		require.NotEqual(t, e.BasicPlaybook.ID, newID)
+
+		duplicatedPlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+
+		assert.Equal(t, "Copy of "+e.BasicPlaybook.Title, duplicatedPlaybook.Title)
+		assert.Equal(t, e.BasicPlaybook.Description, duplicatedPlaybook.Description)
+		assert.Equal(t, e.BasicPlaybook.TeamID, duplicatedPlaybook.TeamID)
 	})
 }

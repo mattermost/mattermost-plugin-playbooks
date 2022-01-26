@@ -8,10 +8,6 @@
     "translation": "Overdue Status Updates"
   },
   {
-    "id": "app.user.digest.overdue_status_updates.md_link_item_appended",
-    "translation": "(Owner: @{{.Username}})"
-  },
-  {
     "id": "app.user.digest.overdue_status_updates.num_overdue",
     "translation": {
       "one": "You have {{.Count}} run overdue for a status update:",

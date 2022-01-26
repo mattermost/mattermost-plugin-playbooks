@@ -4,7 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
-import {Redirect, Route, useRouteMatch, NavLink, Switch} from 'react-router-dom';
+import {Redirect, Route, useRouteMatch, NavLink, Switch, useHistory} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
@@ -35,7 +35,7 @@ import {
 } from 'src/client';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
-import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useForceDocumentTitle, useRun} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
@@ -236,7 +236,10 @@ const PlaybookRunBackstage = () => {
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist | null>(null);
     const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
+    const history = useHistory();
     const currentUserID = useSelector(getCurrentUserId);
+    const currentRun = useRun(match.params.playbookRunId);
+
     const [following, setFollowing] = useState<string[]>([]);
     const [runLinkCopied, setRunLinkCopied] = useState(false);
 
@@ -249,15 +252,19 @@ const PlaybookRunBackstage = () => {
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
 
-        Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
-            setPlaybookRun(playbookRunResult);
-            setPlaybookRunMetadata(playbookRunMetadataResult);
-            setFetchingState(FetchingStateType.fetched);
-            setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
-        }).catch(() => {
-            setFetchingState(FetchingStateType.notFound);
-        });
-    }, [match.params.playbookRunId]);
+        if (currentRun) {
+            setPlaybookRun(currentRun);
+        } else {
+            Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
+                setPlaybookRun(playbookRunResult);
+                setPlaybookRunMetadata(playbookRunMetadataResult);
+                setFetchingState(FetchingStateType.fetched);
+                setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
+            }).catch(() => {
+                setFetchingState(FetchingStateType.notFound);
+            });
+        }
+    }, [match.params.playbookRunId, currentRun]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -274,6 +281,7 @@ const PlaybookRunBackstage = () => {
         if (!playbookRun) {
             return;
         }
+
         await clientRemoveTimelineEvent(playbookRun.id, id);
         setPlaybookRun({
             ...playbookRun,
@@ -285,6 +293,20 @@ const PlaybookRunBackstage = () => {
         setPlaybookRun((run) => ({
             ...run,
             retrospective,
+        } as PlaybookRun));
+    };
+
+    const setPublishedAt = (retrospective_published_at: number) => {
+        setPlaybookRun((run) => ({
+            ...run,
+            retrospective_published_at,
+        } as PlaybookRun));
+    };
+
+    const setCanceled = (retrospective_was_canceled: boolean) => {
+        setPlaybookRun((run) => ({
+            ...run,
+            retrospective_was_canceled,
         } as PlaybookRun));
     };
 
@@ -316,7 +338,7 @@ const PlaybookRunBackstage = () => {
     };
 
     const closePlaybookRunDetails = () => {
-        navigateToPluginUrl('/runs');
+        history.goBack();
     };
 
     let followButton = (<Button onClick={onFollow}>{formatMessage({defaultMessage: 'Follow'})}</Button>);
@@ -416,6 +438,8 @@ const PlaybookRunBackstage = () => {
                                 playbookRun={playbookRun}
                                 deleteTimelineEvent={deleteTimelineEvent}
                                 setRetrospective={setRetrospective}
+                                setPublishedAt={setPublishedAt}
+                                setCanceled={setCanceled}
                             />
                         </Route>
                         <Redirect to={`${match.url}/overview`}/>

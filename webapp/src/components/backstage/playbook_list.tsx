@@ -59,8 +59,6 @@ const PlaybookContainer = styled.div`
 
 const PlaybookList = () => {
     const {formatMessage} = useIntl();
-    const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal();
-    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
     const bottomHalf = useRef<JSX.Element | null>(null);
@@ -69,8 +67,11 @@ const PlaybookList = () => {
     const [
         playbooks,
         {isLoading, totalCount, params, selectedPlaybook},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, setSearchTerm, isFiltering, setWithArchived},
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
+
+    const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
+    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
 
     const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
@@ -96,6 +97,7 @@ const PlaybookList = () => {
                 onEdit={() => edit(p)}
                 onRestore={() => openConfirmRestoreModal(p)}
                 onArchive={() => openConfirmArchiveModal(p)}
+                onDuplicate={() => duplicatePlaybook(p.id)}
             />
         ));
     }

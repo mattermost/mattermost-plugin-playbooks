@@ -27,6 +27,8 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
 
+import {useHistory, useLocation} from 'react-router-dom';
+import qs from 'qs';
 import {haveITeamPermission} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/roles';
 
 import {FetchPlaybookRunsParams, PlaybookRun} from 'src/types/playbook_run';
@@ -439,12 +441,20 @@ export function useNow(refreshIntervalMillis = 1000) {
     return now;
 }
 
+const combineQueryParameters = (oldParams: FetchPlaybookRunsParams, searchString: string) => {
+    const queryParams = qs.parse(searchString, {ignoreQueryPrefix: true});
+    return {...oldParams, ...queryParams};
+};
+
 export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
 [PlaybookRun[], number, FetchPlaybookRunsParams, React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>] {
     const [playbookRuns, setPlaybookRuns] = useState<PlaybookRun[]>([]);
     const [totalCount, setTotalCount] = useState(0);
-    const [fetchParams, setFetchParams] = useState(defaultFetchParams);
+    const history = useHistory();
+    const location = useLocation();
+    const [fetchParams, setFetchParams] = useState(combineQueryParameters(defaultFetchParams, location.search));
 
+    // Fetch the queried runs
     useEffect(() => {
         let isCanceled = false;
 
@@ -452,7 +462,12 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
             const playbookRunsReturn = await fetchPlaybookRuns(fetchParams);
 
             if (!isCanceled) {
-                setPlaybookRuns(playbookRunsReturn.items);
+                setPlaybookRuns((existingRuns: PlaybookRun[]) => {
+                    if (fetchParams.page === 0) {
+                        return playbookRunsReturn.items;
+                    }
+                    return [...existingRuns, ...playbookRunsReturn.items];
+                });
                 setTotalCount(playbookRunsReturn.total_count);
             }
         }
@@ -463,6 +478,14 @@ export function useRunsList(defaultFetchParams: FetchPlaybookRunsParams):
             isCanceled = true;
         };
     }, [fetchParams]);
+
+    // Update the query string when the fetchParams change
+    useEffect(() => {
+        const newFetchParams: Record<string, unknown> = {...fetchParams};
+        delete newFetchParams.page;
+        delete newFetchParams.per_page;
+        history.replace({search: qs.stringify(newFetchParams, {addQueryPrefix: false, arrayFormat: 'brackets'})});
+    }, [fetchParams, history]);
 
     return [playbookRuns, totalCount, fetchParams, setFetchParams];
 }

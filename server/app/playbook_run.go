@@ -376,7 +376,6 @@ type RunLink struct {
 	TeamName           string
 	ChannelName        string
 	ChannelDisplayName string
-	OwnerUserName      string
 }
 
 // AssignedRun represents all the info needed to display a Run & ChecklistItem to a user

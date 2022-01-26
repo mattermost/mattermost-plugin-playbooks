@@ -143,12 +143,16 @@ commands:
             cd tests-e2e
             circleci tests glob "cypress/integration/**/*.js" | circleci tests split --split-by=timings > ./tests-to-run
             npm run test -- --spec "$(cat ./tests-to-run | tr '\n' ',')"
-
+            echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?><testsuites name=\"Cypress tests\">" > ./cypress/results/junit.xml
+            cat temp-results.txt >> ./cypress/results/junit.xml
+            echo "</testsuites>" >> ./cypress/results/junit.xml
       - *save_cypress_cache
       - store_test_results:
           path: tests-e2e/cypress/results
       - store_artifacts:
           path: tests-e2e/cypress/videos
+      - store_artifacts:
+          path: tests-e2e/cypress/results/junit.xml
 
 jobs:
   lint:

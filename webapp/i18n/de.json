@@ -402,5 +402,12 @@
     "8oCVbz": "Sind Sie sicher, dass Sie veröffentlichen wollen",
     "5BUxvl": "Jeder in diesem Team kann dieses Playbook einsehen.",
     "QpUBDr": "{members, plural, =0 {Keiner kann} =1 {Eine Person kann} other {# Personen können}} auf dieses Playbook zugreifen.",
-    "0Vvpht": "Zum Playbook Teilnehmer machen"
+    "0Vvpht": "Zum Playbook Teilnehmer machen",
+    "qsr3Zk": "Aktualisiere die Durchlauf-Zusammenfassung",
+    "0q+hj2": "Definiere eine Vorlage für eine übersichtliche Beschreibung, die jeden Lauf den Stakeholdern erklärt.",
+    "FXCLuZ": "Summe {total, number}",
+    "3PoGhY": "Sind Sie sicher, dass Sie veröffentlichen wollen?",
+    "4fHiNl": "Duplizieren",
+    "4alprY": "Playbook Vorlagen",
+    "/urtZ8": "Ihre Playbooks"
 }

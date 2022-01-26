@@ -50,6 +50,23 @@ describe('playbooks > list', () => {
         cy.findByTestId('titlePlaybook').should('exist').contains('Playbooks');
     });
 
+    it('can duplicate playbook', () => {
+        // # Open the product
+        cy.visit('/playbooks');
+
+        // # Switch to Playbooks
+        cy.findByTestId('playbooksLHSButton').click();
+
+        // # Click on the dot menu
+        cy.get('.icon-dots-horizontal').click();
+
+        // # Click on duplicate
+        cy.findByText('Duplicate').click();
+
+        // * Verify that playbook got duplicated
+        cy.findByText('Copy of Playbook').should('exist');
+    });
+
     context('archived playbooks', () => {
         it('does not show them by default', () => {
             // # Open the product
@@ -60,8 +77,7 @@ describe('playbooks > list', () => {
 
             // * Assert the archived playbook is not there.
             cy.findAllByTestId('playbook-title').should((titles) => {
-                expect(titles).to.have.length(1);
-                expect(titles.eq(0)).to.contain('Playbook');
+                expect(titles).to.have.length(2);
             });
         });
         it('shows them upon click on the filter', () => {
@@ -74,11 +90,9 @@ describe('playbooks > list', () => {
             // # Click the With Archived button
             cy.findByTestId('with-archived').click();
 
-            // * Assert the archived playbook is not there.
+            // * Assert the archived playbook is there.
             cy.findAllByTestId('playbook-title').should((titles) => {
-                expect(titles).to.have.length(2);
-                expect(titles.eq(0)).to.contain('Playbook');
-                expect(titles.eq(1)).to.contain('Playbook archived');
+                expect(titles).to.have.length(3);
             });
         });
     });

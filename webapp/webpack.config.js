@@ -72,18 +72,6 @@ let config = {
                 },
             },
             {
-                test: /\.scss$/,
-                use: [
-                    'style-loader',
-                    {
-                        loader: 'css-loader',
-                    },
-                    {
-                        loader: 'sass-loader',
-                    },
-                ],
-            },
-            {
                 test: /\.(png|eot|tiff|svg|woff2|woff|ttf|gif|mp3|jpg)$/,
                 use: [
                     {
@@ -137,9 +125,7 @@ if (targetIsDevServer) {
         ...config,
         devServer: {
             hot: true,
-            injectHot: true,
             liveReload: false,
-            overlay: false,
             proxy: [{
                 context: () => true,
                 bypass(req) {
@@ -154,8 +140,6 @@ if (targetIsDevServer) {
                 ws: true,
             }],
             port: 9005,
-            watchContentBase: true,
-            writeToDisk: false,
         },
         performance: false,
         optimization: {

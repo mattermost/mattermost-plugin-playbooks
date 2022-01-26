@@ -4,9 +4,13 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 // PlaybooksService handles communication with the playbook related
@@ -123,4 +127,81 @@ func (s *PlaybooksService) Archive(ctx context.Context, playbookID string) error
 	}
 
 	return nil
+}
+
+func (s *PlaybooksService) Export(ctx context.Context, playbookID string) ([]byte, error) {
+	url := fmt.Sprintf("playbooks/%s/export", playbookID)
+	req, err := s.client.newRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.client.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	result, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("expected status code %d", http.StatusOK)
+	}
+
+	return result, nil
+}
+
+// Duplicate a playbook. Returns the id of the newly created playbook
+func (s *PlaybooksService) Duplicate(ctx context.Context, playbookID string) (string, error) {
+	url := fmt.Sprintf("playbooks/%s/duplicate", playbookID)
+	req, err := s.client.newRequest(http.MethodPost, url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var result struct {
+		ID string `json:"id"`
+	}
+	resp, err := s.client.do(ctx, req, &result)
+	if err != nil {
+		return "", err
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("expected status code %d", http.StatusCreated)
+	}
+
+	return result.ID, nil
+}
+
+// Imports a playbook. Returns the id of the newly created playbook
+func (s *PlaybooksService) Import(ctx context.Context, toImport []byte, team string) (string, error) {
+	url := "playbooks/import?team_id=" + team
+	u, err := s.client.BaseURL.Parse(buildAPIURL(url))
+	if err != nil {
+		return "", errors.Wrapf(err, "invalid endpoint %s", url)
+	}
+	req, err := http.NewRequest(http.MethodPost, u.String(), bytes.NewReader(toImport))
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to create http request for import")
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	var result struct {
+		ID string `json:"id"`
+	}
+	resp, err := s.client.do(ctx, req, &result)
+	if err != nil {
+		return "", err
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("expected status code %d", http.StatusCreated)
+	}
+
+	return result.ID, nil
 }

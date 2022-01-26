@@ -26,6 +26,7 @@ interface Props {
     onEdit: () => void
     onArchive: () => void
     onRestore: () => void
+    onDuplicate: () => void
 }
 
 const ActionCol = styled.div`
@@ -126,6 +127,7 @@ const PlaybookListRow = (props: Props) => {
                     onEdit={props.onEdit}
                     onArchive={props.onArchive}
                     onRestore={props.onRestore}
+                    onDuplicate={props.onDuplicate}
                 />
             </ActionCol>
         </PlaybookItem>
@@ -137,6 +139,7 @@ interface PlaybookActionMenuProps {
     onEdit: () => void;
     onArchive: () => void;
     onRestore: () => void;
+    onDuplicate: () => void;
 }
 
 const IconWrapper = styled.div`
@@ -158,16 +161,20 @@ const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
             >
                 <FormattedMessage defaultMessage='Edit'/>
             </DropdownMenuItem>
+            <DropdownMenuItem
+                onClick={props.onDuplicate}
+            >
+                <FormattedMessage defaultMessage='Duplicate'/>
+            </DropdownMenuItem>
             {props.playbookIsArchived ? (
-                <DropdownMenuItem onClick={props.onRestore}>
-                    <FormattedMessage defaultMessage='Restore'/>
-                </DropdownMenuItem>
+            <DropdownMenuItem onClick={props.onRestore}>
+                <FormattedMessage defaultMessage='Restore'/>
+            </DropdownMenuItem>
             ) : (
-                <DropdownMenuItem onClick={props.onArchive}>
-                    <FormattedMessage defaultMessage='Archive'/>
-                </DropdownMenuItem>
+            <DropdownMenuItem onClick={props.onArchive}>
+                <FormattedMessage defaultMessage='Archive'/>
+            </DropdownMenuItem>
             )}
-
         </DotMenu>
     );
 };
