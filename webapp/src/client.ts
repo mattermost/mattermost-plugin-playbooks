@@ -679,6 +679,6 @@ export const doFetchWithoutResponse = async (url: string, options = {}) => {
 
 export const playbookExportProps = (playbook: Playbook) => {
     const href = `${apiUrl}/playbooks/${playbook.id}/export`;
-    const filename = playbook.title.split(/\s+/).join('_').toLowerCase() + '_export.json';
+    const filename = playbook.title.split(/\s+/).join('_').toLowerCase() + '_playbook.json';
     return [href, filename];
 };
