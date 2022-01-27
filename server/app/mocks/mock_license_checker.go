@@ -32,20 +32,6 @@ func (m *MockLicenseChecker) EXPECT() *MockLicenseCheckerMockRecorder {
 	return m.recorder
 }
 
-// PlaybookAllowed mocks base method
-func (m *MockLicenseChecker) PlaybookAllowed(arg0 bool) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PlaybookAllowed", arg0)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// PlaybookAllowed indicates an expected call of PlaybookAllowed
-func (mr *MockLicenseCheckerMockRecorder) PlaybookAllowed(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PlaybookAllowed", reflect.TypeOf((*MockLicenseChecker)(nil).PlaybookAllowed), arg0)
-}
-
 // RetrospectiveAllowed mocks base method
 func (m *MockLicenseChecker) RetrospectiveAllowed() bool {
 	m.ctrl.T.Helper()

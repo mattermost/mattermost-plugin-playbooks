@@ -13,7 +13,6 @@ import (
 var ErrNoPermissions = errors.New("does not have permissions")
 
 type LicenseChecker interface {
-	PlaybookAllowed(isPlaybookPublic bool) bool
 	RetrospectiveAllowed() bool
 }
 
