@@ -25,7 +25,18 @@ func TestGeneratePlaybookExport(t *testing.T) {
 				},
 			},
 		},
+		Metrics: []PlaybookMetricConfig{
+			{
+				ID:          "1",
+				PlaybookID:  "11",
+				Title:       "Title 1",
+				Description: "Description 1",
+				Type:        MetricTypeCurrency,
+				Target:      147,
+			},
+		},
 	}
+
 	output, err := GeneratePlaybookExport(pb)
 	require.NoError(t, err)
 
@@ -38,6 +49,14 @@ func TestGeneratePlaybookExport(t *testing.T) {
 
 	// Shouldn't copy the not specificed stuff
 	assert.Equal(t, result.CreateAt, int64(0))
+
+	// Shouldn't copy metrics ID and PlaybookID fields
+	assert.NotEqual(t, result.Metrics, pb.Metrics)
+	//After cleaning ID and PlaybookID, should be equal
+	pb.Metrics[0].ID = ""
+	pb.Metrics[0].PlaybookID = ""
+	assert.Equal(t, result.Metrics, pb.Metrics)
+
 }
 
 func definesExports(t *testing.T, thing interface{}) {

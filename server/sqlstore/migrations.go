@@ -1724,7 +1724,7 @@ var migrations = []Migration{
 					   Description VARCHAR(4096) NOT NULL,
 					   Type VARCHAR(32) NOT NULL,
 					   Target BIGINT NOT NULL,
-					   Sort TINYINT NOT NULL DEFAULT 0,
+					   Ordering TINYINT NOT NULL DEFAULT 0,
 					   DeleteAt BIGINT NOT NULL DEFAULT 0,
 					   INDEX IR_MetricConfig_PlaybookID (PlaybookID)
 					)
@@ -1757,7 +1757,7 @@ var migrations = []Migration{
 						Description TEXT NOT NULL,
 						Type TEXT NOT NULL,
 						Target BIGINT NOT NULL,
-						Sort SMALLINT NOT NULL DEFAULT 0,
+						Ordering SMALLINT NOT NULL DEFAULT 0,
 						DeleteAt BIGINT NOT NULL DEFAULT 0
 					)
 				`); err != nil {
