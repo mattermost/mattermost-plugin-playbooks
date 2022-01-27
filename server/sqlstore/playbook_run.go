@@ -185,12 +185,10 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 		From("IR_TimelineEvent as te")
 
 	metricsDataSelect := sqlStore.builder.
-		Select(
-			"MetricConfigID",
-			"Value",
-		).
-		From("IR_Metric").
-		OrderBy("MetricConfigID") // Entirely for consistency for the tests
+		Select("MetricConfigID", "Value").
+		From("IR_Metric AS m").
+		Join("IR_MetricConfig AS mc ON (mc.ID = m.MetricConfigID)").
+		Where("mc.DeleteAt = 0")
 
 	return &playbookRunStore{
 		pluginAPI:            pluginAPI,
@@ -658,7 +656,10 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 
 	var metricsData []app.RunMetricData
 
-	err = s.store.selectBuilder(tx, &metricsData, s.metricsDataSelect.Where(sq.Eq{"IncidentID": playbookRunID}))
+	err = s.store.selectBuilder(tx, &metricsData, s.metricsDataSelect.
+		Where(sq.Eq{"IncidentID": playbookRunID}).
+		OrderBy("MetricConfigID")) // Entirely for consistency for the tests)
+
 	if err != nil && err != sql.ErrNoRows {
 		return nil, errors.Wrapf(err, "failed to get metrics data for run with id `%s`", playbookRunID)
 	}

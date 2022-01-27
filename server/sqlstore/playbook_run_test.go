@@ -263,7 +263,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				ExpectedErr: nil,
 			},
 			{
-				Name:        "PlaybookRun with metrics, update metrics data twice",
+				Name:        "PlaybookRun with metrics, update metrics data twice. First one will test insert in the table, second will test update",
 				PlaybookRun: NewBuilder(t).WithPlaybookID(pbWithMetrics.ID).ToPlaybookRun(),
 				Update: func(old app.PlaybookRun) *app.PlaybookRun {
 					old.MetricsData = generateMetricData(pbWithMetrics)
@@ -306,6 +306,50 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				require.Equal(t, expected, actual)
 			})
 		}
+	}
+}
+
+func TestIfDeletedMetricsAreOmitted(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		_, store := setupSQLStore(t, db)
+
+		setupChannelsTable(t, db)
+		setupPostsTable(t, db)
+
+		//create playbook with metrics
+		playbookStore := setupPlaybookStore(t, db)
+		playbook := NewPBBuilder().
+			WithTitle("playbook").
+			WithMetrics([]string{"name3", "name1"}).
+			ToPlaybook()
+		id, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+		playbook, err = playbookStore.Get(id)
+		require.NoError(t, err)
+
+		// create run based on playbook
+		playbookRun := NewBuilder(t).WithPlaybookID(playbook.ID).ToPlaybookRun()
+		playbookRun, err = playbookRunStore.CreatePlaybookRun(playbookRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, playbookRun)
+
+		// store metrics values
+		playbookRun.MetricsData = generateMetricData(playbook)
+		err = playbookRunStore.UpdatePlaybookRun(playbookRun)
+		require.NoError(t, err)
+
+		// delete one metric config from playbook
+		playbook.Metrics = playbook.Metrics[1:]
+		err = playbookStore.Update(playbook)
+		require.NoError(t, err)
+
+		// should return single metrics
+		actual, err := playbookRunStore.GetPlaybookRun(playbookRun.ID)
+		require.NoError(t, err)
+		require.Equal(t, len(actual.MetricsData), 1)
+		require.Equal(t, actual.MetricsData[0].MetricConfigID, playbook.Metrics[0].ID)
 	}
 }
 
