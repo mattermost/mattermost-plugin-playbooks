@@ -33,7 +33,7 @@ const preprocessTemplates = (presetTemplates: PresetTemplate[]): PresetTemplate[
             ...pt.template,
             num_stages: pt.template?.checklists.length,
             num_actions:
-				1 + // Channel creation is hard-coded
+                1 + // Channel creation is hard-coded
                 (pt.template.message_on_join_enabled ? 1 : 0) +
                 (pt.template.signal_any_keywords_enabled ? 1 : 0) +
                 (pt.template.run_summary_template_enabled ? 1 : 0),
@@ -476,7 +476,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                             'Complete the onboarding template prior to your new staff member\'s start date',
                             mtrim`Managers play a large role in setting their new direct report up for success and making them feel welcome by setting clear expectations and preparing the team and internal stakeholders for how they can help new colleagues integrate and connect organizationally and culturally.
                                 * **Onboarding Objectives:** Clarify the areas and projects your new team member should focus on in their first 90 days. Use the _Overview of the Role_ that you completed when you opened the role.
-                                * **AOR clarity:** Identify AORs that are relevant for your new hire, and indicate any AORs that your new hire will [DRI](https://handbook.mattermost.com/company/about-mattermost/list-of-terms#dri) or act as backup DRI. As needed, clarify AOR transitions with internal stakholders ahead of your new hire's start date. See [AOR page](https://handbook.mattermost.com/operations/operations/areas-of-responsibility) Include the interview panel and their respective focus areas.
+                                * **AOR clarity:** Identify AORs that are relevant for your new hire, and indicate any AORs that your new hire will [DRI](https://handbook.mattermost.com/company/about-mattermost/list-of-terms#dri) or act as backup DRI. As needed, clarify AOR transitions with internal stakeholders ahead of your new hire's start date. See [AOR page](https://handbook.mattermost.com/operations/operations/areas-of-responsibility) Include the interview panel and their respective focus areas.
                                 * **Assign an Onboarding Peer:** The Onboarding Peer or peers should be an individual or group of people that can help answer questions about the team, department and Mattermost. In many ways, an Onboarding Peer may be an [end-boss](https://handbook.mattermost.com/company/about-mattermost/mindsets#mini-boss-end-boss) for specific AORs. Managers should ask permission of a potential Onboarding Peer prior to assignment.`,
                         ),
                     ],
@@ -496,7 +496,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                         ),
                         newChecklistItem(
                             'Review list of key internal partners',
-                            'Theser are individuals the new staff member will work with and who the new staff member should set up meetings with during their first month or two.',
+                            'These are individuals the new staff member will work with and who the new staff member should set up meetings with during their first month or two.',
                         ),
                         newChecklistItem(
                             'Add to Mattermost channels',
@@ -643,7 +643,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
                             'Identify existing functionality to add to target testing areas checklist',
                         ),
                         newChecklistItem(
-                            'Add relvant T0/E0/E10/E20 permutations',
+                            'Add relevant T0/E0/E10/E20 permutations',
                         ),
                         newChecklistItem(
                             'Assign owners',
