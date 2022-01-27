@@ -45,12 +45,23 @@ func generateChecklistExport(checklists []Checklist) []interface{} {
 	return exported
 }
 
+func generateMetricsExport(metrics []PlaybookMetricConfig) []interface{} {
+	exported := make([]interface{}, 0, len(metrics))
+	for _, checklist := range metrics {
+		exportList := getFieldsForExport(checklist)
+		exported = append(exported, exportList)
+	}
+
+	return exported
+}
+
 // GeneratePlaybookExport returns a playbook in export format.
 // Fields marked with the stuct tag "export" are included using the given string.
 func GeneratePlaybookExport(playbook Playbook) ([]byte, error) {
 	export := getFieldsForExport(playbook)
 	export["version"] = CurrentPlaybookExportVersion
 	export["checklists"] = generateChecklistExport(playbook.Checklists)
+	export["metrics"] = generateMetricsExport(playbook.Metrics)
 
 	result, err := json.MarshalIndent(export, "", "    ")
 	if err != nil {

@@ -91,6 +91,21 @@ func (mr *MockPlaybookServiceMockRecorder) Create(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockPlaybookService)(nil).Create), arg0, arg1)
 }
 
+// Duplicate mocks base method
+func (m *MockPlaybookService) Duplicate(arg0 app.Playbook, arg1 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Duplicate", arg0, arg1)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Duplicate indicates an expected call of Duplicate
+func (mr *MockPlaybookServiceMockRecorder) Duplicate(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Duplicate", reflect.TypeOf((*MockPlaybookService)(nil).Duplicate), arg0, arg1)
+}
+
 // Get mocks base method
 func (m *MockPlaybookService) Get(arg0 string) (app.Playbook, error) {
 	m.ctrl.T.Helper()

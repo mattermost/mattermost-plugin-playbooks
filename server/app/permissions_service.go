@@ -12,9 +12,6 @@ import (
 // ErrNoPermissions if the error is caused by the user not having permissions
 var ErrNoPermissions = errors.New("does not have permissions")
 
-// ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
-var ErrLicensedFeature = errors.New("not covered by current server license")
-
 type LicenseChecker interface {
 	PlaybookAllowed(isPlaybookPublic bool) bool
 	RetrospectiveAllowed() bool
@@ -25,7 +22,6 @@ type PermissionsService struct {
 	runService      PlaybookRunService
 	pluginAPI       *pluginapi.Client
 	configService   config.Service
-	licenseChecker  LicenseChecker
 }
 
 func NewPermissionsService(
@@ -33,14 +29,12 @@ func NewPermissionsService(
 	runService PlaybookRunService,
 	pluginAPI *pluginapi.Client,
 	configService config.Service,
-	licenseChecker LicenseChecker,
 ) *PermissionsService {
 	return &PermissionsService{
 		playbookService,
 		runService,
 		pluginAPI,
 		configService,
-		licenseChecker,
 	}
 }
 
@@ -104,10 +98,6 @@ func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
 }
 
 func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) error {
-	if !p.licenseChecker.PlaybookAllowed(p.PlaybookIsPublic(playbook)) {
-		return ErrLicensedFeature
-	}
-
 	// Check the user has permissions over all broadcast channels
 	for _, channelID := range playbook.BroadcastChannelIDs {
 		if !p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {

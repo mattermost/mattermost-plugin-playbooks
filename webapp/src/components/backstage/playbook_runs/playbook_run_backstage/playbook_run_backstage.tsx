@@ -35,7 +35,7 @@ import {
 } from 'src/client';
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
-import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useForceDocumentTitle, useRun} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
@@ -238,6 +238,8 @@ const PlaybookRunBackstage = () => {
     const match = useRouteMatch<MatchParams>();
     const history = useHistory();
     const currentUserID = useSelector(getCurrentUserId);
+    const currentRun = useRun(match.params.playbookRunId);
+
     const [following, setFollowing] = useState<string[]>([]);
     const [runLinkCopied, setRunLinkCopied] = useState(false);
 
@@ -250,15 +252,19 @@ const PlaybookRunBackstage = () => {
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
 
-        Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
-            setPlaybookRun(playbookRunResult);
-            setPlaybookRunMetadata(playbookRunMetadataResult);
-            setFetchingState(FetchingStateType.fetched);
-            setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
-        }).catch(() => {
-            setFetchingState(FetchingStateType.notFound);
-        });
-    }, [match.params.playbookRunId]);
+        if (currentRun) {
+            setPlaybookRun(currentRun);
+        } else {
+            Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
+                setPlaybookRun(playbookRunResult);
+                setPlaybookRunMetadata(playbookRunMetadataResult);
+                setFetchingState(FetchingStateType.fetched);
+                setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
+            }).catch(() => {
+                setFetchingState(FetchingStateType.notFound);
+            });
+        }
+    }, [match.params.playbookRunId, currentRun]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -275,6 +281,7 @@ const PlaybookRunBackstage = () => {
         if (!playbookRun) {
             return;
         }
+
         await clientRemoveTimelineEvent(playbookRun.id, id);
         setPlaybookRun({
             ...playbookRun,

@@ -271,6 +271,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		pluginAPI.On("AddUserToChannel", "channel_id", "user_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("CreateTeamMember", "team_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("AddChannelMember", "channel_id", "bot_user_id").Return(nil, nil)
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 		pluginAPI.On("UpdateChannelMemberRoles", "channel_id", "user_id", fmt.Sprintf("%s %s", model.ChannelAdminRoleId, model.ChannelUserRoleId)).Return(nil, nil)
 		configService.EXPECT().GetConfiguration().Return(&config.Configuration{BotUserID: "bot_user_id"}).AnyTimes()
 		store.EXPECT().UpdatePlaybookRun(gomock.Any()).Return(nil)
@@ -357,6 +358,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		pluginAPI.On("AddChannelMember", "channel_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Id: "channel_id", Name: "channel-name"}, nil)
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker)
 
@@ -1131,6 +1133,7 @@ func TestMultipleWebhooks(t *testing.T) {
 		pluginAPI.On("AddChannelMember", "channel_id", "bot_user_id").Return(nil, nil)
 		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "ad-1"}, nil)
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Id: "channel_id", Name: "channel-name"}, nil)
+		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker)
 

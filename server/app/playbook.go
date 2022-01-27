@@ -14,52 +14,53 @@ import (
 // the JSON name of the item in the export format. If the field should not be exported the value should be "-".
 // Fields should be exported if they are not server specific like InvitedUserIDs or are tracking metadata like CreateAt.
 type Playbook struct {
-	ID                                   string           `json:"id" export:"-"`
-	Title                                string           `json:"title" export:"title"`
-	Description                          string           `json:"description" export:"description"`
-	Public                               bool             `json:"public" export:"-"`
-	TeamID                               string           `json:"team_id" export:"-"`
-	CreatePublicPlaybookRun              bool             `json:"create_public_playbook_run" export:"-"`
-	CreateAt                             int64            `json:"create_at" export:"-"`
-	UpdateAt                             int64            `json:"update_at" export:"-"`
-	DeleteAt                             int64            `json:"delete_at" export:"-"`
-	NumStages                            int64            `json:"num_stages" export:"-"`
-	NumSteps                             int64            `json:"num_steps" export:"-"`
-	NumRuns                              int64            `json:"num_runs" export:"-"`
-	NumActions                           int64            `json:"num_actions" export:"-"`
-	LastRunAt                            int64            `json:"last_run_at" export:"-"`
-	Checklists                           []Checklist      `json:"checklists" export:"-"`
-	Members                              []PlaybookMember `json:"members" export:"-"`
-	ReminderMessageTemplate              string           `json:"reminder_message_template" export:"reminder_message_template"`
-	ReminderTimerDefaultSeconds          int64            `json:"reminder_timer_default_seconds" export:"reminder_timer_default_seconds"`
-	StatusUpdateEnabled                  bool             `json:"status_update_enabled" export:"status_update_enabled"`
-	InvitedUserIDs                       []string         `json:"invited_user_ids" export:"-"`
-	InvitedGroupIDs                      []string         `json:"invited_group_ids" export:"-"`
-	InviteUsersEnabled                   bool             `json:"invite_users_enabled" export:"-"`
-	DefaultOwnerID                       string           `json:"default_owner_id" export:"-"`
-	DefaultOwnerEnabled                  bool             `json:"default_owner_enabled" export:"-"`
-	BroadcastChannelIDs                  []string         `json:"broadcast_channel_ids" export:"-"`
-	BroadcastEnabled                     bool             `json:"broadcast_enabled" export:"-"`
-	WebhookOnCreationURLs                []string         `json:"webhook_on_creation_urls" export:"-"`
-	WebhookOnCreationEnabled             bool             `json:"webhook_on_creation_enabled" export:"-"`
-	MessageOnJoin                        string           `json:"message_on_join" export:"message_on_join"`
-	MessageOnJoinEnabled                 bool             `json:"message_on_join_enabled" export:"message_on_join_enabled"`
-	RetrospectiveReminderIntervalSeconds int64            `json:"retrospective_reminder_interval_seconds" export:"retrospective_reminder_interval_seconds"`
-	RetrospectiveTemplate                string           `json:"retrospective_template" export:"retrospective_template"`
-	RetrospectiveEnabled                 bool             `json:"retrospective_enabled" export:"retrospective_enabled"`
-	WebhookOnStatusUpdateURLs            []string         `json:"webhook_on_status_update_urls" export:"-"`
-	WebhookOnStatusUpdateEnabled         bool             `json:"webhook_on_status_update_enabled" export:"-"`
-	SignalAnyKeywords                    []string         `json:"signal_any_keywords" export:"signal_any_keywords"`
-	SignalAnyKeywordsEnabled             bool             `json:"signal_any_keywords_enabled" export:"signal_any_keywords_enabled"`
-	CategorizeChannelEnabled             bool             `json:"categorize_channel_enabled" export:"categorize_channel_enabled"`
-	CategoryName                         string           `json:"category_name" export:"category_name"`
-	RunSummaryTemplateEnabled            bool             `json:"run_summary_template_enabled" export:"run_summary_template_enabled"`
-	RunSummaryTemplate                   string           `json:"run_summary_template" export:"run_summary_template"`
-	ChannelNameTemplate                  string           `json:"channel_name_template" export:"channel_name_template"`
-	DefaultPlaybookAdminRole             string           `json:"default_playbook_admin_role" export:"-"`
-	DefaultPlaybookMemberRole            string           `json:"default_playbook_member_role" export:"-"`
-	DefaultRunAdminRole                  string           `json:"default_run_admin_role" export:"-"`
-	DefaultRunMemberRole                 string           `json:"default_run_member_role" export:"-"`
+	ID                                   string                 `json:"id" export:"-"`
+	Title                                string                 `json:"title" export:"title"`
+	Description                          string                 `json:"description" export:"description"`
+	Public                               bool                   `json:"public" export:"-"`
+	TeamID                               string                 `json:"team_id" export:"-"`
+	CreatePublicPlaybookRun              bool                   `json:"create_public_playbook_run" export:"-"`
+	CreateAt                             int64                  `json:"create_at" export:"-"`
+	UpdateAt                             int64                  `json:"update_at" export:"-"`
+	DeleteAt                             int64                  `json:"delete_at" export:"-"`
+	NumStages                            int64                  `json:"num_stages" export:"-"`
+	NumSteps                             int64                  `json:"num_steps" export:"-"`
+	NumRuns                              int64                  `json:"num_runs" export:"-"`
+	NumActions                           int64                  `json:"num_actions" export:"-"`
+	LastRunAt                            int64                  `json:"last_run_at" export:"-"`
+	Checklists                           []Checklist            `json:"checklists" export:"-"`
+	Members                              []PlaybookMember       `json:"members" export:"-"`
+	ReminderMessageTemplate              string                 `json:"reminder_message_template" export:"reminder_message_template"`
+	ReminderTimerDefaultSeconds          int64                  `json:"reminder_timer_default_seconds" export:"reminder_timer_default_seconds"`
+	StatusUpdateEnabled                  bool                   `json:"status_update_enabled" export:"status_update_enabled"`
+	InvitedUserIDs                       []string               `json:"invited_user_ids" export:"-"`
+	InvitedGroupIDs                      []string               `json:"invited_group_ids" export:"-"`
+	InviteUsersEnabled                   bool                   `json:"invite_users_enabled" export:"-"`
+	DefaultOwnerID                       string                 `json:"default_owner_id" export:"-"`
+	DefaultOwnerEnabled                  bool                   `json:"default_owner_enabled" export:"-"`
+	BroadcastChannelIDs                  []string               `json:"broadcast_channel_ids" export:"-"`
+	BroadcastEnabled                     bool                   `json:"broadcast_enabled" export:"-"`
+	WebhookOnCreationURLs                []string               `json:"webhook_on_creation_urls" export:"-"`
+	WebhookOnCreationEnabled             bool                   `json:"webhook_on_creation_enabled" export:"-"`
+	MessageOnJoin                        string                 `json:"message_on_join" export:"message_on_join"`
+	MessageOnJoinEnabled                 bool                   `json:"message_on_join_enabled" export:"message_on_join_enabled"`
+	RetrospectiveReminderIntervalSeconds int64                  `json:"retrospective_reminder_interval_seconds" export:"retrospective_reminder_interval_seconds"`
+	RetrospectiveTemplate                string                 `json:"retrospective_template" export:"retrospective_template"`
+	RetrospectiveEnabled                 bool                   `json:"retrospective_enabled" export:"retrospective_enabled"`
+	WebhookOnStatusUpdateURLs            []string               `json:"webhook_on_status_update_urls" export:"-"`
+	WebhookOnStatusUpdateEnabled         bool                   `json:"webhook_on_status_update_enabled" export:"-"`
+	SignalAnyKeywords                    []string               `json:"signal_any_keywords" export:"signal_any_keywords"`
+	SignalAnyKeywordsEnabled             bool                   `json:"signal_any_keywords_enabled" export:"signal_any_keywords_enabled"`
+	CategorizeChannelEnabled             bool                   `json:"categorize_channel_enabled" export:"categorize_channel_enabled"`
+	CategoryName                         string                 `json:"category_name" export:"category_name"`
+	RunSummaryTemplateEnabled            bool                   `json:"run_summary_template_enabled" export:"run_summary_template_enabled"`
+	RunSummaryTemplate                   string                 `json:"run_summary_template" export:"run_summary_template"`
+	ChannelNameTemplate                  string                 `json:"channel_name_template" export:"channel_name_template"`
+	DefaultPlaybookAdminRole             string                 `json:"default_playbook_admin_role" export:"-"`
+	DefaultPlaybookMemberRole            string                 `json:"default_playbook_member_role" export:"-"`
+	DefaultRunAdminRole                  string                 `json:"default_run_admin_role" export:"-"`
+	DefaultRunMemberRole                 string                 `json:"default_run_member_role" export:"-"`
+	Metrics                              []PlaybookMetricConfig `json:"metrics" export:"metrics"`
 }
 
 const (
@@ -67,10 +68,38 @@ const (
 	PlaybookRoleAdmin  = "playbook_admin"
 )
 
+const (
+	MetricTypeDuration = "metric_duration"
+	MetricTypeCurrency = "metric_currency"
+	MetricTypeInteger  = "metric_integer"
+)
+
+const MaxMetricsPerPlaybook = 4
+
 type PlaybookMember struct {
 	UserID      string   `json:"user_id"`
 	Roles       []string `json:"roles"`
 	SchemeRoles []string `json:"scheme_roles"`
+}
+
+type PlaybookMetricConfig struct {
+	ID          string `json:"id" export:"-"`
+	PlaybookID  string `json:"playbook_id" export:"-"`
+	Title       string `json:"title" export:"title"`
+	Description string `json:"description" export:"description"`
+	Type        string `json:"type" export:"type"`
+	Target      int64  `json:"target" export:"target"`
+}
+
+func (pm PlaybookMember) Clone() PlaybookMember {
+	newPlaybookMember := pm
+	if len(pm.Roles) != 0 {
+		newPlaybookMember.Roles = append([]string(nil), pm.Roles...)
+	}
+	if len(pm.SchemeRoles) != 0 {
+		newPlaybookMember.SchemeRoles = append([]string(nil), pm.SchemeRoles...)
+	}
+	return newPlaybookMember
 }
 
 func (p Playbook) Clone() Playbook {
@@ -80,7 +109,12 @@ func (p Playbook) Clone() Playbook {
 		newChecklists = append(newChecklists, c.Clone())
 	}
 	newPlaybook.Checklists = newChecklists
-	newPlaybook.Members = append([]PlaybookMember(nil), p.Members...)
+	newPlaybook.Metrics = append([]PlaybookMetricConfig(nil), p.Metrics...)
+	var newMembers []PlaybookMember
+	for _, m := range p.Members {
+		newMembers = append(newMembers, m.Clone())
+	}
+	newPlaybook.Members = newMembers
 	if len(p.InvitedUserIDs) != 0 {
 		newPlaybook.InvitedUserIDs = append([]string(nil), p.InvitedUserIDs...)
 	}
@@ -117,6 +151,9 @@ func (p Playbook) MarshalJSON() ([]byte, error) {
 	}
 	if old.Members == nil {
 		old.Members = []PlaybookMember{}
+	}
+	if old.Metrics == nil {
+		old.Metrics = []PlaybookMetricConfig{}
 	}
 	if old.InvitedUserIDs == nil {
 		old.InvitedUserIDs = []string{}
@@ -262,6 +299,9 @@ type PlaybookService interface {
 
 	// IsAutoFollowing returns weather user is auto-following a playbook
 	IsAutoFollowing(playbookID, userID string) (bool, error)
+
+	// Duplicate duplicates a playbook
+	Duplicate(playbook Playbook, userID string) (string, error)
 }
 
 // PlaybookStore is an interface for storing playbooks

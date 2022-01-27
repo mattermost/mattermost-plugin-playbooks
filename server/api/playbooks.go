@@ -56,6 +56,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("", handler.archivePlaybook).Methods(http.MethodDelete)
 	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("/export", handler.exportPlaybook).Methods(http.MethodGet)
+	playbookRouter.HandleFunc("/duplicate", handler.duplicatePlaybook).Methods(http.MethodPost)
 
 	autoFollowsRouter := playbookRouter.PathPrefix("/autofollows").Subrouter()
 	autoFollowRouter := autoFollowsRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
@@ -176,6 +177,11 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if err := h.validateMetrics(playbook); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid metrics configs", err)
+		return
+	}
+
 	id, err := h.playbookService.Create(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
@@ -224,6 +230,11 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 	oldPlaybook, err := h.playbookService.Get(playbook.ID)
 	if err != nil {
 		h.HandleError(w, err)
+		return
+	}
+
+	if err := h.validateMetrics(playbook); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid metrics configs", err)
 		return
 	}
 
@@ -583,6 +594,39 @@ func (h *PlaybookHandler) exportPlaybook(w http.ResponseWriter, r *http.Request)
 	_, _ = w.Write(export)
 }
 
+func (h *PlaybookHandler) duplicatePlaybook(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, h.permissions.PlaybookViewWithPlaybook(userID, playbook)) {
+		return
+	}
+
+	if !h.PermissionsCheck(w, h.permissions.PlaybookCreate(userID, playbook)) {
+		return
+	}
+
+	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	result := struct {
+		ID string `json:"id"`
+	}{
+		ID: newPlaybookID,
+	}
+	ReturnJSON(w, &result, http.StatusCreated)
+}
+
 func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	teamID := params.Get("team_id")
@@ -641,4 +685,20 @@ func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request)
 	w.Header().Add("Location", makeAPIURL(h.pluginAPI, "playbooks/%s", id))
 
 	ReturnJSON(w, &result, http.StatusCreated)
+}
+
+func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
+	if len(pb.Metrics) > app.MaxMetricsPerPlaybook {
+		return errors.Errorf(fmt.Sprintf("playbook cannot have more than %d key metrics", app.MaxMetricsPerPlaybook))
+	}
+
+	//check if titles are unique
+	titles := make(map[string]bool)
+	for _, m := range pb.Metrics {
+		if titles[m.Title] {
+			return errors.Errorf("metrics names must be unique")
+		}
+		titles[m.Title] = true
+	}
+	return nil
 }
