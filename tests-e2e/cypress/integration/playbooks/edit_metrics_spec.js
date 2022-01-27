@@ -47,7 +47,7 @@ describe('playbooks > edit_metrics', () => {
             cy.viewport('macbook-16');
         });
 
-        describe('adding metrics pt1', () => {
+        describe('adding and editing metrics', () => {
             it('can add 4, but not 5 metrics; can save and re-edit with metrics saved', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
@@ -110,7 +110,7 @@ describe('playbooks > edit_metrics', () => {
                 cy.findByTestId('save_playbook').click();
 
                 // * Verify we're back in the main page
-                cy.getStyledComponent('Title').contains('Checklists');
+                cy.get('#playbooks-playbookPreview-checklists').should('exist');
 
                 // # Go back to editing
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
@@ -123,10 +123,9 @@ describe('playbooks > edit_metrics', () => {
                 verifyViewMetric(1, 'test dollars', '2 per run', 'a new description');
                 verifyViewMetric(2, 'test integer', '7777777 per run', 'test descr 3');
                 verifyViewMetric(3, 'test duration 2!!!', '00:00:02 per run', 'test description 4');
-            });
 
-            it('verifies when clicking "Add", for duration type', () => {
-                // Continuing from previous state
+                // # Now test: verifies when clicking "Add", for duration type
+                // # (using the previous state)
 
                 // # Edit the first metric
                 cy.findAllByTestId('edit-metric').eq(0).click();
@@ -162,10 +161,9 @@ describe('playbooks > edit_metrics', () => {
 
                 // * Verify we have four valid metrics and are editing none.
                 verifyViewsAndEdits(4, 0);
-            });
 
-            it('on clicking edit, closes & saves current editing metric, and switches', () => {
-                // Continuing from previous state
+                // # Now test: on clicking edit, closes & saves current editing metric, and switches
+                // # (using the previous state)
 
                 // # Edit the second metric
                 cy.findAllByTestId('edit-metric').eq(1).click();
@@ -199,7 +197,7 @@ describe('playbooks > edit_metrics', () => {
             });
         });
 
-        describe('adding and editing metrics pt2', () => {
+        describe('adding and editing metrics (new playbook)', () => {
             it('verifies when clicking "Add Metric", for Currency type, and switches to new edit', () => {
                 // # Visit the selected playbook
                 cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
@@ -260,9 +258,10 @@ describe('playbooks > edit_metrics', () => {
 
                 // * Verify we have two valid metrics and are editing next one.
                 verifyViewsAndEdits(2, 1);
-            });
 
-            it('verifies when clicking edit button, for Currency type, and switches to next edit', () => {
+                // # Now test: verifies when clicking edit button, for Currency type, and switches to next edit
+                // # (using the previous state)
+
                 // # Don't fill in the metric's details
                 cy.get('input[type=text]').eq(1).clear();
 
