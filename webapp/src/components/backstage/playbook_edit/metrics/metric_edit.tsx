@@ -31,7 +31,7 @@ const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props)
     const errorTitleDuplicate = formatMessage({defaultMessage: 'A metric with the same name already exists. Please add a unique name for each metric.'});
     const errorTitleMissing = formatMessage({defaultMessage: 'Please add a title for your metric.'});
     const errorTargetCurrencyInteger = formatMessage({defaultMessage: 'Please enter a number, or leave the target blank.'});
-    const errorTargetDuration = formatMessage({defaultMessage: 'Please enter a duration in the format: dd:mm:ss (e.g., 12:00:00), or leave the target blank.'});
+    const errorTargetDuration = formatMessage({defaultMessage: 'Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.'});
 
     const verifyAndSave = (): boolean => {
         // Is the title unique?

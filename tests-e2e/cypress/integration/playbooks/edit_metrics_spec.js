@@ -147,13 +147,13 @@ describe('playbooks > edit_metrics', () => {
                 cy.get('input[type=text]').eq(2).clear().type('a');
                 cy.findByRole('button', {name: 'Add'}).click();
                 cy.getStyledComponent('ErrorText')
-                    .contains('Please enter a duration in the format: dd:mm:ss (e.g., 12:00:00), or leave the target blank.');
+                    .contains('Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.');
 
                 // * A duration target needs to be in the correct format (mm:dd:ss)
                 cy.get('input[type=text]').eq(2).clear().type('0:123:0');
                 cy.findByRole('button', {name: 'Add'}).click();
                 cy.getStyledComponent('ErrorText')
-                    .contains('Please enter a duration in the format: dd:mm:ss (e.g., 12:00:00), or leave the target blank.');
+                    .contains('Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.');
 
                 // # A duration can have 1 or 2 numbers in each position
                 cy.get('input[type=text]').eq(2).clear().type('2:12:1');
