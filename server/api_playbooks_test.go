@@ -817,3 +817,37 @@ func TestPlaybooksDuplicate(t *testing.T) {
 		assert.Equal(t, e.BasicPlaybook.TeamID, duplicatedPlaybook.TeamID)
 	})
 }
+
+func TestPlaybookStats(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+	e.CreateBasicPlaybook()
+
+	t.Run("unlicensed server", func(t *testing.T) {
+		// Make sure there is no license
+		e.RemoveLicence()
+
+		// Verify that retrieving stats is not allowed
+		_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("E10 server", func(t *testing.T) {
+		// Set an E10 license
+		e.SetE10Licence()
+
+		// Verify that ertrieving stats is not allowed
+		_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("E20 server", func(t *testing.T) {
+		// Set an E20 license
+		e.SetE20Licence()
+
+		// Verify that retrieving stats is allowed
+		_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+	})
+}

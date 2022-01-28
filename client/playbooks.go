@@ -205,3 +205,20 @@ func (s *PlaybooksService) Import(ctx context.Context, toImport []byte, team str
 
 	return result.ID, nil
 }
+
+func (s *PlaybooksService) Stats(ctx context.Context, playbookID string) (*PlaybookStats, error) {
+	playbookStatsURL := fmt.Sprintf("stats/playbook?playbook_id=%s", playbookID)
+	req, err := s.client.newRequest(http.MethodGet, playbookStatsURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	stats := new(PlaybookStats)
+	resp, err := s.client.do(ctx, req, stats)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return stats, nil
+}
