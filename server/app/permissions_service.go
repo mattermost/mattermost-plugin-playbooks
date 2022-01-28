@@ -15,6 +15,7 @@ var ErrNoPermissions = errors.New("does not have permissions")
 type LicenseChecker interface {
 	RetrospectiveAllowed() bool
 	TimelineAllowed() bool
+	StatsAllowed() bool
 }
 
 type PermissionsService struct {

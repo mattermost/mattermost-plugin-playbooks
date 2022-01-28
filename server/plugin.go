@@ -196,12 +196,13 @@ func (p *Plugin) OnActivate() error {
 		p.playbookRunService,
 		p.playbookService,
 		p.permissions,
+		p.licenseChecker,
 		pluginAPIClient,
 		p.bot,
 		p.bot,
 		p.config,
 	)
-	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService, p.permissions)
+	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService, p.permissions, p.licenseChecker)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config, p.playbookRunService, p.userInfoStore)
 	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.permissions)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
