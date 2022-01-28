@@ -45,3 +45,31 @@ func (mr *MockLicenseCheckerMockRecorder) RetrospectiveAllowed() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrospectiveAllowed", reflect.TypeOf((*MockLicenseChecker)(nil).RetrospectiveAllowed))
 }
+
+// StatsAllowed mocks base method
+func (m *MockLicenseChecker) StatsAllowed() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StatsAllowed")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// StatsAllowed indicates an expected call of StatsAllowed
+func (mr *MockLicenseCheckerMockRecorder) StatsAllowed() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StatsAllowed", reflect.TypeOf((*MockLicenseChecker)(nil).StatsAllowed))
+}
+
+// TimelineAllowed mocks base method
+func (m *MockLicenseChecker) TimelineAllowed() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TimelineAllowed")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// TimelineAllowed indicates an expected call of TimelineAllowed
+func (mr *MockLicenseCheckerMockRecorder) TimelineAllowed() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TimelineAllowed", reflect.TypeOf((*MockLicenseChecker)(nil).TimelineAllowed))
+}
