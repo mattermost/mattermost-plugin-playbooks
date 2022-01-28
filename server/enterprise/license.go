@@ -26,3 +26,8 @@ func (e *LicenseChecker) isAtLeastE10Licensed() bool {
 func (e *LicenseChecker) RetrospectiveAllowed() bool {
 	return e.isAtLeastE10Licensed()
 }
+
+// TimelineAllowed returns true if the timeline feature is allowed with the current license.
+func (e *LicenseChecker) TimelineAllowed() bool {
+	return e.isAtLeastE10Licensed()
+}

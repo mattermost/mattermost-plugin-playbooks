@@ -28,6 +28,7 @@ type PlaybookRunHandler struct {
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
 	permissions        *app.PermissionsService
+	licenseChecker     app.LicenseChecker
 	pluginAPI          *pluginapi.Client
 	poster             bot.Poster
 	log                bot.Logger
@@ -39,6 +40,7 @@ func NewPlaybookRunHandler(
 	playbookRunService app.PlaybookRunService,
 	playbookService app.PlaybookService,
 	permissions *app.PermissionsService,
+	licenseChecker app.LicenseChecker,
 	api *pluginapi.Client,
 	poster bot.Poster,
 	log bot.Logger,
@@ -53,6 +55,7 @@ func NewPlaybookRunHandler(
 		log:                log,
 		config:             configService,
 		permissions:        permissions,
+		licenseChecker:     licenseChecker,
 	}
 
 	playbookRunsRouter := router.PathPrefix("/runs").Subrouter()
@@ -314,6 +317,11 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 // addToTimelineDialog handles the interactive dialog submission when a user clicks the
 // corresponding post action.
 func (h *PlaybookRunHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Request) {
+	if !h.licenseChecker.TimelineAllowed() {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "timeline feature is not covered by current server license", nil)
+		return
+	}
+
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var request *model.SubmitDialogRequest
