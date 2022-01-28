@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {ReactNode} from 'react';
 import styled from 'styled-components';
 import Icon from '@mdi/react';
 import {mdiRocketLaunchOutline, mdiHandshakeOutline, mdiCodeBraces} from '@mdi/js';
@@ -18,10 +18,15 @@ import {displayPlaybookCreateModal} from 'src/actions';
 import {telemetryEventForTemplate} from 'src/client';
 
 import {StyledSelect} from './styles';
+import TemplateItem from './template_item';
 
 export interface PresetTemplate {
     title: string;
-    icon: JSX.Element;
+    label?: string;
+    description?: string;
+    icon: ReactNode;
+
+    color?: string;
     template: DraftPlaybookWithChecklist;
 }
 
@@ -461,55 +466,10 @@ export const TemplateDropdown = (props: TemplateDropdownProps) => {
     );
 };
 
-const TemplateItemContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    min-width: 198px;
-`;
-
-interface TemplateItemProps {
-    title: string;
-    children: JSX.Element[] | JSX.Element;
-    onClick?: () => void;
-}
-
-const IconContainer = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--center-channel-bg);
-    color: var(--button-bg);
-    height: 156px;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    box-sizing: border-box;
-    border-radius: 8px;
-`;
-
-const TemplateTitle = styled.div`
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 20px;
-    color: var(--center-channel-color);
-    padding: 20px 0 0 0;
-    text-align: center;
-`;
-
-const TemplateItem = (props: TemplateItemProps) => {
-    return (
-        <TemplateItemContainer onClick={props.onClick}>
-            <IconContainer>{props.children}</IconContainer>
-            <TemplateTitle>{props.title}</TemplateTitle>
-        </TemplateItemContainer>
-    );
-};
-
 const SelectorGrid = styled.div`
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
-	grid-auto-rows: 300px;
+	grid-auto-rows: 320px;
 	grid-gap: 2rem;
 
     overflow-y: auto;
@@ -524,14 +484,17 @@ const TemplateSelector = ({templates = PresetTemplates}: Props) => {
             {templates.map((template: PresetTemplate) => (
                 <TemplateItem
                     key={template.title}
+                    label={template.label}
                     title={template.title}
+                    description={template.description ?? ''}
+                    color={template.color}
+                    icon={template.icon}
+                    author={'Mattermost'}
                     onClick={() => {
                         telemetryEventForTemplate(template.title, 'click_template_icon');
                         dispatch(displayPlaybookCreateModal({startingTemplate: template.title}));
                     }}
-                >
-                    {template.icon}
-                </TemplateItem>
+                />
             ))}
 
         </SelectorGrid>
