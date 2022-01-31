@@ -23,7 +23,7 @@ import {
     renderView, RHSContainer, RHSContent,
 } from 'src/components/rhs/rhs_shared';
 import {setRHSViewingPlaybookRun, startPlaybookRun} from 'src/actions';
-import {navigateToUrl, navigateToPluginUrl} from 'src/browser_routing';
+import {navigateToUrl, navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
 import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {myActivePlaybookRunsList} from 'src/selectors';
 import {HamburgerButton} from 'src/components/assets/icons/three_dots_icon';
@@ -85,10 +85,6 @@ const RHSListView = () => {
         navigateToUrl(`/${currentTeam.name}/channels/${channelId}`);
     };
 
-    const viewBackstagePlaybookRunList = () => {
-        navigateToPluginUrl('runs');
-    };
-
     if (playbookRunList.length === 0) {
         return <RHSWelcomeView/>;
     }
@@ -132,7 +128,7 @@ const RHSListView = () => {
 
                     <Footer>
                         {formatMessage({defaultMessage: '<Link>Click here</Link> to see all runs in the team.'}, {
-                            Link: (chunks) => <a onClick={viewBackstagePlaybookRunList}>{chunks}</a>,
+                            Link: (chunks) => <a href={pluginUrl('/runs')}>{chunks}</a>,
                         })}
                     </Footer>
                 </Scrollbars>
