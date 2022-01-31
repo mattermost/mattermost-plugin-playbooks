@@ -51,7 +51,6 @@ const Metrics = ({
         }
 
         // We're editing. Try to close it, and if successful add the new metric.
-        // If we're editing a brand new metric, we need to add next metric at +1 to length
         setNextTask({type: TaskType.add, addType});
         setSaveMetricToggle((prevState) => !prevState);
     };
