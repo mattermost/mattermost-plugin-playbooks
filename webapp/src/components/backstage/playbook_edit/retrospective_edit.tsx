@@ -15,6 +15,7 @@ import {
 import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playbook';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 import Metrics from 'src/components/backstage/playbook_edit/metrics/metrics';
+import {EditingMetric} from 'src/components/backstage/playbook_edit/playbook_edit';
 
 const retrospectiveReminderOptions = [
     {value: 0, label: 'Once'},
@@ -29,6 +30,8 @@ interface Props {
     retrospectiveAccess: boolean;
     setPlaybook: React.Dispatch<React.SetStateAction<DraftPlaybookWithChecklist | PlaybookWithChecklist>>;
     setChangesMade: (b: boolean) => void;
+    curEditingMetric: EditingMetric | null;
+    setCurEditingMetric: React.Dispatch<React.SetStateAction<EditingMetric | null>>;
 }
 
 const RetrospectiveEdit = ({
@@ -36,6 +39,8 @@ const RetrospectiveEdit = ({
     retrospectiveAccess,
     setPlaybook,
     setChangesMade,
+    curEditingMetric,
+    setCurEditingMetric,
 }: Props) => {
     const {formatMessage} = useIntl();
 
@@ -96,6 +101,8 @@ const RetrospectiveEdit = ({
                     playbook={playbook}
                     setPlaybook={setPlaybook}
                     setChangesMade={setChangesMade}
+                    curEditingMetric={curEditingMetric}
+                    setCurEditingMetric={setCurEditingMetric}
                 />
             </SidebarBlock>
             <SidebarBlock>

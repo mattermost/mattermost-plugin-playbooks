@@ -11,6 +11,7 @@ import {DraftPlaybookWithChecklist, Metric, MetricType, newMetric, PlaybookWithC
 import MetricEdit from 'src/components/backstage/playbook_edit/metrics/metric_edit';
 import MetricView from 'src/components/backstage/playbook_edit/metrics/metric_view';
 import {DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
+import {EditingMetric} from 'src/components/backstage/playbook_edit/playbook_edit';
 
 enum TaskType {
     add,
@@ -20,99 +21,124 @@ enum TaskType {
 interface Task {
     type: TaskType;
     addType?: MetricType;
-    editIndex?: number;
+    index?: number;
 }
 
 interface Props {
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
     setPlaybook: React.Dispatch<React.SetStateAction<DraftPlaybookWithChecklist | PlaybookWithChecklist>>;
     setChangesMade: (b: boolean) => void;
+    curEditingMetric: EditingMetric | null;
+    setCurEditingMetric: React.Dispatch<React.SetStateAction<EditingMetric | null>>;
 }
 
-const Metrics = ({playbook, setPlaybook, setChangesMade}: Props) => {
+const Metrics = ({
+    playbook,
+    setPlaybook,
+    setChangesMade,
+    curEditingMetric,
+    setCurEditingMetric,
+}: Props) => {
     const {formatMessage} = useIntl();
-    const [curEditingIdx, setCurEditingIdx] = useState(-1);
     const [saveMetricToggle, setSaveMetricToggle] = useState(false);
     const [nextTask, setNextTask] = useState<Task | null>(null);
 
     const requestAddMetric = (addType: MetricType) => {
         // Only add a new metric if we aren't currently editing.
-        if (curEditingIdx === -1) {
-            addMetric(addType);
+        if (!curEditingMetric) {
+            addMetric(addType, playbook.metrics.length);
             return;
         }
 
         // We're editing. Try to close it, and if successful add the new metric.
+        // If we're editing a brand new metric, we need to add next metric at +1 to length
         setNextTask({type: TaskType.add, addType});
         setSaveMetricToggle((prevState) => !prevState);
     };
 
-    const requestEditMetric = (idx: number) => {
+    const requestEditMetric = (index: number) => {
         // Edit a metric immediately if we aren't currently editing.
-        if (curEditingIdx === -1) {
-            setCurEditingIdx(idx);
+        if (!curEditingMetric) {
+            setCurEditingMetric({
+                index,
+                metric: {...playbook.metrics[index]},
+            });
             return;
         }
 
         // We're editing. Try to close it, and if successful edit the metric.
-        setNextTask({type: TaskType.edit, editIndex: idx});
+        setNextTask({type: TaskType.edit, index});
         setSaveMetricToggle((prevState) => !prevState);
     };
 
-    const addMetric = (metricType?: MetricType) => {
-        const addType = metricType || nextTask?.addType;
+    const addMetric = (metricType: MetricType, index: number) => {
+        setCurEditingMetric({
+            index,
+            metric: newMetric(metricType),
+        });
 
-        if (!addType) {
-            return;
-        }
-
-        const newIdx = playbook.metrics.length;
-        setPlaybook((pb) => ({
-            ...pb,
-            metrics: [...pb.metrics, newMetric(addType)],
-        }));
         setChangesMade(true);
-        setCurEditingIdx(newIdx);
     };
 
-    const saveMetric = (metric: Metric, idx: number) => {
-        setPlaybook((pb) => {
-            const metrics = [...pb.metrics];
-            metrics.splice(idx, 1, metric);
+    const saveMetric = (target: number) => {
+        let length = playbook.metrics.length;
 
-            return {
-                ...pb,
-                metrics,
-            };
-        });
-        setChangesMade(true);
-        setCurEditingIdx(-1);
+        if (curEditingMetric) {
+            const metric = {...curEditingMetric.metric, target};
+            setPlaybook((pb) => {
+                const metrics = [...pb.metrics];
+                metrics.splice(curEditingMetric.index, 1, metric);
+                length = metrics.length;
+
+                return {
+                    ...pb,
+                    metrics,
+                };
+            });
+            setChangesMade(true);
+        }
 
         // Do we have a requested task ready to do next?
         if (nextTask?.type === TaskType.add) {
-            setNextTask(null);
-            addMetric();
+            // Typescript needs defaults (even though they will be present)
+            addMetric(nextTask?.addType || MetricType.Duration, length);
         } else if (nextTask?.type === TaskType.edit) {
-            setNextTask(null);
-
             // The following is because if editIndex === 0, 0 is falsey
             // eslint-disable-next-line no-undefined
-            const index = nextTask.editIndex === undefined ? -1 : nextTask.editIndex;
-            setCurEditingIdx(index);
+            const index = nextTask.index === undefined ? -1 : nextTask.index;
+            setCurEditingMetric({index, metric: playbook.metrics[index]});
+        } else {
+            setCurEditingMetric(null);
         }
+
+        setNextTask(null);
     };
+
+    // If we're editing a metric, we need to add (or replace) the curEditing metric into the metrics array
+    const metrics = [...playbook.metrics];
+    if (curEditingMetric) {
+        metrics.splice(curEditingMetric.index, 1, curEditingMetric.metric);
+    }
 
     return (
         <div>
             {
-                playbook.metrics.map((metric, idx) => {
-                    if (idx === curEditingIdx) {
+                metrics.map((metric, idx) => {
+                    if (idx === curEditingMetric?.index) {
                         return (
                             <MetricEdit
                                 key={idx}
-                                metric={metric}
+                                metric={curEditingMetric.metric}
+                                setMetric={(setState) => setCurEditingMetric((prevState) => {
+                                    if (prevState) {
+                                        return {index: prevState.index, metric: setState(prevState.metric)};
+                                    }
+
+                                    // This can't happen
+                                    return {index: -1, metric: {} as Metric};
+                                })}
                                 otherTitles={playbook.metrics.flatMap((m, i) => (i === idx ? [] : m.title))}
-                                onAdd={(m) => saveMetric(m, idx)}
+                                onAdd={saveMetric}
                                 saveToggle={saveMetricToggle}
                                 saveFailed={() => setNextTask(null)}
                             />
@@ -135,7 +161,7 @@ const Metrics = ({playbook, setPlaybook, setChangesMade}: Props) => {
                         {formatMessage({defaultMessage: 'Add Metric'})}
                     </>
                 }
-                disabled={playbook.metrics.length >= 4}
+                disabled={metrics.length >= 4}
                 topPx={-170}
                 leftPx={20}
             >

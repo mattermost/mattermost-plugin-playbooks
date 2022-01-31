@@ -12,18 +12,20 @@ import {VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
 import {DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {stringToTarget, targetToString} from 'src/components/backstage/playbook_edit/metrics/shared';
 
+type SetState = (prevState: Metric) => Metric;
+
 interface Props {
     metric: Metric;
+    setMetric: (setState: SetState) => void;
     otherTitles: string[];
-    onAdd: (metric: Metric) => void;
+    onAdd: (target: number) => void;
     saveToggle: boolean;
     saveFailed: () => void;
 }
 
-const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props) => {
+const MetricEdit = ({metric, setMetric, otherTitles, onAdd, saveToggle, saveFailed}: Props) => {
     const {formatMessage} = useIntl();
-    const [curState, setCurState] = useState(metric);
-    const [curTargetString, setCurTargetString] = useState(targetToString(metric.target, metric.type));
+    const [curTargetString, setCurTargetString] = useState(() => targetToString(metric.target, metric.type));
     const [curSaveToggle, setCurSaveToggle] = useState(saveToggle);
     const [titleError, setTitleError] = useState('');
     const [targetError, setTargetError] = useState('');
@@ -35,13 +37,13 @@ const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props)
 
     const verifyAndSave = (): boolean => {
         // Is the title unique?
-        if (otherTitles.includes(curState.title)) {
+        if (otherTitles.includes(metric.title)) {
             setTitleError(errorTitleDuplicate);
             return false;
         }
 
         // Is the title set?
-        if (curState.title === '') {
+        if (metric.title === '') {
             setTitleError(errorTitleMissing);
             return false;
         }
@@ -61,9 +63,9 @@ const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props)
             }
         }
 
-        // target is valid. Convert it, add it to the metric, and save the metric.
+        // target is valid. Convert it and save the metric.
         const target = stringToTarget(curTargetString, metric.type);
-        onAdd({...curState, target});
+        onAdd(target);
         return true;
     };
 
@@ -98,10 +100,10 @@ const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props)
                     error={titleError !== ''}
                     placeholder={formatMessage({defaultMessage: 'Name of the metric'})}
                     type='text'
-                    value={curState.title}
+                    value={metric.title}
                     onChange={(e) => {
                         const title = e.target.value;
-                        setCurState((prevState) => ({...prevState, title}));
+                        setMetric((prevState) => ({...prevState, title}));
                         setTitleError('');
                     }}
                     autoFocus={true}
@@ -128,10 +130,10 @@ const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props)
                 <StyledTextarea
                     placeholder={formatMessage({defaultMessage: 'Describe what this metric is about'})}
                     rows={2}
-                    value={curState.description}
+                    value={metric.description}
                     onChange={(e) => {
                         const description = e.target.value;
-                        setCurState((prevState) => ({...prevState, description}));
+                        setMetric((prevState) => ({...prevState, description}));
                     }}
                 />
                 <HelpText>{formatMessage({defaultMessage: 'Add details on what this metric is about and how it should be filled in. This description will be available on the retrospective page for each run where values for these metrics will be input.'})}</HelpText>
