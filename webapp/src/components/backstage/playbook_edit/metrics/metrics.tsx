@@ -49,8 +49,9 @@ const Metrics = ({
     const [nextTask, setNextTask] = useState<Task | null>(null);
     const [deletingIdx, setDeletingIdx] = useState(-1);
 
-    const deleteMessage = formatMessage({defaultMessage: 'If you delete this metric, the values for it will not be collected for any future runs.'});
-    const deleteExistingMessage = deleteMessage + ' ' + formatMessage({defaultMessage: 'You will still be able to access historical data for this metric.'});
+    const deleteBaseMessage = formatMessage({defaultMessage: 'If you delete this metric, the values for it will not be collected for any future runs.'});
+    const deleteExistingMessage = deleteBaseMessage + ' ' + formatMessage({defaultMessage: 'You will still be able to access historical data for this metric.'});
+    const deleteMessage = deletingIdx >= 0 && deletingIdx < playbook.metrics.length && playbook.metrics[deletingIdx].id !== '' ? deleteExistingMessage : deleteBaseMessage;
 
     const requestAddMetric = (addType: MetricType) => {
         // Only add a new metric if we aren't currently editing.
@@ -151,7 +152,7 @@ const Metrics = ({
         });
         setChangesMade(true);
         setDeletingIdx(-1);
-        setCurEditingIdx(-1);
+        setCurEditingMetric(null);
     };
 
     // If we're editing a metric, we need to add (or replace) the curEditing metric into the metrics array
@@ -231,7 +232,7 @@ const Metrics = ({
             <ConfirmModalLight
                 show={deletingIdx >= 0}
                 title={formatMessage({defaultMessage: 'Are you sure you want to delete?'})}
-                message={deletingIdx >= 0 && playbook.metrics[deletingIdx].id === '' ? deleteMessage : deleteExistingMessage}
+                message={deleteMessage}
                 confirmButtonText={formatMessage({defaultMessage: 'Delete metric'})}
                 onConfirm={confirmedDelete}
                 onCancel={() => setDeletingIdx(-1)}
