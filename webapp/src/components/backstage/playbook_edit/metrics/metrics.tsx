@@ -87,7 +87,7 @@ const Metrics = ({
             return;
         }
 
-        // We're editing. Try to close it, and if successful delete the metric.
+        // We're editing a different metric. Try to close it, and if successful delete the requested metric.
         setNextTask({type: TaskType.delete, index});
         setSaveMetricToggle((prevState) => !prevState);
     };
