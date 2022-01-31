@@ -348,7 +348,7 @@ func TestIfDeletedMetricsAreOmitted(t *testing.T) {
 		// should return single metric
 		actual, err := playbookRunStore.GetPlaybookRun(playbookRun.ID)
 		require.NoError(t, err)
-		require.Equal(t, len(actual.MetricsData), 1)
+		require.Len(t, actual.MetricsData, 1)
 		require.Equal(t, actual.MetricsData[0].MetricConfigID, playbook.Metrics[0].ID)
 	}
 }
