@@ -112,6 +112,7 @@ const Backstage = () => {
         <BackstageContainer id={BackstageID}>
             <Switch>
                 <Route path={`${match.url}/error`}/>
+                <Route path={`${match.url}/start`}/>
                 <Route>
                     <BackstageNavbar className='flex justify-content-between'>
                         <div className='d-flex items-center'>
@@ -189,10 +190,15 @@ const Backstage = () => {
                         <ErrorPage/>
                     </Route>
                     <Route
+                        path={`${match.url}/start`}
+                    >
+                        <PlaybookList ftue={true}/>
+                    </Route>
+                    <Route
                         exact={true}
                         path={`${match.url}/`}
                     >
-                        <RunsPage/>
+                        <Redirect to={`${match.url}/runs`}/>
                     </Route>
                     <Route>
                         <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>

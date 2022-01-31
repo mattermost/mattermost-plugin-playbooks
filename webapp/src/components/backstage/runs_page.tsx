@@ -7,12 +7,16 @@ import {FormattedMessage} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {fetchPlaybookRuns} from 'src/client';
+import {Redirect} from 'react-router-dom';
+
+import {clientHasPlaybooks, fetchPlaybookRuns} from 'src/client';
 
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 
 import {useRunsList} from 'src/hooks';
 import {BackstageHeader} from 'src/components/backstage/styles';
+
+import {pluginUrl} from 'src/browser_routing';
 
 import RunList from './runs_list/runs_list';
 import {statusOptions} from './runs_list/status_filter';
@@ -37,27 +41,31 @@ const RunListContainer = styled.div`
 
 const RunsPage = () => {
     const [playbookRuns, totalCount, fetchParams, setFetchParams] = useRunsList(defaultPlaybookFetchParams);
-    const [showNoPlaybookRuns, setShowNoPlaybookRuns] = useState(false);
+    const [showNoPlaybookRuns, setShowNoPlaybookRuns] = useState<boolean | null>(null);
+    const [noPlaybooks, setNoPlaybooks] = useState<boolean | null>(null);
 
     // When the component is first mounted, determine if there are any
     // playbook runs at all, ignoring filters. Decide once if we should show the "no playbook runs"
     // landing page.
     useEffect(() => {
         async function checkForPlaybookRuns() {
-            const playbookRunsReturn = await fetchPlaybookRuns({
-                page: 0,
-                per_page: 1,
-            });
-
-            if (playbookRunsReturn.items.length === 0) {
-                setShowNoPlaybookRuns(true);
-            }
+            const playbookRunsReturn = await fetchPlaybookRuns({page: 0, per_page: 1});
+            const hasPlaybooks = await clientHasPlaybooks('');
+            setShowNoPlaybookRuns(playbookRunsReturn.items.length === 0);
+            setNoPlaybooks(!hasPlaybooks);
         }
 
         checkForPlaybookRuns();
     }, []);
 
-    if (showNoPlaybookRuns) {
+    if (showNoPlaybookRuns == null || noPlaybooks == null) {
+        return null;
+    }
+
+    if (showNoPlaybookRuns === true) {
+        if (noPlaybooks) {
+            return <Redirect to={pluginUrl('/start')}/>;
+        }
         return <NoContentPage/>;
     }
 

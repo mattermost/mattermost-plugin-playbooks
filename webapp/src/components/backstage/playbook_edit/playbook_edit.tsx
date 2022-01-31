@@ -13,7 +13,7 @@ import {useIntl, FormattedMessage} from 'react-intl';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
-import {PresetTemplates} from 'src/components/backstage/template_selector';
+import {PresetTemplates} from 'src/components/templates/template_data';
 import {navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {
     DraftPlaybookWithChecklist,

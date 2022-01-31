@@ -4,7 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import Icon from 'src/components/assets/icons/icon';
+import Icon from 'src/components/assets/svg';
 
 const Svg = styled(Icon)`
     width: 379px;
