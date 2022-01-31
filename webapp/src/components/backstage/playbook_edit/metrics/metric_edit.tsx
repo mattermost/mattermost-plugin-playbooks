@@ -106,10 +106,7 @@ const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props)
                     }}
                     autoFocus={true}
                 />
-                {
-                    titleError !== '' &&
-                    <ErrorText>{titleError}</ErrorText>
-                }
+                <Error text={titleError}/>
                 <VerticalSpacer size={16}/>
                 <Title>{'Target per run'}</Title>
                 <InputWithIcon>
@@ -124,10 +121,7 @@ const MetricEdit = ({metric, otherTitles, onAdd, saveToggle, saveFailed}: Props)
                         }}
                     />
                 </InputWithIcon>
-                {
-                    targetError !== '' &&
-                    <ErrorText>{targetError}</ErrorText>
-                }
+                <Error text={targetError}/>
                 <HelpText>{formatMessage({defaultMessage: 'We’ll show you how close or far from the target each run’s value is and also plot it on a chart.'})}</HelpText>
                 <VerticalSpacer size={16}/>
                 <Title>{'Description'}</Title>
@@ -187,6 +181,10 @@ const HelpText = styled.div`
     margin-top: 4px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
+
+const Error = ({text}: { text: string }) => (
+    text === '' ? null : <ErrorText>{text}</ErrorText>
+);
 
 const ErrorText = styled.div`
     font-size: 12px;
