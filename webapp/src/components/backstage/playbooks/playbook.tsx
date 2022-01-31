@@ -31,6 +31,7 @@ import {
     autoUnfollowPlaybook,
     telemetryEventForPlaybook,
     getSiteUrl,
+    playbookExportProps,
     archivePlaybook,
 } from 'src/client';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
@@ -46,7 +47,7 @@ import {copyToClipboard} from 'src/utils';
 import {CopyIcon} from '../playbook_runs/playbook_run_backstage/playbook_run_backstage';
 import {displayEditPlaybookAccessModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
-import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
+import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 
 interface MatchParams {
@@ -219,6 +220,7 @@ const Playbook = () => {
 
     const archived = playbook?.delete_at !== 0;
     const enableRunPlaybook = !archived && hasPermissionToRunPlaybook;
+    const [exportHref, exportFilename] = playbookExportProps(playbook);
 
     return (
         <>
@@ -252,6 +254,13 @@ const Playbook = () => {
                         >
                             <FormattedMessage defaultMessage='Duplicate'/>
                         </DropdownMenuItem>
+                        <DropdownMenuItemStyled
+                            href={exportHref}
+                            download={exportFilename}
+                            role={'button'}
+                        >
+                            <FormattedMessage defaultMessage='Export'/>
+                        </DropdownMenuItemStyled>
                         {!archived &&
                         <DropdownMenuItem
                             onClick={() => openDeletePlaybookModal(playbook)}

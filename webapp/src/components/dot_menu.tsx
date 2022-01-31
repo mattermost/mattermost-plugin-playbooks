@@ -146,7 +146,7 @@ const DotMenu = (props: DotMenuProps) => {
     );
 };
 
-const DropdownMenuItemStyled = styled.a`
+export const DropdownMenuItemStyled = styled.a`
  && {
     font-family: 'Open Sans';
     font-style: normal;

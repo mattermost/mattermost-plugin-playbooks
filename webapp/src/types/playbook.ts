@@ -141,7 +141,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         signal_any_keywords_enabled: false,
         category_name: '',
         categorize_channel_enabled: false,
-        run_summary_template_enabled: true,
+        run_summary_template_enabled: false,
         run_summary_template: '',
         channel_name_template: '',
         default_playbook_member_role: '',
@@ -234,3 +234,4 @@ This section lists the action items to turn learnings into changes that help the
 
 ### Timeline highlights
 This section is a curated log that details the most important moments. It can contain key communications, screen shots, or other artifacts. Use the built-in timeline feature to help you retrace and replay the sequence of events.`;
+
