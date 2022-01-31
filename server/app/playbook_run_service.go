@@ -755,7 +755,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		PlaybookRunID: playbookRunID,
 		PostID:        channelPost.Id,
 	}); err != nil {
-		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state.")
+		return errors.Wrap(err, "failed to write status post to store. There is now inconsistent state")
 	}
 
 	s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, originalPost.Clone(), statusUpdateMessage, playbookRunToModify)
