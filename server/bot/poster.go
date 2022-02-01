@@ -206,7 +206,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 	case "start_trial_to_access_playbook_dashboard":
 		message = fmt.Sprintf("@%s requested access to view playbook statistics", author.Username)
 		title = "All the statistics you need"
-		text = "View trends for total runs, active runs and participants involved in runs of this playbook."
+		text = "View trends for total runs, active runs, and participants involved in runs of this playbook."
 	}
 
 	actions := []*model.PostAction{
