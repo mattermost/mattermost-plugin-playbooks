@@ -79,10 +79,10 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, saveToggle, saveFail
     }
 
     let typeTitle = <Bold><DollarSign size={1.2}/>{' Dollars'}</Bold>;
-    let searchIcon = <DollarSign size={1}/>;
+    let searchIcon = <DollarSign size={1.07}/>;
     if (metric.type === MetricType.Integer) {
         typeTitle = <Bold><PoundSign size={1.2}/>{' Integer'}</Bold>;
-        searchIcon = <PoundSign size={1}/>;
+        searchIcon = <PoundSign size={1.07}/>;
     } else if (metric.type === MetricType.Duration) {
         typeTitle = <Bold><i className='icon-clock-outline'/>{' Duration (in dd:hh:mm)'}</Bold>;
         searchIcon = <i className='icon-clock-outline'/>;
@@ -107,6 +107,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, saveToggle, saveFail
                         setTitleError('');
                     }}
                     autoFocus={true}
+                    maxLength={64}
                 />
                 <Error text={titleError}/>
                 <VerticalSpacer size={16}/>
@@ -196,7 +197,7 @@ const ErrorText = styled.div`
 `;
 
 const StyledInput = styled(BaseInput)<{ error?: boolean }>`
-    height: 32px;
+    height: 40px;
     width: 100%;
 
     ${(props) => (
@@ -219,8 +220,9 @@ const InputWithIcon = styled.span`
     }
 
     i {
+        font-size: 16px;
         left: 10px;
-        top: 0;
+        top: -1px;
     }
 
     svg {

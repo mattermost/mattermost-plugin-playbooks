@@ -17,8 +17,6 @@ interface Props {
 
 const MetricView = ({metric, editClick, disabled}: Props) => {
     const {formatMessage} = useIntl();
-    const noTarget = formatMessage({defaultMessage: ': No target set.'});
-    const noDescription = formatMessage({defaultMessage: 'No description.'});
     const perRun = formatMessage({defaultMessage: 'per run'});
 
     let icon = <DollarSign size={1.2}/>;
@@ -32,21 +30,22 @@ const MetricView = ({metric, editClick, disabled}: Props) => {
     }
 
     const targetStr = targetToString(metric.target, metric.type);
-    const target = metric.target ? <>{': '}<TargetText>{smallIcon}{`${targetStr} ${perRun}`}</TargetText></> : noTarget;
+    const target = metric.target ? <>{': '}<TargetText>{smallIcon}{`${targetStr} ${perRun}`}</TargetText></> : '';
+    const description = metric.description ? `: ${metric.description}` : '';
 
     return (
         <ViewContainer>
             <Lhs>{icon}</Lhs>
             <Centre>
                 <Title>{metric.title}</Title>
-                <Detail>
-                    <Bold>{formatMessage({defaultMessage: 'Target'})}</Bold>
-                    {target}
-                </Detail>
-                <Detail>
-                    <Bold>{formatMessage({defaultMessage: 'Description'})}</Bold>
-                    {`: ${metric.description || noDescription}`}
-                </Detail>
+                <Detail
+                    title={formatMessage({defaultMessage: 'Target'})}
+                    text={target}
+                />
+                <Detail
+                    title={formatMessage({defaultMessage: 'Description'})}
+                    text={description}
+                />
             </Centre>
             <Rhs>
                 <Button
@@ -92,7 +91,19 @@ const Centre = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
-const Detail = styled.div`
+const Detail = ({title, text}: {title: string, text: JSX.Element | string}) => {
+    if (!text) {
+        return (<></>);
+    }
+    return (
+        <DetailDiv>
+            <Bold>{title}</Bold>
+            {text}
+        </DetailDiv>
+    );
+};
+
+const DetailDiv = styled.div`
     margin-top: 4px;
 `;
 
