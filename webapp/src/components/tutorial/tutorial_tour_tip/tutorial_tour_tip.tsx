@@ -1,0 +1,272 @@
+// Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import React, {useRef} from 'react';
+import ReactDOM from 'react-dom';
+import {FormattedMessage} from 'react-intl';
+import Tippy from '@tippyjs/react';
+import {Placement} from 'tippy.js';
+
+import 'tippy.js/dist/tippy.css';
+import 'tippy.js/themes/light-border.css';
+import 'tippy.js/animations/scale-subtle.css';
+import 'tippy.js/animations/perspective-subtle.css';
+import PulsatingDot from '../pulsating_dot';
+
+import TutorialTourTipBackdrop, {TutorialTourTipPunchout} from './tutorial_tour_tip_backdrop';
+import useTutorialTourTipManager from './tutorial_tour_tip_manager';
+import './tutorial_tour_tip.scss';
+
+const rootPortal = document.getElementById('root-portal');
+
+const TourTipOverlay = ({children, show, onClick}: {children: React.ReactNode ; show: boolean; onClick: (e: React.MouseEvent) => void}) =>
+    (show ? ReactDOM.createPortal(
+        <div
+            className='pb-tutorial-tour-tip__overlay'
+            onClick={onClick}
+        >
+            {children}
+        </div>,
+        rootPortal!,
+    ) : null);
+
+type Props = {
+    screen: JSX.Element;
+    title: JSX.Element;
+    imageURL?: string;
+    punchOut?: TutorialTourTipPunchout | null;
+    step: number;
+    singleTip?: boolean;
+    showOptOut?: boolean;
+    placement?: Placement;
+    telemetryTag?: string;
+    stopPropagation?: boolean;
+    preventDefault?: boolean;
+    tutorialCategory: string;
+    onNextNavigateTo?: () => void;
+    onPrevNavigateTo?: () => void;
+    autoTour?: boolean;
+    pulsatingDotPlacement?: Omit<Placement, 'auto'| 'auto-end'>;
+    pulsatingDotTranslate?: {x: number; y: number};
+    width?: string | number;
+}
+
+const TutorialTourTip = ({
+    title,
+    screen,
+    imageURL,
+    punchOut,
+    autoTour,
+    tutorialCategory,
+    singleTip,
+    step,
+    onNextNavigateTo,
+    onPrevNavigateTo,
+    telemetryTag,
+    placement,
+    showOptOut,
+    pulsatingDotTranslate,
+    pulsatingDotPlacement,
+    stopPropagation = true,
+    preventDefault = true,
+    width = 320,
+}: Props) => {
+    const triggerRef = useRef(null);
+    const {
+        show,
+        tourSteps,
+        handleOpen,
+        handleHide,
+        handleDismiss,
+        handleNext,
+        handlePrevious,
+        handleSkipTutorial,
+        handleSavePreferences,
+        getLastStep,
+    } = useTutorialTourTipManager({
+        step,
+        autoTour,
+        telemetryTag,
+        tutorialCategory,
+        onNextNavigateTo,
+        onPrevNavigateTo,
+        stopPropagation,
+        preventDefault,
+    });
+
+    const getButtonText = (): JSX.Element => {
+        let buttonText = (
+            <>
+                <FormattedMessage
+
+                    defaultMessage={'Next'}
+                />
+                <i className='icon icon-chevron-right'/>
+            </>
+        );
+        if (singleTip) {
+            buttonText = (
+                <FormattedMessage
+
+                    defaultMessage={'Got it'}
+                />
+            );
+            return buttonText;
+        }
+
+        const lastStep = getLastStep();
+        if (step === lastStep) {
+            buttonText = (
+                <FormattedMessage
+
+                    defaultMessage={'Finish tour'}
+                />
+            );
+        }
+
+        return buttonText;
+    };
+
+    const dots = [];
+
+    if (!singleTip && tourSteps) {
+        for (let i = 0; i < (Object.values(tourSteps).length - 1); i++) {
+            let className = 'pb-tutorial-tour-tip__circle';
+            let circularRing = 'pb-tutorial-tour-tip__circular-ring';
+
+            if (i === step) {
+                className += ' active';
+                circularRing += ' pb-tutorial-tour-tip__circular-ring-active';
+            }
+
+            dots.push(
+                <div className={circularRing}>
+                    <a
+                        href='#'
+                        key={'dotactive' + i}
+                        className={className}
+                        data-screen={i}
+                        onClick={() => handleSavePreferences(i)}
+                    />
+                </div>,
+            );
+        }
+    }
+
+    const content = (
+        <>
+            <div className='pb-tutorial-tour-tip__header'>
+                <h4 className='pb-tutorial-tour-tip__header__title'>
+                    {title}
+                </h4>
+                <button
+                    className='pb-tutorial-tour-tip__header__close'
+                    onClick={handleDismiss}
+                >
+                    <i className='icon icon-close'/>
+                </button>
+            </div>
+            <div className='pb-tutorial-tour-tip__body'>
+                {screen}
+            </div>
+            {imageURL && (
+                <div className='pb-tutorial-tour-tip__image'>
+                    <img
+                        src={imageURL}
+                        alt={'tutorial tour tip product image'}
+                    />
+                </div>
+            )}
+            <div className='pb-tutorial-tour-tip__footer'>
+                <div className='pb-tutorial-tour-tip__footer-buttons'>
+                    <div className='pb-tutorial-tour-tip__circles-ctr'>{dots}</div>
+                    <div className={'pb-tutorial-tour-tip__btn-ctr'}>
+                        {step !== 0 && (
+                            <button
+                                id='tipPreviousButton'
+                                className='pb-tutorial-tour-tip__btn pb-tutorial-tour-tip__cancel-btn'
+                                onClick={handlePrevious}
+                            >
+                                <i className='icon icon-chevron-left'/>
+                                <FormattedMessage
+
+                                    defaultMessage='Previous'
+                                />
+                            </button>
+                        )}
+                        <button
+                            id='tipNextButton'
+                            className='pb-tutorial-tour-tip__btn pb-tutorial-tour-tip__confirm-btn'
+                            onClick={handleNext}
+                        >
+                            {getButtonText()}
+                        </button>
+                    </div>
+                </div>
+                {showOptOut && <div className='pb-tutorial-tour-tip__opt'>
+                    <FormattedMessage
+
+                        defaultMessage='Seen this before? '
+                    />
+                    <a
+                        href='#'
+                        onClick={handleSkipTutorial}
+                    >
+                        <FormattedMessage
+
+                            defaultMessage='Opt out of these tips.'
+                        />
+                    </a>
+                </div>}
+            </div>
+        </>
+    );
+
+    return (
+        <>
+            <div
+                ref={triggerRef}
+                onClick={handleOpen}
+                className='pb-tutorial-tour-tip__pulsating-dot-ctr'
+                data-pulsating-dot-placement={pulsatingDotPlacement || 'right'}
+                style={{
+                    transform: `translate(${pulsatingDotTranslate?.x}px, ${pulsatingDotTranslate?.y}px)`,
+                }}
+            >
+                <PulsatingDot/>
+            </div>
+            <TourTipOverlay
+                show={show}
+                onClick={handleHide}
+            >
+                <TutorialTourTipBackdrop
+                    x={punchOut?.x}
+                    y={punchOut?.y}
+                    width={punchOut?.width}
+                    height={punchOut?.height}
+                />
+            </TourTipOverlay>
+            {show && (
+                <Tippy
+                    showOnCreate={show}
+                    content={content}
+                    animation='scale-subtle'
+                    trigger='click'
+                    duration={[250, 150]}
+                    maxWidth={width}
+                    aria={{content: 'labelledby'}}
+                    allowHTML={true}
+                    zIndex={9999}
+                    reference={triggerRef}
+                    interactive={true}
+                    appendTo={rootPortal!}
+                    offset={[0, 2]}
+                    className={'pb-tutorial-tour-tip__box'}
+                    placement={placement || 'right-start'}
+                />
+            )}
+        </>
+    );
+};
+
+export default TutorialTourTip;
