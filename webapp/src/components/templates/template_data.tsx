@@ -201,7 +201,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             message_on_join:
                 mtrim`Hello and welcome!
 
-                This channel was created as part of the **Service Reliability Incident** playbook and is where conversations related to this release are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.`,
+                This channel was created as part of the **Incident Resolution** playbook and is where conversations related to this release are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.`,
             run_summary_template_enabled: true,
             run_summary_template:
                 mtrim`**Summary**

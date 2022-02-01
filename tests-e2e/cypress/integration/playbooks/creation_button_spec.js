@@ -84,8 +84,8 @@ describe('playbooks > creation button', () => {
 
     it('opens Service Outage Incident page from its template option', () => {
         const url1 = 'playbooks/new?teamId=';
-        const url2 = '&template=Service%20Reliability%20Incident';
-        const playbookName = 'Service Reliability Incident';
+        const url2 = '&template=Incident%20Resolution';
+        const playbookName = 'Incident Resolution';
 
         // # Open the product
         cy.visit('/playbooks');
@@ -93,8 +93,8 @@ describe('playbooks > creation button', () => {
         // # Switch to playbooks
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Click 'Service Reliability Incident'
-        cy.findByText('Service Reliability Incident').click();
+        // # Click 'Incident Resolution'
+        cy.findByText('Incident Resolution').click();
         cy.get('#playbooks_create').findByText('Create playbook').click();
 
         // * Verify a new 'Service Outage Incident' creation page is opened
