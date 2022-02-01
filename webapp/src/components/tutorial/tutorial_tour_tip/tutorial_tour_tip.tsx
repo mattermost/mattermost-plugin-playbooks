@@ -97,19 +97,13 @@ const TutorialTourTip = ({
     const getButtonText = (): JSX.Element => {
         let buttonText = (
             <>
-                <FormattedMessage
-
-                    defaultMessage={'Next'}
-                />
+                <FormattedMessage defaultMessage={'Next'}/>
                 <i className='icon icon-chevron-right'/>
             </>
         );
         if (singleTip) {
             buttonText = (
-                <FormattedMessage
-
-                    defaultMessage={'Got it'}
-                />
+                <FormattedMessage defaultMessage={'Got it'}/>
             );
             return buttonText;
         }
@@ -117,10 +111,7 @@ const TutorialTourTip = ({
         const lastStep = getLastStep();
         if (step === lastStep) {
             buttonText = (
-                <FormattedMessage
-
-                    defaultMessage={'Finish tour'}
-                />
+                <FormattedMessage defaultMessage={'Finish tour'}/>
             );
         }
 
@@ -188,10 +179,7 @@ const TutorialTourTip = ({
                                 onClick={handlePrevious}
                             >
                                 <i className='icon icon-chevron-left'/>
-                                <FormattedMessage
-
-                                    defaultMessage='Previous'
-                                />
+                                <FormattedMessage defaultMessage='Previous'/>
                             </button>
                         )}
                         <button
@@ -204,18 +192,12 @@ const TutorialTourTip = ({
                     </div>
                 </div>
                 {showOptOut && <div className='pb-tutorial-tour-tip__opt'>
-                    <FormattedMessage
-
-                        defaultMessage='Seen this before? '
-                    />
+                    <FormattedMessage defaultMessage='Seen this before?'/>
                     <a
                         href='#'
                         onClick={handleSkipTutorial}
                     >
-                        <FormattedMessage
-
-                            defaultMessage='Opt out of these tips.'
-                        />
+                        <FormattedMessage defaultMessage='Opt out of these tips.'/>
                     </a>
                 </div>}
             </div>
