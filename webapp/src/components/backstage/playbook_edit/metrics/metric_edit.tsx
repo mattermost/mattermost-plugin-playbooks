@@ -115,6 +115,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, saveToggle, saveFail
                 <InputWithIcon>
                     {searchIcon}
                     <StyledInput
+                        error={targetError !== ''}
                         placeholder={formatMessage({defaultMessage: 'Target value for each run'})}
                         type='text'
                         value={curTargetString}
