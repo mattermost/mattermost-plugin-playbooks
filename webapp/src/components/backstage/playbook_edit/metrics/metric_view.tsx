@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
@@ -12,9 +12,10 @@ import {targetToString} from 'src/components/backstage/playbook_edit/metrics/sha
 interface Props {
     metric: Metric;
     editClick: () => void;
+    disabled: boolean;
 }
 
-const MetricView = ({metric, editClick}: Props) => {
+const MetricView = ({metric, editClick, disabled}: Props) => {
     const {formatMessage} = useIntl();
     const noTarget = formatMessage({defaultMessage: ': No target set.'});
     const noDescription = formatMessage({defaultMessage: 'No description.'});
@@ -51,6 +52,7 @@ const MetricView = ({metric, editClick}: Props) => {
                 <Button
                     data-testid={'edit-metric'}
                     onClick={editClick}
+                    disabled={disabled}
                 >
                     <i className='icon-pencil-outline'/>
                 </Button>
@@ -124,7 +126,7 @@ const Rhs = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
-const Button = styled.button`
+const Button = styled.button<{ disabled: boolean }>`
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -138,6 +140,16 @@ const Button = styled.button`
     :hover {
         background: rgba(var(--center-channel-color-rgb), 0.08);
     }
+
+    ${(props) => props.disabled && css`
+        i {
+            color: rgba(var(--center-channel-color-rgb), 0.24);
+        }
+
+        :hover {
+            background: none;
+        }
+    `}
 `;
 
 export default MetricView;

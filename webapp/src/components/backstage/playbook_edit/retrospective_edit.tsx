@@ -103,6 +103,7 @@ const RetrospectiveEdit = ({
                     setChangesMade={setChangesMade}
                     curEditingMetric={curEditingMetric}
                     setCurEditingMetric={setCurEditingMetric}
+                    disabled={!playbook.retrospective_enabled}
                 />
             </SidebarBlock>
             <SidebarBlock>

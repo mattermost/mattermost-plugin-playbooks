@@ -30,6 +30,7 @@ interface Props {
     setChangesMade: (b: boolean) => void;
     curEditingMetric: EditingMetric | null;
     setCurEditingMetric: React.Dispatch<React.SetStateAction<EditingMetric | null>>;
+    disabled: boolean;
 }
 
 const Metrics = ({
@@ -38,6 +39,7 @@ const Metrics = ({
     setChangesMade,
     curEditingMetric,
     setCurEditingMetric,
+    disabled,
 }: Props) => {
     const {formatMessage} = useIntl();
     const [saveMetricToggle, setSaveMetricToggle] = useState(false);
@@ -148,6 +150,7 @@ const Metrics = ({
                             key={idx}
                             metric={metric}
                             editClick={() => requestEditMetric(idx)}
+                            disabled={disabled}
                         />
                     );
                 })
@@ -160,7 +163,7 @@ const Metrics = ({
                         {formatMessage({defaultMessage: 'Add Metric'})}
                     </>
                 }
-                disabled={metrics.length >= 4}
+                disabled={disabled || metrics.length >= 4}
                 topPx={-170}
                 leftPx={20}
             >
