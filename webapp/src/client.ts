@@ -238,6 +238,11 @@ export async function restorePlaybook(playbookId: Playbook['id']) {
     return data;
 }
 
+export async function importFile(file: any, teamId: string) {
+    const data = await doPost(`${apiUrl}/playbooks/import?team_id=${teamId}`, file);
+    return data;
+}
+
 export async function duplicatePlaybook(playbookId: Playbook['id']) {
     const {id} = await doPost(`${apiUrl}/playbooks/${playbookId}/duplicate`, '');
     return id;
@@ -677,4 +682,10 @@ export const doFetchWithoutResponse = async (url: string, options = {}) => {
         status_code: response.status,
         url,
     });
+};
+
+export const playbookExportProps = (playbook: Playbook) => {
+    const href = `${apiUrl}/playbooks/${playbook.id}/export`;
+    const filename = playbook.title.split(/\s+/).join('_').toLowerCase() + '_playbook.json';
+    return [href, filename];
 };

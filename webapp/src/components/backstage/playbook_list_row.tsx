@@ -12,10 +12,12 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from '../widgets/text_with_tooltip';
 
-import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
+import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
 import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 
 import Tooltip from '../widgets/tooltip';
+
+import {playbookExportProps} from 'src/client';
 
 import {InfoLine} from './styles';
 
@@ -75,6 +77,11 @@ export const ArchiveIcon = styled.i`
     font-size: 11px;
 `;
 
+const IconWrapper = styled.div`
+    display: inline-flex;
+    padding: 10px 5px 10px 3px;
+`;
+
 const teamNameSelector = (teamId: string) => (state: GlobalState): string => getTeam(state, teamId).display_name;
 
 const PlaybookListRow = (props: Props) => {
@@ -98,6 +105,7 @@ const PlaybookListRow = (props: Props) => {
         infos.push((<>{teamName}</>));
     }
 
+    const [exportHref, exportFilename] = playbookExportProps(props.playbook);
     return (
         <PlaybookItem
             key={props.playbook.id}
@@ -122,60 +130,46 @@ const PlaybookListRow = (props: Props) => {
             <PlaybookItemRow>{props.playbook.num_steps}</PlaybookItemRow>
             <PlaybookItemRow>{props.playbook.num_runs}</PlaybookItemRow>
             <ActionCol>
-                <PlaybookActionMenu
-                    playbookIsArchived={props.playbook.delete_at > 0}
-                    onEdit={props.onEdit}
-                    onArchive={props.onArchive}
-                    onRestore={props.onRestore}
-                    onDuplicate={props.onDuplicate}
-                />
+                <DotMenu
+                    icon={
+                        <IconWrapper>
+                            <DotMenuIcon/>
+                        </IconWrapper>
+                    }
+                >
+                    <DropdownMenuItem
+                        onClick={props.onEdit}
+                    >
+                        <FormattedMessage defaultMessage='Edit'/>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        onClick={props.onDuplicate}
+                    >
+                        <FormattedMessage defaultMessage='Duplicate'/>
+                    </DropdownMenuItem>
+                    <DropdownMenuItemStyled
+                        href={exportHref}
+                        download={exportFilename}
+                        role={'button'}
+                    >
+                        <FormattedMessage defaultMessage='Export'/>
+                    </DropdownMenuItemStyled>
+                    {props.playbook.delete_at > 0 ? (
+                        <DropdownMenuItem
+                            onClick={props.onRestore}
+                        >
+                            <FormattedMessage defaultMessage='Restore'/>
+                        </DropdownMenuItem>
+                    ) : (
+                        <DropdownMenuItem
+                            onClick={props.onArchive}
+                        >
+                            <FormattedMessage defaultMessage='Archive'/>
+                        </DropdownMenuItem>
+                    )}
+                </DotMenu>
             </ActionCol>
         </PlaybookItem>
-    );
-};
-
-interface PlaybookActionMenuProps {
-    playbookIsArchived: boolean;
-    onEdit: () => void;
-    onArchive: () => void;
-    onRestore: () => void;
-    onDuplicate: () => void;
-}
-
-const IconWrapper = styled.div`
-    display: inline-flex;
-    padding: 10px 5px 10px 3px;
-`;
-
-const PlaybookActionMenu = (props: PlaybookActionMenuProps) => {
-    return (
-        <DotMenu
-            icon={
-                <IconWrapper>
-                    <DotMenuIcon/>
-                </IconWrapper>
-            }
-        >
-            <DropdownMenuItem
-                onClick={props.onEdit}
-            >
-                <FormattedMessage defaultMessage='Edit'/>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-                onClick={props.onDuplicate}
-            >
-                <FormattedMessage defaultMessage='Duplicate'/>
-            </DropdownMenuItem>
-            {props.playbookIsArchived ? (
-                <DropdownMenuItem onClick={props.onRestore}>
-                    <FormattedMessage defaultMessage='Restore'/>
-                </DropdownMenuItem>
-            ) : (
-                <DropdownMenuItem onClick={props.onArchive}>
-                    <FormattedMessage defaultMessage='Archive'/>
-                </DropdownMenuItem>
-            )}
-        </DotMenu>
     );
 };
 

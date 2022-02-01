@@ -32,6 +32,8 @@ type playbookStore struct {
 	store          *SQLStore
 	queryBuilder   sq.StatementBuilderType
 	playbookSelect sq.SelectBuilder
+	membersSelect  sq.SelectBuilder
+	metricsSelect  sq.SelectBuilder
 }
 
 // Ensure playbookStore implements the playbook.Store interface.
@@ -158,25 +160,38 @@ func NewPlaybookStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQLSt
 		LeftJoin("Teams t ON t.Id = p.TeamID").
 		LeftJoin("Schemes s ON t.SchemeId = s.Id")
 
+	membersSelect := sqlStore.builder.
+		Select(
+			"PlaybookID",
+			"MemberID",
+			"Roles",
+		).
+		From("IR_PlaybookMember").
+		OrderBy("MemberID ASC") // Entirely for consistency for the tests
+
+	metricsSelect := sqlStore.builder.
+		Select(
+			"ID",
+			"PlaybookID",
+			"Title",
+			"Description",
+			"Type",
+			"Target",
+		).
+		From("IR_MetricConfig").
+		Where(sq.Eq{"DeleteAt": 0}).
+		OrderBy("Ordering ASC")
+
 	newStore := &playbookStore{
 		pluginAPI:      pluginAPI,
 		log:            log,
 		store:          sqlStore,
 		queryBuilder:   sqlStore.builder,
 		playbookSelect: playbookSelect,
+		membersSelect:  membersSelect,
+		metricsSelect:  metricsSelect,
 	}
 	return newStore
-}
-
-func (p *playbookStore) makeMembersSelect(teamID string) sq.SelectBuilder {
-	return p.store.builder.
-		Select(
-			"pm.PlaybookID",
-			"pm.MemberID",
-			"pm.Roles",
-		).
-		From("IR_PlaybookMember pm").
-		OrderBy("pm.MemberID ASC") // Entirely for consistancy for the tests
 }
 
 // Create creates a new playbook
@@ -247,6 +262,10 @@ func (p *playbookStore) Create(playbook app.Playbook) (id string, err error) {
 		return "", errors.Wrap(err, "failed to replace playbook members")
 	}
 
+	if err = p.replacePlaybookMetrics(tx, rawPlaybook.Playbook); err != nil {
+		return "", errors.Wrap(err, "failed to replace playbook metrics configs")
+	}
+
 	if err = tx.Commit(); err != nil {
 		return "", errors.Wrap(err, "could not commit transaction")
 	}
@@ -280,9 +299,15 @@ func (p *playbookStore) Get(id string) (app.Playbook, error) {
 	}
 
 	var members []playbookMember
-	err = p.store.selectBuilder(tx, &members, p.makeMembersSelect(playbook.TeamID).Where(sq.Eq{"PlaybookID": id}))
+	err = p.store.selectBuilder(tx, &members, p.membersSelect.Where(sq.Eq{"PlaybookID": id}))
 	if err != nil && err != sql.ErrNoRows {
 		return app.Playbook{}, errors.Wrapf(err, "failed to get memberIDs for playbook with id '%s'", id)
+	}
+
+	var metrics []app.PlaybookMetricConfig
+	err = p.store.selectBuilder(tx, &metrics, p.metricsSelect.Where(sq.Eq{"PlaybookID": id}))
+	if err != nil && err != sql.ErrNoRows {
+		return app.Playbook{}, errors.Wrapf(err, "failed to get metrics configs for playbook with id '%s'", id)
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -290,7 +315,7 @@ func (p *playbookStore) Get(id string) (app.Playbook, error) {
 	}
 
 	addMembersToPlaybook(members, &playbook)
-
+	playbook.Metrics = metrics
 	return playbook, nil
 }
 
@@ -454,11 +479,18 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		ids = append(ids, pb.ID)
 	}
 	var members []playbookMember
-	err = p.store.selectBuilder(p.store.db, &members, p.makeMembersSelect(teamID).Where(sq.Eq{"PlaybookID": ids}))
+	err = p.store.selectBuilder(p.store.db, &members, p.membersSelect.Where(sq.Eq{"PlaybookID": ids}))
 	if err != nil {
 		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbook members")
 	}
+	var metrics []app.PlaybookMetricConfig
+	err = p.store.selectBuilder(p.store.db, &metrics, p.metricsSelect.Where(sq.Eq{"PlaybookID": ids}))
+	if err != nil {
+		return app.GetPlaybooksResults{}, errors.Wrap(err, "failed to get playbooks metrics")
+	}
+
 	addMembersToPlaybooks(members, playbooks)
+	addMetricsToPlaybooks(metrics, playbooks)
 
 	pageCount := 0
 	if opts.PerPage > 0 {
@@ -621,6 +653,10 @@ func (p *playbookStore) Update(playbook app.Playbook) (err error) {
 		return errors.Wrapf(err, "failed to replace playbook members for playbook with id '%s'", rawPlaybook.ID)
 	}
 
+	if err = p.replacePlaybookMetrics(tx, rawPlaybook.Playbook); err != nil {
+		return errors.Wrapf(err, "failed to replace playbook metrics configs for playbook with id '%s'", rawPlaybook.ID)
+	}
+
 	if err = tx.Commit(); err != nil {
 		return errors.Wrap(err, "could not commit transaction")
 	}
@@ -687,6 +723,47 @@ func (p *playbookStore) replacePlaybookMembers(q queryExecer, playbook app.Playb
 
 	if _, err := p.store.execBuilder(q, insert); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// replacePlaybookMetrics replaces the metric configs of a playbook
+func (p *playbookStore) replacePlaybookMetrics(q queryExecer, playbook app.Playbook) error {
+	// First, we mark as deleted all existing metrics for this playbook, then restore those which are in the playbook object.
+	updateBuilder := sq.Update("IR_MetricConfig").
+		Set("DeleteAt", model.GetMillis()).
+		Where(sq.Eq{"PlaybookID": playbook.ID}).
+		Where(sq.Eq{"DeleteAt": 0})
+
+	if _, err := p.store.execBuilder(q, updateBuilder); err != nil {
+		return err
+	}
+
+	// Restore and update existing metric configs. Insert a new ones.
+	var err error
+	for i, m := range playbook.Metrics {
+		if m.ID == "" {
+			_, err = p.store.execBuilder(q, sq.
+				Insert("IR_MetricConfig").
+				Columns("ID", "PlaybookID", "Title", "Description", "Type", "Target", "Ordering").
+				Values(model.NewId(), playbook.ID, m.Title, m.Description, m.Type, m.Target, i))
+		} else {
+			_, err = p.store.execBuilder(q, sq.
+				Update("IR_MetricConfig").
+				SetMap(map[string]interface{}{
+					"Title":       m.Title,
+					"Description": m.Description,
+					"Target":      m.Target,
+					"Ordering":    i,
+					"DeleteAt":    0,
+				}).
+				Where(sq.Eq{"ID": m.ID}),
+			)
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -792,6 +869,17 @@ func addMembersToPlaybook(members []playbookMember, playbook *app.Playbook) {
 			Roles:       strings.Fields(m.Roles),
 			SchemeRoles: generatePlaybookSchemeRoles(m, playbook),
 		})
+	}
+}
+
+func addMetricsToPlaybooks(metrics []app.PlaybookMetricConfig, playbooks []app.Playbook) {
+	playbookToMetrics := make(map[string][]app.PlaybookMetricConfig)
+	for _, metric := range metrics {
+		playbookToMetrics[metric.PlaybookID] = append(playbookToMetrics[metric.PlaybookID], metric)
+	}
+
+	for i, playbook := range playbooks {
+		playbooks[i].Metrics = playbookToMetrics[playbook.ID]
 	}
 }
 
