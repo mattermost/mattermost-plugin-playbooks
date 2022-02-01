@@ -24,6 +24,7 @@ require (
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
 	github.com/mattermost/mattermost-server/v6 v6.0.0-20211207185652-92e80bd4ed31
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.11.0
 	github.com/rudderlabs/analytics-go v3.3.2+incompatible
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0

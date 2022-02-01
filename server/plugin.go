@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
@@ -9,6 +10,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/command"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -210,6 +212,18 @@ func (p *Plugin) OnActivate() error {
 	if err = command.RegisterCommands(p.API.RegisterCommand, isTestingEnabled); err != nil {
 		return errors.Wrapf(err, "failed register commands")
 	}
+
+	// Init metrics
+	instanceInfo := metrics.InstanceInfo{
+		Version:        "version 12", //appModel.CurrentVersion
+		BuildNum:       "build 1",    //appModel.BuildNumber
+		Edition:        "edition 1",  //appModel.Edition
+		InstallationID: os.Getenv("MM_CLOUD_INSTALLATION_ID"),
+	}
+	metricsService := metrics.NewMetrics(instanceInfo)
+	metricServer := metrics.NewMetricsServer(":9093", metricsService, pluginAPIClient.Log)
+
+	go metricServer.Run()
 
 	// prevent a recursive OnConfigurationChange
 	go func() {
