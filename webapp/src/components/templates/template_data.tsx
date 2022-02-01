@@ -728,7 +728,57 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
         description: 'New to playbooks? This playbook will help you get familiar with playbooks, configurations, and playbook runs.',
         template: {
             ...emptyPlaybook(),
-            description: 'Use this playbook to learn more about playbooks. Go through this page to check out the contents or simply select ‘start a test run’ in the top right corner.',
+            title: 'Learn how to use playbooks',
+            description: mtrim`Use this playbook to learn more about playbooks. Go through this page to check out the contents or simply select ‘start a test run’ in the top right corner.`,
+            create_public_playbook_run: true,
+            channel_name_template: 'Onboarding Run',
+            checklists: [
+                {
+                    title: 'Learn',
+                    items: [
+                        newChecklistItem(
+                            'Try editing the run name or description in the top section of this page..',
+                        ),
+                        newChecklistItem(
+                            'Try checking off the first two tasks!',
+                        ),
+                        newChecklistItem(
+                            'Assign a task to yourself or another member.',
+                        ),
+                        newChecklistItem(
+                            'Post your first status update.',
+                        ),
+                        newChecklistItem(
+                            'Complete your first checklist!',
+                        ),
+                    ],
+                },
+                {
+                    title: 'Collaborate',
+                    items: [
+                        newChecklistItem(
+                            'Invite other team members that you’d like to collaborate with.',
+                        ),
+                        newChecklistItem(
+                            'Skip a task.',
+                        ),
+                        newChecklistItem(
+                            'Finish the run.',
+                        ),
+                    ],
+                },
+            ],
+            status_update_enabled: true,
+            reminder_timer_default_seconds: 50 * 60, // 50 minutes
+            message_on_join: '',
+            message_on_join_enabled: false,
+            retrospective_enabled: false,
+            run_summary_template_enabled: true,
+            run_summary_template: mtrim`This summary area helps everyone involved gather context at a glance. It supports markdown syntax just like a channel message, just click to edit and try it out!
+
+            - Start date: 20 Dec, 2021
+            - Target date: To be determined
+            - User guide: Playbooks docs`,
         },
     },
 ]);

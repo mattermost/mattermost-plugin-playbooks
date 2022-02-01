@@ -66,6 +66,7 @@ describe('channels > rhs > home', () => {
                 {name: 'Employee Onboarding', checklists: '5 checklists', actions: '2 actions'},
                 {name: 'Feature Lifecycle', checklists: '5 checklists', actions: '3 actions'},
                 {name: 'Bug Bash', checklists: '5 checklists', actions: '3 actions'},
+                {name: 'Learn how to use playbooks', checklists: '2 checklists', actions: '2 actions'},
             ];
 
             // # Click the icon
