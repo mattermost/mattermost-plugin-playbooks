@@ -61,8 +61,8 @@ describe('channels > rhs > home', () => {
             const templates = [
                 {name: 'Blank', checklists: '1 checklist', actions: '1 action'},
                 {name: 'Product Release', checklists: '4 checklists', actions: '3 actions'},
-                {name: 'Customer Onboarding', checklists: '4 checklists', actions: '3 actions'},
                 {name: 'Incident Resolution', checklists: '4 checklists', actions: '4 actions'},
+                {name: 'Customer Onboarding', checklists: '4 checklists', actions: '3 actions'},
                 {name: 'Feature Lifecycle', checklists: '5 checklists', actions: '3 actions'},
                 {name: 'Employee Onboarding', checklists: '5 checklists', actions: '2 actions'},
                 {name: 'Bug Bash', checklists: '5 checklists', actions: '3 actions'},
