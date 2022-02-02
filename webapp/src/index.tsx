@@ -6,17 +6,17 @@ import {render, unmountComponentAtNode} from 'react-dom';
 import {Store, Unsubscribe} from 'redux';
 import {Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
+import '@mattermost/compass-icons/css/compass-icons.css';
+
 //@ts-ignore Webapp imports don't work properly
 import {PluginRegistry} from 'mattermost-webapp/plugins/registry';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {Client4} from 'mattermost-redux/client';
 import WebsocketEvents from 'mattermost-redux/constants/websocket';
-
 import {loadRolesIfNeeded} from 'mattermost-webapp/packages/mattermost-redux/src/actions/roles';
 
 import {GlobalSelectStyle} from 'src/components/backstage/styles';
-
 import {makeRHSOpener} from 'src/rhs_opener';
 import {makeSlashCommandHook} from 'src/slash_command';
 import {
@@ -61,8 +61,7 @@ import {fetchGlobalSettings, notifyConnect, setSiteUrl} from 'src/client';
 import {CloudUpgradePost} from 'src/components/cloud_upgrade_post';
 import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
-
-import {PlaybookRole} from './types/permissions';
+import {PlaybookRole} from 'src/types/permissions';
 
 const GlobalHeaderCenter = () => {
     return null;

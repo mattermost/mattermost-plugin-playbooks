@@ -72,6 +72,15 @@ let config = {
                 },
             },
             {
+                test: /\.css$/,
+                use: [
+                    'style-loader',
+                    {
+                        loader: 'css-loader',
+                    },
+                ],
+            },
+            {
                 test: /\.(png|eot|tiff|svg|woff2|woff|ttf|gif|mp3|jpg)$/,
                 use: [
                     {
