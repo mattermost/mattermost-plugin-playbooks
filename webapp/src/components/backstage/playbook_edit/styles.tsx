@@ -1,8 +1,10 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
 import styled from 'styled-components';
+import {mdiCurrencyUsd, mdiPound} from '@mdi/js';
+import Icon from '@mdi/react';
+import React from 'react';
 
 export const Section = styled.div`
     margin: 32px 0;
@@ -34,3 +36,17 @@ export const BackstageGroupToggleHeader = styled.div`
     flex-direction: row;
     align-items: center;
 `;
+
+export const DollarSign = ({size}: {size: number}) => (
+    <Icon
+        path={mdiCurrencyUsd}
+        size={size}
+    />
+);
+
+export const PoundSign = ({size}: {size: number}) => (
+    <Icon
+        path={mdiPound}
+        size={size}
+    />
+);
