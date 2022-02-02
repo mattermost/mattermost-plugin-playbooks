@@ -470,7 +470,7 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 
 	searchTerm := u.Query().Get("search_term")
 
-	withArchived := u.Query().Get("with_archived") == "true"
+	withArchived, _ := strconv.ParseBool(u.Query().Get("with_archived"))
 
 	return app.PlaybookFilterOptions{
 		Sort:         sortField,
