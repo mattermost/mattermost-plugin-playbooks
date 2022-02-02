@@ -44,7 +44,7 @@ const UpgradeBadge = (props: Props) => {
 
     return (
         <Tooltip
-            id={props.id}
+            id={props.id || 'upgrade-badge'}
             content={props.tooltipText}
         >
             {svg}
