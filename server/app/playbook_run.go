@@ -157,6 +157,9 @@ type PlaybookRun struct {
 
 	// CategoryName, if not empty, is the name of the category where the run channel will live.
 	CategoryName string `json:"category_name"`
+
+	// Playbook run metric values
+	MetricsData []RunMetricData `json:"metrics_data"`
 }
 
 func (i *PlaybookRun) Clone() *PlaybookRun {
@@ -174,6 +177,7 @@ func (i *PlaybookRun) Clone() *PlaybookRun {
 	newPlaybookRun.ParticipantIDs = append([]string(nil), i.ParticipantIDs...)
 	newPlaybookRun.WebhookOnCreationURLs = append([]string(nil), i.WebhookOnCreationURLs...)
 	newPlaybookRun.WebhookOnStatusUpdateURLs = append([]string(nil), i.WebhookOnStatusUpdateURLs...)
+	newPlaybookRun.MetricsData = append([]RunMetricData(nil), i.MetricsData...)
 
 	return &newPlaybookRun
 }
@@ -214,6 +218,9 @@ func (i *PlaybookRun) MarshalJSON() ([]byte, error) {
 	}
 	if old.WebhookOnStatusUpdateURLs == nil {
 		old.WebhookOnStatusUpdateURLs = []string{}
+	}
+	if old.MetricsData == nil {
+		old.MetricsData = []RunMetricData{}
 	}
 
 	return json.Marshal(old)
@@ -324,6 +331,16 @@ type SQLStatusPost struct {
 	PlaybookRunID string
 	PostID        string
 	EndAt         int64
+}
+
+type RunMetricData struct {
+	MetricConfigID string
+	Value          int64
+}
+
+type RetrospectiveUpdate struct {
+	Text    string          `json:"retrospective"`
+	Metrics []RunMetricData `json:"metrics"`
 }
 
 func (r GetPlaybookRunsResults) Clone() GetPlaybookRunsResults {
@@ -530,10 +547,10 @@ type PlaybookRunService interface {
 	UserHasLeftChannel(userID, channelID, actorID string)
 
 	// UpdateRetrospective updates the retrospective for the given playbook run.
-	UpdateRetrospective(playbookRunID, userID, newRetrospective string) error
+	UpdateRetrospective(playbookRunID, userID string, retrospective RetrospectiveUpdate) error
 
 	// PublishRetrospective publishes the retrospective.
-	PublishRetrospective(playbookRunID, text, userID string) error
+	PublishRetrospective(playbookRunID, userID string, retrospective RetrospectiveUpdate) error
 
 	// CancelRetrospective cancels the retrospective.
 	CancelRetrospective(playbookRunID, userID string) error
