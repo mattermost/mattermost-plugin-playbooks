@@ -10,7 +10,7 @@ import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
 import {DraftPlaybookWithChecklist, Metric, MetricType, newMetric, PlaybookWithChecklist} from 'src/types/playbook';
 import MetricEdit from 'src/components/backstage/playbook_edit/metrics/metric_edit';
 import MetricView from 'src/components/backstage/playbook_edit/metrics/metric_view';
-import {DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
+import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {EditingMetric} from 'src/components/backstage/playbook_edit/playbook_edit';
 
 enum TaskType {
@@ -169,21 +169,21 @@ const Metrics = ({
             >
                 <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Duration)}>
                     <MetricTypeOption
-                        icon={<i className='icon-clock-outline'/>}
+                        icon={<ClockOutline sizePx={18}/>}
                         title={formatMessage({defaultMessage: 'Duration (in dd:hh:mm)'})}
                         description={formatMessage({defaultMessage: 'e.g., Time to acknowledge, Time to resolve'})}
                     />
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Currency)}>
                     <MetricTypeOption
-                        icon={<DollarSign size={1.2}/>}
+                        icon={<DollarSign sizePx={18}/>}
                         title={formatMessage({defaultMessage: 'Dollars'})}
                         description={formatMessage({defaultMessage: 'e.g., Cost, Purchases'})}
                     />
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Integer)}>
                     <MetricTypeOption
-                        icon={<PoundSign size={1.2}/>}
+                        icon={<PoundSign sizePx={18}/>}
                         title={formatMessage({defaultMessage: 'Integer'})}
                         description={formatMessage({defaultMessage: 'e.g., Resource count, Customers affected'})}
                     />

@@ -9,7 +9,7 @@ import {Metric, MetricType} from 'src/types/playbook';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
-import {DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
+import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {stringToTarget, targetToString} from 'src/components/backstage/playbook_edit/metrics/shared';
 
 type SetState = (prevState: Metric) => Metric;
@@ -78,14 +78,14 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, saveToggle, saveFail
         }
     }
 
-    let typeTitle = <Bold><DollarSign size={1.2}/>{' Dollars'}</Bold>;
-    let searchIcon = <DollarSign size={1.07}/>;
+    let typeTitle = <Bold><DollarSign sizePx={18}/>{' Dollars'}</Bold>;
+    let inputIcon = <DollarSign sizePx={18}/>;
     if (metric.type === MetricType.Integer) {
-        typeTitle = <Bold><PoundSign size={1.2}/>{' Integer'}</Bold>;
-        searchIcon = <PoundSign size={1.07}/>;
+        typeTitle = <Bold><PoundSign sizePx={18}/>{' Integer'}</Bold>;
+        inputIcon = <PoundSign sizePx={18}/>;
     } else if (metric.type === MetricType.Duration) {
-        typeTitle = <Bold><i className='icon-clock-outline'/>{' Duration (in dd:hh:mm)'}</Bold>;
-        searchIcon = <i className='icon-clock-outline'/>;
+        typeTitle = <Bold><ClockOutline sizePx={18}/>{' Duration (in dd:hh:mm)'}</Bold>;
+        inputIcon = <ClockOutline sizePx={18}/>;
     }
 
     return (
@@ -113,7 +113,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, saveToggle, saveFail
                 <VerticalSpacer size={16}/>
                 <Title>{'Target per run'}</Title>
                 <InputWithIcon>
-                    {searchIcon}
+                    {inputIcon}
                     <StyledInput
                         error={targetError !== ''}
                         placeholder={formatMessage({defaultMessage: 'Target value for each run'})}
@@ -215,20 +215,11 @@ const StyledInput = styled(BaseInput)<{ error?: boolean }>`
 const InputWithIcon = styled.span`
     position: relative;
 
-    i, svg {
-        position: absolute;
-        color: rgba(var(--center-channel-color-rgb), 0.64);
-    }
-
-    i {
-        font-size: 16px;
-        left: 10px;
-        top: -1px;
-    }
-
     svg {
+        position: absolute;
         left: 14px;
-        top: 2px;
+        top: 1px;
+        color: rgba(var(--center-channel-color-rgb), 0.64);
     }
 
     input {

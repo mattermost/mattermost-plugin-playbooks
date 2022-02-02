@@ -6,7 +6,7 @@ import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
-import {DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
+import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {targetToString} from 'src/components/backstage/playbook_edit/metrics/shared';
 
 interface Props {
@@ -19,14 +19,14 @@ const MetricView = ({metric, editClick, disabled}: Props) => {
     const {formatMessage} = useIntl();
     const perRun = formatMessage({defaultMessage: 'per run'});
 
-    let icon = <DollarSign size={1.2}/>;
-    let smallIcon = <DollarSign size={1}/>;
+    let icon = <DollarSign sizePx={18}/>;
+    let smallIcon = <DollarSign sizePx={15}/>;
     if (metric.type === MetricType.Integer) {
-        icon = <PoundSign size={1.2}/>;
-        smallIcon = <PoundSign size={1}/>;
+        icon = <PoundSign sizePx={18}/>;
+        smallIcon = <PoundSign sizePx={15}/>;
     } else if (metric.type === MetricType.Duration) {
-        icon = <i className='icon-clock-outline'/>;
-        smallIcon = <i className='icon-clock-outline'/>;
+        icon = <ClockOutline sizePx={18}/>;
+        smallIcon = <ClockOutline sizePx={15}/>;
     }
 
     const targetStr = targetToString(metric.target, metric.type);
@@ -77,7 +77,7 @@ const Lhs = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
     padding: 0 6px 0 0;
 
-    > i, > svg {
+    svg {
         margin-top: 2px;
     }
 `;
@@ -111,12 +111,7 @@ const TargetText = styled.span`
     padding-left: 20px;
     position: relative;
 
-    > i {
-        position: absolute;
-        left: 0;
-    }
-
-    > svg {
+    svg {
         position: absolute;
         margin-top: 2px;
         left: 0;
