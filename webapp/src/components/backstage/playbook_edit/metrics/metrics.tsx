@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ReactNode, useState} from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
@@ -13,7 +13,6 @@ import MetricView from 'src/components/backstage/playbook_edit/metrics/metric_vi
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {EditingMetric} from 'src/components/backstage/playbook_edit/playbook_edit';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
-import {Rhs, Button} from 'src/components/backstage/playbook_edit/metrics/shared';
 
 enum TaskType {
     add,
@@ -165,34 +164,29 @@ const Metrics = ({
         <div>
             {
                 metrics.map((metric, idx) => (
-                    <DeleteWrapper
-                        key={idx}
-                        deleteClick={() => requestDeleteMetric(idx)}
-                    >
-                        {
-                            idx === curEditingMetric?.index ?
-                                <MetricEdit
-                                    metric={curEditingMetric.metric}
-                                    setMetric={(setState) => setCurEditingMetric((prevState) => {
-                                        if (prevState) {
-                                            return {index: prevState.index, metric: setState(prevState.metric)};
-                                        }
+                    idx === curEditingMetric?.index ?
+                        <MetricEdit
+                            metric={curEditingMetric.metric}
+                            setMetric={(setState) => setCurEditingMetric((prevState) => {
+                                if (prevState) {
+                                    return {index: prevState.index, metric: setState(prevState.metric)};
+                                }
 
-                                        // This can't happen
-                                        return {index: -1, metric: {} as Metric};
-                                    })}
-                                    otherTitles={playbook.metrics.flatMap((m, i) => (i === idx ? [] : m.title))}
-                                    onAdd={saveMetric}
-                                    saveToggle={saveMetricToggle}
-                                    saveFailed={() => setNextTask(null)}
-                                /> :
-                                <MetricView
-                                    metric={metric}
-                                    editClick={() => requestEditMetric(idx)}
-                                    disabled={disabled}
-                                />
-                        }
-                    </DeleteWrapper>
+                                // This can't happen
+                                return {index: -1, metric: {} as Metric};
+                            })}
+                            otherTitles={playbook.metrics.flatMap((m, i) => (i === idx ? [] : m.title))}
+                            onAdd={saveMetric}
+                            deleteClick={() => requestDeleteMetric(idx)}
+                            saveToggle={saveMetricToggle}
+                            saveFailed={() => setNextTask(null)}
+                        /> :
+                        <MetricView
+                            metric={metric}
+                            editClick={() => requestEditMetric(idx)}
+                            deleteClick={() => requestDeleteMetric(idx)}
+                            disabled={disabled}
+                        />
                 ))
             }
             <DotMenu
@@ -240,28 +234,6 @@ const Metrics = ({
         </div>
     );
 };
-
-const DeleteWrapper = ({children, deleteClick}: { children: ReactNode, deleteClick: () => void }) => (
-    <DeleteContainer>
-        {children}
-        <Rhs>
-            <StyledButton
-                data-testid={'delete-metric'}
-                onClick={deleteClick}
-            >
-                <i className={'icon-trash-can-outline'}/>
-            </StyledButton>
-        </Rhs>
-    </DeleteContainer>
-);
-
-const DeleteContainer = styled.div`
-    display: flex;
-`;
-
-const StyledButton = styled(Button)`
-    margin-left: 2px;
-`;
 
 interface MetricTypeProps {
     icon: JSX.Element;

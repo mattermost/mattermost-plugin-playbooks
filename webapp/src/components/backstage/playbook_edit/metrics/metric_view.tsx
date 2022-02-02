@@ -7,15 +7,16 @@ import {useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
-import {Button, Rhs, targetToString} from 'src/components/backstage/playbook_edit/metrics/shared';
+import {targetToString} from 'src/components/backstage/playbook_edit/metrics/shared';
 
 interface Props {
     metric: Metric;
     editClick: () => void;
+    deleteClick: () => void;
     disabled: boolean;
 }
 
-const MetricView = ({metric, editClick, disabled}: Props) => {
+const MetricView = ({metric, editClick, deleteClick, disabled}: Props) => {
     const {formatMessage} = useIntl();
     const perRun = formatMessage({defaultMessage: 'per run'});
 
@@ -50,6 +51,13 @@ const MetricView = ({metric, editClick, disabled}: Props) => {
                     disabled={disabled}
                 >
                     <i className='icon-pencil-outline'/>
+                </Button>
+                <HorizontalSpacer size={6}/>
+                <Button
+                    data-testid={'delete-metric'}
+                    onClick={deleteClick}
+                >
+                    <i className={'icon-trash-can-outline'}/>
                 </Button>
             </Rhs>
         </ViewContainer>
@@ -88,7 +96,30 @@ const Centre = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
-const Detail = ({title, text}: {title: string, text: JSX.Element | string}) => {
+const Rhs = styled.div`
+    display: flex;
+    align-items: flex-start;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const Button = styled.button`
+    font-size: 18px;
+    padding: 4px 1px;
+    background: none;
+    border-radius: 4px;
+    border: 0;
+    margin-top: -4px;
+
+    :hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+`;
+
+const HorizontalSpacer = styled.div<{ size: number }>`
+    margin-left: ${(props) => props.size}px;
+`;
+
+const Detail = ({title, text}: { title: string, text: string }) => {
     if (!text) {
         return (<></>);
     }
