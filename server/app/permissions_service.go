@@ -95,7 +95,27 @@ func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
 	return p.pluginAPI.User.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam)
 }
 
+func (p *PermissionsService) checkPlaybookNotUsingE20Features(playbook Playbook) error {
+	if !p.PlaybookIsPublic(playbook) {
+		return errors.Wrap(ErrLicensedFeature, "private playbooks are not available with your current subscription")
+	}
+
+	return nil
+}
+
+func (p *PermissionsService) checkPlaybookLicenceRequirements(playbook Playbook) error {
+	if p.configService.IsAtLeastE20Licensed() {
+		return nil
+	}
+
+	return p.checkPlaybookNotUsingE20Features(playbook)
+}
+
 func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) error {
+	if err := p.checkPlaybookLicenceRequirements(playbook); err != nil {
+		return err
+	}
+
 	// Check the user has permissions over all broadcast channels
 	for _, channelID := range playbook.BroadcastChannelIDs {
 		if !p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
