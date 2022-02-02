@@ -3,6 +3,9 @@ import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
+import {useAllowPrivatePlaybooks} from 'src/hooks/general';
+import UpgradeBadge from 'src/components/backstage/upgrade_badge';
+
 type Props = {
     public: boolean
     setPlaybookPublic: (pub: boolean) => void
@@ -27,6 +30,7 @@ const BigButton = styled.button`
 
     &:disabled {
         background: rgba(var(--center-channel-color-rgb), 0.08);
+        opacity: 0.6;
     }
 
 	display: flex;
@@ -63,12 +67,19 @@ const SmallText = styled.div`
 	color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
 
+const PositionedUpgradeBadge = styled(UpgradeBadge)`
+    margin-left: 8px;
+    vertical-align: sub;
+`;
+
 const PublicPrivateSelector = (props: Props) => {
     const {formatMessage} = useIntl();
+    const privatePlaybooksAllowed = useAllowPrivatePlaybooks();
+
     const handleButtonClick = props.setPlaybookPublic;
 
     const publicButtonDisabled = !props.public && props.disableOtherOption;
-    const privateButtonDisabled = props.public && props.disableOtherOption;
+    const privateButtonDisabled = !privatePlaybooksAllowed || (props.public && props.disableOtherOption);
 
     return (
         <HorizontalContainer>
@@ -107,7 +118,15 @@ const PublicPrivateSelector = (props: Props) => {
                     className={'icon-lock-outline'}
                 />
                 <StackedText>
-                    <BigText>{'Private playbook'}</BigText>
+                    <BigText>
+                        {'Private playbook'}
+                        {!privatePlaybooksAllowed &&
+                        <PositionedUpgradeBadge
+                            id={'playbook-selector_upgrade-badge'}
+                            tooltipText={formatMessage({defaultMessage: 'Private playbooks are only available in Mattermost Enterprise'})}
+                        />
+                        }
+                    </BigText>
                     <SmallText>{'Only invited members'}</SmallText>
                 </StackedText>
                 {!props.public &&

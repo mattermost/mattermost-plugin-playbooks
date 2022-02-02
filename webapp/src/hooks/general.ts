@@ -351,6 +351,12 @@ export function useAllowRetrospectiveAccess() {
     return useSelector(isE10LicensedOrDevelopment);
 }
 
+// useAllowPrivatePlaybooks returns whether the server is licenced for
+// creating private playbooks
+export function useAllowPrivatePlaybooks() {
+    return useSelector(isE20LicensedOrDevelopment);
+}
+
 export function useEnsureProfiles(userIds: string[]) {
     const dispatch = useDispatch();
     type StringToUserProfileFn = (id: string) => UserProfile;
