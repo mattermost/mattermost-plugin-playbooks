@@ -57,7 +57,7 @@ describe('playbooks > edit_metrics', () => {
 
                 // # Add and verify metric
                 addMetric('Duration', 'test duration', '0:0:1', 'test description');
-                verifyViewMetric(0, 'test duration', '00:00:01 per run', 'test description');
+                verifyViewMetric(0, 'test duration', '1 minute per run', 'test description');
 
                 // # Add and verify metric
                 addMetric('Dollars', 'test dollars', '2', 'test description 2');
@@ -69,7 +69,7 @@ describe('playbooks > edit_metrics', () => {
 
                 // # Add and verify metric
                 addMetric('Duration', 'test duration 2', '0:0:2', 'test description 4');
-                verifyViewMetric(3, 'test duration 2', '00:00:02 per run', 'test description 4');
+                verifyViewMetric(3, 'test duration 2', '2 minutes per run', 'test description 4');
 
                 // * Verify Add Metric button is inactive
                 cy.findByRole('button', {name: 'Add Metric'}).should('be.disabled');
@@ -87,10 +87,10 @@ describe('playbooks > edit_metrics', () => {
                 cy.get('#root').findByText('Retrospective').click();
 
                 // * Verify we saved the metrics
-                verifyViewMetric(0, 'test duration', '00:00:01 per run', 'test description');
+                verifyViewMetric(0, 'test duration', '1 minute per run', 'test description');
                 verifyViewMetric(1, 'test dollars', '2 per run', 'test description 2');
                 verifyViewMetric(2, 'test integer', '4 per run', 'test descr 3');
-                verifyViewMetric(3, 'test duration 2', '00:00:02 per run', 'test description 4');
+                verifyViewMetric(3, 'test duration 2', '2 minutes per run', 'test description 4');
 
                 // # Edit all 4 metrics and repeat the test
                 cy.findAllByTestId('edit-metric').eq(0).click();
@@ -119,10 +119,10 @@ describe('playbooks > edit_metrics', () => {
                 cy.get('#root').findByText('Retrospective').click();
 
                 // * Verify we saved the metrics
-                verifyViewMetric(0, 'test duration', '12:09:37 per run', 'test description');
+                verifyViewMetric(0, 'test duration', '12 days 9 hours 37 minutes per run', 'test description');
                 verifyViewMetric(1, 'test dollars', '2 per run', 'a new description');
                 verifyViewMetric(2, 'test integer', '7777777 per run', 'test descr 3');
-                verifyViewMetric(3, 'test duration 2!!!', '00:00:02 per run', 'test description 4');
+                verifyViewMetric(3, 'test duration 2!!!', '2 minutes per run', 'test description 4');
 
                 // # Now test: verifies when clicking "Add", for duration type
                 // # (using the previous state)
@@ -157,7 +157,7 @@ describe('playbooks > edit_metrics', () => {
                 // # A duration can have 1 or 2 numbers in each position
                 cy.get('input[type=text]').eq(2).clear().type('2:12:1');
                 cy.findByRole('button', {name: 'Add'}).click();
-                verifyViewMetric(0, 'test duration', '02:12:01 per run', 'test description');
+                verifyViewMetric(0, 'test duration', '2 days 12 hours 1 minute per run', 'test description');
 
                 // * Verify we have four valid metrics and are editing none.
                 verifyViewsAndEdits(4, 0);
@@ -254,7 +254,7 @@ describe('playbooks > edit_metrics', () => {
                 });
 
                 // * Verify metric was added without target or description.
-                verifyViewMetric(1, 'test currency!', 'No target set.', 'No description.');
+                verifyViewMetric(1, 'test currency!', '', '');
 
                 // * Verify we have two valid metrics and are editing next one.
                 verifyViewsAndEdits(2, 1);
@@ -298,7 +298,7 @@ describe('playbooks > edit_metrics', () => {
                 cy.findByRole('button', {name: 'Add'}).click();
 
                 // * Verify metric was added without target or description.
-                verifyViewMetric(2, 'test integer #2!!', 'No target set.', 'No description.');
+                verifyViewMetric(2, 'test integer #2!!', '', '');
 
                 // * Verify we have three valid metrics and are editing none.
                 verifyViewsAndEdits(3, 0);
@@ -328,8 +328,14 @@ const addMetric = (type, title, target, description) => {
 const verifyViewMetric = (index, title, target, description) => {
     cy.getStyledComponent('ViewContainer').eq(index).within(() => {
         cy.getStyledComponent('Title').contains(title);
-        cy.getStyledComponent('Detail').eq(0).contains(target);
-        cy.getStyledComponent('Detail').eq(1).contains(description);
+
+        if (target) {
+            cy.getStyledComponent('Detail').eq(0).contains(target);
+        }
+
+        if (description) {
+            cy.getStyledComponent('Detail').eq(1).contains(description);
+        }
     });
 };
 
