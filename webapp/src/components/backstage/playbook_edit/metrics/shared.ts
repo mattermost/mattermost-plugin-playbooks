@@ -4,17 +4,22 @@
 import {Duration} from 'luxon';
 
 import {MetricType} from 'src/types/playbook';
+import {formatDuration} from 'src/components/formatted_duration';
 
-export const targetToString = (target: number, type: MetricType) => {
+export const targetToString = (target: number, type: MetricType, naturalDuration = false) => {
     if (!target) {
         if (type === MetricType.Integer || type === MetricType.Currency) {
             return '0';
         }
-        return '00:00:00';
+        return naturalDuration ? formatDuration(Duration.fromMillis(0), 'long') : '00:00:00';
     }
 
     if (type === MetricType.Integer || type === MetricType.Currency) {
         return target.toString();
+    }
+
+    if (naturalDuration) {
+        return formatDuration(Duration.fromMillis(target), 'long');
     }
 
     const dur = Duration.fromMillis(target).shiftTo('days', 'hours', 'minutes');

@@ -20,18 +20,14 @@ const MetricView = ({metric, editClick, disabled}: Props) => {
     const perRun = formatMessage({defaultMessage: 'per run'});
 
     let icon = <DollarSign sizePx={18}/>;
-    let smallIcon = <DollarSign sizePx={15}/>;
     if (metric.type === MetricType.Integer) {
         icon = <PoundSign sizePx={18}/>;
-        smallIcon = <PoundSign sizePx={15}/>;
     } else if (metric.type === MetricType.Duration) {
         icon = <ClockOutline sizePx={18}/>;
-        smallIcon = <ClockOutline sizePx={15}/>;
     }
 
-    const targetStr = targetToString(metric.target, metric.type);
-    const target = metric.target ? <>{': '}<TargetText>{smallIcon}{`${targetStr} ${perRun}`}</TargetText></> : '';
-    const description = metric.description ? `: ${metric.description}` : '';
+    const targetStr = targetToString(metric.target, metric.type, true);
+    const target = metric.target ? `${targetStr} ${perRun}` : '';
 
     return (
         <ViewContainer>
@@ -39,12 +35,12 @@ const MetricView = ({metric, editClick, disabled}: Props) => {
             <Centre>
                 <Title>{metric.title}</Title>
                 <Detail
-                    title={formatMessage({defaultMessage: 'Target'})}
+                    title={formatMessage({defaultMessage: 'Target'}) + ':'}
                     text={target}
                 />
                 <Detail
-                    title={formatMessage({defaultMessage: 'Description'})}
-                    text={description}
+                    title={formatMessage({defaultMessage: 'Description'}) + ':'}
+                    text={metric.description}
                 />
             </Centre>
             <Rhs>
@@ -98,7 +94,7 @@ const Detail = ({title, text}: {title: string, text: JSX.Element | string}) => {
     return (
         <DetailDiv>
             <Bold>{title}</Bold>
-            {text}
+            <DescrText>{text}</DescrText>
         </DetailDiv>
     );
 };
@@ -107,15 +103,8 @@ const DetailDiv = styled.div`
     margin-top: 4px;
 `;
 
-const TargetText = styled.span`
-    padding-left: 20px;
-    position: relative;
-
-    svg {
-        position: absolute;
-        margin-top: 2px;
-        left: 0;
-    }
+const DescrText = styled.span`
+    padding-left: 0.3em;
 `;
 
 const Title = styled.div`
