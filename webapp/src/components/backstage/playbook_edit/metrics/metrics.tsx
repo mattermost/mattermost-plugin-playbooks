@@ -13,6 +13,7 @@ import MetricView from 'src/components/backstage/playbook_edit/metrics/metric_vi
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {EditingMetric} from 'src/components/backstage/playbook_edit/playbook_edit';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
+import {DefaultFooterContainer} from 'src/components/widgets/generic_modal';
 
 enum TaskType {
     add,
@@ -230,6 +231,7 @@ const Metrics = ({
                 confirmButtonText={formatMessage({defaultMessage: 'Delete metric'})}
                 onConfirm={confirmedDelete}
                 onCancel={() => setDeletingIdx(-1)}
+                components={{FooterContainer: ConfirmModalFooter}}
             />
         </div>
     );
@@ -280,6 +282,20 @@ const OptionDesc = styled.div`
     font-size: 12px;
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const ConfirmModalFooter = styled(DefaultFooterContainer)`
+    align-items: center;
+    margin-bottom: 24px;
+
+    button.confirm {
+        background: var(--error-text);
+    }
+
+    button.cancel {
+        background: rgba(var(--error-text-color-rgb), 0.08);
+        color: var(--error-text);
+    }
 `;
 
 export default Metrics;
