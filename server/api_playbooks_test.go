@@ -771,6 +771,7 @@ func TestPlaybooksConversions(t *testing.T) {
 		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
 		defer func() {
 			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			e.SetE20Licence()
 		}()
 		e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
 
@@ -780,9 +781,26 @@ func TestPlaybooksConversions(t *testing.T) {
 
 		e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
 
-		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
-		require.NoError(t, err)
+		t.Run("E0", func(t *testing.T) {
+			e.RemoveLicense()
 
+			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		t.Run("E10", func(t *testing.T) {
+			e.SetE10Licence()
+
+			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		t.Run("E20", func(t *testing.T) {
+			e.SetE20Licence()
+
+			err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+			require.NoError(t, err)
+		})
 	})
 
 	t.Run("private to public conversion", func(t *testing.T) {
