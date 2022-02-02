@@ -19,9 +19,10 @@ import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
-import {useForceDocumentTitle, useHasPlaybookPermission, useStats} from 'src/hooks';
+import {useForceDocumentTitle, useHasPlaybookPermission, useStats, DuplicateBannerTimeout} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
+import {useToasts} from '../toast_banner';
 
 import {
     clientFetchPlaybook,
@@ -109,6 +110,7 @@ const Playbook = () => {
             navigateToPluginUrl('/playbooks');
         }
     });
+    const addToast = useToasts().add;
 
     const changeFollowing = (check: boolean) => {
         if (playbook?.id) {
@@ -248,6 +250,7 @@ const Playbook = () => {
                             onClick={async () => {
                                 const newID = await clientDuplicatePlaybook(playbook.id);
                                 navigateToPluginUrl(`/playbooks/${newID}`);
+                                addToast('successfully duplicated playbook', DuplicateBannerTimeout);
                             }}
                         >
                             <FormattedMessage defaultMessage='Duplicate'/>

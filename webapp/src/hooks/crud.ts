@@ -9,8 +9,11 @@ import {
     savePlaybook,
 } from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
+import {useToasts} from 'src/components/backstage/toast_banner';
 
 type ParamsState = Required<FetchPlaybooksParams>;
+
+export const DuplicateBannerTimeout = 5000;
 
 const searchDebounceDelayMilliseconds = 300;
 
@@ -78,6 +81,8 @@ export function usePlaybooksCrud(
         fetchPlaybooks();
     }, [params]);
 
+    const addToast = useToasts().add;
+
     const setSelectedPlaybook = async (nextSelected: Playbook | string | null) => {
         if (typeof nextSelected !== 'string') {
             return setSelectedPlaybookState(nextSelected);
@@ -125,6 +130,7 @@ export function usePlaybooksCrud(
     const duplicatePlaybook = async (playbookId: Playbook['id']) => {
         await clientDuplicatePlaybook(playbookId);
         await fetchPlaybooks();
+        addToast('successfully duplicated playbook', DuplicateBannerTimeout);
     };
 
     const sortBy = (colName: FetchPlaybooksParams['sort']) => {
