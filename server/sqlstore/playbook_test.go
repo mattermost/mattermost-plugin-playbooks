@@ -388,7 +388,18 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		WithChannelNameTemplate("playbook XX").
 		ToPlaybook()
 
-	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09}
+	pb10 := NewPBBuilder().
+		WithTitle("playbook 10").
+		WithDescription("I'm archived").
+		WithTeamID(team1id).
+		WithCreateAt(1700).
+		WithUpdateAt(0).
+		WithDeleteAt(1701).
+		WithChecklists([]int{1, 2}).
+		WithMembers([]userInfo{jon, andrew, matt}).
+		ToPlaybook()
+
+	playbooks := []app.Playbook{pb01, pb02, pb03, pb04, pb05, pb06, pb07, pb08, pb09, pb10}
 
 	createPlaybooks := func(store app.PlaybookStore) {
 		t.Helper()
@@ -424,6 +435,27 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 				PageCount:  1,
 				HasMore:    false,
 				Items:      []app.Playbook{pb01, pb02},
+			},
+			expectedErr: nil,
+		},
+		{
+			name:   "team1 from Andrew, with archived",
+			teamID: team1id,
+			requesterInfo: app.RequesterInfo{
+				UserID: andrew.ID,
+				TeamID: team1id,
+			},
+			options: app.PlaybookFilterOptions{
+				Sort:         app.SortByCreateAt,
+				Page:         0,
+				PerPage:      1000,
+				WithArchived: true,
+			},
+			expected: app.GetPlaybooksResults{
+				TotalCount: 3,
+				PageCount:  1,
+				HasMore:    false,
+				Items:      []app.Playbook{pb01, pb02, pb10},
 			},
 			expectedErr: nil,
 		},
@@ -811,7 +843,7 @@ func TestGetPlaybooksForTeam(t *testing.T) {
 		db := setupTestDB(t, driverName)
 		playbookStore := setupPlaybookStore(t, db)
 
-		t.Run("zero playbooks", func(t *testing.T) {
+		t.Run(driverName+" - zero playbooks", func(t *testing.T) {
 			result, err := playbookStore.GetPlaybooks()
 			require.NoError(t, err)
 			require.ElementsMatch(t, []app.Playbook{}, result)

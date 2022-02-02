@@ -63,6 +63,7 @@ export interface FetchPlaybooksParams {
     sort?: 'title' | 'stages' | 'steps' | 'runs';
     direction?: 'asc' | 'desc';
     search_term?: string;
+    with_archived?: boolean;
 }
 
 export interface FetchPlaybooksReturn {
