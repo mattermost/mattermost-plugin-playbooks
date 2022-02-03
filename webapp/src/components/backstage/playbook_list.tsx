@@ -114,7 +114,7 @@ const AltSub = styled(Sub)`
     margin-bottom: 36px;
 `;
 
-const PlaybookList = (props: {ftue?: boolean}) => {
+const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const {formatMessage} = useIntl();
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
@@ -164,7 +164,7 @@ const PlaybookList = (props: {ftue?: boolean}) => {
     }
 
     const makeContent = () => {
-        if (props.ftue || (!hasPlaybooks && !isFiltering)) {
+        if (props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering)) {
             return (
                 <>
                     <NoContentPage
@@ -324,7 +324,7 @@ const PlaybookList = (props: {ftue?: boolean}) => {
             {canCreatePlaybooks && (
                 <>
                     <ContainerMedium>
-                        {props.ftue ? (
+                        {props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? (
                             <AltCreatePlaybookHeader>
                                 <AltHeading>
                                     {formatMessage({defaultMessage: 'Choose a template'})}
@@ -343,7 +343,7 @@ const PlaybookList = (props: {ftue?: boolean}) => {
                                 </Sub>
                             </CreatePlaybookHeader>
                         )}
-                        <TemplateSelector templates={props.ftue ? swapEnds(PresetTemplates) : PresetTemplates}/>
+                        <TemplateSelector templates={props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? swapEnds(PresetTemplates) : PresetTemplates}/>
                     </ContainerMedium>
                 </>
             )}
