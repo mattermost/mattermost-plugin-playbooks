@@ -14,6 +14,7 @@ import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/play
 import {EditingMetric} from 'src/components/backstage/playbook_edit/playbook_edit';
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 import {DefaultFooterContainer} from 'src/components/widgets/generic_modal';
+import ConditionalTooltip from 'src/components/widgets/conditional_tooltip';
 
 enum TaskType {
     add,
@@ -190,40 +191,47 @@ const Metrics = ({
                         />
                 ))
             }
-            <DotMenu
-                dotMenuButton={TertiaryButton}
-                icon={
-                    <>
-                        <i className='icon-plus'/>
-                        {formatMessage({defaultMessage: 'Add Metric'})}
-                    </>
-                }
-                disabled={disabled || metrics.length >= 4}
-                topPx={-170}
-                leftPx={20}
+            <ConditionalTooltip
+                show={metrics.length >= 4}
+                id={'max-metrics-tooltip'}
+                content={'You may only add up to 4 key metrics'}
+                disableChildrenOnShow={true}
             >
-                <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Duration)}>
-                    <MetricTypeOption
-                        icon={<ClockOutline sizePx={18}/>}
-                        title={formatMessage({defaultMessage: 'Duration (in dd:hh:mm)'})}
-                        description={formatMessage({defaultMessage: 'e.g., Time to acknowledge, Time to resolve'})}
-                    />
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Currency)}>
-                    <MetricTypeOption
-                        icon={<DollarSign sizePx={18}/>}
-                        title={formatMessage({defaultMessage: 'Dollars'})}
-                        description={formatMessage({defaultMessage: 'e.g., Cost, Purchases'})}
-                    />
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Integer)}>
-                    <MetricTypeOption
-                        icon={<PoundSign sizePx={18}/>}
-                        title={formatMessage({defaultMessage: 'Integer'})}
-                        description={formatMessage({defaultMessage: 'e.g., Resource count, Customers affected'})}
-                    />
-                </DropdownMenuItem>
-            </DotMenu>
+                <DotMenu
+                    dotMenuButton={TertiaryButton}
+                    icon={
+                        <>
+                            <i className='icon-plus'/>
+                            {formatMessage({defaultMessage: 'Add Metric'})}
+                        </>
+                    }
+                    disabled={disabled || metrics.length >= 4}
+                    topPx={-170}
+                    leftPx={20}
+                >
+                    <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Duration)}>
+                        <MetricTypeOption
+                            icon={<ClockOutline sizePx={18}/>}
+                            title={formatMessage({defaultMessage: 'Duration (in dd:hh:mm)'})}
+                            description={formatMessage({defaultMessage: 'e.g., Time to acknowledge, Time to resolve'})}
+                        />
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Currency)}>
+                        <MetricTypeOption
+                            icon={<DollarSign sizePx={18}/>}
+                            title={formatMessage({defaultMessage: 'Dollars'})}
+                            description={formatMessage({defaultMessage: 'e.g., Cost, Purchases'})}
+                        />
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => requestAddMetric(MetricType.Integer)}>
+                        <MetricTypeOption
+                            icon={<PoundSign sizePx={18}/>}
+                            title={formatMessage({defaultMessage: 'Integer'})}
+                            description={formatMessage({defaultMessage: 'e.g., Resource count, Customers affected'})}
+                        />
+                    </DropdownMenuItem>
+                </DotMenu>
+            </ConditionalTooltip>
             <ConfirmModalLight
                 show={deletingIdx >= 0}
                 title={formatMessage({defaultMessage: 'Are you sure you want to delete?'})}
