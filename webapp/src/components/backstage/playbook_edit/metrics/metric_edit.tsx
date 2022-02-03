@@ -19,11 +19,12 @@ interface Props {
     setMetric: (setState: SetState) => void;
     otherTitles: string[];
     onAdd: (target: number) => void;
+    deleteClick: () => void;
     saveToggle: boolean;
     saveFailed: () => void;
 }
 
-const MetricEdit = ({metric, setMetric, otherTitles, onAdd, saveToggle, saveFailed}: Props) => {
+const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveToggle, saveFailed}: Props) => {
     const {formatMessage} = useIntl();
     const [curTargetString, setCurTargetString] = useState(() => targetToString(metric.target, metric.type));
     const [curSaveToggle, setCurSaveToggle] = useState(saveToggle);
@@ -89,10 +90,16 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, saveToggle, saveFail
     }
 
     return (
-        <>
+        <Container>
             <EditHeader>
                 {'Type: '}
                 {typeTitle}
+                <Button
+                    data-testid={'delete-metric'}
+                    onClick={deleteClick}
+                >
+                    <i className={'icon-trash-can-outline'}/>
+                </Button>
             </EditHeader>
             <EditContainer>
                 <Title>{'Title'}</Title>
@@ -142,17 +149,36 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, saveToggle, saveFail
                 <VerticalSpacer size={16}/>
                 <PrimaryButton onClick={verifyAndSave}>{'Add'}</PrimaryButton>
             </EditContainer>
-        </>
+        </Container>
     );
 };
 
+const Container = styled.div`
+    flex: 1;
+`;
+
 const EditHeader = styled.div`
+    display: flex;
+    align-items: center;
     font-size: 14px;
     line-height: 20px;
     padding: 12px 24px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
     background: rgba(var(--center-channel-color-rgb), 0.04);
     border-radius: 4px 4px 0 0;
+`;
+
+const Button = styled.button`
+    font-size: 18px;
+    padding: 4px 1px;
+    background: none;
+    border-radius: 4px;
+    border: 0;
+    margin-left: auto;
+
+    :hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
 `;
 
 const EditContainer = styled.div`
@@ -166,11 +192,12 @@ const EditContainer = styled.div`
 `;
 
 const Bold = styled.span`
+    display: flex;
+    align-items: center;
     font-weight: 600;
 
-    > svg {
-        position: relative;
-        top: 3px;
+    svg {
+        margin: 0 5px;
     }
 `;
 
@@ -223,7 +250,7 @@ const InputWithIcon = styled.span`
     }
 
     input {
-        padding-left: 36px;
+        padding-left: 38px;
     }
 `;
 
