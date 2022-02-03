@@ -9,10 +9,10 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import {Redirect} from 'react-router-dom';
 
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import {displayPlaybookCreateModal} from 'src/actions';
-import {GrayTertiaryButton, PrimaryButton, TertiaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
 import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
@@ -23,13 +23,10 @@ import PlaybookListRow from 'src/components/backstage/playbook_list_row';
 import {ExpandRight, HorizontalSpacer} from 'src/components/backstage/playbook_runs/shared';
 import SearchInput from 'src/components/backstage/search_input';
 import {BackstageSubheader} from 'src/components/backstage/styles';
-import TemplateSelector, {
-    isPlaybookCreationAllowed,
-} from 'src/components/templates/template_selector';
-import UpgradeModal from 'src/components/backstage/upgrade_modal';
+import TemplateSelector from 'src/components/templates/template_selector';
 import {PaginationRow} from 'src/components/pagination_row';
 import {SortableColHeader} from 'src/components/sortable_col_header';
-import {AdminNotificationType, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
+import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {
     useCanCreatePlaybooksOnAnyTeam,
     usePlaybooksCrud,
