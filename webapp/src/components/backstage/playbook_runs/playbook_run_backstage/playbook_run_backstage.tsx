@@ -149,7 +149,7 @@ const Title = styled.div`
     color: var(--center-channel-color);
 `;
 
-const PlaybookDiv = styled.div`
+const PlaybookLink = styled(Link)`
     display: flex;
     flex-direction: row;
     color: rgba(var(--center-channel-color-rgb), 0.64);
@@ -388,13 +388,10 @@ const PlaybookRunBackstage = () => {
                         </TitleWithBadgeAndLink>
                         {
                             playbook &&
-                            <Link
-                                to={pluginUrl(`/playbooks/${playbook?.id}`)}
-                                style={{display: 'flex', flexDirection: 'row'}}
-                            >
+                            <PlaybookLink to={pluginUrl(`/playbooks/${playbook?.id}`)}>
                                 <SmallPlaybookIcon/>
                                 <SubTitle>{playbook?.title}</SubTitle>
-                            </Link>
+                            </PlaybookLink>
                         }
                     </VerticalBlock>
                     <ExpandRight/>
