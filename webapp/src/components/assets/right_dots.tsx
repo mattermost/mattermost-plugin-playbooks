@@ -1,12 +1,12 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-import React, {FC} from 'react';
+import React from 'react';
 import styled from 'styled-components';
 
 const Icon = styled.svg`
     position: absolute;
-    right: 0;
+    right: 8px;
     bottom: 0;
     max-height: 70%;
     height: auto;
