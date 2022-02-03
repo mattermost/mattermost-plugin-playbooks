@@ -2,9 +2,9 @@
 // See LICENSE.txt for license information.
 import React from 'react';
 
-import {Coords} from 'src/components/tutorial/tutorial_tour_tip/tutorial_tour_tip_backdrop';
+import {Coords} from 'src/components/tutorial/tutorial_tour_tip/backdrop';
 
-import './pulsating_dot.scss';
+import './dot.scss';
 
 type Props = {
     targetRef?: React.RefObject<HTMLImageElement>;
@@ -21,9 +21,9 @@ export class PulsatingDot extends React.PureComponent<Props> {
                 transform: `translate(${this.props.coords?.x}px, ${this.props.coords?.y}px)`,
             };
         }
-        let effectiveClassName = 'pulsating_dot';
+        let effectiveClassName = 'pb_pulsating_dot';
         if (this.props.onClick) {
-            effectiveClassName += ' pulsating_dot-clickable';
+            effectiveClassName += ' pb_pulsating_dot-clickable';
         }
         if (this.props.className) {
             effectiveClassName = effectiveClassName + ' ' + this.props.className;

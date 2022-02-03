@@ -1,11 +1,16 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import {useLayoutEffect, useMemo, useState} from 'react';
+import {ElementRef, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {useSelector} from 'react-redux';
 import throttle from 'lodash/throttle';
 
-import {useElementAvailable} from 'src/hooks/general';
+import {getInt} from 'mattermost-redux/selectors/entities/preferences';
 
-import {TutorialTourTipPunchout} from './tutorial_tour_tip_backdrop';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
+
+import {GlobalState} from 'mattermost-redux/types/store';
+
+import {TutorialTourTipPunchout} from './backdrop';
 
 type PunchoutOffset = {
     x: number;
@@ -14,8 +19,11 @@ type PunchoutOffset = {
     height: number;
 }
 
-export function useMeasurePunchouts(elementIds: string[], additionalDeps: any[], offset?: PunchoutOffset): TutorialTourTipPunchout | null | undefined {
-    const elementsAvailable = useElementAvailable(elementIds);
+export function useMeasurePunchouts(
+    elements: Array<null | string | HTMLElement>,
+    additionalDeps: any[], offset?: PunchoutOffset
+): TutorialTourTipPunchout | null {
+    const elementsAvailable = useElementAvailable(elements);
     const [size, setSize] = useState<DOMRect>();
     const updateSize = throttle(() => {
         setSize(document.getElementById('root')?.getBoundingClientRect());
@@ -27,27 +35,29 @@ export function useMeasurePunchouts(elementIds: string[], additionalDeps: any[],
             window.removeEventListener('resize', updateSize);
     }, []);
 
-    const channelPunchout = useMemo(() => {
+    return useMemo(() => {
         let minX = Number.MAX_SAFE_INTEGER;
         let minY = Number.MAX_SAFE_INTEGER;
         let maxX = Number.MIN_SAFE_INTEGER;
         let maxY = Number.MIN_SAFE_INTEGER;
-        for (let i = 0; i < elementIds.length; i++) {
-            const rectangle = document.getElementById(elementIds[i])?.getBoundingClientRect();
-            if (!rectangle) {
+        for (let i = 0; i < elements.length; i++) {
+            const elOrId = elements[i];
+            const el = ((typeof elOrId !== 'string' && elOrId) || (elOrId && document.getElementById(elOrId)));
+            if (!el) {
                 return null;
             }
-            if (rectangle.x < minX) {
-                minX = rectangle.x;
+            const {x, y, width, height} = el.getBoundingClientRect();
+            if (x < minX) {
+                minX = x;
             }
-            if (rectangle.y < minY) {
-                minY = rectangle.y;
+            if (y < minY) {
+                minY = y;
             }
-            if (rectangle.x + rectangle.width > maxX) {
-                maxX = rectangle.x + rectangle.width;
+            if (x + width > maxX) {
+                maxX = x + width;
             }
-            if (rectangle.y + rectangle.height > maxY) {
-                maxY = rectangle.y + rectangle.height;
+            if (y + height > maxY) {
+                maxY = y + height;
             }
         }
 
@@ -57,6 +67,40 @@ export function useMeasurePunchouts(elementIds: string[], additionalDeps: any[],
             width: `${(maxX - minX) + (offset ? offset.width : 0)}px`,
             height: `${(maxY - minY) + (offset ? offset.height : 0)}px`,
         };
-    }, [...elementIds, ...additionalDeps, size, elementsAvailable]);
-    return channelPunchout;
+    }, [...elements, ...additionalDeps, size, elementsAvailable]);
 }
+
+export const useShowTutorialStep = (stepToShow: number, category: string): boolean => {
+    const currentUserId = useSelector(getCurrentUserId);
+    const step = useSelector((state: GlobalState) => getInt(state, category, currentUserId, 0));
+
+    return step === stepToShow;
+};
+
+export const useElementAvailable = (elements: Array<null | string | HTMLElement>): boolean => {
+    const checkAvailableInterval = useRef<NodeJS.Timeout | null>(null);
+    const [available, setAvailable] = useState(false);
+    useEffect(() => {
+        if (available) {
+            if (checkAvailableInterval.current) {
+                clearInterval(checkAvailableInterval.current);
+                checkAvailableInterval.current = null;
+            }
+            return;
+        } else if (checkAvailableInterval.current) {
+            return;
+        }
+        checkAvailableInterval.current = setInterval(() => {
+            if (elements.every((x) => (typeof x !== 'string' && x) || (x && document.getElementById(x)))) {
+                setAvailable(true);
+                if (checkAvailableInterval.current) {
+                    clearInterval(checkAvailableInterval.current);
+                    checkAvailableInterval.current = null;
+                }
+            }
+        }, 500);
+    }, []);
+
+    return useMemo(() => available, [available]);
+};
+

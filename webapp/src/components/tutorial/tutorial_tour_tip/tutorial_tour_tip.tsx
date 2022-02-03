@@ -11,28 +11,37 @@ import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light-border.css';
 import 'tippy.js/animations/scale-subtle.css';
 import 'tippy.js/animations/perspective-subtle.css';
-import PulsatingDot from '../pulsating_dot';
+import useTutorialTourTipManager from './manager';
 
-import TutorialTourTipBackdrop, {TutorialTourTipPunchout} from './tutorial_tour_tip_backdrop';
-import useTutorialTourTipManager from './tutorial_tour_tip_manager';
+import PulsatingDot from './dot';
+import TutorialTourTipBackdrop, {TutorialTourTipPunchout} from './backdrop';
 import './tutorial_tour_tip.scss';
 
 const rootPortal = document.getElementById('root-portal');
 
-const TourTipOverlay = ({children, show, onClick}: {children: React.ReactNode ; show: boolean; onClick: (e: React.MouseEvent) => void}) =>
-    (show ? ReactDOM.createPortal(
+type OverlayProps = {
+    children: React.ReactNode;
+    show: boolean;
+    onClick: (e: React.MouseEvent) => void;
+};
+const TourTipOverlay = ({children, show, onClick}: OverlayProps) => {
+    if (!show) {
+        return null;
+    }
+
+    return ReactDOM.createPortal((
         <div
             className='pb-tutorial-tour-tip__overlay'
             onClick={onClick}
         >
             {children}
-        </div>,
-        rootPortal!,
-    ) : null);
+        </div>
+    ), rootPortal!);
+};
 
 type Props = {
-    screen: JSX.Element;
-    title: JSX.Element;
+    screen: React.ReactNode;
+    title: React.ReactNode;
     imageURL?: string;
     punchOut?: TutorialTourTipPunchout | null;
     step: number;
@@ -46,7 +55,7 @@ type Props = {
     onNextNavigateTo?: () => void;
     onPrevNavigateTo?: () => void;
     autoTour?: boolean;
-    pulsatingDotPlacement?: Omit<Placement, 'auto'| 'auto-end'>;
+    pulsatingDotPlacement?: Omit<Placement, 'auto' | 'auto-end'>;
     pulsatingDotTranslate?: {x: number; y: number};
     width?: string | number;
 }
@@ -111,7 +120,7 @@ const TutorialTourTip = ({
         const lastStep = getLastStep();
         if (step === lastStep) {
             buttonText = (
-                <FormattedMessage defaultMessage={'Finish tour'}/>
+                <FormattedMessage defaultMessage={'Done'}/>
             );
         }
 
@@ -191,15 +200,17 @@ const TutorialTourTip = ({
                         </button>
                     </div>
                 </div>
-                {showOptOut && <div className='pb-tutorial-tour-tip__opt'>
-                    <FormattedMessage defaultMessage='Seen this before?'/>
-                    <a
-                        href='#'
-                        onClick={handleSkipTutorial}
-                    >
-                        <FormattedMessage defaultMessage='Opt out of these tips.'/>
-                    </a>
-                </div>}
+                {showOptOut && (
+                    <div className='pb-tutorial-tour-tip__opt'>
+                        <FormattedMessage defaultMessage='Seen this before?'/>
+                        <a
+                            href='#'
+                            onClick={handleSkipTutorial}
+                        >
+                            <FormattedMessage defaultMessage='Opt out of these tips.'/>
+                        </a>
+                    </div>
+                )}
             </div>
         </>
     );

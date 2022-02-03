@@ -559,31 +559,3 @@ export const usePrevious = (value: any) => {
 
     return ref.current;
 };
-
-export const useElementAvailable = (elementIds: string[]): boolean => {
-    const checkAvailableInterval = useRef<NodeJS.Timeout | null>(null);
-    const [available, setAvailable] = useState(false);
-    useEffect(() => {
-        if (available) {
-            if (checkAvailableInterval.current) {
-                clearInterval(checkAvailableInterval.current);
-                checkAvailableInterval.current = null;
-            }
-            return;
-        } else if (checkAvailableInterval.current) {
-            return;
-        }
-        checkAvailableInterval.current = setInterval(() => {
-            if (elementIds.every((x) => document.getElementById(x))) {
-                setAvailable(true);
-                if (checkAvailableInterval.current) {
-                    clearInterval(checkAvailableInterval.current);
-                    checkAvailableInterval.current = null;
-                }
-            }
-        }, 500);
-    }, []);
-
-    return useMemo(() => available, [available]);
-};
-
