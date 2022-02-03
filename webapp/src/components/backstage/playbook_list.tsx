@@ -332,7 +332,7 @@ const PlaybookList = (props: {ftue?: boolean}) => {
                                 </AltSub>
                             </AltCreatePlaybookHeader>
                         )}
-                        <TemplateSelector templates={hasPlaybooks ? PresetTemplates : swapEnds(PresetTemplates)}/>
+                        <TemplateSelector templates={hasPlaybooks && !props.ftue ? PresetTemplates : swapEnds(PresetTemplates)}/>
                     </ContainerMedium>
                 </>
             )}
