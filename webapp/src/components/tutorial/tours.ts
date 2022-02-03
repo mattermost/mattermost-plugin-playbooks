@@ -14,18 +14,18 @@ export const AutoTourStatus = {
 const AutoStatusSuffix = '_at_status';
 
 export const TutorialTourCategories: Record<string, string> = {
-    PB_RHS_TOUR: 'pb_rhs_tour',
+    PB_TOUR_EX: 'tutorial_pb_tour_ex',
 };
 
-export const PB_RHS_TOUR = {
+export const PB_TOUR_EX = {
     START: 0,
     FINISHED,
 };
 
 export const TTCategoriesMapToSteps: Record<string, Record<string, number>> = {
-    [TutorialTourCategories.PB_RHS_TOUR]: PB_RHS_TOUR,
+    [TutorialTourCategories.PB_TOUR_EX]: PB_TOUR_EX,
 };
 
 export const TTCategoriesMapToAutoTourStatusKey: Record<string, string> = {
-    [TutorialTourCategories.ADMIN_ON_BOARDING]: TutorialTourCategories.ADMIN_ON_BOARDING + AutoStatusSuffix,
+    [TutorialTourCategories.PB_TOUR_EX]: TutorialTourCategories.PB_TOUR_EX + AutoStatusSuffix,
 };

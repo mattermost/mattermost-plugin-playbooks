@@ -16,12 +16,9 @@ import RHSAbout from 'src/components/rhs/rhs_about';
 import RHSChecklistList from 'src/components/rhs/rhs_checklist_list';
 import {usePrevious} from 'src/hooks/general';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
-import TutorialTourTip, {useMeasurePunchouts} from 'src/components/tutorial/tutorial_tour_tip';
-import {TutorialTourCategories} from '../tutorial/tours';
 
 const RHSRunDetails = () => {
     const scrollbarsRef = useRef<Scrollbars>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
 
     const playbookRun = useSelector(currentPlaybookRun);
 
@@ -31,8 +28,6 @@ const RHSRunDetails = () => {
             scrollbarsRef?.current?.scrollToTop();
         }
     }, [playbookRun?.current_status]);
-
-    const punchout = useMeasurePunchouts(['rhsContainer'], [containerRef], {y: -11, height: 11, x: 0, width: 0});
 
     if (!playbookRun) {
         return null;
@@ -55,22 +50,6 @@ const RHSRunDetails = () => {
                     <RHSChecklistList playbookRun={playbookRun}/>
                 </Scrollbars>
             </RHSContent>
-
-            <TutorialTourTip
-                title={'View run details in a side panel'}
-                screen={'See who is involved and what needs to be done without leaving the conversation.'}
-                tutorialCategory={TutorialTourCategories.PB_RHS_TOUR}
-                step={0}
-                showOptOut={false}
-                placement='left-start'
-                pulsatingDotPlacement='top-start'
-                pulsatingDotTranslate={{x: -6, y: -6}}
-                telemetryTag={'telemetry_prefix_'}
-                width={352}
-                autoTour={false}
-                punchOut={punchout}
-            />
-
         </RHSContainer>
     );
 };
