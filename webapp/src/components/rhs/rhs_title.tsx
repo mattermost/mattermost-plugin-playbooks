@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {Link} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
@@ -18,7 +19,7 @@ import {RHSState} from 'src/types/rhs';
 import {setRHSViewingList} from 'src/actions';
 import {currentPlaybookRun, currentRHSState} from 'src/selectors';
 
-import {navigateToPluginUrl} from 'src/browser_routing';
+import {pluginUrl} from 'src/browser_routing';
 
 import {OVERLAY_DELAY} from 'src/constants';
 
@@ -50,24 +51,16 @@ const RHSTitle = () => {
                     delay={OVERLAY_DELAY}
                     overlay={tooltip}
                 >
-                    <RHSTitleText
+                    <RHSTitleLink
                         data-testid='rhs-title'
                         role={'button'}
-                        clickable={true}
-                        tabIndex={0}
-                        onClick={() => navigateToPluginUrl(`/runs/${playbookRun?.id}`)}
-                        onKeyDown={(e) => {
-                            // Handle Enter and Space as clicking on the button
-                            if (e.keyCode === 13 || e.keyCode === 32) {
-                                navigateToPluginUrl(`/runs/${playbookRun?.id}`);
-                            }
-                        }}
+                        to={pluginUrl(`/runs/${playbookRun?.id}`)}
                     >
                         {formatMessage({defaultMessage: 'Run details'})}
                         <StyledButtonIcon>
                             <ExternalLink/>
                         </StyledButtonIcon>
-                    </RHSTitleText>
+                    </RHSTitleLink>
                 </OverlayTrigger>
             </RHSTitleContainer>
         );
@@ -111,9 +104,34 @@ const RHSTitleText = styled.div<{ clickable?: boolean }>`
         &--active:hover {
             background: rgba(var(--button-bg-rgb), 0.08);
             color: var(--button-bg);
-            fill: var(--button-bg);
         }
     `}
+`;
+
+const RHSTitleLink = styled(Link)`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+    color: var(--center-channel-color) !important;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    border-radius: 4px;
+
+    &:hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        text-decoration: none;
+    }
+
+    &:active,
+    &--active,
+    &--active:hover {
+        background: rgba(var(--button-bg-rgb), 0.08);
+        color: var(--button-bg);
+    }
 `;
 
 const Button = styled.button`
@@ -136,7 +154,8 @@ const StyledButtonIcon = styled.i`
 
     color: rgba(var(--center-channel-color-rgb), 0.48);
 
-    ${RHSTitleText}:hover & {
+    ${RHSTitleText}:hover &,
+    ${RHSTitleLink}:hover & {
         color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 `;
