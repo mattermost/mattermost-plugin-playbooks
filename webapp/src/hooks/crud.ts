@@ -3,6 +3,7 @@ import debounce from 'debounce';
 
 import {
     archivePlaybook as clientArchivePlaybook,
+    restorePlaybook as clientRestorePlaybook,
     duplicatePlaybook as clientDuplicatePlaybook,
     clientFetchPlaybook,
     clientFetchPlaybooks,
@@ -67,6 +68,7 @@ export function usePlaybooksCrud(
         page: 0,
         per_page: 10,
         search_term: '',
+        with_archived: false,
         ...defaultParams,
     });
 
@@ -122,6 +124,11 @@ export function usePlaybooksCrud(
         }
     };
 
+    const restorePlaybook = async (playbookId: Playbook['id']) => {
+        await clientRestorePlaybook(playbookId);
+        await fetchPlaybooks();
+    };
+
     const duplicatePlaybook = async (playbookId: Playbook['id']) => {
         await clientDuplicatePlaybook(playbookId);
         await fetchPlaybooks();
@@ -144,6 +151,11 @@ export function usePlaybooksCrud(
     };
     const setSearchTermDebounced = debounce(setSearchTerm, searchDebounceDelayMilliseconds);
 
+    const setWithArchived = (with_archived: boolean) => {
+        setLoading(true);
+        setParams({with_archived});
+    };
+
     const isFiltering = (params?.search_term?.length ?? 0) > 0;
 
     return [
@@ -155,8 +167,10 @@ export function usePlaybooksCrud(
             sortBy,
             setSelectedPlaybook,
             archivePlaybook,
+            restorePlaybook,
             duplicatePlaybook,
             setSearchTerm: setSearchTermDebounced,
+            setWithArchived,
             isFiltering,
         },
     ] as const;
