@@ -58,6 +58,8 @@ func applyPlaybookFilterOptionsSort(builder sq.SelectBuilder, options app.Playbo
 		sort = "NumSteps"
 	case app.SortByRuns:
 		sort = "NumRuns"
+	case app.SortByCreateAt:
+		sort = "CreateAt"
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
@@ -425,7 +427,6 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 		LeftJoin("Schemes s ON t.SchemeId = s.Id").
 		GroupBy("p.ID").
 		GroupBy("s.Id").
-		Where(sq.Eq{"p.DeleteAt": 0}).
 		Where(permissionsAndFilter).
 		Where(teamLimitExpr)
 
@@ -437,7 +438,6 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 	queryForTotal := p.store.builder.
 		Select("COUNT(*)").
 		From("IR_Playbook AS p").
-		Where(sq.Eq{"DeleteAt": 0}).
 		Where(permissionsAndFilter).
 		Where(teamLimitExpr)
 
@@ -454,6 +454,11 @@ func (p *playbookStore) GetPlaybooksForTeam(requesterInfo app.RequesterInfo, tea
 
 		queryForResults = queryForResults.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
 		queryForTotal = queryForTotal.Where(sq.Like{column: fmt.Sprint("%", searchString, "%")})
+	}
+
+	if !opts.WithArchived {
+		queryForResults = queryForResults.Where(sq.Eq{"p.DeleteAt": 0})
+		queryForTotal = queryForTotal.Where(sq.Eq{"DeleteAt": 0})
 	}
 
 	var playbooks []app.Playbook
@@ -506,7 +511,6 @@ func (p *playbookStore) GetPlaybooksWithKeywords(opts app.PlaybookFilterOptions)
 	queryForResults := p.store.builder.
 		Select("ID", "Title", "UpdateAt", "TeamID", "ConcatenatedSignalAnyKeywords").
 		From("IR_Playbook AS p").
-		Where(sq.Eq{"DeleteAt": 0}).
 		Where(sq.Eq{"SignalAnyKeywordsEnabled": true}).
 		Offset(uint64(opts.Page * opts.PerPage)).
 		Limit(uint64(opts.PerPage))

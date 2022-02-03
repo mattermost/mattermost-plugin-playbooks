@@ -20,6 +20,7 @@ import {
     PlaybookWithChecklist,
     Checklist,
     emptyPlaybook,
+    Metric,
 } from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/playbook_edit/stages_and_steps_edit';
@@ -85,6 +86,11 @@ const PlaybookNavbar = styled(BackstageNavbar)`
     top: 80px;
 `;
 
+export interface EditingMetric {
+    index: number;
+    metric: Metric;
+}
+
 const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
@@ -112,6 +118,7 @@ const PlaybookEdit = (props: Props) => {
         return initialPlaybook;
     });
     const [changesMade, setChangesMade] = useState(false);
+    const [curEditingMetric, setCurEditingMetric] = useState<EditingMetric | null>(null);
 
     const [showTitleDescriptionModal, setShowTitleDescriptionModal] = useState(false);
 
@@ -139,6 +146,7 @@ const PlaybookEdit = (props: Props) => {
                     const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
                     if (fetchedPlaybook) {
                         fetchedPlaybook.members ??= [{user_id: currentUserId, roles: [PlaybookRole.Member, PlaybookRole.Admin]}];
+                        fetchedPlaybook.metrics ??= [];
                         setPlaybook(fetchedPlaybook);
                     }
                     setFetchingState(FetchingStateType.fetched);
@@ -303,6 +311,8 @@ const PlaybookEdit = (props: Props) => {
                                 retrospectiveAccess={retrospectiveAccess}
                                 setPlaybook={setPlaybook}
                                 setChangesMade={setChangesMade}
+                                curEditingMetric={curEditingMetric}
+                                setCurEditingMetric={setCurEditingMetric}
                             />
                         </TabsContent>
                     </EditContent>
@@ -310,7 +320,7 @@ const PlaybookEdit = (props: Props) => {
             </Container>
             <RouteLeavingGuard
                 navigate={(path) => WebappUtils.browserHistory.push(path)}
-                shouldBlockNavigation={() => changesMade}
+                shouldBlockNavigation={(newLoc) => location.pathname !== newLoc.pathname && changesMade}
             />
         </OuterContainer>
     );

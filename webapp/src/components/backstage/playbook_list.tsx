@@ -49,8 +49,11 @@ import TeamSelector from '../team/team_selector';
 
 import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
 
+import CheckboxInput from './runs_list/checkbox_input';
+
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
 import NoContentPage from './playbook_list_getting_started';
+import useConfirmPlaybookRestoreModal from './restore_playbook_modal';
 
 const PlaybooksHeader = styled(BackstageSubheader)`
     display: flex;
@@ -124,10 +127,11 @@ const PlaybookList = (props: {ftue?: boolean}) => {
     const [
         playbooks,
         {isLoading, totalCount, params, selectedPlaybook},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, duplicatePlaybook, setSearchTerm, isFiltering},
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
+    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
 
     const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
@@ -152,6 +156,7 @@ const PlaybookList = (props: {ftue?: boolean}) => {
                 displayTeam={teams.length > 1}
                 onClick={() => view(p)}
                 onEdit={() => edit(p)}
+                onRestore={() => openConfirmRestoreModal(p)}
                 onArchive={() => openConfirmArchiveModal(p)}
                 onDuplicate={() => duplicatePlaybook(p.id)}
             />
@@ -207,6 +212,12 @@ const PlaybookList = (props: {ftue?: boolean}) => {
                             default={params.search_term}
                             onSearch={setSearchTerm}
                             placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
+                        />
+                        <CheckboxInput
+                            testId={'with-archived'}
+                            text={formatMessage({defaultMessage: 'With archived'})}
+                            checked={params.with_archived}
+                            onChange={setWithArchived}
                         />
                         <HorizontalSpacer size={12}/>
                         <input
@@ -337,6 +348,7 @@ const PlaybookList = (props: {ftue?: boolean}) => {
                 </>
             )}
             {confirmArchiveModal}
+            {confirmRestoreModal}
         </PlaybookListContainer>
     );
 };

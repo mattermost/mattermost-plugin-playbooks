@@ -188,6 +188,40 @@ func TestPlaybooks(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 1, playbookResults.TotalCount)
 	})
+
+	t.Run("archived playbooks can be retrieved", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "ArchiveTest 1 -- not archived",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		assert.Nil(t, err)
+		assert.NotEmpty(t, id)
+
+		id, err = e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "ArchiveTest 2 -- archived",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		assert.Nil(t, err)
+		assert.NotEmpty(t, id)
+		err = e.PlaybooksClient.Playbooks.Archive(context.Background(), id)
+		assert.NoError(t, err)
+
+		playbookResults, err := e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
+			SearchTeam: "ArchiveTest",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, 1, playbookResults.TotalCount)
+
+		playbookResults, err = e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
+			SearchTeam:   "ArchiveTest",
+			WithArchived: true,
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, 2, playbookResults.TotalCount)
+
+	})
 }
 
 func TestPlaybooksRetrieval(t *testing.T) {

@@ -25,7 +25,7 @@ import {PatternedTextArea} from 'src/components/backstage/playbook_edit/automati
 
 interface Props {
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
-    setPlaybook: (playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist) => void;
+    setPlaybook: React.Dispatch<React.SetStateAction<DraftPlaybookWithChecklist | PlaybookWithChecklist>>;
     setChangesMade: (b: boolean) => void;
 }
 
