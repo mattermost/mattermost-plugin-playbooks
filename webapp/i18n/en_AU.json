@@ -406,5 +406,10 @@
     "9XUYQt": "Import",
     "4fHiNl": "Duplicate",
     "4alprY": "Playbook Templates",
-    "/urtZ8": "Your Playbooks"
+    "/urtZ8": "Your Playbooks",
+    "lBqu4h": "Restore playbook",
+    "bTgMQ2": "This playbook is archived.",
+    "MTzF3S": "Are you sure you want to restore the playbook {title}?",
+    "4cwL43": "With archived",
+    "4aupaG": "The playbook {title} was successfully restored."
 }
