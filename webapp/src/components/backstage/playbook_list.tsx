@@ -4,11 +4,9 @@
 import {getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {Team} from 'mattermost-redux/types/teams';
-import React, {useRef, useState, useEffect} from 'react';
+import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-import {Redirect} from 'react-router-dom';
-
 import styled from 'styled-components';
 
 import {displayPlaybookCreateModal} from 'src/actions';
@@ -123,7 +121,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
 
     const [
         playbooks,
-        {isLoading, totalCount, params, selectedPlaybook},
+        {isLoading, totalCount, params},
         {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
@@ -131,10 +129,6 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
 
     const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
-
-    const newPlaybook = (team: Team, templateTitle?: string) => {
-        dispatch(displayPlaybookCreateModal({startingTeamId: team.id, startingTemplate: templateTitle}));
-    };
 
     const hasPlaybooks = playbooks?.length !== 0;
 
@@ -210,6 +204,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                             onSearch={setSearchTerm}
                             placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
                         />
+                        <HorizontalSpacer size={12}/>
                         <CheckboxInput
                             testId={'with-archived'}
                             text={formatMessage({defaultMessage: 'With archived'})}
