@@ -313,16 +313,7 @@ const PlaybookList = (props: {ftue?: boolean}) => {
             {canCreatePlaybooks && (
                 <>
                     <ContainerMedium>
-                        {hasPlaybooks && !props.ftue ? (
-                            <CreatePlaybookHeader>
-                                <Heading>
-                                    {formatMessage({defaultMessage: 'Do more with Playbooks'})}
-                                </Heading>
-                                <Sub>
-                                    {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
-                                </Sub>
-                            </CreatePlaybookHeader>
-                        ) : (
+                        {props.ftue ? (
                             <AltCreatePlaybookHeader>
                                 <AltHeading>
                                     {formatMessage({defaultMessage: 'Choose a template'})}
@@ -331,8 +322,17 @@ const PlaybookList = (props: {ftue?: boolean}) => {
                                     {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
                                 </AltSub>
                             </AltCreatePlaybookHeader>
+                        ) : (
+                            <CreatePlaybookHeader>
+                                <Heading>
+                                    {formatMessage({defaultMessage: 'Do more with Playbooks'})}
+                                </Heading>
+                                <Sub>
+                                    {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
+                                </Sub>
+                            </CreatePlaybookHeader>
                         )}
-                        <TemplateSelector templates={hasPlaybooks && !props.ftue ? PresetTemplates : swapEnds(PresetTemplates)}/>
+                        <TemplateSelector templates={props.ftue ? swapEnds(PresetTemplates) : PresetTemplates}/>
                     </ContainerMedium>
                 </>
             )}
