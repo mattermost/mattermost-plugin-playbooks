@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import StatusBadge from 'src/components/backstage/status_badge';
 
@@ -32,8 +32,7 @@ export const TabPageContainer = styled.div`
 export const Title = styled.div`
     ${SemiBoldHeading} {
     }
-
-    color: var(--button-bg);
+    color: var(--center-channel-color);
     font-size: 18px;
     font-weight: 600;
 `;

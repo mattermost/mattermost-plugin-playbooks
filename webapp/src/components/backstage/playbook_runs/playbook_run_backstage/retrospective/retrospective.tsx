@@ -1,24 +1,31 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {mdiCurrencyUsd, mdiPound} from '@mdi/js';
-
-import Icon from '@mdi/react';
-
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import React, {useState} from 'react';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
-import {BaseInput} from 'src/components/assets/inputs';
+import {DateTime} from 'luxon';
 
 import UpgradeRetrospectiveSvg from 'src/components/assets/upgrade_retrospective_svg';
-import {Container, Left, Right, VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
+import {Container, Content, Left, Right, Title, VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
 
 import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookRun} from 'src/types/playbook_run';
+import {PlaybookWithChecklist} from 'src/types/playbook';
+
+import MetricsData from '../metrics_data';
+
+import {publishRetrospective} from 'src/client';
+
+import {PrimaryButton} from 'src/components/assets/buttons';
+
+import {Timestamp} from 'src/webapp_globals';
+
+import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 
 import Report from './report';
 
@@ -26,82 +33,29 @@ import TimelineRetro from './timeline_retro';
 
 interface Props {
     playbookRun: PlaybookRun;
+    playbook: PlaybookWithChecklist | null;
     deleteTimelineEvent: (id: string) => void;
     setRetrospective: (retrospective: string) => void;
     setPublishedAt: (publishedAt: number) => void;
     setCanceled: (canceled: boolean) => void;
 }
 
-const Title = styled.div`
-    font-weight: 600;
-    margin: 0 0 8px 0;
-`;
-
-const InputWithIcon = styled.span`
-    position: relative;
-
-    i, svg {
-        position: absolute;
-        color: rgba(var(--center-channel-color-rgb), 0.64);
-    }
-
-    i {
-        left: 10px;
-        top: 0;
-    }
-
-    svg {
-        left: 14px;
-        top: 2px;
-    }
-
-    input {
-        padding-left: 36px;
-    }
-`;
-
-const StyledInput = styled(BaseInput)<{ error?: boolean }>`
-    height: 32px;
-    width: 100%;
-
-    ${(props) => (
-        props.error && css`
-            box-shadow: inset 0 0 0 1px var(--error-text);
-
-            &:focus {
-                box-shadow: inset 0 0 0 2px var(--error-text);
-            }
-        `
-    )}
-`;
-const Bold = styled.span`
-    font-weight: 600;
-
-    > svg {
-        position: relative;
-        top: 3px;
-    }
-`;
-
-interface Metric {
-    val: string;
-    id: string;
-}
+const PUB_TIME = {
+    useTime: false,
+    units: [
+        {within: ['second', -45], display: <FormattedMessage defaultMessage='just now'/>},
+        ['minute', -59],
+        ['hour', -48],
+        ['day', -30],
+        ['month', -12],
+        'year',
+    ],
+};
 
 export const Retrospective = (props: Props) => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
-    const metrics = [1, 2, 3];
-    const metricsValues = [{val: '9', id: '1'}, {val: '92', id: '2'}, {val: '19', id: '3'}];
     const {formatMessage} = useIntl();
-    const [targetError, setTargetError] = useState('');
-    const [curState, setCurState] = useState<Metric[]>(metricsValues);
-
-    function updateMetrics(index: number, event: React.ChangeEvent<HTMLInputElement>) {
-        const newList = [...curState];
-        newList[index].val = event.target.value;
-        setCurState(newList);
-        setTargetError('');
-    }
+    const [showConfirmation, setShowConfirmation] = useState(false);
 
     if (!allowRetrospectiveAccess) {
         return (
@@ -115,54 +69,66 @@ export const Retrospective = (props: Props) => {
         );
     }
 
+    const confirmedPublish = () => {
+        publishRetrospective(props.playbookRun.id, props.playbookRun.retrospective);
+        props.setPublishedAt(DateTime.now().valueOf());
+        props.setCanceled(false);
+        setShowConfirmation(false);
+    };
+
+    const publishButtonText: React.ReactNode = formatMessage({defaultMessage: 'Publish'});
+    let publishComponent = (
+        <PrimaryButtonSmaller
+            onClick={() => setShowConfirmation(true)}
+        >
+            <TextContainer>{publishButtonText}</TextContainer>
+        </PrimaryButtonSmaller>
+    );
+
+    const isPublished = props.playbookRun.retrospective_published_at > 0 && !props.playbookRun.retrospective_was_canceled;
+    if (isPublished) {
+        const publishedAt = (
+            <Timestamp
+                value={props.playbookRun.retrospective_published_at}
+                {...PUB_TIME}
+            />
+        );
+        publishComponent = (
+            <>
+                <i className={'icon icon-check-all'}/>
+                <span>{''}</span>
+                {formatMessage({defaultMessage: 'Published {timestamp}'}, {timestamp: publishedAt})}
+                <DisabledPrimaryButtonSmaller>
+                    <TextContainer>{publishButtonText}</TextContainer>
+                </DisabledPrimaryButtonSmaller>
+            </>
+        );
+    }
+
     return (
         <Container>
             <Left>
-                {
-                    metrics.map((metric, idx) => {
-                        let typeTitle = ' Dollars';
-                        let searchIcon = <DollarSign size={1}/>;
-                        if (metric === 1) {
-                            typeTitle = ' Integer';
-                            searchIcon = <PoundSign size={1}/>;
-                        } else if (metric === 2) {
-                            typeTitle = 'Duration (in dd:hh:mm)';
-                            searchIcon = <i className='icon-clock-outline'/>;
-                        }
-
-                        return (
-                            <>
-                                <VerticalSpacer size={16}/>
-                                <Title>{'Target per run'}</Title>
-                                <InputWithIcon>
-                                    {searchIcon}
-                                    <StyledInput
-                                        placeholder={typeTitle}
-                                        type='text'
-                                        value={curState[idx].val}
-                                        onChange={(e) => updateMetrics(idx, e)}
-                                    />
-                                </InputWithIcon>
-                                {
-                                    targetError !== '' &&
-                                    <ErrorText>{targetError}</ErrorText>
-                                }
-                                <HelpText>{formatMessage({defaultMessage: 'We’ll show you how close or far from the target each run’s value is and also plot it on a chart.'})}</HelpText>
-                            </>
-                        );
-                    })
-                }
-
-                {props.playbookRun.retrospective_enabled ?
-                    <Report
-                        playbookRun={props.playbookRun}
-                        setRetrospective={props.setRetrospective}
-                        setPublishedAt={props.setPublishedAt}
-                        setCanceled={props.setCanceled}
-                    /> :
-                    <RetrospectiveDisabledText id={'retrospective-disabled-msg'}>
-                        {formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}
-                    </RetrospectiveDisabledText>}
+                {props.playbookRun.retrospective_enabled ? <div>
+                    <Header>
+                        <Title>{formatMessage({defaultMessage: 'Retrospective'})}</Title>
+                        <HeaderButtonsRight>
+                            {publishComponent}
+                        </HeaderButtonsRight>
+                    </Header>
+                    <StyledContent>
+                        <MetricsData
+                            playbookRun={props.playbookRun}
+                            isPublished={isPublished}
+                        />
+                        <Report
+                            playbookRun={props.playbookRun}
+                            setRetrospective={props.setRetrospective}
+                            isPublished={isPublished}
+                        />
+                    </StyledContent>
+                </div> : <RetrospectiveDisabledText id={'retrospective-disabled-msg'}>
+                    {formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}
+                </RetrospectiveDisabledText>}
             </Left>
             <Right>
                 <TimelineRetro
@@ -170,6 +136,14 @@ export const Retrospective = (props: Props) => {
                     deleteTimelineEvent={props.deleteTimelineEvent}
                 />
             </Right>
+            <ConfirmModalLight
+                show={showConfirmation}
+                title={formatMessage({defaultMessage: 'Are you sure you want to publish?'})}
+                message={formatMessage({defaultMessage: 'You will not be able to edit the retrospective report after publishing it. Do you want to publish the retrospective report?'})}
+                confirmButtonText={formatMessage({defaultMessage: 'Publish'})}
+                onConfirm={confirmedPublish}
+                onCancel={() => setShowConfirmation(false)}
+            />
         </Container>
     );
 };
@@ -181,43 +155,48 @@ const RetrospectiveDisabledText = styled.div`
     text-align: left;
 `;
 
-/*
-
-    let typeTitle = <Bold><DollarSign size={1.2}/>{' Dollars'}</Bold>;
-     let searchIcon = <DollarSign size={1}/>;
-     if (metric.type === MetricType.Integer) {
-         typeTitle = <Bold><PoundSign size={1.2}/>{' Integer'}</Bold>;
-         searchIcon = <PoundSign size={1}/>;
-     } else if (metric.type === MetricType.Duration) {
-         typeTitle = <Bold><i className='icon-clock-outline'/>{' Duration (in dd:hh:mm)'}</Bold>;
-         searchIcon = <i className='icon-clock-outline'/>;
-     }
-*/
-
-const DollarSign = ({size}: {size: number}) => (
-    <Icon
-        path={mdiCurrencyUsd}
-        size={size}
-    />
-);
-
-const PoundSign = ({size}: {size: number}) => (
-    <Icon
-        path={mdiPound}
-        size={size}
-    />
-);
-
-const HelpText = styled.div`
-    font-size: 12px;
-    line-height: 16px;
-    margin-top: 4px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
+const StyledContent = styled(Content)`
+    padding: 0 24px;
 `;
 
-const ErrorText = styled.div`
-    font-size: 12px;
-    line-height: 16px;
-    margin-top: 4px;
-    color: var(--error-text);
+const PrimaryButtonSmaller = styled(PrimaryButton)`
+    height: 32px;
+`;
+
+const TextContainer = styled.span`
+    display: flex;
+`;
+
+const DisabledPrimaryButtonSmaller = styled(PrimaryButtonSmaller)`
+    background: rgba(var(--center-channel-color-rgb),0.08);
+    color: rgba(var(--center-channel-color-rgb),0.32);
+    margin-left: 16px;
+    cursor: default;
+
+    &:active:not([disabled])  {
+        background: rgba(var(--center-channel-color-rgb),0.08);
+    }
+
+    &:hover:enabled {
+        background: rgba(var(--center-channel-color-rgb),0.08);
+        &:before {
+            opacity: 0;
+        }
+    }
+`;
+
+const Header = styled.div`
+    display: flex;
+    align-items: center;
+`;
+
+const HeaderButtonsRight = styled.div`
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    > * {
+        margin-left: 4px;
+    }
 `;

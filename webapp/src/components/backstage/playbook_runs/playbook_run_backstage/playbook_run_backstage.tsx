@@ -436,6 +436,7 @@ const PlaybookRunBackstage = () => {
                         <Route path={`${match.url}/retrospective`}>
                             <Retrospective
                                 playbookRun={playbookRun}
+                                playbook={playbook}
                                 deleteTimelineEvent={deleteTimelineEvent}
                                 setRetrospective={setRetrospective}
                                 setPublishedAt={setPublishedAt}
