@@ -924,6 +924,7 @@ func TestPlaybookStats(t *testing.T) {
 	e := Setup(t)
 	e.CreateClients()
 	e.CreateBasicServer()
+	e.SetE20Licence()
 	e.CreateBasicPlaybook()
 
 	t.Run("unlicensed server", func(t *testing.T) {
