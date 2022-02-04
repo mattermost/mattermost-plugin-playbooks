@@ -35,9 +35,9 @@ const useConfirmPlaybookArchiveModal = (archivePlaybook: (id: Playbook['id']) =>
         <>
             <ConfirmModal
                 show={open}
-                title={formatMessage({defaultMessage: 'Delete playbook'})}
-                message={formatMessage({defaultMessage: 'Are you sure you want to delete the playbook {title}?'}, {title: playbook?.title})}
-                confirmButtonText={formatMessage({defaultMessage: 'Delete'})}
+                title={formatMessage({defaultMessage: 'Archive playbook'})}
+                message={formatMessage({defaultMessage: 'Are you sure you want to archive the playbook {title}?'}, {title: playbook?.title})}
+                confirmButtonText={formatMessage({defaultMessage: 'Archive'})}
                 onConfirm={onArchive}
                 onCancel={() => setOpen(false)}
             />

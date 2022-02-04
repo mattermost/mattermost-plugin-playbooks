@@ -2,6 +2,9 @@
 // See LICENSE.txt for license information.
 
 import styled from 'styled-components';
+import {mdiClockOutline, mdiCurrencyUsd, mdiPound} from '@mdi/js';
+import Icon from '@mdi/react';
+import React from 'react';
 
 export const Section = styled.div`
     margin: 32px 0;
@@ -33,3 +36,24 @@ export const BackstageGroupToggleHeader = styled.div`
     flex-direction: row;
     align-items: center;
 `;
+
+export const ClockOutline = ({sizePx}: {sizePx: number}) => (
+    <Icon
+        path={mdiClockOutline}
+        size={`${sizePx}px`}
+    />
+);
+
+export const DollarSign = ({sizePx}: {sizePx: number}) => (
+    <Icon
+        path={mdiCurrencyUsd}
+        size={`${sizePx}px`}
+    />
+);
+
+export const PoundSign = ({sizePx}: {sizePx: number}) => (
+    <Icon
+        path={mdiPound}
+        size={`${sizePx}px`}
+    />
+);

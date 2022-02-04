@@ -254,7 +254,7 @@
     "TdTXXf": "Erfahre mehr",
     "TDaF6J": "Ablehnen",
     "TBez4r": "Es sind keine Playbooks vorhanden. Sie haben keine Berechtigung zum Erstellen von Playbooks in diesem Arbeitsbereich.",
-    "SmAUf9": "Eine Erinnerung wird gesendet um <b>{timestamp}</b>",
+    "SmAUf9": "Eine Erinnerung wird um <b>{timestamp}</b> gesendet",
     "S0kWcH": "Aktualisierung überfällig",
     "Rgo4VW": "Jeder in diesem Arbeitsbereich kann Playbooks erstellen. Systemadministratoren können diese Einstellung ändern.",
     "R4vA+C": "Nur die unten aufgeführten Benutzer können Playbooks erstellen. Diese Benutzer sowie die Systemadministratoren können diese Einstellung ändern.",
@@ -393,7 +393,7 @@
     "lQT7iD": "Playbook erstellen",
     "gGcNUr": "Sie haben keine Berechtigung",
     "g0mp+I": "Bei der Umwandlung in ein privates Playbook bleiben die Mitgliedschaft und der Verlauf der Ausführung erhalten. Diese Änderung ist dauerhaft und kann nicht rückgängig gemacht werden. Sind Sie sicher, dass Sie {playbookTitle} in einen privaten Playbook konvertieren möchten?",
-    "SXJ98n": "Sie können den retrospektiven Bericht nach der Veröffentlichung nicht mehr bearbeiten. Möchten Sie den retrospektiven Bericht veröffentlichen?",
+    "SXJ98n": "Sie können die Retrospektive nach der Veröffentlichung nicht mehr bearbeiten. Möchten Sie die Retrospektive veröffentlichen?",
     "R/2lqw": "Vorlage auswählen",
     "MJ89uW": "In privates Playbook umwandeln",
     "HLn43R": "Zugang verwalten",
@@ -409,5 +409,7 @@
     "3PoGhY": "Sind Sie sicher, dass Sie veröffentlichen wollen?",
     "4fHiNl": "Duplizieren",
     "4alprY": "Playbook Vorlagen",
-    "/urtZ8": "Ihre Playbooks"
+    "/urtZ8": "Ihre Playbooks",
+    "9XUYQt": "Importieren",
+    "SVwJTM": "Exportieren"
 }

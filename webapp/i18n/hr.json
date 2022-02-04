@@ -377,7 +377,7 @@
     "HLn43R": "Upravljaj pristupom",
     "EvBQLq": "Postavi administratorom priručnika",
     "EWz2w5": "Pokreni priručnik",
-    "9kCT7Q": "Pojednostvni retrospektive s vremenskom trakom koja automatski prati ključne događaje i poruke, tako da ih timovi imaju nadohvat ruke.",
+    "9kCT7Q": "Stvori retrospektive s vremenskom trakom koja automatski prati ključne događaje i poruke, tako da ih timovi imaju nadohvat ruke.",
     "8oCVbz": "Stvarno želiš objaviti",
     "7VTSeD": "Stvarno želiš preskočiti ovaj zadatak? Uklonit će se iz ovog pokretanja, ali neće utjecati na priručnik.",
     "5BUxvl": "Svatko u ovom timu može vidjeti ovaj priručnik.",
@@ -402,5 +402,7 @@
     "3PoGhY": "Stvarno želiš objaviti?",
     "4fHiNl": "Dupliciraj",
     "/urtZ8": "Tvoji priručnici",
-    "4alprY": "Predlošci priručnika"
+    "4alprY": "Predlošci priručnika",
+    "SVwJTM": "Izvezi",
+    "9XUYQt": "Uvezi"
 }

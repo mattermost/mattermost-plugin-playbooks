@@ -54,6 +54,21 @@ export interface PlaybookWithChecklist extends Playbook {
     categorize_channel_enabled: boolean;
     run_summary_template: string;
     channel_name_template: string;
+    metrics: Metric[];
+}
+
+export enum MetricType {
+    Duration = 'metric_duration',
+    Currency = 'metric_currency',
+    Integer = 'metric_integer',
+}
+
+export interface Metric {
+    id: string;
+    type: MetricType;
+    title: string;
+    description: string;
+    target: number;
 }
 
 export interface FetchPlaybooksParams {
@@ -63,6 +78,7 @@ export interface FetchPlaybooksParams {
     sort?: 'title' | 'stages' | 'steps' | 'runs';
     direction?: 'asc' | 'desc';
     search_term?: string;
+    with_archived?: boolean;
 }
 
 export interface FetchPlaybooksReturn {
@@ -141,10 +157,11 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         signal_any_keywords_enabled: false,
         category_name: '',
         categorize_channel_enabled: false,
-        run_summary_template_enabled: true,
+        run_summary_template_enabled: false,
         run_summary_template: '',
         channel_name_template: '',
         default_playbook_member_role: '',
+        metrics: [],
     };
 }
 
@@ -208,6 +225,14 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
         typeof arg.command_last_run === 'number';
 }
 
+export const newMetric = (type: MetricType, title = '', description = '', target = 0): Metric => ({
+    id: '',
+    type,
+    title,
+    description,
+    target,
+});
+
 export const defaultMessageOnJoin = `Welcome! This channel was automatically created as part of a playbook run. You can [learn more about playbooks here](https://docs.mattermost.com/administration/devops-command-center.html?highlight=playbook#playbooks). To see information about this run, such as current owner and checklist of tasks, select the shield icon in the channel header.
 
 Here are some resources that you may find helpful:
@@ -234,3 +259,4 @@ This section lists the action items to turn learnings into changes that help the
 
 ### Timeline highlights
 This section is a curated log that details the most important moments. It can contain key communications, screen shots, or other artifacts. Use the built-in timeline feature to help you retrace and replay the sequence of events.`;
+

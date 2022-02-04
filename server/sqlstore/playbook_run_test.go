@@ -140,6 +140,11 @@ func TestGetPlaybookRun(t *testing.T) {
 }
 
 func TestUpdatePlaybookRun(t *testing.T) {
+	pbWithMetrics := NewPBBuilder().
+		WithTitle("playbook").
+		WithMetrics([]string{"name3", "name1", "name2"}).
+		ToPlaybook()
+
 	post1 := &model.Post{
 		Id:       model.NewId(),
 		CreateAt: 10000000,
@@ -180,6 +185,12 @@ func TestUpdatePlaybookRun(t *testing.T) {
 		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
 		savePosts(t, store, allPosts)
+
+		playbookStore := setupPlaybookStore(t, db)
+		id, err := playbookStore.Create(pbWithMetrics)
+		require.NoError(t, err)
+		pbWithMetrics, err := playbookStore.Get(id)
+		require.NoError(t, err)
 
 		validPlaybookRuns := []struct {
 			Name        string
@@ -232,6 +243,44 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				},
 				ExpectedErr: nil,
 			},
+			{
+				Name:        "PlaybookRun with metrics, update retrospective text and metrics data",
+				PlaybookRun: NewBuilder(t).WithPlaybookID(pbWithMetrics.ID).ToPlaybookRun(),
+				Update: func(old app.PlaybookRun) *app.PlaybookRun {
+					old.MetricsData = generateMetricData(pbWithMetrics)
+					old.Retrospective = "Retro1"
+					return &old
+				},
+				ExpectedErr: nil,
+			},
+			{
+				Name:        "PlaybookRun with metrics, update metrics data partially",
+				PlaybookRun: NewBuilder(t).WithPlaybookID(pbWithMetrics.ID).ToPlaybookRun(),
+				Update: func(old app.PlaybookRun) *app.PlaybookRun {
+					old.MetricsData = generateMetricData(pbWithMetrics)[1:]
+					return &old
+				},
+				ExpectedErr: nil,
+			},
+			{
+				Name:        "PlaybookRun with metrics, update metrics data twice. First one will test insert in the table, second will test update",
+				PlaybookRun: NewBuilder(t).WithPlaybookID(pbWithMetrics.ID).ToPlaybookRun(),
+				Update: func(old app.PlaybookRun) *app.PlaybookRun {
+					old.MetricsData = generateMetricData(pbWithMetrics)
+
+					//first update will insert rows
+					err = playbookRunStore.UpdatePlaybookRun(&old)
+					require.NoError(t, err)
+
+					//second update will update values
+					for i := range old.MetricsData {
+						old.MetricsData[i].Value *= 10
+					}
+					old.Retrospective = "Retro3"
+					return &old
+				},
+				ExpectedErr: nil,
+			},
 		}
 
 		for _, testCase := range validPlaybookRuns {
@@ -257,6 +306,50 @@ func TestUpdatePlaybookRun(t *testing.T) {
 				require.Equal(t, expected, actual)
 			})
 		}
+	}
+}
+
+func TestIfDeletedMetricsAreOmitted(t *testing.T) {
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		_, store := setupSQLStore(t, db)
+
+		setupChannelsTable(t, db)
+		setupPostsTable(t, db)
+
+		//create playbook with metrics
+		playbookStore := setupPlaybookStore(t, db)
+		playbook := NewPBBuilder().
+			WithTitle("playbook").
+			WithMetrics([]string{"name3", "name1"}).
+			ToPlaybook()
+		id, err := playbookStore.Create(playbook)
+		require.NoError(t, err)
+		playbook, err = playbookStore.Get(id)
+		require.NoError(t, err)
+
+		// create run based on playbook
+		playbookRun := NewBuilder(t).WithPlaybookID(playbook.ID).ToPlaybookRun()
+		playbookRun, err = playbookRunStore.CreatePlaybookRun(playbookRun)
+		require.NoError(t, err)
+		createPlaybookRunChannel(t, store, playbookRun)
+
+		// store metrics values
+		playbookRun.MetricsData = generateMetricData(playbook)
+		err = playbookRunStore.UpdatePlaybookRun(playbookRun)
+		require.NoError(t, err)
+
+		// delete one metric config from playbook
+		playbook.Metrics = playbook.Metrics[1:]
+		err = playbookStore.Update(playbook)
+		require.NoError(t, err)
+
+		// should return single metric
+		actual, err := playbookRunStore.GetPlaybookRun(playbookRun.ID)
+		require.NoError(t, err)
+		require.Len(t, actual.MetricsData, 1)
+		require.Equal(t, actual.MetricsData[0].MetricConfigID, playbook.Metrics[0].ID)
 	}
 }
 
@@ -946,6 +1039,22 @@ func (ib *PlaybookRunBuilder) WithUpdateOverdueBy(overdueAmount time.Duration) *
 	ib.playbookRun.LastStatusUpdateAt = time.Now().Add(-2*overdueAmount).Unix() * 1000
 
 	return ib
+}
+
+func generateMetricData(playbook app.Playbook) []app.RunMetricData {
+	metrics := make([]app.RunMetricData, 0)
+	for i, mc := range playbook.Metrics {
+		metrics = append(metrics,
+			app.RunMetricData{
+				MetricConfigID: mc.ID,
+				Value:          int64(i + 10),
+			},
+		)
+	}
+	// Entirely for consistency for the tests
+	sort.Slice(metrics, func(i, j int) bool { return metrics[i].MetricConfigID < metrics[j].MetricConfigID })
+
+	return metrics
 }
 
 func min(a, b int) int {

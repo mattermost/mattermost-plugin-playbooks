@@ -2,10 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React, {useState, useRef} from 'react';
-import {useIntl} from 'react-intl';
 import styled, {css} from 'styled-components';
 
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
+import {PrimaryButton} from 'src/components/assets/buttons';
 
 export const DotMenuButton = styled.div`
     display: inline-flex;
@@ -44,9 +44,12 @@ export const DropdownMenu = styled.div<DropdownMenuProps>`
     position: absolute;
     ${(props) => (props.top ? 'bottom: 35px;' : 'top: 100%;')};
     ${(props) => (props.left && css`
-        left: ${props.leftPx || -197}px;
-        top: ${props.topPx || 35}px;
+        left: -197px;
+        top: 35px;
     `)};
+    ${(props) => (props.leftPx && `left: ${props.leftPx}px`)};
+    ${(props) => (props.topPx && `top: ${props.topPx}px`)};
+
     ${(props) => (props.wide && css`
         left: -236px;
     `)};
@@ -80,19 +83,19 @@ interface DotMenuProps {
     topPx?: number;
     leftPx?: number;
     wide?: boolean;
-    dotMenuButton?: typeof DotMenuButton;
+    dotMenuButton?: typeof DotMenuButton | typeof PrimaryButton;
     dropdownMenu?: typeof DropdownMenu;
     title?: string;
+    disabled?: boolean;
 }
 
 const DotMenu = (props: DotMenuProps) => {
-    const {formatMessage} = useIntl();
     const [isOpen, setOpen] = useState(false);
     const toggleOpen = () => {
         setOpen(true);
     };
 
-    const rootRef = useRef<HTMLDivElement>(null);
+    const rootRef = useRef(null);
     useClickOutsideRef(rootRef, () => {
         setOpen(false);
     });
@@ -105,14 +108,16 @@ const DotMenu = (props: DotMenuProps) => {
     const Menu = props.dropdownMenu ?? DropdownMenu;
 
     return (
+
+        // @ts-ignore
         <MenuButton
             title={props.title}
             ref={rootRef}
-            onClick={(e) => {
+            onClick={(e: MouseEvent) => {
                 e.stopPropagation();
                 toggleOpen();
             }}
-            onKeyDown={(e) => {
+            onKeyDown={(e: KeyboardEvent) => {
                 // Handle Enter and Space as clicking on the button
                 if (e.keyCode === 13 || e.keyCode === 32) {
                     e.stopPropagation();
@@ -121,6 +126,7 @@ const DotMenu = (props: DotMenuProps) => {
             }}
             tabIndex={0}
             role={'button'}
+            disabled={props.disabled || false}
         >
             {props.icon}
             <DropdownMenuWrapper>
@@ -146,7 +152,7 @@ const DotMenu = (props: DotMenuProps) => {
     );
 };
 
-const DropdownMenuItemStyled = styled.a`
+export const DropdownMenuItemStyled = styled.a`
  && {
     font-family: 'Open Sans';
     font-style: normal;
