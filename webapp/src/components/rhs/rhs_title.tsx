@@ -114,7 +114,10 @@ const RHSTitleLink = styled(Link)`
     justify-content: space-between;
     align-items: center;
     padding: 0 4px;
-    color: var(--center-channel-color) !important;
+
+    && {
+        color: var(--center-channel-color);
+    }
 
     overflow: hidden;
     text-overflow: ellipsis;
