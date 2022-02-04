@@ -24,6 +24,13 @@ describe('playbooks > list', () => {
                 title: 'Playbook',
                 memberIDs: [],
             });
+
+            // # Create an archived public playbook
+            cy.apiCreatePlaybook({
+                teamId: testTeam.id,
+                title: 'Playbook archived',
+                memberIDs: [],
+            }).then(({id}) => cy.apiArchivePlaybook(id));
         });
     });
 
@@ -58,5 +65,35 @@ describe('playbooks > list', () => {
 
         // * Verify that playbook got duplicated
         cy.findByText('Copy of Playbook').should('exist');
+    });
+
+    context('archived playbooks', () => {
+        it('does not show them by default', () => {
+            // # Open the product
+            cy.visit('/playbooks');
+
+            // # Switch to Playbooks
+            cy.findByTestId('playbooksLHSButton').click();
+
+            // * Assert the archived playbook is not there.
+            cy.findAllByTestId('playbook-title').should((titles) => {
+                expect(titles).to.have.length(2);
+            });
+        });
+        it('shows them upon click on the filter', () => {
+            // # Open the product
+            cy.visit('/playbooks');
+
+            // # Switch to Playbooks
+            cy.findByTestId('playbooksLHSButton').click();
+
+            // # Click the With Archived button
+            cy.findByTestId('with-archived').click();
+
+            // * Assert the archived playbook is there.
+            cy.findAllByTestId('playbook-title').should((titles) => {
+                expect(titles).to.have.length(3);
+            });
+        });
     });
 });

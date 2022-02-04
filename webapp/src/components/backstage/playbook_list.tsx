@@ -8,10 +8,10 @@ import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import {displayPlaybookCreateModal} from 'src/actions';
-import {GrayTertiaryButton, PrimaryButton, TertiaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
 import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
@@ -22,13 +22,10 @@ import PlaybookListRow from 'src/components/backstage/playbook_list_row';
 import {ExpandRight, HorizontalSpacer} from 'src/components/backstage/playbook_runs/shared';
 import SearchInput from 'src/components/backstage/search_input';
 import {BackstageSubheader} from 'src/components/backstage/styles';
-import TemplateSelector, {
-    isPlaybookCreationAllowed,
-} from 'src/components/backstage/template_selector';
-import UpgradeModal from 'src/components/backstage/upgrade_modal';
+import TemplateSelector from 'src/components/backstage/template_selector';
 import {PaginationRow} from 'src/components/pagination_row';
 import {SortableColHeader} from 'src/components/sortable_col_header';
-import {AdminNotificationType, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
+import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {
     useCanCreatePlaybooksOnAnyTeam,
     usePlaybooksCrud,
@@ -44,7 +41,10 @@ import TeamSelector from '../team/team_selector';
 
 import {navigateToPluginUrl} from 'src/browser_routing';
 
+import CheckboxInput from './runs_list/checkbox_input';
+
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
+import useConfirmPlaybookRestoreModal from './restore_playbook_modal';
 
 const PlaybooksHeader = styled(BackstageSubheader)`
     display: flex;
@@ -75,10 +75,11 @@ const PlaybookList = () => {
     const [
         playbooks,
         {isLoading, totalCount, params, selectedPlaybook},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, duplicatePlaybook, setSearchTerm, isFiltering},
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
+    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
 
     const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
@@ -102,6 +103,7 @@ const PlaybookList = () => {
                 displayTeam={teams.length > 1}
                 onClick={() => view(p)}
                 onEdit={() => edit(p)}
+                onRestore={() => openConfirmRestoreModal(p)}
                 onArchive={() => openConfirmArchiveModal(p)}
                 onDuplicate={() => duplicatePlaybook(p.id)}
             />
@@ -155,6 +157,12 @@ const PlaybookList = () => {
                             default={params.search_term}
                             onSearch={setSearchTerm}
                             placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
+                        />
+                        <CheckboxInput
+                            testId={'with-archived'}
+                            text={formatMessage({defaultMessage: 'With archived'})}
+                            checked={params.with_archived}
+                            onChange={setWithArchived}
                         />
                         <HorizontalSpacer size={12}/>
                         <input
@@ -263,6 +271,7 @@ const PlaybookList = () => {
             }
             {bottomHalf.current}
             {confirmArchiveModal}
+            {confirmRestoreModal}
         </PlaybookContainer>
     );
 };

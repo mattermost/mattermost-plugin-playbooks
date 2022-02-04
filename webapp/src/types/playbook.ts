@@ -54,6 +54,21 @@ export interface PlaybookWithChecklist extends Playbook {
     categorize_channel_enabled: boolean;
     run_summary_template: string;
     channel_name_template: string;
+    metrics: Metric[];
+}
+
+export enum MetricType {
+    Duration = 'metric_duration',
+    Currency = 'metric_currency',
+    Integer = 'metric_integer',
+}
+
+export interface Metric {
+    id: string;
+    type: MetricType;
+    title: string;
+    description: string;
+    target: number;
 }
 
 export interface FetchPlaybooksParams {
@@ -63,6 +78,7 @@ export interface FetchPlaybooksParams {
     sort?: 'title' | 'stages' | 'steps' | 'runs';
     direction?: 'asc' | 'desc';
     search_term?: string;
+    with_archived?: boolean;
 }
 
 export interface FetchPlaybooksReturn {
@@ -145,6 +161,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         run_summary_template: '',
         channel_name_template: '',
         default_playbook_member_role: '',
+        metrics: [],
     };
 }
 
@@ -207,6 +224,14 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
         typeof arg.command === 'string' &&
         typeof arg.command_last_run === 'number';
 }
+
+export const newMetric = (type: MetricType, title = '', description = '', target = 0): Metric => ({
+    id: '',
+    type,
+    title,
+    description,
+    target,
+});
 
 export const defaultMessageOnJoin = `Welcome! This channel was automatically created as part of a playbook run. You can [learn more about playbooks here](https://docs.mattermost.com/administration/devops-command-center.html?highlight=playbook#playbooks). To see information about this run, such as current owner and checklist of tasks, select the shield icon in the channel header.
 
