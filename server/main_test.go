@@ -419,6 +419,10 @@ func (e *TestEnvironment) CreateAdditionalPlaybooks() {
 	e.ArchivedPlaybook = archivedPlaybook
 }
 
+func (e *TestEnvironment) RemoveLicense() {
+	e.Srv.SetLicense(nil)
+}
+
 func (e *TestEnvironment) SetE10Licence() {
 	license := model.NewTestLicense()
 	license.SkuShortName = model.LicenseShortSkuE10
