@@ -3,7 +3,7 @@ import styled from 'styled-components';
 const RightFade = styled.div`
     position: absolute;
     top: 85px;
-    right: 0;
+    right: 8px;
     height: 100%;
     width: 188px;
     z-index: -1;

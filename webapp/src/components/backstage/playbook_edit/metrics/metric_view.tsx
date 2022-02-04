@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
@@ -12,10 +12,11 @@ import {targetToString} from 'src/components/backstage/playbook_edit/metrics/sha
 interface Props {
     metric: Metric;
     editClick: () => void;
+    deleteClick: () => void;
     disabled: boolean;
 }
 
-const MetricView = ({metric, editClick, disabled}: Props) => {
+const MetricView = ({metric, editClick, deleteClick, disabled}: Props) => {
     const {formatMessage} = useIntl();
     const perRun = formatMessage({defaultMessage: 'per run'});
 
@@ -51,12 +52,20 @@ const MetricView = ({metric, editClick, disabled}: Props) => {
                 >
                     <i className='icon-pencil-outline'/>
                 </Button>
+                <HorizontalSpacer size={6}/>
+                <Button
+                    data-testid={'delete-metric'}
+                    onClick={deleteClick}
+                >
+                    <i className={'icon-trash-can-outline'}/>
+                </Button>
             </Rhs>
         </ViewContainer>
     );
 };
 
 const ViewContainer = styled.div`
+    flex: 1;
     display: flex;
     font-size: 14px;
     line-height: 20px;
@@ -87,7 +96,30 @@ const Centre = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
-const Detail = ({title, text}: {title: string, text: JSX.Element | string}) => {
+const Rhs = styled.div`
+    display: flex;
+    align-items: flex-start;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const Button = styled.button`
+    font-size: 18px;
+    padding: 4px 1px;
+    background: none;
+    border-radius: 4px;
+    border: 0;
+    margin-top: -4px;
+
+    :hover {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+`;
+
+const HorizontalSpacer = styled.div<{ size: number }>`
+    margin-left: ${(props) => props.size}px;
+`;
+
+const Detail = ({title, text}: { title: string, text: string }) => {
     if (!text) {
         return (<></>);
     }
@@ -114,37 +146,6 @@ const Title = styled.div`
 
 const Bold = styled.span`
     font-weight: 600;
-`;
-
-const Rhs = styled.div`
-    font-size: 18px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-`;
-
-const Button = styled.button<{ disabled: boolean }>`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    padding: 4px 1px;
-    background: none;
-    border-radius: 4px;
-    border: 0;
-
-    :hover {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-    }
-
-    ${(props) => props.disabled && css`
-        i {
-            color: rgba(var(--center-channel-color-rgb), 0.24);
-        }
-
-        :hover {
-            background: none;
-        }
-    `}
 `;
 
 export default MetricView;
