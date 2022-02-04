@@ -245,7 +245,7 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 		}
 	}
 
-	return nil
+	return p.checkPlaybookLicenceRequirements(*playbook)
 }
 
 func (p *PermissionsService) DeletePlaybook(userID string, playbook Playbook) error {
