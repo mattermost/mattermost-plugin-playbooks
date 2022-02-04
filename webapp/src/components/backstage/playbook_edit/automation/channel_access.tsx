@@ -14,7 +14,7 @@ import {HorizontalSpacer} from 'src/components/backstage/playbook_runs/shared';
 
 interface Props {
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
-    setPlaybook: (playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist) => void;
+    setPlaybook: React.Dispatch<React.SetStateAction<DraftPlaybookWithChecklist | PlaybookWithChecklist>>;
     setChangesMade: (b: boolean) => void;
 }
 

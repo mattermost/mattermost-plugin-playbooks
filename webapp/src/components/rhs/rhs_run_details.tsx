@@ -19,6 +19,7 @@ import {PlaybookRunStatus} from 'src/types/playbook_run';
 
 const RHSRunDetails = () => {
     const scrollbarsRef = useRef<Scrollbars>(null);
+
     const playbookRun = useSelector(currentPlaybookRun);
 
     const prevStatus = usePrevious(playbookRun?.current_status);

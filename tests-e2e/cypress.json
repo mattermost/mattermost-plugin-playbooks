@@ -36,6 +36,7 @@
         "webhookBaseUrl": "http://localhost:3000",
         "developerMode": false
     },
+    "reporter": "cypress-multi-reporters",
     "reporterOptions": {
         "configFile": "reporter-config.json"
     },
