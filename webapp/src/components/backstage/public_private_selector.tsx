@@ -5,6 +5,7 @@ import styled from 'styled-components';
 
 import {useAllowPrivatePlaybooks} from 'src/hooks/general';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
+import Tooltip from 'src/components/widgets/tooltip';
 
 type Props = {
     public: boolean
@@ -74,12 +75,11 @@ const PositionedUpgradeBadge = styled(UpgradeBadge)`
 
 const PublicPrivateSelector = (props: Props) => {
     const {formatMessage} = useIntl();
-    const privatePlaybooksAllowed = useAllowPrivatePlaybooks();
 
     const handleButtonClick = props.setPlaybookPublic;
 
     const publicButtonDisabled = !props.public && props.disableOtherOption;
-    const privateButtonDisabled = !privatePlaybooksAllowed || (props.public && props.disableOtherOption);
+    const privateButtonDisabled = props.public && props.disableOtherOption;
 
     return (
         <HorizontalContainer>
@@ -105,37 +105,61 @@ const PublicPrivateSelector = (props: Props) => {
                 />
                 }
             </BigButton>
-            <BigButton
+            <PrivateButton
+                public={props.public}
+                publicButtonDisabled={publicButtonDisabled}
+                privateButtonDisabled={privateButtonDisabled}
                 onClick={(e) => {
                     e.preventDefault();
                     handleButtonClick(false);
                 }}
-                disabled={privateButtonDisabled}
-                title={publicButtonDisabled ? formatMessage({defaultMessage: 'You do not have permissions'}) : formatMessage({defaultMessage: 'Private'})}
-            >
-                <GiantIcon
-                    active={!props.public}
-                    className={'icon-lock-outline'}
-                />
-                <StackedText>
-                    <BigText>
-                        {'Private playbook'}
-                        {!privatePlaybooksAllowed &&
-                        <PositionedUpgradeBadge
-                            id={'playbook-selector_upgrade-badge'}
-                            tooltipText={formatMessage({defaultMessage: 'Private playbooks are only available in Mattermost Enterprise'})}
-                        />
-                        }
-                    </BigText>
-                    <SmallText>{'Only invited members'}</SmallText>
-                </StackedText>
-                {!props.public &&
-                <CheckIcon
-                    className={'icon-check-circle'}
-                />
-                }
-            </BigButton>
+            />
         </HorizontalContainer>
+    );
+};
+
+const PrivateButton = (props: {public: boolean, publicButtonDisabled: boolean, privateButtonDisabled: boolean, onClick: (e: any) => void}) => {
+    const {formatMessage} = useIntl();
+    const privatePlaybooksAllowed = useAllowPrivatePlaybooks();
+
+    const button = (
+        <BigButton
+            onClick={props.onClick}
+            disabled={!privatePlaybooksAllowed || props.privateButtonDisabled}
+            title={props.publicButtonDisabled ? formatMessage({defaultMessage: 'You do not have permissions'}) : formatMessage({defaultMessage: 'Private'})}
+        >
+            <GiantIcon
+                active={!props.public}
+                className={'icon-lock-outline'}
+            />
+            <StackedText>
+                <BigText>
+                    {'Private playbook'}
+                    {!privatePlaybooksAllowed &&
+                    <PositionedUpgradeBadge/>
+                    }
+                </BigText>
+                <SmallText>{'Only invited members'}</SmallText>
+            </StackedText>
+            {!props.public &&
+            <CheckIcon
+                className={'icon-check-circle'}
+            />
+            }
+        </BigButton>
+    );
+
+    if (privatePlaybooksAllowed) {
+        return button;
+    }
+
+    return (
+        <Tooltip
+            id={'private-playbooks-upgrade-badge'}
+            content={formatMessage({defaultMessage: 'Private playbooks are only available in Mattermost Enterprise'})}
+        >
+            {button}
+        </Tooltip>
     );
 };
 
