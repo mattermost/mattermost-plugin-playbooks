@@ -15,6 +15,7 @@ const AutoStatusSuffix = '_at_status';
 
 export const TutorialTourCategories: Record<string, string> = {
     PB_TOUR_EX: 'tutorial_pb_tour_ex',
+    PLAYBOOK_PREVIEW: 'playbook_preview',
 };
 
 export const PB_TOUR_EX = {
@@ -22,8 +23,16 @@ export const PB_TOUR_EX = {
     FINISHED,
 };
 
+export const PlaybookPreviewTutorialSteps = {
+    EditButton: 0,
+    Navbar: 1,
+    RunButton: 2,
+    FINISHED,
+};
+
 export const TTCategoriesMapToSteps: Record<string, Record<string, number>> = {
     [TutorialTourCategories.PB_TOUR_EX]: PB_TOUR_EX,
+    [TutorialTourCategories.PLAYBOOK_PREVIEW]: PlaybookPreviewTutorialSteps,
 };
 
 export const TTCategoriesMapToAutoTourStatusKey: Record<string, string> = {
