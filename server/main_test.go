@@ -419,7 +419,7 @@ func (e *TestEnvironment) CreateAdditionalPlaybooks() {
 	e.ArchivedPlaybook = archivedPlaybook
 }
 
-func (e *TestEnvironment) RemoveLicense() {
+func (e *TestEnvironment) RemoveLicence() {
 	e.Srv.SetLicense(nil)
 }
 
