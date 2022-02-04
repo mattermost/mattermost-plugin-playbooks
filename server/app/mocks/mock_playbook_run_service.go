@@ -522,7 +522,7 @@ func (mr *MockPlaybookRunServiceMockRecorder) OpenUpdateStatusDialog(arg0, arg1 
 }
 
 // PublishRetrospective mocks base method
-func (m *MockPlaybookRunService) PublishRetrospective(arg0, arg1, arg2 string) error {
+func (m *MockPlaybookRunService) PublishRetrospective(arg0, arg1 string, arg2 app.RetrospectiveUpdate) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PublishRetrospective", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
@@ -745,7 +745,7 @@ func (mr *MockPlaybookRunServiceMockRecorder) UpdateDescription(arg0, arg1 inter
 }
 
 // UpdateRetrospective mocks base method
-func (m *MockPlaybookRunService) UpdateRetrospective(arg0, arg1, arg2 string) error {
+func (m *MockPlaybookRunService) UpdateRetrospective(arg0, arg1 string, arg2 app.RetrospectiveUpdate) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateRetrospective", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
