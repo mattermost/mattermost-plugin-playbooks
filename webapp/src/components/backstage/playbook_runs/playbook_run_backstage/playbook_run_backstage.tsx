@@ -4,7 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
-import {Redirect, Route, useRouteMatch, NavLink, Switch, useHistory} from 'react-router-dom';
+import {Redirect, Route, useRouteMatch, Link, NavLink, Switch, useHistory} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
@@ -33,7 +33,7 @@ import {
     unfollowPlaybookRun,
     getSiteUrl,
 } from 'src/client';
-import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
+import {pluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {useAllowRetrospectiveAccess, useForceDocumentTitle, useRun} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
@@ -149,7 +149,7 @@ const Title = styled.div`
     color: var(--center-channel-color);
 `;
 
-const PlaybookDiv = styled.div`
+const PlaybookLink = styled(Link)`
     display: flex;
     flex-direction: row;
     color: rgba(var(--center-channel-color-rgb), 0.64);
@@ -318,10 +318,6 @@ const PlaybookRunBackstage = () => {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
 
-    const goToChannel = () => {
-        navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
-    };
-
     const onFollow = () => {
         if (following.includes(currentUserID)) {
             return;
@@ -392,10 +388,10 @@ const PlaybookRunBackstage = () => {
                         </TitleWithBadgeAndLink>
                         {
                             playbook &&
-                            <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
+                            <PlaybookLink to={pluginUrl(`/playbooks/${playbook?.id}`)}>
                                 <SmallPlaybookIcon/>
                                 <SubTitle>{playbook?.title}</SubTitle>
-                            </PlaybookDiv>
+                            </PlaybookLink>
                         }
                     </VerticalBlock>
                     <ExpandRight/>
@@ -403,13 +399,14 @@ const PlaybookRunBackstage = () => {
                     {followButton}
                     <Line/>
                     <ExportLink playbookRun={playbookRun}/>
-                    <PrimaryButtonLarger
-                        onClick={goToChannel}
-                        style={{marginLeft: 12}}
+                    <Link
+                        to={`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`}
                     >
-                        <Icon16 className={'icon icon-message-text-outline mr-1'}/>
-                        {formatMessage({defaultMessage: 'Go to channel'})}
-                    </PrimaryButtonLarger>
+                        <PrimaryButtonLarger style={{marginLeft: 12}}>
+                            <Icon16 className={'icon icon-message-text-outline mr-1'}/>
+                            {formatMessage({defaultMessage: 'Go to channel'})}
+                        </PrimaryButtonLarger>
+                    </Link>
                 </FirstRow>
                 <SecondRow>
                     <TabItem
