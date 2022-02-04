@@ -181,7 +181,7 @@ func (p *Plugin) OnActivate() error {
 	}
 	mutex.Unlock()
 
-	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config)
+	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.licenseChecker)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,

@@ -108,7 +108,7 @@ func NewPlaybookRunService(
 		licenseChecker:  licenseChecker,
 	}
 
-	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService)
+	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
 
 	return service
 }
