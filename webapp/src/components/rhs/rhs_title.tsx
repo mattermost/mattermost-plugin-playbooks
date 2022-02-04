@@ -115,7 +115,7 @@ const RHSTitleLink = styled(Link)`
     align-items: center;
     padding: 0 4px;
 
-    && {
+    &&& {
         color: var(--center-channel-color);
     }
 
