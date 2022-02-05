@@ -9,6 +9,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/command"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -52,6 +53,7 @@ type Plugin struct {
 	pluginAPI          *pluginapi.Client
 	userInfoStore      app.UserInfoStore
 	telemetryClient    TelemetryClient
+	licenseChecker     app.LicenseChecker
 }
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
@@ -145,6 +147,8 @@ func (p *Plugin) OnActivate() error {
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
 	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
 
+	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
+
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,
 		playbookRunStore,
@@ -155,6 +159,7 @@ func (p *Plugin) OnActivate() error {
 		p.telemetryClient,
 		p.API,
 		p.playbookService,
+		p.licenseChecker,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
@@ -176,7 +181,7 @@ func (p *Plugin) OnActivate() error {
 	}
 	mutex.Unlock()
 
-	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config)
+	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.licenseChecker)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
@@ -191,12 +196,13 @@ func (p *Plugin) OnActivate() error {
 		p.playbookRunService,
 		p.playbookService,
 		p.permissions,
+		p.licenseChecker,
 		pluginAPIClient,
 		p.bot,
 		p.bot,
 		p.config,
 	)
-	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService, p.permissions)
+	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService, p.permissions, p.licenseChecker)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config, p.playbookRunService, p.userInfoStore)
 	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.permissions)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)

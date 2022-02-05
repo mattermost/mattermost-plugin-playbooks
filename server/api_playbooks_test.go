@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -782,7 +783,7 @@ func TestPlaybooksConversions(t *testing.T) {
 		e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
 
 		t.Run("E0", func(t *testing.T) {
-			e.RemoveLicense()
+			e.RemoveLicence()
 
 			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 			requireErrorWithStatusCode(t, err, http.StatusForbidden)
@@ -869,5 +870,87 @@ func TestPlaybooksDuplicate(t *testing.T) {
 		assert.Equal(t, "Copy of "+e.BasicPlaybook.Title, duplicatedPlaybook.Title)
 		assert.Equal(t, e.BasicPlaybook.Description, duplicatedPlaybook.Description)
 		assert.Equal(t, e.BasicPlaybook.TeamID, duplicatedPlaybook.TeamID)
+	})
+}
+
+func TestAddPostToTimeline(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	dialogRequest := model.SubmitDialogRequest{
+		TeamId: e.BasicTeam.Id,
+		UserId: e.RegularUser.Id,
+		State:  fmt.Sprintf(`{"post_id": "%s"}`, e.BasicPublicChannelPost.Id),
+		Submission: map[string]interface{}{
+			app.DialogFieldPlaybookRunKey: e.BasicRun.ID,
+			app.DialogFieldSummary:        "a summary",
+		},
+	}
+
+	// Build the payload for the dialog
+	dialogRequestBytes, err := json.Marshal(dialogRequest)
+	require.NoError(t, err)
+
+	t.Run("unlicensed server", func(t *testing.T) {
+		// Make sure there is no license
+		e.RemoveLicence()
+
+		// Post the request with the dialog payload and verify it is not allowed
+		resp, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
+		require.Error(t, err)
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("E10 server", func(t *testing.T) {
+		// Set an E10 license
+		e.SetE10Licence()
+
+		// Post the request with the dialog payload and verify it is allowed
+		_, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
+		require.NoError(t, err)
+	})
+
+	t.Run("E20 server", func(t *testing.T) {
+		// Set an E20 license
+		e.SetE20Licence()
+
+		// Post the request with the dialog payload and verify it is allowed
+		_, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
+		require.NoError(t, err)
+	})
+}
+
+func TestPlaybookStats(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+	e.SetE20Licence()
+	e.CreateBasicPlaybook()
+
+	t.Run("unlicensed server", func(t *testing.T) {
+		// Make sure there is no license
+		e.RemoveLicence()
+
+		// Verify that retrieving stats is not allowed
+		_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("E10 server", func(t *testing.T) {
+		// Set an E10 license
+		e.SetE10Licence()
+
+		// Verify that ertrieving stats is not allowed
+		_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("E20 server", func(t *testing.T) {
+		// Set an E20 license
+		e.SetE20Licence()
+
+		// Verify that retrieving stats is allowed
+		_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
 	})
 }
