@@ -19,6 +19,7 @@ import {
     isPlaybookRun,
     isMetadata,
     Metadata,
+    RunMetricData,
 } from 'src/types/playbook_run';
 
 import {setTriggerId} from 'src/actions';
@@ -31,7 +32,6 @@ import {
     PlaybookWithChecklist,
     DraftPlaybookWithChecklist,
     Playbook,
-    FetchPlaybooksCountReturn,
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 
@@ -445,10 +445,11 @@ export async function fetchGlobalSettings(): Promise<GlobalSettings> {
     return globalSettingsSetDefaults(data);
 }
 
-export async function updateRetrospective(playbookRunID: string, updatedText: string) {
+export async function updateRetrospective(playbookRunID: string, updatedText: string, metrics: RunMetricData[]) {
     const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective`,
         JSON.stringify({
             retrospective: updatedText,
+            metrics,
         }));
     return data;
 }

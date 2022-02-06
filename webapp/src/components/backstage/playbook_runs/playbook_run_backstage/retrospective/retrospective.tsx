@@ -3,7 +3,7 @@
 
 import styled from 'styled-components';
 
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';
@@ -21,7 +21,7 @@ import {Metric} from 'src/types/playbook';
 
 import MetricsData from '../metrics_data';
 
-import {publishRetrospective} from 'src/client';
+import {publishRetrospective, updateRetrospective} from 'src/client';
 
 import {PrimaryButton} from 'src/components/assets/buttons';
 
@@ -61,6 +61,15 @@ export const Retrospective = (props: Props) => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);
+
+    const [updatedCounter, setUpdated] = useState(0);
+    const didMountRef = useRef(false);
+    useEffect(() => {
+        if (didMountRef.current) {
+            updateRetrospective(props.playbookRun.id, props.playbookRun.retrospective, props.playbookRun.metrics_data);
+        }
+        didMountRef.current = true;
+    }, [updatedCounter]);
 
     if (!allowRetrospectiveAccess) {
         return (
@@ -110,11 +119,17 @@ export const Retrospective = (props: Props) => {
         );
     }
 
-    const persistEditEvent = (data: RunMetricData[]) => {
-        // updateRetrospective(props.playbookRun.id, text);
+    const persistMetricEditEvent = (data: RunMetricData[]) => {
         props.setMetricsData(data);
+        setUpdated(updatedCounter + 1);
     };
-    const debouncedPersistEditEvent = debounce(persistEditEvent, editDebounceDelayMilliseconds);
+    const persistReportEditEvent = (report: string) => {
+        props.setRetrospective(report);
+        setUpdated(updatedCounter + 1);
+    };
+
+    const debouncedPersistMetricEditEvent = debounce(persistMetricEditEvent, editDebounceDelayMilliseconds);
+    const debouncedPersistReportEditEvent = debounce(persistReportEditEvent, editDebounceDelayMilliseconds);
 
     return (
         <Container>
@@ -132,12 +147,13 @@ export const Retrospective = (props: Props) => {
                                 metricsData={props.playbookRun.metrics_data}
                                 metricsConfigs={props.metricsConfigs}
                                 isPublished={isPublished}
-                                onEdit={debouncedPersistEditEvent}
-                                flushChanges={() => debouncedPersistEditEvent.flush()}
+                                onEdit={debouncedPersistMetricEditEvent}
+                                flushChanges={() => debouncedPersistMetricEditEvent.flush()}
                             />}
                         <Report
                             playbookRun={props.playbookRun}
-                            setRetrospective={props.setRetrospective}
+                            onEdit={debouncedPersistReportEditEvent}
+                            flushChanges={() => debouncedPersistReportEditEvent.flush()}
                             isPublished={isPublished}
                         />
                     </StyledContent>

@@ -5,30 +5,20 @@ import React from 'react';
 
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
-import debounce from 'debounce';
 
 import {PlaybookRun} from 'src/types/playbook_run';
-import {updateRetrospective} from 'src/client';
 import ReportTextArea
     from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/report_text_area';
-
-const editDebounceDelayMilliseconds = 2000;
 
 interface ReportProps {
     playbookRun: PlaybookRun;
     isPublished: boolean;
-    setRetrospective: (report: string) => void;
+    onEdit: (report: string) => void;
+    flushChanges: () => void;
 }
 
 const Report = (props: ReportProps) => {
     const {formatMessage} = useIntl();
-
-    const persistEditEvent = (text: string) => {
-        updateRetrospective(props.playbookRun.id, text);
-        props.setRetrospective(text);
-    };
-    const debouncedPersistEditEvent = debounce(persistEditEvent, editDebounceDelayMilliseconds);
-
     return (
         <ReportContainer>
             <Header>
@@ -38,8 +28,8 @@ const Report = (props: ReportProps) => {
                 teamId={props.playbookRun.team_id}
                 text={props.playbookRun.retrospective}
                 isEditable={!props.isPublished}
-                onEdit={debouncedPersistEditEvent}
-                flushChanges={() => debouncedPersistEditEvent.flush()}
+                onEdit={props.onEdit}
+                flushChanges={props.flushChanges}
             />
         </ReportContainer>
     );
