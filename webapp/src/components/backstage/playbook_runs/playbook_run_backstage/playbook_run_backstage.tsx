@@ -21,7 +21,7 @@ import {
     SecondaryButtonLarger,
 } from 'src/components/backstage/playbook_runs/shared';
 
-import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
+import {PlaybookRun, Metadata as PlaybookRunMetadata, RunMetricData} from 'src/types/playbook_run';
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
 import {
@@ -296,6 +296,13 @@ const PlaybookRunBackstage = () => {
         } as PlaybookRun));
     };
 
+    const setMetricsData = (metrics_data: RunMetricData[]) => {
+        setPlaybookRun((run) => ({
+            ...run,
+            metrics_data,
+        } as PlaybookRun));
+    };
+
     const setPublishedAt = (retrospective_published_at: number) => {
         setPlaybookRun((run) => ({
             ...run,
@@ -433,11 +440,12 @@ const PlaybookRunBackstage = () => {
                         <Route path={`${match.url}/retrospective`}>
                             <Retrospective
                                 playbookRun={playbookRun}
-                                playbook={playbook}
+                                metricsConfigs={playbook?.metrics || null}
                                 deleteTimelineEvent={deleteTimelineEvent}
                                 setRetrospective={setRetrospective}
                                 setPublishedAt={setPublishedAt}
                                 setCanceled={setCanceled}
+                                setMetricsData={setMetricsData}
                             />
                         </Route>
                         <Redirect to={`${match.url}/overview`}/>

@@ -10,7 +10,7 @@ import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
-import {stringToTarget, targetToString} from 'src/components/backstage/playbook_edit/metrics/shared';
+import {stringToMetric, metricToString, isMetricValueValid} from 'src/components/backstage/playbook_edit/metrics/shared';
 
 type SetState = (prevState: Metric) => Metric;
 
@@ -26,7 +26,7 @@ interface Props {
 
 const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveToggle, saveFailed}: Props) => {
     const {formatMessage} = useIntl();
-    const [curTargetString, setCurTargetString] = useState(() => targetToString(metric.target, metric.type));
+    const [curTargetString, setCurTargetString] = useState(() => metricToString(metric.target, metric.type));
     const [curSaveToggle, setCurSaveToggle] = useState(saveToggle);
     const [titleError, setTitleError] = useState('');
     const [targetError, setTargetError] = useState('');
@@ -50,22 +50,13 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
         }
 
         // Is the target valid?
-        if (metric.type === MetricType.Duration) {
-            const regex = /(^$|^\d{1,2}:\d{1,2}:\d{1,2}$)/;
-            if (!regex.test(curTargetString)) {
-                setTargetError(errorTargetDuration);
-                return false;
-            }
-        } else {
-            const regex = /^\d*$/;
-            if (!regex.test(curTargetString)) {
-                setTargetError(errorTargetCurrencyInteger);
-                return false;
-            }
+        if (!isMetricValueValid(metric.type, curTargetString)) {
+            setTargetError(metric.type === MetricType.Duration ? errorTargetDuration : errorTargetCurrencyInteger);
+            return false;
         }
 
         // target is valid. Convert it and save the metric.
-        const target = stringToTarget(curTargetString, metric.type);
+        const target = stringToMetric(curTargetString, metric.type);
         onAdd(target);
         return true;
     };

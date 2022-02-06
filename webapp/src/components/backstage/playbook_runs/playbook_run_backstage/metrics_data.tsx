@@ -1,76 +1,115 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {mdiCurrencyUsd, mdiPound} from '@mdi/js';
-
-import Icon from '@mdi/react';
-
 import styled, {css} from 'styled-components';
 
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
 
 import {BaseInput} from 'src/components/assets/inputs';
 
 import {VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
 
-import {PlaybookRun} from 'src/types/playbook_run';
+import {RunMetricData} from 'src/types/playbook_run';
+import {Metric, MetricType} from 'src/types/playbook';
+import {ClockOutline, DollarSign, PoundSign} from '../../playbook_edit/styles';
+import {isMetricValueValid, stringToMetric, metricToString} from '../../playbook_edit/metrics/shared';
+import {useClickOutsideRef} from 'src/hooks';
 
 interface MetricsProps {
-    playbookRun: PlaybookRun;
+    metricsData: RunMetricData[];
+    metricsConfigs: Metric[];
     isPublished: boolean;
-}
-
-interface Metric {
-    val: string;
-    id: string;
+    onEdit: (metricsData: RunMetricData[]) => void;
+    flushChanges: () => void;
 }
 
 const MetricsData = (props: MetricsProps) => {
-    const metrics = [1, 2, 3];
-    const metricsValues = [{val: '9', id: '1'}, {val: '92', id: '2'}, {val: '19', id: '3'}];
     const {formatMessage} = useIntl();
-    const [targetError, setTargetError] = useState('');
-    const [curState, setCurState] = useState<Metric[]>(metricsValues);
+
+    const initialValues = new Array(props.metricsConfigs?.length).fill('');
+    props.metricsConfigs.forEach((mc, index) => {
+        const md = props.metricsData.find((metric) => {
+            return metric.metric_config_id === mc.id;
+        });
+        if (md) {
+            initialValues[index] = metricToString(md.value, mc.type);
+        }
+    });
+    const [inputsValues, setInputsValues] = useState(initialValues);
+    const [inputsErrors, setInputsErrors] = useState(new Array(props.metricsConfigs?.length).fill(''));
+
+    const textareaRef = useRef(null);
+    useClickOutsideRef(textareaRef, () => {
+        props.flushChanges();
+    });
+
+    const errorCurrencyInteger = formatMessage({defaultMessage: 'Please enter a number, or leave the target blank.'});
+    const errorDuration = formatMessage({defaultMessage: 'Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.'});
+
+    const verifyInputs = (values: string[]): boolean => {
+        let isValid = true;
+        const newErrors = new Array(props.metricsConfigs?.length).fill('');
+        values.forEach((value, index) => {
+            if (!isMetricValueValid(props.metricsConfigs[index].type, value)) {
+                newErrors[index] = props.metricsConfigs[index].type === MetricType.Duration ? errorDuration : errorCurrencyInteger;
+                isValid = false;
+            }
+        });
+        setInputsErrors(newErrors);
+        return isValid;
+    };
+
+    function stringsToMetricsData(values: string[]) {
+        const newMetricsData = new Array<RunMetricData>(props.metricsConfigs?.length);
+        props.metricsConfigs.forEach((mc, index) => {
+            newMetricsData[index] = {metric_config_id: mc.id, value: stringToMetric(values[index], mc.type)};
+        });
+        return newMetricsData;
+    }
 
     function updateMetrics(index: number, event: React.ChangeEvent<HTMLInputElement>) {
-        const newList = [...curState];
-        newList[index].val = event.target.value;
-        setCurState(newList);
-        setTargetError('');
+        const newList = [...inputsValues];
+        newList[index] = event.target.value;
+        setInputsValues(newList);
+        if (verifyInputs(newList)) {
+            const newMetricsData = stringsToMetricsData(newList);
+            props.onEdit(newMetricsData);
+        }
     }
 
     return (
         <div>
             {
-                metrics.map((metric, idx) => {
-                    let typeTitle = ' Dollars';
-                    let searchIcon = <DollarSign size={1}/>;
-                    if (metric === 1) {
-                        typeTitle = ' Integer';
-                        searchIcon = <PoundSign size={1}/>;
-                    } else if (metric === 2) {
-                        typeTitle = 'Duration (in dd:hh:mm)';
-                        searchIcon = <i className='icon-clock-outline'/>;
+                props.metricsConfigs?.map((metric, idx) => {
+                    let inputPlaceholder = formatMessage({defaultMessage: ' Add value'});
+                    let inputIcon = <DollarSign sizePx={18}/>;
+                    if (metric.type === MetricType.Integer) {
+                        inputPlaceholder = formatMessage({defaultMessage: ' Add value'});
+                        inputIcon = <PoundSign sizePx={18}/>;
+                    } else if (metric.type === MetricType.Duration) {
+                        inputPlaceholder = formatMessage({defaultMessage: ' Add value (in dd:hh:mm)'});
+                        inputIcon = <ClockOutline sizePx={18}/>;
                     }
 
                     return (
                         <>
                             <VerticalSpacer size={24}/>
-                            <Title>{'Target per run'}</Title>
-                            <InputWithIcon>
-                                {searchIcon}
+                            <Title>{metric.title}</Title>
+                            <InputWithIcon key={metric.id}>
+                                {inputIcon}
                                 <StyledInput
-                                    placeholder={typeTitle}
+                                    ref={textareaRef}
+                                    placeholder={inputPlaceholder}
                                     type='text'
-                                    value={curState[idx].val}
+                                    value={inputsValues[idx]}
                                     onChange={(e) => updateMetrics(idx, e)}
                                     disabled={props.isPublished}
                                 />
                             </InputWithIcon>
                             {
-                                targetError !== '' &&
-                                <ErrorText>{targetError}</ErrorText>
+                                inputsErrors[idx] !== '' &&
+                                <ErrorText>{inputsErrors[idx]}</ErrorText>
                             }
                             <HelpText>{formatMessage({defaultMessage: 'We’ll show you how close or far from the target each run’s value is and also plot it on a chart.'})}</HelpText>
                         </>
@@ -80,19 +119,6 @@ const MetricsData = (props: MetricsProps) => {
         </div>
     );
 };
-const DollarSign = ({size}: {size: number}) => (
-    <Icon
-        path={mdiCurrencyUsd}
-        size={size}
-    />
-);
-
-const PoundSign = ({size}: {size: number}) => (
-    <Icon
-        path={mdiPound}
-        size={size}
-    />
-);
 
 const HelpText = styled.div`
     font-size: 12px;

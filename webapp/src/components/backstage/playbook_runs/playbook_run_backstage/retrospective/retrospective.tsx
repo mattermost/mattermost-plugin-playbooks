@@ -8,14 +8,16 @@ import {FormattedMessage, useIntl} from 'react-intl';
 
 import {DateTime} from 'luxon';
 
+import debounce from 'debounce';
+
 import UpgradeRetrospectiveSvg from 'src/components/assets/upgrade_retrospective_svg';
-import {Container, Content, Left, Right, Title, VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
+import {Container, Content, Left, Right, Title} from 'src/components/backstage/playbook_runs/shared';
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
 
 import {useAllowRetrospectiveAccess} from 'src/hooks';
-import {PlaybookRun} from 'src/types/playbook_run';
-import {PlaybookWithChecklist} from 'src/types/playbook';
+import {PlaybookRun, RunMetricData} from 'src/types/playbook_run';
+import {Metric} from 'src/types/playbook';
 
 import MetricsData from '../metrics_data';
 
@@ -31,13 +33,16 @@ import Report from './report';
 
 import TimelineRetro from './timeline_retro';
 
+const editDebounceDelayMilliseconds = 2000;
+
 interface Props {
     playbookRun: PlaybookRun;
-    playbook: PlaybookWithChecklist | null;
+    metricsConfigs: Metric[] | null;
     deleteTimelineEvent: (id: string) => void;
     setRetrospective: (retrospective: string) => void;
     setPublishedAt: (publishedAt: number) => void;
     setCanceled: (canceled: boolean) => void;
+    setMetricsData: (metricsData: RunMetricData[]) => void;
 }
 
 const PUB_TIME = {
@@ -105,6 +110,12 @@ export const Retrospective = (props: Props) => {
         );
     }
 
+    const persistEditEvent = (data: RunMetricData[]) => {
+        // updateRetrospective(props.playbookRun.id, text);
+        props.setMetricsData(data);
+    };
+    const debouncedPersistEditEvent = debounce(persistEditEvent, editDebounceDelayMilliseconds);
+
     return (
         <Container>
             <Left>
@@ -116,10 +127,14 @@ export const Retrospective = (props: Props) => {
                         </HeaderButtonsRight>
                     </Header>
                     <StyledContent>
-                        <MetricsData
-                            playbookRun={props.playbookRun}
-                            isPublished={isPublished}
-                        />
+                        {props.metricsConfigs &&
+                            <MetricsData
+                                metricsData={props.playbookRun.metrics_data}
+                                metricsConfigs={props.metricsConfigs}
+                                isPublished={isPublished}
+                                onEdit={debouncedPersistEditEvent}
+                                flushChanges={() => debouncedPersistEditEvent.flush()}
+                            />}
                         <Report
                             playbookRun={props.playbookRun}
                             setRetrospective={props.setRetrospective}
