@@ -19,8 +19,6 @@ import {useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookRun, RunMetricData} from 'src/types/playbook_run';
 import {Metric} from 'src/types/playbook';
 
-import MetricsData from '../metrics_data';
-
 import {publishRetrospective, updateRetrospective} from 'src/client';
 
 import {PrimaryButton} from 'src/components/assets/buttons';
@@ -28,6 +26,8 @@ import {PrimaryButton} from 'src/components/assets/buttons';
 import {Timestamp} from 'src/webapp_globals';
 
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
+
+import MetricsData from '../metrics/metrics_data';
 
 import Report from './report';
 
