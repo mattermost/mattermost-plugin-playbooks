@@ -1,5 +1,6 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import styled from 'styled-components';
+import {CSSTransition, TransitionGroup} from 'react-transition-group';
 
 const Ctx = React.createContext({} as ToastFuncs);
 
@@ -15,6 +16,24 @@ const StyledToast = styled.div`
     background: var(--center-channel-color);
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.12);
     border-radius: 4px;
+
+    &.fade-enter {
+        transform: translateY(80px);
+    }
+  
+    &.fade-enter-active {
+        transform: translateY(0);
+        transition: transform 500ms linear;
+    }
+  
+    &.fade-exit {
+        transform: translateY(0);
+    }
+  
+    &.fade-exit-active {
+        transform: translateY(280px);
+        transition: transform 1s cubic-bezier(1, -0.4, 0.5, 1);
+    }
 `;
 
 const StyledText = styled.div`
@@ -112,23 +131,28 @@ export const ToastProvider = (props: Props) => {
     return (
         <Ctx.Provider value={{add, remove}}>
             {props.children}
-            <ToastContainer>
+            <TransitionGroup component={ToastContainer}>
                 {
                     toasts.map(({content, id, ...rest}) => (
-                        <StyledToast
+                        <CSSTransition
                             key={id}
-                            {...rest}
+                            classNames='fade'
+                            timeout={2000}
                         >
-                            <StyledCheck className={'icon icon-check'}/>
-                            <StyledText>{content}</StyledText>
-                            <StyledClose
-                                className={'icon icon-close'}
-                                onClick={onDismiss(id)}
-                            />
-                        </StyledToast>
+                            <StyledToast
+                                {...rest}
+                            >
+                                <StyledCheck className={'icon icon-check'}/>
+                                <StyledText>{content}</StyledText>
+                                <StyledClose
+                                    className={'icon icon-close'}
+                                    onClick={onDismiss(id)}
+                                />
+                            </StyledToast>
+                        </CSSTransition>
                     ))
                 }
-            </ToastContainer >
+            </TransitionGroup>
         </Ctx.Provider >
     );
 };

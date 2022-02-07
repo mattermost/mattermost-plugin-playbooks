@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import debounce from 'debounce';
+import {useIntl} from 'react-intl';
 
 import {
     archivePlaybook as clientArchivePlaybook,
@@ -13,7 +14,7 @@ import {useToasts} from 'src/components/backstage/toast_banner';
 
 type ParamsState = Required<FetchPlaybooksParams>;
 
-export const DuplicateBannerTimeout = 5000;
+export const DuplicateBannerTimeout = 2000;
 
 const searchDebounceDelayMilliseconds = 300;
 
@@ -58,6 +59,7 @@ export function usePlaybooksCrud(
     defaultParams: Partial<FetchPlaybooksParams>,
     {infinitePaging} = {infinitePaging: false},
 ) {
+    const {formatMessage} = useIntl();
     const [playbooks, setPlaybooks] = useState<Playbook[] | null>(null);
     const [isLoading, setLoading] = useState(true);
     const [hasMore, setHasMore] = useState(false);
@@ -130,7 +132,7 @@ export function usePlaybooksCrud(
     const duplicatePlaybook = async (playbookId: Playbook['id']) => {
         await clientDuplicatePlaybook(playbookId);
         await fetchPlaybooks();
-        addToast('successfully duplicated playbook', DuplicateBannerTimeout);
+        addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}), DuplicateBannerTimeout);
     };
 
     const sortBy = (colName: FetchPlaybooksParams['sort']) => {

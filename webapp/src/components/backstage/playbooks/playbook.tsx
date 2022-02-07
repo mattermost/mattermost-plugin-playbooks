@@ -250,7 +250,7 @@ const Playbook = () => {
                             onClick={async () => {
                                 const newID = await clientDuplicatePlaybook(playbook.id);
                                 navigateToPluginUrl(`/playbooks/${newID}`);
-                                addToast('successfully duplicated playbook', DuplicateBannerTimeout);
+                                addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}), DuplicateBannerTimeout);
                             }}
                         >
                             <FormattedMessage defaultMessage='Duplicate'/>
