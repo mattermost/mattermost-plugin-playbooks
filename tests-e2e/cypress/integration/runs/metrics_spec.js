@@ -25,6 +25,7 @@ describe('runs > edit_metrics', () => {
         // # Login as testUser
         cy.apiLogin(testUser);
 
+        // # Create playbook with metrics
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
             title: 'Playbook with metrics',
@@ -86,7 +87,7 @@ describe('runs > edit_metrics', () => {
                 // * Verify metric 3
                 verifyMetricInput(2, 'title3', '30', 'description3');
 
-                // # Clear playbook metric target value and verify
+                // # Edit playbook, remove all metrics. then check retro tab ui
                 testPlaybookWithMetrics.metrics = null;
                 cy.apiUpdatePlaybook(testPlaybookWithMetrics);
                 cy.visit(`/playbooks/runs/${runId}/retrospective`);
@@ -101,6 +102,7 @@ describe('runs > edit_metrics', () => {
                 // # Navigate directly to the retro tab
                 cy.visit(`/playbooks/runs/${runId}/retrospective`);
 
+                // # Enter metric values
                 cy.get('input[type=text]').eq(0).click();
                 cy.get('input[type=text]').eq(0).type('12:11:10')
                     .tab().type('56')
@@ -115,6 +117,7 @@ describe('runs > edit_metrics', () => {
                 cy.get('input[type=text]').eq(1).should('have.value', '56');
                 cy.get('input[type=text]').eq(2).should('have.value', '123');
 
+                // # Wait 2 sec to auto save
                 cy.wait(2000);
 
                 // # Reload page and navigate to the retro tab
@@ -130,12 +133,13 @@ describe('runs > edit_metrics', () => {
                 // # Navigate directly to the retro tab
                 cy.visit(`/playbooks/runs/${runId}/retrospective`);
 
+                // # Enter invalid metric values
                 cy.get('input[type=text]').eq(0).click();
                 cy.get('input[type=text]').eq(0).type('5')
                     .tab().type('56d')
                     .tab().type('125');
 
-                // * First two metrics values are invalid
+                // * Validate error messages
                 cy.getStyledComponent('ErrorText').eq(0).contains('Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.');
                 cy.getStyledComponent('ErrorText').eq(1).contains('Please enter a number, or leave the target blank.');
 
@@ -143,6 +147,7 @@ describe('runs > edit_metrics', () => {
                 cy.findByText('Overview').click({force: true});
                 cy.findByText('Retrospective').click({force: true});
 
+                // # Wait 2 sec to auto save
                 cy.wait(2000);
 
                 // # Reload page and navigate to the retro tab
@@ -158,6 +163,7 @@ describe('runs > edit_metrics', () => {
                 // # Navigate directly to the retro tab
                 cy.visit(`/playbooks/runs/${runId}/retrospective`);
 
+                //# Enter metric values
                 cy.get('input[type=text]').eq(0).click();
                 cy.get('input[type=text]').eq(0).type('20:00:12')
                     .tab().type('56')
