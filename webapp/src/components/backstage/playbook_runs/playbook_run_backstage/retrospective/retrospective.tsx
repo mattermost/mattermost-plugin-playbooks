@@ -61,15 +61,16 @@ export const Retrospective = (props: Props) => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [metricsValid, setMetricsValid] = useState(true);
 
-    const [updatedCounter, setUpdated] = useState(0);
+    const [retrospectiveInfoUpdated, setUpdated] = useState(0);
     const didMountRef = useRef(false);
     useEffect(() => {
         if (didMountRef.current) {
             updateRetrospective(props.playbookRun.id, props.playbookRun.retrospective, props.playbookRun.metrics_data);
         }
         didMountRef.current = true;
-    }, [updatedCounter]);
+    }, [retrospectiveInfoUpdated]);
 
     if (!allowRetrospectiveAccess) {
         return (
@@ -93,7 +94,11 @@ export const Retrospective = (props: Props) => {
     const publishButtonText: React.ReactNode = formatMessage({defaultMessage: 'Publish'});
     let publishComponent = (
         <PrimaryButtonSmaller
-            onClick={() => setShowConfirmation(true)}
+            onClick={() => {
+                if (metricsValid) {
+                    setShowConfirmation(true);
+                }
+            }}
         >
             <TextContainer>{publishButtonText}</TextContainer>
         </PrimaryButtonSmaller>
@@ -121,11 +126,11 @@ export const Retrospective = (props: Props) => {
 
     const persistMetricEditEvent = (data: RunMetricData[]) => {
         props.setMetricsData(data);
-        setUpdated(updatedCounter + 1);
+        setUpdated(retrospectiveInfoUpdated + 1);
     };
     const persistReportEditEvent = (report: string) => {
         props.setRetrospective(report);
-        setUpdated(updatedCounter + 1);
+        setUpdated(retrospectiveInfoUpdated + 1);
     };
 
     const debouncedPersistMetricEditEvent = debounce(persistMetricEditEvent, editDebounceDelayMilliseconds);
@@ -149,6 +154,7 @@ export const Retrospective = (props: Props) => {
                                 isPublished={isPublished}
                                 onEdit={debouncedPersistMetricEditEvent}
                                 flushChanges={() => debouncedPersistMetricEditEvent.flush()}
+                                setMetricsValid={setMetricsValid}
                             />}
                         <Report
                             playbookRun={props.playbookRun}

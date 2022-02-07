@@ -21,6 +21,7 @@ interface MetricsProps {
     isPublished: boolean;
     onEdit: (metricsData: RunMetricData[]) => void;
     flushChanges: () => void;
+    setMetricsValid: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const MetricsData = (props: MetricsProps) => {
@@ -71,10 +72,12 @@ const MetricsData = (props: MetricsProps) => {
         const newList = [...inputsValues];
         newList[index] = event.target.value;
         setInputsValues(newList);
-        if (verifyInputs(newList)) {
+        const valid = verifyInputs(newList);
+        if (valid) {
             const newMetricsData = stringsToMetricsData(newList);
             props.onEdit(newMetricsData);
         }
+        props.setMetricsValid(valid);
     }
 
     return (
