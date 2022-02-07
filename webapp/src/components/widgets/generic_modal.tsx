@@ -198,28 +198,16 @@ export const Buttons = styled.div`
     gap: 10px;
 `;
 
-export const DefaultFooterContainer = styled.div<{centered?: boolean;}>`
+export const DefaultFooterContainer = styled.div`
     display: flex;
     flex-direction: column;
-    align-items: ${({centered}) => (centered ? 'center' : 'flex-end')};
+    align-items: flex-end
 `;
 
 export const ModalHeading = styled.h1`
     font-size: 22px;
     line-height: 28px;
     color: var(--center-channel-color);
-`;
-
-const Title = styled.h1`
-    font-size: 22px;
-    line-height: 28px;
-    color: var(--center-channel-color);
-`;
-
-const TitleSub = styled.p`
-    font-size: 12px;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
 `;
 
 export const Description = styled.p`
