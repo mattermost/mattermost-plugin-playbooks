@@ -25,9 +25,9 @@ const MetricInput = ({title, value, placeholder, helpText, errorText, targetValu
     const {formatMessage} = useIntl();
 
     return (
-        <Container>
+        <ViewContainer>
             <Header>
-                <Bold>{title}</Bold>
+                <Title>{title}</Title>
                 <Target
                     title={formatMessage({defaultMessage: 'Target'}) + ':'}
                     text={targetValue}
@@ -47,15 +47,15 @@ const MetricInput = ({title, value, placeholder, helpText, errorText, targetValu
             </InputWithIcon>
             <Error text={errorText}/>
             <HelpText>{helpText}</HelpText>
-        </Container>
+        </ViewContainer>
     );
 };
 
-const Container = styled.div`
+const ViewContainer = styled.div`
     flex: 1;
 `;
 
-const Bold = styled.div`
+const Title = styled.div`
     font-weight: 600;
 `;
 
@@ -132,7 +132,7 @@ const Target = ({title, text}: { title: string, text?: string }) => {
     }
     return (
         <TargetTitle>
-            <Bold>{title}</Bold>
+            <Title>{title}</Title>
             <ValueText>{text}</ValueText>
         </TargetTitle>
     );
