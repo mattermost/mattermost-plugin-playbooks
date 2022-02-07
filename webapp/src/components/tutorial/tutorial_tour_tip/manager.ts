@@ -19,6 +19,7 @@ import * as Utils from './utils';
 export interface TutorialTourTipManager {
     show: boolean;
     tourSteps: Record<string, number>;
+    setShow: (value: React.SetStateAction<boolean>) => void;
     getLastStep: () => number;
     handleOpen: (e: React.MouseEvent) => void;
     handleHide: (e: React.MouseEvent) => void;
@@ -186,6 +187,7 @@ const useTutorialTourTipManager = ({
     return {
         show,
         tourSteps,
+        setShow,
         handleOpen,
         handleHide,
         handleDismiss,
