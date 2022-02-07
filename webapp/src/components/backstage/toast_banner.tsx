@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useEffect} from 'react';
 import styled from 'styled-components';
 import {CSSTransition, TransitionGroup} from 'react-transition-group';
 
@@ -110,17 +110,11 @@ export const ToastProvider = (props: Props) => {
         }
     }, [toasts]);
 
-    const addHelper = (content: string, duration: number) => {
+    const add = (content: string, duration: number) => {
         const id = toastCount++;
         const toast = {id, content, duration};
         setToasts((ts) => [...ts, toast]);
     };
-
-    // do not recreate every time
-    const add = useCallback(
-        addHelper,
-        [setToasts]
-    );
 
     const remove = (id: number) => {
         setToasts((ts) => ts.filter((t: ToastType) => t.id !== id));
