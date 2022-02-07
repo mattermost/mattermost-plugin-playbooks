@@ -3,7 +3,7 @@
 
 import React, {useEffect, useRef} from 'react';
 import Scrollbars from 'react-custom-scrollbars';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 
 import {FormattedMessage} from 'react-intl';
 
@@ -19,27 +19,42 @@ import RHSChecklistList from 'src/components/rhs/rhs_checklist_list';
 import {usePrevious} from 'src/hooks/general';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
-import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
+import {RunDetailsTutorialSteps, SKIPPED, TutorialTourCategories} from 'src/components/tutorial/tours';
+import {displayRhsRunDetailsTourDialog} from 'src/actions';
+import {useTutorialStepper} from '../tutorial/tutorial_tour_tip/manager';
 
 const RHSRunDetails = () => {
+    const dispatch = useDispatch();
     const scrollbarsRef = useRef<Scrollbars>(null);
 
     const playbookRun = useSelector(currentPlaybookRun);
 
     const prevStatus = usePrevious(playbookRun?.current_status);
+
+    const {currentStep: runDetailsStep, setStep: setRunDetailsStep} = useTutorialStepper(TutorialTourCategories.RUN_DETAILS);
+
     useEffect(() => {
         if ((prevStatus !== playbookRun?.current_status) && (playbookRun?.current_status === PlaybookRunStatus.Finished)) {
             scrollbarsRef?.current?.scrollToTop();
         }
     }, [playbookRun?.current_status]);
 
+    useEffect(() => {
+        const isRunDetailTour = false;
+        if (runDetailsStep === null && isRunDetailTour) {
+            dispatch(displayRhsRunDetailsTourDialog({
+                onConfirm: () => setRunDetailsStep(RunDetailsTutorialSteps.SidePanel),
+                onDismiss: () => setRunDetailsStep(SKIPPED),
+            }));
+        }
+    }, [runDetailsStep]);
+
     const rhsContainerPunchout = useMeasurePunchouts(
         ['rhsContainer'],
         [],
         {y: 0, height: 0, x: 0, width: 0},
     );
-    const startRunDetailsTour = false;
-    const showRunDetailsSidePanelStep = useShowTutorialStep(RunDetailsTutorialSteps.SidePanel, TutorialTourCategories.RUN_DETAILS) && startRunDetailsTour;
+    const showRunDetailsSidePanelStep = useShowTutorialStep(RunDetailsTutorialSteps.SidePanel, TutorialTourCategories.RUN_DETAILS, false);
 
     if (!playbookRun) {
         return null;

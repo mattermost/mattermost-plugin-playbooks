@@ -65,7 +65,8 @@ import {modals} from 'src/webapp_globals';
 import {makeModalDefinition as makeUpdateRunStatusModalDefinition} from 'src/components/modals/update_run_status_modal';
 import {makePlaybookAccessModalDefinition} from 'src/components/backstage/playbook_access_modal';
 
-import {makePlaybookCreateModal, PlaybookCreateModalProps} from './components/create_playbook_modal';
+import {makePlaybookCreateModal, PlaybookCreateModalProps} from 'src/components/create_playbook_modal';
+import {makeRhsRunDetailsTourDialog} from 'src/components/rhs/rhs_run_details_tour_dialog';
 
 export function startPlaybookRun(teamId: string, postId?: string) {
     return async (dispatch: Dispatch<AnyAction>, getState: GetStateFunc) => {
@@ -142,6 +143,12 @@ export function displayEditPlaybookAccessModal(
 export function displayPlaybookCreateModal(props: PlaybookCreateModalProps) {
     return async (dispatch: Dispatch<AnyAction>) => {
         dispatch(modals.openModal(makePlaybookCreateModal(props)));
+    };
+}
+
+export function displayRhsRunDetailsTourDialog(props: Parameters<typeof makeRhsRunDetailsTourDialog>[0]) {
+    return async (dispatch: Dispatch<AnyAction>) => {
+        dispatch(modals.openModal(makeRhsRunDetailsTourDialog(props)));
     };
 }
 
