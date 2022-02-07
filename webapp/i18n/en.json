@@ -230,6 +230,7 @@
   "d8KvXJ": "Your trial license expires on {expiryDate}. You can purchase a license at any time through the <PortalLink>Customer Portal</PortalLink> to avoid any disruption.",
   "d9epHh": "Export channel log",
   "dSC1YD": "Skip task",
+  "dZmYk6": "Successfully duplicated playbook",
   "djALPR": "{activeRuns, number} {activeRuns, plural, one {run} other {runs}} in progress",
   "dsTLW1": "Edit task",
   "dvhvum": "(Optional) Describe how this playbook should be used",
