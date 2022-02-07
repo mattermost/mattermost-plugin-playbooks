@@ -201,7 +201,7 @@ export const Buttons = styled.div`
 export const DefaultFooterContainer = styled.div`
     display: flex;
     flex-direction: column;
-    align-items: flex-end
+    align-items: flex-end;
 `;
 
 export const ModalHeading = styled.h1`
