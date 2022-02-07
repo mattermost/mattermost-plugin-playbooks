@@ -2,17 +2,17 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import {useIntl} from 'react-intl';
 
-import {BaseInput} from 'src/components/assets/inputs';
+import {StyledInput, HelpText, ErrorText} from '../../shared';
 
 interface Props {
     title: string;
     value: string;
     placeholder: string;
-    helpText: string;
+    helpText?: string;
     errorText: string;
     targetValue?: string;
     inputIcon: JSX.Element;
@@ -25,7 +25,7 @@ const MetricInput = ({title, value, placeholder, helpText, errorText, targetValu
     const {formatMessage} = useIntl();
 
     return (
-        <ViewContainer>
+        <InputContainer>
             <Header>
                 <Title>{title}</Title>
                 <Target
@@ -46,12 +46,12 @@ const MetricInput = ({title, value, placeholder, helpText, errorText, targetValu
                 />
             </InputWithIcon>
             <Error text={errorText}/>
-            <HelpText>{helpText}</HelpText>
-        </ViewContainer>
+            {helpText && <HelpText>{helpText}</HelpText>}
+        </InputContainer>
     );
 };
 
-const ViewContainer = styled.div`
+const InputContainer = styled.div`
     flex: 1;
 `;
 
@@ -59,38 +59,9 @@ const Title = styled.div`
     font-weight: 600;
 `;
 
-const HelpText = styled.div`
-    font-size: 12px;
-    line-height: 16px;
-    margin-top: 4px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-`;
-
 const Error = ({text}: { text: string }) => (
     text === '' ? null : <ErrorText>{text}</ErrorText>
 );
-
-const ErrorText = styled.div`
-    font-size: 12px;
-    line-height: 16px;
-    margin-top: 4px;
-    color: var(--error-text);
-`;
-
-const StyledInput = styled(BaseInput)<{ error?: boolean }>`
-    height: 40px;
-    width: 100%;
-
-    ${(props) => (
-        props.error && css`
-            box-shadow: inset 0 0 0 1px var(--error-text);
-
-            &:focus {
-                box-shadow: inset 0 0 0 2px var(--error-text);
-            }
-        `
-    )}
-`;
 
 const InputWithIcon = styled.span`
     position: relative;

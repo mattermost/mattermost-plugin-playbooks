@@ -1,12 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import StatusBadge from 'src/components/backstage/status_badge';
 
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';
+
+import {BaseInput} from 'src/components/assets/inputs';
 
 export const Container = styled.div`
     display: flex;
@@ -108,3 +110,33 @@ export const Icon16 = styled.i`
         font-size: 16px;
     }
 `;
+
+export const HelpText = styled.div`
+    font-size: 12px;
+    line-height: 16px;
+    margin-top: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+`;
+
+export const ErrorText = styled.div`
+    font-size: 12px;
+    line-height: 16px;
+    margin-top: 4px;
+    color: var(--error-text);
+`;
+
+export const StyledInput = styled(BaseInput)<{ error?: boolean }>`
+    height: 40px;
+    width: 100%;
+
+    ${(props) => (
+        props.error && css`
+            box-shadow: inset 0 0 0 1px var(--error-text);
+
+            &:focus {
+                box-shadow: inset 0 0 0 2px var(--error-text);
+            }
+        `
+    )}
+`;
+

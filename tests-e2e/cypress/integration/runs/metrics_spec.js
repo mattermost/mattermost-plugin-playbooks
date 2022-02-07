@@ -78,6 +78,9 @@ describe('runs > edit_metrics', () => {
                 // # Navigate directly to the retro tab
                 cy.visit(`/playbooks/runs/${runId}/retrospective`);
 
+                // * Verify metrics number
+                cy.getStyledComponent('InputContainer').should('have.length', 3);
+
                 // * Verify metric 1
                 verifyMetricInput(0, 'title1', '12 minutes', 'description1');
 
@@ -93,7 +96,7 @@ describe('runs > edit_metrics', () => {
                 cy.visit(`/playbooks/runs/${runId}/retrospective`);
 
                 // * Verify there are no metrics inputs
-                cy.getStyledComponent('ViewContainer').should('not.exist');
+                cy.getStyledComponent('InputContainer').should('not.exist');
             });
         });
 
@@ -191,7 +194,7 @@ describe('runs > edit_metrics', () => {
 });
 
 const verifyMetricInput = (index, title, target, description) => {
-    cy.getStyledComponent('ViewContainer').eq(index).within(() => {
+    cy.getStyledComponent('InputContainer').eq(index).within(() => {
         cy.getStyledComponent('Title').contains(title);
 
         if (target) {
