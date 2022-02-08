@@ -24,46 +24,52 @@ interface MetricsProps {
     setMetricsValid: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const MetricsData = (props: MetricsProps) => {
+const MetricsData = ({metricsData, metricsConfigs, isPublished, onEdit, flushChanges, setMetricsValid}: MetricsProps) => {
     const {formatMessage} = useIntl();
 
-    const initialValues = new Array(props.metricsConfigs?.length).fill('');
-    props.metricsConfigs.forEach((mc, index) => {
-        const md = props.metricsData.find((metric) => {
-            return metric.metric_config_id === mc.id;
-        });
-        if (md) {
-            initialValues[index] = metricToString(md.value, mc.type);
-        }
+    const initialValues = new Array(metricsConfigs?.length);
+    metricsConfigs.forEach((mc, index) => {
+        const md = metricsData.find((metric) => metric.metric_config_id === mc.id);
+        initialValues[index] = md ? metricToString(md.value, mc.type) : '';
     });
     const [inputsValues, setInputsValues] = useState(initialValues);
-    const [inputsErrors, setInputsErrors] = useState(new Array(props.metricsConfigs?.length).fill(''));
+    const [inputsErrors, setInputsErrors] = useState(new Array(metricsConfigs?.length).fill(''));
 
-    const textareaRef = useRef(null);
-    useClickOutsideRef(textareaRef, () => {
-        props.flushChanges();
+    const inputRef = useRef(null);
+    useClickOutsideRef(inputRef, () => {
+        flushChanges();
     });
 
     const errorCurrencyInteger = formatMessage({defaultMessage: 'Please enter a number, or leave the target blank.'});
     const errorDuration = formatMessage({defaultMessage: 'Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.'});
+    const errorEmptyValue = formatMessage({defaultMessage: 'Please fill in the metric value.'});
 
-    const verifyInputs = (values: string[]): boolean => {
-        let isValid = true;
-        const newErrors = new Array(props.metricsConfigs?.length).fill('');
+    const verifyInputs = (values: string[]): string[] => {
+        const errors = new Array(metricsConfigs?.length).fill('');
         values.forEach((value, index) => {
-            if (!isMetricValueValid(props.metricsConfigs[index].type, value)) {
-                newErrors[index] = props.metricsConfigs[index].type === MetricType.Duration ? errorDuration : errorCurrencyInteger;
-                isValid = false;
+            if (value === '') {
+                const metric = metricsData.find((m) => m.metric_config_id === metricsConfigs[index].id);
+                errors[index] = metric ? errorEmptyValue : '';
+            } else if (!isMetricValueValid(metricsConfigs[index].type, value)) {
+                errors[index] = metricsConfigs[index].type === MetricType.Duration ? errorDuration : errorCurrencyInteger;
             }
         });
-        setInputsErrors(newErrors);
-        return isValid;
+        return errors;
     };
 
-    function stringsToMetricsData(values: string[]) {
-        const newMetricsData = new Array<RunMetricData>(props.metricsConfigs?.length);
-        props.metricsConfigs.forEach((mc, index) => {
-            newMetricsData[index] = {metric_config_id: mc.id, value: stringToMetric(values[index], mc.type)};
+    function stringsToMetricsData(values: string[], errors: string[]) {
+        const newMetricsData = new Array<RunMetricData>();
+        errors.forEach((error, index) => {
+            if (error) {
+                // When input value is invalid, remain existing metric value
+                const metric = metricsData.find((m) => m.metric_config_id === metricsConfigs[index].id);
+
+                if (metric) {
+                    newMetricsData.push(metric);
+                }
+            } else if (values[index] !== '') {
+                newMetricsData.push({metric_config_id: metricsConfigs[index].id, value: stringToMetric(values[index], metricsConfigs[index].type)});
+            }
         });
         return newMetricsData;
     }
@@ -71,19 +77,19 @@ const MetricsData = (props: MetricsProps) => {
     function updateMetrics(index: number, event: React.ChangeEvent<HTMLInputElement>) {
         const newList = [...inputsValues];
         newList[index] = event.target.value;
+        const newErrors = verifyInputs(newList);
         setInputsValues(newList);
-        const valid = verifyInputs(newList);
-        if (valid) {
-            const newMetricsData = stringsToMetricsData(newList);
-            props.onEdit(newMetricsData);
-        }
-        props.setMetricsValid(valid);
+        setInputsErrors(newErrors);
+
+        const newMetricsData = stringsToMetricsData(newList, newErrors);
+        onEdit(newMetricsData);
+        setMetricsValid(!newErrors.join());
     }
 
     return (
         <div>
             {
-                props.metricsConfigs?.map((mc, idx) => {
+                metricsConfigs?.map((mc, idx) => {
                     let placeholder = formatMessage({defaultMessage: ' Add value'});
                     let inputIcon = <DollarSign sizePx={18}/>;
                     if (mc.type === MetricType.Integer) {
@@ -105,9 +111,9 @@ const MetricsData = (props: MetricsProps) => {
                                 errorText={inputsErrors[idx]}
                                 targetValue={metricToString(mc.target, mc.type, true)}
                                 inputIcon={inputIcon}
-                                inputRef={textareaRef}
+                                inputRef={inputRef}
                                 onChange={(e) => updateMetrics(idx, e)}
-                                disabled={props.isPublished}
+                                disabled={isPublished}
                             />
                         </>
                     );
