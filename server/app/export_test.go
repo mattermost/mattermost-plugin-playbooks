@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"gopkg.in/guregu/null.v4"
 	"reflect"
 	"strings"
 	"testing"
@@ -32,7 +33,7 @@ func TestGeneratePlaybookExport(t *testing.T) {
 				Title:       "Title 1",
 				Description: "Description 1",
 				Type:        MetricTypeCurrency,
-				Target:      147,
+				Target:      null.IntFrom(147),
 			},
 		},
 	}

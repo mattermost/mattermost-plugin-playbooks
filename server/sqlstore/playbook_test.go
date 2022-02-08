@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"fmt"
+	"gopkg.in/guregu/null.v4"
 	"sort"
 	"strconv"
 	"testing"
@@ -60,7 +61,7 @@ func metricsFromNames(names []string) []app.PlaybookMetricConfig {
 			Title:       names[i],
 			Description: "description: " + strconv.Itoa(i),
 			Type:        types[i%len(types)],
-			Target:      int64(i),
+			Target:      null.IntFrom(int64(i)),
 		}
 	}
 	return metrics

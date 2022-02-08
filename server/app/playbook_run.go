@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"gopkg.in/guregu/null.v4"
 	"strings"
 	"time"
 
@@ -335,7 +336,7 @@ type SQLStatusPost struct {
 
 type RunMetricData struct {
 	MetricConfigID string
-	Value          int64
+	Value          null.Int
 }
 
 type RetrospectiveUpdate struct {

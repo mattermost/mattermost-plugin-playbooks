@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"gopkg.in/guregu/null.v4"
 	"strings"
 
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -83,12 +84,12 @@ type PlaybookMember struct {
 }
 
 type PlaybookMetricConfig struct {
-	ID          string `json:"id" export:"-"`
-	PlaybookID  string `json:"playbook_id" export:"-"`
-	Title       string `json:"title" export:"title"`
-	Description string `json:"description" export:"description"`
-	Type        string `json:"type" export:"type"`
-	Target      int64  `json:"target" export:"target"`
+	ID          string   `json:"id" export:"-"`
+	PlaybookID  string   `json:"playbook_id" export:"-"`
+	Title       string   `json:"title" export:"title"`
+	Description string   `json:"description" export:"description"`
+	Type        string   `json:"type" export:"type"`
+	Target      null.Int `json:"target" export:"target"`
 }
 
 func (pm PlaybookMember) Clone() PlaybookMember {

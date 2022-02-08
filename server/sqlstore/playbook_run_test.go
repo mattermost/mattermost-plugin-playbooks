@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"fmt"
+	"gopkg.in/guregu/null.v4"
 	"math/rand"
 	"sort"
 	"strings"
@@ -274,7 +275,7 @@ func TestUpdatePlaybookRun(t *testing.T) {
 
 					//second update will update values
 					for i := range old.MetricsData {
-						old.MetricsData[i].Value *= 10
+						old.MetricsData[i].Value = null.IntFrom(old.MetricsData[i].Value.ValueOrZero() * 10)
 					}
 					old.Retrospective = "Retro3"
 					return &old
@@ -1047,7 +1048,7 @@ func generateMetricData(playbook app.Playbook) []app.RunMetricData {
 		metrics = append(metrics,
 			app.RunMetricData{
 				MetricConfigID: mc.ID,
-				Value:          int64(i + 10),
+				Value:          null.IntFrom(int64(i + 10)),
 			},
 		)
 	}
