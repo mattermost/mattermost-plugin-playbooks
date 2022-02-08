@@ -1,8 +1,11 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import {CSSTransition, TransitionGroup} from 'react-transition-group';
 
 const Ctx = React.createContext({} as ToastFuncs);
+
+const DEFAULT_DURATION = 2000;
+let toastCount = 0;
 
 const StyledToast = styled.div`
     display: flex;
@@ -23,7 +26,7 @@ const StyledToast = styled.div`
   
     &.fade-enter-active {
         transform: translateY(0);
-        transition: transform 500ms linear;
+        transition: 0.5s cubic-bezier(0.44, 0.13, 0.42, 1.43);
     }
   
     &.fade-exit {
@@ -32,7 +35,7 @@ const StyledToast = styled.div`
   
     &.fade-exit-active {
         transform: translateY(280px);
-        transition: transform 1s cubic-bezier(1, -0.4, 0.5, 1);
+        transition: transform 0.75s cubic-bezier(0.59, -0.23, 0.42, 1.43);
     }
 `;
 
@@ -68,8 +71,6 @@ const StyledClose = styled.i`
     color: var(--sidebar-text-60);
 `;
 
-let toastCount = 0;
-
 interface ToastType {
     id: number;
     content: string;
@@ -81,39 +82,29 @@ interface Props {
 }
 
 interface ToastFuncs {
-    add: (content: string, duration: number) => void;
+    add: (content: string, duration?: number) => void;
     remove: (id: number) => void;
 }
-
-const getIndexOfFirstRemovableToast = (ts: ToastType[]) => {
-    for (let i = 0; i < ts.length; i++) {
-        if (ts[i].duration > 0) {
-            return i;
-        }
-    }
-    return -1;
-};
 
 export const ToastProvider = (props: Props) => {
     const [toasts, setToasts] = useState<ToastType[]>([]);
 
-    useEffect(() => {
-        if (toasts.length === 0) {
-            return;
-        }
-
-        const index = getIndexOfFirstRemovableToast(toasts);
-        if (index >= 0) {
-            window.setTimeout(() => {
-                setToasts((ts) => [...ts.slice(0, index), ...ts.slice(index + 1)]);
-            }, toasts[index].duration);
-        }
-    }, [toasts]);
-
-    const add = (content: string, duration: number) => {
+    const add = (content: string, duration: number = DEFAULT_DURATION) => {
         const id = toastCount++;
         const toast = {id, content, duration};
         setToasts((ts) => [...ts, toast]);
+        if (duration <= 0) {
+            return;
+        }
+        window.setTimeout(() => {
+            setToasts((ts) => {
+                const index = ts.findIndex((t) => t.id === id);
+                if (index === -1) {
+                    return ts;
+                }
+                return [...ts.slice(0, index), ...ts.slice(index + 1)];
+            });
+        }, duration);
     };
 
     const remove = (id: number) => {

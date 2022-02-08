@@ -14,8 +14,6 @@ import {useToasts} from 'src/components/backstage/toast_banner';
 
 type ParamsState = Required<FetchPlaybooksParams>;
 
-export const DuplicateBannerTimeout = 2000;
-
 const searchDebounceDelayMilliseconds = 300;
 
 export async function getPlaybookOrFetch(id: string, playbooks: Playbook[] | null) {
@@ -132,7 +130,7 @@ export function usePlaybooksCrud(
     const duplicatePlaybook = async (playbookId: Playbook['id']) => {
         await clientDuplicatePlaybook(playbookId);
         await fetchPlaybooks();
-        addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}), DuplicateBannerTimeout);
+        addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
     };
 
     const sortBy = (colName: FetchPlaybooksParams['sort']) => {
