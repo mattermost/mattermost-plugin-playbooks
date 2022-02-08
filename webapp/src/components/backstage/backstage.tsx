@@ -192,7 +192,7 @@ const Backstage = () => {
                     <Route
                         path={`${match.url}/start`}
                     >
-                        <PlaybookList ftue={true}/>
+                        <PlaybookList firstTimeUserExperience={true}/>
                     </Route>
                     <Route
                         exact={true}

@@ -38,7 +38,7 @@ const DescriptionWarn = styled(Description)`
 const LinedSeparator = styled.div`
     > span {
         font-weight: 600;
-        font-size: 11px;
+        font-size: 12px;
         line-height: 10px;
         background: var(--center-channel-bg);
         color: rgba(var(--center-channel-color-rgb), 0.72);

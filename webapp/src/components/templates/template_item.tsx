@@ -26,7 +26,7 @@ const Item = styled.div`
     border-radius: 8px;
     box-sizing: border-box;
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.08);
-    aspect-ratio: 284 / 320;
+    aspect-ratio: 284 / 300;
     max-width: 360px;
 `;
 
@@ -53,9 +53,10 @@ const Label = styled.label<LabelProps>`
     top: 9px;
     left: 9px;
     text-transform: uppercase;
-    background: ${({$color}) => $color};
+    background: ${({$color}) => $color?.split('-')?.[0]};
     padding: 0 4px;
     border-radius: 4px;
+    color: ${({$color}) => $color?.split('-')?.[1]}
 `;
 
 const Author = styled.div`

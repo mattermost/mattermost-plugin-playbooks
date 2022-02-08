@@ -721,7 +721,7 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
     {
         title: 'Learn how to use playbooks',
         label: 'Recommended For Beginners',
-        labelColor: '#E5AA1F29',
+        labelColor: '#E5AA1F29-#A37200',
         icon: <LightBulb/>,
         color: '#FFBC1F14',
         author: <MattermostLogo/>,

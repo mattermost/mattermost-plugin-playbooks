@@ -22,15 +22,6 @@ interface Props {
     templates?: PresetTemplate[];
 }
 
-export function isPlaybookCreationAllowed(allowPlaybookCreationInTeams: Map<string, boolean>) {
-    for (const [key, value] of allowPlaybookCreationInTeams) {
-        if (value) {
-            return true;
-        }
-    }
-    return false;
-}
-
 interface TemplateDropdownProps {
     template?: string
     onTemplateSet: (template?: string) => void
@@ -60,7 +51,7 @@ export const TemplateDropdown = (props: TemplateDropdownProps) => {
 const SelectorGrid = styled.div`
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    grid-gap: min(4vw, 4rem);
+    gap: min(4vw, 5rem);
     place-items: flex-start center;
     padding: 0 0 100px;
 `;

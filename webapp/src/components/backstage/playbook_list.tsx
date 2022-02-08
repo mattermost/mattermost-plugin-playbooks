@@ -154,7 +154,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
         ));
     }
 
-    const makeContent = () => {
+    const makePlaybookList = () => {
         if (props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering)) {
             return (
                 <>
@@ -307,7 +307,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
 
     // If we don't have a bottomHalf, create it. Or if we're loading new playbooks, use the previous body.
     if (!content.current || !isLoading) {
-        content.current = makeContent();
+        content.current = makePlaybookList();
     }
 
     return (

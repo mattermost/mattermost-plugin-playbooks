@@ -62,7 +62,7 @@ const RunsPage = () => {
         return null;
     }
 
-    if (showNoPlaybookRuns === true) {
+    if (showNoPlaybookRuns) {
         if (noPlaybooks) {
             return <Redirect to={pluginUrl('/start')}/>;
         }
