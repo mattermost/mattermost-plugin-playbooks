@@ -391,6 +391,14 @@ func TestPlaybookProperties(t *testing.T) {
 		SignalAnyKeywordsEnabled:    true,
 		SignalAnyKeywords:           []string{"SEV1, SEV2"},
 		ChannelNameTemplate:         "channel_name_template",
+		Metrics: []app.PlaybookMetricConfig{{
+			ID:          "metricid",
+			PlaybookID:  "id",
+			Title:       "metric 1",
+			Description: "this is a descr",
+			Type:        "Duration",
+			Target:      12345,
+		}},
 	}
 
 	properties := playbookProperties(dummyPlaybook, dummyUserID)
@@ -424,6 +432,7 @@ func TestPlaybookProperties(t *testing.T) {
 		"SignalAnyKeywordsEnabled":    dummyPlaybook.SignalAnyKeywordsEnabled,
 		"NumSignalAnyKeywords":        len(dummyPlaybook.SignalAnyKeywords),
 		"HasChannelNameTemplate":      true,
+		"NumMetrics":                  1,
 	}
 
 	require.Equal(t, expectedProperties, properties)
