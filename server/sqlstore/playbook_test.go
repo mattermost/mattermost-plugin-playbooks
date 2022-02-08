@@ -2,10 +2,11 @@ package sqlstore
 
 import (
 	"fmt"
-	"gopkg.in/guregu/null.v4"
 	"sort"
 	"strconv"
 	"testing"
+
+	"gopkg.in/guregu/null.v4"
 
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"

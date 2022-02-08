@@ -2,10 +2,11 @@ package app
 
 import (
 	"encoding/json"
-	"gopkg.in/guregu/null.v4"
 	"reflect"
 	"strings"
 	"testing"
+
+	"gopkg.in/guregu/null.v4"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

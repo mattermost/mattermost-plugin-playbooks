@@ -2,8 +2,9 @@ package app
 
 import (
 	"encoding/json"
-	"gopkg.in/guregu/null.v4"
 	"strings"
+
+	"gopkg.in/guregu/null.v4"
 
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
