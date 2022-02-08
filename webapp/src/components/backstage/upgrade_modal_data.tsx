@@ -168,6 +168,10 @@ export const getUpgradeModalCopy = (
             titleText = <FormattedMessage defaultMessage='Track key metrics and measure value'/>;
             helpText = <FormattedMessage defaultMessage='Use metrics to understand patterns and progress across runs, and track performance.'/>;
             break;
+        case AdminNotificationType.PLAYBOOK_METRICS:
+            titleText = <FormattedMessage defaultMessage='Track key metrics and measure value'/>;
+            helpText = <FormattedMessage defaultMessage='Use metrics to understand patterns and progress across runs and concretely demonstrate performance.'/>;
+            break;
         }
 
         if (!isAdmin) {
