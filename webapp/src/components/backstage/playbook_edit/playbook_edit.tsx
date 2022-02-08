@@ -172,7 +172,7 @@ const PlaybookEdit = (props: Props) => {
         dispatch(fetchMyCategories(teamId));
     }, [dispatch, props.teamId, playbook.team_id]);
 
-    const startTutorial = true;
+    const startTutorial = false;
     const showChecklistsTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.Checklists, TutorialTourCategories.PLAYBOOK_EDIT) && startTutorial;
     const showActionsTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.Actions, TutorialTourCategories.PLAYBOOK_EDIT);
     const showStatusUpdatesTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.StatusUpdates, TutorialTourCategories.PLAYBOOK_EDIT);
