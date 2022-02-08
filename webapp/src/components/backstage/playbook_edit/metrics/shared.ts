@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {Duration} from 'luxon';
+import styled from 'styled-components';
 
 import {MetricType} from 'src/types/playbook';
 import {formatDuration} from 'src/components/formatted_duration';

@@ -87,3 +87,16 @@ type GetPlaybooksResults struct {
 	HasMore    bool       `json:"has_more"`
 	Items      []Playbook `json:"items"`
 }
+
+type PlaybookStats struct {
+	RunsInProgress                int       `json:"runs_in_progress"`
+	ParticipantsActive            int       `json:"participants_active"`
+	RunsFinishedPrev30Days        int       `json:"runs_finished_prev_30_days"`
+	RunsFinishedPercentageChange  int       `json:"runs_finished_percentage_change"`
+	RunsStartedPerWeek            []int     `json:"runs_started_per_week"`
+	RunsStartedPerWeekTimes       [][]int64 `json:"runs_started_per_week_times"`
+	ActiveRunsPerDay              []int     `json:"active_runs_per_day"`
+	ActiveRunsPerDayTimes         [][]int64 `json:"active_runs_per_day_times"`
+	ActiveParticipantsPerDay      []int     `json:"active_participants_per_day"`
+	ActiveParticipantsPerDayTimes [][]int64 `json:"active_participants_per_day_times"`
+}
