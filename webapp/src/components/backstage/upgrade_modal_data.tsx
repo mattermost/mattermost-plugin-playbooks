@@ -164,6 +164,10 @@ export const getUpgradeModalCopy = (
             titleText = <FormattedMessage defaultMessage='Save your playbook run history'/>;
             helpText = <FormattedMessage defaultMessage='Export the channel of your playbook run and save it for later analysis.'/>;
             break;
+        case AdminNotificationType.PLAYBOOK_METRICS:
+            titleText = <FormattedMessage defaultMessage='Track key metrics and measure value'/>;
+            helpText = <FormattedMessage defaultMessage='Use metrics to understand patterns and progress across runs and concretely demonstrate performance.'/>;
+            break;
         }
 
         if (!isAdmin) {

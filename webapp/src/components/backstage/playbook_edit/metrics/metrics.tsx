@@ -15,6 +15,10 @@ import {EditingMetric} from 'src/components/backstage/playbook_edit/playbook_edi
 import ConfirmModalLight from 'src/components/widgets/confirmation_modal_light';
 import {DefaultFooterContainer} from 'src/components/widgets/generic_modal';
 import ConditionalTooltip from 'src/components/widgets/conditional_tooltip';
+import UpgradeBadge from 'src/components/backstage/upgrade_badge';
+import {useAllowPlaybookAndRunMetrics} from 'src/hooks';
+import UpgradeModal from 'src/components/backstage/upgrade_modal';
+import {AdminNotificationType} from 'src/constants';
 
 enum TaskType {
     add,
@@ -49,6 +53,8 @@ const Metrics = ({
     const [saveMetricToggle, setSaveMetricToggle] = useState(false);
     const [nextTask, setNextTask] = useState<Task | null>(null);
     const [deletingIdx, setDeletingIdx] = useState(-1);
+    const metricsAvailable = useAllowPlaybookAndRunMetrics();
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const deleteBaseMessage = formatMessage({defaultMessage: 'If you delete this metric, the values for it will not be collected for any future runs.'});
     const deleteExistingMessage = deleteBaseMessage + ' ' + formatMessage({defaultMessage: 'You will still be able to access historical data for this metric.'});
@@ -162,35 +168,18 @@ const Metrics = ({
         metrics.splice(curEditingMetric.index, 1, curEditingMetric.metric);
     }
 
-    return (
-        <div>
-            {
-                metrics.map((metric, idx) => (
-                    idx === curEditingMetric?.index ?
-                        <MetricEdit
-                            metric={curEditingMetric.metric}
-                            setMetric={(setState) => setCurEditingMetric((prevState) => {
-                                if (prevState) {
-                                    return {index: prevState.index, metric: setState(prevState.metric)};
-                                }
-
-                                // This can't happen
-                                return {index: -1, metric: {} as Metric};
-                            })}
-                            otherTitles={playbook.metrics.flatMap((m, i) => (i === idx ? [] : m.title))}
-                            onAdd={saveMetric}
-                            deleteClick={() => requestDeleteMetric(idx)}
-                            saveToggle={saveMetricToggle}
-                            saveFailed={() => setNextTask(null)}
-                        /> :
-                        <MetricView
-                            metric={metric}
-                            editClick={() => requestEditMetric(idx)}
-                            deleteClick={() => requestDeleteMetric(idx)}
-                            disabled={disabled}
-                        />
-                ))
-            }
+    const addMetricMsg = formatMessage({defaultMessage: 'Add Metric'});
+    let addMetricButton = (
+        <UpgradeButton>
+            <TertiaryButton onClick={() => setShowUpgradeModal(true)}>
+                <i className='icon-plus'/>
+                {addMetricMsg}
+            </TertiaryButton>
+            <PositionedUpgradeBadge/>
+        </UpgradeButton>
+    );
+    if (metricsAvailable) {
+        addMetricButton = (
             <ConditionalTooltip
                 show={metrics.length >= 4}
                 id={'max-metrics-tooltip'}
@@ -232,6 +221,39 @@ const Metrics = ({
                     </DropdownMenuItem>
                 </DotMenu>
             </ConditionalTooltip>
+        );
+    }
+
+    return (
+        <div>
+            {
+                metrics.map((metric, idx) => (
+                    idx === curEditingMetric?.index ?
+                        <MetricEdit
+                            metric={curEditingMetric.metric}
+                            setMetric={(setState) => setCurEditingMetric((prevState) => {
+                                if (prevState) {
+                                    return {index: prevState.index, metric: setState(prevState.metric)};
+                                }
+
+                                // This can't happen
+                                return {index: -1, metric: {} as Metric};
+                            })}
+                            otherTitles={playbook.metrics.flatMap((m, i) => (i === idx ? [] : m.title))}
+                            onAdd={saveMetric}
+                            deleteClick={() => requestDeleteMetric(idx)}
+                            saveToggle={saveMetricToggle}
+                            saveFailed={() => setNextTask(null)}
+                        /> :
+                        <MetricView
+                            metric={metric}
+                            editClick={() => requestEditMetric(idx)}
+                            deleteClick={() => requestDeleteMetric(idx)}
+                            disabled={disabled}
+                        />
+                ))
+            }
+            {addMetricButton}
             <ConfirmModalLight
                 show={deletingIdx >= 0}
                 title={formatMessage({defaultMessage: 'Are you sure you want to delete?'})}
@@ -240,6 +262,11 @@ const Metrics = ({
                 onConfirm={confirmedDelete}
                 onCancel={() => setDeletingIdx(-1)}
                 components={{FooterContainer: ConfirmModalFooter}}
+            />
+            <UpgradeModal
+                messageType={AdminNotificationType.PLAYBOOK_METRICS}
+                show={showUpgradeModal}
+                onHide={() => setShowUpgradeModal(false)}
             />
         </div>
     );
@@ -304,6 +331,16 @@ const ConfirmModalFooter = styled(DefaultFooterContainer)`
         background: rgba(var(--error-text-color-rgb), 0.08);
         color: var(--error-text);
     }
+`;
+
+const UpgradeButton = styled.div`
+    position: relative;
+`;
+
+const PositionedUpgradeBadge = styled(UpgradeBadge)`
+    position: absolute;
+    margin-left: -12px;
+    top: -4px;
 `;
 
 export default Metrics;
