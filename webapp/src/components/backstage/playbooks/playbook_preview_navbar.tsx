@@ -190,43 +190,45 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
                 <i className={'icon-pencil-outline icon-16'}/>
                 {formatMessage({defaultMessage: 'Edit'})}
             </EditButton>
-            <Header>
-                {formatMessage({defaultMessage: 'In this playbook'})}
-            </Header>
-            <Items
+            <div
                 id={'playbook-preview-navbar'}
             >
-                <Item
-                    id={SectionID.Description}
-                    iconName={'information-outline'}
-                    title={formatMessage({defaultMessage: 'Description'})}
-                    show={showElements.description}
-                />
-                <Item
-                    id={SectionID.Checklists}
-                    iconName={'check-all'}
-                    title={formatMessage({defaultMessage: 'Checklists'})}
-                    show={showElements.checklists}
-                />
-                <Item
-                    id={SectionID.Actions}
-                    iconName={'sync'}
-                    title={formatMessage({defaultMessage: 'Actions'})}
-                    show={showElements.actions}
-                />
-                <Item
-                    id={SectionID.StatusUpdates}
-                    iconName={'update'}
-                    title={formatMessage({defaultMessage: 'Status updates'})}
-                    show={showElements.statusUpdates}
-                />
-                <Item
-                    id={SectionID.Retrospective}
-                    iconName={'lightbulb-outline'}
-                    title={formatMessage({defaultMessage: 'Retrospective'})}
-                    show={showElements.retrospective}
-                />
-            </Items>
+                <Header>
+                    {formatMessage({defaultMessage: 'In this playbook'})}
+                </Header>
+                <Items >
+                    <Item
+                        id={SectionID.Description}
+                        iconName={'information-outline'}
+                        title={formatMessage({defaultMessage: 'Description'})}
+                        show={showElements.description}
+                    />
+                    <Item
+                        id={SectionID.Checklists}
+                        iconName={'check-all'}
+                        title={formatMessage({defaultMessage: 'Checklists'})}
+                        show={showElements.checklists}
+                    />
+                    <Item
+                        id={SectionID.Actions}
+                        iconName={'sync'}
+                        title={formatMessage({defaultMessage: 'Actions'})}
+                        show={showElements.actions}
+                    />
+                    <Item
+                        id={SectionID.StatusUpdates}
+                        iconName={'update'}
+                        title={formatMessage({defaultMessage: 'Status updates'})}
+                        show={showElements.statusUpdates}
+                    />
+                    <Item
+                        id={SectionID.Retrospective}
+                        iconName={'lightbulb-outline'}
+                        title={formatMessage({defaultMessage: 'Retrospective'})}
+                        show={showElements.retrospective}
+                    />
+                </Items>
+            </div>
             <UsageButton
                 playbookId={playbookId}
                 activeRuns={runsInProgress}
