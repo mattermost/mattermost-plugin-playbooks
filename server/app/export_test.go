@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"gopkg.in/guregu/null.v4"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,7 +34,7 @@ func TestGeneratePlaybookExport(t *testing.T) {
 				Title:       "Title 1",
 				Description: "Description 1",
 				Type:        MetricTypeCurrency,
-				Target:      147,
+				Target:      null.IntFrom(147),
 			},
 		},
 	}

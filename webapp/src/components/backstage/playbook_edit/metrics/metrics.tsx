@@ -102,7 +102,7 @@ const Metrics = ({
         setChangesMade(true);
     };
 
-    const saveMetric = (target: number) => {
+    const saveMetric = (target: number | null) => {
         let length = playbook.metrics.length;
 
         if (curEditingMetric) {

@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/guregu/null.v4"
+
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 
@@ -335,7 +337,7 @@ type SQLStatusPost struct {
 
 type RunMetricData struct {
 	MetricConfigID string
-	Value          int64
+	Value          null.Int
 }
 
 type RetrospectiveUpdate struct {
