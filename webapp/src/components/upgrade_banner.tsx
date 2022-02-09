@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 import {useSelector} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import General from 'mattermost-redux/constants/general';
@@ -39,13 +39,30 @@ const UpgradeWrapper = styled.div`
     text-align: center;
 `;
 
-const UpgradeContent = styled.div<{ vertical?: boolean, verticalAdjustment: number }>`
+const UpgradeContent = styled.div<{
+    vertical?: boolean,
+    verticalAdjustment: number,
+    horizontalAdjustment?: number,
+    svgVerticalAdjustment?: number
+}>`
     height: 100%;
     display: flex;
     flex-direction: ${(props) => (props.vertical ? 'column' : 'row')};
     margin-top: -${(props) => props.verticalAdjustment}px;
     align-items: center;
     justify-content: center;
+
+    ${(props) => props.horizontalAdjustment && css`
+        svg {
+            margin-right: ${props.horizontalAdjustment}px;
+        }
+    `}
+
+    ${(props) => props.svgVerticalAdjustment && css`
+        svg {
+            margin-top: -${props.svgVerticalAdjustment}px;
+        }
+    `}
 `;
 
 const InfoContainer = styled.div<{ vertical?: boolean }>`
@@ -95,6 +112,8 @@ interface Props {
     helpText: string;
     notificationType: AdminNotificationType;
     verticalAdjustment: number;
+    horizontalAdjustment?: number;
+    svgVerticalAdjustment?: number;
     vertical?: boolean;
     secondaryButton?: boolean;
 }
@@ -185,6 +204,8 @@ const UpgradeBanner = (props: Props) => {
             <UpgradeContent
                 vertical={props.vertical}
                 verticalAdjustment={props.verticalAdjustment}
+                horizontalAdjustment={props.horizontalAdjustment}
+                svgVerticalAdjustment={props.svgVerticalAdjustment}
             >
                 {stateImage}
                 <InfoContainer vertical={props.vertical}>
@@ -202,9 +223,9 @@ const UpgradeBanner = (props: Props) => {
                         secondaryButton={props.secondaryButton}
                     />
                     {!isServerCloud && isCurrentUserAdmin && !isServerTeamEdition && actionState === ActionState.Uninitialized &&
-                    <FooterContainer>
-                        <StartTrialNotice/>
-                    </FooterContainer>
+                        <FooterContainer>
+                            <StartTrialNotice/>
+                        </FooterContainer>
                     }
                 </InfoContainer>
             </UpgradeContent>
@@ -255,7 +276,8 @@ const Button = (props: ButtonProps) => {
 
     if (props.isCurrentUserAdmin) {
         handleClick = props.adminMainAction;
-        buttonText = props.isCloud ? <FormattedMessage defaultMessage='Upgrade now'/> : <FormattedMessage defaultMessage='Start trial'/>;
+        buttonText = props.isCloud ? <FormattedMessage defaultMessage='Upgrade now'/> :
+            <FormattedMessage defaultMessage='Start trial'/>;
     }
 
     return (

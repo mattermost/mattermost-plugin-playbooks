@@ -17,7 +17,8 @@ const UpgradeKeyMetricsPlaceholder = () => {
             titleText={formatMessage({defaultMessage: 'Track key metrics and measure value'})}
             helpText={formatMessage({defaultMessage: 'Use metrics to understand patterns and progress across runs and concretely demonstrate performance.'})}
             notificationType={AdminNotificationType.PLAYBOOK_METRICS}
-            verticalAdjustment={470}
+            verticalAdjustment={412}
+            svgVerticalAdjustment={90}
             vertical={true}
         />
     );
