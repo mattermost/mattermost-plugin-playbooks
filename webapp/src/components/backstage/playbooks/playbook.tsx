@@ -22,6 +22,7 @@ import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_ro
 import {useForceDocumentTitle, useHasPlaybookPermission, useStats} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
+import {useToasts} from '../toast_banner';
 
 import {
     clientFetchPlaybook,
@@ -113,6 +114,7 @@ const Playbook = () => {
             navigateToPluginUrl('/playbooks');
         }
     });
+    const addToast = useToasts().add;
     const punchoutTitleRow = useMeasurePunchouts(['title-row'], [], {y: -5, height: 10, x: -5, width: 10});
     const showRunButtonTutorial = useShowTutorialStep(PlaybookPreviewTutorialSteps.RunButton, TutorialTourCategories.PLAYBOOK_PREVIEW);
 
@@ -257,6 +259,7 @@ const Playbook = () => {
                             onClick={async () => {
                                 const newID = await clientDuplicatePlaybook(playbook.id);
                                 navigateToPluginUrl(`/playbooks/${newID}`);
+                                addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
                             }}
                         >
                             <FormattedMessage defaultMessage='Duplicate'/>
