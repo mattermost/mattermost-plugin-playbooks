@@ -49,6 +49,9 @@ import {displayEditPlaybookAccessModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
 import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
+import {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip/hooks';
+import {PlaybookPreviewTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
+import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip';
 
 interface MatchParams {
     playbookId: string
@@ -110,6 +113,8 @@ const Playbook = () => {
             navigateToPluginUrl('/playbooks');
         }
     });
+    const punchoutTitleRow = useMeasurePunchouts(['title-row'], [], {y: -5, height: 10, x: -5, width: 10});
+    const showRunButtonTutorial = useShowTutorialStep(PlaybookPreviewTutorialSteps.RunButton, TutorialTourCategories.PLAYBOOK_PREVIEW);
 
     const changeFollowing = (check: boolean) => {
         if (playbook?.id) {
@@ -224,7 +229,9 @@ const Playbook = () => {
 
     return (
         <>
-            <TopContainer>
+            <TopContainer
+                id='title-row'
+            >
                 <TitleRow>
                     <LeftArrow
                         className='icon-arrow-left'
@@ -317,6 +324,20 @@ const Playbook = () => {
                         />
                         {formatMessage({defaultMessage: 'Run'})}
                     </PrimaryButtonLarger>
+                    {showRunButtonTutorial &&
+                        <TutorialTourTip
+                            title={<FormattedMessage defaultMessage='Run the playbook to see it in action'/>}
+                            screen={<FormattedMessage defaultMessage='Click on edit to start customizing it and tailor it to your own models and processes. You can explore the template in detail on this page.'/>}
+                            tutorialCategory={TutorialTourCategories.PLAYBOOK_PREVIEW}
+                            step={PlaybookPreviewTutorialSteps.RunButton}
+                            placement='bottom-end'
+                            pulsatingDotPlacement='right'
+                            pulsatingDotTranslate={{x: -90, y: 15}}
+                            autoTour={true}
+                            width={352}
+                            punchOut={punchoutTitleRow}
+                        />
+                    }
                 </TitleRow>
             </TopContainer>
             <Navbar>
