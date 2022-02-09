@@ -68,7 +68,7 @@ export interface Metric {
     type: MetricType;
     title: string;
     description: string;
-    target: number;
+    target: number | null;
 }
 
 export interface FetchPlaybooksParams {
@@ -225,7 +225,7 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
         typeof arg.command_last_run === 'number';
 }
 
-export const newMetric = (type: MetricType, title = '', description = '', target = 0): Metric => ({
+export const newMetric = (type: MetricType, title = '', description = '', target = null): Metric => ({
     id: '',
     type,
     title,
