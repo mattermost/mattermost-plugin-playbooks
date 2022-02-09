@@ -349,8 +349,8 @@ const RocketMan = (props: {className?: string}) => (
                 cy='168.211'
                 rx='33.4324'
                 ry='1.692'
-                fill='black'
-                fillOpacity='0.12'
+                fill='var(--center-channel-color)'
+                fillOpacity='0.16'
             />
         </g>
         <defs>
