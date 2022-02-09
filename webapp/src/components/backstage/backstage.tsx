@@ -37,7 +37,7 @@ const BackstageContainer = styled.div`
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    height: calc(100% - 40px);
+    height: 100%;
 `;
 
 const BackstageTitlebarItem = styled(NavLink)`
