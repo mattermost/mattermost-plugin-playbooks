@@ -45,6 +45,7 @@ const LinedSeparator = styled.div`
         padding: 0 10px;
         display: inline-flex;
         align-items: center;
+        cursor: pointer;
     }
     display: flex;
     align-items: center;
@@ -63,7 +64,7 @@ const IconArrowDown = styled.i.attrs(() => ({className: 'icon icon-arrow-down'})
     margin-left: 5px;
 `;
 
-const GettingStarted = (props: {canCreatePlaybooks: boolean}) => {
+const GettingStarted = (props: {canCreatePlaybooks: boolean, scrollToNext: () => void}) => {
     return (
         <Container>
             <RocketManSvg/>
@@ -76,7 +77,7 @@ const GettingStarted = (props: {canCreatePlaybooks: boolean}) => {
             {props.canCreatePlaybooks ? (
                 <>
                     <LinedSeparator>
-                        <span>
+                        <span onClick={props.scrollToNext}>
                             <FormattedMessage defaultMessage="Let's go!"/>
                             <IconArrowDown/>
                         </span>

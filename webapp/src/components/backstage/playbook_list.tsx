@@ -60,6 +60,7 @@ const ContainerMedium = styled.article`
     margin: 0 auto;
     max-width: 1160px;
     padding: 0 20px;
+    scroll-margin-top: 20px;
 `;
 
 const PlaybookListContainer = styled.div`
@@ -118,6 +119,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [importUploading, setImportUploading] = useState(false);
     const [importTargetTeam, setImportTargetTeam] = useState('');
+    const selectorRef = useRef<HTMLDivElement>(null);
 
     const [
         playbooks,
@@ -131,6 +133,10 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
     const hasPlaybooks = playbooks?.length !== 0;
+
+    const scrollToTemplates = () => {
+        selectorRef.current?.scrollIntoView({behavior: 'smooth'});
+    };
 
     let listBody: JSX.Element | JSX.Element[] | null = null;
     if (!hasPlaybooks && isFiltering) {
@@ -160,6 +166,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                 <>
                     <NoContentPage
                         canCreatePlaybooks={canCreatePlaybooks}
+                        scrollToNext={scrollToTemplates}
                     />
                     <NoContentPlaybookSvg/>
                 </>
@@ -315,7 +322,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
             {content.current}
             {canCreatePlaybooks && (
                 <>
-                    <ContainerMedium>
+                    <ContainerMedium ref={selectorRef}>
                         {props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? (
                             <AltCreatePlaybookHeader>
                                 <AltHeading>
@@ -335,7 +342,9 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                                 </Sub>
                             </CreatePlaybookHeader>
                         )}
-                        <TemplateSelector templates={props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? swapEnds(PresetTemplates) : PresetTemplates}/>
+                        <TemplateSelector
+                            templates={props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? swapEnds(PresetTemplates) : PresetTemplates}
+                        />
                     </ContainerMedium>
                 </>
             )}
