@@ -2,9 +2,11 @@
 // See LICENSE.txt for license information.
 
 import React, {HTMLAttributes} from 'react';
-import {useIntl} from 'react-intl';
+import {useIntl, FormattedMessage} from 'react-intl';
 
 import styled from 'styled-components';
+
+import {isKeyPressed, KeyCodes} from 'src/utils';
 
 import Tooltip from '../widgets/tooltip';
 
@@ -16,7 +18,30 @@ interface Props {
     color?: string;
     labelColor?: string;
     author: React.ReactNode;
+    onSelect: () => void;
 }
+
+const HoverPanel = styled.div`
+    background: rgba(var(--button-bg-rgb), 0.32);
+    color: rgba(var(--button-color-rgb), 1);
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 50%;
+    display: grid;
+    place-items: center;
+    border-radius: 8px 8px 0 0;
+`;
+
+const FakeBtn = styled.span`
+    background: rgba(var(--button-bg-rgb), 1);
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    padding: 12px 20px;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 14px;
+`;
 
 const Item = styled.div`
     position: relative;
@@ -28,6 +53,11 @@ const Item = styled.div`
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.08);
     aspect-ratio: 284 / 300;
     max-width: 360px;
+    &:not(:hover):not(:focus) {
+        ${HoverPanel} {
+            display: none;
+        }
+    }
 `;
 
 type ThumbnailProps = {$color?: string;}
@@ -38,10 +68,6 @@ const Thumbnail = styled.div<ThumbnailProps>`
     background: ${({$color}) => $color};
     height: 50%;
     border-radius: 8px 8px 0 0;
-    svg {
-        width: fit-content;
-        height: fit-content;
-    }
 `;
 
 type LabelProps = {$color?: string;}
@@ -53,10 +79,10 @@ const Label = styled.label<LabelProps>`
     top: 9px;
     left: 9px;
     text-transform: uppercase;
-    background: ${({$color}) => $color?.split('-')?.[0]};
+    background: ${({$color}) => $color?.split('-')[0]};
     padding: 0 4px;
     border-radius: 4px;
-    color: ${({$color}) => $color?.split('-')?.[1]}
+    color: ${({$color}) => $color?.split('-')[1]}
 `;
 
 const Author = styled.div`
@@ -94,14 +120,30 @@ const TemplateItem = ({
     icon,
     color,
     labelColor,
+    onSelect,
     ...attrs
 }: Props & HTMLAttributes<HTMLDivElement>) => {
     const {formatMessage} = useIntl();
     return (
-        <Item {...attrs}>
+        <Item
+            role='button'
+            tabIndex={0}
+            onClick={() => onSelect()}
+            onKeyDown={(e) => {
+                if (isKeyPressed(e.nativeEvent, KeyCodes.SPACE) || isKeyPressed(e.nativeEvent, KeyCodes.ENTER)) {
+                    onSelect();
+                }
+            }}
+            {...attrs}
+        >
             <Thumbnail $color={color}>
                 {label && <Label $color={labelColor}>{label}</Label>}
                 {icon}
+                <HoverPanel>
+                    <FakeBtn>
+                        <FormattedMessage defaultMessage='Create playbook'/>
+                    </FakeBtn>
+                </HoverPanel>
             </Thumbnail>
             <Detail>
                 <Title>{title}</Title>

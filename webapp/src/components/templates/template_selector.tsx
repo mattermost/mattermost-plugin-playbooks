@@ -70,7 +70,7 @@ const TemplateSelector = ({templates = PresetTemplates}: Props) => {
                     icon={template.icon}
                     author={template.author}
                     labelColor={template.labelColor}
-                    onClick={() => {
+                    onSelect={() => {
                         telemetryEventForTemplate(template.title, 'click_template_icon');
                         dispatch(displayPlaybookCreateModal({startingTemplate: template.title}));
                     }}
