@@ -276,8 +276,7 @@ const Button = (props: ButtonProps) => {
 
     if (props.isCurrentUserAdmin) {
         handleClick = props.adminMainAction;
-        buttonText = props.isCloud ? <FormattedMessage defaultMessage='Upgrade now'/> :
-            <FormattedMessage defaultMessage='Start trial'/>;
+        buttonText = props.isCloud ? <FormattedMessage defaultMessage='Upgrade now'/> : <FormattedMessage defaultMessage='Start trial'/>;
     }
 
     return (
