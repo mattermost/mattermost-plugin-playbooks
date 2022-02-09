@@ -59,11 +59,13 @@ describe('channels > rhs > home', () => {
         it('starter templates', () => {
             // templates are defined in `webapp/src/components/backstage/template_selector.tsx`
             const templates = [
-                {name: 'Blank', checklists: 'no checklists', actions: 'no actions'},
-                {name: 'Product Release', checklists: '4 checklists', actions: '2 actions'},
-                {name: 'Customer Onboarding', checklists: '4 checklists', actions: '2 actions'},
-                {name: 'Service Reliability Incident', checklists: '4 checklists', actions: '3 actions'},
-                {name: 'Feature Lifecycle', checklists: '5 checklists', actions: '2 actions'},
+                {name: 'Blank', checklists: '1 checklist', actions: '1 action'},
+                {name: 'Product Release', checklists: '4 checklists', actions: '3 actions'},
+                {name: 'Customer Onboarding', checklists: '4 checklists', actions: '3 actions'},
+                {name: 'Service Reliability Incident', checklists: '4 checklists', actions: '4 actions'},
+                {name: 'Feature Lifecycle', checklists: '5 checklists', actions: '3 actions'},
+                {name: 'Employee Onboarding', checklists: '5 checklists', actions: '2 actions'},
+                {name: 'Bug Bash', checklists: '5 checklists', actions: '3 actions'},
             ];
 
             // # Click the icon

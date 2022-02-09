@@ -394,8 +394,9 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 	}
 
 	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, app.PlaybookFilterOptions{
-		Page:    0,
-		PerPage: maxPlaybooksToAutocomplete,
+		Page:         0,
+		PerPage:      maxPlaybooksToAutocomplete,
+		WithArchived: query.Get("with_archived") == "true",
 	})
 	if err != nil {
 		h.HandleError(w, err)
@@ -469,12 +470,15 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 
 	searchTerm := u.Query().Get("search_term")
 
+	withArchived, _ := strconv.ParseBool(u.Query().Get("with_archived"))
+
 	return app.PlaybookFilterOptions{
-		Sort:       sortField,
-		Direction:  sortDirection,
-		Page:       page,
-		PerPage:    perPage,
-		SearchTerm: searchTerm,
+		Sort:         sortField,
+		Direction:    sortDirection,
+		Page:         page,
+		PerPage:      perPage,
+		SearchTerm:   searchTerm,
+		WithArchived: withArchived,
 	}, nil
 }
 
