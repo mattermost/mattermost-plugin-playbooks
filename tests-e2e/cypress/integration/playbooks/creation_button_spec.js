@@ -57,7 +57,7 @@ describe('playbooks > creation button', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'New Playbook' button
-        cy.findByText('Create playbook').click();
+        cy.findByTestId('titlePlaybook').findByText('Create playbook').click();
         cy.get('#playbooks_create').findByText('Create playbook').click();
 
         // * Verify a new playbook creation page opened
