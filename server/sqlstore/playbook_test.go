@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"testing"
 
+	"gopkg.in/guregu/null.v4"
+
 	"github.com/golang/mock/gomock"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -60,7 +62,7 @@ func metricsFromNames(names []string) []app.PlaybookMetricConfig {
 			Title:       names[i],
 			Description: "description: " + strconv.Itoa(i),
 			Type:        types[i%len(types)],
-			Target:      int64(i),
+			Target:      null.IntFrom(int64(i)),
 		}
 	}
 	return metrics

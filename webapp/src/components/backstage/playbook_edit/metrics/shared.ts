@@ -2,17 +2,13 @@
 // See LICENSE.txt for license information.
 
 import {Duration} from 'luxon';
-import styled from 'styled-components';
 
 import {MetricType} from 'src/types/playbook';
 import {formatDuration} from 'src/components/formatted_duration';
 
-export const metricToString = (target: number, type: MetricType, naturalDuration = false) => {
-    if (!target) {
-        if (type === MetricType.Integer || type === MetricType.Currency) {
-            return '0';
-        }
-        return naturalDuration ? formatDuration(Duration.fromMillis(0), 'long') : '00:00:00';
+export const metricToString = (target: number | null, type: MetricType, naturalDuration = false) => {
+    if (target === null) {
+        return '';
     }
 
     if (type === MetricType.Integer || type === MetricType.Currency) {
@@ -32,7 +28,7 @@ export const metricToString = (target: number, type: MetricType, naturalDuration
 
 export const stringToMetric = (target: string, type: MetricType) => {
     if (target === '') {
-        return 0;
+        return null;
     }
 
     if (type === MetricType.Integer || type === MetricType.Currency) {

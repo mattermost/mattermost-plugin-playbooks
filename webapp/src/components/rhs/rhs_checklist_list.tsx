@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 import ReactDOM from 'react-dom';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {
@@ -53,6 +53,8 @@ import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';
 import AddChecklistDialog from 'src/components/rhs/rhs_checklists_add_dialog';
 import RHSChecklist from 'src/components/rhs/rhs_checklist';
+import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
+import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 
 // disable all react-beautiful-dnd development warnings
 // @ts-ignore
@@ -78,6 +80,15 @@ const RHSChecklistList = (props: Props) => {
     const preferredName = displayUsername(myUser, teamnameNameDisplaySetting);
     const [showMenu, setShowMenu] = useState(false);
     const [showAddChecklistDialog, setShowAddChecklistDialog] = useState(false);
+    const checklistsPunchout = useMeasurePunchouts(
+        ['pb-checklists-inner-container'],
+        [],
+        {y: -5, height: 10, x: -5, width: 10},
+    );
+    const showRunDetailsChecklistsStep = useShowTutorialStep(
+        RunDetailsTutorialSteps.Checklists,
+        TutorialTourCategories.RUN_DETAILS
+    );
 
     const checklists = props.playbookRun.checklists || [];
     const FinishButton = allComplete(props.playbookRun.checklists) ? StyledPrimaryButton : StyledTertiaryButton;
@@ -194,6 +205,7 @@ const RHSChecklistList = (props: Props) => {
 
     return (
         <InnerContainer
+            id='pb-checklists-inner-container'
             onMouseEnter={() => setShowMenu(true)}
             onMouseLeave={() => setShowMenu(false)}
         >
@@ -288,6 +300,21 @@ const RHSChecklistList = (props: Props) => {
                 show={showAddChecklistDialog}
                 onHide={() => setShowAddChecklistDialog(false)}
             />
+            {showRunDetailsChecklistsStep && (
+                <TutorialTourTip
+                    title={<FormattedMessage defaultMessage='Track progress and ownership'/>}
+                    screen={<FormattedMessage defaultMessage='Assign, check off, or skip tasks to ensure the team is clear on how to move toward the finish line together.'/>}
+                    tutorialCategory={TutorialTourCategories.RUN_DETAILS}
+                    step={RunDetailsTutorialSteps.Checklists}
+                    showOptOut={false}
+                    placement='left'
+                    pulsatingDotPlacement='top-start'
+                    pulsatingDotTranslate={{x: 0, y: 0}}
+                    width={352}
+                    autoTour={true}
+                    punchOut={checklistsPunchout}
+                />
+            )}
         </InnerContainer>
     );
 };
@@ -302,6 +329,9 @@ const InnerContainer = styled.div`
 
     &:hover {
         background-color: rgba(var(--center-channel-color-rgb), 0.04);
+    }
+    .pb-tutorial-tour-tip__pulsating-dot-ctr {
+        z-index: 1000;
     }
 `;
 

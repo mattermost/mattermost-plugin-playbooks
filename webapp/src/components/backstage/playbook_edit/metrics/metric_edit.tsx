@@ -19,7 +19,7 @@ interface Props {
     metric: Metric;
     setMetric: (setState: SetState) => void;
     otherTitles: string[];
-    onAdd: (target: number) => void;
+    onAdd: (target: number | null) => void;
     deleteClick: () => void;
     saveToggle: boolean;
     saveFailed: () => void;

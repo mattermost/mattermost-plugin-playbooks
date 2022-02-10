@@ -15,6 +15,8 @@ import RHSPostUpdateButton from 'src/components/rhs/rhs_post_update_button';
 import Exclamation from 'src/components/assets/icons/exclamation';
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import Clock from 'src/components/assets/icons/clock';
+import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
+import {RunDetailsTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 
 import {useNow} from 'src/hooks';
 
@@ -28,6 +30,15 @@ const RHSPostUpdate = (props: Props) => {
     const dispatch = useDispatch();
     const fiveSeconds = 5000;
     const now = useNow(fiveSeconds);
+    const postUpdatePunchout = useMeasurePunchouts(
+        ['rhs-post-update'],
+        [],
+        {y: -5, height: 10, x: -5, width: 10},
+    );
+    const showRunDetailsPostUpdateStep = useShowTutorialStep(
+        RunDetailsTutorialSteps.PostUpdate,
+        TutorialTourCategories.RUN_DETAILS
+    );
 
     //@ts-ignore
     const Timestamp = window.Components?.Timestamp;
@@ -107,6 +118,21 @@ const RHSPostUpdate = (props: Props) => {
                 }}
                 isDue={isDue}
             />
+            {showRunDetailsPostUpdateStep && (
+                <TutorialTourTip
+                    title={<FormattedMessage defaultMessage='Post status updates'/>}
+                    screen={<FormattedMessage defaultMessage='Broadcast to stakeholders in multiple places and keep a paper trail for retrospective with just one post.'/>}
+                    tutorialCategory={TutorialTourCategories.RUN_DETAILS}
+                    step={RunDetailsTutorialSteps.PostUpdate}
+                    showOptOut={false}
+                    placement='left'
+                    pulsatingDotPlacement='left'
+                    pulsatingDotTranslate={{x: 0, y: 0}}
+                    width={352}
+                    autoTour={true}
+                    punchOut={postUpdatePunchout}
+                />
+            )}
         </PostUpdate>
     );
 };
@@ -157,6 +183,7 @@ const PostUpdate = styled.div<CollapsedProps>`
 
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
     border-radius: 4px;
+    position: relative;
 `;
 
 const Timer = styled.div`
