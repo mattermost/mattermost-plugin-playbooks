@@ -61,10 +61,11 @@ export const Retrospective = (props: Props) => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);
-    const [metricsValid, setMetricsValid] = useState(true);
 
     const [retrospectiveInfoUpdated, setUpdated] = useState(0);
     const didMountRef = useRef(false);
+    const childRef = useRef<MetricsData>();
+
     useEffect(() => {
         if (didMountRef.current) {
             updateRetrospective(props.playbookRun.id, props.playbookRun.retrospective, props.playbookRun.metrics_data);
@@ -95,9 +96,13 @@ export const Retrospective = (props: Props) => {
     let publishComponent = (
         <PrimaryButtonSmaller
             onClick={() => {
-                if (metricsValid) {
-                    setShowConfirmation(true);
+                if (childRef.current) {
+                    const valid = childRef.current.validateInputs();
+                    if (!valid) {
+                        return;
+                    }
                 }
+                setShowConfirmation(true);
             }}
         >
             <TextContainer>{publishButtonText}</TextContainer>
@@ -149,12 +154,12 @@ export const Retrospective = (props: Props) => {
                     <StyledContent>
                         {props.metricsConfigs &&
                             <MetricsData
+                                ref={childRef}
                                 metricsData={props.playbookRun.metrics_data}
                                 metricsConfigs={props.metricsConfigs}
                                 isPublished={isPublished}
                                 onEdit={debouncedPersistMetricEditEvent}
                                 flushChanges={() => debouncedPersistMetricEditEvent.flush()}
-                                setMetricsValid={setMetricsValid}
                             />}
                         <Report
                             playbookRun={props.playbookRun}

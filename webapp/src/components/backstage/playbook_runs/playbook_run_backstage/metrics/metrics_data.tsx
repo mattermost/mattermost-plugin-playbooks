@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useRef, useState} from 'react';
+import React, {forwardRef, useImperativeHandle, useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
 
 import {VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
@@ -21,10 +21,9 @@ interface MetricsProps {
     isPublished: boolean;
     onEdit: (metricsData: RunMetricData[]) => void;
     flushChanges: () => void;
-    setMetricsValid: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const MetricsData = ({metricsData, metricsConfigs, isPublished, onEdit, flushChanges, setMetricsValid}: MetricsProps) => {
+const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdit, flushChanges}: MetricsProps, ref) => {
     const {formatMessage} = useIntl();
 
     const initialValues = new Array(metricsConfigs.length);
@@ -40,13 +39,29 @@ const MetricsData = ({metricsData, metricsConfigs, isPublished, onEdit, flushCha
         flushChanges();
     });
 
+    useImperativeHandle(
+        ref,
+        () => ({
+            validateInputs() {
+                const errors = verifyInputs(inputsValues, true);
+                setInputsErrors(errors);
+
+                return !hasErrors(errors);
+            },
+        }),
+    );
+
     const errorCurrencyInteger = formatMessage({defaultMessage: 'Please enter a number, or leave the target blank.'});
     const errorDuration = formatMessage({defaultMessage: 'Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.'});
     const errorEmptyValue = formatMessage({defaultMessage: 'Please fill in the metric value.'});
 
-    const verifyInputs = (values: string[]): string[] => {
+    const verifyInputs = (values: string[], forPublishing = false): string[] => {
         const errors = new Array(metricsConfigs.length).fill('');
         values.forEach((value, index) => {
+            //If we do before publishing verification, consider empty value as invalid
+            if (forPublishing && value === '') {
+                errors[index] = errorEmptyValue;
+            }
             if (!isMetricValueValid(metricsConfigs[index].type, value)) {
                 errors[index] = metricsConfigs[index].type === MetricType.Duration ? errorDuration : errorCurrencyInteger;
             }
@@ -79,7 +94,6 @@ const MetricsData = ({metricsData, metricsConfigs, isPublished, onEdit, flushCha
 
         const newMetricsData = stringsToMetricsData(newList, newErrors);
         onEdit(newMetricsData);
-        setMetricsValid(!newErrors.join());
     }
 
     return (
@@ -117,6 +131,15 @@ const MetricsData = ({metricsData, metricsConfigs, isPublished, onEdit, flushCha
             }
         </div>
     );
-};
+});
+
+function hasErrors(errors: string[]) {
+    for (let i = 0; i < errors.length; i++) {
+        if (errors[i] !== '') {
+            return true;
+        }
+    }
+    return false;
+}
 
 export default MetricsData;
