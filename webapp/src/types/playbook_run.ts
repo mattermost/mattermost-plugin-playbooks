@@ -67,7 +67,7 @@ export enum PlaybookRunStatus {
 
 export interface RunMetricData {
     metric_config_id: string;
-    value: number;
+    value: number | null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
