@@ -14,7 +14,7 @@ import {Client4} from 'mattermost-redux/client';
 
 import {FINISHED, SKIPPED, TTCategoriesMapToSteps} from '../tours';
 
-import * as Utils from './utils';
+import {isKeyPressed, KeyCodes} from 'src/utils';
 
 export interface TutorialTourTipManager {
     show: boolean;
@@ -94,7 +94,7 @@ const useTutorialTourTipManager = ({
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent): void => {
-            if (Utils.isKeyPressed(e, Utils.KeyCodes.ENTER)) {
+            if (isKeyPressed(e, KeyCodes.ENTER)) {
                 handleNext();
             }
         };

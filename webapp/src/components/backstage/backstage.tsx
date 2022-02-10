@@ -115,6 +115,7 @@ const Backstage = () => {
             <ToastProvider>
                 <Switch>
                     <Route path={`${match.url}/error`}/>
+                    <Route path={`${match.url}/start`}/>
                     <Route>
                         <BackstageNavbar className='flex justify-content-between'>
                             <div className='d-flex items-center'>
@@ -141,18 +142,18 @@ const Backstage = () => {
                             </div>
                             <div className='d-flex items-center'>
                                 {npsAvailable &&
-                                    <BackstageTitlebarItem
-                                        onClick={promptForFeedback}
-                                        to={`/${teams[0].name}/messages/@surveybot`}
-                                        data-testid='giveFeedbackButton'
-                                    >
-                                        <Icon
-                                            path={mdiThumbsUpDown}
-                                            title={formatMessage({defaultMessage: 'Give Feedback'})}
-                                            size={1}
-                                        />
-                                        {formatMessage({defaultMessage: 'Give Feedback'})}
-                                    </BackstageTitlebarItem>
+                                <BackstageTitlebarItem
+                                    to={`${match.url}/runs`}
+                                    activeClassName={'active'}
+                                    data-testid='playbookRunsLHSButton'
+                                >
+                                    <Icon
+                                        path={mdiClipboardPlayMultipleOutline}
+                                        title={formatMessage({defaultMessage: 'Runs'})}
+                                        size={1.4}
+                                    />
+                                    {formatMessage({defaultMessage: 'Runs'})}
+                                </BackstageTitlebarItem>
                                 }
                             </div>
                         </BackstageNavbar>
@@ -192,10 +193,15 @@ const Backstage = () => {
                             <ErrorPage/>
                         </Route>
                         <Route
+                            path={`${match.url}/start`}
+                        >
+                            <PlaybookList firstTimeUserExperience={true}/>
+                        </Route>
+                        <Route
                             exact={true}
                             path={`${match.url}/`}
                         >
-                            <RunsPage/>
+                            <Redirect to={`${match.url}/runs`}/>
                         </Route>
                         <Route>
                             <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>
