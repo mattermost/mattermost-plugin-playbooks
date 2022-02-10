@@ -26,11 +26,13 @@ export const PB_TOUR_EX = {
 
 export const RunDetailsTutorialSteps = {
     SidePanel: 0,
+    PostUpdate: 1,
     Checklists: 2,
     FINISHED,
 };
 export const PlaybookPreviewTutorialSteps = {
     EditButton: 0,
+    Navbar: 1,
     RunButton: 2,
     FINISHED,
 };
