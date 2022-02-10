@@ -64,7 +64,7 @@ export const Retrospective = (props: Props) => {
 
     const [retrospectiveInfoUpdated, setUpdated] = useState(0);
     const didMountRef = useRef(false);
-    const childRef = useRef<MetricsData>();
+    const childRef = useRef<any>();
 
     useEffect(() => {
         if (didMountRef.current) {

@@ -120,6 +120,7 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdi
                                 helpText={mc.description}
                                 errorText={inputsErrors[idx]}
                                 targetValue={metricToString(mc.target, mc.type, true)}
+                                mandatory={true}
                                 inputIcon={inputIcon}
                                 inputRef={inputRef}
                                 onChange={(e) => updateMetrics(idx, e)}

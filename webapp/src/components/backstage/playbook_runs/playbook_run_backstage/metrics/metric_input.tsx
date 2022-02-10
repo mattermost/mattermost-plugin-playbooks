@@ -15,19 +15,20 @@ interface Props {
     helpText?: string;
     errorText: string;
     targetValue?: string;
+    mandatory?: boolean;
     inputIcon: JSX.Element;
     inputRef?: React.MutableRefObject<null>
     onChange?: React.ChangeEventHandler<HTMLInputElement>;
     disabled?: boolean;
 }
 
-const MetricInput = ({title, value, placeholder, helpText, errorText, targetValue, inputIcon, inputRef: textareaRef, onChange, disabled}: Props) => {
+const MetricInput = ({title, value, placeholder, helpText, errorText, targetValue, mandatory, inputIcon, inputRef: textareaRef, onChange, disabled}: Props) => {
     const {formatMessage} = useIntl();
 
     return (
         <InputContainer>
             <Header>
-                <Title>{title}</Title>
+                <Title data-end={mandatory && ' *'}>{title}</Title>
                 <Target
                     title={formatMessage({defaultMessage: 'Target'}) + ':'}
                     text={targetValue}
@@ -57,6 +58,11 @@ const InputContainer = styled.div`
 
 const Title = styled.div`
     font-weight: 600;
+    
+    :after {
+        content: attr(data-end);
+        color: red;
+    }    
 `;
 
 const Error = ({text}: { text: string }) => (
