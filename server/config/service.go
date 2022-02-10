@@ -186,16 +186,6 @@ func (c *ServiceImpl) IsCloud() bool {
 	return *license.Features.Cloud
 }
 
-// IsAtLeastE20Licensed returns true when the server either has an E20 license or is configured for development.
-func (c *ServiceImpl) IsAtLeastE20Licensed() bool {
-	return pluginapi.IsE20LicensedOrDevelopment(c.api.Configuration.GetConfig(), c.api.System.GetLicense())
-}
-
-// IsAtLeastE10Licensed returns true when the server either has at least an E10 license or is configured for development.
-func (c *ServiceImpl) IsAtLeastE10Licensed() bool {
-	return pluginapi.IsE10LicensedOrDevelopment(c.api.Configuration.GetConfig(), c.api.System.GetLicense())
-}
-
 // SupportsGivingFeedback returns nil when the nps plugin is installed and enabled, thus enabling giving feedback.
 func (c *ServiceImpl) SupportsGivingFeedback() error {
 	pluginState := c.api.Configuration.GetConfig().PluginSettings.PluginStates[npsPluginID]

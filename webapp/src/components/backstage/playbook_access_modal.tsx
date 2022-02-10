@@ -10,7 +10,7 @@ import styled from 'styled-components';
 
 import GenericModal from 'src/components/widgets/generic_modal';
 import {AdminNotificationType, PROFILE_CHUNK_SIZE} from 'src/constants';
-import {useEditPlaybook, useHasPlaybookPermission} from 'src/hooks';
+import {useEditPlaybook, useHasPlaybookPermission, useAllowMakePlaybookPrivate} from 'src/hooks';
 import {Playbook, PlaybookMember} from 'src/types/playbook';
 import ConfirmModal from 'src/components/widgets/confirmation_modal';
 
@@ -72,6 +72,7 @@ const PlaybookAccessModal = ({
     const [playbook, updatePlaybook] = useEditPlaybook(playbookId);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
     const permissionToMakePrivate = useHasPlaybookPermission(PlaybookPermissionGeneral.Convert, playbook);
+    const licenseToMakePrivate = useAllowMakePlaybookPrivate();
 
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showMakePrivateConfirm, setShowMakePrivateConfirm] = useState(false);
@@ -153,7 +154,7 @@ const PlaybookAccessModal = ({
                     <HorizontalBlock>
                         <i className={'icon ' + (playbook.public ? 'icon-globe' : 'icon-lock-outline')}/>
                         <SubTitle>{getSubtitle(playbook)}</SubTitle>
-                        {(playbook.public && permissionToMakePrivate) &&
+                        {(playbook.public && permissionToMakePrivate && licenseToMakePrivate) &&
                         <>
                             <PrivateLink
                                 onClick={() => setShowMakePrivateConfirm(true)}

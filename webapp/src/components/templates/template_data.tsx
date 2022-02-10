@@ -1,28 +1,31 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
-import styled from 'styled-components';
-import Icon from '@mdi/react';
-import {mdiRocketLaunchOutline, mdiHandshakeOutline, mdiCodeBraces} from '@mdi/js';
+import React, {ReactNode} from 'react';
+
 import {mtrim} from 'js-trim-multiline-string';
 
-import {FormattedMessage, useIntl} from 'react-intl';
-
-import {useDispatch} from 'react-redux';
-
 import {DraftPlaybookWithChecklist, emptyPlaybook, newChecklistItem} from 'src/types/playbook';
-import FileIcon from 'src/components/assets/icons/file_icon';
-import AlertIcon from 'src/components/assets/icons/alert_icon';
 
-import {displayPlaybookCreateModal} from 'src/actions';
-import {telemetryEventForTemplate} from 'src/client';
-
-import {StyledSelect} from './styles';
+import MattermostLogo from 'src/components/assets/mattermost_logo_svg';
+import ClipboardChecklist from 'src/components/assets/illustrations/clipboard_checklist_svg';
+import DumpsterFire from 'src/components/assets/illustrations/dumpster_fire_svg';
+import Gears from 'src/components/assets/illustrations/gears_svg';
+import Handshake from 'src/components/assets/illustrations/handshake_svg';
+import Rocket from 'src/components/assets/illustrations/rocket_svg';
+import SmileySunglasses from 'src/components/assets/illustrations/smiley_sunglasses_svg';
+import BugSearch from 'src/components/assets/illustrations/bug_search_svg';
+import LightBulb from 'src/components/assets/illustrations/light_bulb_svg';
 
 export interface PresetTemplate {
+    label?: string;
+    labelColor?: string;
     title: string;
-    icon: JSX.Element;
+    description?: string;
+
+    author?: ReactNode;
+    icon: ReactNode;
+    color?: string;
     template: DraftPlaybookWithChecklist;
 }
 
@@ -51,7 +54,9 @@ const preprocessTemplates = (presetTemplates: PresetTemplate[]): PresetTemplate[
 export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
     {
         title: 'Blank',
-        icon: <FileIcon/>,
+        icon: <ClipboardChecklist/>,
+        color: '#FFBC1F14',
+        description: 'Start with a blank state and create your own masterpiece.',
         template: {
             ...emptyPlaybook(),
             description: 'Customize this playbook\'s description to give an overview of when and how this playbook is run.',
@@ -59,12 +64,10 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
     },
     {
         title: 'Product Release',
-        icon: (
-            <Icon
-                path={mdiRocketLaunchOutline}
-                size={2.5}
-            />
-        ),
+        description: 'Perfect your release process from ideation to production.',
+        icon: <Rocket/>,
+        color: '#C4313314',
+        author: <MattermostLogo/>,
         template: {
             ...emptyPlaybook(),
             title: 'Product Release',
@@ -147,13 +150,102 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
         },
     },
     {
+        title: 'Incident Resolution',
+        description: 'Resolving incidents requires speed and accuracy. Streamline your processes for rapid response and resolution.',
+        icon: <DumpsterFire/>,
+        author: <MattermostLogo/>,
+        color: '#33997014',
+        template: {
+            ...emptyPlaybook(),
+            title: 'Incident Resolution',
+            description: 'Customize this playbook to reflect your own incident resolution process.',
+            checklists: [
+                {
+                    title: 'Setup for triage',
+                    items: [
+                        newChecklistItem('Add on-call engineer to channel'),
+                        newChecklistItem('Start bridge call', '', '/zoom start'),
+                        newChecklistItem('Update description with current situation'),
+                        newChecklistItem('Create an incident ticket', '', '/jira create'),
+                        newChecklistItem('Assign severity in description (ie. #sev-2)'),
+                        newChecklistItem('(If #sev-1) Notify @vip'),
+                    ],
+                },
+                {
+                    title: 'Investigate cause',
+                    items: [
+                        newChecklistItem('Add suspected causes here and check off if eliminated'),
+                    ],
+                },
+                {
+                    title: 'Resolution',
+                    items: [
+                        newChecklistItem('Confirm issue has been resolved'),
+                        newChecklistItem('Notify customer success managers'),
+                        newChecklistItem('(If sev-1) Notify leader team'),
+                    ],
+                },
+                {
+                    title: 'Retrospective',
+                    items: [
+                        newChecklistItem('Send out survey to participants'),
+                        newChecklistItem('Schedule post-mortem meeting'),
+                        newChecklistItem('Save key messages as timeline entries'),
+                        newChecklistItem('Publish retrospective report'),
+                    ],
+                },
+            ],
+            create_public_playbook_run: false,
+            channel_name_template: 'Incident: <name>',
+            message_on_join_enabled: true,
+            message_on_join:
+                mtrim`Hello and welcome!
+
+                This channel was created as part of the **Incident Resolution** playbook and is where conversations related to this release are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.`,
+            run_summary_template_enabled: true,
+            run_summary_template:
+                mtrim`**Summary**
+
+                **Customer impact**
+
+                **About**
+                - Severity: #sev-1/2/3
+                - Responders:
+                - ETA to resolution:`,
+            reminder_message_template: '',
+            reminder_timer_default_seconds: 60 * 60, // 1 hour
+            retrospective_template:
+                mtrim`### Summary
+                This should contain 2-3 sentences that give a reader an overview of what happened, what was the cause, and what was done. The briefer the better as this is what future teams will look at first for reference.
+
+                ### What was the impact?
+                This section describes the impact of this playbook run as experienced by internal and external customers as well as stakeholders.
+
+                ### What were the contributing factors?
+                This playbook may be a reactive protocol to a situation that is otherwise undesirable. If that's the case, this section explains the reasons that caused the situation in the first place. There may be multiple root causes - this helps stakeholders understand why.
+
+                ### What was done?
+                This section tells the story of how the team collaborated throughout the event to achieve the outcome. This will help future teams learn from this experience on what they could try.
+
+                ### What did we learn?
+                This section should include perspective from everyone that was involved to celebrate the victories and identify areas for improvement. For example: What went well? What didn't go well? What should be done differently next time?
+
+                ### Follow-up tasks
+                This section lists the action items to turn learnings into changes that help the team become more proficient with iterations. It could include tweaking the playbook, publishing the retrospective, or other improvements. The best follow-ups will have a clear owner assigned as well as due date.
+
+                ### Timeline highlights
+                This section is a curated log that details the most important moments. It can contain key communications, screen shots, or other artifacts. Use the built-in timeline feature to help you retrace and replay the sequence of events.`,
+            retrospective_reminder_interval_seconds: 24 * 60 * 60, // 24 hours
+            signal_any_keywords_enabled: true,
+            signal_any_keywords: ['sev-1', 'sev-2', '#incident', 'this is serious'],
+        },
+    },
+    {
         title: 'Customer Onboarding',
-        icon: (
-            <Icon
-                path={mdiHandshakeOutline}
-                size={2.5}
-            />
-        ),
+        description: 'Create a standardized, smooth onboarding experience for new customers to get them up and running quickly. ',
+        icon: <Handshake/>,
+        color: '#3C507A14',
+        author: <MattermostLogo/>,
         template: {
             ...emptyPlaybook(),
             title: 'Customer Onboarding',
@@ -241,101 +333,116 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
         },
     },
     {
-        title: 'Service Reliability Incident',
-        icon: <AlertIcon/>,
+        title: 'Employee Onboarding',
+        description: 'Set your new hires up for success with input from your entire organization, in one smooth process.',
+        icon: <SmileySunglasses/>,
+        color: '#FFBC1F14',
+        author: <MattermostLogo/>,
         template: {
             ...emptyPlaybook(),
-            title: 'Service Reliability Incident',
-            description: 'Customize this playbook to reflect your own incident response process.',
+            title: 'Employee Onboarding',
+            description: mtrim`Every new Mattermost Staff member completes this onboarding process when joining the company.
+
+            Customize this playbook to reflect your own employee onboarding process.`,
             checklists: [
                 {
-                    title: 'Setup for triage',
+                    title: 'Pre-day one',
                     items: [
-                        newChecklistItem('Add on-call engineer to channel'),
-                        newChecklistItem('Start bridge call', '', '/zoom start'),
-                        newChecklistItem('Update description with current situation'),
-                        newChecklistItem('Create an incident ticket', '', '/jira create'),
-                        newChecklistItem('Assign severity in description (ie. #sev-2)'),
-                        newChecklistItem('(If #sev-1) Notify @vip'),
+                        newChecklistItem('Complete the [Onboarding Systems Form in the IT HelpDesk](https://helpdesk.mattermost.com/support/home)'),
+                        newChecklistItem(
+                            'Complete the onboarding template prior to your new staff member\'s start date',
+                            mtrim`Managers play a large role in setting their new direct report up for success and making them feel welcome by setting clear expectations and preparing the team and internal stakeholders for how they can help new colleagues integrate and connect organizationally and culturally.
+                                * **Onboarding Objectives:** Clarify the areas and projects your new team member should focus on in their first 90 days. Use the _Overview of the Role_ that you completed when you opened the role.
+                                * **AOR clarity:** Identify AORs that are relevant for your new hire, and indicate any AORs that your new hire will [DRI](https://handbook.mattermost.com/company/about-mattermost/list-of-terms#dri) or act as backup DRI. As needed, clarify AOR transitions with internal stakeholders ahead of your new hire's start date. See [AOR page](https://handbook.mattermost.com/operations/operations/areas-of-responsibility) Include the interview panel and their respective focus areas.
+                                * **Assign an Onboarding Peer:** The Onboarding Peer or peers should be an individual or group of people that can help answer questions about the team, department and Mattermost. In many ways, an Onboarding Peer may be an [end-boss](https://handbook.mattermost.com/company/about-mattermost/mindsets#mini-boss-end-boss) for specific AORs. Managers should ask permission of a potential Onboarding Peer prior to assignment.`,
+                        ),
                     ],
                 },
                 {
-                    title: 'Investigate cause',
+                    title: 'Week one',
                     items: [
-                        newChecklistItem('Add suspected causes here and check off if eliminated'),
+                        newChecklistItem(
+                            'Introduce our new staff member in the [Welcome Channel](https://community.mattermost.com/private-core/channels/welcome)',
+                            mtrim`All new hires are asked to complete a short bio and share with their Managers. Managers should include this bio in the welcome message.
+
+                                Be sure to include the hashtag \#newcolleague when posting your message.`,
+                        ),
+                        newChecklistItem(
+                            'Review Team [AORs](https://handbook.mattermost.com/operations/operations/areas-of-responsibility)',
+                            'This is also a good time to review the new hire\'s AOR and onboarding expectations.'
+                        ),
+                        newChecklistItem(
+                            'Review list of key internal partners',
+                            'These are individuals the new staff member will work with and who the new staff member should set up meetings with during their first month or two.',
+                        ),
+                        newChecklistItem(
+                            'Add to Mattermost channels',
+                            'Ensure your team member is added to appropriate channels based on team and role.',
+                        ),
+                        newChecklistItem(
+                            'Share team cadences',
+                            'Review specific team cadences, operating norms and relevant playbooks.',
+                        ),
                     ],
                 },
                 {
-                    title: 'Resolution',
+                    title: 'Month one',
                     items: [
-                        newChecklistItem('Confirm issue has been resolved'),
-                        newChecklistItem('Notify customer success managers'),
-                        newChecklistItem('(If sev-1) Notify leader team'),
+                        newChecklistItem('Review Company and Team [V2MOMs](https://handbook.mattermost.com/company/how-to-guides-for-staff/how-to-v2mom)'),
+                        newChecklistItem('Align on role responsibilities and expectations'),
+                        newChecklistItem(
+                            'COM Introduction',
+                            'New team members are invited to introduce themselves at [COM](https://handbook.mattermost.com/operations/operations/company-cadence#customer-obsession-meeting-aka-com) during their second week. If they\'re not comfortable doing their own introduction, Managers will do so on their behalf.',
+                        ),
+                        newChecklistItem(
+                            '[Shoulder Check](https://handbook.mattermost.com/company/about-mattermost/mindsets#shoulder-check)',
+                            'Assess potential blindspots and ask for feedback.',
+                        ),
                     ],
                 },
                 {
-                    title: 'Retrospective',
+                    title: 'Month two',
                     items: [
-                        newChecklistItem('Send out survey to participants'),
-                        newChecklistItem('Schedule post-mortem meeting'),
-                        newChecklistItem('Save key messages as timeline entries'),
-                        newChecklistItem('Publish retrospective report'),
+                        newChecklistItem(
+                            '90-day New Colleague Feedback',
+                            'Managers are notified to kick off the [New Colleague Review Process](https://handbook.mattermost.com/contributors/onboarding#new-colleague-90-day-feedback-process) on their new staff member\'s 65th day. The feedback will include a summary of the new staff member\'s responsibilities during the first 90 days. Managers should communicate these responsibilities to the new staff member during their first week.',
+                        ),
+                    ],
+                },
+                {
+                    title: 'Month three',
+                    items: [
+                        newChecklistItem('Deliver New Colleague Feedback'),
                     ],
                 },
             ],
             create_public_playbook_run: false,
-            channel_name_template: 'Incident: <name>',
+            channel_name_template: 'Employee Onboarding: <name>',
             message_on_join_enabled: true,
             message_on_join:
                 mtrim`Hello and welcome!
 
-                This channel was created as part of the **Service Reliability Incident** playbook and is where conversations related to this release are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.`,
-            run_summary_template_enabled: true,
-            run_summary_template:
-                mtrim`**Summary**
-
-                **Customer impact**
-
-                **About**
-                - Severity: #sev-1/2/3
-                - Responders:
-                - ETA to resolution:`,
-            reminder_message_template: '',
-            reminder_timer_default_seconds: 60 * 60, // 1 hour
+                This channel was created as part of the **Employee Onboarding** playbook and is where conversations related to onboarding this employee are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.`,
+            run_summary_template: '',
+            reminder_timer_default_seconds: 7 * 24 * 60 * 60, // once a week
             retrospective_template:
-                mtrim`### Summary
-                This should contain 2-3 sentences that give a reader an overview of what happened, what was the cause, and what was done. The briefer the better as this is what future teams will look at first for reference.
+                mtrim`### What went well?
+                -
 
-                ### What was the impact?
-                This section describes the impact of this playbook run as experienced by internal and external customers as well as stakeholders.
+                ### What could have gone better?
+                -
 
-                ### What were the contributing factors?
-                This playbook may be a reactive protocol to a situation that is otherwise undesirable. If that's the case, this section explains the reasons that caused the situation in the first place. There may be multiple root causes - this helps stakeholders understand why.
-
-                ### What was done?
-                This section tells the story of how the team collaborated throughout the event to achieve the outcome. This will help future teams learn from this experience on what they could try.
-
-                ### What did we learn?
-                This section should include perspective from everyone that was involved to celebrate the victories and identify areas for improvement. For example: What went well? What didn't go well? What should be done differently next time?
-
-                ### Follow-up tasks
-                This section lists the action items to turn learnings into changes that help the team become more proficient with iterations. It could include tweaking the playbook, publishing the retrospective, or other improvements. The best follow-ups will have a clear owner assigned as well as due date.
-
-                ### Timeline highlights
-                This section is a curated log that details the most important moments. It can contain key communications, screen shots, or other artifacts. Use the built-in timeline feature to help you retrace and replay the sequence of events.`,
-            retrospective_reminder_interval_seconds: 24 * 60 * 60, // 24 hours
-            signal_any_keywords_enabled: true,
-            signal_any_keywords: ['sev-1', 'sev-2', '#incident', 'this is serious'],
+                ### What should be changed for next time?
+                - `,
+            retrospective_reminder_interval_seconds: 0, // Once
         },
     },
     {
         title: 'Feature Lifecycle',
-        icon: (
-            <Icon
-                path={mdiCodeBraces}
-                size={2.5}
-            />
-        ),
+        description: 'Create transparent workflows across development teams to ensure your feature development process is seamless.',
+        icon: <Gears/>,
+        color: '#62697E14',
+        author: <MattermostLogo/>,
         template: {
             ...emptyPlaybook(),
             title: 'Feature Lifecycle',
@@ -454,120 +561,11 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
         },
     },
     {
-        title: 'Employee Onboarding',
-        icon: (
-            <Icon
-                path={mdiHandshakeOutline}
-                size={2.5}
-            />
-        ),
-        template: {
-            ...emptyPlaybook(),
-            title: 'Employee Onboarding',
-            description: mtrim`Every new Mattermost Staff member completes this onboarding process when joining the company.
-
-            Customize this playbook to reflect your own employee onboarding process.`,
-            checklists: [
-                {
-                    title: 'Pre-day one',
-                    items: [
-                        newChecklistItem('Complete the [Onboarding Systems Form in the IT HelpDesk](https://helpdesk.mattermost.com/support/home)'),
-                        newChecklistItem(
-                            'Complete the onboarding template prior to your new staff member\'s start date',
-                            mtrim`Managers play a large role in setting their new direct report up for success and making them feel welcome by setting clear expectations and preparing the team and internal stakeholders for how they can help new colleagues integrate and connect organizationally and culturally.
-                                * **Onboarding Objectives:** Clarify the areas and projects your new team member should focus on in their first 90 days. Use the _Overview of the Role_ that you completed when you opened the role.
-                                * **AOR clarity:** Identify AORs that are relevant for your new hire, and indicate any AORs that your new hire will [DRI](https://handbook.mattermost.com/company/about-mattermost/list-of-terms#dri) or act as backup DRI. As needed, clarify AOR transitions with internal stakeholders ahead of your new hire's start date. See [AOR page](https://handbook.mattermost.com/operations/operations/areas-of-responsibility) Include the interview panel and their respective focus areas.
-                                * **Assign an Onboarding Peer:** The Onboarding Peer or peers should be an individual or group of people that can help answer questions about the team, department and Mattermost. In many ways, an Onboarding Peer may be an [end-boss](https://handbook.mattermost.com/company/about-mattermost/mindsets#mini-boss-end-boss) for specific AORs. Managers should ask permission of a potential Onboarding Peer prior to assignment.`,
-                        ),
-                    ],
-                },
-                {
-                    title: 'Week one',
-                    items: [
-                        newChecklistItem(
-                            'Introduce our new staff member in the [Welcome Channel](https://community.mattermost.com/private-core/channels/welcome)',
-                            mtrim`All new hires are asked to complete a short bio and share with their Managers. Managers should include this bio in the welcome message.
-
-                                Be sure to include the hashtag \#newcolleague when posting your message.`,
-                        ),
-                        newChecklistItem(
-                            'Review Team [AORs](https://handbook.mattermost.com/operations/operations/areas-of-responsibility)',
-                            'This is also a good time to review the new hire\'s AOR and onboarding expectations.'
-                        ),
-                        newChecklistItem(
-                            'Review list of key internal partners',
-                            'These are individuals the new staff member will work with and who the new staff member should set up meetings with during their first month or two.',
-                        ),
-                        newChecklistItem(
-                            'Add to Mattermost channels',
-                            'Ensure your team member is added to appropriate channels based on team and role.',
-                        ),
-                        newChecklistItem(
-                            'Share team cadences',
-                            'Review specific team cadences, operating norms and relevant playbooks.',
-                        ),
-                    ],
-                },
-                {
-                    title: 'Month one',
-                    items: [
-                        newChecklistItem('Review Company and Team [V2MOMs](https://handbook.mattermost.com/company/how-to-guides-for-staff/how-to-v2mom)'),
-                        newChecklistItem('Align on role responsibilities and expectations'),
-                        newChecklistItem(
-                            'COM Introduction',
-                            'New team members are invited to introduce themselves at [COM](https://handbook.mattermost.com/operations/operations/company-cadence#customer-obsession-meeting-aka-com) during their second week. If they\'re not comfortable doing their own introduction, Managers will do so on their behalf.',
-                        ),
-                        newChecklistItem(
-                            '[Shoulder Check](https://handbook.mattermost.com/company/about-mattermost/mindsets#shoulder-check)',
-                            'Assess potential blindspots and ask for feedback.',
-                        ),
-                    ],
-                },
-                {
-                    title: 'Month two',
-                    items: [
-                        newChecklistItem(
-                            '90-day New Colleague Feedback',
-                            'Managers are notified to kick off the [New Colleague Review Process](https://handbook.mattermost.com/contributors/onboarding#new-colleague-90-day-feedback-process) on their new staff member\'s 65th day. The feedback will include a summary of the new staff member\'s responsibilities during the first 90 days. Managers should communicate these responsibilities to the new staff member during their first week.',
-                        ),
-                    ],
-                },
-                {
-                    title: 'Month three',
-                    items: [
-                        newChecklistItem('Deliver New Colleague Feedback'),
-                    ],
-                },
-            ],
-            create_public_playbook_run: false,
-            channel_name_template: 'Employee Onboarding: <name>',
-            message_on_join_enabled: true,
-            message_on_join:
-                mtrim`Hello and welcome!
-
-                This channel was created as part of the **Employee Onboarding** playbook and is where conversations related to onboarding this employee are held. You can customize this message using markdown so that every new channel member can be welcomed with helpful context and resources.`,
-            run_summary_template: '',
-            reminder_timer_default_seconds: 7 * 24 * 60 * 60, // once a week
-            retrospective_template:
-                mtrim`### What went well?
-                -
-
-                ### What could have gone better?
-                -
-
-                ### What should be changed for next time?
-                - `,
-            retrospective_reminder_interval_seconds: 0, // Once
-        },
-    },
-    {
         title: 'Bug Bash',
-        icon: (
-            <Icon
-                path={mdiHandshakeOutline}
-                size={2.5}
-            />
-        ),
+        description: 'Customize this playbook to reflect your own bug bash process.',
+        icon: <BugSearch/>,
+        color: '#7A560014',
+        author: <MattermostLogo/>,
         template: {
             ...emptyPlaybook(),
             title: 'Playbooks: Bug Bash',
@@ -720,174 +718,69 @@ export const PresetTemplates: PresetTemplate[] = preprocessTemplates([
             | sysadmin | Sys@dmin123 |`,
         },
     },
+    {
+        title: 'Learn how to use playbooks',
+        label: 'Recommended For Beginners',
+        labelColor: '#E5AA1F29-#A37200',
+        icon: <LightBulb/>,
+        color: '#FFBC1F14',
+        author: <MattermostLogo/>,
+        description: 'New to playbooks? This playbook will help you get familiar with playbooks, configurations, and playbook runs.',
+        template: {
+            ...emptyPlaybook(),
+            title: 'Learn how to use playbooks',
+            description: mtrim`Use this playbook to learn more about playbooks. Go through this page to check out the contents or simply select ‘start a test run’ in the top right corner.`,
+            create_public_playbook_run: true,
+            channel_name_template: 'Onboarding Run',
+            checklists: [
+                {
+                    title: 'Learn',
+                    items: [
+                        newChecklistItem(
+                            'Try editing the run name or description in the top section of this page..',
+                        ),
+                        newChecklistItem(
+                            'Try checking off the first two tasks!',
+                        ),
+                        newChecklistItem(
+                            'Assign a task to yourself or another member.',
+                        ),
+                        newChecklistItem(
+                            'Post your first status update.',
+                        ),
+                        newChecklistItem(
+                            'Complete your first checklist!',
+                        ),
+                    ],
+                },
+                {
+                    title: 'Collaborate',
+                    items: [
+                        newChecklistItem(
+                            'Invite other team members that you’d like to collaborate with.',
+                        ),
+                        newChecklistItem(
+                            'Skip a task.',
+                        ),
+                        newChecklistItem(
+                            'Finish the run.',
+                        ),
+                    ],
+                },
+            ],
+            status_update_enabled: true,
+            reminder_timer_default_seconds: 50 * 60, // 50 minutes
+            message_on_join: '',
+            message_on_join_enabled: false,
+            retrospective_enabled: false,
+            run_summary_template_enabled: true,
+            run_summary_template: mtrim`This summary area helps everyone involved gather context at a glance. It supports markdown syntax just like a channel message, just click to edit and try it out!
+
+            - Start date: 20 Dec, 2021
+            - Target date: To be determined
+            - User guide: Playbooks docs`,
+        },
+    },
 ]);
 
-const presetTemplateOptions = PresetTemplates.map((template: PresetTemplate) => ({label: template.title, value: template.title}));
-
-const RootContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    overflow-x: auto;
-    padding: 32px 20px;
-    background: rgba(var(--center-channel-color-rgb), 0.03);
-`;
-
-// BackgroundColorContainer hides the left dots from showing over the template selector.
-const BackgroundColorContainer = styled.div`
-    position: relative;
-    background: var(--center-channel-bg);
-`;
-
-const InnerContainer = styled.div`
-    max-width: 1120px;
-    width: 100%;
-    margin: 0 auto;
-`;
-
-const Title = styled.div`
-    display: flex;
-    align-items: center;
-
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
-    color: var(--center-channel-color);
-`;
-
-const TemplateItemContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    min-width: 198px;
-`;
-
-const TemplateItemDiv = styled.div`
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    padding: 20px 0;
-    > ${TemplateItemContainer.selector}:nth-child(n+1) {
-        margin-right: 24px;
-    }
-`;
-
-interface Props {
-    templates?: PresetTemplate[];
-}
-
-export function isPlaybookCreationAllowed(allowPlaybookCreationInTeams: Map<string, boolean>) {
-    for (const [key, value] of allowPlaybookCreationInTeams) {
-        if (value) {
-            return true;
-        }
-    }
-    return false;
-}
-
-interface TemplateDropdownProps {
-    template?: string
-    onTemplateSet: (template?: string) => void
-}
-
-export const TemplateDropdown = (props: TemplateDropdownProps) => {
-    const {formatMessage} = useIntl();
-
-    const handleTemplateSet = (option: {value: string}) => {
-        props.onTemplateSet(option.value);
-    };
-
-    return (
-        <StyledSelect
-            filterOption={null}
-            isMulti={false}
-            placeholder={formatMessage({defaultMessage: 'Select a template'})}
-            onChange={handleTemplateSet}
-            options={presetTemplateOptions}
-            value={presetTemplateOptions.find((val) => val.value === props?.template)}
-            isClearable={false}
-            maxMenuHeight={380}
-        />
-    );
-};
-
-const TemplateSelector = ({templates = PresetTemplates}: Props) => {
-    const dispatch = useDispatch();
-    return (
-        <BackgroundColorContainer>
-            <RootContainer>
-                <InnerContainer>
-                    <Title>
-                        <FormattedMessage defaultMessage='Create a playbook'/>
-                    </Title>
-                    <TemplateItemDiv>
-                        {templates.map((template: PresetTemplate) => (
-                            <TemplateItem
-                                key={template.title}
-                                title={template.title}
-                                onClick={() => {
-                                    telemetryEventForTemplate(template.title, 'click_template_icon');
-                                    dispatch(displayPlaybookCreateModal({startingTemplate: template.title}));
-                                }}
-                            >
-                                {template.icon}
-                            </TemplateItem>
-                        ))}
-                    </TemplateItemDiv>
-                </InnerContainer>
-            </RootContainer>
-        </BackgroundColorContainer>
-    );
-};
-
-const NotAllowedIcon = styled.i`
-    margin: 8px;
-    color: var(--online-indicator);
-    width: 16px;
-    height: 16px;
-    background-color: white;
-    border-radius: 50%;
-`;
-
-interface TemplateItemProps {
-    title: string;
-    children: JSX.Element[] | JSX.Element;
-    onClick?: () => void;
-}
-
-const IconContainer = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--center-channel-bg);
-    color: var(--button-bg);
-    height: 156px;
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    box-sizing: border-box;
-    border-radius: 8px;
-`;
-
-const TemplateTitle = styled.div`
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 20px;
-    color: var(--center-channel-color);
-    padding: 20px 0 0 0;
-    text-align: center;
-`;
-
-const TemplateItem = (props: TemplateItemProps) => {
-    return (
-        <TemplateItemContainer
-            onClick={props.onClick}
-        >
-            <IconContainer>{props.children}</IconContainer>
-            <TemplateTitle>{props.title}</TemplateTitle>
-        </TemplateItemContainer>
-    );
-};
-
-export default TemplateSelector;
+export default PresetTemplates;

@@ -22,9 +22,10 @@ type StatsHandler struct {
 	statsStore      *sqlstore.StatsStore
 	playbookService app.PlaybookService
 	permissions     *app.PermissionsService
+	licenseChecker  app.LicenseChecker
 }
 
-func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore, playbookService app.PlaybookService, permissions *app.PermissionsService) *StatsHandler {
+func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore, playbookService app.PlaybookService, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *StatsHandler {
 	handler := &StatsHandler{
 		ErrorHandler:    &ErrorHandler{log: log},
 		pluginAPI:       api,
@@ -32,6 +33,7 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 		statsStore:      statsStore,
 		playbookService: playbookService,
 		permissions:     permissions,
+		licenseChecker:  licenseChecker,
 	}
 
 	statsRouter := router.PathPrefix("/stats").Subrouter()
@@ -65,6 +67,11 @@ func parsePlaybookStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
 }
 
 func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
+	if !h.licenseChecker.StatsAllowed() {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "timeline feature is not covered by current server license", nil)
+		return
+	}
+
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	filters, err := parsePlaybookStatsFilters(r.URL)
