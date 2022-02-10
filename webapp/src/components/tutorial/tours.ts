@@ -30,6 +30,7 @@ export const PlaybookEditTutorialSteps = {
     Actions: 1,
     StatusUpdates: 2,
     Retrospective: 3,
+    FINISHED,
 };
 export const RunDetailsTutorialSteps = {
     SidePanel: 0,
