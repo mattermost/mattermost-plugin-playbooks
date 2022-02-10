@@ -111,7 +111,7 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdi
                     }
 
                     return (
-                        <>
+                        <div key={mc.id}>
                             <VerticalSpacer size={24}/>
                             <MetricInput
                                 title={mc.title}
@@ -126,7 +126,7 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdi
                                 onChange={(e) => updateMetrics(idx, e)}
                                 disabled={isPublished}
                             />
-                        </>
+                        </div>
                     );
                 })
             }

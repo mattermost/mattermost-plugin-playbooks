@@ -126,10 +126,12 @@ export const ErrorText = styled.div`
     color: var(--error-text);
 `;
 
-export const StyledInput = styled(BaseInput)<{ error?: boolean }>`
+export const StyledInput = styled(BaseInput)<{ error?: boolean}>`
     height: 40px;
     width: 100%;
 
+    background-color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
+    
     ${(props) => (
         props.error && css`
             box-shadow: inset 0 0 0 1px var(--error-text);
