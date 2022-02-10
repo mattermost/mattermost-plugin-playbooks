@@ -16,6 +16,7 @@ const AutoStatusSuffix = '_at_status';
 export const TutorialTourCategories: Record<string, string> = {
     PB_TOUR_EX: 'tutorial_pb_tour_ex',
     PLAYBOOK_EDIT: 'playbook_edit',
+    RUN_DETAILS: 'tutorial_pb_run_details',
     PLAYBOOK_PREVIEW: 'playbook_preview',
 };
 
@@ -30,6 +31,12 @@ export const PlaybookEditTutorialSteps = {
     StatusUpdates: 2,
     Retrospective: 3,
 };
+export const RunDetailsTutorialSteps = {
+    SidePanel: 0,
+    PostUpdate: 1,
+    Checklists: 2,
+    FINISHED,
+};
 export const PlaybookPreviewTutorialSteps = {
     EditButton: 0,
     Navbar: 1,
@@ -41,8 +48,10 @@ export const TTCategoriesMapToSteps: Record<string, Record<string, number>> = {
     [TutorialTourCategories.PB_TOUR_EX]: PB_TOUR_EX,
     [TutorialTourCategories.PLAYBOOK_EDIT]: PlaybookEditTutorialSteps,
     [TutorialTourCategories.PLAYBOOK_PREVIEW]: PlaybookPreviewTutorialSteps,
+    [TutorialTourCategories.RUN_DETAILS]: RunDetailsTutorialSteps,
 };
 
-export const TTCategoriesMapToAutoTourStatusKey: Record<string, string> = {
-    [TutorialTourCategories.PB_TOUR_EX]: TutorialTourCategories.PB_TOUR_EX + AutoStatusSuffix,
-};
+export const TTCategoriesMapToAutoTourStatusKey = Object.values(TutorialTourCategories).reduce((result, category) => {
+    result[category] = category + AutoStatusSuffix;
+    return result;
+}, {} as Record<string, string>);

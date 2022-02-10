@@ -4,7 +4,7 @@ import {ElementRef, useEffect, useLayoutEffect, useMemo, useRef, useState} from 
 import {useSelector} from 'react-redux';
 import throttle from 'lodash/throttle';
 
-import {getInt} from 'mattermost-redux/selectors/entities/preferences';
+import {get, getInt} from 'mattermost-redux/selectors/entities/preferences';
 
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/common';
 
@@ -70,9 +70,15 @@ export function useMeasurePunchouts(
     }, [...elements, ...additionalDeps, size, elementsAvailable]);
 }
 
-export const useShowTutorialStep = (stepToShow: number, category: string): boolean => {
+export const useShowTutorialStep = (stepToShow: number, category: string, defaultAutostart = true): boolean => {
     const currentUserId = useSelector(getCurrentUserId);
-    const step = useSelector((state: GlobalState) => getInt(state, category, currentUserId, 0));
+    const step = useSelector<GlobalState, number | null>((state: GlobalState) => {
+        if (defaultAutostart) {
+            return getInt(state, category, currentUserId, 0);
+        }
+        const value = get(state, category, currentUserId, null);
+        return value === null ? null : parseInt(value, 10);
+    });
 
     return step === stepToShow;
 };

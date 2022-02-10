@@ -84,6 +84,7 @@ const TutorialTourTip = ({
     const {
         show,
         tourSteps,
+        setShow,
         handleOpen,
         handleHide,
         handleDismiss,
@@ -140,10 +141,13 @@ const TutorialTourTip = ({
             }
 
             dots.push(
-                <div className={circularRing}>
+                <div
+                    key={'dotactive' + i}
+                    className={circularRing}
+                >
                     <a
                         href='#'
-                        key={'dotactive' + i}
+
                         className={className}
                         data-screen={i}
                         onClick={() => handleSavePreferences(i)}
@@ -248,11 +252,11 @@ const TutorialTourTip = ({
                     duration={[250, 150]}
                     maxWidth={width}
                     aria={{content: 'labelledby'}}
-                    allowHTML={true}
                     zIndex={9999}
                     reference={triggerRef}
                     interactive={true}
                     appendTo={rootPortal!}
+                    onHide={() => setShow(false)}
                     offset={[0, 2]}
                     className={'pb-tutorial-tour-tip__box'}
                     placement={placement || 'right-start'}

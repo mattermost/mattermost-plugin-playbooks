@@ -1794,4 +1794,27 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.48.0"),
+		toVersion:   semver.MustParse("0.49.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`ALTER TABLE IR_MetricConfig MODIFY COLUMN Target BIGINT`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_MetricConfig")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Metric MODIFY COLUMN Value BIGINT`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_MetricConfig")
+				}
+			} else {
+				if _, err := e.Exec(`ALTER TABLE IR_MetricConfig ALTER COLUMN Target DROP NOT NULL`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_MetricConfig")
+				}
+				if _, err := e.Exec(`ALTER TABLE IR_Metric ALTER COLUMN Value DROP NOT NULL`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_MetricConfig")
+				}
+			}
+
+			return nil
+		},
+	},
 }
