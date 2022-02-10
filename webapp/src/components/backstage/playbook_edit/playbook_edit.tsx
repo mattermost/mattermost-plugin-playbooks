@@ -37,6 +37,9 @@ import ActionsEdit from 'src/components/backstage/playbook_edit/actions_edit';
 import RetrospectiveEdit from 'src/components/backstage/playbook_edit/retrospective_edit';
 
 import {PlaybookRole} from 'src/types/permissions';
+import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip/tutorial_tour_tip';
+import {PlaybookEditTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
+import {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip/hooks';
 
 interface Props {
     isNew: boolean;
@@ -169,6 +172,87 @@ const PlaybookEdit = (props: Props) => {
         dispatch(fetchMyCategories(teamId));
     }, [dispatch, props.teamId, playbook.team_id]);
 
+    const startTutorial = false;
+    const showChecklistsTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.Checklists, TutorialTourCategories.PLAYBOOK_EDIT) && startTutorial;
+    const showActionsTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.Actions, TutorialTourCategories.PLAYBOOK_EDIT);
+    const showStatusUpdatesTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.StatusUpdates, TutorialTourCategories.PLAYBOOK_EDIT);
+    const showRetrospectiveTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.Retrospective, TutorialTourCategories.PLAYBOOK_EDIT);
+
+    const punchout = useMeasurePunchouts(['tabs-header'], [], {y: -100, height: 100, x: 0, width: 0});
+
+    const checklistsTutorial = (showChecklistsTutorial &&
+        <TutorialTourTip
+            title={<FormattedMessage defaultMessage='Create and assign tasks'/>}
+            screen={<FormattedMessage defaultMessage='Document steps for the entire process here. Assign each task to responsible individuals and optionally add timelines or linked actions.'/>}
+            tutorialCategory={TutorialTourCategories.PLAYBOOK_EDIT}
+            step={PlaybookEditTutorialSteps.Checklists}
+            placement='bottom'
+            pulsatingDotPlacement='bottom'
+            pulsatingDotTranslate={{x: 0, y: 2}}
+            autoTour={true}
+            width={352}
+            punchOut={punchout}
+            onNextNavigateTo={() => setCurrentTab(1)}
+        />
+    );
+
+    const actionsTutorial = (showActionsTutorial &&
+        <TutorialTourTip
+            title={<FormattedMessage defaultMessage='Set up assumptions'/>}
+            screen={<FormattedMessage defaultMessage='Automate aspects of your playbook, such as sending a welcome message, inviting key members, and creating an update channel.'/>}
+            tutorialCategory={TutorialTourCategories.PLAYBOOK_EDIT}
+            step={PlaybookEditTutorialSteps.Actions}
+            placement='bottom'
+            pulsatingDotPlacement='bottom'
+            pulsatingDotTranslate={{x: 0, y: 2}}
+            autoTour={true}
+            width={352}
+            punchOut={punchout}
+            onNextNavigateTo={() => setCurrentTab(2)}
+            onPrevNavigateTo={() => setCurrentTab(0)}
+        />
+    );
+
+    const statusUpdatesTutorial = (showStatusUpdatesTutorial &&
+        <TutorialTourTip
+            title={<FormattedMessage defaultMessage='Keep stakeholders updated'/>}
+            screen={<FormattedMessage defaultMessage='Set timers and put together a template for status updates so stakeholders are always up to date with developments.'/>}
+            tutorialCategory={TutorialTourCategories.PLAYBOOK_EDIT}
+            step={PlaybookEditTutorialSteps.StatusUpdates}
+            placement='bottom'
+            pulsatingDotPlacement='bottom'
+            pulsatingDotTranslate={{x: 0, y: 2}}
+            autoTour={true}
+            width={352}
+            punchOut={punchout}
+            onNextNavigateTo={() => setCurrentTab(3)}
+            onPrevNavigateTo={() => setCurrentTab(1)}
+        />
+    );
+
+    const retrospectiveTutorial = (showRetrospectiveTutorial &&
+        <TutorialTourTip
+            title={<FormattedMessage defaultMessage='Learn AND reflect'/>}
+            screen={<FormattedMessage defaultMessage='Evaluate your processes using a retrospective to refine and improve with each run.'/>}
+            tutorialCategory={TutorialTourCategories.PLAYBOOK_EDIT}
+            step={PlaybookEditTutorialSteps.Retrospective}
+            placement='bottom'
+            pulsatingDotPlacement='bottom'
+            pulsatingDotTranslate={{x: 0, y: 2}}
+            autoTour={true}
+            width={352}
+            punchOut={punchout}
+            onPrevNavigateTo={() => setCurrentTab(2)}
+        />
+    );
+
+    const tutorials = new Map<string, false | JSX.Element>([
+        ['checklists', checklistsTutorial],
+        ['actions', actionsTutorial],
+        ['status', statusUpdatesTutorial],
+        ['retrospective', retrospectiveTutorial],
+    ]);
+
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
             ...playbook,
@@ -278,12 +362,17 @@ const PlaybookEdit = (props: Props) => {
             </PlaybookNavbar>
             <Container>
                 <EditView>
-                    <TabsHeader>
+                    <TabsHeader id='tabs-header'>
                         <Tabs
                             currentTab={currentTab}
                             setCurrentTab={setCurrentTab}
                         >
-                            {tabInfo.map(({id, name}) => <React.Fragment key={id}>{name}</React.Fragment>)}
+                            {tabInfo.map(({id, name}) => (
+                                <React.Fragment key={id}>
+                                    {name}
+                                    {tutorials.get(id)}
+                                </React.Fragment>
+                            ))}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>
