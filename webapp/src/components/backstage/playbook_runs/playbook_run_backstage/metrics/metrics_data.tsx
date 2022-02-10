@@ -27,13 +27,13 @@ interface MetricsProps {
 const MetricsData = ({metricsData, metricsConfigs, isPublished, onEdit, flushChanges, setMetricsValid}: MetricsProps) => {
     const {formatMessage} = useIntl();
 
-    const initialValues = new Array(metricsConfigs?.length);
+    const initialValues = new Array(metricsConfigs.length);
     metricsConfigs.forEach((mc, index) => {
         const md = metricsData.find((metric) => metric.metric_config_id === mc.id);
         initialValues[index] = md ? metricToString(md.value, mc.type) : '';
     });
     const [inputsValues, setInputsValues] = useState(initialValues);
-    const [inputsErrors, setInputsErrors] = useState(new Array(metricsConfigs?.length).fill(''));
+    const [inputsErrors, setInputsErrors] = useState(new Array(metricsConfigs.length).fill(''));
 
     const inputRef = useRef(null);
     useClickOutsideRef(inputRef, () => {
@@ -45,12 +45,9 @@ const MetricsData = ({metricsData, metricsConfigs, isPublished, onEdit, flushCha
     const errorEmptyValue = formatMessage({defaultMessage: 'Please fill in the metric value.'});
 
     const verifyInputs = (values: string[]): string[] => {
-        const errors = new Array(metricsConfigs?.length).fill('');
+        const errors = new Array(metricsConfigs.length).fill('');
         values.forEach((value, index) => {
-            if (value === '') {
-                const metric = metricsData.find((m) => m.metric_config_id === metricsConfigs[index].id);
-                errors[index] = metric ? errorEmptyValue : '';
-            } else if (!isMetricValueValid(metricsConfigs[index].type, value)) {
+            if (!isMetricValueValid(metricsConfigs[index].type, value)) {
                 errors[index] = metricsConfigs[index].type === MetricType.Duration ? errorDuration : errorCurrencyInteger;
             }
         });
@@ -60,14 +57,13 @@ const MetricsData = ({metricsData, metricsConfigs, isPublished, onEdit, flushCha
     function stringsToMetricsData(values: string[], errors: string[]) {
         const newMetricsData = new Array<RunMetricData>();
         errors.forEach((error, index) => {
+            // When input value is invalid, remain existing metric value
             if (error) {
-                // When input value is invalid, remain existing metric value
                 const metric = metricsData.find((m) => m.metric_config_id === metricsConfigs[index].id);
-
                 if (metric) {
                     newMetricsData.push(metric);
                 }
-            } else if (values[index] !== '') {
+            } else {
                 newMetricsData.push({metric_config_id: metricsConfigs[index].id, value: stringToMetric(values[index], metricsConfigs[index].type)});
             }
         });
@@ -89,7 +85,7 @@ const MetricsData = ({metricsData, metricsConfigs, isPublished, onEdit, flushCha
     return (
         <div>
             {
-                metricsConfigs?.map((mc, idx) => {
+                metricsConfigs.map((mc, idx) => {
                     let placeholder = formatMessage({defaultMessage: ' Add value'});
                     let inputIcon = <DollarSign sizePx={18}/>;
                     if (mc.type === MetricType.Integer) {

@@ -99,7 +99,7 @@ const TargetTitle = styled.div`
 
 const Target = ({title, text}: { title: string, text?: string }) => {
     if (!text) {
-        return (<></>);
+        return null;
     }
     return (
         <TargetTitle>

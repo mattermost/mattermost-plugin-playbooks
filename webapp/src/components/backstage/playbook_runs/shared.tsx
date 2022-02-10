@@ -116,6 +116,7 @@ export const HelpText = styled.div`
     line-height: 16px;
     margin-top: 4px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-weight: 400;
 `;
 
 export const ErrorText = styled.div`
