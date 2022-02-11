@@ -18,8 +18,11 @@ describe('playbooks > edit', () => {
             testTeam = team;
             testUser = user;
 
+            cy.apiDisableTutorials(user.id);
+
             cy.apiCreateCustomAdmin().then(({sysadmin}) => {
                 testSysadmin = sysadmin;
+                cy.apiDisableTutorials(testSysadmin.id);
             });
 
             // # Create a second test user in this team
@@ -54,7 +57,7 @@ describe('playbooks > edit', () => {
                 cy.get('#root').findByText('Blank').click();
                 cy.get('#playbooks_create').findByText('Create playbook').click();
 
-                // # Add a slash command to a step
+                // # Add a slash command to a ste
                 cy.get('#root').findByText('Add a slash command').click();
 
                 // * Verify the slash command input field now has focus
