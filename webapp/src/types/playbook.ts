@@ -119,6 +119,20 @@ export interface DraftPlaybookWithChecklist extends Omit<PlaybookWithChecklist, 
     id?: string;
 }
 
+// setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
+export const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
+    ...playbook,
+    title: playbook.title.trim() || 'Untitled playbook',
+    checklists: playbook.checklists.map((checklist) => ({
+        ...checklist,
+        title: checklist.title || 'Untitled checklist',
+        items: checklist.items.map((item) => ({
+            ...item,
+            title: item.title || 'Untitled task',
+        })),
+    })),
+});
+
 export function emptyPlaybook(): DraftPlaybookWithChecklist {
     return {
         title: '',
