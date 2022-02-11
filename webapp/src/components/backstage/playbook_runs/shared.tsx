@@ -130,7 +130,7 @@ export const StyledInput = styled(BaseInput)<{ error?: boolean}>`
     height: 40px;
     width: 100%;
 
-    background-color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
+    background-color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb),0.03)' : 'var(--center-channel-bg)')};
     
     ${(props) => (
         props.error && css`
