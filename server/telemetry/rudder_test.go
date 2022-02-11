@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"gopkg.in/guregu/null.v4"
+
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
 
 	rudder "github.com/rudderlabs/analytics-go"
@@ -397,7 +399,7 @@ func TestPlaybookProperties(t *testing.T) {
 			Title:       "metric 1",
 			Description: "this is a descr",
 			Type:        "Duration",
-			Target:      12345,
+			Target:      null.IntFrom(12345),
 		}},
 	}
 

@@ -53,6 +53,7 @@ import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 import {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip/hooks';
 import {PlaybookPreviewTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip';
+import PlaybookKeyMetrics from 'src/components/backstage/playbooks/playbook_key_metrics';
 
 interface MatchParams {
     playbookId: string
@@ -74,27 +75,29 @@ const MembersIcon = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
     height: 28px;
     line-height: 28px;
-	cursor: pointer;
+    cursor: pointer;
+
     &:hover {
-       background: rgba(var(--center-channel-color-rgb), 0.08);
-       color: rgba(var(--center-channel-color-rgb), 0.72);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 `;
 
 const TitleButton = styled.div`
-	margin-left: 20px;
+    margin-left: 20px;
     display: inline-flex;
     border-radius: 4px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
     fill: rgba(var(--center-channel-color-rgb), 0.64);
+
     &:hover {
-       background: rgba(var(--link-color-rgb), 0.08);
-       color: rgba(var(--link-color-rgb), 0.72);
+        background: rgba(var(--link-color-rgb), 0.08);
+        color: rgba(var(--link-color-rgb), 0.72);
     }
 `;
 
 const RedText = styled.div`
-	color: var(--error-text);
+    color: var(--error-text);
 `;
 
 const Playbook = () => {
@@ -132,11 +135,6 @@ const Playbook = () => {
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
-
-    const activeNavItemStyle = {
-        color: 'var(--button-bg)',
-        boxShadow: 'inset 0px -2px 0px 0px var(--button-bg)',
-    };
 
     const goToPlaybooks = () => {
         navigateToPluginUrl('/playbooks');
@@ -272,13 +270,13 @@ const Playbook = () => {
                             <FormattedMessage defaultMessage='Export'/>
                         </DropdownMenuItemStyled>
                         {!archived &&
-                        <DropdownMenuItem
-                            onClick={() => openDeletePlaybookModal(playbook)}
-                        >
-                            <RedText>
-                                <FormattedMessage defaultMessage='Archive playbook'/>
-                            </RedText>
-                        </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => openDeletePlaybookModal(playbook)}
+                            >
+                                <RedText>
+                                    <FormattedMessage defaultMessage='Archive playbook'/>
+                                </RedText>
+                            </DropdownMenuItem>
                         }
                     </DotMenu>
                     <MembersIcon
@@ -358,6 +356,13 @@ const Playbook = () => {
                 >
                     {formatMessage({defaultMessage: 'Usage'})}
                 </NavItem>
+                <NavItem
+                    activeStyle={activeNavItemStyle}
+                    to={`${match.url}/metrics`}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_metrics_tab_clicked')}
+                >
+                    {formatMessage({defaultMessage: 'Key metrics'})}
+                </NavItem>
             </Navbar>
             <Switch>
                 <Route
@@ -374,6 +379,12 @@ const Playbook = () => {
                 </Route>
                 <Route path={`${match.path}/usage`}>
                     <PlaybookUsage
+                        playbook={playbook}
+                        stats={stats}
+                    />
+                </Route>
+                <Route path={`${match.path}/metrics`}>
+                    <PlaybookKeyMetrics
                         playbook={playbook}
                         stats={stats}
                     />
@@ -415,38 +426,15 @@ const LeftArrow = styled.button`
         color: var(--button-bg);
     }
 `;
-
-const VerticalBlock = styled.div`
-    display: flex;
-    flex-direction: column;
-    font-weight: 400;
-    padding: 0 16px 0 24px;
-`;
-
-const HorizontalBlock = styled.div`
-    display: flex;
-    flex-direction: row;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-
-    > i {
-        font-size: 12px;
-        margin-left: -3px;
-    }
-`;
-
 const Title = styled.div`
-    ${RegularHeading}
+    ${RegularHeading} {
+    }
 
     font-size: 20px;
     line-height: 28px;
     color: var(--center-channel-color);
-	margin-left: 6px;
-	margin-right: 6px;
-`;
-
-const SubTitle = styled.div`
-    font-size: 11px;
-    line-height: 16px;
+    margin-left: 6px;
+    margin-right: 6px;
 `;
 
 const PrimaryButtonLarger = styled(PrimaryButton)`
@@ -468,6 +456,7 @@ const CheckboxInputStyled = styled(CheckboxInput)`
 interface CheckedProps {
     checked: boolean;
 }
+
 const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <CheckedProps>`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
     color: rgba(var(--center-channel-color-rgb), 0.56);
@@ -481,7 +470,7 @@ const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <Che
         color: var(--button-bg);
 
         &:hover:enabled {
-            background-color: rgba(var(--button-bg-rgb),0.12);
+            background-color: rgba(var(--button-bg-rgb), 0.12);
         }
     `}`;
 
@@ -520,5 +509,10 @@ const NavItem = styled(NavLink)`
 const RightMarginedIcon = styled(Icon)`
     margin-right: 0.5rem;
 `;
+
+const activeNavItemStyle = {
+    color: 'var(--button-bg)',
+    boxShadow: 'inset 0px -2px 0px 0px var(--button-bg)',
+};
 
 export default Playbook;
