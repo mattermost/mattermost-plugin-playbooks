@@ -15,7 +15,7 @@ import {Container, Content, Left, Right, Title} from 'src/components/backstage/p
 import UpgradeBanner from 'src/components/upgrade_banner';
 import {AdminNotificationType} from 'src/constants';
 
-import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {useAllowPlaybookAndRunMetrics, useAllowRetrospectiveAccess} from 'src/hooks';
 import {PlaybookRun, RunMetricData} from 'src/types/playbook_run';
 import {Metric} from 'src/types/playbook';
 
@@ -61,10 +61,10 @@ export const Retrospective = (props: Props) => {
     const allowRetrospectiveAccess = useAllowRetrospectiveAccess();
     const {formatMessage} = useIntl();
     const [showConfirmation, setShowConfirmation] = useState(false);
-
     const [retrospectiveInfoUpdated, setUpdated] = useState(0);
     const didMountRef = useRef(false);
     const childRef = useRef<any>();
+    const metricsAvailable = useAllowPlaybookAndRunMetrics();
 
     useEffect(() => {
         if (didMountRef.current) {
@@ -152,7 +152,7 @@ export const Retrospective = (props: Props) => {
                         </HeaderButtonsRight>
                     </Header>
                     <StyledContent>
-                        {props.metricsConfigs &&
+                        {props.metricsConfigs && metricsAvailable &&
                             <MetricsData
                                 ref={childRef}
                                 metricsData={props.playbookRun.metrics_data}
