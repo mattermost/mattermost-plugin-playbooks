@@ -236,8 +236,9 @@ const Metrics = ({
                                     return {index: prevState.index, metric: setState(prevState.metric)};
                                 }
 
-                                // This can't happen
-                                return {index: -1, metric: {} as Metric};
+                                // This can't happen, because we wouldn't be here if curEditingMetric === null
+                                // (and if curEditingMetric isn't null, prevState cannot be null) -- but typescript doesn't know that.
+                                return null;
                             })}
                             otherTitles={playbook.metrics.flatMap((m, i) => (i === idx ? [] : m.title))}
                             onAdd={saveMetric}
