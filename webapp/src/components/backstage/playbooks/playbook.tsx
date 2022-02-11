@@ -14,9 +14,7 @@ import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {Channel} from 'mattermost-redux/types/channels';
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
+import {getCurrentUserId, getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 
@@ -110,6 +108,7 @@ const Playbook = () => {
     const stats = useStats(match.params.playbookId);
     const [isFollowed, setIsFollowed] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
+    const currentUser = useSelector(getCurrentUser);
     const [playbookLinkCopied, setPlaybookLinkCopied] = useState(false);
     const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal(() => {
         if (playbook) {
@@ -321,7 +320,7 @@ const Playbook = () => {
                     <PrimaryButtonLarger
                         onClick={
                             playbook.title === 'Learn how to use playbooks' ? async () => {
-                                const playbookRun = await createPlaybookRun(playbook.id, currentUserId, playbook.team_id, 'johns onboarding playbok', playbook.description);
+                                const playbookRun = await createPlaybookRun(playbook.id, currentUserId, playbook.team_id, `${currentUser.username}'s onboarding run`, playbook.description);
                                 const pathname = `/${team.name}/channels/${playbookRun.channel_id}`;
                                 const search = '?forceRHSOpen&&openTakeATourDialog';
                                 navigateToUrl({pathname, search});
