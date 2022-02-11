@@ -362,6 +362,7 @@ func (t *RudderTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, user
 func (t *RudderTelemetry) PublishRetrospective(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionPublishRetrospective
+	properties["NumMetrics"] = len(playbookRun.MetricsData)
 	t.track(eventTasks, properties)
 }
 
@@ -403,6 +404,7 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 		"SignalAnyKeywordsEnabled":    playbook.SignalAnyKeywordsEnabled,
 		"NumSignalAnyKeywords":        len(playbook.SignalAnyKeywords),
 		"HasChannelNameTemplate":      playbook.ChannelNameTemplate != "",
+		"NumMetrics":                  len(playbook.Metrics),
 	}
 }
 
