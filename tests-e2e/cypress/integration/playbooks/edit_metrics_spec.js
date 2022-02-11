@@ -440,6 +440,81 @@ describe('playbooks > edit_metrics', () => {
                 verifyViewsAndEdits(0, 0);
             });
         });
+
+        describe('nullable and 0-able targets', () => {
+            it('can add 0 targets and no (null) targets', () => {
+                // # Visit the selected playbook
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Retrospective tab
+                cy.get('#root').findByText('Retrospective').click();
+
+                // # Add and verify duration
+                addMetric('Duration', 'test duration', '0:0:0', 'test description');
+                verifyViewMetric(0, 'test duration', 'less than 1 minute per run', 'test description');
+
+                // # Verify it shows 0:0:0, then turn it into null.
+                cy.findAllByTestId('edit-metric').eq(0).click();
+                cy.get('input[type=text]').eq(2).should('have.value', '00:00:00')
+                    .clear();
+                cy.findByRole('button', {name: 'Add'}).click();
+                verifyViewMetric(0, 'test duration', '', 'test description');
+
+                // * Verify it has null value when editing again.
+                cy.findAllByTestId('edit-metric').eq(0).click();
+                cy.get('input[type=text]').eq(2).should('have.value', '');
+                cy.findByRole('button', {name: 'Add'}).click();
+
+                // # Add and verify currency
+                addMetric('Dollars', 'test money', '0', 'test description 2');
+                verifyViewMetric(1, 'test money', '0', 'test description 2');
+
+                // # Verify it shows 0, then turn it into null.
+                cy.findAllByTestId('edit-metric').eq(1).click();
+                cy.get('input[type=text]').eq(2).should('have.value', '0')
+                    .clear();
+                cy.findByRole('button', {name: 'Add'}).click();
+                verifyViewMetric(1, 'test money', '', 'test description 2');
+
+                // * Verify it has null value when editing again.
+                cy.findAllByTestId('edit-metric').eq(1).click();
+                cy.get('input[type=text]').eq(2).should('have.value', '');
+                cy.findByRole('button', {name: 'Add'}).click();
+
+                // # Add and verify Integer
+                addMetric('Integer', 'test number', '0', 'test description 3');
+                verifyViewMetric(2, 'test number', '0', 'test description 3');
+
+                // # Verify it shows 0, then turn it into null.
+                cy.findAllByTestId('edit-metric').eq(2).click();
+                cy.get('input[type=text]').eq(2).should('have.value', '0')
+                    .clear();
+                cy.findByRole('button', {name: 'Add'}).click();
+                verifyViewMetric(2, 'test number', '', 'test description 3');
+
+                // * Verify it has null value when editing again.
+                cy.findAllByTestId('edit-metric').eq(2).click();
+                cy.get('input[type=text]').eq(2).should('have.value', '');
+                cy.findByRole('button', {name: 'Add'}).click();
+
+                // * Verify we have three valid metrics and are editing none.
+                verifyViewsAndEdits(3, 0);
+
+                // # Save -- for the next batch of tests
+                cy.findByTestId('save_playbook').click();
+
+                // # Go back to editing
+                cy.visit(`/playbooks/playbooks/${testPlaybook.id}/edit`);
+
+                // # Switch to Retrospective tab
+                cy.get('#root').findByText('Retrospective').click();
+
+                // * Verify we saved the metrics
+                verifyViewMetric(0, 'test duration', '', 'test description');
+                verifyViewMetric(1, 'test money', '', 'test description 2');
+                verifyViewMetric(2, 'test number', '', 'test description 3');
+            });
+        });
     });
 });
 
@@ -470,7 +545,8 @@ const verifyViewMetric = (index, title, target, description) => {
         }
 
         if (description) {
-            cy.getStyledComponent('Detail').eq(1).contains(description);
+            const idx = target ? 1 : 0;
+            cy.getStyledComponent('Detail').eq(idx).contains(description);
         }
     });
 };

@@ -28,7 +28,7 @@ const MetricView = ({metric, editClick, deleteClick, disabled}: Props) => {
     }
 
     const targetStr = targetToString(metric.target, metric.type, true);
-    const target = metric.target ? `${targetStr} ${perRun}` : '';
+    const target = metric.target === null ? '' : `${targetStr} ${perRun}`;
 
     return (
         <ViewContainer>

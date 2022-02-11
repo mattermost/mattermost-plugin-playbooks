@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import debounce from 'debounce';
+import {useIntl} from 'react-intl';
 
 import {
     archivePlaybook as clientArchivePlaybook,
@@ -10,6 +11,7 @@ import {
     savePlaybook,
 } from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
+import {useToasts} from 'src/components/backstage/toast_banner';
 
 type ParamsState = Required<FetchPlaybooksParams>;
 
@@ -56,6 +58,7 @@ export function usePlaybooksCrud(
     defaultParams: Partial<FetchPlaybooksParams>,
     {infinitePaging} = {infinitePaging: false},
 ) {
+    const {formatMessage} = useIntl();
     const [playbooks, setPlaybooks] = useState<Playbook[] | null>(null);
     const [isLoading, setLoading] = useState(true);
     const [hasMore, setHasMore] = useState(false);
@@ -79,6 +82,8 @@ export function usePlaybooksCrud(
     useEffect(() => {
         fetchPlaybooks();
     }, [params]);
+
+    const addToast = useToasts().add;
 
     const setSelectedPlaybook = async (nextSelected: Playbook | string | null) => {
         if (typeof nextSelected !== 'string') {
@@ -132,6 +137,7 @@ export function usePlaybooksCrud(
     const duplicatePlaybook = async (playbookId: Playbook['id']) => {
         await clientDuplicatePlaybook(playbookId);
         await fetchPlaybooks();
+        addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
     };
 
     const sortBy = (colName: FetchPlaybooksParams['sort']) => {
