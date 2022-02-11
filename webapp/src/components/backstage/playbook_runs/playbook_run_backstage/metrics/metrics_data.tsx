@@ -34,11 +34,13 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdi
     const [inputsValues, setInputsValues] = useState(initialValues);
     const [inputsErrors, setInputsErrors] = useState(new Array(metricsConfigs.length).fill(''));
 
+    // Handles click outside of metrics inputs to save changes
     const inputRef = useRef(null);
     useClickOutsideRef(inputRef, () => {
         flushChanges();
     });
 
+    //  validateInputs function is called from retrospective component on publish button click, to validate metrics inputs
     useImperativeHandle(
         ref,
         () => ({
