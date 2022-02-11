@@ -45,7 +45,7 @@ const PlaceholderRow = styled.div`
 
 const OuterContainer = styled.div`
     height: 100%;
-    background-color: rgba(var(--center-channel-color-rgb),0.04);
+    background-color: rgba(var(--center-channel-color-rgb), 0.04);
 `;
 
 const InnerContainer = styled.div`
@@ -54,7 +54,6 @@ const InnerContainer = styled.div`
     padding: 20px;
     max-width: 1120px;
     margin: 0 auto;
-    font-family: 'Open Sans', sans-serif;
     font-style: normal;
     font-weight: 600;
 
