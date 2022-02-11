@@ -84,6 +84,17 @@ export async function fetchPlaybookRun(id: string) {
     return data as PlaybookRun;
 }
 
+export async function createPlaybookRun(playbook_id: string, owner_user_id: string, team_id: string, name: string, description: string) {
+    const run = await doPost(`${apiUrl}/runs`, JSON.stringify({
+        owner_user_id,
+        team_id,
+        name,
+        description,
+        playbook_id,
+    }));
+    return run as PlaybookRun;
+}
+
 export async function postStatusUpdate(
     playbookRunId: string,
     payload: {

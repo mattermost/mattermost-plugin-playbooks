@@ -15,6 +15,8 @@ import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {Channel} from 'mattermost-redux/types/channels';
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 
@@ -34,6 +36,7 @@ import {
     getSiteUrl,
     playbookExportProps,
     archivePlaybook,
+    createPlaybookRun,
 } from 'src/client';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -316,7 +319,14 @@ const Playbook = () => {
                         </OverlayTrigger>
                     </SecondaryButtonLargerRightStyled>
                     <PrimaryButtonLarger
-                        onClick={runPlaybook}
+                        onClick={
+                            playbook.title === 'Learn how to use playbooks' ? async () => {
+                                const playbookRun = await createPlaybookRun(playbook.id, currentUserId, playbook.team_id, 'johns onboarding playbok', playbook.description);
+                                const pathname = `/${team.name}/channels/${playbookRun.channel_id}`;
+                                const search = '?forceRHSOpen&&openTakeATourDialog';
+                                navigateToUrl({pathname, search});
+                            } : runPlaybook
+                        }
                         disabled={!enableRunPlaybook}
                         title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
                         data-testid='run-playbook'
@@ -325,7 +335,7 @@ const Playbook = () => {
                             path={mdiClipboardPlayOutline}
                             size={1.25}
                         />
-                        {formatMessage({defaultMessage: 'Run'})}
+                        {playbook.title === 'Learn how to use playbooks' ? formatMessage({defaultMessage: 'Start a test run'}) : formatMessage({defaultMessage: 'Run'})}
                     </PrimaryButtonLarger>
                     {showRunButtonTutorial &&
                         <TutorialTourTip
