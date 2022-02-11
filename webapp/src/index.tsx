@@ -63,7 +63,6 @@ import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
 
 import {PlaybookRole} from './types/permissions';
-import {RetrospectivePost} from './components/retrospective_post';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -148,7 +147,6 @@ export default class Plugin {
         registry.registerPostTypeComponent('custom_cloud_upgrade', CloudUpgradePost);
         registry.registerPostTypeComponent('custom_run_update', UpdatePost);
         registry.registerPostTypeComponent('custom_update_status', UpdateRequestPost);
-        registry.registerPostTypeComponent('custom_retro', RetrospectivePost);
     }
 
     userActivityWatch(): void {

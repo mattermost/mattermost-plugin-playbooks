@@ -2391,12 +2391,7 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	}
 
 	retrospectiveURL := getRunRetrospectiveURL("", playbookRunToPublish.ID)
-	post, err := s.buildRetrospectivePost(playbookRunToPublish, publisherUser, retrospectiveURL)
-	if err != nil {
-		return err
-	}
-
-	if err = s.poster.Post(post); err != nil {
+	if _, err = s.poster.PostMessage(playbookRunToPublish.ChannelID, "@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n%s", publisherUser.Username, retrospectiveURL, retrospective.Text); err != nil {
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
@@ -2422,20 +2417,6 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	s.telemetry.PublishRetrospective(playbookRunToPublish, publisherID)
 
 	return nil
-}
-
-func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *PlaybookRun, publisherUser *model.User, retrospectiveURL string) (*model.Post, error) {
-	//TODO: get metric configs!!
-
-	return &model.Post{
-		Message:   fmt.Sprintf("@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n", publisherUser.Username, retrospectiveURL),
-		Type:      "custom_retro",
-		ChannelId: playbookRunToPublish.ChannelID,
-		Props: map[string]interface{}{
-			// "metricsData":       playbookRunToPublish.MetricsData,
-			"retrospectiveText": playbookRunToPublish.Retrospective,
-		},
-	}, nil
 }
 
 func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID string) error {
