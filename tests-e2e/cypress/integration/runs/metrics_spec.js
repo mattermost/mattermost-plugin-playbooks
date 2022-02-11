@@ -74,29 +74,44 @@ describe('runs > edit_metrics', () => {
         });
 
         describe('retrospective tab ui', () => {
-            it('metrics inputs ui', () => {
+            it('metrics inputs info(title, target, description) and order', () => {
                 // # Navigate directly to the retro tab
                 cy.visit(`/playbooks/runs/${runId}/retrospective`);
 
                 // * Verify metrics number
                 cy.getStyledComponent('InputContainer').should('have.length', 3);
 
-                // * Verify metric 1
+                // * Verify metrics infos
                 verifyMetricInput(0, 'title1', '12 minutes', 'description1');
-
-                // * Verify metric 2
                 verifyMetricInput(1, 'title2', '40', 'description2');
-
-                // * Verify metric 3
                 verifyMetricInput(2, 'title3', '30', 'description3');
+            });
 
+            it('metrics inputs, null and zero values', () => {
+                // # Set targets to null and update playbook
+                testPlaybookWithMetrics.metrics[0].target = null;
+                testPlaybookWithMetrics.metrics[1].target = 0;
+                cy.apiUpdatePlaybook(testPlaybookWithMetrics).then(() => {
+                    // # Navigate directly to the retro tab
+                    cy.visit(`/playbooks/runs/${runId}/retrospective`);
+
+                    // * Verify if Target text(top | left) is removed
+                    verifyMetricInput(0, 'title1', null, 'description1');
+                    verifyMetricInput(1, 'title2', '0', 'description2');
+                    verifyMetricInput(2, 'title3', '30', 'description3');
+                });
+            });
+
+            it('run without metrics', () => {
                 // # Edit playbook, remove all metrics. then check retro tab ui
                 testPlaybookWithMetrics.metrics = null;
-                cy.apiUpdatePlaybook(testPlaybookWithMetrics);
-                cy.visit(`/playbooks/runs/${runId}/retrospective`);
+                cy.apiUpdatePlaybook(testPlaybookWithMetrics).then(() => {
+                    // # Navigate directly to the retro tab
+                    cy.visit(`/playbooks/runs/${runId}/retrospective`);
 
-                // * Verify there are no metrics inputs
-                cy.getStyledComponent('InputContainer').should('not.exist');
+                    // * Verify there are no metrics inputs
+                    cy.getStyledComponent('InputContainer').should('not.exist');
+                });
             });
         });
 
@@ -111,7 +126,7 @@ describe('runs > edit_metrics', () => {
                     .tab().type('56')
                     .tab().type('123');
 
-                // # Navigate to the overview tab and then back
+                // # Navigate to the overview tab and then back. Click should flush changes
                 cy.findByText('Overview').click({force: true});
                 cy.findByText('Retrospective').click({force: true});
 
@@ -120,6 +135,12 @@ describe('runs > edit_metrics', () => {
                 cy.get('input[type=text]').eq(1).should('have.value', '56');
                 cy.get('input[type=text]').eq(2).should('have.value', '123');
 
+                // # Enter new values
+                cy.get('input[type=text]').eq(0).click();
+                cy.get('input[type=text]').eq(0).clear().type('12:00:10')
+                    .tab().clear().type('20')
+                    .tab().clear().type('21');
+
                 // # Wait 2 sec to auto save
                 cy.wait(2000);
 
@@ -127,12 +148,46 @@ describe('runs > edit_metrics', () => {
                 cy.visit(`/playbooks/runs/${runId}/retrospective`);
 
                 // * Validate if values are saved
-                cy.get('input[type=text]').eq(0).should('have.value', '12:11:10');
-                cy.get('input[type=text]').eq(1).should('have.value', '56');
-                cy.get('input[type=text]').eq(2).should('have.value', '123');
+                cy.get('input[type=text]').eq(0).should('have.value', '12:00:10');
+                cy.get('input[type=text]').eq(1).should('have.value', '20');
+                cy.get('input[type=text]').eq(2).should('have.value', '21');
             });
 
-            it('invalid values are not saved. check error messages', () => {
+            it('save empty and zero values', () => {
+                // # Navigate directly to the retro tab
+                cy.visit(`/playbooks/runs/${runId}/retrospective`);
+
+                // # Enter metric values
+                cy.get('input[type=text]').eq(0).click();
+                cy.get('input[type=text]').eq(0).clear().type('00:00:00')
+                    .tab().type('7')
+                    .tab().type('0');
+
+                // # Navigate to the overview tab and then back
+                cy.findByText('Overview').click({force: true});
+                cy.findByText('Retrospective').click({force: true});
+
+                // * Validate if values persist
+                cy.get('input[type=text]').eq(0).should('have.value', '00:00:00');
+                cy.get('input[type=text]').eq(1).should('have.value', '7');
+                cy.get('input[type=text]').eq(2).should('have.value', '0');
+
+                // # Clear first two metrics values
+                cy.get('input[type=text]').eq(0).click();
+                cy.get('input[type=text]').eq(0).clear()
+                    .tab().clear();
+
+                // # Navigate to the overview tab and then back
+                cy.findByText('Overview').click({force: true});
+                cy.findByText('Retrospective').click({force: true});
+
+                // * Validate if values persist
+                cy.get('input[type=text]').eq(0).should('have.value', '');
+                cy.get('input[type=text]').eq(1).should('have.value', '');
+                cy.get('input[type=text]').eq(2).should('have.value', '0');
+            });
+
+            it('only valid values are saved. check error messages', () => {
                 // # Navigate directly to the retro tab
                 cy.visit(`/playbooks/runs/${runId}/retrospective`);
 
@@ -150,27 +205,58 @@ describe('runs > edit_metrics', () => {
                 cy.findByText('Overview').click({force: true});
                 cy.findByText('Retrospective').click({force: true});
 
-                // # Wait 2 sec to auto save
-                cy.wait(2000);
-
                 // # Reload page and navigate to the retro tab
                 cy.visit(`/playbooks/runs/${runId}/retrospective`);
 
                 // * Validate that values are not saved
                 cy.get('input[type=text]').eq(0).should('have.value', '');
                 cy.get('input[type=text]').eq(1).should('have.value', '');
-                cy.get('input[type=text]').eq(2).should('have.value', '');
+                cy.get('input[type=text]').eq(2).should('have.value', '125');
+
+                // # Enter new metric values
+                cy.get('input[type=text]').eq(0).click();
+                cy.get('input[type=text]').eq(0).type('s')
+                    .tab().type('d')
+                    .tab().type('k');
             });
 
             it('publish retro', () => {
                 // # Navigate directly to the retro tab
                 cy.visit(`/playbooks/runs/${runId}/retrospective`);
 
-                //# Enter metric values
+                //# Enter metric invalid values
                 cy.get('input[type=text]').eq(0).click();
-                cy.get('input[type=text]').eq(0).type('20:00:12')
+                cy.get('input[type=text]').eq(0).type('20:00:12d')
                     .tab().type('56')
-                    .tab().type('125');
+                    .tab().type('125v');
+
+                // # Publish
+                cy.findByRole('button', {name: 'Publish'}).click();
+
+                // * Verify we're not showing the publish retro confirmation modal
+                cy.get('#confirm-modal-light').should('not.exist');
+
+                //# Enter empty metric values
+                cy.get('input[type=text]').eq(0).click();
+                cy.get('input[type=text]').eq(0).clear()
+                    .tab().clear()
+                    .tab().clear().type(24);
+
+                // # Publish
+                cy.findByRole('button', {name: 'Publish'}).click();
+
+                // * Validate error messages
+                cy.getStyledComponent('ErrorText').eq(0).contains('Please fill in the metric value.');
+                cy.getStyledComponent('ErrorText').eq(1).contains('Please fill in the metric value.');
+                cy.getStyledComponent('ErrorText').should('have.length', 2);
+
+                // * Verify we're not showing the publish retro confirmation modal
+                cy.get('#confirm-modal-light').should('not.exist');
+
+                //# Enter valid metric values
+                cy.get('input[type=text]').eq(0).click();
+                cy.get('input[type=text]').eq(0).type('09:87:12')
+                    .tab().type(123);
 
                 // # Publish
                 cy.findByRole('button', {name: 'Publish'}).click();
