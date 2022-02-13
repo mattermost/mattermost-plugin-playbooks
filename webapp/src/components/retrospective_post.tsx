@@ -68,6 +68,18 @@ export const RetrospectivePost = (props: Props) => {
         metric_config_id: '1',
         value: 55000,
     });
+    metricsData.push({
+        metric_config_id: '2',
+        value: 40,
+    });
+    metricsData.push({
+        metric_config_id: '3',
+        value: 23,
+    });
+    metricsData.push({
+        metric_config_id: '4',
+        value: 232323,
+    });
     return (
         <>
             <TextBody>{mdText(props.post.message)}</TextBody>
