@@ -86,7 +86,7 @@ export const Retrospective = (props: Props) => {
     }
 
     const confirmedPublish = () => {
-        publishRetrospective(props.playbookRun.id, props.playbookRun.retrospective);
+        publishRetrospective(props.playbookRun.id, props.playbookRun.retrospective, props.playbookRun.metrics_data);
         props.setPublishedAt(DateTime.now().valueOf());
         props.setCanceled(false);
         setShowConfirmation(false);

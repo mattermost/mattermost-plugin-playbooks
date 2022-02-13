@@ -51,6 +51,17 @@ export const RetrospectivePost = (props: Props) => {
         description: 'description 3',
         target: 6000000,
     });
+    metricsConfigs.push({
+        id: '4',
+        type: MetricType.Integer,
+        title: 'Time to resolve',
+        description: 'description 4',
+        target: 6000000,
+    });
+
+    let arr: RunMetricData[];
+    arr = JSON.parse(props.post.props.metricsData);
+    console.log(arr);
 
     const metricsData = new Array<RunMetricData>();
     metricsData.push({
@@ -65,11 +76,15 @@ export const RetrospectivePost = (props: Props) => {
         metric_config_id: '3',
         value: 23,
     });
+    metricsData.push({
+        metric_config_id: '4',
+        value: 232323,
+    });
     return (
         <>
             <TextBody>{mdText(props.post.message)}</TextBody>
             <CustomPostContainerVertical>
-                <Header>
+                <HeaderGrid>
                     {
                         metricsConfigs?.map((mc, idx) => {
                             let inputIcon = (
@@ -107,7 +122,7 @@ export const RetrospectivePost = (props: Props) => {
                             );
                         })
                     }
-                </Header>
+                </HeaderGrid>
                 <Separator/>
                 <FullWidthContent>
                     <TextBody>{mdText(props.post.props.retrospectiveText)}</TextBody>
@@ -117,39 +132,42 @@ export const RetrospectivePost = (props: Props) => {
     );
 };
 
-const Header = styled.div`
+const HeaderGrid = styled.div`
     width: 100%;
-    display: flex;
-    flex: 1;
-    margin-top: 6px;
-    margin-bottom: 7px;
+    display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    row-gap: 19px;
+    place-items: flex-start center;
+    justify-items: stretch;
+    margin: 8px 0px;
 `;
 
 const MetricInfo = styled.div`
     display: flex;
-    flex: 1;
-    align-items: center;`
-;
+    align-items: center;
+`;
 
 const MetricIcon = styled.div`
     display: flex;
     width: 40px;
     height: 40px;
-    padding: 8px;
+    padding: 10px;
     align-items: center;
     background: rgba(var(--button-bg-rgb), 0.08);
     border-radius: 4px;
-    margin: 0px 8px;    
+    margin: 0px 8px;
 `;
 
 const ViewContent = styled.div`
     flex-direction: column;
-    margin: 2px 0px;
 `;
 
 const Title = styled.div`
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;    
     color: rgba(var(--center-channel-color-rgb), 0.64);
-    font-weight: 600;
+    margin: 2px 0px;
 `;
 
 const Value = styled.div`
@@ -157,6 +175,7 @@ const Value = styled.div`
     line-height: 24px;
     color: var(--center-channel-color);
     font-weight: normal;    
+    margin: 2px 0px;
 `;
 
 const CustomPostContainerVertical = styled(CustomPostContainer)`

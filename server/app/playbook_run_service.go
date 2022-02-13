@@ -2427,12 +2427,18 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *PlaybookRun, publisherUser *model.User, retrospectiveURL string) (*model.Post, error) {
 	//TODO: get metric configs!!
 
+	metrics, err := json.Marshal(playbookRunToPublish.MetricsData)
+	if err != nil {
+		s.pluginAPI.Log.Warn("cannot post retro, unable to marshal metrics")
+		return nil, err
+	}
+
 	return &model.Post{
 		Message:   fmt.Sprintf("@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n", publisherUser.Username, retrospectiveURL),
 		Type:      "custom_retro",
 		ChannelId: playbookRunToPublish.ChannelID,
 		Props: map[string]interface{}{
-			// "metricsData":       playbookRunToPublish.MetricsData,
+			"metricsData":       string(metrics),
 			"retrospectiveText": playbookRunToPublish.Retrospective,
 		},
 	}, nil
