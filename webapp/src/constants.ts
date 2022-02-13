@@ -25,6 +25,7 @@ export enum AdminNotificationType {
     PLAYBOOK_CREATION_RESTRICTION = 'start_trial_to_restrict_playbook_creation',
     EXPORT_CHANNEL = 'start_trial_to_export_channel',
     MESSAGE_TO_PLAYBOOK_DASHBOARD = 'start_trial_to_access_playbook_dashboard',
+    PLAYBOOK_METRICS = 'start_trial_to_access_metrics',
 }
 
 export const DateTimeFormats = {

@@ -20,12 +20,6 @@ const defaultPlaybookFetchParams = {
     statuses: [PlaybookRunStatus.InProgress, PlaybookRunStatus.Finished],
 };
 
-const RunListContainer = styled.div`
-    && {
-        margin-top: 48px;
-    }
-`;
-
 interface Props {
     playbook: PlaybookWithChecklist;
     stats: PlaybookStats;
@@ -67,7 +61,7 @@ const PlaybookUsage = (props: Props) => {
 };
 
 const OuterContainer = styled.div`
-    background: var(center-channel-bg);
+    height: 100%;
 `;
 
 const InnerContainer = styled.div`
@@ -82,6 +76,12 @@ const InnerContainer = styled.div`
 
     > div + div {
         margin-top: 16px;
+    }
+`;
+
+const RunListContainer = styled.div`
+    && {
+        margin-top: 48px;
     }
 `;
 
