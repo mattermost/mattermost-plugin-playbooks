@@ -76,10 +76,9 @@ describe('playbooks > creation button', () => {
 
         // # Click 'Blank'
         cy.findByText('Blank').click();
-        cy.get('#playbooks_create').findByText('Create playbook').click();
 
         // * Verify playbook preview opened
-        verifyPreviewOpened(playbookName);
+        verifyPreviewOpened();
     });
 
     it('opens Service Outage Incident page from its template option', () => {
@@ -93,36 +92,9 @@ describe('playbooks > creation button', () => {
 
         // # Click 'Incident Resolution'
         cy.findByText('Incident Resolution').click();
-        cy.get('#playbooks_create').findByText('Create playbook').click();
 
         // * Verify playbook preview opened
-        verifyPreviewOpened(playbookName);
-    });
-
-    it('opens Service Outage Incident page from its template option when there are multiple teams', () => {
-        // # Create another team
-        cy.apiCreateTeam('second-team', 'Second Team').then(({team: createdTeam}) => {
-            // # Add user to team
-            cy.apiAddUserToTeam(createdTeam.id, testUser.id);
-
-            const url1 = 'playbooks/new?teamId=';
-            const url2 = '&template=Incident%20Resolution';
-            const playbookName = 'Incident Resolution';
-
-            // # Open the product
-            cy.visit('/playbooks');
-
-            // # Switch to playbooks
-            cy.findByTestId('playbooksLHSButton').click();
-
-            // # Click 'Incident Resolution'
-            cy.findByText('Incident Resolution').click();
-            cy.get('#playbooks_create').findByText('Create playbook').click();
-
-            // * Verify a new 'Service Outage Incident' creation page is opened
-            verifyPlaybookCreationPageOpened(url1, playbookName);
-            verifyPlaybookCreationPageOpened(url2, playbookName);
-        });
+        verifyPreviewOpened();
     });
 });
 
@@ -139,12 +111,7 @@ function verifyPlaybookCreationPageOpened(url, playbookName) {
     cy.findByTestId('save_playbook').should('be.visible');
 }
 
-function verifyPreviewOpened(playbookName) {
+function verifyPreviewOpened() {
     // * Verify the page url contains 'preview'
-    cy.url().should('include', 'preveiw');
-
-    // * Verify the playbook name matches the one provided
-    cy.findByTestId('backstage-nav-bar').within(() => {
-        cy.findByText(playbookName).should('be.visible');
-    });
+    cy.url().should('include', 'preview');
 }
