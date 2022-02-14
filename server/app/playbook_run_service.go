@@ -1936,46 +1936,6 @@ func sliceContains(strs []string, target string) bool {
 	return false
 }
 
-// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
-// playbookRun.MessageOnJoin if it exists. Returns true if the message was sent.
-func (s *PlaybookRunServiceImpl) CheckAndSendMessageOnJoin(userID, givenPlaybookRunID, channelID string) bool {
-	hasViewed := s.store.HasViewedChannel(userID, channelID)
-
-	if hasViewed {
-		return true
-	}
-
-	playbookRunID, err := s.store.GetPlaybookRunIDForChannel(channelID)
-	if err != nil {
-		s.logger.Errorf("failed to resolve playbook run for channelID '%s'; error: %s", channelID, err.Error())
-		return false
-	}
-
-	if playbookRunID != givenPlaybookRunID {
-		s.logger.Errorf("endpoint's playbookRunID does not match channelID's playbookRunID")
-		return false
-	}
-
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		s.logger.Errorf("failed to resolve playbook run for playbookRunID '%s'; error: %s", playbookRunID, err.Error())
-		return false
-	}
-
-	if err = s.store.SetViewedChannel(userID, channelID); err != nil {
-		// If duplicate entry, userID has viewed channelID. If not a duplicate, assume they haven't.
-		return errors.Is(err, ErrDuplicateEntry)
-	}
-
-	if playbookRun.MessageOnJoin != "" {
-		s.poster.EphemeralPost(userID, channelID, &model.Post{
-			Message: playbookRun.MessageOnJoin,
-		})
-	}
-
-	return true
-}
-
 func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description string) error {
 	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
 	if err != nil {
