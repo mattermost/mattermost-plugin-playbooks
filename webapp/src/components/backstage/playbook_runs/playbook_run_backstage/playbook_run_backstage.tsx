@@ -440,7 +440,7 @@ const PlaybookRunBackstage = () => {
                         <Route path={`${match.url}/retrospective`}>
                             <Retrospective
                                 playbookRun={playbookRun}
-                                metricsConfigs={playbook?.metrics || null}
+                                metricsConfigs={playbook?.metrics}
                                 deleteTimelineEvent={deleteTimelineEvent}
                                 setRetrospective={setRetrospective}
                                 setPublishedAt={setPublishedAt}

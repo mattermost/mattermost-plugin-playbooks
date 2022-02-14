@@ -198,8 +198,8 @@ describe('runs > edit_metrics', () => {
                     .tab().type('125');
 
                 // * Validate error messages
-                cy.getStyledComponent('ErrorText').eq(0).contains('Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.');
-                cy.getStyledComponent('ErrorText').eq(1).contains('Please enter a number, or leave the target blank.');
+                cy.getStyledComponent('ErrorText').eq(0).contains('Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00).');
+                cy.getStyledComponent('ErrorText').eq(1).contains('Please enter a number.');
 
                 // # Navigate to the overview tab and then back
                 cy.findByText('Overview').click({force: true});

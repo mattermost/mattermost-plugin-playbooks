@@ -70,6 +70,7 @@ const PlaybookPreview = (props: Props) => {
 };
 
 const Container = styled.main`
+    height: 100%;
     display: flex;
     flex-direction: row;
     justify-content: center;
