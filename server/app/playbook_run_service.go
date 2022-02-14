@@ -42,6 +42,7 @@ type PlaybookRunServiceImpl struct {
 	telemetry       PlaybookRunTelemetry
 	api             plugin.API
 	playbookService PlaybookService
+	actionService   ChannelActionService
 	permissions     *PermissionsService
 	licenseChecker  LicenseChecker
 }
@@ -92,6 +93,7 @@ func NewPlaybookRunService(
 	telemetry PlaybookRunTelemetry,
 	api plugin.API,
 	playbookService PlaybookService,
+	channelActionService ChannelActionService,
 	licenseChecker LicenseChecker,
 ) *PlaybookRunServiceImpl {
 	service := &PlaybookRunServiceImpl{
@@ -105,6 +107,7 @@ func NewPlaybookRunService(
 		httpClient:      httptools.MakeClient(pluginAPI),
 		api:             api,
 		playbookService: playbookService,
+		actionService:   channelActionService,
 		licenseChecker:  licenseChecker,
 	}
 
@@ -260,6 +263,24 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		playbookRun.Name = channel.Name
+	}
+
+	if pb != nil && pb.MessageOnJoinEnabled && pb.MessageOnJoin != "" {
+		welcomeAction := GenericChannelAction{
+			GenericChannelActionWithoutPayload: GenericChannelActionWithoutPayload{
+				ChannelID:   playbookRun.ChannelID,
+				Enabled:     true,
+				ActionType:  ActionTypeWelcomeMessage,
+				TriggerType: TriggerTypeNewMemberJoins,
+			},
+			Payload: WelcomeMessagePayload{
+				Message: pb.MessageOnJoin,
+			},
+		}
+
+		if _, err := s.actionService.Create(welcomeAction); err != nil {
+			s.logger.Errorf(errors.Wrapf(err, "unable to create welcome action for new run in channel %q", playbookRun.ChannelID).Error())
+		}
 	}
 
 	now := model.GetMillis()

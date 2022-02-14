@@ -458,10 +458,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.WebhookOnStatusUpdateURLs = pb.WebhookOnStatusUpdateURLs
 		}
 
-		if pb.MessageOnJoinEnabled {
-			playbookRun.MessageOnJoin = pb.MessageOnJoin
-		}
-
 		if pb.CategorizeChannelEnabled {
 			playbookRun.CategoryName = pb.CategoryName
 		}
