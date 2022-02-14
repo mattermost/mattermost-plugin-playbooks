@@ -2390,13 +2390,8 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 		return errors.Wrap(err, "failed to get publisher user")
 	}
 
-	playbook, err := s.playbookService.Get(playbookRunToPublish.PlaybookID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get playbook")
-	}
-
 	retrospectiveURL := getRunRetrospectiveURL("", playbookRunToPublish.ID)
-	post, err := s.buildRetrospectivePost(playbookRunToPublish, &playbook, publisherUser, retrospectiveURL)
+	post, err := s.buildRetrospectivePost(playbookRunToPublish, publisherUser, retrospectiveURL)
 	if err != nil {
 		return err
 	}
@@ -2429,17 +2424,26 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *PlaybookRun, playbook *Playbook, publisherUser *model.User, retrospectiveURL string) (*model.Post, error) {
-	metricsConfigs, err := json.Marshal(playbook.Metrics)
-	if err != nil {
-		s.pluginAPI.Log.Warn("cannot post retro, unable to marshal metrics configs")
-		return nil, err
-	}
+func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *PlaybookRun, publisherUser *model.User, retrospectiveURL string) (*model.Post, error) {
+	var metricsData, metricsConfigs []byte
+	// If run has metrics data, get metrics configs too and include them in custom post
+	if len(playbookRunToPublish.MetricsData) > 0 {
+		playbook, err := s.playbookService.Get(playbookRunToPublish.PlaybookID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get playbook")
+		}
 
-	metricsData, err := json.Marshal(playbookRunToPublish.MetricsData)
-	if err != nil {
-		s.pluginAPI.Log.Warn("cannot post retro, unable to marshal metrics data")
-		return nil, err
+		metricsConfigs, err = json.Marshal(playbook.Metrics)
+		if err != nil {
+			s.pluginAPI.Log.Warn("cannot post retro, unable to marshal metrics configs")
+			return nil, err
+		}
+
+		metricsData, err = json.Marshal(playbookRunToPublish.MetricsData)
+		if err != nil {
+			s.pluginAPI.Log.Warn("cannot post retro, unable to marshal metrics data")
+			return nil, err
+		}
 	}
 
 	return &model.Post{
