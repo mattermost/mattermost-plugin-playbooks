@@ -31,31 +31,34 @@ export const RetrospectivePost = (props: Props) => {
 
     const metricsConfigs: Array<Metric> = JSON.parse(props.post.props.metricsConfigs);
     const metricsData: Array<RunMetricData> = JSON.parse(props.post.props.metricsData);
+
     return (
         <>
             <TextBody>{mdText(props.post.message)}</TextBody>
             <CustomPostContainerVertical>
-                <HeaderGrid>
-                    {
-                        metricsConfigs?.map((mc) => {
-                            const inputIcon = getMetricInputIcon(mc.type, colorName);
-                            const md = metricsData.find((metric) => metric.metric_config_id === mc.id);
+                {metricsConfigs && <>
+                    <HeaderGrid>
+                        {
+                            metricsConfigs?.map((mc) => {
+                                const inputIcon = getMetricInputIcon(mc.type, colorName);
+                                const md = metricsData.find((metric) => metric.metric_config_id === mc.id);
 
-                            return (md &&
-                                <MetricInfo key={mc.id}>
-                                    <MetricIcon>
-                                        {inputIcon}
-                                    </MetricIcon>
-                                    <ViewContent>
-                                        <Title>{mc.title}</Title>
-                                        <Value>{metricToString(md.value, mc.type, true)}</Value>
-                                    </ViewContent>
-                                </MetricInfo>
-                            );
-                        })
-                    }
-                </HeaderGrid>
-                <Separator/>
+                                return (md &&
+                                    <MetricInfo key={mc.id}>
+                                        <MetricIcon>
+                                            {inputIcon}
+                                        </MetricIcon>
+                                        <ViewContent>
+                                            <Title>{mc.title}</Title>
+                                            <Value>{metricToString(md.value, mc.type, true)}</Value>
+                                        </ViewContent>
+                                    </MetricInfo>
+                                );
+                            })
+                        }
+                    </HeaderGrid>
+                    <Separator/>
+                </>}
                 <FullWidthContent>
                     <TextBody>{mdText(props.post.props.retrospectiveText)}</TextBody>
                 </FullWidthContent>
