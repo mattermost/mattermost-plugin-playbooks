@@ -79,14 +79,14 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdi
             if (error) {
                 return;
             }
-            const metricNewValue = stringToMetric(values[index], metricsConfigs[index].type);
+            const metricNewValue = {metric_config_id: metricsConfigs[index].id, value: stringToMetric(values[index], metricsConfigs[index].type)};
             const existingMetricIdx = newMetricsData.findIndex((m) => m.metric_config_id === metricsConfigs[index].id);
 
             // Update metric value if exists, otherwise append new element
             if (existingMetricIdx > -1) {
-                newMetricsData[existingMetricIdx].value = metricNewValue;
+                newMetricsData[existingMetricIdx] = metricNewValue;
             } else {
-                newMetricsData.push({metric_config_id: metricsConfigs[index].id, value: metricNewValue});
+                newMetricsData.push(metricNewValue);
             }
         });
         return newMetricsData;
