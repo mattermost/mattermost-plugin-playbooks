@@ -26,12 +26,14 @@ interface MetricsProps {
 const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdit, flushChanges}: MetricsProps, ref) => {
     const {formatMessage} = useIntl();
 
-    const initialValues = new Array(metricsConfigs.length);
-    metricsConfigs.forEach((mc, index) => {
-        const md = metricsData.find((metric) => metric.metric_config_id === mc.id);
-        initialValues[index] = md ? metricToString(md.value, mc.type) : '';
+    const [inputsValues, setInputsValues] = useState(() => {
+        const initialValues = new Array(metricsConfigs.length);
+        metricsConfigs.forEach((mc, index) => {
+            const md = metricsData.find((metric) => metric.metric_config_id === mc.id);
+            initialValues[index] = md ? metricToString(md.value, mc.type) : '';
+        });
+        return initialValues;
     });
-    const [inputsValues, setInputsValues] = useState(initialValues);
     const [inputsErrors, setInputsErrors] = useState(new Array(metricsConfigs.length).fill(''));
 
     // Handles click outside of metrics inputs to save changes
@@ -48,19 +50,19 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdi
                 const errors = verifyInputs(inputsValues, true);
                 setInputsErrors(errors);
 
-                return !hasErrors(errors);
+                return !errors.some((e) => e !== '');
             },
         }),
     );
 
-    const errorCurrencyInteger = formatMessage({defaultMessage: 'Please enter a number, or leave the target blank.'});
-    const errorDuration = formatMessage({defaultMessage: 'Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00), or leave the target blank.'});
+    const errorCurrencyInteger = formatMessage({defaultMessage: 'Please enter a number.'});
+    const errorDuration = formatMessage({defaultMessage: 'Please enter a duration in the format: dd:hh:mm (e.g., 12:00:00).'});
     const errorEmptyValue = formatMessage({defaultMessage: 'Please fill in the metric value.'});
 
     const verifyInputs = (values: string[], forPublishing = false): string[] => {
         const errors = new Array(metricsConfigs.length).fill('');
         values.forEach((value, index) => {
-            //If we do before publishing verification, consider empty value as invalid
+            // If we do before publishing verification, consider empty value as invalid
             if (forPublishing && value === '') {
                 errors[index] = errorEmptyValue;
             }
@@ -72,16 +74,19 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdi
     };
 
     function stringsToMetricsData(values: string[], errors: string[]) {
-        const newMetricsData = new Array<RunMetricData>();
+        const newMetricsData = [...metricsData];
         errors.forEach((error, index) => {
-            // When input value is invalid, remain existing metric value
             if (error) {
-                const metric = metricsData.find((m) => m.metric_config_id === metricsConfigs[index].id);
-                if (metric) {
-                    newMetricsData.push(metric);
-                }
+                return;
+            }
+            const metricNewValue = stringToMetric(values[index], metricsConfigs[index].type);
+            const existingMetricIdx = newMetricsData.findIndex((m) => m.metric_config_id === metricsConfigs[index].id);
+
+            // Update metric value if exists, otherwise append new element
+            if (existingMetricIdx > -1) {
+                newMetricsData[existingMetricIdx].value = metricNewValue;
             } else {
-                newMetricsData.push({metric_config_id: metricsConfigs[index].id, value: stringToMetric(values[index], metricsConfigs[index].type)});
+                newMetricsData.push({metric_config_id: metricsConfigs[index].id, value: metricNewValue});
             }
         });
         return newMetricsData;
@@ -105,7 +110,6 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdi
                     let placeholder = formatMessage({defaultMessage: ' Add value'});
                     let inputIcon = <DollarSign sizePx={18}/>;
                     if (mc.type === MetricType.Integer) {
-                        placeholder = formatMessage({defaultMessage: ' Add value'});
                         inputIcon = <PoundSign sizePx={18}/>;
                     } else if (mc.type === MetricType.Duration) {
                         placeholder = formatMessage({defaultMessage: ' Add value (in dd:hh:mm)'});
@@ -135,14 +139,5 @@ const MetricsData = forwardRef(({metricsData, metricsConfigs, isPublished, onEdi
         </div>
     );
 });
-
-function hasErrors(errors: string[]) {
-    for (let i = 0; i < errors.length; i++) {
-        if (errors[i] !== '') {
-            return true;
-        }
-    }
-    return false;
-}
 
 export default MetricsData;

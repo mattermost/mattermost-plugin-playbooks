@@ -37,7 +37,7 @@ const editDebounceDelayMilliseconds = 2000;
 
 interface Props {
     playbookRun: PlaybookRun;
-    metricsConfigs: Metric[] | null;
+    metricsConfigs?: Metric[];
     deleteTimelineEvent: (id: string) => void;
     setRetrospective: (retrospective: string) => void;
     setPublishedAt: (publishedAt: number) => void;
