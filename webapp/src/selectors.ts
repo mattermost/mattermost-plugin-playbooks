@@ -195,6 +195,9 @@ export const getProfileSetForChannel = (state: GlobalState, channelId: string) =
 export const isPostMenuModalVisible = (state: GlobalState): boolean =>
     pluginState(state).postMenuModalVisibility;
 
+export const isActionsModalVisible = (state: GlobalState): boolean =>
+    pluginState(state).postActionsModalVisibility;
+
 export const isCurrentUserAdmin = createSelector(
     'isCurrentUserAdmin',
     getCurrentUser,
