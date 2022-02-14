@@ -10,6 +10,7 @@ import {getCurrentTeam, getCurrentTeamId} from 'mattermost-redux/selectors/entit
 import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
 
 import {PlaybookRun, isPlaybookRun, StatusPost} from 'src/types/playbook_run';
+import {ChannelActionType, ChannelTriggerType} from 'src/types/channel_actions';
 
 import {navigateToUrl} from 'src/browser_routing';
 import {
@@ -25,6 +26,7 @@ import {
     fetchCheckAndSendMessageOnJoin,
     fetchPlaybookRunByChannel,
     fetchPlaybookRuns,
+    fetchChannelActions,
 } from 'src/client';
 import {clientId, hasViewedByChannelID, myPlaybookRunsMap} from 'src/selectors';
 
@@ -217,14 +219,15 @@ export const handleWebsocketChannelViewed = (getState: GetStateFunc, dispatch: D
     return async (msg: WebSocketMessage<{ channel_id: string }>) => {
         const channelId = msg.data.channel_id;
 
-        // If this isn't a playbook run channel, stop
-        const playbookRun = myPlaybookRunsMap(getState())[channelId];
-        if (!playbookRun) {
+        // If there are no welcome message actions enabled, stop
+        const actions = await fetchChannelActions(channelId, ChannelTriggerType.NewMemberJoins);
+        const welcomeAction = actions[ChannelActionType.WelcomeMessage];
+        if (!welcomeAction?.enabled) {
             return;
         }
 
         if (!hasViewedByChannelID(getState())[channelId]) {
-            const hasViewed = await fetchCheckAndSendMessageOnJoin(playbookRun.id, channelId);
+            const hasViewed = await fetchCheckAndSendMessageOnJoin(channelId);
             if (hasViewed) {
                 dispatch(setHasViewedChannel(channelId));
             }

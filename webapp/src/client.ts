@@ -147,8 +147,8 @@ export async function fetchPlaybookRunByChannel(channelId: string) {
     return data as PlaybookRun;
 }
 
-export async function fetchCheckAndSendMessageOnJoin(playbookRunID: string, channelId: string) {
-    const data = await doGet(`${apiUrl}/runs/${playbookRunID}/check-and-send-message-on-join/${channelId}`);
+export async function fetchCheckAndSendMessageOnJoin(channelId: string) {
+    const data = await doGet(`${apiUrl}/actions/channels/${channelId}/check-and-send-message-on-join`);
     return Boolean(data.viewed);
 }
 
