@@ -9,7 +9,7 @@ import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-import {getUsers} from 'mattermost-redux/selectors/entities/common';
+import {getUsers, getMyCurrentChannelMembership} from 'mattermost-redux/selectors/entities/common';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {IDMappedObjects} from 'mattermost-redux/types/utilities';
@@ -201,6 +201,14 @@ export const isCurrentUserAdmin = createSelector(
     (user) => {
         const rolesArray = user.roles.split(' ');
         return rolesArray.includes(General.SYSTEM_ADMIN_ROLE);
+    },
+);
+
+export const isCurrentUserChannelAdmin = createSelector(
+    'isCurrentUserChannelAdmin',
+    getMyCurrentChannelMembership,
+    (membership) => {
+        return membership?.scheme_admin || false;
     },
 );
 
