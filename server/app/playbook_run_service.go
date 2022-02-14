@@ -2390,8 +2390,13 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 		return errors.Wrap(err, "failed to get publisher user")
 	}
 
+	playbook, err := s.playbookService.Get(playbookRunToPublish.PlaybookID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get playbook")
+	}
+
 	retrospectiveURL := getRunRetrospectiveURL("", playbookRunToPublish.ID)
-	post, err := s.buildRetrospectivePost(playbookRunToPublish, publisherUser, retrospectiveURL)
+	post, err := s.buildRetrospectivePost(playbookRunToPublish, &playbook, publisherUser, retrospectiveURL)
 	if err != nil {
 		return err
 	}
@@ -2424,12 +2429,16 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	return nil
 }
 
-func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *PlaybookRun, publisherUser *model.User, retrospectiveURL string) (*model.Post, error) {
-	//TODO: get metric configs!!
-
-	metrics, err := json.Marshal(playbookRunToPublish.MetricsData)
+func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *PlaybookRun, playbook *Playbook, publisherUser *model.User, retrospectiveURL string) (*model.Post, error) {
+	metricsConfigs, err := json.Marshal(playbook.Metrics)
 	if err != nil {
-		s.pluginAPI.Log.Warn("cannot post retro, unable to marshal metrics")
+		s.pluginAPI.Log.Warn("cannot post retro, unable to marshal metrics configs")
+		return nil, err
+	}
+
+	metricsData, err := json.Marshal(playbookRunToPublish.MetricsData)
+	if err != nil {
+		s.pluginAPI.Log.Warn("cannot post retro, unable to marshal metrics data")
 		return nil, err
 	}
 
@@ -2438,7 +2447,8 @@ func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *Pl
 		Type:      "custom_retro",
 		ChannelId: playbookRunToPublish.ChannelID,
 		Props: map[string]interface{}{
-			"metricsData":       string(metrics),
+			"metricsData":       string(metricsData),
+			"metricsConfigs":    string(metricsConfigs),
 			"retrospectiveText": playbookRunToPublish.Retrospective,
 		},
 	}, nil
