@@ -10,6 +10,7 @@ import Icon from '@mdi/react';
 import {mdiClipboardPlayOutline} from '@mdi/js';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+import {Client4} from 'mattermost-redux/client';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
@@ -321,8 +322,9 @@ const Playbook = () => {
                         onClick={
                             playbook.title === 'Learn how to use playbooks' ? async () => {
                                 const playbookRun = await createPlaybookRun(playbook.id, currentUserId, playbook.team_id, `${currentUser.username}'s onboarding run`, playbook.description);
-                                const pathname = `/${team.name}/channels/${playbookRun.channel_id}`;
-                                const search = '?forceRHSOpen&&openTakeATourDialog';
+                                const channel = await Client4.getChannel(playbookRun.channel_id);
+                                const pathname = `/${team.name}/channels/${channel.name}`;
+                                const search = '?forceRHSOpen&openTakeATourDialog';
                                 navigateToUrl({pathname, search});
                             } : runPlaybook
                         }

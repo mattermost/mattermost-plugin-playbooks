@@ -57,7 +57,7 @@ describe('playbooks > edit', () => {
                 cy.get('#root').findByText('Blank').click();
                 cy.get('#playbooks_create').findByText('Create playbook').click();
 
-                // # Add a slash command to a ste
+                // # Add a slash command to a step
                 cy.get('#root').findByText('Add a slash command').click();
 
                 // * Verify the slash command input field now has focus
