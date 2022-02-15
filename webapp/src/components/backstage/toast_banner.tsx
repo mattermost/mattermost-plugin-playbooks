@@ -52,7 +52,7 @@ const StyledText = styled.div`
 
     margin: 0px 8px;
     
-    color: var(--sidebar-text);
+    color: var(--center-channel-bg);
 `;
 
 const ToastContainer = styled.div`
@@ -64,11 +64,11 @@ const ToastContainer = styled.div`
 `;
 
 const StyledCheck = styled.i`
-    color: var(--sidebar-text);
+    color: var(--center-channel-bg);
 `;
 
 const StyledClose = styled.i`
-    color: var(--sidebar-text-60);
+    color: var(--center-channel-bg-56);
 `;
 
 interface ToastType {
