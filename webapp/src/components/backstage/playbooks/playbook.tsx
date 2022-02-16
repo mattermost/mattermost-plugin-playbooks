@@ -136,7 +136,7 @@ const Playbook = () => {
 
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
 
-    const isTutorial = playbook && playbook.title === tutorialPlaybookTitle;
+    const isTutorial = playbook?.title === tutorialPlaybookTitle;
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -150,7 +150,7 @@ const Playbook = () => {
     };
 
     const runPlaybook = async () => {
-        if (isTutorial) {
+        if (playbook && isTutorial) {
             const playbookRun = await createPlaybookRun(playbook.id, currentUserId, playbook.team_id, `${currentUser.username}'s onboarding run`, playbook.description);
             const channel = await Client4.getChannel(playbookRun.channel_id);
             const pathname = `/${team.name}/channels/${channel.name}`;
