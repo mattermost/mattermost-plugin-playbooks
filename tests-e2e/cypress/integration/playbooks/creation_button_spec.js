@@ -16,8 +16,6 @@ describe('playbooks > creation button', () => {
             testTeam = team;
             testUser = user;
 
-            cy.apiDisableTutorials(user.id);
-
             cy.apiCreateUser().then(({user: user2}) => {
                 testUser2 = user2;
                 cy.apiAddUserToTeam(testTeam.id, testUser2.id);

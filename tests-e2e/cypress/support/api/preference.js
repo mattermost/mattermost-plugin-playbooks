@@ -291,6 +291,12 @@ Cypress.Commands.add('apiDisableTutorials', (userId) => {
             name: userId,
             value: '999',
         },
+        {
+            user_id: userId,
+            category: 'tutorial_step',
+            name: userId,
+            value: '999'
+        }
     ];
 
     return cy.apiSaveUserPreference(preferences, userId);
