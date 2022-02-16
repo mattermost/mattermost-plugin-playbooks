@@ -15,8 +15,6 @@ describe('playbooks > edit_metrics', () => {
             testTeam = team;
             testUser = user;
 
-            cy.apiDisableTutorials(user.id);
-
             // # Login as testUser
             cy.apiLogin(testUser);
         });

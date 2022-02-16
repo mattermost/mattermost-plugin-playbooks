@@ -19,8 +19,6 @@ describe('playbooks > overview', () => {
             testTeam = team;
             testUser = user;
 
-            cy.apiDisableTutorials(user.id);
-
             // # Create another user
             cy.apiCreateUser().then(({user: anotherUser}) => {
                 // # Login as testUser
