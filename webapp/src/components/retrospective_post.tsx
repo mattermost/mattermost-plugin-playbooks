@@ -36,10 +36,11 @@ export const RetrospectivePost = (props: Props) => {
         <>
             <TextBody>{mdText(props.post.message)}</TextBody>
             <CustomPostContainerVertical>
-                {metricsConfigs && <>
+                {metricsConfigs &&
+                <>
                     <HeaderGrid>
                         {
-                            metricsConfigs?.map((mc) => {
+                            metricsConfigs.map((mc) => {
                                 const inputIcon = getMetricInputIcon(mc.type, colorName);
                                 const md = metricsData.find((metric) => metric.metric_config_id === mc.id);
 
@@ -100,17 +101,27 @@ const ViewContent = styled.div`
 const Title = styled.div`
     font-size: 12px;
     line-height: 16px;
-    font-weight: 600;    
+    font-weight: 600;
     color: rgba(var(--center-channel-color-rgb), 0.64);
     margin: 2px 0px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
 `;
 
 const Value = styled.div`
     font-size: 16px;
     line-height: 24px;
     color: var(--center-channel-color);
-    font-weight: normal;    
+    font-weight: normal;
     margin: 2px 0px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
 `;
 
 const CustomPostContainerVertical = styled(CustomPostContainer)`
