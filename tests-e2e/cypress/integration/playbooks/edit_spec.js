@@ -18,11 +18,8 @@ describe('playbooks > edit', () => {
             testTeam = team;
             testUser = user;
 
-            cy.apiDisableTutorials(user.id);
-
             cy.apiCreateCustomAdmin().then(({sysadmin}) => {
                 testSysadmin = sysadmin;
-                cy.apiDisableTutorials(testSysadmin.id);
             });
 
             // # Create a second test user in this team
