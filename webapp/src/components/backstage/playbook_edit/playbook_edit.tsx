@@ -21,6 +21,7 @@ import {
     Checklist,
     emptyPlaybook,
     Metric,
+    setPlaybookDefaults,
 } from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/playbook_edit/stages_and_steps_edit';
@@ -60,20 +61,6 @@ const FetchingStateType = {
     fetched: 'fetched',
     notFound: 'notfound',
 };
-
-// setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
-const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
-    ...playbook,
-    title: playbook.title.trim() || 'Untitled playbook',
-    checklists: playbook.checklists.map((checklist) => ({
-        ...checklist,
-        title: checklist.title || 'Untitled checklist',
-        items: checklist.items.map((item) => ({
-            ...item,
-            title: item.title || 'Untitled task',
-        })),
-    })),
-});
 
 export const tabInfo = [
     {id: 'checklists', name: <FormattedMessage defaultMessage='Checklists'/>},
