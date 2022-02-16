@@ -60,6 +60,8 @@ interface MatchParams {
     playbookId: string
 }
 
+const tutorialPlaybookTitle = 'Learn how to use playbooks';
+
 const FetchingStateType = {
     loading: 'loading',
     fetched: 'fetched',
@@ -134,6 +136,8 @@ const Playbook = () => {
 
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
 
+    const isTutorial = playbook?.title === tutorialPlaybookTitle;
+
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
     const activeNavItemStyle = {
@@ -145,7 +149,15 @@ const Playbook = () => {
         navigateToPluginUrl('/playbooks');
     };
 
-    const runPlaybook = () => {
+    const runPlaybook = async () => {
+        if (isTutorial) {
+            const playbookRun = await createPlaybookRun(playbook?.id, currentUserId, playbook?.team_id, `${currentUser.username}'s onboarding run`, playbook?.description);
+            const channel = await Client4.getChannel(playbookRun.channel_id);
+            const pathname = `/${team.name}/channels/${channel.name}`;
+            const search = '?forceRHSOpen&openTakeATourDialog';
+            navigateToUrl({pathname, search});
+            return;
+        }
         if (playbook?.id) {
             telemetryEventForPlaybook(playbook.id, 'playbook_dashboard_run_clicked');
             navigateToUrl(`/${team.name || ''}/_playbooks/${playbook?.id || ''}/run`);
@@ -319,15 +331,7 @@ const Playbook = () => {
                         </OverlayTrigger>
                     </SecondaryButtonLargerRightStyled>
                     <PrimaryButtonLarger
-                        onClick={
-                            playbook.title === 'Learn how to use playbooks' ? async () => {
-                                const playbookRun = await createPlaybookRun(playbook.id, currentUserId, playbook.team_id, `${currentUser.username}'s onboarding run`, playbook.description);
-                                const channel = await Client4.getChannel(playbookRun.channel_id);
-                                const pathname = `/${team.name}/channels/${channel.name}`;
-                                const search = '?forceRHSOpen&openTakeATourDialog';
-                                navigateToUrl({pathname, search});
-                            } : runPlaybook
-                        }
+                        onClick={runPlaybook}
                         disabled={!enableRunPlaybook}
                         title={enableRunPlaybook ? formatMessage({defaultMessage: 'Run Playbook'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
                         data-testid='run-playbook'
@@ -336,7 +340,7 @@ const Playbook = () => {
                             path={mdiClipboardPlayOutline}
                             size={1.25}
                         />
-                        {playbook.title === 'Learn how to use playbooks' ? formatMessage({defaultMessage: 'Start a test run'}) : formatMessage({defaultMessage: 'Run'})}
+                        {isTutorial ? formatMessage({defaultMessage: 'Start a test run'}) : formatMessage({defaultMessage: 'Run'})}
                     </PrimaryButtonLarger>
                     {showRunButtonTutorial &&
                         <TutorialTourTip
