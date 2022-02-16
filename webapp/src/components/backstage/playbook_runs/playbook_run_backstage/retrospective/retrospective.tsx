@@ -119,9 +119,11 @@ export const Retrospective = (props: Props) => {
         );
         publishComponent = (
             <>
-                <i className={'icon icon-check-all'}/>
-                <span>{''}</span>
-                {formatMessage({defaultMessage: 'Published {timestamp}'}, {timestamp: publishedAt})}
+                <TimestampContainer>
+                    <i className={'icon icon-check-all'}/>
+                    <span>{''}</span>
+                    {formatMessage({defaultMessage: 'Published {timestamp}'}, {timestamp: publishedAt})}
+                </TimestampContainer>
                 <DisabledPrimaryButtonSmaller>
                     <TextContainer>{publishButtonText}</TextContainer>
                 </DisabledPrimaryButtonSmaller>
@@ -241,4 +243,10 @@ const HeaderButtonsRight = styled.div`
     > * {
         margin-left: 4px;
     }
+`;
+
+const TimestampContainer = styled.div`
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-weight: normal;
+    margin-right: 16px;
 `;
