@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import StatusBadge from 'src/components/backstage/status_badge';
 
@@ -74,14 +74,6 @@ export const SecondaryButtonLargerRight = styled(SecondaryButtonLarger)`
 
 export const ExpandRight = styled.div`
     margin-left: auto;
-`;
-
-export const HorizontalSpacer = styled.div<{ size: number }>`
-    margin-left: ${(props) => props.size}px;
-`;
-
-export const VerticalSpacer = styled.div<{ size: number }>`
-    margin-top: ${(props) => props.size}px;
 `;
 
 export const PrimaryButtonRight = styled(PrimaryButton)`

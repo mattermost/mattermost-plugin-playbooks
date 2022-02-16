@@ -30,11 +30,11 @@ import {nearest} from 'src/utils';
 import Tooltip from 'src/components/widgets/tooltip';
 import WarningIcon from '../assets/icons/warning_icon';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
-import {VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
 import {makeUncontrolledConfirmModalDefinition} from 'src/components/widgets/confirmation_modal';
 import {modals} from 'src/webapp_globals';
 import {Checklist, ChecklistItemState} from 'src/types/playbook';
 import {openUpdateRunStatusModal} from 'src/actions';
+import {VerticalSpacer} from 'src/components/backstage/styles';
 
 const ID = 'playbooks_update_run_status_dialog';
 

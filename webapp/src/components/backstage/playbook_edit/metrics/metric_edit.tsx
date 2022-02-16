@@ -8,9 +8,9 @@ import {useIntl} from 'react-intl';
 import {Metric, MetricType} from 'src/types/playbook';
 import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import {VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {stringToTarget, targetToString} from 'src/components/backstage/playbook_edit/metrics/shared';
+import {VerticalSpacer} from 'src/components/backstage/styles';
 
 type SetState = (prevState: Metric) => Metric;
 

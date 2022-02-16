@@ -10,15 +10,16 @@ const GraphBoxContainer = styled.div`
 `;
 
 interface BarGraphProps {
-    title: string
-    xlabel?: string
-    data?: number[]
-    labels?: string[]
-    className?: string
-    color?: string
-    tooltipTitleCallback?: (xLabel: string) => string
-    tooltipLabelCallback?: (yLabel: number) => string
-    onClick?: (index: number) => void
+    title: string;
+    xlabel?: string;
+    data?: number[];
+    labels?: string[];
+    className?: string;
+    color?: string;
+    tooltipTitleCallback?: (xLabel: string) => string;
+    tooltipLabelCallback?: (yLabel: number) => string;
+    onClick?: (index: number) => void;
+    yAxesTicksCallback?: (val: number, index: number) => string;
 }
 
 const BarGraph = (props: BarGraphProps) => {
@@ -39,7 +40,7 @@ const BarGraph = (props: BarGraphProps) => {
                     scales: {
                         yAxes: [{
                             ticks: {
-                                callback: (val: any) => {
+                                callback: props.yAxesTicksCallback ? props.yAxesTicksCallback : (val: any) => {
                                     return (val % 1 === 0) ? val : null;
                                 },
                                 beginAtZero: true,
