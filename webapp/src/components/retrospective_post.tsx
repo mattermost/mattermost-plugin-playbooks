@@ -71,7 +71,7 @@ export const RetrospectivePost = (props: Props) => {
 const HeaderGrid = styled.div`
     width: 100%;
     display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     row-gap: 19px;
     place-items: flex-start center;
     justify-items: stretch;
@@ -108,7 +108,7 @@ const Title = styled.div`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 200px;
+    max-width: 220px;
 `;
 
 const Value = styled.div`
@@ -121,7 +121,7 @@ const Value = styled.div`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 200px;
+    max-width: 220px;
 `;
 
 const CustomPostContainerVertical = styled(CustomPostContainer)`
