@@ -159,7 +159,3 @@ func getAverage(nums []int64) int64 {
 	}
 	return sum / int64(len(nums))
 }
-
-func getMetricRollingAverageChange() {
-
-}
