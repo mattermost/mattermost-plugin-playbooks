@@ -304,6 +304,8 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 	return counts, daysAsTimes
 }
 
+// MetricOverallAverage returns list of average values of playbook's metrics.
+// Only published metrics values are included.
 func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []int64 {
 	query := s.store.builder.
 		Select("FLOOR(AVG(m.Value))").
@@ -327,8 +329,10 @@ func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []int64 {
 	return overallAverage
 }
 
+// MetricValueRange returns min and max values for each metric
+// Only published metrics are included.
 func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
-	// retrieve metric configs metricsConfigsIDs for playbook
+	// first retrieve metric configs metricsConfigsIDs for playbook
 	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
 	if err != nil {
 		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
@@ -340,6 +344,7 @@ func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
 		Max *int64
 	}
 
+	// for each metric config finds min and max values
 	valueRange := make([][]int64, len(metricsConfigsIDs))
 	for i, id := range metricsConfigsIDs {
 		query := s.store.builder.
@@ -360,6 +365,8 @@ func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
 	return valueRange
 }
 
+// MetricRollingValuesLastXRuns for each metric returns list of last `x` published values, starting from `offset`
+// first element in the list is most recent
 func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *StatsFilters) [][]int64 {
 	// retrieve metric configs metricsConfigsIDs for playbook
 	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
@@ -392,6 +399,8 @@ func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *St
 	return metricsValues
 }
 
+// MetricRollingAverageAndChange for each metric returns average of last `x` published values and
+// change with comparison to the previous period
 func (s *StatsStore) MetricRollingAverageAndChange(x int, filters *StatsFilters) (metricRollingAverage []int64, metricRollingAverageChange []int64) {
 	metricValuesWholePeriod := s.MetricRollingValuesLastXRuns(2*x, 0, filters)
 
