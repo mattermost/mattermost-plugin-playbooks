@@ -99,6 +99,7 @@ const RHSRunDetails = () => {
                     width={352}
                     autoTour={true}
                     punchOut={rhsContainerPunchout}
+                    telemetryTag={`tutorial_tip_Playbook_Run_Details_${RunDetailsTutorialSteps.SidePanel}_SidePanel`}
                 />
             )}
         </RHSContainer>
