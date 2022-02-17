@@ -267,3 +267,37 @@ Cypress.Commands.add('apiSaveJoinLeaveMessagesPreference', (userId, enable = tru
 
     return cy.apiSaveUserPreference([preference], userId);
 });
+
+/**
+ * Disables tutorials for user by marking them finished
+ */
+Cypress.Commands.add('apiDisableTutorials', (userId) => {
+    const preferences = [
+        {
+            user_id: userId,
+            category: 'playbook_edit',
+            name: userId,
+            value: '999',
+        },
+        {
+            user_id: userId,
+            category: 'tutorial_pb_run_details',
+            name: userId,
+            value: '999',
+        },
+        {
+            user_id: userId,
+            category: 'playbook_preview',
+            name: userId,
+            value: '999',
+        },
+        {
+            user_id: userId,
+            category: 'tutorial_step',
+            name: userId,
+            value: '999'
+        }
+    ];
+
+    return cy.apiSaveUserPreference(preferences, userId);
+});
