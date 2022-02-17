@@ -19,9 +19,10 @@ import RHSChecklistList from 'src/components/rhs/rhs_checklist_list';
 import {usePrevious} from 'src/hooks/general';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 import TutorialTourTip, {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip';
-import {RunDetailsTutorialSteps, SKIPPED, TutorialTourCategories} from 'src/components/tutorial/tours';
+import {FINISHED, RunDetailsTutorialSteps, SKIPPED, TutorialTourCategories} from 'src/components/tutorial/tours';
 import {displayRhsRunDetailsTourDialog} from 'src/actions';
 import {useTutorialStepper} from '../tutorial/tutorial_tour_tip/manager';
+import {browserHistory} from 'src/webapp_globals';
 
 const RHSRunDetails = () => {
     const dispatch = useDispatch();
@@ -40,8 +41,15 @@ const RHSRunDetails = () => {
     }, [playbookRun?.current_status]);
 
     useEffect(() => {
-        const isRunDetailTour = false;
-        if (runDetailsStep === null && isRunDetailTour) {
+        let isRunDetailTour = false;
+        const url = new URL(window.location.href);
+        const searchParams = new URLSearchParams(url.searchParams);
+        if (searchParams.has('openTakeATourDialog')) {
+            isRunDetailTour = true;
+            searchParams.delete('openTakeATourDialog');
+            browserHistory.replace({pathname: url.pathname, search: searchParams.toString()});
+        }
+        if ((runDetailsStep === null || parseInt(runDetailsStep, 10) === FINISHED) && isRunDetailTour) {
             dispatch(displayRhsRunDetailsTourDialog({
                 onConfirm: () => setRunDetailsStep(RunDetailsTutorialSteps.SidePanel),
                 onDismiss: () => setRunDetailsStep(SKIPPED),
