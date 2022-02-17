@@ -121,7 +121,7 @@ commands:
             TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
             TOKEN=${TOKEN//$'\r'/}
             STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr -m 5)
-            if [[ $STATUSCODE == 28 ]]; then echo "ignoring timeout" && exit 0 fi
+            if [[ $STATUSCODE == 28 ]]; then echo "ignoring timeout" && exit 0; fi
       - *restore_cypress_cache
       - run:
           name: Getting Cypress & JavaScript dependencies
