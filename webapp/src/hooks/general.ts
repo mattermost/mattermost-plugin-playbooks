@@ -349,6 +349,12 @@ export function useAllowPlaybookStatsView() {
     return useSelector(isE20LicensedOrDevelopment);
 }
 
+// useAllowPlaybookAndRunMetrics returns whether the server is licensed to
+// enter and show playbook and run metrics
+export function useAllowPlaybookAndRunMetrics() {
+    return useSelector(isE20LicensedOrDevelopment);
+}
+
 // useAllowRetrospectiveAccess returns whether the server is licenced for
 // the retrospective feature.
 export function useAllowRetrospectiveAccess() {

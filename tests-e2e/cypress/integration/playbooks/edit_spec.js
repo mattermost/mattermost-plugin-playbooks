@@ -51,7 +51,7 @@ describe('playbooks > edit', () => {
                 cy.visit('/playbooks/playbooks');
 
                 // # Start a blank playbook
-                cy.get('#root').findByText('Blank').click();
+                cy.findByTestId('titlePlaybook').findByText('Create playbook').click();
                 cy.get('#playbooks_create').findByText('Create playbook').click();
 
                 // # Add a slash command to a step
@@ -76,7 +76,7 @@ describe('playbooks > edit', () => {
                 cy.visit('/playbooks/playbooks');
 
                 // # Start a blank playbook
-                cy.get('#root').findByText('Blank').click();
+                cy.findByTestId('titlePlaybook').findByText('Create playbook').click();
                 cy.get('#playbooks_create').findByText('Create playbook').click();
 
                 // # Add a slash command to a step
@@ -106,7 +106,7 @@ describe('playbooks > edit', () => {
                 cy.visit('/playbooks/playbooks');
 
                 // # Start a blank playbook
-                cy.get('#root').findByText('Blank').click();
+                cy.findByTestId('titlePlaybook').findByText('Create playbook').click();
                 cy.get('#playbooks_create').findByText('Create playbook').click();
 
                 // # Add a slash command to a step
