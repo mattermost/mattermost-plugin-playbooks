@@ -60,9 +60,7 @@ const MetricsRunListHeader = ({metricsInfo, fetchParams, setFetchParams}: Props)
                             direction={fetchParams.direction || 'desc'}
                             active={fetchParams.sort === `metric${idx}`}
 
-                            // TODO: when we get sorting by metric supported on the backend:
-                            //onClick={() => colHeaderClicked(idx)}
-                            onClick={() => null}
+                            onClick={() => colHeaderClicked(idx)}
                         />
                     </div>
                 ))}

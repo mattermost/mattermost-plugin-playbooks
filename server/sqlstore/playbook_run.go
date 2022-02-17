@@ -36,7 +36,7 @@ type sqlPlaybookRun struct {
 	ConcatenatedBroadcastChannelIDs       string
 	ConcatenatedWebhookOnCreationURLs     string
 	ConcatenatedWebhookOnStatusUpdateURLs string
-	Metric                                int64
+	Metric                                null.Int
 }
 
 type sqlRunMetricData struct {
@@ -88,6 +88,8 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
+	case app.SortByMetric0, app.SortByMetric1, app.SortByMetric2, app.SortByMetric3:
+		// Will handle below
 	default:
 		return sq.SelectBuilder{}, errors.Errorf("unsupported sort parameter '%s'", options.Sort)
 	}
@@ -105,8 +107,6 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 		return sq.SelectBuilder{}, errors.Errorf("unsupported direction parameter '%s'", options.Direction)
 	}
 
-	builder = builder.OrderByClause(fmt.Sprintf("%s %s", sort, direction))
-
 	page := options.Page
 	perPage := options.PerPage
 	if page < 0 {
@@ -119,6 +119,39 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 	builder = builder.
 		Offset(uint64(page * perPage)).
 		Limit(uint64(perPage))
+
+	switch options.Sort {
+	case app.SortByMetric0, app.SortByMetric1, app.SortByMetric2, app.SortByMetric3:
+		if options.PlaybookID == "" {
+			return sq.SelectBuilder{}, errors.New("sorting by metric requires a playbook_id")
+		}
+
+		ordering := 0
+		switch options.Sort {
+		case app.SortByMetric1:
+			ordering = 1
+		case app.SortByMetric2:
+			ordering = 2
+		case app.SortByMetric3:
+			ordering = 3
+		}
+
+		// Since we're sorting by metric, we need to create the correct metric column to sort by
+		builder = builder.Column(
+			sq.Alias(
+				sq.Select("m.Value").
+					From("IR_Metric AS m").
+					InnerJoin("IR_MetricConfig AS mc ON (mc.ID = m.MetricConfigID)").
+					Where("mc.DeleteAt = 0").
+					Where(sq.Eq{"mc.PlaybookID": options.PlaybookID}).
+					Where("m.IncidentID = i.ID").
+					Where(sq.Eq{"mc.Ordering": ordering}),
+				"Metric",
+			)).
+			OrderByClause("Metric " + direction)
+	default:
+		builder = builder.OrderByClause(fmt.Sprintf("%s %s", sort, direction))
+	}
 
 	return builder, nil
 }
@@ -313,6 +346,9 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		return nil, errors.Wrap(err, "could not begin transaction")
 	}
 	defer s.store.finalizeTransaction(tx)
+
+	sqlStmnt, args, _ := queryForResults.ToSql()
+	fmt.Printf("<><> SQL: %s ARGS: %v", sqlStmnt, args)
 
 	var rawPlaybookRuns []sqlPlaybookRun
 	if err = s.store.selectBuilder(tx, &rawPlaybookRuns, queryForResults); err != nil {
