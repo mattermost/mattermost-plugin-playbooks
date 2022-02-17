@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"testing"
 
@@ -411,7 +412,7 @@ func TestMetricsStats(t *testing.T) {
 			t.Run(testCase.Playbook.Title+"-MetricOverallAverage", func(t *testing.T) {
 				actual := statsStore.MetricOverallAverage(&filters)
 
-				expected := getMetricOverallAverage(len(testCase.publishedRunsWithMetrics), 0, &testCase)
+				expected := getMetricRollingAverage(len(testCase.publishedRunsWithMetrics), 0, &testCase)
 				require.Equal(t, expected, actual)
 			})
 
@@ -491,19 +492,22 @@ func generateNames(num int) []string {
 	return names
 }
 
-func getMetricOverallAverage(x, offset int, testCase *MetricStatsTest) []int64 {
+func getMetricRollingAverage(x, offset int, testCase *MetricStatsTest) []int64 {
 	averages := make([]int64, 0)
 
 	sums := make(map[string]int64)
-	for _, run := range testCase.publishedRunsWithMetrics {
+	numRuns := len(testCase.publishedRunsWithMetrics)
+	for i := offset; i < offset+x && i < numRuns; i++ {
+		run := testCase.publishedRunsWithMetrics[numRuns-i-1]
 		for _, m := range run.MetricsData {
 			sums[m.MetricConfigID] += m.Value.Int64
 		}
 	}
 
+	count := math.Min(float64(x), float64(numRuns))
 	for _, mc := range testCase.Playbook.Metrics {
 		if val, ok := sums[mc.ID]; ok {
-			averages = append(averages, val/int64(len(testCase.publishedRunsWithMetrics)))
+			averages = append(averages, val/int64(count))
 		}
 	}
 	return averages
