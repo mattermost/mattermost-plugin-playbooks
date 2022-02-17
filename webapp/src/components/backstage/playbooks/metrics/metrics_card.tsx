@@ -26,6 +26,31 @@ const MetricsCard = ({playbook, playbookStats, index}: Props) => {
     const valueTransformFn = playbook.metrics[index].type === MetricType.Duration ?
         (val: number) => formatDuration(Duration.fromMillis(val), 'narrow', 'truncate') : (val: number) => val;
 
+    const style = getComputedStyle(document.body);
+    const buttonBg = style.getPropertyValue('--button-bg');
+    const annotation = {
+        type: 'line',
+        mode: 'horizontal',
+        borderColor: buttonBg,
+        borderWidth: 1,
+        scaleID: 'y-axis-0',
+        value: stats.target,
+        enabled: Boolean(stats.target),
+        label: {
+            backgroundColor: 'transparent',
+            fontColor: buttonBg,
+            fontStyle: 'normal',
+            content: transformFn(stats.target || 0),
+            position: 'left',
+            yAdjust: -6,
+            enabled: Boolean(stats.target),
+        },
+    };
+
+    const title = playbook.metrics[index].title;
+    const titleEllipsis = title.substring(0, 32) + (title.length > 32 ? '...' : '');
+    const chartTitle = titleEllipsis + ' ' + formatMessage({defaultMessage: 'per run over the last 10 runs'});
+
     return (
         <Container>
             <Card>
@@ -63,13 +88,20 @@ const MetricsCard = ({playbook, playbookStats, index}: Props) => {
             <HorizontalSpacer size={16}/>
             <Card>
                 <BarGraph
-                    title={playbook.metrics[index].title + ' ' + formatMessage({defaultMessage: 'per run over the last 10 runs'})}
+                    title={chartTitle}
                     labels={['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']}
                     data={stats.rolling_values}
                     color={'--center-channel-color-48'}
                     yAxesTicksCallback={(val, idx) => (idx % 2 === 0 ? '' : valueTransformFn(val).toString())}
                     tooltipTitleCallback={(label) => `Run #${label}`}
                     tooltipLabelCallback={(val) => transformFn(val).toString()}
+                    options={{
+                        annotation: {
+                            annotations: [
+                                annotation,
+                            ],
+                        },
+                    }}
                 />
             </Card>
         </Container>

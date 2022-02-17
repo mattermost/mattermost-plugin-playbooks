@@ -3,6 +3,8 @@
 
 import React from 'react';
 import {Bar} from 'react-chartjs-2';
+import * as chartjs from 'chart.js';
+import 'chartjs-plugin-annotation';
 import styled from 'styled-components';
 
 const GraphBoxContainer = styled.div`
@@ -20,6 +22,7 @@ interface BarGraphProps {
     tooltipLabelCallback?: (yLabel: number) => string;
     onClick?: (index: number) => void;
     yAxesTicksCallback?: (val: number, index: number) => string;
+    options?: any;
 }
 
 const BarGraph = (props: BarGraphProps) => {
@@ -27,6 +30,7 @@ const BarGraph = (props: BarGraphProps) => {
     const centerChannelFontColor = style.getPropertyValue('--center-channel-color');
     const colorName = props.color ? props.color : '--button-bg';
     const color = style.getPropertyValue(colorName);
+
     return (
         <GraphBoxContainer className={props.className}>
             <Bar
@@ -96,12 +100,12 @@ const BarGraph = (props: BarGraphProps) => {
                     },
                     maintainAspectRatio: false,
                     responsive: true,
+                    ...props.options,
                 }}
                 data={{
                     labels: props.labels,
                     datasets: [{
                         fill: false,
-                        tension: 0,
                         backgroundColor: color,
                         borderColor: color,
                         pointBackgroundColor: color,
