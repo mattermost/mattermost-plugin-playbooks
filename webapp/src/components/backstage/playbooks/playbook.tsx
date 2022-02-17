@@ -352,6 +352,7 @@ const Playbook = () => {
                             autoTour={true}
                             width={352}
                             punchOut={punchoutTitleRow}
+                            telemetryTag={`tutorial_tip_Playbook_Preview_${PlaybookPreviewTutorialSteps.RunButton}_RunButton`}
                         />
                     }
                 </TitleRow>
