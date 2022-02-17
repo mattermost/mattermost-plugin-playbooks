@@ -54,10 +54,7 @@ const MetricsRunList = ({
     };
 
     return (
-        <PlaybookRunList
-            id='playbookRunList'
-            className='PlaybookRunList'
-        >
+        <PlaybookRunList id='playbookRunList'>
             <Filters
                 fetchParams={fetchParams}
                 setFetchParams={setFetchParams}

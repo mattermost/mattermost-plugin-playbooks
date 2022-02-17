@@ -347,9 +347,6 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 	}
 	defer s.store.finalizeTransaction(tx)
 
-	sqlStmnt, args, _ := queryForResults.ToSql()
-	fmt.Printf("<><> SQL: %s ARGS: %v", sqlStmnt, args)
-
 	var rawPlaybookRuns []sqlPlaybookRun
 	if err = s.store.selectBuilder(tx, &rawPlaybookRuns, queryForResults); err != nil {
 		return nil, errors.Wrap(err, "failed to query for playbook runs")
