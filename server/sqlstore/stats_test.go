@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"testing"
 
@@ -295,19 +294,6 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 	}
 }
 
-/*
-Test cases:
-	* Playbook no metrics: no runs, active runs, published runs
-	* Playbook with metrics, no run
-	* Playbook with metrics and active runs, no published retro
-	* Playbook with metrics and active runs with metrics, no published retro
-	* Playbook with metrics, active runs and few published runs
-	* Playbook with metrics, active runs and lots of published runs
-
-
-	playbook, numMetrics, numActiveRuns, numPublishedRuns, activeRuns, publishedRuns
-
-*/
 type MetricStatsTest struct {
 	Playbook                 *app.Playbook
 	numMetrics               int
@@ -434,6 +420,23 @@ func TestMetricsStats(t *testing.T) {
 				expected = getMetricRollingValuesLastXRuns(x, x, &testCase)
 				require.Equal(t, expected, actual)
 			})
+
+			t.Run(testCase.Playbook.Title+"-MetricRollingAverageAndChange", func(t *testing.T) {
+				period := 4
+				actualAverage, actualChange := statsStore.MetricRollingAverageAndChange(period, &filters)
+
+				expectedAverage := getMetricRollingAverage(period, 0, &testCase)
+				prevPeriodAverage := getMetricRollingAverage(period, period, &testCase)
+				expectedChange := make([]int64, 0)
+				for i, num := range prevPeriodAverage {
+					if num == 0 {
+						continue
+					}
+					expectedChange = append(expectedChange, expectedAverage[i]*100/num-100)
+				}
+				require.Equal(t, expectedAverage, actualAverage)
+				require.Equal(t, expectedChange, actualChange)
+			})
 		}
 	}
 }
@@ -496,15 +499,16 @@ func getMetricRollingAverage(x, offset int, testCase *MetricStatsTest) []int64 {
 	averages := make([]int64, 0)
 
 	sums := make(map[string]int64)
+	count := 0
 	numRuns := len(testCase.publishedRunsWithMetrics)
 	for i := offset; i < offset+x && i < numRuns; i++ {
 		run := testCase.publishedRunsWithMetrics[numRuns-i-1]
+		count++
 		for _, m := range run.MetricsData {
 			sums[m.MetricConfigID] += m.Value.Int64
 		}
 	}
 
-	count := math.Min(float64(x), float64(numRuns))
 	for _, mc := range testCase.Playbook.Metrics {
 		if val, ok := sums[mc.ID]; ok {
 			averages = append(averages, val/int64(count))

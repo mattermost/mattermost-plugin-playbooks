@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"time"
@@ -391,6 +392,29 @@ func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *St
 	return metricsValues
 }
 
+func (s *StatsStore) MetricRollingAverageAndChange(x int, filters *StatsFilters) (metricRollingAverage []int64, metricRollingAverageChange []int64) {
+	metricValuesWholePeriod := s.MetricRollingValuesLastXRuns(2*x, 0, filters)
+
+	if len(metricValuesWholePeriod) == 0 {
+		return []int64{}, []int64{}
+	}
+
+	firstPeriodEnd := int(math.Min(float64(x), float64(len(metricValuesWholePeriod[0]))))
+	metricRollingAverage = getMetricRollingAverageForPeriod(metricValuesWholePeriod, 0, firstPeriodEnd)
+
+	secondPeriodEnd := int(math.Min(float64(2*x), float64(len(metricValuesWholePeriod[0]))))
+	prevPeriodAverages := getMetricRollingAverageForPeriod(metricValuesWholePeriod, firstPeriodEnd, secondPeriodEnd)
+	metricRollingAverageChange = make([]int64, 0)
+	for i, num := range prevPeriodAverages {
+		// if previous value was zero, increase percentage can't be defined
+		if num == 0 {
+			continue
+		}
+		metricRollingAverageChange = append(metricRollingAverageChange, metricRollingAverage[i]*100/num-100)
+	}
+	return
+}
+
 func (s *StatsStore) performQueryForXCols(q sq.SelectBuilder, x int) ([]int, error) {
 	sqlString, args, err := q.ToSql()
 	if err != nil {
@@ -473,4 +497,24 @@ func reverseSlice(s interface{}) {
 	for i, j := 0, n-1; i < j; i, j = i+1, j-1 {
 		swap(i, j)
 	}
+}
+
+func getMetricRollingAverageForPeriod(metricRollingValues [][]int64, start, end int) []int64 {
+	metricRollingAverage := make([]int64, 0)
+
+	for _, nums := range metricRollingValues {
+		// if there are some values calculate average and add to list
+		if start < end {
+			metricRollingAverage = append(metricRollingAverage, getAverage(nums[start:end]))
+		}
+	}
+	return metricRollingAverage
+}
+
+func getAverage(nums []int64) int64 {
+	var sum int64
+	for _, num := range nums {
+		sum += num
+	}
+	return sum / int64(len(nums))
 }

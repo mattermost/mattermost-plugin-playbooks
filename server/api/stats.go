@@ -108,8 +108,7 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 
 	metricOverallAverage := h.statsStore.MetricOverallAverage(filters)
 	metricRollingValues := h.statsStore.MetricRollingValuesLastXRuns(MetricChartPeriod, 0, filters)
-	metricRollingAverage := getMetricRollingAverage(metricRollingValues)
-	metricRollingAverageChange := h.getMetricRollingAverageChange(metricRollingAverage, filters)
+	metricRollingAverage, metricRollingAverageChange := h.statsStore.MetricRollingAverageAndChange(MetricRollingAveragePeriod, filters)
 	metricValueRange := h.statsStore.MetricValueRange(filters)
 
 	ReturnJSON(w, &PlaybookStats{
@@ -129,33 +128,4 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 		MetricRollingAverage:          metricRollingAverage,
 		MetricRollingAverageChange:    metricRollingAverageChange,
 	}, http.StatusOK)
-}
-
-func (h *StatsHandler) getMetricRollingAverageChange(metricRollingAverage []int64, filters *sqlstore.StatsFilters) []int64 {
-	prevPeriodValues := h.statsStore.MetricRollingValuesLastXRuns(MetricRollingAveragePeriod, MetricRollingAveragePeriod, filters)
-	prevPeriodAverages := getMetricRollingAverage(prevPeriodValues)
-	metricRollingAverageChange := make([]int64, 0)
-	for i, num := range prevPeriodAverages {
-		metricRollingAverageChange = append(metricRollingAverageChange, 100-metricRollingAverage[i]*100/num)
-	}
-	return metricRollingAverageChange
-}
-
-func getMetricRollingAverage(metricRollingValues [][]int64) []int64 {
-	metricRollingAverage := make([]int64, 0)
-
-	for _, nums := range metricRollingValues {
-		if len(nums) > 0 {
-			metricRollingAverage = append(metricRollingAverage[:MetricRollingAveragePeriod], getAverage(nums))
-		}
-	}
-	return metricRollingAverage
-}
-
-func getAverage(nums []int64) int64 {
-	var sum int64
-	for _, num := range nums {
-		sum += num
-	}
-	return sum / int64(len(nums))
 }
