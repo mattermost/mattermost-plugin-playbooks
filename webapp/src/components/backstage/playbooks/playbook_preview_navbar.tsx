@@ -51,8 +51,7 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
     const [activeId, setActiveId] = useState(SectionID.Description);
     const punchoutEdit = useMeasurePunchouts(['edit-playbook'], [], {y: -5, height: 10, x: -5, width: 10});
     const punchoutNavbar = useMeasurePunchouts(['playbook-preview-navbar'], [], {y: -5, height: 10, x: -5, width: 10});
-    const startTutorial = false;
-    const showEditTutorial = useShowTutorialStep(PlaybookPreviewTutorialSteps.EditButton, TutorialTourCategories.PLAYBOOK_PREVIEW) && startTutorial;
+    const showEditTutorial = useShowTutorialStep(PlaybookPreviewTutorialSteps.EditButton, TutorialTourCategories.PLAYBOOK_PREVIEW);
     const showNavbarTutorial = useShowTutorialStep(PlaybookPreviewTutorialSteps.Navbar, TutorialTourCategories.PLAYBOOK_PREVIEW);
 
     const hasEditPermissions = useHasPlaybookPermissionById(PlaybookPermissionGeneral.ManageProperties, playbookId);
