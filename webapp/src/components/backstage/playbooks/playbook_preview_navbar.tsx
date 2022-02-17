@@ -164,6 +164,7 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
                 autoTour={true}
                 width={352}
                 punchOut={punchoutEdit}
+                telemetryTag={`tutorial_tip_Playbook_Preview_${PlaybookPreviewTutorialSteps.EditButton}_EditButton`}
             />
             }
             {showNavbarTutorial &&
@@ -178,6 +179,7 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
                 autoTour={true}
                 width={360}
                 punchOut={punchoutNavbar}
+                telemetryTag={`tutorial_tip_Playbook_Preview_${PlaybookPreviewTutorialSteps.Navbar}_Navbar`}
             />
             }
             <EditButton
