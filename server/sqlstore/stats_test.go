@@ -1,6 +1,8 @@
 package sqlstore
 
 import (
+	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -10,6 +12,7 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/guregu/null.v4"
 )
 
 func setupStatsStore(t *testing.T, db *sqlx.DB) *StatsStore {
@@ -289,4 +292,267 @@ func TestTotalInProgressPlaybookRuns(t *testing.T) {
 			assert.Equal(t, []int{0, 0, 0, 0}, activeParticipantsPerDay)
 		})
 	}
+}
+
+/*
+Test cases:
+	* Playbook no metrics: no runs, active runs, published runs
+	* Playbook with metrics, no run
+	* Playbook with metrics and active runs, no published retro
+	* Playbook with metrics and active runs with metrics, no published retro
+	* Playbook with metrics, active runs and few published runs
+	* Playbook with metrics, active runs and lots of published runs
+
+
+	playbook, numMetrics, numActiveRuns, numPublishedRuns, activeRuns, publishedRuns
+
+*/
+type MetricStatsTest struct {
+	Playbook                 *app.Playbook
+	numMetrics               int
+	numActiveRuns            int
+	numPublishedRuns         int
+	ratioRunsWithMetrics     int // [0, 100] value, 0 means there is no run which has metrics values, 100 means all runs have metrics values
+	publishedRunsWithMetrics []*app.PlaybookRun
+}
+
+func TestMetricsStats(t *testing.T) {
+	const x = 14
+	testCases := []MetricStatsTest{
+		{
+			numMetrics:           0,
+			numActiveRuns:        0,
+			numPublishedRuns:     0,
+			ratioRunsWithMetrics: 0,
+		},
+		{
+			numMetrics:           0,
+			numActiveRuns:        5,
+			numPublishedRuns:     11,
+			ratioRunsWithMetrics: 0,
+		},
+		{
+			numMetrics:           3,
+			numActiveRuns:        0,
+			numPublishedRuns:     0,
+			ratioRunsWithMetrics: 0,
+		},
+		{
+			numMetrics:           4,
+			numActiveRuns:        7,
+			numPublishedRuns:     0,
+			ratioRunsWithMetrics: 0,
+		},
+		{
+			numMetrics:           1,
+			numActiveRuns:        7,
+			numPublishedRuns:     11,
+			ratioRunsWithMetrics: 0,
+		},
+		{
+			numMetrics:           2,
+			numActiveRuns:        10,
+			numPublishedRuns:     0,
+			ratioRunsWithMetrics: 70,
+		},
+		{
+			numMetrics:           4,
+			numActiveRuns:        10,
+			numPublishedRuns:     5,
+			ratioRunsWithMetrics: 70,
+		},
+		{
+			numMetrics:           1,
+			numActiveRuns:        15,
+			numPublishedRuns:     8,
+			ratioRunsWithMetrics: 80,
+		},
+		{
+			numMetrics:           3,
+			numActiveRuns:        5,
+			numPublishedRuns:     14,
+			ratioRunsWithMetrics: 100,
+		},
+		{
+			numMetrics:           4,
+			numActiveRuns:        20,
+			numPublishedRuns:     30,
+			ratioRunsWithMetrics: 80,
+		},
+	}
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		playbookStore := setupPlaybookStore(t, db)
+		statsStore := setupStatsStore(t, db)
+		// _, store := setupSQLStore(t, db)
+
+		setupChannelsTable(t, db)
+		setupPostsTable(t, db)
+
+		// generate playbooks and runs based on tests array
+		for testNum := range testCases {
+			generateTestData(t, &testCases[testNum], testNum, db, playbookStore, playbookRunStore)
+		}
+
+		for _, testCase := range testCases {
+			filters := StatsFilters{
+				PlaybookID: testCase.Playbook.ID,
+			}
+
+			t.Run(testCase.Playbook.Title+"-MetricOverallAverage", func(t *testing.T) {
+				actual := statsStore.MetricOverallAverage(&filters)
+
+				expected := getMetricOverallAverage(&testCase)
+				require.Equal(t, expected, actual)
+			})
+
+			t.Run(testCase.Playbook.Title+"-MetricValueRange", func(t *testing.T) {
+				actual := statsStore.MetricValueRange(&filters)
+
+				expected := getMetricValueRange(&testCase)
+				require.Equal(t, expected, actual)
+			})
+
+			t.Run(testCase.Playbook.Title+"-MetricRollingAverage", func(t *testing.T) {
+				actual := statsStore.MetricRollingValuesLastXRuns(x, 0, &filters)
+
+				expected := getMetricRollingValuesLastXRuns(x, 0, &testCase)
+				require.Equal(t, expected, actual)
+			})
+		}
+	}
+}
+
+func generateTestData(t *testing.T, testCase *MetricStatsTest, testNum int, db *sqlx.DB, playbookStore app.PlaybookStore, playbookRunStore app.PlaybookRunStore) {
+	//create playbook with metrics
+	playbook := NewPBBuilder().
+		WithTitle(fmt.Sprintf("playbook %d", testNum)).
+		WithMetrics(generateNames(testCase.numMetrics)).
+		ToPlaybook()
+	id, err := playbookStore.Create(playbook)
+	require.NoError(t, err)
+	playbook, err = playbookStore.Get(id)
+	require.NoError(t, err)
+	testCase.Playbook = &playbook
+
+	// create active runs
+	numRunsWithMetrics := testCase.numActiveRuns * testCase.ratioRunsWithMetrics / 100
+	for i := 0; i < testCase.numActiveRuns; i++ {
+		playbookRun := NewBuilder(t).WithPlaybookID(playbook.ID).ToPlaybookRun()
+		playbookRun, err = playbookRunStore.CreatePlaybookRun(playbookRun)
+		require.NoError(t, err)
+
+		if i < numRunsWithMetrics {
+			playbookRun.MetricsData = generateRandomMetricData(playbook.Metrics)
+			err = playbookRunStore.UpdatePlaybookRun(playbookRun)
+			require.NoError(t, err)
+		}
+	}
+
+	// create and publish runs
+	numRunsWithMetrics = testCase.numPublishedRuns * testCase.ratioRunsWithMetrics / 100
+	testCase.publishedRunsWithMetrics = make([]*app.PlaybookRun, numRunsWithMetrics)
+	for i := 0; i < testCase.numPublishedRuns; i++ {
+		playbookRun := NewBuilder(t).WithPlaybookID(playbook.ID).ToPlaybookRun()
+		playbookRun, err = playbookRunStore.CreatePlaybookRun(playbookRun)
+		require.NoError(t, err)
+
+		if i < numRunsWithMetrics {
+			now := model.GetMillis()
+			playbookRun.RetrospectivePublishedAt = now
+			playbookRun.RetrospectiveWasCanceled = false
+			playbookRun.MetricsData = generateRandomMetricData(playbook.Metrics)
+			err = playbookRunStore.UpdatePlaybookRun(playbookRun)
+			require.NoError(t, err)
+			testCase.publishedRunsWithMetrics[i] = playbookRun
+		}
+	}
+}
+
+func generateNames(num int) []string {
+	names := make([]string, num)
+	for i := range names {
+		names[i] = fmt.Sprintf("name %d", i+1)
+	}
+	return names
+}
+
+func getMetricOverallAverage(testCase *MetricStatsTest) []int64 {
+	averages := make([]int64, len(testCase.Playbook.Metrics))
+	if len(testCase.publishedRunsWithMetrics) == 0 {
+		return averages
+	}
+	sums := make(map[string]int64)
+	for _, run := range testCase.publishedRunsWithMetrics {
+		for _, m := range run.MetricsData {
+			sums[m.MetricConfigID] += m.Value.Int64
+		}
+	}
+	for i, mc := range testCase.Playbook.Metrics {
+		averages[i] = sums[mc.ID] / int64(len(testCase.publishedRunsWithMetrics))
+	}
+	return averages
+}
+
+func getMetricValueRange(testCase *MetricStatsTest) [][]int64 {
+	minMaxes := make([][]int64, len(testCase.Playbook.Metrics))
+	for i := range minMaxes {
+		minMaxes[i] = make([]int64, 2)
+	}
+	if len(testCase.publishedRunsWithMetrics) == 0 {
+		return minMaxes
+	}
+	mins := make(map[string]int64)
+	maxes := make(map[string]int64)
+	for _, run := range testCase.publishedRunsWithMetrics {
+		for _, m := range run.MetricsData {
+			if val, ok := mins[m.MetricConfigID]; !ok || val > m.Value.Int64 {
+				mins[m.MetricConfigID] = m.Value.Int64
+			}
+			if val, ok := maxes[m.MetricConfigID]; !ok || val < m.Value.Int64 {
+				maxes[m.MetricConfigID] = m.Value.Int64
+			}
+		}
+	}
+	for i, mc := range testCase.Playbook.Metrics {
+		minMaxes[i][0] = mins[mc.ID]
+		minMaxes[i][1] = maxes[mc.ID]
+	}
+	return minMaxes
+}
+
+func getMetricRollingValuesLastXRuns(x, offset int, testCase *MetricStatsTest) [][]int64 {
+	rollingValues := make([][]int64, len(testCase.Playbook.Metrics))
+	if len(testCase.publishedRunsWithMetrics) == 0 {
+		return rollingValues
+	}
+
+	idToValues := make(map[string][]int64)
+	for _, mc := range testCase.Playbook.Metrics {
+		idToValues[mc.ID] = make([]int64, 0)
+	}
+
+	numRuns := len(testCase.publishedRunsWithMetrics)
+	for i := offset; i < offset+x && i < numRuns; i++ {
+		run := testCase.publishedRunsWithMetrics[numRuns-i-1]
+		for _, m := range run.MetricsData {
+			idToValues[m.MetricConfigID] = append(idToValues[m.MetricConfigID], m.Value.Int64)
+		}
+	}
+	for i, mc := range testCase.Playbook.Metrics {
+		rollingValues[i] = idToValues[mc.ID]
+	}
+	return rollingValues
+}
+
+func generateRandomMetricData(configs []app.PlaybookMetricConfig) []app.RunMetricData {
+	data := make([]app.RunMetricData, len(configs))
+	for i := range configs {
+		data[i].MetricConfigID = configs[i].ID
+		data[i].Value = null.IntFrom(rand.Int63() % 1000)
+	}
+	return data
+
 }

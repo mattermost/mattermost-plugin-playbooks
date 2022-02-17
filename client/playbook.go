@@ -99,4 +99,10 @@ type PlaybookStats struct {
 	ActiveRunsPerDayTimes         [][]int64 `json:"active_runs_per_day_times"`
 	ActiveParticipantsPerDay      []int     `json:"active_participants_per_day"`
 	ActiveParticipantsPerDayTimes [][]int64 `json:"active_participants_per_day_times"`
+
+	MetricOverallAverage       []int64   `json:"metric_overall_average"`
+	MetricRollingAverage       []int64   `json:"metric_rolling_average"`
+	MetricRollingAverageChange []int64   `json:"metric_rolling_average_change"`
+	MetricValueRange           [][]int64 `json:"metric_value_range"`
+	MetricRollingValues        [][]int64 `json:"metric_rolling_values"`
 }

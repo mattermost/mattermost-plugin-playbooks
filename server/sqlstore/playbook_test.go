@@ -1761,6 +1761,9 @@ func (p *PlaybookBuilder) WithUpdateAt(updateAt int64) *PlaybookBuilder {
 }
 
 func (p *PlaybookBuilder) WithMetrics(names []string) *PlaybookBuilder {
+	if len(names) == 0 {
+		return p
+	}
 	p.Metrics = metricsFromNames(names)
 
 	return p

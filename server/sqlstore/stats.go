@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -302,6 +303,99 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 	return counts, daysAsTimes
 }
 
+func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []int64 {
+	// retrieve metric configs metricsConfigsIDs for playbook
+	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
+	if err != nil {
+		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
+		return []int64{}
+	}
+
+	query := s.store.builder.
+		Select("FLOOR(AVG(m.Value))").
+		From("IR_Metric as m").
+		InnerJoin("IR_MetricConfig as mc ON m.MetricConfigID = mc.ID").
+		GroupBy("mc.ID").
+		Where(sq.Eq{"mc.PlaybookID": filters.PlaybookID}).
+		Where(sq.Eq{"m.Published": true}).
+		OrderBy("mc.Ordering ASC")
+
+	var averages [][]uint8
+	if err := s.store.selectBuilder(s.store.db, &averages, query); err != nil {
+		s.log.Warnf("Error retrieving stat total active participants %w", err)
+		return []int64{}
+	}
+
+	overallAverage := make([]int64, len(metricsConfigsIDs))
+	for i, v := range averages {
+		overallAverage[i], _ = strconv.ParseInt(string(v), 10, 64)
+	}
+	return overallAverage
+}
+
+func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
+	// retrieve metric configs metricsConfigsIDs for playbook
+	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
+	if err != nil {
+		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
+		return [][]int64{}
+	}
+
+	type MinMax struct {
+		Min int64
+		Max int64
+	}
+	//error(*fmt.wrapError) *{msg: "sql: Scan error on column index 0, name \"min\": converting NULL to int64 is unsupported", err: error(*errors.errorString) *{s: "converting NULL to int64 is unsupported"}}
+	valueRange := make([][]int64, len(metricsConfigsIDs))
+	for i, id := range metricsConfigsIDs {
+		query := s.store.builder.
+			Select("COALESCE(MIN(Value), 0) as Min, COALESCE(MAX(Value), 0) as Max").
+			From("IR_Metric").
+			Where(sq.Eq{"Published": true}).
+			Where(sq.Eq{"MetricConfigID": id})
+
+		var minMax []MinMax
+		if err := s.store.selectBuilder(s.store.db, &minMax, query); err != nil {
+			s.log.Warnf("Error retrieving metric min and max values %w", err)
+			return [][]int64{}
+		}
+		valueRange[i] = []int64{minMax[0].Min, minMax[0].Max}
+	}
+	return valueRange
+}
+
+func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *StatsFilters) [][]int64 {
+	// retrieve metric configs metricsConfigsIDs for playbook
+	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
+	if err != nil {
+		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
+		return [][]int64{}
+	}
+	metricsValues := make([][]int64, 0)
+	for _, id := range metricsConfigsIDs {
+		query := s.store.builder.
+			Select("m.Value").
+			From("IR_Incident as i").
+			InnerJoin("IR_Metric AS m ON (i.ID = m.IncidentID)").
+			Where(sq.Eq{"i.PlaybookID": filters.PlaybookID}).
+			Where("i.RetrospectivePublishedAt > 0").
+			Where(sq.Eq{"i.RetrospectiveWasCanceled": false}).
+			Where(sq.Eq{"m.MetricConfigID": id}).
+			OrderBy("i.RetrospectivePublishedAt DESC").
+			Limit(uint64(x)).
+			Offset(uint64(offset))
+
+		var values []int64
+		if err := s.store.selectBuilder(s.store.db, &values, query); err != nil {
+			s.log.Warnf("Error retrieving metrics values %w", err)
+			return [][]int64{}
+		}
+		metricsValues = append(metricsValues, values)
+	}
+
+	return metricsValues
+}
+
 func (s *StatsStore) performQueryForXCols(q sq.SelectBuilder, x int) ([]int, error) {
 	sqlString, args, err := q.ToSql()
 	if err != nil {
@@ -337,6 +431,21 @@ func (s *StatsStore) performQueryForXCols(q sq.SelectBuilder, x int) ([]int, err
 	}
 
 	return counts, nil
+}
+
+func (s *StatsStore) retrieveMetricConfigs(playbookID string) ([]string, error) {
+	query := s.store.builder.
+		Select("ID").
+		From("IR_MetricConfig").
+		Where(sq.Eq{"PlaybookID": playbookID}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		OrderBy("Ordering ASC")
+	var ids []string
+	if err := s.store.selectBuilder(s.store.db, &ids, query); err != nil {
+		s.log.Warnf("Error retrieving metrics configs ids for playbook %s ", playbookID)
+		return nil, err
+	}
+	return ids, nil
 }
 
 func beginningOfTodayMillis() int64 {
