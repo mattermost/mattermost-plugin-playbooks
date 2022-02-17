@@ -313,6 +313,7 @@ const RHSChecklistList = (props: Props) => {
                     width={352}
                     autoTour={true}
                     punchOut={checklistsPunchout}
+                    telemetryTag={`tutorial_tip_Playbook_Run_Details_${RunDetailsTutorialSteps.Checklists}_Checklists`}
                 />
             )}
         </InnerContainer>
