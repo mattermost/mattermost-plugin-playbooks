@@ -306,6 +306,7 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 
 // MetricOverallAverage returns list of average values of playbook's metrics.
 // Only published metrics values are included.
+// Returns empty list when Playbook doesn't have metrics or there are no any published metrics values
 func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []int64 {
 	query := s.store.builder.
 		Select("FLOOR(AVG(m.Value))").
@@ -331,6 +332,7 @@ func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []int64 {
 
 // MetricValueRange returns min and max values for each metric
 // Only published metrics are included.
+// If there are no any published values, returns empty list
 func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
 	// first retrieve metric configs metricsConfigsIDs for playbook
 	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
@@ -367,6 +369,8 @@ func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
 
 // MetricRollingValuesLastXRuns for each metric returns list of last `x` published values, starting from `offset`
 // first element in the list is most recent
+// Retruns empty list if Playbook doesn't have metrics.
+// Returns list with null values, if Playbook has metrics but there are no any published values
 func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *StatsFilters) [][]int64 {
 	// retrieve metric configs metricsConfigsIDs for playbook
 	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
@@ -401,6 +405,7 @@ func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *St
 
 // MetricRollingAverageAndChange for each metric returns average of last `x` published values and
 // change with comparison to the previous period
+// returns empty list if there are no available published metrics values
 func (s *StatsStore) MetricRollingAverageAndChange(x int, filters *StatsFilters) (metricRollingAverage []int64, metricRollingAverageChange []int64) {
 	metricValuesWholePeriod := s.MetricRollingValuesLastXRuns(2*x, 0, filters)
 
