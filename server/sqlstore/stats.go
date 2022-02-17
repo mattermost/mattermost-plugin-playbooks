@@ -304,13 +304,6 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 }
 
 func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []int64 {
-	// retrieve metric configs metricsConfigsIDs for playbook
-	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
-	if err != nil {
-		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
-		return []int64{}
-	}
-
 	query := s.store.builder.
 		Select("FLOOR(AVG(m.Value))").
 		From("IR_Metric as m").
@@ -326,7 +319,7 @@ func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []int64 {
 		return []int64{}
 	}
 
-	overallAverage := make([]int64, len(metricsConfigsIDs))
+	overallAverage := make([]int64, len(averages))
 	for i, v := range averages {
 		overallAverage[i], _ = strconv.ParseInt(string(v), 10, 64)
 	}
@@ -342,14 +335,14 @@ func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
 	}
 
 	type MinMax struct {
-		Min int64
-		Max int64
+		Min *int64
+		Max *int64
 	}
-	//error(*fmt.wrapError) *{msg: "sql: Scan error on column index 0, name \"min\": converting NULL to int64 is unsupported", err: error(*errors.errorString) *{s: "converting NULL to int64 is unsupported"}}
+
 	valueRange := make([][]int64, len(metricsConfigsIDs))
 	for i, id := range metricsConfigsIDs {
 		query := s.store.builder.
-			Select("COALESCE(MIN(Value), 0) as Min, COALESCE(MAX(Value), 0) as Max").
+			Select("MIN(Value) as Min, MAX(Value) as Max").
 			From("IR_Metric").
 			Where(sq.Eq{"Published": true}).
 			Where(sq.Eq{"MetricConfigID": id})
@@ -359,7 +352,9 @@ func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
 			s.log.Warnf("Error retrieving metric min and max values %w", err)
 			return [][]int64{}
 		}
-		valueRange[i] = []int64{minMax[0].Min, minMax[0].Max}
+		if minMax[0].Min != nil && minMax[0].Max != nil {
+			valueRange[i] = []int64{*minMax[0].Min, *minMax[0].Max}
+		}
 	}
 	return valueRange
 }

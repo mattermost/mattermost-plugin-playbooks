@@ -317,6 +317,7 @@ type MetricStatsTest struct {
 }
 
 func TestMetricsStats(t *testing.T) {
+	rand.Seed(1)
 	const x = 14
 	testCases := []MetricStatsTest{
 		{
@@ -374,6 +375,12 @@ func TestMetricsStats(t *testing.T) {
 			ratioRunsWithMetrics: 100,
 		},
 		{
+			numMetrics:           1,
+			numActiveRuns:        21,
+			numPublishedRuns:     21,
+			ratioRunsWithMetrics: 100,
+		},
+		{
 			numMetrics:           4,
 			numActiveRuns:        20,
 			numPublishedRuns:     30,
@@ -404,7 +411,7 @@ func TestMetricsStats(t *testing.T) {
 			t.Run(testCase.Playbook.Title+"-MetricOverallAverage", func(t *testing.T) {
 				actual := statsStore.MetricOverallAverage(&filters)
 
-				expected := getMetricOverallAverage(&testCase)
+				expected := getMetricOverallAverage(len(testCase.publishedRunsWithMetrics), 0, &testCase)
 				require.Equal(t, expected, actual)
 			})
 
@@ -415,10 +422,15 @@ func TestMetricsStats(t *testing.T) {
 				require.Equal(t, expected, actual)
 			})
 
-			t.Run(testCase.Playbook.Title+"-MetricRollingAverage", func(t *testing.T) {
+			t.Run(testCase.Playbook.Title+"-MetricRollingValuesLastXRuns", func(t *testing.T) {
 				actual := statsStore.MetricRollingValuesLastXRuns(x, 0, &filters)
 
 				expected := getMetricRollingValuesLastXRuns(x, 0, &testCase)
+				require.Equal(t, expected, actual)
+
+				actual = statsStore.MetricRollingValuesLastXRuns(x, x, &filters)
+
+				expected = getMetricRollingValuesLastXRuns(x, x, &testCase)
 				require.Equal(t, expected, actual)
 			})
 		}
@@ -479,31 +491,27 @@ func generateNames(num int) []string {
 	return names
 }
 
-func getMetricOverallAverage(testCase *MetricStatsTest) []int64 {
-	averages := make([]int64, len(testCase.Playbook.Metrics))
-	if len(testCase.publishedRunsWithMetrics) == 0 {
-		return averages
-	}
+func getMetricOverallAverage(x, offset int, testCase *MetricStatsTest) []int64 {
+	averages := make([]int64, 0)
+
 	sums := make(map[string]int64)
 	for _, run := range testCase.publishedRunsWithMetrics {
 		for _, m := range run.MetricsData {
 			sums[m.MetricConfigID] += m.Value.Int64
 		}
 	}
-	for i, mc := range testCase.Playbook.Metrics {
-		averages[i] = sums[mc.ID] / int64(len(testCase.publishedRunsWithMetrics))
+
+	for _, mc := range testCase.Playbook.Metrics {
+		if val, ok := sums[mc.ID]; ok {
+			averages = append(averages, val/int64(len(testCase.publishedRunsWithMetrics)))
+		}
 	}
 	return averages
 }
 
 func getMetricValueRange(testCase *MetricStatsTest) [][]int64 {
 	minMaxes := make([][]int64, len(testCase.Playbook.Metrics))
-	for i := range minMaxes {
-		minMaxes[i] = make([]int64, 2)
-	}
-	if len(testCase.publishedRunsWithMetrics) == 0 {
-		return minMaxes
-	}
+
 	mins := make(map[string]int64)
 	maxes := make(map[string]int64)
 	for _, run := range testCase.publishedRunsWithMetrics {
@@ -517,27 +525,27 @@ func getMetricValueRange(testCase *MetricStatsTest) [][]int64 {
 		}
 	}
 	for i, mc := range testCase.Playbook.Metrics {
-		minMaxes[i][0] = mins[mc.ID]
-		minMaxes[i][1] = maxes[mc.ID]
+		if _, ok := mins[mc.ID]; ok {
+			minMaxes[i] = []int64{mins[mc.ID], maxes[mc.ID]}
+
+		}
 	}
 	return minMaxes
 }
 
 func getMetricRollingValuesLastXRuns(x, offset int, testCase *MetricStatsTest) [][]int64 {
 	rollingValues := make([][]int64, len(testCase.Playbook.Metrics))
-	if len(testCase.publishedRunsWithMetrics) == 0 {
-		return rollingValues
-	}
 
 	idToValues := make(map[string][]int64)
-	for _, mc := range testCase.Playbook.Metrics {
-		idToValues[mc.ID] = make([]int64, 0)
-	}
 
 	numRuns := len(testCase.publishedRunsWithMetrics)
 	for i := offset; i < offset+x && i < numRuns; i++ {
 		run := testCase.publishedRunsWithMetrics[numRuns-i-1]
+
 		for _, m := range run.MetricsData {
+			if _, ok := idToValues[m.MetricConfigID]; !ok {
+				idToValues[m.MetricConfigID] = make([]int64, 0)
+			}
 			idToValues[m.MetricConfigID] = append(idToValues[m.MetricConfigID], m.Value.Int64)
 		}
 	}

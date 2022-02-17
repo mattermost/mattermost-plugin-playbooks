@@ -53,6 +53,11 @@ type PlaybookStats struct {
 	ActiveRunsPerDayTimes         [][]int64 `json:"active_runs_per_day_times"`
 	ActiveParticipantsPerDay      []int     `json:"active_participants_per_day"`
 	ActiveParticipantsPerDayTimes [][]int64 `json:"active_participants_per_day_times"`
+	MetricOverallAverage          []int64   `json:"metric_overall_average"`
+	MetricRollingAverage          []int64   `json:"metric_rolling_average"`
+	MetricRollingAverageChange    []int64   `json:"metric_rolling_average_change"`
+	MetricValueRange              [][]int64 `json:"metric_value_range"`
+	MetricRollingValues           [][]int64 `json:"metric_rolling_values"`
 }
 
 func parsePlaybookStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
@@ -96,6 +101,11 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	activeRunsPerDay, activeRunsPerDayTimes := h.statsStore.ActiveRunsPerDayLastXDays(14, filters)
 	activeParticipantsPerDay, activeParticipantsPerDayTimes := h.statsStore.ActiveParticipantsPerDayLastXDays(14, filters)
 
+	metricOverallAverage := h.statsStore.MetricOverallAverage(filters)
+	// metricRollingAverageChange := h.statsStore.MetricOverallAverage(0, 0, filters)
+	metricValueRange := h.statsStore.MetricValueRange(filters)
+	metricRollingValues := h.statsStore.MetricRollingValuesLastXRuns(14, 0, filters)
+
 	ReturnJSON(w, &PlaybookStats{
 		RunsInProgress:                h.statsStore.TotalInProgressPlaybookRuns(filters),
 		ParticipantsActive:            h.statsStore.TotalActiveParticipants(filters),
@@ -107,5 +117,8 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 		ActiveRunsPerDayTimes:         activeRunsPerDayTimes,
 		ActiveParticipantsPerDay:      activeParticipantsPerDay,
 		ActiveParticipantsPerDayTimes: activeParticipantsPerDayTimes,
+		MetricOverallAverage:          metricOverallAverage,
+		MetricRollingValues:           metricRollingValues,
+		MetricValueRange:              metricValueRange,
 	}, http.StatusOK)
 }
