@@ -336,8 +336,8 @@ type SQLStatusPost struct {
 }
 
 type RunMetricData struct {
-	MetricConfigID string
-	Value          null.Int
+	MetricConfigID string   `json:"metric_config_id"`
+	Value          null.Int `json:"value"`
 }
 
 type RetrospectiveUpdate struct {
