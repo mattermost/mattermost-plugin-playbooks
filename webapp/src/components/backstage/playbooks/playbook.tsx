@@ -10,11 +10,12 @@ import Icon from '@mdi/react';
 import {mdiClipboardPlayOutline} from '@mdi/js';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+import {Client4} from 'mattermost-redux/client';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentUserId, getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 
@@ -34,6 +35,7 @@ import {
     getSiteUrl,
     playbookExportProps,
     archivePlaybook,
+    createPlaybookRun,
 } from 'src/client';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -58,6 +60,8 @@ import PlaybookKeyMetrics from 'src/components/backstage/playbooks/playbook_key_
 interface MatchParams {
     playbookId: string
 }
+
+const tutorialPlaybookTitle = 'Learn how to use playbooks';
 
 const FetchingStateType = {
     loading: 'loading',
@@ -110,6 +114,7 @@ const Playbook = () => {
     const stats = useStats(match.params.playbookId);
     const [isFollowed, setIsFollowed] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
+    const currentUser = useSelector(getCurrentUser);
     const [playbookLinkCopied, setPlaybookLinkCopied] = useState(false);
     const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal(() => {
         if (playbook) {
@@ -134,13 +139,23 @@ const Playbook = () => {
 
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
 
+    const isTutorial = playbook?.title === tutorialPlaybookTitle;
+
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
     const goToPlaybooks = () => {
         navigateToPluginUrl('/playbooks');
     };
 
-    const runPlaybook = () => {
+    const runPlaybook = async () => {
+        if (playbook && isTutorial) {
+            const playbookRun = await createPlaybookRun(playbook.id, currentUserId, playbook.team_id, `${currentUser.username}'s onboarding run`, playbook.description);
+            const channel = await Client4.getChannel(playbookRun.channel_id);
+            const pathname = `/${team.name}/channels/${channel.name}`;
+            const search = '?forceRHSOpen&openTakeATourDialog';
+            navigateToUrl({pathname, search});
+            return;
+        }
         if (playbook?.id) {
             telemetryEventForPlaybook(playbook.id, 'playbook_dashboard_run_clicked');
             navigateToUrl(`/${team.name || ''}/_playbooks/${playbook?.id || ''}/run`);
@@ -323,7 +338,7 @@ const Playbook = () => {
                             path={mdiClipboardPlayOutline}
                             size={1.25}
                         />
-                        {formatMessage({defaultMessage: 'Run'})}
+                        {isTutorial ? formatMessage({defaultMessage: 'Start a test run'}) : formatMessage({defaultMessage: 'Run'})}
                     </PrimaryButtonLarger>
                     {showRunButtonTutorial &&
                         <TutorialTourTip
@@ -337,6 +352,7 @@ const Playbook = () => {
                             autoTour={true}
                             width={352}
                             punchOut={punchoutTitleRow}
+                            telemetryTag={`tutorial_tip_Playbook_Preview_${PlaybookPreviewTutorialSteps.RunButton}_RunButton`}
                         />
                     }
                 </TitleRow>
