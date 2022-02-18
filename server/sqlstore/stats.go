@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"gopkg.in/guregu/null.v4"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -334,36 +335,28 @@ func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []int64 {
 // Only published metrics are included.
 // If there are no any published values, returns empty list
 func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
-	// first retrieve metric configs metricsConfigsIDs for playbook
-	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
-	if err != nil {
-		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
+	type MinMax struct {
+		Min null.Int
+		Max null.Int
+	}
+	q := s.store.builder.
+		Select("MIN(Value) as Min, MAX(Value) as Max").
+		From("IR_Metric as m").
+		InnerJoin("IR_MetricConfig as mc ON m.MetricConfigID = mc.ID").
+		GroupBy("mc.ID").
+		Where(sq.Eq{"mc.PlaybookID": filters.PlaybookID}).
+		Where(sq.Eq{"m.Published": true}).
+		OrderBy("mc.Ordering ASC")
+	var res []MinMax
+	if err := s.store.selectBuilder(s.store.db, &res, q); err != nil {
+		s.log.Warnf("Error retrieving metric min and max values %w", err)
 		return [][]int64{}
 	}
-
-	type MinMax struct {
-		Min *int64
-		Max *int64
+	valueRange := make([][]int64, len(res))
+	for i := range res {
+		valueRange[i] = []int64{res[i].Min.Int64, res[i].Max.Int64}
 	}
 
-	// for each metric config finds min and max values
-	valueRange := make([][]int64, len(metricsConfigsIDs))
-	for i, id := range metricsConfigsIDs {
-		query := s.store.builder.
-			Select("MIN(Value) as Min, MAX(Value) as Max").
-			From("IR_Metric").
-			Where(sq.Eq{"Published": true}).
-			Where(sq.Eq{"MetricConfigID": id})
-
-		var minMax []MinMax
-		if err := s.store.selectBuilder(s.store.db, &minMax, query); err != nil {
-			s.log.Warnf("Error retrieving metric min and max values %w", err)
-			return [][]int64{}
-		}
-		if minMax[0].Min != nil && minMax[0].Max != nil {
-			valueRange[i] = []int64{*minMax[0].Min, *minMax[0].Max}
-		}
-	}
 	return valueRange
 }
 

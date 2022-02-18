@@ -305,7 +305,7 @@ type MetricStatsTest struct {
 
 func TestMetricsStats(t *testing.T) {
 	rand.Seed(1)
-	const x = 14
+	const x = 7
 	testCases := []MetricStatsTest{
 		{
 			numMetrics:           0,
@@ -518,7 +518,7 @@ func getMetricRollingAverage(x, offset int, testCase *MetricStatsTest) []int64 {
 }
 
 func getMetricValueRange(testCase *MetricStatsTest) [][]int64 {
-	minMaxes := make([][]int64, len(testCase.Playbook.Metrics))
+	minMaxes := make([][]int64, 0)
 
 	mins := make(map[string]int64)
 	maxes := make(map[string]int64)
@@ -532,10 +532,9 @@ func getMetricValueRange(testCase *MetricStatsTest) [][]int64 {
 			}
 		}
 	}
-	for i, mc := range testCase.Playbook.Metrics {
+	for _, mc := range testCase.Playbook.Metrics {
 		if _, ok := mins[mc.ID]; ok {
-			minMaxes[i] = []int64{mins[mc.ID], maxes[mc.ID]}
-
+			minMaxes = append(minMaxes, []int64{mins[mc.ID], maxes[mc.ID]})
 		}
 	}
 	return minMaxes

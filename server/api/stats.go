@@ -61,7 +61,7 @@ type PlaybookStats struct {
 }
 
 const (
-	MetricChartPeriod          = 14
+	MetricChartPeriod          = 10
 	MetricRollingAveragePeriod = 10
 )
 
