@@ -357,6 +357,10 @@ func (s *playbookService) IsAutoFollowing(playbookID, userID string) (bool, erro
 func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, error) {
 	newPlaybook := playbook.Clone()
 	newPlaybook.ID = ""
+	// Empty metric IDs if there are such. Otherwise, metrics will not be saved in the database.
+	for i := range newPlaybook.Metrics {
+		newPlaybook.Metrics[i].ID = ""
+	}
 	newPlaybook.Title = "Copy of " + playbook.Title
 
 	return s.Create(newPlaybook, userID)
