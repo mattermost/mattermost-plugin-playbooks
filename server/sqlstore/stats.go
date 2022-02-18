@@ -371,6 +371,8 @@ func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *St
 		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
 		return [][]int64{}
 	}
+
+	//NOTE: It would be possible to turn this into a single statement; keep in mind if the playbookStats call becomes slow
 	metricsValues := make([][]int64, 0)
 	for _, id := range metricsConfigsIDs {
 		query := s.store.builder.
