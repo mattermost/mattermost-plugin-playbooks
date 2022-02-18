@@ -24,7 +24,6 @@ export interface TutorialTourTipManager {
     handleOpen: (e: React.MouseEvent) => void;
     handleHide: (e: React.MouseEvent) => void;
     handleSkipTutorial: (e: React.MouseEvent) => void;
-    handleDismiss: (e: React.MouseEvent) => void;
     handleSavePreferences: (step: number) => void;
     handlePrevious: (e: React.MouseEvent) => void;
     handleNext: (e?: React.MouseEvent) => void;
@@ -116,16 +115,6 @@ const useTutorialTourTipManager = ({
         setShow(true);
     };
 
-    const handleDismiss = (e: React.MouseEvent): void => {
-        handleEventPropagationAndDefault(e);
-        handleHide();
-
-        // open for discussion should we move forward if user dismiss like next time show them next tip instead of the same one.
-        handleNext(e);
-        const tag = telemetryTag + '_dismiss';
-        trackEvent('tutorial', tag);
-    };
-
     const handleSavePreferences = (nextStep: boolean | number): void => {
         let stepValue = currentStep;
         if (nextStep === true) {
@@ -171,7 +160,7 @@ const useTutorialTourTipManager = ({
             const tag = telemetryTag + '_skip';
             trackEvent('tutorial', tag);
         }
-        savePreferences(currentUserId, SKIPPED.toString());
+        handleSavePreferences(SKIPPED);
     };
 
     const getLastStep = () => {
@@ -190,7 +179,6 @@ const useTutorialTourTipManager = ({
         setShow,
         handleOpen,
         handleHide,
-        handleDismiss,
         handleNext,
         handlePrevious,
         handleSkipTutorial,
