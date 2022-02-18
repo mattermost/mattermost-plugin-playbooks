@@ -675,7 +675,7 @@ func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	id, err := h.playbookService.Create(playbook, userID)
+	id, err := h.playbookService.Import(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
 		return

@@ -87,6 +87,10 @@ func (t *NoopTelemetry) MoveTask(string, string, app.ChecklistItem) {
 func (t *NoopTelemetry) CreatePlaybook(app.Playbook, string) {
 }
 
+// ImportPlaybook does nothing.
+func (t *NoopTelemetry) ImportPlaybook(app.Playbook, string) {
+}
+
 // UpdatePlaybook does nothing.
 func (t *NoopTelemetry) UpdatePlaybook(app.Playbook, string) {
 }
