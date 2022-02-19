@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState} from 'react';
+import React from 'react';
 import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
@@ -13,7 +13,6 @@ interface Props {
 
 const Trigger = (props: Props) => {
     const {formatMessage} = useIntl();
-    const [collapsed, setCollapsed] = useState(false);
 
     return (
         <Container>
@@ -22,18 +21,10 @@ const Trigger = (props: Props) => {
                     <Label>{formatMessage({defaultMessage: 'Trigger'})}</Label>
                     <Title>{props.title}</Title>
                 </Legend>
-                <Buttons>
-                    <ChevronIcon
-                        open={!collapsed}
-                        onClick={() => setCollapsed((c) => !c)}
-                    />
-                </Buttons>
             </Header>
-            {!collapsed &&
             <Body>
                 {props.children}
             </Body>
-            }
         </Container>
     );
 };
@@ -75,23 +66,6 @@ const Title = styled.span`
     font-weight: 600;
     color: var(--center-channel-color);
     margin-top: 2px;
-`;
-
-const Buttons = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-`;
-
-const ChevronIcon = ({open, onClick}: {open: boolean, onClick: () => void}) => (
-    <ChevronIconI
-        className={`icon-${open ? 'chevron-down' : 'chevron-left'} icon-16`}
-        onClick={onClick}
-    />
-);
-
-const ChevronIconI = styled.i`
-    cursor: pointer;
 `;
 
 const Body = styled.div`
