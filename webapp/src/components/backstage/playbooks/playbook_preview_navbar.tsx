@@ -153,15 +153,15 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
         <Wrapper>
             {showEditTutorial &&
             <TutorialTourTip
-                title={<FormattedMessage defaultMessage='Congratulations! You’ve created your first playbook using a template!'/>}
-                screen={<FormattedMessage defaultMessage='Select edit to start customizing it and tailor it to your own models and processes. You can explore the template in detail on this page.'/>}
+                title={<FormattedMessage defaultMessage='Welcome to the playbook preview page!'/>}
+                screen={<FormattedMessage defaultMessage='This is where you can explore your playbook components in detail. Select Edit to customize your playbook to fit your processes and models.'/>}
                 tutorialCategory={TutorialTourCategories.PLAYBOOK_PREVIEW}
                 step={PlaybookPreviewTutorialSteps.EditButton}
                 placement='left'
                 pulsatingDotPlacement='left'
                 pulsatingDotTranslate={{x: -10, y: -135}}
                 autoTour={true}
-                width={352}
+                width={370}
                 punchOut={punchoutEdit}
                 telemetryTag={`tutorial_tip_Playbook_Preview_${PlaybookPreviewTutorialSteps.EditButton}_EditButton`}
             />
