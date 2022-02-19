@@ -2,9 +2,12 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
+import {useSelector} from 'react-redux';
+import {useIntl} from 'react-intl';
 
 import {ChannelAction, ChannelActionType} from 'src/types/channel_actions';
 import MarkdownTextbox from 'src/components/markdown_textbox';
+import {isCurrentUserChannelAdmin} from 'src/selectors';
 
 interface Props {
     action: ChannelAction;
@@ -21,25 +24,30 @@ const ActionChildren = (props: Props) => {
     return null;
 };
 
-const WelcomeActionChildren = ({action, onUpdate, editable}: Props) => (
+const WelcomeActionChildren = ({action, onUpdate, editable}: Props) => {
     const {formatMessage} = useIntl();
+    const isChannelAdmin = useSelector(isCurrentUserChannelAdmin);
 
-    <MarkdownTextbox
-        placeholder={formatMessage({defaultMessage: 'Define a message to welcome any new member that joins the channel.'})}
-        value={action.payload.message}
-        setValue={(newMessage: string) => onUpdate((prevActions: Record<string, ChannelAction>) => ({
-            ...prevActions,
-            [action.action_type]: {
-                ...prevActions[action.action_type],
-                payload: {
-                    message: newMessage,
+    return (
+        <MarkdownTextbox
+            placeholder={formatMessage({defaultMessage: 'Define a message to welcome any new member that joins the channel.'})}
+            value={action.payload.message}
+            setValue={(newMessage: string) => onUpdate((prevActions: Record<string, ChannelAction>) => ({
+                ...prevActions,
+                [action.action_type]: {
+                    ...prevActions[action.action_type],
+                    payload: {
+                        message: newMessage,
+                    },
                 },
-            },
-        }))}
-        id={'channel-actions-modal_welcome-msg'}
-        hideHelpText={true}
-        disabled={!editable}
-    />
-);
+            }))}
+            id={'channel-actions-modal_welcome-msg'}
+            hideHelpText={true}
+            hideButtonsRow={!isChannelAdmin}
+            previewByDefault={!isChannelAdmin}
+            disabled={!editable}
+        />
+    );
+};
 
 export default ActionChildren;

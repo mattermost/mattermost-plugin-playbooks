@@ -24,6 +24,8 @@ type Props = {
     className?: string;
     disabled?: boolean;
     hideHelpText?: boolean;
+    hideButtonsRow?: boolean;
+    previewByDefault?: boolean;
 } & ComponentProps<typeof Textbox>;
 
 const MarkdownTextbox = ({
@@ -33,9 +35,11 @@ const MarkdownTextbox = ({
     placeholder = '',
     disabled,
     hideHelpText,
+    hideButtonsRow,
+    previewByDefault,
     ...textboxProps
 }: Props) => {
-    const [showPreview, setShowPreview] = useState(false);
+    const [showPreview, setShowPreview] = useState(previewByDefault);
     const config = useSelector(getConfig);
 
     const charLimit = parseInt(config.MaxPostSize || '', 10) || DEFAULT_CHAR_LIMIT;
@@ -59,6 +63,7 @@ const MarkdownTextbox = ({
                 disabled={disabled}
                 {...textboxProps}
             />
+            {!hideButtonsRow &&
             <StyledTextboxLinks
                 disabled={disabled}
                 characterLimit={charLimit}
@@ -67,6 +72,7 @@ const MarkdownTextbox = ({
                 message={value}
                 hideHelpText={hideHelpText}
             />
+            }
         </Wrapper>
     );
 };
