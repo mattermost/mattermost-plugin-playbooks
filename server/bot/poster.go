@@ -101,6 +101,7 @@ func (b *Bot) DM(userID string, post *model.Post) error {
 
 // EphemeralPost sends an ephemeral message to a user
 func (b *Bot) EphemeralPost(userID, channelID string, post *model.Post) {
+	post.UserId = userID
 	post.ChannelId = channelID
 
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
