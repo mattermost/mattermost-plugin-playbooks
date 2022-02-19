@@ -22,7 +22,10 @@ const ActionChildren = (props: Props) => {
 };
 
 const WelcomeActionChildren = ({action, onUpdate, editable}: Props) => (
+    const {formatMessage} = useIntl();
+
     <MarkdownTextbox
+        placeholder={formatMessage({defaultMessage: 'Define a message to welcome any new member that joins the channel.'})}
         value={action.payload.message}
         setValue={(newMessage: string) => onUpdate((prevActions: Record<string, ChannelAction>) => ({
             ...prevActions,
