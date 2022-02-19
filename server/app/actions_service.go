@@ -169,7 +169,7 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 				a.logger.Errorf("payload of action of type %q is not valid", action.ActionType)
 			}
 
-			a.poster.EphemeralPost(userID, channelID, &model.Post{
+			a.poster.SystemEphemeralPost(userID, channelID, &model.Post{
 				Message: payload.Message,
 			})
 		}

@@ -54,6 +54,9 @@ type Poster interface {
 	// EphemeralPost sends an ephemeral message to a user.
 	EphemeralPost(userID, channelID string, post *model.Post)
 
+	// SystemEphemeralPost sends an ephemeral message to a user authored by the System.
+	SystemEphemeralPost(userID, channelID string, post *model.Post)
+
 	// EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
 	EphemeralPostWithAttachments(userID, channelID, rootPostID string, attachments []*model.SlackAttachment, format string, args ...interface{})
 
