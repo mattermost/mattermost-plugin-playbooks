@@ -105,7 +105,7 @@ func (a *ActionsHandler) getChannelActions(w http.ResponseWriter, r *http.Reques
 	ReturnJSON(w, &actions, http.StatusOK)
 }
 
-// checkAndSendMessageOnJoin handles the GET /run/{id}/check_and_send_message_on_join/{channel_id} endpoint.
+// checkAndSendMessageOnJoin handles the GET /actions/channels/{channel_id}/check_and_send_message_on_join endpoint.
 func (a *ActionsHandler) checkAndSendMessageOnJoin(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	channelID := vars["channel_id"]
