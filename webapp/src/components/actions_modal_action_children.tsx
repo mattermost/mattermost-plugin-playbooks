@@ -30,7 +30,7 @@ const WelcomeActionChildren = ({action, onUpdate, editable}: Props) => {
 
     return (
         <MarkdownTextbox
-            placeholder={formatMessage({defaultMessage: 'Define a message to welcome any new member that joins the channel.'})}
+            placeholder={formatMessage({defaultMessage: 'Define a message to welcome users joining the channel.'})}
             value={action.payload.message}
             setValue={(newMessage: string) => onUpdate((prevActions: Record<string, ChannelAction>) => ({
                 ...prevActions,
