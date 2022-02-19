@@ -1687,34 +1687,34 @@ func (s *PlaybookRunServiceImpl) GetChecklistItemAutocomplete(playbookRunID stri
 	return ret, nil
 }
 
-// DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
-// and DMs the message to userID. Use force = true to DM even if there are no items.
-func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) error {
+// buildTodoDigestMessage
+// gathers the list of assigned tasks, participating runs, and overdue updates and builds a combined message with them
+func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force bool) (*model.Post, error) {
 	runsOverdue, err := s.GetOverdueUpdateRuns(userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	part1 := buildRunsOverdueMessage(runsOverdue, user.Locale)
 
 	runsAssigned, err := s.GetRunsWithAssignedTasks(userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	part2 := buildAssignedTaskMessageAndTotal(runsAssigned, user.Locale)
 
 	if force {
 		runsInProgress, err := s.GetParticipatingRuns(userID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		part3 := buildRunsInProgressMessage(runsInProgress, user.Locale)
 
-		return s.poster.DM(userID, &model.Post{Message: part1 + part2 + part3})
+		return &model.Post{Message: part1 + part2 + part3}, nil
 	}
 
 	// !force, so only return sections that have information.
@@ -1726,9 +1726,41 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 		message += part2
 	}
 	if message == "" {
+		return nil, nil
+	}
+
+	return &model.Post{Message: message}, nil
+}
+
+// EphermalPostTodoDigestToUser
+// builds todo digest message and sends an ephermal post to userID, channelID. Use force = true to send post even if there are no items.
+func (s *PlaybookRunServiceImpl) EphermalPostTodoDigestToUser(userID string, channelID string, force bool) error {
+	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force)
+	if err != nil {
+		return err
+	}
+
+	if todoDigestMessage != nil {
+		s.poster.EphemeralPost(userID, channelID, todoDigestMessage)
 		return nil
 	}
-	return s.poster.DM(userID, &model.Post{Message: message})
+
+	return nil
+}
+
+// DMTodoDigestToUser
+// DMs the message to userID. Use force = true to DM even if there are no items.
+func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) error {
+	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force)
+	if err != nil {
+		return err
+	}
+
+	if todoDigestMessage != nil {
+		return s.poster.DM(userID, todoDigestMessage)
+	}
+
+	return nil
 }
 
 // GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
