@@ -18,11 +18,6 @@ type WelcomeMessagePayload struct {
 	Message string `json:"message" mapstructure:"message"`
 }
 
-type WelcomeMessageAction struct {
-	GenericChannelActionWithoutPayload
-	Payload WelcomeMessagePayload `json:"payload"`
-}
-
 const (
 	// Action types
 	ActionTypeWelcomeMessage = "send_welcome_message"
