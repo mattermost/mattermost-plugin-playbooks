@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import styled from 'styled-components';
 import {Modal} from 'react-bootstrap';
+import styled from 'styled-components';
 
 import GenericModal, {DefaultFooterContainer} from 'src/components/widgets/generic_modal';
 
@@ -12,18 +12,21 @@ interface Props {
     title: React.ReactNode;
     message: React.ReactNode;
     confirmButtonText: React.ReactNode;
+    isConfirmDestructive?: boolean;
     onConfirm: () => void;
     onCancel: () => void;
     components?: Partial<{
         Header: typeof Modal.Header;
         FooterContainer: typeof DefaultFooterContainer;
-    }>;}
+    }>;
+}
 
 const ConfirmModalLight = ({
     show,
     title,
     message,
     confirmButtonText,
+    isConfirmDestructive,
     onConfirm,
     onCancel,
     components,
@@ -32,6 +35,7 @@ const ConfirmModalLight = ({
         <ConfirmModal
             id={'confirm-modal-light'}
             show={show}
+            isConfirmDestructive={isConfirmDestructive}
             confirmButtonText={<div id='confirm-modal-light-button'>{confirmButtonText}</div>}
             autoCloseOnCancelButton={true}
             autoCloseOnConfirmButton={true}
@@ -43,12 +47,8 @@ const ConfirmModalLight = ({
                 ...components,
             }}
         >
-            <ConfirmModalTitle>
-                {title}
-            </ConfirmModalTitle>
-            <ConfirmModalMessage>
-                {message}
-            </ConfirmModalMessage>
+            <ConfirmModalTitle>{title}</ConfirmModalTitle>
+            <ConfirmModalMessage>{message}</ConfirmModalMessage>
         </ConfirmModal>
     );
 };
