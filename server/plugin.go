@@ -35,6 +35,7 @@ type TelemetryClient interface {
 	app.PlaybookTelemetry
 	bot.Telemetry
 	app.UserInfoTelemetry
+	app.ChannelActionTelemetry
 	Enable() error
 	Disable() error
 }
@@ -143,7 +144,7 @@ func (p *Plugin) OnActivate() error {
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 	channelActionStore := sqlstore.NewChannelActionStore(apiClient, p.bot, sqlStore)
-	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.bot, channelActionStore)
+	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.bot, channelActionStore, p.telemetryClient)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
 

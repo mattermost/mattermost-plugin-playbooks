@@ -12,18 +12,20 @@ import (
 )
 
 type channelActionServiceImpl struct {
-	logger bot.Logger
-	poster bot.Poster
-	store  ChannelActionStore
-	api    *pluginapi.Client
+	logger    bot.Logger
+	poster    bot.Poster
+	store     ChannelActionStore
+	api       *pluginapi.Client
+	telemetry ChannelActionTelemetry
 }
 
-func NewChannelActionsService(api *pluginapi.Client, logger bot.Logger, poster bot.Poster, store ChannelActionStore) ChannelActionService {
+func NewChannelActionsService(api *pluginapi.Client, logger bot.Logger, poster bot.Poster, store ChannelActionStore, telemetry ChannelActionTelemetry) ChannelActionService {
 	return &channelActionServiceImpl{
-		logger: logger,
-		poster: poster,
-		store:  store,
-		api:    api,
+		logger:    logger,
+		poster:    poster,
+		store:     store,
+		api:       api,
+		telemetry: telemetry,
 	}
 }
 
@@ -169,9 +171,12 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 				a.logger.Errorf("payload of action of type %q is not valid", action.ActionType)
 			}
 
+			// Run the action
 			a.poster.SystemEphemeralPost(userID, channelID, &model.Post{
 				Message: payload.Message,
 			})
+
+			a.telemetry.RunChannelAction(action, userID)
 		}
 	}
 
