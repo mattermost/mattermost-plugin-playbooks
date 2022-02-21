@@ -221,13 +221,12 @@ func (p *Plugin) OnActivate() error {
 
 	// Init metrics
 	instanceInfo := metrics.InstanceInfo{
-		Version:        "version 12", //appModel.CurrentVersion
-		BuildNum:       "build 1",    //appModel.BuildNumber
-		Edition:        "edition 1",  //appModel.Edition
+		Version:        manifest.Version,
+		BuildNum:       "build 2",
 		InstallationID: os.Getenv("MM_CLOUD_INSTALLATION_ID"),
 	}
 	metricsService := metrics.NewMetrics(instanceInfo)
-	metricServer := metrics.NewMetricsServer(":9093", metricsService, pluginAPIClient.Log)
+	metricServer := metrics.NewMetricsServer(":9093", metricsService, &pluginAPIClient.Log)
 
 	go metricServer.Run()
 
