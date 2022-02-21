@@ -758,7 +758,7 @@ func (s *PlaybookRunServiceImpl) UpdateStatus(playbookRunID, userID string, opti
 		PlaybookRunID: playbookRunID,
 		PostID:        channelPost.Id,
 	}); err != nil {
-		return errors.Wrap(err, "failed to write status post to store. there is now inconsistent state.")
+		return errors.Wrap(err, "failed to write status post to store. there is now inconsistent state")
 	}
 
 	s.broadcastPlaybookRunMessageToChannels(playbookRunToModify.BroadcastChannelIDs, originalPost.Clone(), statusUpdateMessage, playbookRunToModify)
@@ -2391,7 +2391,12 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	}
 
 	retrospectiveURL := getRunRetrospectiveURL("", playbookRunToPublish.ID)
-	if _, err = s.poster.PostMessage(playbookRunToPublish.ChannelID, "@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n%s", publisherUser.Username, retrospectiveURL, retrospective.Text); err != nil {
+	post, err := s.buildRetrospectivePost(playbookRunToPublish, publisherUser, retrospectiveURL)
+	if err != nil {
+		return err
+	}
+
+	if err = s.poster.Post(post); err != nil {
 		return errors.Wrap(err, "failed to post to channel")
 	}
 
@@ -2417,6 +2422,43 @@ func (s *PlaybookRunServiceImpl) PublishRetrospective(playbookRunID, publisherID
 	s.telemetry.PublishRetrospective(playbookRunToPublish, publisherID)
 
 	return nil
+}
+
+func (s *PlaybookRunServiceImpl) buildRetrospectivePost(playbookRunToPublish *PlaybookRun, publisherUser *model.User, retrospectiveURL string) (*model.Post, error) {
+	props := map[string]interface{}{
+		"metricsData":       "null",
+		"metricsConfigs":    "null",
+		"retrospectiveText": playbookRunToPublish.Retrospective,
+	}
+
+	// If run has metrics data, get playbooks metrics configs and include them in custom post
+	if len(playbookRunToPublish.MetricsData) > 0 {
+		playbook, err := s.playbookService.Get(playbookRunToPublish.PlaybookID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get playbook")
+		}
+
+		metricsConfigs, err := json.Marshal(playbook.Metrics)
+		if err != nil {
+			s.pluginAPI.Log.Warn("cannot post retro, unable to marshal metrics configs")
+			return nil, err
+		}
+
+		metricsData, err := json.Marshal(playbookRunToPublish.MetricsData)
+		if err != nil {
+			s.pluginAPI.Log.Warn("cannot post retro, unable to marshal metrics data")
+			return nil, err
+		}
+		props["metricsData"] = string(metricsData)
+		props["metricsConfigs"] = string(metricsConfigs)
+	}
+
+	return &model.Post{
+		Message:   fmt.Sprintf("@channel Retrospective has been published by @%s\n[See the full retrospective](%s)\n", publisherUser.Username, retrospectiveURL),
+		Type:      "custom_retro",
+		ChannelId: playbookRunToPublish.ChannelID,
+		Props:     props,
+	}, nil
 }
 
 func (s *PlaybookRunServiceImpl) CancelRetrospective(playbookRunID, cancelerID string) error {
