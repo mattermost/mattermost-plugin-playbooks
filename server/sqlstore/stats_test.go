@@ -468,6 +468,7 @@ func generateTestData(t *testing.T, testCase *MetricStatsTest, testNum int, db *
 	}
 
 	// create and publish runs
+	now := model.GetMillis()
 	numRunsWithMetrics = testCase.numPublishedRuns * testCase.ratioRunsWithMetrics / 100
 	testCase.publishedRunsWithMetrics = make([]*app.PlaybookRun, numRunsWithMetrics)
 	for i := 0; i < testCase.numPublishedRuns; i++ {
@@ -476,7 +477,8 @@ func generateTestData(t *testing.T, testCase *MetricStatsTest, testNum int, db *
 		require.NoError(t, err)
 
 		if i < numRunsWithMetrics {
-			now := model.GetMillis()
+			//Increase time by 10 sec. to avoid duplicate values. Otherwise, metric values sorted by `PublishedAt` may be inconsistent.
+			now += 100000
 			playbookRun.RetrospectivePublishedAt = now
 			playbookRun.RetrospectiveWasCanceled = false
 			playbookRun.MetricsData = generateRandomMetricData(playbook.Metrics)
