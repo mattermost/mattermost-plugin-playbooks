@@ -146,33 +146,37 @@ export const Retrospective = (props: Props) => {
     return (
         <Container>
             <Left>
-                {props.playbookRun.retrospective_enabled ? <div>
-                    <Header>
-                        <Title>{formatMessage({defaultMessage: 'Retrospective'})}</Title>
-                        <HeaderButtonsRight>
-                            {publishComponent}
-                        </HeaderButtonsRight>
-                    </Header>
-                    <StyledContent>
-                        {props.metricsConfigs && metricsAvailable &&
-                            <MetricsData
-                                ref={childRef}
-                                metricsData={props.playbookRun.metrics_data}
-                                metricsConfigs={props.metricsConfigs}
+                {props.playbookRun.retrospective_enabled ? (
+                    <div>
+                        <Header>
+                            <Title>{formatMessage({defaultMessage: 'Retrospective'})}</Title>
+                            <HeaderButtonsRight>
+                                {publishComponent}
+                            </HeaderButtonsRight>
+                        </Header>
+                        <StyledContent>
+                            {props.metricsConfigs && metricsAvailable &&
+                                <MetricsData
+                                    ref={childRef}
+                                    metricsData={props.playbookRun.metrics_data}
+                                    metricsConfigs={props.metricsConfigs}
+                                    isPublished={isPublished}
+                                    onEdit={debouncedPersistMetricEditEvent}
+                                    flushChanges={() => debouncedPersistMetricEditEvent.flush()}
+                                />}
+                            <Report
+                                playbookRun={props.playbookRun}
+                                onEdit={debouncedPersistReportEditEvent}
+                                flushChanges={() => debouncedPersistReportEditEvent.flush()}
                                 isPublished={isPublished}
-                                onEdit={debouncedPersistMetricEditEvent}
-                                flushChanges={() => debouncedPersistMetricEditEvent.flush()}
-                            />}
-                        <Report
-                            playbookRun={props.playbookRun}
-                            onEdit={debouncedPersistReportEditEvent}
-                            flushChanges={() => debouncedPersistReportEditEvent.flush()}
-                            isPublished={isPublished}
-                        />
-                    </StyledContent>
-                </div> : <RetrospectiveDisabledText id={'retrospective-disabled-msg'}>
-                    {formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}
-                </RetrospectiveDisabledText>}
+                            />
+                        </StyledContent>
+                    </div>
+                ) : (
+                    <RetrospectiveDisabledText id={'retrospective-disabled-msg'}>
+                        {formatMessage({defaultMessage: 'Retrospectives were disabled for this playbook run.'})}
+                    </RetrospectiveDisabledText>
+                )}
             </Left>
             <Right>
                 <TimelineRetro
@@ -212,17 +216,17 @@ const TextContainer = styled.span`
 `;
 
 const DisabledPrimaryButtonSmaller = styled(PrimaryButtonSmaller)`
-    background: rgba(var(--center-channel-color-rgb),0.08);
-    color: rgba(var(--center-channel-color-rgb),0.32);
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    color: rgba(var(--center-channel-color-rgb), 0.32);
     margin-left: 16px;
     cursor: default;
 
     &:active:not([disabled])  {
-        background: rgba(var(--center-channel-color-rgb),0.08);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
     }
 
     &:hover:enabled {
-        background: rgba(var(--center-channel-color-rgb),0.08);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
         &:before {
             opacity: 0;
         }
