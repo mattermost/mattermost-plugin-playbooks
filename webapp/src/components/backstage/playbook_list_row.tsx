@@ -1,16 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {Fragment} from 'react';
 import styled from 'styled-components';
 
 import {GlobalState} from 'mattermost-redux/types/store';
-
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
-
 import {useSelector} from 'react-redux';
-
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {Playbook} from 'src/types/playbook';
 import TextWithTooltip from '../widgets/text_with_tooltip';
@@ -18,7 +15,9 @@ import TextWithTooltip from '../widgets/text_with_tooltip';
 import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
 import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 
-import {playbookExportProps} from 'src/client';
+import Tooltip from '../widgets/tooltip';
+
+import {playbookExportProps, telemetryEventForPlaybook} from 'src/client';
 
 import {InfoLine} from './styles';
 
@@ -28,6 +27,7 @@ interface Props {
     onClick: () => void
     onEdit: () => void
     onArchive: () => void
+    onRestore: () => void
     onDuplicate: () => void
 }
 
@@ -73,6 +73,10 @@ const PlaybookItemRow = styled.div`
 	padding-right: 15px;
 `;
 
+export const ArchiveIcon = styled.i`
+    font-size: 11px;
+`;
+
 const IconWrapper = styled.div`
     display: inline-flex;
     padding: 10px 5px 10px 3px;
@@ -82,18 +86,45 @@ const teamNameSelector = (teamId: string) => (state: GlobalState): string => get
 
 const PlaybookListRow = (props: Props) => {
     const teamName = useSelector(teamNameSelector(props.playbook.team_id));
+    const {formatMessage} = useIntl();
+
+    const infos: JSX.Element[] = [];
+    if (props.playbook.delete_at > 0) {
+        infos.push((
+            <Tooltip
+                delay={{show: 0, hide: 1000}}
+                id={`archive-${props.playbook.id}`}
+                content={formatMessage({defaultMessage: 'This playbook is archived.'})}
+            >
+                <ArchiveIcon className='icon icon-archive-outline'/>
+            </Tooltip>
+        ));
+    }
+
+    if (props.displayTeam) {
+        infos.push((<>{teamName}</>));
+    }
+
     const [exportHref, exportFilename] = playbookExportProps(props.playbook);
     return (
         <PlaybookItem
             key={props.playbook.id}
             onClick={props.onClick}
         >
-            <PlaybookItemTitle>
+            <PlaybookItemTitle data-testid='playbook-title'>
                 <TextWithTooltip
                     id={props.playbook.title}
                     text={props.playbook.title}
                 />
-                {props.displayTeam && <InfoLine>{teamName}</InfoLine>}
+                {infos.length > 0 &&
+                    <InfoLine>
+                        {infos.map((info, i) => (
+                            <Fragment key={props.playbook.id + '-infoline' + i}>
+                                {i > 0 && ' - '}
+                                {info}
+                            </Fragment>))}
+                    </InfoLine>
+                }
             </PlaybookItemTitle>
             <PlaybookItemRow>{props.playbook.num_stages}</PlaybookItemRow>
             <PlaybookItemRow>{props.playbook.num_steps}</PlaybookItemRow>
@@ -112,7 +143,10 @@ const PlaybookListRow = (props: Props) => {
                         <FormattedMessage defaultMessage='Edit'/>
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                        onClick={props.onDuplicate}
+                        onClick={() => {
+                            props.onDuplicate();
+                            telemetryEventForPlaybook(props.playbook.id, 'playbook_duplicate_clicked_in_playbooks_list');
+                        }}
                     >
                         <FormattedMessage defaultMessage='Duplicate'/>
                     </DropdownMenuItem>
@@ -120,14 +154,23 @@ const PlaybookListRow = (props: Props) => {
                         href={exportHref}
                         download={exportFilename}
                         role={'button'}
+                        onClick={() => telemetryEventForPlaybook(props.playbook.id, 'playbook_export_clicked_in_playbooks_list')}
                     >
                         <FormattedMessage defaultMessage='Export'/>
                     </DropdownMenuItemStyled>
-                    <DropdownMenuItem
-                        onClick={props.onArchive}
-                    >
-                        <FormattedMessage defaultMessage='Archive'/>
-                    </DropdownMenuItem>
+                    {props.playbook.delete_at > 0 ? (
+                        <DropdownMenuItem
+                            onClick={props.onRestore}
+                        >
+                            <FormattedMessage defaultMessage='Restore'/>
+                        </DropdownMenuItem>
+                    ) : (
+                        <DropdownMenuItem
+                            onClick={props.onArchive}
+                        >
+                            <FormattedMessage defaultMessage='Archive'/>
+                        </DropdownMenuItem>
+                    )}
                 </DotMenu>
             </ActionCol>
         </PlaybookItem>

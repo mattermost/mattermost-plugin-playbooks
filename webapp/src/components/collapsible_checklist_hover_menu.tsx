@@ -50,7 +50,6 @@ const CollapsibleChecklistHoverMenu = (props: Props) => {
                 icon={<DotMenuIcon/>}
                 dotMenuButton={StyledDotMenuButton}
                 dropdownMenu={StyledDropdownMenu}
-                left={true}
                 topPx={15}
                 leftPx={-189}
                 title={formatMessage({defaultMessage: 'More'})}

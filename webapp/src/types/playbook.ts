@@ -54,6 +54,21 @@ export interface PlaybookWithChecklist extends Playbook {
     categorize_channel_enabled: boolean;
     run_summary_template: string;
     channel_name_template: string;
+    metrics: Metric[];
+}
+
+export enum MetricType {
+    Duration = 'metric_duration',
+    Currency = 'metric_currency',
+    Integer = 'metric_integer',
+}
+
+export interface Metric {
+    id: string;
+    type: MetricType;
+    title: string;
+    description: string;
+    target: number | null;
 }
 
 export interface FetchPlaybooksParams {
@@ -63,6 +78,7 @@ export interface FetchPlaybooksParams {
     sort?: 'title' | 'stages' | 'steps' | 'runs';
     direction?: 'asc' | 'desc';
     search_term?: string;
+    with_archived?: boolean;
 }
 
 export interface FetchPlaybooksReturn {
@@ -102,6 +118,20 @@ export interface ChecklistItem {
 export interface DraftPlaybookWithChecklist extends Omit<PlaybookWithChecklist, 'id'> {
     id?: string;
 }
+
+// setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
+export const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
+    ...playbook,
+    title: playbook.title.trim() || 'Untitled playbook',
+    checklists: playbook.checklists.map((checklist) => ({
+        ...checklist,
+        title: checklist.title || 'Untitled checklist',
+        items: checklist.items.map((item) => ({
+            ...item,
+            title: item.title || 'Untitled task',
+        })),
+    })),
+});
 
 export function emptyPlaybook(): DraftPlaybookWithChecklist {
     return {
@@ -145,6 +175,7 @@ export function emptyPlaybook(): DraftPlaybookWithChecklist {
         run_summary_template: '',
         channel_name_template: '',
         default_playbook_member_role: '',
+        metrics: [],
     };
 }
 
@@ -207,6 +238,14 @@ export function isChecklistItem(arg: any): arg is ChecklistItem {
         typeof arg.command === 'string' &&
         typeof arg.command_last_run === 'number';
 }
+
+export const newMetric = (type: MetricType, title = '', description = '', target = null): Metric => ({
+    id: '',
+    type,
+    title,
+    description,
+    target,
+});
 
 export const defaultMessageOnJoin = `Welcome! This channel was automatically created as part of a playbook run. You can [learn more about playbooks here](https://docs.mattermost.com/administration/devops-command-center.html?highlight=playbook#playbooks). To see information about this run, such as current owner and checklist of tasks, select the shield icon in the channel header.
 

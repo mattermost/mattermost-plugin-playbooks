@@ -13,13 +13,15 @@ import {useIntl, FormattedMessage} from 'react-intl';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
 
 import {Tabs, TabsContent} from 'src/components/tabs';
-import {PresetTemplates} from 'src/components/backstage/template_selector';
+import {PresetTemplates} from 'src/components/templates/template_data';
 import {navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {
     DraftPlaybookWithChecklist,
     PlaybookWithChecklist,
     Checklist,
     emptyPlaybook,
+    Metric,
+    setPlaybookDefaults,
 } from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/playbook_edit/stages_and_steps_edit';
@@ -36,6 +38,9 @@ import ActionsEdit from 'src/components/backstage/playbook_edit/actions_edit';
 import RetrospectiveEdit from 'src/components/backstage/playbook_edit/retrospective_edit';
 
 import {PlaybookRole} from 'src/types/permissions';
+import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip/tutorial_tour_tip';
+import {PlaybookEditTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
+import {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip/hooks';
 
 interface Props {
     isNew: boolean;
@@ -57,20 +62,6 @@ const FetchingStateType = {
     notFound: 'notfound',
 };
 
-// setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
-const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
-    ...playbook,
-    title: playbook.title.trim() || 'Untitled playbook',
-    checklists: playbook.checklists.map((checklist) => ({
-        ...checklist,
-        title: checklist.title || 'Untitled checklist',
-        items: checklist.items.map((item) => ({
-            ...item,
-            title: item.title || 'Untitled task',
-        })),
-    })),
-});
-
 export const tabInfo = [
     {id: 'checklists', name: <FormattedMessage defaultMessage='Checklists'/>},
     {id: 'actions', name: <FormattedMessage defaultMessage='Actions'/>},
@@ -84,6 +75,11 @@ const WebappUtils = window.WebappUtils;
 const PlaybookNavbar = styled(BackstageNavbar)`
     top: 80px;
 `;
+
+export interface EditingMetric {
+    index: number;
+    metric: Metric;
+}
 
 const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
@@ -112,6 +108,7 @@ const PlaybookEdit = (props: Props) => {
         return initialPlaybook;
     });
     const [changesMade, setChangesMade] = useState(false);
+    const [curEditingMetric, setCurEditingMetric] = useState<EditingMetric | null>(null);
 
     const [showTitleDescriptionModal, setShowTitleDescriptionModal] = useState(false);
 
@@ -139,6 +136,7 @@ const PlaybookEdit = (props: Props) => {
                     const fetchedPlaybook = await clientFetchPlaybook(urlParams.playbookId);
                     if (fetchedPlaybook) {
                         fetchedPlaybook.members ??= [{user_id: currentUserId, roles: [PlaybookRole.Member, PlaybookRole.Admin]}];
+                        fetchedPlaybook.metrics ??= [];
                         setPlaybook(fetchedPlaybook);
                     }
                     setFetchingState(FetchingStateType.fetched);
@@ -160,6 +158,90 @@ const PlaybookEdit = (props: Props) => {
         dispatch(fetchMyChannelsAndMembers(teamId));
         dispatch(fetchMyCategories(teamId));
     }, [dispatch, props.teamId, playbook.team_id]);
+
+    const showChecklistsTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.Checklists, TutorialTourCategories.PLAYBOOK_EDIT);
+    const showActionsTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.Actions, TutorialTourCategories.PLAYBOOK_EDIT);
+    const showStatusUpdatesTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.StatusUpdates, TutorialTourCategories.PLAYBOOK_EDIT);
+    const showRetrospectiveTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.Retrospective, TutorialTourCategories.PLAYBOOK_EDIT);
+
+    const punchout = useMeasurePunchouts(['tabs-header'], [], {y: -100, height: 100, x: 0, width: 0});
+
+    const checklistsTutorial = (showChecklistsTutorial &&
+        <TutorialTourTip
+            title={<FormattedMessage defaultMessage='Create and assign tasks'/>}
+            screen={<FormattedMessage defaultMessage='Document steps for the entire process here. Assign each task to responsible individuals and optionally add timelines or linked actions.'/>}
+            tutorialCategory={TutorialTourCategories.PLAYBOOK_EDIT}
+            step={PlaybookEditTutorialSteps.Checklists}
+            placement='bottom'
+            pulsatingDotPlacement='bottom'
+            pulsatingDotTranslate={{x: 0, y: 2}}
+            autoTour={true}
+            width={352}
+            punchOut={punchout}
+            onNextNavigateTo={() => setCurrentTab(1)}
+            telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.Checklists}_Checklists`}
+        />
+    );
+
+    const actionsTutorial = (showActionsTutorial &&
+        <TutorialTourTip
+            title={<FormattedMessage defaultMessage='Set up assumptions'/>}
+            screen={<FormattedMessage defaultMessage='Automate aspects of your playbook, such as sending a welcome message, inviting key members, and creating an update channel.'/>}
+            tutorialCategory={TutorialTourCategories.PLAYBOOK_EDIT}
+            step={PlaybookEditTutorialSteps.Actions}
+            placement='bottom'
+            pulsatingDotPlacement='bottom'
+            pulsatingDotTranslate={{x: 0, y: 2}}
+            autoTour={true}
+            width={352}
+            punchOut={punchout}
+            onNextNavigateTo={() => setCurrentTab(2)}
+            onPrevNavigateTo={() => setCurrentTab(0)}
+            telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.Actions}_Actions`}
+        />
+    );
+
+    const statusUpdatesTutorial = (showStatusUpdatesTutorial &&
+        <TutorialTourTip
+            title={<FormattedMessage defaultMessage='Keep stakeholders updated'/>}
+            screen={<FormattedMessage defaultMessage='Set timers and put together a template for status updates so stakeholders are always up to date with developments.'/>}
+            tutorialCategory={TutorialTourCategories.PLAYBOOK_EDIT}
+            step={PlaybookEditTutorialSteps.StatusUpdates}
+            placement='bottom'
+            pulsatingDotPlacement='bottom'
+            pulsatingDotTranslate={{x: 0, y: 2}}
+            autoTour={true}
+            width={352}
+            punchOut={punchout}
+            onNextNavigateTo={() => setCurrentTab(3)}
+            onPrevNavigateTo={() => setCurrentTab(1)}
+            telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.StatusUpdates}_StatusUpdates`}
+        />
+    );
+
+    const retrospectiveTutorial = (showRetrospectiveTutorial &&
+        <TutorialTourTip
+            title={<FormattedMessage defaultMessage='Learn AND reflect'/>}
+            screen={<FormattedMessage defaultMessage='Evaluate your processes using a retrospective to refine and improve with each run.'/>}
+            tutorialCategory={TutorialTourCategories.PLAYBOOK_EDIT}
+            step={PlaybookEditTutorialSteps.Retrospective}
+            placement='bottom'
+            pulsatingDotPlacement='bottom'
+            pulsatingDotTranslate={{x: 0, y: 2}}
+            autoTour={true}
+            width={352}
+            punchOut={punchout}
+            onPrevNavigateTo={() => setCurrentTab(2)}
+            telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.Retrospective}_Retrospective`}
+        />
+    );
+
+    const tutorials = new Map<string, false | JSX.Element>([
+        ['checklists', checklistsTutorial],
+        ['actions', actionsTutorial],
+        ['status', statusUpdatesTutorial],
+        ['retrospective', retrospectiveTutorial],
+    ]);
 
     const updateChecklist = (newChecklist: Checklist[]) => {
         setPlaybook({
@@ -270,12 +352,17 @@ const PlaybookEdit = (props: Props) => {
             </PlaybookNavbar>
             <Container>
                 <EditView>
-                    <TabsHeader>
+                    <TabsHeader id='tabs-header'>
                         <Tabs
                             currentTab={currentTab}
                             setCurrentTab={setCurrentTab}
                         >
-                            {tabInfo.map(({id, name}) => <React.Fragment key={id}>{name}</React.Fragment>)}
+                            {tabInfo.map(({id, name}) => (
+                                <React.Fragment key={id}>
+                                    {name}
+                                    {tutorials.get(id)}
+                                </React.Fragment>
+                            ))}
                         </Tabs>
                     </TabsHeader>
                     <EditContent>
@@ -303,6 +390,8 @@ const PlaybookEdit = (props: Props) => {
                                 retrospectiveAccess={retrospectiveAccess}
                                 setPlaybook={setPlaybook}
                                 setChangesMade={setChangesMade}
+                                curEditingMetric={curEditingMetric}
+                                setCurEditingMetric={setCurEditingMetric}
                             />
                         </TabsContent>
                     </EditContent>
@@ -310,7 +399,7 @@ const PlaybookEdit = (props: Props) => {
             </Container>
             <RouteLeavingGuard
                 navigate={(path) => WebappUtils.browserHistory.push(path)}
-                shouldBlockNavigation={() => changesMade}
+                shouldBlockNavigation={(newLoc) => location.pathname !== newLoc.pathname && changesMade}
             />
         </OuterContainer>
     );

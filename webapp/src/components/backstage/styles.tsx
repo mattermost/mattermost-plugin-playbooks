@@ -23,7 +23,7 @@ export const Banner = styled.div`
     text-align: center;
 `;
 
-export const BackstageHeader = styled.div`
+export const BackstageHeader = styled.header`
     ${RegularHeading} {
     }
 
@@ -39,19 +39,19 @@ export const TeamContainer = styled.div`
     margin-left: 1rem;
 `;
 
-export const BackstageSubheader = styled.div`
+export const BackstageSubheader = styled.header`
     font-weight: 600;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 14px;
+    line-height: 20px;
     color: var(--center-channel-color);
 `;
 
 export const BackstageSubheaderDescription = styled.div`
     font-weight: normal;
-    font-size: 12px;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
-    margin: 0 0 16px;
+    font-size: 14px;
+    line-height: 20px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    margin: 4px 0 16px;
 `;
 
 export const TabContainer = styled.div`
