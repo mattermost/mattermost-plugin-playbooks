@@ -60,6 +60,16 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	return newID, nil
 }
 
+func (s *playbookService) Import(playbook Playbook, userID string) (string, error) {
+	newID, err := s.Create(playbook, userID)
+	if err != nil {
+		return "", err
+	}
+	playbook.ID = newID
+	s.telemetry.ImportPlaybook(playbook, userID)
+	return newID, nil
+}
+
 func (s *playbookService) Get(id string) (Playbook, error) {
 	return s.store.Get(id)
 }
