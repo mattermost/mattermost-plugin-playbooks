@@ -111,6 +111,10 @@ func (a *ActionsHandler) checkAndSendMessageOnJoin(w http.ResponseWriter, r *htt
 	channelID := vars["channel_id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
+	if !a.PermissionsCheck(w, a.permissions.ChannelActionView(userID, channelID)) {
+		return
+	}
+
 	hasViewed := a.channelActionsService.CheckAndSendMessageOnJoin(userID, channelID)
 	ReturnJSON(w, map[string]interface{}{"viewed": hasViewed}, http.StatusOK)
 }
