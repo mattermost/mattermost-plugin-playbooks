@@ -94,7 +94,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                 </Button>
             </EditHeader>
             <EditContainer>
-                <Title>{'Title'}</Title>
+                <Title>{formatMessage({defaultMessage: 'Title'})}</Title>
                 <StyledInput
                     error={titleError !== ''}
                     placeholder={formatMessage({defaultMessage: 'Name of the metric'})}
@@ -123,7 +123,8 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                         setTargetError('');
                     }}
                 />
-                <Title>{'Description'}</Title>
+                <VerticalSpacer size={16}/>
+                <Title>{formatMessage({defaultMessage: 'Description'})}</Title>
                 <StyledTextarea
                     placeholder={formatMessage({defaultMessage: 'Describe what this metric is about'})}
                     rows={2}

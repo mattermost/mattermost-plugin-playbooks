@@ -22,7 +22,19 @@ interface Props {
     disabled?: boolean;
 }
 
-const MetricInput = ({title, value, placeholder, helpText, errorText, targetValue, mandatory, inputIcon, inputRef: textareaRef, onChange, disabled}: Props) => {
+const MetricInput = ({
+    title,
+    value,
+    placeholder,
+    helpText,
+    errorText,
+    targetValue,
+    mandatory,
+    inputIcon,
+    inputRef: textareaRef,
+    onChange,
+    disabled,
+}: Props) => {
     const {formatMessage} = useIntl();
 
     return (
