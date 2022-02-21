@@ -465,10 +465,11 @@ export async function updateRetrospective(playbookRunID: string, updatedText: st
     return data;
 }
 
-export async function publishRetrospective(playbookRunID: string, currentText: string) {
+export async function publishRetrospective(playbookRunID: string, currentText: string, metrics: RunMetricData[]) {
     const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective/publish`,
         JSON.stringify({
             retrospective: currentText,
+            metrics,
         }));
     return data;
 }
