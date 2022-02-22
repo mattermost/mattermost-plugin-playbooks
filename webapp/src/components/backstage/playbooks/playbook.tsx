@@ -55,7 +55,7 @@ import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 import {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip/hooks';
 import {PlaybookPreviewTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip';
-import PlaybookKeyMetrics from 'src/components/backstage/playbooks/playbook_key_metrics';
+import PlaybookKeyMetrics from 'src/components/backstage/playbooks/metrics/playbook_key_metrics';
 
 interface MatchParams {
     playbookId: string

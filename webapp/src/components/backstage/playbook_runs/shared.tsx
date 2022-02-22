@@ -77,14 +77,6 @@ export const ExpandRight = styled.div`
     margin-left: auto;
 `;
 
-export const HorizontalSpacer = styled.div<{ size: number }>`
-    margin-left: ${(props) => props.size}px;
-`;
-
-export const VerticalSpacer = styled.div<{ size: number }>`
-    margin-top: ${(props) => props.size}px;
-`;
-
 export const PrimaryButtonRight = styled(PrimaryButton)`
     height: 26px;
     padding: 0 14px;
@@ -131,7 +123,7 @@ export const StyledInput = styled(BaseInput)<{error?: boolean}>`
     width: 100%;
 
     background-color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb), 0.03)' : 'var(--center-channel-bg)')};
-    
+
     ${(props) => (
         props.error && css`
             box-shadow: inset 0 0 0 1px var(--error-text);

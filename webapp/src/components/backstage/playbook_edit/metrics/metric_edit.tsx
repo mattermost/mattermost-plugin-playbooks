@@ -7,11 +7,12 @@ import {useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import {VerticalSpacer, StyledInput, HelpText, ErrorText} from 'src/components/backstage/playbook_runs/shared';
+import {StyledInput, HelpText, ErrorText} from 'src/components/backstage/playbook_runs/shared';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 import {stringToMetric, metricToString, isMetricValueValid} from 'src/components/backstage/playbook_edit/metrics/shared';
-import MetricInput from '../../playbook_runs/playbook_run_backstage/metrics/metric_input';
+import MetricInput from 'src/components/backstage/playbook_runs/playbook_run_backstage/metrics/metric_input';
 import {BaseTextArea} from 'src/components/assets/inputs';
+import {VerticalSpacer} from 'src/components/backstage/styles';
 
 type SetState = (prevState: Metric) => Metric;
 
