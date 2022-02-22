@@ -9,6 +9,8 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
+import {Redirect} from 'react-router-dom';
+
 import {displayPlaybookCreateModal} from 'src/actions';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import LeftDots from 'src/components/assets/left_dots';
@@ -132,7 +134,11 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
 
     const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
-    const hasPlaybooks = playbooks?.length !== 0;
+    const hasPlaybooks = Boolean(playbooks?.length);
+
+    if (props.firstTimeUserExperience && hasPlaybooks) {
+        return <Redirect to={pluginUrl('/playbooks')}/>;
+    }
 
     const scrollToTemplates = () => {
         selectorRef.current?.scrollIntoView({behavior: 'smooth'});

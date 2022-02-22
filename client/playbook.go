@@ -23,6 +23,8 @@ type Playbook struct {
 	DefaultOwnerEnabled         bool             `json:"default_owner_enabled"`
 	BroadcastChannelIDs         []string         `json:"broadcast_channel_ids"`
 	BroadcastEnabled            bool             `json:"broadcast_enabled"`
+	WebhookOnCreationURLs       []string         `json:"webhook_on_creation_urls"`
+	WebhookOnCreationEnabled    bool             `json:"webhook_on_creation_enabled"`
 }
 
 type PlaybookMember struct {

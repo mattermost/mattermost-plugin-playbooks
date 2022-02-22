@@ -7,7 +7,7 @@ import {useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
-import {targetToString} from 'src/components/backstage/playbook_edit/metrics/shared';
+import {metricToString} from 'src/components/backstage/playbook_edit/metrics/shared';
 
 interface Props {
     metric: Metric;
@@ -27,7 +27,7 @@ const MetricView = ({metric, editClick, deleteClick, disabled}: Props) => {
         icon = <ClockOutline sizePx={18}/>;
     }
 
-    const targetStr = targetToString(metric.target, metric.type, true);
+    const targetStr = metricToString(metric.target, metric.type, true);
     const target = metric.target === null ? '' : `${targetStr} ${perRun}`;
 
     return (
