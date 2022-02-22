@@ -141,20 +141,20 @@ const Backstage = () => {
                                 </BackstageTitlebarItem>
                             </div>
                             <div className='d-flex items-center'>
-                                {npsAvailable &&
-                                <BackstageTitlebarItem
-                                    to={`${match.url}/runs`}
-                                    activeClassName={'active'}
-                                    data-testid='playbookRunsLHSButton'
-                                >
-                                    <Icon
-                                        path={mdiClipboardPlayMultipleOutline}
-                                        title={formatMessage({defaultMessage: 'Runs'})}
-                                        size={1.4}
-                                    />
-                                    {formatMessage({defaultMessage: 'Runs'})}
-                                </BackstageTitlebarItem>
-                                }
+                                {npsAvailable && (
+                                    <BackstageTitlebarItem
+                                        onClick={promptForFeedback}
+                                        to={`/${teams[0].name}/messages/@surveybot`}
+                                        data-testid='giveFeedbackButton'
+                                    >
+                                        <Icon
+                                            path={mdiThumbsUpDown}
+                                            title={formatMessage({defaultMessage: 'Give Feedback'})}
+                                            size={1}
+                                        />
+                                        {formatMessage({defaultMessage: 'Give Feedback'})}
+                                    </BackstageTitlebarItem>
+                                )}
                             </div>
                         </BackstageNavbar>
                     </Route>
