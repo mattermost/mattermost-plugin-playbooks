@@ -61,8 +61,8 @@ const Cell = ({type, value, target}: CellProps) => {
 
     const valueAsDuration = Duration.fromMillis(value);
     let val = <>{value}</>;
-    const prefix = value < target ? '- ' : '';
-    let diff = prefix + (target - value);
+    const prefix = value < target ? '- ' : '+ ';
+    let diff = prefix + Math.abs(value - target);
     if (type === MetricType.Duration) {
         val = <div className='time'>{formatDuration(valueAsDuration)}</div>;
         diff = prefix + formatDuration(Duration.fromMillis(target).minus(valueAsDuration));

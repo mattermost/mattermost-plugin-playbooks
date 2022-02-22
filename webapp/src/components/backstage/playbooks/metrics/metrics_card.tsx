@@ -8,7 +8,7 @@ import {useIntl} from 'react-intl';
 
 import {MetricType, PlaybookWithChecklist} from 'src/types/playbook';
 import {HorizontalSpacer} from 'src/components/backstage/styles';
-import {PlaybookStats} from 'src/types/stats';
+import {NullNumber, PlaybookStats} from 'src/types/stats';
 import {formatDuration} from 'src/components/formatted_duration';
 import BarGraph from 'src/components/backstage/playbooks/bar_graph';
 
@@ -47,8 +47,7 @@ const MetricsCard = ({playbook, playbookStats, index}: Props) => {
         },
     };
 
-    const title = playbook.metrics[index].title;
-    const titleEllipsis = title.substring(0, 32) + (title.length > 32 ? '...' : '');
+    const titleEllipsis = ellipsize(playbook.metrics[index].title, 32);
     const chartTitle = titleEllipsis + ' ' + formatMessage({defaultMessage: 'per run over the last 10 runs'});
 
     return (
@@ -57,21 +56,21 @@ const MetricsCard = ({playbook, playbookStats, index}: Props) => {
                 <SummaryCardInner>
                     <Cell>
                         <Title>{formatMessage({defaultMessage: 'Average value'})}</Title>
-                        <Value>{transformFn(stats.average)}</Value>
+                        <Value>{stats.average === null ? '-' : transformFn(stats.average)}</Value>
                     </Cell>
                     <Cell>
                         <Title>{formatMessage({defaultMessage: '10-run average value'})}</Title>
                         <Row>
-                            <Value>{transformFn(stats.rolling_average)}</Value>
+                            <Value>{stats.rolling_average === null ? '-' : transformFn(stats.rolling_average)}</Value>
                             {percentageChange(stats.rolling_average_change)}
                         </Row>
                     </Cell>
                     <Cell>
                         <Title>{formatMessage({defaultMessage: 'Value range'})}</Title>
                         <Value>
-                            {valueTransformFn(stats.value_range[0])}
+                            {stats.value_range[0] === null ? '-' : valueTransformFn(stats.value_range[0])}
                             <ValueTo>{' ' + formatMessage({defaultMessage: 'to'}) + ' '}</ValueTo>
-                            {valueTransformFn(stats.value_range[1])}
+                            {stats.value_range[1] === null ? '-' : valueTransformFn(stats.value_range[1])}
                         </Value>
                     </Cell>
                     <Cell>
@@ -93,7 +92,11 @@ const MetricsCard = ({playbook, playbookStats, index}: Props) => {
                     data={stats.rolling_values}
                     color={'--center-channel-color-48'}
                     yAxesTicksCallback={(val, idx) => (idx % 2 === 0 ? '' : valueTransformFn(val).toString())}
-                    tooltipTitleCallback={(label) => `Run #${label}`}
+                    xAxesTicksCallback={(val) => val.toString()}
+                    tooltipTitleCallback={(label) => {
+                        const runName = stats.last_x_run_names[parseInt(label, 10) - 1];
+                        return ellipsize(runName, 24);
+                    }}
                     tooltipLabelCallback={(val) => transformFn(val).toString()}
                     options={{
                         annotation: {
@@ -109,24 +112,29 @@ const MetricsCard = ({playbook, playbookStats, index}: Props) => {
 };
 
 interface MetricsCardStats {
-    average: number;
-    rolling_average: number;
-    rolling_average_change: number;
-    value_range: number[];
-    rolling_values: number[];
-    target?: number;
+    average: NullNumber;
+    rolling_average: NullNumber;
+    rolling_average_change: NullNumber;
+    value_range: NullNumber[];
+    rolling_values: NullNumber[];
+    target: NullNumber;
+    last_x_run_names: string[];
 }
 
 const makeCardStats = (playbook: PlaybookWithChecklist, stats: PlaybookStats, idx: number) => {
     return {
-        average: stats.metric_overall_average[idx],
-        rolling_average: stats.metric_rolling_average[idx],
-        rolling_average_change: stats.metric_rolling_average_change[idx],
-        value_range: stats.metric_value_range[idx],
-        rolling_values: stats.metric_rolling_values[idx],
-        target: playbook.metrics[idx].target,
+        average: stats.metric_overall_average[idx] || null,
+        rolling_average: stats.metric_rolling_average[idx] || null,
+        rolling_average_change: stats.metric_rolling_average_change[idx] || null,
+        value_range: stats.metric_value_range[idx] || [null, null],
+        rolling_values: stats.metric_rolling_values[idx] || [null, null, null, null, null, null, null, null, null, null],
+        target: playbook.metrics[idx].target || null,
+        last_x_run_names: stats.last_x_run_names || ['', '', '', '', '', '', '', '', '', ''],
     } as MetricsCardStats;
 };
+
+const ellipsize = (original: string, charLimit: number) =>
+    original.substring(0, charLimit) + (original.length > charLimit ? '...' : '');
 
 const Container = styled.div`
     display: flex;
@@ -176,8 +184,8 @@ const Row = styled.div`
     align-items: center;
 `;
 
-const percentageChange = (change: number) => {
-    if (change >= 99999999 || change === 0) {
+const percentageChange = (change: NullNumber) => {
+    if (!change || change >= 99999999) {
         return null;
     }
     const changeSymbol = (change > 0) ? 'icon-arrow-up' : 'icon-arrow-down';
@@ -192,6 +200,7 @@ const percentageChange = (change: number) => {
 
 const PercentageChange = styled.div`
     margin-left: 12px;
+    padding-right: 4px;
     display: flex;
     flex-direction: row;
     border-radius: 10px;

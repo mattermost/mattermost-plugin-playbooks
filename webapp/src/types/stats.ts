@@ -12,6 +12,8 @@ export interface Stats {
     average_start_to_resolved: number[];
 }
 
+export type NullNumber = number | null;
+
 export interface PlaybookStats {
     runs_in_progress: number;
     participants_active: number;
@@ -23,11 +25,12 @@ export interface PlaybookStats {
     active_runs_per_day_times: number[][];
     active_participants_per_day: number[];
     active_participants_per_day_times: number[][];
-    metric_overall_average: number[]; // indexed by metric, in the same order as playbook.metrics
-    metric_rolling_average: number[]; // indexed by metric
-    metric_rolling_average_change: number[];
-    metric_value_range: number[][]; // indexed by metric, each array is a tuple: min max
-    metric_rolling_values: number[][]; // indexed by metric, each array is that metric's last x runs values (reverse order: 0: most recent, 1: second most recent, etc.)
+    metric_overall_average: NullNumber[]; // indexed by metric, in the same order as playbook.metrics
+    metric_rolling_average: NullNumber[]; // indexed by metric
+    metric_rolling_average_change: NullNumber[];
+    metric_value_range: NullNumber[][]; // indexed by metric, each array is a tuple: min max
+    metric_rolling_values: NullNumber[][]; // indexed by metric, each array is that metric's last x runs values (reverse order: 0: most recent, 1: second most recent, etc.)
+    last_x_run_names: string[];
 }
 
 export const EmptyPlaybookStats = {
@@ -46,18 +49,5 @@ export const EmptyPlaybookStats = {
     metric_rolling_average_change: [0, 0, 0, 0],
     metric_value_range: [[0, 0], [0, 0], [0, 0], [0, 0]],
     metric_rolling_values: [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+    last_x_run_names: ['', '', '', '', '', '', '', '', '', ''],
 } as PlaybookStats;
-
-// TODO: adding values for development, remove
-export const DevMetrics = {
-    metric_overall_average: [8520340042, 1800, 6, 7500000],
-    metric_rolling_average: [8500000000, 2200, 9, 5400000],
-    metric_rolling_average_change: [15, -34, 120, 0],
-    metric_value_range: [[3500000000, 10500000000], [0, 5900], [0, 49], [2500000, 7500000]],
-    metric_rolling_values: [
-        [3800000000, 4200000000, 4500000000, 4500000000, 0, 0, 0, 0, 7400000000, 5900000000],
-        [1800, 800, 2800, 2200, 4400, 2100, 100, 900, 3800, 400],
-        [4, 2, 1, 3, 4, 6, 10, 14, 3, 2],
-        [8500000000, 8500000000, 0, 0, 0, 0, 8500000000, 8500000000, 8500000000, 8500000000],
-    ],
-};

@@ -7,6 +7,8 @@ import * as chartjs from 'chart.js';
 import 'chartjs-plugin-annotation';
 import styled from 'styled-components';
 
+import {NullNumber} from 'src/types/stats';
+
 const GraphBoxContainer = styled.div`
     padding: 10px;
 `;
@@ -14,7 +16,7 @@ const GraphBoxContainer = styled.div`
 interface BarGraphProps {
     title: string;
     xlabel?: string;
-    data?: number[];
+    data?: NullNumber[];
     labels?: string[];
     className?: string;
     color?: string;
@@ -22,6 +24,7 @@ interface BarGraphProps {
     tooltipLabelCallback?: (yLabel: number) => string;
     onClick?: (index: number) => void;
     yAxesTicksCallback?: (val: number, index: number) => string;
+    xAxesTicksCallback?: (val: number, index: number) => string;
     options?: any;
 }
 
@@ -58,7 +61,7 @@ const BarGraph = (props: BarGraphProps) => {
                                 fontColor: centerChannelFontColor,
                             },
                             ticks: {
-                                callback: (val: any, index: number) => {
+                                callback: props.xAxesTicksCallback ? props.xAxesTicksCallback : (val: any, index: number) => {
                                     return (index % 2) === 0 ? val : '';
                                 },
                                 fontColor: centerChannelFontColor,
@@ -112,7 +115,9 @@ const BarGraph = (props: BarGraphProps) => {
                         pointBorderColor: '#fff',
                         pointHoverBackgroundColor: '#fff',
                         pointHoverBorderColor: color,
-                        data: props.data,
+
+                        // This is okay, it can take nulls and numbers
+                        data: props.data as number[],
                     }],
                 }}
             />

@@ -82,16 +82,12 @@ const OuterContainer = styled.div`
 const InnerContainer = styled.div`
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 0 20px 20px;
     max-width: 1120px;
     margin: 0 auto;
     font-family: 'Open Sans', sans-serif;
     font-style: normal;
     font-weight: 600;
-
-    > div + div {
-        margin-top: 16px;
-    }
 `;
 
 const RunListContainer = styled.div`

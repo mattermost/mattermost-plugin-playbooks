@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import StatusBadge from 'src/components/backstage/status_badge';
 
@@ -123,7 +123,7 @@ export const StyledInput = styled(BaseInput)<{error?: boolean}>`
     width: 100%;
 
     background-color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb), 0.03)' : 'var(--center-channel-bg)')};
-    
+
     ${(props) => (
         props.error && css`
             box-shadow: inset 0 0 0 1px var(--error-text);

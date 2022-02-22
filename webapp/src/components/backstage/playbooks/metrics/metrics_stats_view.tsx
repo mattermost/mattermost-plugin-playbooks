@@ -5,7 +5,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 import MetricsCard from 'src/components/backstage/playbooks/metrics/metrics_card';
-import {DevMetrics, PlaybookStats} from 'src/types/stats';
+import {PlaybookStats} from 'src/types/stats';
 import {Metric, MetricType, PlaybookWithChecklist} from 'src/types/playbook';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
 
@@ -26,9 +26,7 @@ const MetricsStatsView = ({playbook, stats}: Props) => {
                         />
                         <MetricsCard
                             playbook={playbook}
-
-                            // TODO: for development only; replace {...stats, ...metrics} with stats
-                            playbookStats={{...stats, ...DevMetrics}}
+                            playbookStats={stats}
                             index={idx}
                         />
                     </>
@@ -62,6 +60,7 @@ const Header = styled.div`
     font-weight: 600;
     line-height: 24px;
     color: var(--center-channel-color);
+    margin: 24px 0 8px 0;
 
     svg {
         color: rgba(var(--center-channel-color-rgb), 0.56);
