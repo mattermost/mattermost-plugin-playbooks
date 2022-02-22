@@ -269,6 +269,9 @@ type PlaybookService interface {
 	// Create creates a new playbook
 	Create(playbook Playbook, userID string) (string, error)
 
+	// Import imports a new playbook
+	Import(playbook Playbook, userID string) (string, error)
+
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 
@@ -358,6 +361,9 @@ type PlaybookStore interface {
 type PlaybookTelemetry interface {
 	// CreatePlaybook tracks the creation of a playbook.
 	CreatePlaybook(playbook Playbook, userID string)
+
+	// ImportPlaybook tracks the import of a playbook.
+	ImportPlaybook(playbook Playbook, userID string)
 
 	// UpdatePlaybook tracks the update of a playbook.
 	UpdatePlaybook(playbook Playbook, userID string)

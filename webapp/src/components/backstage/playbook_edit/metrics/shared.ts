@@ -6,7 +6,7 @@ import {Duration} from 'luxon';
 import {MetricType} from 'src/types/playbook';
 import {formatDuration} from 'src/components/formatted_duration';
 
-export const targetToString = (target: number | null, type: MetricType, naturalDuration = false) => {
+export const metricToString = (target: number | null, type: MetricType, naturalDuration = false) => {
     if (target === null) {
         return '';
     }
@@ -26,7 +26,7 @@ export const targetToString = (target: number | null, type: MetricType, naturalD
     return `${dd}:${hh}:${mm}`;
 };
 
-export const stringToTarget = (target: string, type: MetricType) => {
+export const stringToMetric = (target: string, type: MetricType) => {
     if (target === '') {
         return null;
     }
@@ -42,4 +42,19 @@ export const stringToTarget = (target: string, type: MetricType) => {
         hours: ddmmss[1],
         minutes: ddmmss[2],
     }).as('milliseconds');
+};
+
+export const isMetricValueValid = (type: MetricType, value: string) => {
+    if (type === MetricType.Duration) {
+        const regex = /(^$|^\d{1,2}:\d{1,2}:\d{1,2}$)/;
+        if (!regex.test(value)) {
+            return false;
+        }
+    } else {
+        const regex = /^\d*$/;
+        if (!regex.test(value)) {
+            return false;
+        }
+    }
+    return true;
 };

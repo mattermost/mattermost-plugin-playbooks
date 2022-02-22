@@ -67,7 +67,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	return handler
 }
 
-func (h *PlaybookHandler) validPlaybookCreation(w http.ResponseWriter, playbook *app.Playbook) bool {
+func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, playbook *app.Playbook) bool {
 	if playbook.WebhookOnCreationEnabled {
 		if len(playbook.WebhookOnCreationURLs) > 64 {
 			msg := "too many registered creation webhook urls, limit to less than 64"
@@ -173,7 +173,7 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if !h.validPlaybookCreation(w, &playbook) {
+	if !h.validPlaybook(w, &playbook) {
 		return
 	}
 
@@ -247,49 +247,8 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if playbook.WebhookOnCreationEnabled {
-		for _, webhook := range playbook.WebhookOnCreationURLs {
-			var parsedURL *url.URL
-			parsedURL, err = url.ParseRequestURI(webhook)
-			if err != nil {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
-				return
-			}
-
-			if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-				msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
-				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-				return
-			}
-		}
-	}
-
-	if playbook.WebhookOnStatusUpdateEnabled {
-		for _, webhook := range playbook.WebhookOnStatusUpdateURLs {
-			var parsedURL *url.URL
-			parsedURL, err = url.ParseRequestURI(webhook)
-			if err != nil {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
-				return
-			}
-
-			if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-				msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
-				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-				return
-			}
-		}
-	}
-
-	if playbook.CategorizeChannelEnabled {
-		if err = h.validateCategoryName(playbook.CategoryName); err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
-			return
-		}
-	}
-
-	if len(playbook.SignalAnyKeywords) != 0 {
-		playbook.SignalAnyKeywords = removeDuplicates(playbook.SignalAnyKeywords)
+	if !h.validPlaybook(w, &playbook) {
+		return
 	}
 
 	err = h.playbookService.Update(playbook, userID)
@@ -671,11 +630,11 @@ func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !h.validPlaybookCreation(w, &playbook) {
+	if !h.validPlaybook(w, &playbook) {
 		return
 	}
 
-	id, err := h.playbookService.Create(playbook, userID)
+	id, err := h.playbookService.Import(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
 		return

@@ -17,7 +17,7 @@ import DotMenuIcon from 'src/components/assets/icons/dot_menu_icon';
 
 import Tooltip from '../widgets/tooltip';
 
-import {playbookExportProps} from 'src/client';
+import {playbookExportProps, telemetryEventForPlaybook} from 'src/client';
 
 import {InfoLine} from './styles';
 
@@ -143,7 +143,10 @@ const PlaybookListRow = (props: Props) => {
                         <FormattedMessage defaultMessage='Edit'/>
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                        onClick={props.onDuplicate}
+                        onClick={() => {
+                            props.onDuplicate();
+                            telemetryEventForPlaybook(props.playbook.id, 'playbook_duplicate_clicked_in_playbooks_list');
+                        }}
                     >
                         <FormattedMessage defaultMessage='Duplicate'/>
                     </DropdownMenuItem>
@@ -151,6 +154,7 @@ const PlaybookListRow = (props: Props) => {
                         href={exportHref}
                         download={exportFilename}
                         role={'button'}
+                        onClick={() => telemetryEventForPlaybook(props.playbook.id, 'playbook_export_clicked_in_playbooks_list')}
                     >
                         <FormattedMessage defaultMessage='Export'/>
                     </DropdownMenuItemStyled>
