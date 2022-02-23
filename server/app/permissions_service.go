@@ -397,7 +397,7 @@ func (p *PermissionsService) RunViewByChannel(userID, channelID string) error {
 }
 
 func (p *PermissionsService) ChannelActionCreate(userID, channelID string) error {
-	if IsSystemAdmin(userID, p.pluginAPI) || IsChannelAdmin(userID, channelID, p.pluginAPI) {
+	if IsSystemAdmin(userID, p.pluginAPI) || CanManageChannelProperties(userID, channelID, p.pluginAPI) {
 		return nil
 	}
 
@@ -413,7 +413,7 @@ func (p *PermissionsService) ChannelActionView(userID, channelID string) error {
 }
 
 func (p *PermissionsService) ChannelActionUpdate(userID, channelID string) error {
-	if IsSystemAdmin(userID, p.pluginAPI) || IsChannelAdmin(userID, channelID, p.pluginAPI) {
+	if IsSystemAdmin(userID, p.pluginAPI) || CanManageChannelProperties(userID, channelID, p.pluginAPI) {
 		return nil
 	}
 
@@ -425,8 +425,8 @@ func IsSystemAdmin(userID string, pluginAPI *pluginapi.Client) bool {
 	return pluginAPI.User.HasPermissionTo(userID, model.PermissionManageSystem)
 }
 
-// IsChannelAdmin returns true if the userID is a channel admin of channelID
-func IsChannelAdmin(userID, channelID string, pluginAPI *pluginapi.Client) bool {
+// CanManageChannelProperties returns true if the userID is allowed to manage the properties of channelID
+func CanManageChannelProperties(userID, channelID string, pluginAPI *pluginapi.Client) bool {
 	channel, err := pluginAPI.Channel.Get(channelID)
 	if err != nil {
 		return false

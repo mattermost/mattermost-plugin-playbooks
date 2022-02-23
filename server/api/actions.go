@@ -135,6 +135,13 @@ func (a *ActionsHandler) updateChannelAction(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Ensure that the channel ID in both the URL and the body of the request are the same;
+	// otherwise the permission check done above no longer makes sense
+	if newChannelAction.ChannelID != channelID {
+		a.HandleErrorWithCode(w, http.StatusBadRequest, "channel ID in request body must match channel ID in URL", nil)
+		return
+	}
+
 	// Validate the new action type and payload
 	if err := a.channelActionsService.Validate(newChannelAction); err != nil {
 		a.HandleErrorWithCode(w, http.StatusBadRequest, "invalid action", err)
