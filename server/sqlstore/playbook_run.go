@@ -1163,6 +1163,40 @@ func (s *playbookRunStore) GetFollowers(playbookRunID string) ([]string, error) 
 	return followers, nil
 }
 
+// Get number of active playbooks.
+func (s *playbookRunStore) GetRunsActiveTotal() (int64, error) {
+	var count int64
+	err := s.store.db.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM IR_Incident WHERE CurrentStatus = %s", app.StatusInProgress))
+
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to count active runs'")
+	}
+
+	return count, nil
+}
+
+// GetOverdueUpdateRunsTotal returns number of runs that have overdue status updates.
+func (s *playbookRunStore) GetOverdueUpdateRunsTotal() (int64, error) {
+	query := s.store.builder.
+		Select("(*)").
+		From("IR_Incident").
+		Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+		Where(sq.NotEq{"PreviousReminder": 0})
+
+	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
+	} else {
+		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
+	}
+
+	var count int64
+	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count active runs that have overdue status updates")
+	}
+
+	return count, nil
+}
+
 // updateRunMetrics updates run metrics values.
 func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.PlaybookRun) error {
 	if len(playbookRun.MetricsData) == 0 {

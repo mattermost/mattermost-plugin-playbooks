@@ -354,6 +354,9 @@ type PlaybookStore interface {
 
 	// IsAutoFollowing returns weather user is auto-following a playbook
 	IsAutoFollowing(playbookID, userID string) (bool, error)
+
+	// GetPlaybooksActiveTotal returns number of active playbooks
+	GetPlaybooksActiveTotal() (int64, error)
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.

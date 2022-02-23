@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -12,6 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -22,6 +24,12 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/cluster"
+)
+
+const (
+	updateMetricsTaskFrequency = 15 * time.Minute
+
+	metricsExposePort = ":9093"
 )
 
 // These credentials for Rudder need to be populated at build-time,
@@ -56,6 +64,7 @@ type Plugin struct {
 	userInfoStore      app.UserInfoStore
 	telemetryClient    TelemetryClient
 	licenseChecker     app.LicenseChecker
+	metricsService     *metrics.Metrics
 }
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
@@ -130,6 +139,17 @@ func (p *Plugin) OnActivate() error {
 	toggleTelemetry()
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
+	// Init metrics
+	instanceInfo := metrics.InstanceInfo{
+		Version:        manifest.Version,
+		BuildNum:       "build 2",
+		InstallationID: os.Getenv("MM_CLOUD_INSTALLATION_ID"),
+	}
+	p.metricsService = metrics.NewMetrics(instanceInfo)
+	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService, &pluginAPIClient.Log)
+	// Run server to expose metrics
+	go metricServer.Run()
+
 	apiClient := sqlstore.NewClient(pluginAPIClient)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
 	scheduler := cluster.GetJobOnceScheduler(p.API)
@@ -147,7 +167,15 @@ func (p *Plugin) OnActivate() error {
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
+	p.playbookService = app.NewPlaybookService(
+		playbookStore,
+		p.bot,
+		p.telemetryClient,
+		pluginAPIClient,
+		p.config,
+		keywordsThreadIgnorer,
+		p.metricsService,
+	)
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
@@ -162,6 +190,7 @@ func (p *Plugin) OnActivate() error {
 		p.API,
 		p.playbookService,
 		p.licenseChecker,
+		p.metricsService,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
@@ -219,16 +248,8 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
-	// Init metrics
-	instanceInfo := metrics.InstanceInfo{
-		Version:        manifest.Version,
-		BuildNum:       "build 2",
-		InstallationID: os.Getenv("MM_CLOUD_INSTALLATION_ID"),
-	}
-	metricsService := metrics.NewMetrics(instanceInfo)
-	metricServer := metrics.NewMetricsServer(":9093", metricsService, &pluginAPIClient.Log)
-
-	go metricServer.Run()
+	// run metrics updater recuring task
+	p.RunMetricsUpdaterTask(playbookStore, playbookRunStore)
 
 	// prevent a recursive OnConfigurationChange
 	go func() {
@@ -279,4 +300,31 @@ func (p *Plugin) UserHasLeftChannel(c *plugin.Context, channelMember *model.Chan
 
 func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 	p.playbookService.MessageHasBeenPosted(c.SessionId, post)
+}
+
+func (p *Plugin) RunMetricsUpdaterTask(playbookStore app.PlaybookStore, playbookRunStore app.PlaybookRunStore) {
+	metricsUpdater := func() {
+		playbooksActiveTotal, err := playbookStore.GetPlaybooksActiveTotal()
+		if err != nil {
+			p.pluginAPI.Log.Error("error updating metrics, playbooks_active_total", err)
+		} else {
+			p.metricsService.ObservePlaybooksActiveTotal(playbooksActiveTotal)
+		}
+
+		runsActiveTotal, err := playbookRunStore.GetRunsActiveTotal()
+		if err != nil {
+			p.pluginAPI.Log.Error("error updating metrics, runs_active_total", err)
+		} else {
+			p.metricsService.ObserveRunsActiveTotal(runsActiveTotal)
+		}
+
+		remindersOverdueTotal, err := playbookRunStore.GetOverdueUpdateRunsTotal()
+		if err != nil {
+			p.pluginAPI.Log.Error("error updating metrics, reminders_outstanding_total", err)
+		} else {
+			p.metricsService.ObserveRemindersOutstandingTotal(remindersOverdueTotal)
+		}
+	}
+
+	scheduler.CreateRecurringTask("updateMetrics", metricsUpdater, updateMetricsTaskFrequency)
 }

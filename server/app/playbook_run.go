@@ -671,6 +671,12 @@ type PlaybookRunStore interface {
 
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
+
+	// GetRunsActiveTotal returns number of active runs
+	GetRunsActiveTotal() (int64, error)
+
+	// GetOverdueUpdateRunsTotal returns number of runs that have overdue status updates.
+	GetOverdueUpdateRunsTotal() (int64, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

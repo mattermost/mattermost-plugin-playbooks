@@ -16,6 +16,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/httptools"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/shared/i18n"
@@ -44,6 +45,7 @@ type PlaybookRunServiceImpl struct {
 	playbookService PlaybookService
 	permissions     *PermissionsService
 	licenseChecker  LicenseChecker
+	metricsService  *metrics.Metrics
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -93,6 +95,7 @@ func NewPlaybookRunService(
 	api plugin.API,
 	playbookService PlaybookService,
 	licenseChecker LicenseChecker,
+	metricsService *metrics.Metrics,
 ) *PlaybookRunServiceImpl {
 	service := &PlaybookRunServiceImpl{
 		pluginAPI:       pluginAPI,
@@ -106,6 +109,7 @@ func NewPlaybookRunService(
 		api:             api,
 		playbookService: playbookService,
 		licenseChecker:  licenseChecker,
+		metricsService:  metricsService,
 	}
 
 	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
@@ -283,6 +287,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	s.telemetry.CreatePlaybookRun(playbookRun, userID, public)
+	s.metricsService.IncrementRunsCreatedTotal(1)
 
 	// Add users to channel after creating playbook run so that all automations trigger.
 	err = s.addPlaybookRunUsers(playbookRun, channel)
@@ -918,6 +923,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	s.telemetry.FinishPlaybookRun(playbookRunToModify, userID)
+	s.metricsService.IncrementRunsFinishedTotal(1)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
 		return err
