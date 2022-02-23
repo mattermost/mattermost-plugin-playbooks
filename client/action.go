@@ -39,6 +39,7 @@ type ChannelActionListOptions struct {
 
 // ChannelActionCreateOptions specifies the parameters for ActionsService.Create method.
 type ChannelActionCreateOptions struct {
+	ChannelID   string      `json:"channel_id"`
 	Enabled     bool        `json:"enabled"`
 	ActionType  string      `json:"action_type"`
 	TriggerType string      `json:"trigger_type"`

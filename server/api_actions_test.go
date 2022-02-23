@@ -18,6 +18,7 @@ func TestActionCreation(t *testing.T) {
 	t.Run("create valid action", func(t *testing.T) {
 		// Create a valid action
 		actionID, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   e.BasicPublicChannel.Id,
 			Enabled:     true,
 			ActionType:  client.ActionTypeWelcomeMessage,
 			TriggerType: client.TriggerTypeNewMemberJoins,
@@ -34,6 +35,7 @@ func TestActionCreation(t *testing.T) {
 	t.Run("create invalid action - wrong action type", func(t *testing.T) {
 		// Create an action with a wrong action type
 		_, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   e.BasicPublicChannel.Id,
 			Enabled:     true,
 			ActionType:  "wrong action type",
 			TriggerType: client.TriggerTypeNewMemberJoins,
@@ -49,6 +51,7 @@ func TestActionCreation(t *testing.T) {
 	t.Run("create invalid action - wrong trigger type", func(t *testing.T) {
 		// Create an action with a wrong trigger type
 		_, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   e.BasicPublicChannel.Id,
 			Enabled:     true,
 			ActionType:  client.ActionTypeWelcomeMessage,
 			TriggerType: "wrong trigger type",
@@ -64,6 +67,7 @@ func TestActionCreation(t *testing.T) {
 	t.Run("create invalid action - wrong payload for action", func(t *testing.T) {
 		// Create an action with a wrong payload
 		_, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   e.BasicPublicChannel.Id,
 			Enabled:     true,
 			ActionType:  client.ActionTypeWelcomeMessage,
 			TriggerType: client.TriggerTypeNewMemberJoins,
@@ -87,6 +91,7 @@ func TestActionCreation(t *testing.T) {
 
 		// Attempt to create the action without those permissions
 		_, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   e.BasicPublicChannel.Id,
 			Enabled:     true,
 			ActionType:  client.ActionTypeWelcomeMessage,
 			TriggerType: client.TriggerTypeNewMemberJoins,
@@ -110,6 +115,7 @@ func TestActionCreation(t *testing.T) {
 
 		// Attempt to create the action as a sysadmin without being a channel admin
 		actionID, err := e.PlaybooksAdminClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   e.BasicPublicChannel.Id,
 			Enabled:     true,
 			ActionType:  client.ActionTypeWelcomeMessage,
 			TriggerType: client.TriggerTypeNewMemberJoins,
@@ -130,6 +136,7 @@ func TestActionList(t *testing.T) {
 
 	createValidWelcomeMessageAction := func(msg string) string {
 		id, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   e.BasicPublicChannel.Id,
 			Enabled:     true,
 			ActionType:  client.ActionTypeWelcomeMessage,
 			TriggerType: client.TriggerTypeNewMemberJoins,
@@ -215,6 +222,7 @@ func TestActionUpdate(t *testing.T) {
 		action := defaultAction
 
 		id, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+			ChannelID:   e.BasicPublicChannel.Id,
 			Enabled:     action.Enabled,
 			ActionType:  action.ActionType,
 			TriggerType: action.TriggerType,
