@@ -58,6 +58,7 @@ type PlaybookStats struct {
 	MetricRollingAverageChange    []int64   `json:"metric_rolling_average_change"`
 	MetricValueRange              [][]int64 `json:"metric_value_range"`
 	MetricRollingValues           [][]int64 `json:"metric_rolling_values"`
+	LastXRunNames                 []string  `json:"last_x_run_names"`
 }
 
 const (
@@ -107,7 +108,7 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	activeParticipantsPerDay, activeParticipantsPerDayTimes := h.statsStore.ActiveParticipantsPerDayLastXDays(14, filters)
 
 	metricOverallAverage := h.statsStore.MetricOverallAverage(filters)
-	metricRollingValues := h.statsStore.MetricRollingValuesLastXRuns(MetricChartPeriod, 0, filters)
+	metricRollingValues, lastXRunNames := h.statsStore.MetricRollingValuesLastXRuns(MetricChartPeriod, 0, filters)
 	metricRollingAverage, metricRollingAverageChange := h.statsStore.MetricRollingAverageAndChange(MetricRollingAveragePeriod, filters)
 	metricValueRange := h.statsStore.MetricValueRange(filters)
 
@@ -127,5 +128,6 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 		MetricValueRange:              metricValueRange,
 		MetricRollingAverage:          metricRollingAverage,
 		MetricRollingAverageChange:    metricRollingAverageChange,
+		LastXRunNames:                 lastXRunNames,
 	}, http.StatusOK)
 }

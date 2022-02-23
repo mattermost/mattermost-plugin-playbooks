@@ -854,6 +854,7 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	case SortByEndAt:
 	case SortByStatus:
 	case SortByLastStatusUpdateAt:
+	case SortByMetric0, SortByMetric1, SortByMetric2, SortByMetric3:
 	case "": // default
 		options.Sort = SortByCreateAt
 	default:
