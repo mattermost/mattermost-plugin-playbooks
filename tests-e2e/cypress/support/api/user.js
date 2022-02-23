@@ -241,7 +241,7 @@ Cypress.Commands.add('apiCreateUser', ({
         const createdUser = userRes.body;
 
         if (bypassTutorial) {
-            cy.apiSaveTutorialStep(createdUser.id, '999');
+            cy.apiDisableTutorials(createdUser.id);
         }
 
         if (hideOnboarding) {

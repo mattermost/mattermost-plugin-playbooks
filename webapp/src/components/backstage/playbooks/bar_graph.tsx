@@ -3,22 +3,29 @@
 
 import React from 'react';
 import {Bar} from 'react-chartjs-2';
+import * as chartjs from 'chart.js';
+import 'chartjs-plugin-annotation';
 import styled from 'styled-components';
+
+import {NullNumber} from 'src/types/stats';
 
 const GraphBoxContainer = styled.div`
     padding: 10px;
 `;
 
 interface BarGraphProps {
-    title: string
-    xlabel?: string
-    data?: number[]
-    labels?: string[]
-    className?: string
-    color?: string
-    tooltipTitleCallback?: (xLabel: string) => string
-    tooltipLabelCallback?: (yLabel: number) => string
-    onClick?: (index: number) => void
+    title: string;
+    xlabel?: string;
+    data?: NullNumber[];
+    labels?: string[];
+    className?: string;
+    color?: string;
+    tooltipTitleCallback?: (xLabel: string) => string;
+    tooltipLabelCallback?: (yLabel: number) => string;
+    onClick?: (index: number) => void;
+    yAxesTicksCallback?: (val: number, index: number) => string;
+    xAxesTicksCallback?: (val: number, index: number) => string;
+    options?: any;
 }
 
 const BarGraph = (props: BarGraphProps) => {
@@ -26,6 +33,7 @@ const BarGraph = (props: BarGraphProps) => {
     const centerChannelFontColor = style.getPropertyValue('--center-channel-color');
     const colorName = props.color ? props.color : '--button-bg';
     const color = style.getPropertyValue(colorName);
+
     return (
         <GraphBoxContainer className={props.className}>
             <Bar
@@ -39,7 +47,7 @@ const BarGraph = (props: BarGraphProps) => {
                     scales: {
                         yAxes: [{
                             ticks: {
-                                callback: (val: any) => {
+                                callback: props.yAxesTicksCallback ? props.yAxesTicksCallback : (val: any) => {
                                     return (val % 1 === 0) ? val : null;
                                 },
                                 beginAtZero: true,
@@ -53,7 +61,7 @@ const BarGraph = (props: BarGraphProps) => {
                                 fontColor: centerChannelFontColor,
                             },
                             ticks: {
-                                callback: (val: any, index: number) => {
+                                callback: props.xAxesTicksCallback ? props.xAxesTicksCallback : (val: any, index: number) => {
                                     return (index % 2) === 0 ? val : '';
                                 },
                                 fontColor: centerChannelFontColor,
@@ -95,19 +103,21 @@ const BarGraph = (props: BarGraphProps) => {
                     },
                     maintainAspectRatio: false,
                     responsive: true,
+                    ...props.options,
                 }}
                 data={{
                     labels: props.labels,
                     datasets: [{
                         fill: false,
-                        tension: 0,
                         backgroundColor: color,
                         borderColor: color,
                         pointBackgroundColor: color,
                         pointBorderColor: '#fff',
                         pointHoverBackgroundColor: '#fff',
                         pointHoverBorderColor: color,
-                        data: props.data,
+
+                        // This is okay, it can take nulls and numbers
+                        data: props.data as number[],
                     }],
                 }}
             />

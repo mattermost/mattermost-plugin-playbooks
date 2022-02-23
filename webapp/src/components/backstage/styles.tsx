@@ -1,14 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled, {css, createGlobalStyle} from 'styled-components';
+import styled, {createGlobalStyle, css} from 'styled-components';
 import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
 import Creatable from 'react-select/creatable';
 
 import {RegularHeading} from 'src/styles/headings';
 import MarkdownTextbox from 'src/components/markdown_textbox';
-import {pluginId} from 'src/manifest';
 
 export const Banner = styled.div`
     color: var(--button-color);
@@ -278,4 +277,11 @@ export const PlaybookRunFilterButton = styled.button<PlaybookRunFilterButtonProp
         background: rgba(var(--button-bg-rgb), 0.08);
         color: var(--button-bg);
     `}
+`;
+export const HorizontalSpacer = styled.div<{ size: number }>`
+    margin-left: ${(props) => props.size}px;
+`;
+
+export const VerticalSpacer = styled.div<{ size: number }>`
+    margin-top: ${(props) => props.size}px;
 `;
