@@ -9,6 +9,8 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
+import {Redirect} from 'react-router-dom';
+
 import {displayPlaybookCreateModal} from 'src/actions';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import LeftDots from 'src/components/assets/left_dots';
@@ -18,9 +20,9 @@ import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import PlaybookListRow from 'src/components/backstage/playbook_list_row';
-import {ExpandRight, HorizontalSpacer} from 'src/components/backstage/playbook_runs/shared';
+import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import SearchInput from 'src/components/backstage/search_input';
-import {BackstageSubheader} from 'src/components/backstage/styles';
+import {BackstageSubheader, HorizontalSpacer} from 'src/components/backstage/styles';
 import TemplateSelector from 'src/components/templates/template_selector';
 import {PaginationRow} from 'src/components/pagination_row';
 import {SortableColHeader} from 'src/components/sortable_col_header';
@@ -132,7 +134,11 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
 
     const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
-    const hasPlaybooks = playbooks?.length !== 0;
+    const hasPlaybooks = Boolean(playbooks?.length);
+
+    if (props.firstTimeUserExperience && hasPlaybooks) {
+        return <Redirect to={pluginUrl('/playbooks')}/>;
+    }
 
     const scrollToTemplates = () => {
         selectorRef.current?.scrollIntoView({behavior: 'smooth'});

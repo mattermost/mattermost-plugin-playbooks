@@ -16,15 +16,16 @@ import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/p
 import PlaybookSelector, {Option as PlaybookOption} from 'src/components/backstage/runs_list/playbook_selector';
 import TeamSelector, {Option as TeamOption} from 'src/components/team/team_selector';
 import {fetchOwnersInTeam, clientFetchPlaybooks} from 'src/client';
-import {Playbook} from '../../../types/playbook';
+import {Playbook} from 'src/types/playbook';
 import SearchInput from 'src/components/backstage/search_input';
 import CheckboxInput from 'src/components/backstage/runs_list/checkbox_input';
 
 interface Props {
-    fetchParams: FetchPlaybookRunsParams
-    setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>
-    fixedTeam?: boolean
-    fixedPlaybook?: boolean
+    fetchParams: FetchPlaybookRunsParams;
+    setFetchParams: React.Dispatch<React.SetStateAction<FetchPlaybookRunsParams>>;
+    fixedTeam?: boolean;
+    fixedPlaybook?: boolean;
+    fixedFinished?: boolean;
 }
 
 const searchDebounceDelayMilliseconds = 300;
@@ -72,7 +73,7 @@ const PlaybookControlComponent = (ownProps: ControlProps<PlaybookOption, boolean
     return controlComponent(ownProps, 'playbooks');
 };
 
-const Filters = ({fetchParams, setFetchParams, fixedTeam, fixedPlaybook}: Props) => {
+const Filters = ({fetchParams, setFetchParams, fixedTeam, fixedPlaybook, fixedFinished}: Props) => {
     const {formatMessage} = useIntl();
     const teams = useSelector(getMyTeams);
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
@@ -159,12 +160,14 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam, fixedPlaybook}: Props)
                 checked={myRunsOnly}
                 onChange={setMyRunsOnly}
             />
-            <CheckboxInput
-                testId={'finished-runs'}
-                text={formatMessage({defaultMessage: 'Include finished'})}
-                checked={(fetchParams.statuses?.length ?? 0) > 1}
-                onChange={setFinishedRuns}
-            />
+            {!fixedFinished &&
+                <CheckboxInput
+                    testId={'finished-runs'}
+                    text={formatMessage({defaultMessage: 'Include finished'})}
+                    checked={(fetchParams.statuses?.length ?? 0) > 1}
+                    onChange={setFinishedRuns}
+                />
+            }
             <ProfileSelector
                 testId={'owner-filter'}
                 selectedUserId={fetchParams.owner_user_id}

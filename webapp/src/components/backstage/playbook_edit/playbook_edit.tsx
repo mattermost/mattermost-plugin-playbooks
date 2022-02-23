@@ -21,6 +21,7 @@ import {
     Checklist,
     emptyPlaybook,
     Metric,
+    setPlaybookDefaults,
 } from 'src/types/playbook';
 import {savePlaybook, clientFetchPlaybook} from 'src/client';
 import {StagesAndStepsEdit} from 'src/components/backstage/playbook_edit/stages_and_steps_edit';
@@ -60,20 +61,6 @@ const FetchingStateType = {
     fetched: 'fetched',
     notFound: 'notfound',
 };
-
-// setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
-const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
-    ...playbook,
-    title: playbook.title.trim() || 'Untitled playbook',
-    checklists: playbook.checklists.map((checklist) => ({
-        ...checklist,
-        title: checklist.title || 'Untitled checklist',
-        items: checklist.items.map((item) => ({
-            ...item,
-            title: item.title || 'Untitled task',
-        })),
-    })),
-});
 
 export const tabInfo = [
     {id: 'checklists', name: <FormattedMessage defaultMessage='Checklists'/>},
@@ -172,8 +159,7 @@ const PlaybookEdit = (props: Props) => {
         dispatch(fetchMyCategories(teamId));
     }, [dispatch, props.teamId, playbook.team_id]);
 
-    const startTutorial = false;
-    const showChecklistsTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.Checklists, TutorialTourCategories.PLAYBOOK_EDIT) && startTutorial;
+    const showChecklistsTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.Checklists, TutorialTourCategories.PLAYBOOK_EDIT);
     const showActionsTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.Actions, TutorialTourCategories.PLAYBOOK_EDIT);
     const showStatusUpdatesTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.StatusUpdates, TutorialTourCategories.PLAYBOOK_EDIT);
     const showRetrospectiveTutorial = useShowTutorialStep(PlaybookEditTutorialSteps.Retrospective, TutorialTourCategories.PLAYBOOK_EDIT);
@@ -193,6 +179,7 @@ const PlaybookEdit = (props: Props) => {
             width={352}
             punchOut={punchout}
             onNextNavigateTo={() => setCurrentTab(1)}
+            telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.Checklists}_Checklists`}
         />
     );
 
@@ -210,6 +197,7 @@ const PlaybookEdit = (props: Props) => {
             punchOut={punchout}
             onNextNavigateTo={() => setCurrentTab(2)}
             onPrevNavigateTo={() => setCurrentTab(0)}
+            telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.Actions}_Actions`}
         />
     );
 
@@ -227,6 +215,7 @@ const PlaybookEdit = (props: Props) => {
             punchOut={punchout}
             onNextNavigateTo={() => setCurrentTab(3)}
             onPrevNavigateTo={() => setCurrentTab(1)}
+            telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.StatusUpdates}_StatusUpdates`}
         />
     );
 
@@ -243,6 +232,7 @@ const PlaybookEdit = (props: Props) => {
             width={352}
             punchOut={punchout}
             onPrevNavigateTo={() => setCurrentTab(2)}
+            telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.Retrospective}_Retrospective`}
         />
     );
 
