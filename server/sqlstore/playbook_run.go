@@ -1237,9 +1237,13 @@ func (s *playbookRunStore) GetFollowers(playbookRunID string) ([]string, error) 
 // Get number of active playbooks.
 func (s *playbookRunStore) GetRunsActiveTotal() (int64, error) {
 	var count int64
-	err := s.store.db.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM IR_Incident WHERE CurrentStatus = %s", app.StatusInProgress))
 
-	if err != nil {
+	query := s.store.builder.
+		Select("COUNT(*)").
+		From("IR_Incident").
+		Where(sq.Eq{"CurrentStatus": app.StatusInProgress})
+
+	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
 		return 0, errors.Wrap(err, "failed to count active runs'")
 	}
 
@@ -1249,7 +1253,7 @@ func (s *playbookRunStore) GetRunsActiveTotal() (int64, error) {
 // GetOverdueUpdateRunsTotal returns number of runs that have overdue status updates.
 func (s *playbookRunStore) GetOverdueUpdateRunsTotal() (int64, error) {
 	query := s.store.builder.
-		Select("(*)").
+		Select("COUNT(*)").
 		From("IR_Incident").
 		Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
 		Where(sq.NotEq{"PreviousReminder": 0})

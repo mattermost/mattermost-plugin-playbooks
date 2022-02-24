@@ -896,6 +896,51 @@ func TestTasksAndRunsDigest(t *testing.T) {
 	}
 }
 
+func TestGetRunsActiveTotal(t *testing.T) {
+	createRuns := func(store *SQLStore, playbookRunStore app.PlaybookRunStore, num int, status string) {
+		now := model.GetMillis()
+		for i := 0; i < num; i++ {
+			run := NewBuilder(t).
+				WithCreateAt(now - int64(i*1000)).
+				WithCurrentStatus(status).
+				ToPlaybookRun()
+
+			returned, err := playbookRunStore.CreatePlaybookRun(run)
+			require.NoError(t, err)
+			createPlaybookRunChannel(t, store, returned)
+		}
+	}
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		_, store := setupSQLStore(t, db)
+
+		t.Run("zero runs", func(t *testing.T) {
+			actual, err := playbookRunStore.GetRunsActiveTotal()
+			require.NoError(t, err)
+			require.Equal(t, int64(0), actual)
+		})
+
+		// add finished runs
+		createRuns(store, playbookRunStore, 10, app.StatusFinished)
+
+		t.Run("zero active runs, few finished runs", func(t *testing.T) {
+			actual, err := playbookRunStore.GetRunsActiveTotal()
+			require.NoError(t, err)
+			require.Equal(t, int64(0), actual)
+		})
+
+		// add active runs
+		createRuns(store, playbookRunStore, 15, app.StatusInProgress)
+		t.Run("few active runs, few finished runs", func(t *testing.T) {
+			actual, err := playbookRunStore.GetRunsActiveTotal()
+			require.NoError(t, err)
+			require.Equal(t, int64(15), actual)
+		})
+	}
+}
+
 func setupPlaybookRunStore(t *testing.T, db *sqlx.DB) app.PlaybookRunStore {
 	mockCtrl := gomock.NewController(t)
 
