@@ -1259,9 +1259,9 @@ func (s *playbookRunStore) GetOverdueUpdateRunsTotal() (int64, error) {
 		Where(sq.NotEq{"PreviousReminder": 0})
 
 	if s.store.db.DriverName() == model.DatabaseDriverMysql {
-		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
+		query = query.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
 	} else {
-		query = query.Where(sq.Expr("(i.PreviousReminder / 1e6 + i.LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
+		query = query.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
 	}
 
 	var count int64

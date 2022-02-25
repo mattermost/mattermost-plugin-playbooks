@@ -941,6 +941,65 @@ func TestGetRunsActiveTotal(t *testing.T) {
 	}
 }
 
+func TestGetOverdueUpdateRunsTotal(t *testing.T) {
+	// overdue: 0 means no reminders at all. -1 means set only due reminders. 1 means set only overdue reminders.
+	createRuns := func(store *SQLStore, playbookRunStore app.PlaybookRunStore, num int, status string, overdue int) {
+		now := model.GetMillis()
+		for i := 0; i < num; i++ {
+			run := NewBuilder(t).
+				WithCreateAt(now - int64(i*1000)).
+				WithCurrentStatus(status).
+				WithUpdateOverdueBy(time.Duration(overdue) * 2 * time.Minute * time.Duration(i+1)).
+				ToPlaybookRun()
+
+			returned, err := playbookRunStore.CreatePlaybookRun(run)
+			require.NoError(t, err)
+			createPlaybookRunChannel(t, store, returned)
+		}
+	}
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		_, store := setupSQLStore(t, db)
+
+		t.Run("zero runs", func(t *testing.T) {
+			actual, err := playbookRunStore.GetOverdueUpdateRunsTotal()
+			require.NoError(t, err)
+			require.Equal(t, int64(0), actual)
+		})
+
+		// add finished runs with overdue reminders
+		createRuns(store, playbookRunStore, 7, app.StatusFinished, 1)
+		// add active runs without reminders
+		createRuns(store, playbookRunStore, 5, app.StatusInProgress, 0)
+
+		t.Run("zero active runs with overdue, few finished runs with overdue", func(t *testing.T) {
+			actual, err := playbookRunStore.GetOverdueUpdateRunsTotal()
+			require.NoError(t, err)
+			require.Equal(t, int64(0), actual)
+		})
+
+		// add active runs with overdue
+		createRuns(store, playbookRunStore, 9, app.StatusInProgress, 1)
+
+		t.Run("few active runs with overdue", func(t *testing.T) {
+			actual, err := playbookRunStore.GetOverdueUpdateRunsTotal()
+			require.NoError(t, err)
+			require.Equal(t, int64(9), actual)
+		})
+
+		// add active runs with due reminder
+		createRuns(store, playbookRunStore, 4, app.StatusInProgress, -1)
+
+		t.Run("few active runs with overdue", func(t *testing.T) {
+			actual, err := playbookRunStore.GetOverdueUpdateRunsTotal()
+			require.NoError(t, err)
+			require.Equal(t, int64(9), actual)
+		})
+	}
+}
+
 func setupPlaybookRunStore(t *testing.T, db *sqlx.DB) app.PlaybookRunStore {
 	mockCtrl := gomock.NewController(t)
 
