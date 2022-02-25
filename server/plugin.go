@@ -148,7 +148,12 @@ func (p *Plugin) OnActivate() error {
 	p.metricsService = metrics.NewMetrics(instanceInfo)
 	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService, &pluginAPIClient.Log)
 	// Run server to expose metrics
-	go metricServer.Run()
+	go func() {
+		err := metricServer.Run()
+		if err != nil {
+			pluginAPIClient.Log.Error("Metrics server could not be started", "Error", err)
+		}
+	}()
 
 	apiClient := sqlstore.NewClient(pluginAPIClient)
 	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
