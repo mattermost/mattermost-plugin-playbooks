@@ -18,7 +18,6 @@ const (
 
 type InstanceInfo struct {
 	Version        string
-	BuildNum       string
 	InstallationID string
 }
 
@@ -62,9 +61,9 @@ func NewMetrics(info InstanceInfo) *Metrics {
 		Name:        "playbook_instance_info",
 		Help:        "Instance information for Playbook.",
 		ConstLabels: additionalLabels,
-	}, []string{"Version", "BuildNum"})
+	}, []string{"Version"})
 	m.registry.MustRegister(m.instance)
-	m.instance.WithLabelValues(info.Version, info.BuildNum).Set(1)
+	m.instance.WithLabelValues(info.Version).Set(1)
 
 	m.playbooksCreatedTotal = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace:   MetricsNamespace,

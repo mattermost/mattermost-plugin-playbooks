@@ -29,7 +29,7 @@ import (
 const (
 	updateMetricsTaskFrequency = 15 * time.Minute
 
-	metricsExposePort = ":9093"
+	metricsExposePort = ":9092"
 )
 
 // These credentials for Rudder need to be populated at build-time,
@@ -142,7 +142,6 @@ func (p *Plugin) OnActivate() error {
 	// Init metrics
 	instanceInfo := metrics.InstanceInfo{
 		Version:        manifest.Version,
-		BuildNum:       "build 2",
 		InstallationID: os.Getenv("MM_CLOUD_INSTALLATION_ID"),
 	}
 	p.metricsService = metrics.NewMetrics(instanceInfo)
