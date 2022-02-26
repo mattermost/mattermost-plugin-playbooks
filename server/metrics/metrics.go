@@ -96,8 +96,8 @@ func NewMetrics(info InstanceInfo) *Metrics {
 	m.runsCreatedTotal = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemRuns,
-		Name:        "runs_restored_total",
-		Help:        "Total number of runs restored.",
+		Name:        "runs_created_total",
+		Help:        "Total number of runs created.",
 		ConstLabels: additionalLabels,
 	})
 	m.registry.MustRegister(m.runsCreatedTotal)
@@ -147,14 +147,14 @@ func NewMetrics(info InstanceInfo) *Metrics {
 	})
 	m.registry.MustRegister(m.remindersOutstandingTotal)
 
-	m.remindersOutstandingTotal = prometheus.NewGauge(prometheus.GaugeOpts{
+	m.retrosOutstandingTotal = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemPlaybooks,
 		Name:        "retros_outstanding_total",
 		Help:        "Total number of outstanding retrospectives.",
 		ConstLabels: additionalLabels,
 	})
-	m.registry.MustRegister(m.remindersOutstandingTotal)
+	m.registry.MustRegister(m.retrosOutstandingTotal)
 
 	return m
 }

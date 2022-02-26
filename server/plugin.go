@@ -337,5 +337,5 @@ func (p *Plugin) RunMetricsUpdaterTask(playbookStore app.PlaybookStore, playbook
 		}
 	}
 
-	scheduler.CreateRecurringTask("updateMetrics", metricsUpdater, updateMetricsTaskFrequency)
+	scheduler.CreateRecurringTask("metricsUpdater", metricsUpdater, updateMetricsTaskFrequency)
 }
