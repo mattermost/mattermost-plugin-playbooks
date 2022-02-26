@@ -329,7 +329,7 @@ func (p *Plugin) RunMetricsUpdaterTask(playbookStore app.PlaybookStore, playbook
 			p.metricsService.ObserveRemindersOutstandingTotal(remindersOverdueTotal)
 		}
 
-		retrosOverdueTotal, err := playbookRunStore.GetOverdueUpdateRunsTotal()
+		retrosOverdueTotal, err := playbookRunStore.GetOverdueRetroRunsTotal()
 		if err != nil {
 			p.pluginAPI.Log.Error("error updating metrics, retros_outstanding_total", err)
 		} else {

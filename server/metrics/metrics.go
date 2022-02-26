@@ -154,7 +154,7 @@ func NewMetrics(info InstanceInfo) *Metrics {
 		Help:        "Total number of outstanding retrospectives.",
 		ConstLabels: additionalLabels,
 	})
-	m.registry.MustRegister(m.retrosOutstandingTotal)
+	m.registry.MustRegister(m.remindersOutstandingTotal)
 
 	return m
 }
