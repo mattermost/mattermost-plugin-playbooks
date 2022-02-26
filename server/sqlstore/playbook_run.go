@@ -1272,14 +1272,15 @@ func (s *playbookRunStore) GetOverdueUpdateRunsTotal() (int64, error) {
 	return count, nil
 }
 
-// GetOverdueRetroRunsTotal returns the number of completed runs without retro
+// GetOverdueRetroRunsTotal returns the number of completed runs without retro and with reminder
 func (s *playbookRunStore) GetOverdueRetroRunsTotal() (int64, error) {
 	query := s.store.builder.
 		Select("COUNT(*)").
 		From("IR_Incident").
 		Where(sq.Eq{"CurrentStatus": app.StatusFinished}).
 		Where(sq.Eq{"RetrospectiveEnabled": true}).
-		Where(sq.Eq{"RetrospectivePublishedAt": 0})
+		Where(sq.Eq{"RetrospectivePublishedAt": 0}).
+		Where(sq.NotEq{"RetrospectiveReminderIntervalSeconds": 0})
 
 	var count int64
 	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {

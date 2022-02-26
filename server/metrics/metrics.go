@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	MetricsNamespace          = "playbook"
+	MetricsNamespace          = "playbooks_plugin"
 	MetricsSubsystemPlaybooks = "playbooks"
 	MetricsSubsystemRuns      = "runs"
 	MetricsSubsystemSystem    = "system"
@@ -151,7 +151,7 @@ func NewMetrics(info InstanceInfo) *Metrics {
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemPlaybooks,
 		Name:        "retros_outstanding_total",
-		Help:        "Total number of outstanding retrospectives.",
+		Help:        "Total number of outstanding retrospective reminders.",
 		ConstLabels: additionalLabels,
 	})
 	m.registry.MustRegister(m.retrosOutstandingTotal)

@@ -1002,8 +1002,19 @@ func TestGetOverdueUpdateRunsTotal(t *testing.T) {
 
 func TestGetOverdueRetroRunsTotal(t *testing.T) {
 	// overdue: 0 means no reminders at all. -1 means set only due reminders. 1 means set only overdue reminders.
-	createRuns := func(store *SQLStore, playbookRunStore app.PlaybookRunStore, num int, status string, retroEnabled bool, retroPublishedAt int64, retroCanceled bool) {
+	createRuns := func(
+		store *SQLStore,
+		playbookRunStore app.PlaybookRunStore,
+		num int,
+		status string,
+		retroEnabled bool,
+		retroInterval int64,
+		retroPublishedAt int64,
+		retroCanceled bool,
+	) {
+
 		now := model.GetMillis()
+
 		for i := 0; i < num; i++ {
 			run := NewBuilder(t).
 				WithCreateAt(now - int64(i*1000)).
@@ -1011,6 +1022,7 @@ func TestGetOverdueRetroRunsTotal(t *testing.T) {
 				WithRetrospectiveEnabled(retroEnabled).
 				WithRetrospectivePublishedAt(retroPublishedAt).
 				WithRetrospectiveCanceled(retroCanceled).
+				WithRetrospectiveReminderInterval(retroInterval).
 				ToPlaybookRun()
 
 			returned, err := playbookRunStore.CreatePlaybookRun(run)
@@ -1031,10 +1043,10 @@ func TestGetOverdueRetroRunsTotal(t *testing.T) {
 		})
 
 		// add active runs with enabled/disabled retro
-		createRuns(store, playbookRunStore, 5, app.StatusInProgress, true, 0, false)
-		createRuns(store, playbookRunStore, 2, app.StatusInProgress, false, 0, false)
+		createRuns(store, playbookRunStore, 5, app.StatusInProgress, true, 60, 0, false)
+		createRuns(store, playbookRunStore, 2, app.StatusInProgress, false, 0, 0, false)
 		// add active runs with published retro
-		createRuns(store, playbookRunStore, 6, app.StatusInProgress, true, 100000000, false)
+		createRuns(store, playbookRunStore, 6, app.StatusInProgress, true, 60, 100000000, false)
 
 		t.Run("zero finished runs, few active runs", func(t *testing.T) {
 			actual, err := playbookRunStore.GetOverdueRetroRunsTotal()
@@ -1043,11 +1055,13 @@ func TestGetOverdueRetroRunsTotal(t *testing.T) {
 		})
 
 		// add finished runs with enabled/disabled retro
-		createRuns(store, playbookRunStore, 3, app.StatusFinished, true, 0, false)
-		createRuns(store, playbookRunStore, 4, app.StatusFinished, false, 0, false)
+		createRuns(store, playbookRunStore, 3, app.StatusFinished, true, 60, 0, false)
+		createRuns(store, playbookRunStore, 4, app.StatusFinished, false, 60, 0, false)
 		// add finished runs with published/canceled retro
-		createRuns(store, playbookRunStore, 7, app.StatusFinished, true, 100000000, false)
-		createRuns(store, playbookRunStore, 8, app.StatusFinished, true, 100000000, true)
+		createRuns(store, playbookRunStore, 7, app.StatusFinished, true, 60, 100000000, false)
+		createRuns(store, playbookRunStore, 8, app.StatusFinished, true, 60, 100000000, true)
+		// add finished runs without retro and without reminder
+		createRuns(store, playbookRunStore, 2, app.StatusFinished, true, 60, 100000000, false)
 
 		t.Run("few finished runs, few active runs", func(t *testing.T) {
 			actual, err := playbookRunStore.GetOverdueRetroRunsTotal()
@@ -1218,6 +1232,12 @@ func (ib *PlaybookRunBuilder) WithRetrospectivePublishedAt(publishedAt int64) *P
 
 func (ib *PlaybookRunBuilder) WithRetrospectiveCanceled(canceled bool) *PlaybookRunBuilder {
 	ib.playbookRun.RetrospectiveWasCanceled = canceled
+
+	return ib
+}
+
+func (ib *PlaybookRunBuilder) WithRetrospectiveReminderInterval(interval int64) *PlaybookRunBuilder {
+	ib.playbookRun.RetrospectiveReminderIntervalSeconds = interval
 
 	return ib
 }
