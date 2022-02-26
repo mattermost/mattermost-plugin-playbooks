@@ -152,6 +152,21 @@ func (mr *MockPlaybookRunStoreMockRecorder) GetHistoricalPlaybookRunParticipants
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHistoricalPlaybookRunParticipantsCount", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetHistoricalPlaybookRunParticipantsCount), arg0)
 }
 
+// GetOverdueRetroRunsTotal mocks base method.
+func (m *MockPlaybookRunStore) GetOverdueRetroRunsTotal() (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOverdueRetroRunsTotal")
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOverdueRetroRunsTotal indicates an expected call of GetOverdueRetroRunsTotal.
+func (mr *MockPlaybookRunStoreMockRecorder) GetOverdueRetroRunsTotal() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOverdueRetroRunsTotal", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetOverdueRetroRunsTotal))
+}
+
 // GetOverdueUpdateRuns mocks base method.
 func (m *MockPlaybookRunStore) GetOverdueUpdateRuns(arg0 string) ([]app.RunLink, error) {
 	m.ctrl.T.Helper()

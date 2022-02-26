@@ -37,6 +37,7 @@ type Metrics struct {
 	playbooksActiveTotal      prometheus.Gauge
 	runsActiveTotal           prometheus.Gauge
 	remindersOutstandingTotal prometheus.Gauge
+	retrosOutstandingTotal    prometheus.Gauge
 }
 
 // NewMetrics Factory method to create a new metrics collector.
@@ -146,6 +147,15 @@ func NewMetrics(info InstanceInfo) *Metrics {
 	})
 	m.registry.MustRegister(m.remindersOutstandingTotal)
 
+	m.remindersOutstandingTotal = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace:   MetricsNamespace,
+		Subsystem:   MetricsSubsystemPlaybooks,
+		Name:        "retros_outstanding_total",
+		Help:        "Total number of outstanding retrospectives.",
+		ConstLabels: additionalLabels,
+	})
+	m.registry.MustRegister(m.retrosOutstandingTotal)
+
 	return m
 }
 
@@ -200,5 +210,11 @@ func (m *Metrics) ObserveRunsActiveTotal(count int64) {
 func (m *Metrics) ObserveRemindersOutstandingTotal(count int64) {
 	if m != nil {
 		m.remindersOutstandingTotal.Set(float64(count))
+	}
+}
+
+func (m *Metrics) ObserveRetrosOutstandingTotal(count int64) {
+	if m != nil {
+		m.retrosOutstandingTotal.Set(float64(count))
 	}
 }

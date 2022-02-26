@@ -1272,6 +1272,23 @@ func (s *playbookRunStore) GetOverdueUpdateRunsTotal() (int64, error) {
 	return count, nil
 }
 
+// GetOverdueRetroRunsTotal returns the number of completed runs without retro
+func (s *playbookRunStore) GetOverdueRetroRunsTotal() (int64, error) {
+	query := s.store.builder.
+		Select("COUNT(*)").
+		From("IR_Incident").
+		Where(sq.Eq{"CurrentStatus": app.StatusFinished}).
+		Where(sq.Eq{"RetrospectiveEnabled": true}).
+		Where(sq.Eq{"RetrospectivePublishedAt": 0})
+
+	var count int64
+	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count finished runs without retro")
+	}
+
+	return count, nil
+}
+
 // updateRunMetrics updates run metrics values.
 func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.PlaybookRun) error {
 	if len(playbookRun.MetricsData) == 0 {

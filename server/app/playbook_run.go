@@ -677,6 +677,9 @@ type PlaybookRunStore interface {
 
 	// GetOverdueUpdateRunsTotal returns number of runs that have overdue status updates.
 	GetOverdueUpdateRunsTotal() (int64, error)
+
+	// GetOverdueRetroRunsTotal returns number of finished runs without retrospective
+	GetOverdueRetroRunsTotal() (int64, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.
