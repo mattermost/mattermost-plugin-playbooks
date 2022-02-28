@@ -12,6 +12,7 @@ import MetricsStatsView from 'src/components/backstage/playbooks/metrics/metrics
 import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {PlaybookRunStatus} from 'src/types/playbook_run';
 import MetricsRunList from 'src/components/backstage/playbooks/metrics/metrics_run_list';
+import NoMetricsPlaceholder from 'src/components/backstage/playbooks/metrics/no_metrics_placeholder';
 
 const defaultPlaybookFetchParams = {
     page: 0,
@@ -43,6 +44,16 @@ const PlaybookKeyMetrics = ({playbook, stats}: Props) => {
                     <PlaceholderRow>
                         <UpgradeKeyMetricsPlaceholder/>
                     </PlaceholderRow>
+                </InnerContainer>
+            </OuterContainer>
+        );
+    }
+
+    if (playbook.metrics.length === 0) {
+        return (
+            <OuterContainer>
+                <InnerContainer>
+                    <NoMetricsPlaceholder/>
                 </InnerContainer>
             </OuterContainer>
         );
