@@ -82,7 +82,6 @@ export const TertiaryButton = styled.button`
     border: 0px;
     font-weight: 600;
     font-size: 14px;
-    align-items: center;
     padding: 0 20px;
     transition: all 0.15s ease-out;
 

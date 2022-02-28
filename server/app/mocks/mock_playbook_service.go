@@ -181,6 +181,21 @@ func (mr *MockPlaybookServiceMockRecorder) GetSuggestedPlaybooks(arg0, arg1, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSuggestedPlaybooks", reflect.TypeOf((*MockPlaybookService)(nil).GetSuggestedPlaybooks), arg0, arg1, arg2)
 }
 
+// Import mocks base method
+func (m *MockPlaybookService) Import(arg0 app.Playbook, arg1 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Import", arg0, arg1)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Import indicates an expected call of Import
+func (mr *MockPlaybookServiceMockRecorder) Import(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Import", reflect.TypeOf((*MockPlaybookService)(nil).Import), arg0, arg1)
+}
+
 // IsAutoFollowing mocks base method
 func (m *MockPlaybookService) IsAutoFollowing(arg0, arg1 string) (bool, error) {
 	m.ctrl.T.Helper()

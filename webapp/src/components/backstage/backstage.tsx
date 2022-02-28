@@ -32,6 +32,8 @@ import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
 import RunsPage from 'src/components/backstage/runs_page';
 import {applyTheme} from 'src/components/backstage/css_utils';
 
+import {ToastProvider} from './toast_banner';
+
 const BackstageContainer = styled.div`
     background: var(--center-channel-bg);
     display: flex;
@@ -110,96 +112,104 @@ const Backstage = () => {
 
     return (
         <BackstageContainer id={BackstageID}>
-            <Switch>
-                <Route path={`${match.url}/error`}/>
-                <Route>
-                    <BackstageNavbar className='flex justify-content-between'>
-                        <div className='d-flex items-center'>
-                            <BackstageTitlebarItem
-                                to={`${match.url}/runs`}
-                                activeClassName={'active'}
-                                data-testid='playbookRunsLHSButton'
-                            >
-                                <Icon
-                                    path={mdiClipboardPlayMultipleOutline}
-                                    title={formatMessage({defaultMessage: 'Runs'})}
-                                    size={1.4}
-                                />
-                                {formatMessage({defaultMessage: 'Runs'})}
-                            </BackstageTitlebarItem>
-                            <BackstageTitlebarItem
-                                to={`${match.url}/playbooks`}
-                                activeClassName={'active'}
-                                data-testid='playbooksLHSButton'
-                            >
-                                <PlaybookIcon/>
-                                {formatMessage({defaultMessage: 'Playbooks'})}
-                            </BackstageTitlebarItem>
-                        </div>
-                        <div className='d-flex items-center'>
-                            {npsAvailable &&
+            <ToastProvider>
+                <Switch>
+                    <Route path={`${match.url}/error`}/>
+                    <Route path={`${match.url}/start`}/>
+                    <Route>
+                        <BackstageNavbar className='flex justify-content-between'>
+                            <div className='d-flex items-center'>
                                 <BackstageTitlebarItem
-                                    onClick={promptForFeedback}
-                                    to={`/${teams[0].name}/messages/@surveybot`}
-                                    data-testid='giveFeedbackButton'
+                                    to={`${match.url}/runs`}
+                                    activeClassName={'active'}
+                                    data-testid='playbookRunsLHSButton'
                                 >
                                     <Icon
-                                        path={mdiThumbsUpDown}
-                                        title={formatMessage({defaultMessage: 'Give Feedback'})}
-                                        size={1}
+                                        path={mdiClipboardPlayMultipleOutline}
+                                        title={formatMessage({defaultMessage: 'Runs'})}
+                                        size={1.4}
                                     />
-                                    {formatMessage({defaultMessage: 'Give Feedback'})}
+                                    {formatMessage({defaultMessage: 'Runs'})}
                                 </BackstageTitlebarItem>
-                            }
-                        </div>
-                    </BackstageNavbar>
-                </Route>
-            </Switch>
-            <BackstageBody>
-                <Switch>
-                    <Route path={`${match.url}/playbooks/new`}>
-                        <NewPlaybook/>
-                    </Route>
-                    <Route path={`${match.url}/playbooks/:playbookId/edit/:tabId?`}>
-                        <PlaybookEdit
-                            isNew={false}
-                        />
-                    </Route>
-                    <Route path={`${match.url}/playbooks/:playbookId`}>
-                        <Playbook/>
-                    </Route>
-                    <Route path={`${match.url}/playbooks`}>
-                        <PlaybookList/>
-                    </Route>
-                    <Redirect
-                        from={`${match.url}/incidents/:playbookRunId`}
-                        to={`${match.url}/runs/:playbookRunId`}
-                    />
-                    <Route path={`${match.url}/runs/:playbookRunId`}>
-                        <PlaybookRunBackstage/>
-                    </Route>
-                    <Redirect
-                        from={`${match.url}/incidents`}
-                        to={`${match.url}/runs`}
-                    />
-                    <Route path={`${match.url}/runs`}>
-                        <RunsPage/>
-                    </Route>
-                    <Route path={`${match.url}/error`}>
-                        <ErrorPage/>
-                    </Route>
-                    <Route
-                        exact={true}
-                        path={`${match.url}/`}
-                    >
-                        <RunsPage/>
-                    </Route>
-                    <Route>
-                        <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>
+                                <BackstageTitlebarItem
+                                    to={`${match.url}/playbooks`}
+                                    activeClassName={'active'}
+                                    data-testid='playbooksLHSButton'
+                                >
+                                    <PlaybookIcon/>
+                                    {formatMessage({defaultMessage: 'Playbooks'})}
+                                </BackstageTitlebarItem>
+                            </div>
+                            <div className='d-flex items-center'>
+                                {npsAvailable && (
+                                    <BackstageTitlebarItem
+                                        onClick={promptForFeedback}
+                                        to={`/${teams[0].name}/messages/@surveybot`}
+                                        data-testid='giveFeedbackButton'
+                                    >
+                                        <Icon
+                                            path={mdiThumbsUpDown}
+                                            title={formatMessage({defaultMessage: 'Give Feedback'})}
+                                            size={1}
+                                        />
+                                        {formatMessage({defaultMessage: 'Give Feedback'})}
+                                    </BackstageTitlebarItem>
+                                )}
+                            </div>
+                        </BackstageNavbar>
                     </Route>
                 </Switch>
-            </BackstageBody>
-            <CloudModal/>
+                <BackstageBody>
+                    <Switch>
+                        <Route path={`${match.url}/playbooks/new`}>
+                            <NewPlaybook/>
+                        </Route>
+                        <Route path={`${match.url}/playbooks/:playbookId/edit/:tabId?`}>
+                            <PlaybookEdit
+                                isNew={false}
+                            />
+                        </Route>
+                        <Route path={`${match.url}/playbooks/:playbookId`}>
+                            <Playbook/>
+                        </Route>
+                        <Route path={`${match.url}/playbooks`}>
+                            <PlaybookList/>
+                        </Route>
+                        <Redirect
+                            from={`${match.url}/incidents/:playbookRunId`}
+                            to={`${match.url}/runs/:playbookRunId`}
+                        />
+                        <Route path={`${match.url}/runs/:playbookRunId`}>
+                            <PlaybookRunBackstage/>
+                        </Route>
+                        <Redirect
+                            from={`${match.url}/incidents`}
+                            to={`${match.url}/runs`}
+                        />
+                        <Route path={`${match.url}/runs`}>
+                            <RunsPage/>
+                        </Route>
+                        <Route path={`${match.url}/error`}>
+                            <ErrorPage/>
+                        </Route>
+                        <Route
+                            path={`${match.url}/start`}
+                        >
+                            <PlaybookList firstTimeUserExperience={true}/>
+                        </Route>
+                        <Route
+                            exact={true}
+                            path={`${match.url}/`}
+                        >
+                            <Redirect to={`${match.url}/runs`}/>
+                        </Route>
+                        <Route>
+                            <Redirect to={pluginErrorUrl(ErrorPageTypes.DEFAULT)}/>
+                        </Route>
+                    </Switch>
+                </BackstageBody>
+                <CloudModal/>
+            </ToastProvider>
         </BackstageContainer>
     );
 };

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 
+	"gopkg.in/guregu/null.v4"
+
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
@@ -83,12 +85,12 @@ type PlaybookMember struct {
 }
 
 type PlaybookMetricConfig struct {
-	ID          string `json:"id" export:"-"`
-	PlaybookID  string `json:"playbook_id" export:"-"`
-	Title       string `json:"title" export:"title"`
-	Description string `json:"description" export:"description"`
-	Type        string `json:"type" export:"type"`
-	Target      int64  `json:"target" export:"target"`
+	ID          string   `json:"id" export:"-"`
+	PlaybookID  string   `json:"playbook_id" export:"-"`
+	Title       string   `json:"title" export:"title"`
+	Description string   `json:"description" export:"description"`
+	Type        string   `json:"type" export:"type"`
+	Target      null.Int `json:"target" export:"target"`
 }
 
 func (pm PlaybookMember) Clone() PlaybookMember {
@@ -267,6 +269,9 @@ type PlaybookService interface {
 	// Create creates a new playbook
 	Create(playbook Playbook, userID string) (string, error)
 
+	// Import imports a new playbook
+	Import(playbook Playbook, userID string) (string, error)
+
 	// GetPlaybooks retrieves all playbooks
 	GetPlaybooks() ([]Playbook, error)
 
@@ -357,6 +362,9 @@ type PlaybookTelemetry interface {
 	// CreatePlaybook tracks the creation of a playbook.
 	CreatePlaybook(playbook Playbook, userID string)
 
+	// ImportPlaybook tracks the import of a playbook.
+	ImportPlaybook(playbook Playbook, userID string)
+
 	// UpdatePlaybook tracks the update of a playbook.
 	UpdatePlaybook(playbook Playbook, userID string)
 
@@ -399,9 +407,10 @@ func IsValidChecklistItemIndex(checklists []Checklist, checklistNum, itemNum int
 
 // PlaybookFilterOptions specifies the parameters when getting playbooks.
 type PlaybookFilterOptions struct {
-	Sort       SortField
-	Direction  SortDirection
-	SearchTerm string
+	Sort         SortField
+	Direction    SortDirection
+	SearchTerm   string
+	WithArchived bool
 
 	// Pagination options.
 	Page    int

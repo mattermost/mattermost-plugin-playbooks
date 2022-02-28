@@ -67,3 +67,35 @@ export function copyToClipboard(data: any) {
     document.execCommand('copy');
     document.body.removeChild(textArea);
 }
+
+export const KeyCodes: Record<string, [string, number]> = {
+    ENTER: ['Enter', 13],
+    COMPOSING: ['Composing', 229],
+    SPACE: ['Space', 32],
+};
+
+export function isKeyPressed(event: KeyboardEvent, key: [string, number]): boolean {
+    // There are two types of keyboards
+    // 1. English with different layouts(Ex: Dvorak)
+    // 2. Different language keyboards(Ex: Russian)
+
+    if (event.keyCode === KeyCodes.COMPOSING[1]) {
+        return false;
+    }
+
+    // checks for event.key for older browsers and also for the case of different English layout keyboards.
+    if (typeof event.key !== 'undefined' && event.key !== 'Unidentified' && event.key !== 'Dead') {
+        const isPressedByCode = event.key === key[0] || event.key === key[0].toUpperCase();
+        if (isPressedByCode) {
+            return true;
+        }
+    }
+
+    // used for different language keyboards to detect the position of keys
+    if (event.code) {
+        return event.code === key[0];
+    }
+
+    // legacy
+    return event.keyCode === key[1];
+}

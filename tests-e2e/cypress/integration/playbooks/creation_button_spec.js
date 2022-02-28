@@ -57,14 +57,14 @@ describe('playbooks > creation button', () => {
         cy.findByTestId('playbooksLHSButton').click();
 
         // # Click 'New Playbook' button
-        cy.findByText('Create playbook').click();
+        cy.findByTestId('titlePlaybook').findByText('Create playbook').click();
         cy.get('#playbooks_create').findByText('Create playbook').click();
 
         // * Verify a new playbook creation page opened
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
 
-    it('opens playbook creation page with "Blank" template option', () => {
+    it('auto creates a playbook with "Blank" template option', () => {
         const url = 'playbooks/new';
         const playbookName = 'Untitled playbook';
 
@@ -76,16 +76,13 @@ describe('playbooks > creation button', () => {
 
         // # Click 'Blank'
         cy.findByText('Blank').click();
-        cy.get('#playbooks_create').findByText('Create playbook').click();
 
-        // * Verify a new playbook creation page opened
-        verifyPlaybookCreationPageOpened(url, playbookName);
+        // * Verify playbook preview opened
+        verifyPreviewOpened();
     });
 
     it('opens Service Outage Incident page from its template option', () => {
-        const url1 = 'playbooks/new?teamId=';
-        const url2 = '&template=Service%20Reliability%20Incident';
-        const playbookName = 'Service Reliability Incident';
+        const playbookName = 'Incident Resolution';
 
         // # Open the product
         cy.visit('/playbooks');
@@ -93,13 +90,11 @@ describe('playbooks > creation button', () => {
         // # Switch to playbooks
         cy.findByTestId('playbooksLHSButton').click();
 
-        // # Click 'Service Reliability Incident'
-        cy.findByText('Service Reliability Incident').click();
-        cy.get('#playbooks_create').findByText('Create playbook').click();
+        // # Click 'Incident Resolution'
+        cy.findByText('Incident Resolution').click();
 
-        // * Verify a new 'Service Outage Incident' creation page is opened
-        verifyPlaybookCreationPageOpened(url1, playbookName);
-        verifyPlaybookCreationPageOpened(url2, playbookName);
+        // * Verify playbook preview opened
+        verifyPreviewOpened();
     });
 });
 
@@ -114,4 +109,9 @@ function verifyPlaybookCreationPageOpened(url, playbookName) {
 
     // * Verify there is 'Save' button
     cy.findByTestId('save_playbook').should('be.visible');
+}
+
+function verifyPreviewOpened() {
+    // * Verify the page url contains 'preview'
+    cy.url().should('include', 'preview');
 }

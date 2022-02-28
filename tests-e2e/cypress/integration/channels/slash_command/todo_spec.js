@@ -202,16 +202,13 @@ describe('channels > slash command > todo', () => {
             // # Run a slash command to show the to-do list.
             cy.executeSlashCommand('/playbook todo');
 
-            // # Switch to playbooks DM channel
-            cy.visit(`/${team2.name}/messages/@playbooks`);
-
             cy.getLastPost().within((post) => {
                 // * Should show titles
                 cy.wrap(post).contains('You have 0 runs overdue.');
                 cy.wrap(post).contains('You have 0 outstanding tasks.');
                 cy.wrap(post).contains('You have 4 runs currently in progress:');
 
-                // * Should show three active runs
+                // * Should show four active runs
                 cy.get('li').then((liItems) => {
                     expect(liItems[0]).to.contain.text(run4.name);
                     expect(liItems[1]).to.contain.text(run1.name);
@@ -228,8 +225,8 @@ describe('channels > slash command > todo', () => {
             cy.apiChangeChecklistItemAssignee(run2.id, 0, 1, testUser.id);
             cy.apiChangeChecklistItemAssignee(run3.id, 1, 0, testUser.id);
 
-            // # Switch to playbooks DM channel
-            cy.visit(`/${team2.name}/messages/@playbooks`);
+            // # Navigate to a non-playbook run channel.
+            cy.visit(`/${team2.name}/channels/town-square`);
 
             // # Run a slash command to show the to-do list.
             cy.executeSlashCommand('/playbook todo');
@@ -239,11 +236,11 @@ describe('channels > slash command > todo', () => {
                 cy.wrap(post).contains('You have 0 runs overdue.');
                 cy.wrap(post).contains('You have 4 total outstanding tasks:');
 
-                // * Should show 3 runs
+                // * Should show 3 runs w/ tasks
                 cy.get('a').then((links) => {
-                    expect(links[1]).to.contain.text(run1.name);
-                    expect(links[2]).to.contain.text(run2.name);
-                    expect(links[3]).to.contain.text(run3.name);
+                    expect(links[0]).to.contain.text(run1.name);
+                    expect(links[1]).to.contain.text(run2.name);
+                    expect(links[2]).to.contain.text(run3.name);
                 });
 
                 cy.get('li').then((items) => {
@@ -272,10 +269,10 @@ describe('channels > slash command > todo', () => {
                 cy.wrap(post).contains('You have 0 runs overdue.');
                 cy.wrap(post).contains('You have 2 total outstanding tasks:');
 
-                // * Should show 2 runs
+                // * Should show 2 runs w/ tasks
                 cy.get('a').then((links) => {
-                    expect(links[1]).to.contain.text(run1.name);
-                    expect(links[2]).to.contain.text(run2.name);
+                    expect(links[0]).to.contain.text(run1.name);
+                    expect(links[1]).to.contain.text(run2.name);
                 });
 
                 cy.get('li').then((items) => {

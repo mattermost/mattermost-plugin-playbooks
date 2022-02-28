@@ -7,7 +7,7 @@ import General from 'mattermost-redux/constants/general';
 import {GlobalState} from 'mattermost-redux/types/store';
 import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
-import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
 import {getUsers} from 'mattermost-redux/selectors/entities/common';
 import {UserProfile} from 'mattermost-redux/types/users';
@@ -18,9 +18,12 @@ import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {
     haveIChannelPermission,
     haveISystemPermission,
+    haveITeamPermission,
 } from 'mattermost-redux/selectors/entities/roles';
 
 import Permissions from 'mattermost-redux/constants/permissions';
+
+import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
 
 import {pluginId} from 'src/manifest';
 import {playbookRunIsActive, PlaybookRun} from 'src/types/playbook_run';
@@ -226,5 +229,12 @@ export const currentRHSAboutCollapsedState = createSelector(
         return stateByChannel[channelId] ?? false;
     },
 );
+
+export const selectTeamsIHavePermissionToMakePlaybooksOn = (state: GlobalState) => {
+    return getMyTeams(state).filter((team: Team) => (
+        haveITeamPermission(state, team.id, 'playbook_public_create') ||
+		haveITeamPermission(state, team.id, 'playbook_private_create')
+    ));
+};
 
 export const selectExperimentalFeatures = (state: GlobalState) => Boolean(globalSettings(state)?.enable_experimental_features);

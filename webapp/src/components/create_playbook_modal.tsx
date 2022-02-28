@@ -12,9 +12,11 @@ import styled from 'styled-components';
 import {useHasTeamPermission, usePlaybooksRouting} from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 
+import {selectTeamsIHavePermissionToMakePlaybooksOn} from 'src/selectors';
+
 import {BaseInput} from './assets/inputs';
 import PublicPrivateSelector from './backstage/public_private_selector';
-import {TemplateDropdown} from './backstage/template_selector';
+import {TemplateDropdown} from './templates/template_selector';
 import MarkdownTextbox from './markdown_textbox';
 import TeamSelector from './team/team_selector';
 import GenericModal, {InlineLabel} from './widgets/generic_modal';
@@ -53,13 +55,6 @@ const TeamSelectorBorder = styled(BaseInput).attrs({as: 'div'})`
 	flex-direction: horizontal;
 	padding: 0;
 `;
-
-const selectTeamsIHavePermissionToMakePlaybooksOn = (state: GlobalState) => {
-    return getMyTeams(state).filter((team: Team) => (
-        haveITeamPermission(state, team.id, 'playbook_public_create') ||
-		haveITeamPermission(state, team.id, 'playbook_private_create')
-    ));
-};
 
 const PlaybookCreateModal = ({startingName, startingTeamId, startingTemplate, startingDescription, startingPublic, ...modalProps}: PlaybookCreateModalProps) => {
     const {formatMessage} = useIntl();
