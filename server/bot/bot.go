@@ -2,6 +2,7 @@ package bot
 
 import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-server/v6/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -15,6 +16,7 @@ type Bot struct {
 	botUserID     string
 	logContext    LogContext
 	telemetry     Telemetry
+	metrics       *metrics.Metrics
 }
 
 // Logger interface - a logging system that will tee logs to a DM channel.
@@ -79,12 +81,13 @@ type Telemetry interface {
 }
 
 // New creates a new bot poster/logger.
-func New(api *pluginapi.Client, botUserID string, configService config.Service, telemetry Telemetry) *Bot {
+func New(api *pluginapi.Client, botUserID string, configService config.Service, telemetry Telemetry, metrics *metrics.Metrics) *Bot {
 	return &Bot{
 		pluginAPI:     api,
 		botUserID:     botUserID,
 		configService: configService,
 		telemetry:     telemetry,
+		metrics:       metrics,
 	}
 }
 
@@ -96,5 +99,6 @@ func (b *Bot) clone() *Bot {
 		botUserID:     b.botUserID,
 		logContext:    b.logContext.copyShallow(),
 		telemetry:     b.telemetry,
+		metrics:       b.metrics,
 	}
 }

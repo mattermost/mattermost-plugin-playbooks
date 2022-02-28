@@ -83,6 +83,7 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "unable to load translation files")
 	}
 
+	p.metricsService = p.getMetricsInstance()
 	pluginAPIClient := pluginapi.NewClient(p.API, p.Driver)
 	p.pluginAPI = pluginAPIClient
 
@@ -139,23 +140,8 @@ func (p *Plugin) OnActivate() error {
 	toggleTelemetry()
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
-	// Init metrics
-	instanceInfo := metrics.InstanceInfo{
-		Version:        manifest.Version,
-		InstallationID: os.Getenv("MM_CLOUD_INSTALLATION_ID"),
-	}
-	p.metricsService = metrics.NewMetrics(instanceInfo)
-	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService, &pluginAPIClient.Log)
-	// Run server to expose metrics
-	go func() {
-		err := metricServer.Run()
-		if err != nil {
-			pluginAPIClient.Log.Error("Metrics server could not be started", "Error", err)
-		}
-	}()
-
 	apiClient := sqlstore.NewClient(pluginAPIClient)
-	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
+	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient, p.metricsService)
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
 	sqlStore, err := sqlstore.New(apiClient, p.bot, scheduler)
@@ -252,8 +238,10 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
+	// run metrics server to expose data
+	p.runMetricsServer()
 	// run metrics updater recuring task
-	p.RunMetricsUpdaterTask(playbookStore, playbookRunStore)
+	p.runMetricsUpdaterTask(playbookStore, playbookRunStore)
 
 	// prevent a recursive OnConfigurationChange
 	go func() {
@@ -306,7 +294,27 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 	p.playbookService.MessageHasBeenPosted(c.SessionId, post)
 }
 
-func (p *Plugin) RunMetricsUpdaterTask(playbookStore app.PlaybookStore, playbookRunStore app.PlaybookRunStore) {
+func (p *Plugin) getMetricsInstance() *metrics.Metrics {
+	// Init metrics
+	instanceInfo := metrics.InstanceInfo{
+		Version:        manifest.Version,
+		InstallationID: os.Getenv("MM_CLOUD_INSTALLATION_ID"),
+	}
+	return metrics.NewMetrics(instanceInfo)
+}
+
+func (p *Plugin) runMetricsServer() {
+	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService, &p.pluginAPI.Log)
+	// Run server to expose metrics
+	go func() {
+		err := metricServer.Run()
+		if err != nil {
+			p.pluginAPI.Log.Error("Metrics server could not be started", "Error", err)
+		}
+	}()
+}
+
+func (p *Plugin) runMetricsUpdaterTask(playbookStore app.PlaybookStore, playbookRunStore app.PlaybookRunStore) {
 	metricsUpdater := func() {
 		playbooksActiveTotal, err := playbookStore.GetPlaybooksActiveTotal()
 		if err != nil {
