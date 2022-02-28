@@ -228,7 +228,9 @@ describe('channels > rhs > checklist', () => {
             cy.findByText(newTasktext).should('exist');
         });
 
-        it('assignee selector is shifted up if it falls below window', () => {
+        it('assignee selector is shifted up if it falls below window', {
+            retries: {runMode: 3},
+        }, () => {
             // Hover over a checklist item at the end
             cy.findAllByTestId('checkbox-item-container').eq(10).trigger('mouseover').within(() => {
                 // Click the profile icon
