@@ -11,12 +11,12 @@ import (
 // Bot stores the information for the plugin configuration, and implements the Poster and Logger
 // interfaces.
 type Bot struct {
-	configService config.Service
-	pluginAPI     *pluginapi.Client
-	botUserID     string
-	logContext    LogContext
-	telemetry     Telemetry
-	metrics       *metrics.Metrics
+	configService  config.Service
+	pluginAPI      *pluginapi.Client
+	botUserID      string
+	logContext     LogContext
+	telemetry      Telemetry
+	metricsService *metrics.Metrics
 }
 
 // Logger interface - a logging system that will tee logs to a DM channel.
@@ -83,22 +83,22 @@ type Telemetry interface {
 // New creates a new bot poster/logger.
 func New(api *pluginapi.Client, botUserID string, configService config.Service, telemetry Telemetry, metrics *metrics.Metrics) *Bot {
 	return &Bot{
-		pluginAPI:     api,
-		botUserID:     botUserID,
-		configService: configService,
-		telemetry:     telemetry,
-		metrics:       metrics,
+		pluginAPI:      api,
+		botUserID:      botUserID,
+		configService:  configService,
+		telemetry:      telemetry,
+		metricsService: metrics,
 	}
 }
 
 // Clone shallow copies
 func (b *Bot) clone() *Bot {
 	return &Bot{
-		configService: b.configService,
-		pluginAPI:     b.pluginAPI,
-		botUserID:     b.botUserID,
-		logContext:    b.logContext.copyShallow(),
-		telemetry:     b.telemetry,
-		metrics:       b.metrics,
+		configService:  b.configService,
+		pluginAPI:      b.pluginAPI,
+		botUserID:      b.botUserID,
+		logContext:     b.logContext.copyShallow(),
+		telemetry:      b.telemetry,
+		metricsService: b.metricsService,
 	}
 }

@@ -85,7 +85,7 @@ func (b *Bot) Errorf(format string, args ...interface{}) {
 		b.logToAdmins("ERROR", message)
 	}
 
-	b.metrics.IncrementErrorsTotal(1)
+	b.metricsService.IncrementErrorsTotal(1)
 }
 
 // Infof .
