@@ -2,15 +2,17 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 import {useIntl} from 'react-intl';
 
 import {Metric, MetricType} from 'src/types/playbook';
-import {BaseInput, BaseTextArea} from 'src/components/assets/inputs';
 import {PrimaryButton} from 'src/components/assets/buttons';
-import {VerticalSpacer} from 'src/components/backstage/playbook_runs/shared';
+import {StyledInput, HelpText, ErrorText} from 'src/components/backstage/playbook_runs/shared';
 import {ClockOutline, DollarSign, PoundSign} from 'src/components/backstage/playbook_edit/styles';
-import {stringToTarget, targetToString} from 'src/components/backstage/playbook_edit/metrics/shared';
+import {stringToMetric, metricToString, isMetricValueValid} from 'src/components/backstage/playbook_edit/metrics/shared';
+import MetricInput from 'src/components/backstage/playbook_runs/playbook_run_backstage/metrics/metric_input';
+import {BaseTextArea} from 'src/components/assets/inputs';
+import {VerticalSpacer} from 'src/components/backstage/styles';
 
 type SetState = (prevState: Metric) => Metric;
 
@@ -26,7 +28,7 @@ interface Props {
 
 const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveToggle, saveFailed}: Props) => {
     const {formatMessage} = useIntl();
-    const [curTargetString, setCurTargetString] = useState(() => targetToString(metric.target, metric.type));
+    const [curTargetString, setCurTargetString] = useState(() => metricToString(metric.target, metric.type));
     const [curSaveToggle, setCurSaveToggle] = useState(saveToggle);
     const [titleError, setTitleError] = useState('');
     const [targetError, setTargetError] = useState('');
@@ -50,22 +52,13 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
         }
 
         // Is the target valid?
-        if (metric.type === MetricType.Duration) {
-            const regex = /(^$|^\d{1,2}:\d{1,2}:\d{1,2}$)/;
-            if (!regex.test(curTargetString)) {
-                setTargetError(errorTargetDuration);
-                return false;
-            }
-        } else {
-            const regex = /^\d*$/;
-            if (!regex.test(curTargetString)) {
-                setTargetError(errorTargetCurrencyInteger);
-                return false;
-            }
+        if (!isMetricValueValid(metric.type, curTargetString)) {
+            setTargetError(metric.type === MetricType.Duration ? errorTargetDuration : errorTargetCurrencyInteger);
+            return false;
         }
 
         // target is valid. Convert it and save the metric.
-        const target = stringToTarget(curTargetString, metric.type);
+        const target = stringToMetric(curTargetString, metric.type);
         onAdd(target);
         return true;
     };
@@ -102,7 +95,7 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                 </Button>
             </EditHeader>
             <EditContainer>
-                <Title>{'Title'}</Title>
+                <Title>{formatMessage({defaultMessage: 'Title'})}</Title>
                 <StyledInput
                     error={titleError !== ''}
                     placeholder={formatMessage({defaultMessage: 'Name of the metric'})}
@@ -118,24 +111,21 @@ const MetricEdit = ({metric, setMetric, otherTitles, onAdd, deleteClick, saveTog
                 />
                 <Error text={titleError}/>
                 <VerticalSpacer size={16}/>
-                <Title>{'Target per run'}</Title>
-                <InputWithIcon>
-                    {inputIcon}
-                    <StyledInput
-                        error={targetError !== ''}
-                        placeholder={formatMessage({defaultMessage: 'Target value for each run'})}
-                        type='text'
-                        value={curTargetString}
-                        onChange={(e) => {
-                            setCurTargetString(e.target.value.trim());
-                            setTargetError('');
-                        }}
-                    />
-                </InputWithIcon>
-                <Error text={targetError}/>
-                <HelpText>{formatMessage({defaultMessage: 'We’ll show you how close or far from the target each run’s value is and also plot it on a chart.'})}</HelpText>
+
+                <MetricInput
+                    title={formatMessage({defaultMessage: 'Target per run'})}
+                    value={curTargetString}
+                    placeholder={formatMessage({defaultMessage: 'Target value for each run'})}
+                    helpText={formatMessage({defaultMessage: 'We’ll show you how close or far from the target each run’s value is and also plot it on a chart.'})}
+                    errorText={targetError}
+                    inputIcon={inputIcon}
+                    onChange={(e) => {
+                        setCurTargetString(e.target.value.trim());
+                        setTargetError('');
+                    }}
+                />
                 <VerticalSpacer size={16}/>
-                <Title>{'Description'}</Title>
+                <Title>{formatMessage({defaultMessage: 'Description'})}</Title>
                 <StyledTextarea
                     placeholder={formatMessage({defaultMessage: 'Describe what this metric is about'})}
                     rows={2}
@@ -206,54 +196,9 @@ const Title = styled.div`
     margin: 0 0 8px 0;
 `;
 
-const HelpText = styled.div`
-    font-size: 12px;
-    line-height: 16px;
-    margin-top: 4px;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-`;
-
 const Error = ({text}: { text: string }) => (
     text === '' ? null : <ErrorText>{text}</ErrorText>
 );
-
-const ErrorText = styled.div`
-    font-size: 12px;
-    line-height: 16px;
-    margin-top: 4px;
-    color: var(--error-text);
-`;
-
-const StyledInput = styled(BaseInput)<{ error?: boolean }>`
-    height: 40px;
-    width: 100%;
-
-    ${(props) => (
-        props.error && css`
-            box-shadow: inset 0 0 0 1px var(--error-text);
-
-            &:focus {
-                box-shadow: inset 0 0 0 2px var(--error-text);
-            }
-        `
-    )}
-`;
-
-const InputWithIcon = styled.span`
-    position: relative;
-
-    svg {
-        position: absolute;
-        left: 14px;
-        top: 1px;
-        color: rgba(var(--center-channel-color-rgb), 0.64);
-    }
-
-    input {
-        padding-left: 38px;
-    }
-`;
-
 const StyledTextarea = styled(BaseTextArea)`
     width: 100%;
     margin-bottom: -4px;

@@ -25,6 +25,7 @@ type RudderTelemetry struct {
 const (
 	eventPlaybookRun               = "incident"
 	actionCreate                   = "create"
+	actionImport                   = "import"
 	actionEnd                      = "end"
 	actionRestart                  = "restart"
 	actionChangeOwner              = "change_commander"
@@ -362,6 +363,7 @@ func (t *RudderTelemetry) UpdateRetrospective(playbookRun *app.PlaybookRun, user
 func (t *RudderTelemetry) PublishRetrospective(playbookRun *app.PlaybookRun, userID string) {
 	properties := playbookRunProperties(playbookRun, userID)
 	properties["Action"] = actionPublishRetrospective
+	properties["NumMetrics"] = len(playbookRun.MetricsData)
 	t.track(eventTasks, properties)
 }
 
@@ -403,6 +405,7 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 		"SignalAnyKeywordsEnabled":    playbook.SignalAnyKeywordsEnabled,
 		"NumSignalAnyKeywords":        len(playbook.SignalAnyKeywords),
 		"HasChannelNameTemplate":      playbook.ChannelNameTemplate != "",
+		"NumMetrics":                  len(playbook.Metrics),
 	}
 }
 
@@ -417,6 +420,13 @@ func playbookTemplateProperties(templateName string, userID string) map[string]i
 func (t *RudderTelemetry) CreatePlaybook(playbook app.Playbook, userID string) {
 	properties := playbookProperties(playbook, userID)
 	properties["Action"] = actionCreate
+	t.track(eventPlaybook, properties)
+}
+
+// ImportPlaybook tracks the import of a playbook.
+func (t *RudderTelemetry) ImportPlaybook(playbook app.Playbook, userID string) {
+	properties := playbookProperties(playbook, userID)
+	properties["Action"] = actionImport
 	t.track(eventPlaybook, properties)
 }
 

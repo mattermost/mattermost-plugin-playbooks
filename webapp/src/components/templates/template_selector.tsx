@@ -1,17 +1,18 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {ReactNode} from 'react';
+import React from 'react';
 import styled from 'styled-components';
-
-import {FormattedMessage, useIntl} from 'react-intl';
-
-import {useDispatch} from 'react-redux';
+import {useIntl} from 'react-intl';
+import {useDispatch, useSelector} from 'react-redux';
+import {getCurrentUser} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
 
 import {displayPlaybookCreateModal} from 'src/actions';
-import {telemetryEventForTemplate} from 'src/client';
-
+import {telemetryEventForTemplate, savePlaybook} from 'src/client';
 import {StyledSelect} from 'src/components/backstage/styles';
+import {selectTeamsIHavePermissionToMakePlaybooksOn} from 'src/selectors';
+import {setPlaybookDefaults} from 'src/types/playbook';
+import {navigateToPluginUrl} from 'src/browser_routing';
 
 import TemplateItem from './template_item';
 import PresetTemplates, {PresetTemplate} from './template_data';
@@ -56,8 +57,22 @@ const SelectorGrid = styled.div`
     padding: 0 0 100px;
 `;
 
+const instantCreatePlaybook = async (template: PresetTemplate, teamID: string, username: string): Promise<string> => {
+    const pb = setPlaybookDefaults(template.template);
+    pb.public = true;
+    pb.team_id = teamID;
+    if (username !== '') {
+        pb.title = '@' + username + "'s " + template.title;
+    }
+    const data = await savePlaybook(pb);
+
+    return data?.id;
+};
+
 const TemplateSelector = ({templates = PresetTemplates}: Props) => {
     const dispatch = useDispatch();
+    const teams = useSelector(selectTeamsIHavePermissionToMakePlaybooksOn);
+    const currentUser = useSelector(getCurrentUser);
     return (
         <SelectorGrid>
             {templates.map((template: PresetTemplate) => (
@@ -70,9 +85,19 @@ const TemplateSelector = ({templates = PresetTemplates}: Props) => {
                     icon={template.icon}
                     author={template.author}
                     labelColor={template.labelColor}
-                    onSelect={() => {
+                    onSelect={async () => {
                         telemetryEventForTemplate(template.title, 'click_template_icon');
-                        dispatch(displayPlaybookCreateModal({startingTemplate: template.title}));
+                        let username = currentUser.username;
+                        const isTutorial = template.title === 'Learn how to use playbooks';
+                        if (isTutorial) {
+                            username = '';
+                        }
+                        if (isTutorial || teams.length === 1) {
+                            const playbookID = await instantCreatePlaybook(template, teams[0].id, username);
+                            navigateToPluginUrl(`/playbooks/${playbookID}`);
+                        } else {
+                            dispatch(displayPlaybookCreateModal({startingTemplate: template.title}));
+                        }
                     }}
                 />
             ))}

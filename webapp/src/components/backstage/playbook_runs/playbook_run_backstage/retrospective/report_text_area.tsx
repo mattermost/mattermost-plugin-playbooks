@@ -51,6 +51,7 @@ const ReportTextArea = ({text, isEditable, onEdit, flushChanges, teamId}: Props)
 
     return (
         <PostTextContainer
+            published={!isEditable}
             data-testid={'retro-report-text'}
             onClick={() => {
                 if (isEditable) {
@@ -74,8 +75,9 @@ const StyledTextArea = styled(StyledTextarea)`
     flex-grow: 1;
 `;
 
-const PostTextContainer = styled.div`
-    background: var(--center-channel-bg);
+const PostTextContainer = styled.div<{ published?: boolean}>`
+    background-color: ${(props) => (props.published ? 'rgba(var(--center-channel-color-rgb),0.03)' : 'var(--center-channel-bg)')};
+
     margin: 8px 0 0 0;
     padding: 10px 25px 0 16px;
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
