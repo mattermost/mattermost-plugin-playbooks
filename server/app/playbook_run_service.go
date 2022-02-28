@@ -1732,9 +1732,9 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 	return &model.Post{Message: message}, nil
 }
 
-// EphermalPostTodoDigestToUser
-// builds todo digest message and sends an ephermal post to userID, channelID. Use force = true to send post even if there are no items.
-func (s *PlaybookRunServiceImpl) EphermalPostTodoDigestToUser(userID string, channelID string, force bool) error {
+// EphemeralPostTodoDigestToUser
+// builds todo digest message and sends an ephemeral post to userID, channelID. Use force = true to send post even if there are no items.
+func (s *PlaybookRunServiceImpl) EphemeralPostTodoDigestToUser(userID string, channelID string, force bool) error {
 	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force)
 	if err != nil {
 		return err
