@@ -2,12 +2,10 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useSelector} from 'react-redux';
 import {useIntl} from 'react-intl';
 
 import {ChannelAction, ChannelActionType} from 'src/types/channel_actions';
 import MarkdownTextbox from 'src/components/markdown_textbox';
-import {isCurrentUserChannelAdmin} from 'src/selectors';
 
 interface Props {
     action: ChannelAction;
@@ -26,7 +24,6 @@ const ActionChildren = (props: Props) => {
 
 const WelcomeActionChildren = ({action, onUpdate, editable}: Props) => {
     const {formatMessage} = useIntl();
-    const isChannelAdmin = useSelector(isCurrentUserChannelAdmin);
 
     return (
         <MarkdownTextbox
@@ -43,7 +40,7 @@ const WelcomeActionChildren = ({action, onUpdate, editable}: Props) => {
             }))}
             id={'channel-actions-modal_welcome-msg'}
             hideHelpText={true}
-            previewByDefault={!isChannelAdmin}
+            previewByDefault={!editable}
             disabled={!editable}
         />
     );
