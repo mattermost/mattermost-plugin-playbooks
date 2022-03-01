@@ -25,7 +25,7 @@ const RhsRunDetailsTourDialog = ({onDismiss, onConfirm, ...modalProps}: Props) =
 
     return (
         <DialogModal
-            id={'collapsible-checklist-hover-menu-delete-modal'}
+            id={ID}
             confirmButtonText={formatMessage({defaultMessage: 'Take a quick tour'})}
             cancelButtonText={formatMessage({defaultMessage: 'Let me explore for myself'})}
             autoCloseOnCancelButton={true}
@@ -40,7 +40,7 @@ const RhsRunDetailsTourDialog = ({onDismiss, onConfirm, ...modalProps}: Props) =
                 <ChecklistIllustration/>
             </Graphic>
             <Title>
-                {formatMessage({defaultMessage: 'We’ve auto-created your first run'})}
+                {formatMessage({defaultMessage: 'We’ve auto-created your run'})}
             </Title>
             <Desc>
                 {formatMessage({defaultMessage: 'This lets you experience a sample playbook first before investing time to create your own. '})}
