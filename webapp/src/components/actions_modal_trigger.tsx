@@ -58,7 +58,6 @@ const Legend = styled.legend`
 const Label = styled.span`
     font-size: 11px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
-    text-transform: uppercase;
 `;
 
 const Title = styled.span`
