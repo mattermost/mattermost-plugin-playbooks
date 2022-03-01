@@ -29,7 +29,7 @@ const Action = (props: Props) => {
     const onChange = props.editable ? onToggle : () => {/* do nothing */};
 
     const titles: Record<string, string> = {
-        [ChannelActionType.WelcomeMessage]: formatMessage({defaultMessage: 'Send an ephemeral welcome message to the user'}),
+        [ChannelActionType.WelcomeMessage]: formatMessage({defaultMessage: 'Send a temporary welcome message to the user'}),
     };
 
     return (
