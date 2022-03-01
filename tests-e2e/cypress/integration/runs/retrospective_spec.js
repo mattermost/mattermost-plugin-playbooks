@@ -51,7 +51,7 @@ describe('runs > retrospective', () => {
         cy.findByText('Go to channel').click();
 
         // * Verify the modified retro text is posted
-        cy.verifyPostedMessage('Edited retrospective.');
+        cy.getStyledComponent('CustomPostContent').should('exist').contains('Edited retrospective.');
     });
 
     it('prevents repeated publishing', () => {

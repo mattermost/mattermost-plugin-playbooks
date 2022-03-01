@@ -19,6 +19,7 @@ import {
     isPlaybookRun,
     isMetadata,
     Metadata,
+    RunMetricData,
 } from 'src/types/playbook_run';
 
 import {setTriggerId} from 'src/actions';
@@ -81,6 +82,17 @@ export async function fetchPlaybookRun(id: string) {
     }
 
     return data as PlaybookRun;
+}
+
+export async function createPlaybookRun(playbook_id: string, owner_user_id: string, team_id: string, name: string, description: string) {
+    const run = await doPost(`${apiUrl}/runs`, JSON.stringify({
+        owner_user_id,
+        team_id,
+        name,
+        description,
+        playbook_id,
+    }));
+    return run as PlaybookRun;
 }
 
 export async function postStatusUpdate(
@@ -444,18 +456,20 @@ export async function fetchGlobalSettings(): Promise<GlobalSettings> {
     return globalSettingsSetDefaults(data);
 }
 
-export async function updateRetrospective(playbookRunID: string, updatedText: string) {
+export async function updateRetrospective(playbookRunID: string, updatedText: string, metrics: RunMetricData[]) {
     const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective`,
         JSON.stringify({
             retrospective: updatedText,
+            metrics,
         }));
     return data;
 }
 
-export async function publishRetrospective(playbookRunID: string, currentText: string) {
+export async function publishRetrospective(playbookRunID: string, currentText: string, metrics: RunMetricData[]) {
     const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective/publish`,
         JSON.stringify({
             retrospective: currentText,
+            metrics,
         }));
     return data;
 }

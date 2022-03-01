@@ -1,13 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React from 'react';
+import React, {useRef} from 'react';
 import classNames from 'classnames';
 import styled from 'styled-components';
 
-const Header = styled.div`
-    cursor: pointer;
-`;
+import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
 
 interface Props {
     name: string;
@@ -16,21 +14,38 @@ interface Props {
     onClick: () => void;
 }
 
-export function SortableColHeader(props: Props) {
+export function SortableColHeader({name, direction, active, onClick}: Props) {
+    const nameRef = useRef(null);
+
     const chevron = classNames('icon--small', 'ml-2', {
-        'icon-chevron-down': props.direction === 'desc',
-        'icon-chevron-up': props.direction === 'asc',
+        'icon-chevron-down': direction === 'desc',
+        'icon-chevron-up': direction === 'asc',
     });
 
     return (
-        <Header
-            onClick={() => props.onClick()}
-        >
-            {props.name}
+        <Header onClick={() => onClick()}>
+            <Name ref={nameRef}>
+                <TextWithTooltipWhenEllipsis
+                    id={`col_${name}`}
+                    text={name}
+                    parentRef={nameRef}
+                />
+            </Name>
             {
-                props.active &&
+                active &&
                 <i className={chevron}/>
             }
         </Header>
     );
 }
+
+const Header = styled.div`
+    display: flex;
+    cursor: pointer;
+`;
+
+const Name = styled.div`
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+`;

@@ -2,10 +2,13 @@ package sqlstore
 
 import (
 	"fmt"
+	"math"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
+	"gopkg.in/guregu/null.v4"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -302,6 +305,140 @@ func (s *StatsStore) ActiveParticipantsPerDayLastXDays(x int, filters *StatsFilt
 	return counts, daysAsTimes
 }
 
+// MetricOverallAverage returns list of average values of playbook's metrics.
+// Only published metrics values are included.
+// Returns empty list when Playbook doesn't have metrics or there are no any published metrics values
+func (s *StatsStore) MetricOverallAverage(filters *StatsFilters) []int64 {
+	query := s.store.builder.
+		Select("FLOOR(AVG(m.Value))").
+		From("IR_Metric as m").
+		InnerJoin("IR_MetricConfig as mc ON m.MetricConfigID = mc.ID").
+		GroupBy("mc.ID").
+		Where(sq.Eq{"mc.PlaybookID": filters.PlaybookID}).
+		Where(sq.Eq{"m.Published": true}).
+		OrderBy("mc.Ordering ASC")
+
+	var averages [][]uint8
+	if err := s.store.selectBuilder(s.store.db, &averages, query); err != nil {
+		s.log.Warnf("Error retrieving stat total active participants %w", err)
+		return []int64{}
+	}
+
+	overallAverage := make([]int64, len(averages))
+	for i, v := range averages {
+		overallAverage[i], _ = strconv.ParseInt(string(v), 10, 64)
+	}
+	return overallAverage
+}
+
+// MetricValueRange returns min and max values for each metric
+// Only published metrics are included.
+// If there are no any published values, returns empty list
+func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
+	type MinMax struct {
+		Min null.Int
+		Max null.Int
+	}
+	q := s.store.builder.
+		Select("MIN(Value) as Min, MAX(Value) as Max").
+		From("IR_Metric as m").
+		InnerJoin("IR_MetricConfig as mc ON m.MetricConfigID = mc.ID").
+		GroupBy("mc.ID").
+		Where(sq.Eq{"mc.PlaybookID": filters.PlaybookID}).
+		Where(sq.Eq{"m.Published": true}).
+		OrderBy("mc.Ordering ASC")
+	var res []MinMax
+	if err := s.store.selectBuilder(s.store.db, &res, q); err != nil {
+		s.log.Warnf("Error retrieving metric min and max values %w", err)
+		return [][]int64{}
+	}
+	valueRange := make([][]int64, len(res))
+	for i := range res {
+		valueRange[i] = []int64{res[i].Min.Int64, res[i].Max.Int64}
+	}
+
+	return valueRange
+}
+
+// MetricRollingValuesLastXRuns for each metric returns list of last `x` published values, starting from `offset`
+// first element in the list is most recent. And returns the names of the last `x` runs.
+// Retruns empty list if Playbook doesn't have metrics.
+// Returns list with null values, if Playbook has metrics but there are no any published values
+func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *StatsFilters) ([][]int64, []string) {
+	// retrieve metric configs metricsConfigsIDs for playbook
+	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
+	if err != nil {
+		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
+		return [][]int64{}, []string{}
+	}
+
+	//NOTE: It would be possible to turn this into a single statement; keep in mind if the playbookStats call becomes slow
+	metricsValues := make([][]int64, 0)
+	runNames := make([]string, 0)
+
+	for _, id := range metricsConfigsIDs {
+		query := s.store.builder.
+			Select("m.Value AS Value", "c.DisplayName AS Name").
+			From("IR_Incident as i").
+			Join("Channels AS c ON (c.Id = i.ChannelId)").
+			InnerJoin("IR_Metric AS m ON (i.ID = m.IncidentID)").
+			Where(sq.Eq{"i.PlaybookID": filters.PlaybookID}).
+			Where("i.RetrospectivePublishedAt > 0").
+			Where(sq.Eq{"i.RetrospectiveWasCanceled": false}).
+			Where(sq.Eq{"m.MetricConfigID": id}).
+			OrderBy("i.RetrospectivePublishedAt DESC").
+			Limit(uint64(x)).
+			Offset(uint64(offset))
+
+		var rows []struct {
+			Value int64
+			Name  string
+		}
+		if err := s.store.selectBuilder(s.store.db, &rows, query); err != nil {
+			s.log.Warnf("Error retrieving metrics values %w", err)
+			return [][]int64{}, []string{}
+		}
+
+		var values []int64
+		var names []string
+		for _, r := range rows {
+			values = append(values, r.Value)
+			names = append(names, r.Name)
+		}
+
+		metricsValues = append(metricsValues, values)
+		runNames = names // overwrites, but it'll be the same data each time -- simpler than making a separate query
+	}
+
+	return metricsValues, runNames
+}
+
+// MetricRollingAverageAndChange for each metric returns average of last `x` published values and
+// change with comparison to the previous period
+// returns empty list if there are no available published metrics values
+func (s *StatsStore) MetricRollingAverageAndChange(x int, filters *StatsFilters) (metricRollingAverage []int64, metricRollingAverageChange []int64) {
+	metricValuesWholePeriod, _ := s.MetricRollingValuesLastXRuns(2*x, 0, filters)
+
+	if len(metricValuesWholePeriod) == 0 {
+		return []int64{}, []int64{}
+	}
+
+	firstPeriodEnd := int(math.Min(float64(x), float64(len(metricValuesWholePeriod[0]))))
+	metricRollingAverage = getMetricRollingAverageForPeriod(metricValuesWholePeriod, 0, firstPeriodEnd)
+
+	secondPeriodEnd := int(math.Min(float64(2*x), float64(len(metricValuesWholePeriod[0]))))
+	prevPeriodAverages := getMetricRollingAverageForPeriod(metricValuesWholePeriod, firstPeriodEnd, secondPeriodEnd)
+	metricRollingAverageChange = make([]int64, 0)
+	for i, num := range prevPeriodAverages {
+		// if previous value was zero, increase percentage can't be defined
+		if num == 0 {
+			continue
+		}
+		metricRollingAverageChange = append(metricRollingAverageChange, metricRollingAverage[i]*100/num-100)
+	}
+	return
+}
+
 func (s *StatsStore) performQueryForXCols(q sq.SelectBuilder, x int) ([]int, error) {
 	sqlString, args, err := q.ToSql()
 	if err != nil {
@@ -339,6 +476,21 @@ func (s *StatsStore) performQueryForXCols(q sq.SelectBuilder, x int) ([]int, err
 	return counts, nil
 }
 
+func (s *StatsStore) retrieveMetricConfigs(playbookID string) ([]string, error) {
+	query := s.store.builder.
+		Select("ID").
+		From("IR_MetricConfig").
+		Where(sq.Eq{"PlaybookID": playbookID}).
+		Where(sq.Eq{"DeleteAt": 0}).
+		OrderBy("Ordering ASC")
+	var ids []string
+	if err := s.store.selectBuilder(s.store.db, &ids, query); err != nil {
+		s.log.Warnf("Error retrieving metrics configs ids for playbook %s ", playbookID)
+		return nil, err
+	}
+	return ids, nil
+}
+
 func beginningOfTodayMillis() int64 {
 	year, month, day := time.Now().UTC().Date()
 	bod := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
@@ -369,4 +521,24 @@ func reverseSlice(s interface{}) {
 	for i, j := 0, n-1; i < j; i, j = i+1, j-1 {
 		swap(i, j)
 	}
+}
+
+func getMetricRollingAverageForPeriod(metricRollingValues [][]int64, start, end int) []int64 {
+	metricRollingAverage := make([]int64, 0)
+
+	for _, nums := range metricRollingValues {
+		// if there are some values calculate average and add to list
+		if start < end {
+			metricRollingAverage = append(metricRollingAverage, getAverage(nums[start:end]))
+		}
+	}
+	return metricRollingAverage
+}
+
+func getAverage(nums []int64) int64 {
+	var sum int64
+	for _, num := range nums {
+		sum += num
+	}
+	return sum / int64(len(nums))
 }

@@ -38,23 +38,26 @@ export const BackstageGroupToggleHeader = styled.div`
     column-gap: 12px;
 `;
 
-export const ClockOutline = ({sizePx}: {sizePx: number}) => (
+export const ClockOutline = ({sizePx, color}: {sizePx: number, color?: string}) => (
     <Icon
         path={mdiClockOutline}
         size={`${sizePx}px`}
+        color={color}
     />
 );
 
-export const DollarSign = ({sizePx}: {sizePx: number}) => (
+export const DollarSign = ({sizePx, color}: {sizePx: number, color?: string}) => (
     <Icon
         path={mdiCurrencyUsd}
         size={`${sizePx}px`}
+        color={color}
     />
 );
 
-export const PoundSign = ({sizePx}: {sizePx: number}) => (
+export const PoundSign = ({sizePx, color}: {sizePx: number, color?: string}) => (
     <Icon
         path={mdiPound}
         size={`${sizePx}px`}
+        color={color}
     />
 );

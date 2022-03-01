@@ -87,7 +87,6 @@ const TutorialTourTip = ({
         setShow,
         handleOpen,
         handleHide,
-        handleDismiss,
         handleNext,
         handlePrevious,
         handleSkipTutorial,
@@ -165,7 +164,7 @@ const TutorialTourTip = ({
                 </h4>
                 <button
                     className='pb-tutorial-tour-tip__header__close'
-                    onClick={handleDismiss}
+                    onClick={handleSkipTutorial}
                 >
                     <i className='icon icon-close'/>
                 </button>

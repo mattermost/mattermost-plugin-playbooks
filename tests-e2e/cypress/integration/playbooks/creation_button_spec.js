@@ -64,7 +64,7 @@ describe('playbooks > creation button', () => {
         verifyPlaybookCreationPageOpened(url, playbookName);
     });
 
-    it('opens playbook creation page with "Blank" template option', () => {
+    it('auto creates a playbook with "Blank" template option', () => {
         const url = 'playbooks/new';
         const playbookName = 'Untitled playbook';
 
@@ -76,15 +76,12 @@ describe('playbooks > creation button', () => {
 
         // # Click 'Blank'
         cy.findByText('Blank').click();
-        cy.get('#playbooks_create').findByText('Create playbook').click();
 
-        // * Verify a new playbook creation page opened
-        verifyPlaybookCreationPageOpened(url, playbookName);
+        // * Verify playbook preview opened
+        verifyPreviewOpened();
     });
 
     it('opens Service Outage Incident page from its template option', () => {
-        const url1 = 'playbooks/new?teamId=';
-        const url2 = '&template=Incident%20Resolution';
         const playbookName = 'Incident Resolution';
 
         // # Open the product
@@ -95,11 +92,9 @@ describe('playbooks > creation button', () => {
 
         // # Click 'Incident Resolution'
         cy.findByText('Incident Resolution').click();
-        cy.get('#playbooks_create').findByText('Create playbook').click();
 
-        // * Verify a new 'Service Outage Incident' creation page is opened
-        verifyPlaybookCreationPageOpened(url1, playbookName);
-        verifyPlaybookCreationPageOpened(url2, playbookName);
+        // * Verify playbook preview opened
+        verifyPreviewOpened();
     });
 });
 
@@ -114,4 +109,9 @@ function verifyPlaybookCreationPageOpened(url, playbookName) {
 
     // * Verify there is 'Save' button
     cy.findByTestId('save_playbook').should('be.visible');
+}
+
+function verifyPreviewOpened() {
+    // * Verify the page url contains 'preview'
+    cy.url().should('include', 'preview');
 }
