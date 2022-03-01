@@ -35,6 +35,7 @@ export const BackstageGroupToggleHeader = styled.div`
     display: flex;
     flex-direction: row;
     align-items: center;
+    column-gap: 12px;
 `;
 
 export const ClockOutline = ({sizePx}: {sizePx: number}) => (
