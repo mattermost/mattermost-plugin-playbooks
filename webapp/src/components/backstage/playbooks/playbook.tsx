@@ -55,7 +55,7 @@ import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 import {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip/hooks';
 import {PlaybookPreviewTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip';
-import PlaybookKeyMetrics from 'src/components/backstage/playbooks/playbook_key_metrics';
+import PlaybookKeyMetrics from 'src/components/backstage/playbooks/metrics/playbook_key_metrics';
 
 interface MatchParams {
     playbookId: string
@@ -273,6 +273,7 @@ const Playbook = () => {
                                 const newID = await clientDuplicatePlaybook(playbook.id);
                                 navigateToPluginUrl(`/playbooks/${newID}`);
                                 addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
+                                telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
                             }}
                         >
                             <FormattedMessage defaultMessage='Duplicate'/>
@@ -281,6 +282,7 @@ const Playbook = () => {
                             href={exportHref}
                             download={exportFilename}
                             role={'button'}
+                            onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_export_clicked_in_playbook')}
                         >
                             <FormattedMessage defaultMessage='Export'/>
                         </DropdownMenuItemStyled>

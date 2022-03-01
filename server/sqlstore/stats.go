@@ -361,23 +361,26 @@ func (s *StatsStore) MetricValueRange(filters *StatsFilters) [][]int64 {
 }
 
 // MetricRollingValuesLastXRuns for each metric returns list of last `x` published values, starting from `offset`
-// first element in the list is most recent
+// first element in the list is most recent. And returns the names of the last `x` runs.
 // Retruns empty list if Playbook doesn't have metrics.
 // Returns list with null values, if Playbook has metrics but there are no any published values
-func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *StatsFilters) [][]int64 {
+func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *StatsFilters) ([][]int64, []string) {
 	// retrieve metric configs metricsConfigsIDs for playbook
 	metricsConfigsIDs, err := s.retrieveMetricConfigs(filters.PlaybookID)
 	if err != nil {
 		s.log.Warnf("Error retrieving metrics configs ids for playbook %w", err)
-		return [][]int64{}
+		return [][]int64{}, []string{}
 	}
 
 	//NOTE: It would be possible to turn this into a single statement; keep in mind if the playbookStats call becomes slow
 	metricsValues := make([][]int64, 0)
+	runNames := make([]string, 0)
+
 	for _, id := range metricsConfigsIDs {
 		query := s.store.builder.
-			Select("m.Value").
+			Select("m.Value AS Value", "c.DisplayName AS Name").
 			From("IR_Incident as i").
+			Join("Channels AS c ON (c.Id = i.ChannelId)").
 			InnerJoin("IR_Metric AS m ON (i.ID = m.IncidentID)").
 			Where(sq.Eq{"i.PlaybookID": filters.PlaybookID}).
 			Where("i.RetrospectivePublishedAt > 0").
@@ -387,22 +390,34 @@ func (s *StatsStore) MetricRollingValuesLastXRuns(x int, offset int, filters *St
 			Limit(uint64(x)).
 			Offset(uint64(offset))
 
-		var values []int64
-		if err := s.store.selectBuilder(s.store.db, &values, query); err != nil {
-			s.log.Warnf("Error retrieving metrics values %w", err)
-			return [][]int64{}
+		var rows []struct {
+			Value int64
+			Name  string
 		}
+		if err := s.store.selectBuilder(s.store.db, &rows, query); err != nil {
+			s.log.Warnf("Error retrieving metrics values %w", err)
+			return [][]int64{}, []string{}
+		}
+
+		var values []int64
+		var names []string
+		for _, r := range rows {
+			values = append(values, r.Value)
+			names = append(names, r.Name)
+		}
+
 		metricsValues = append(metricsValues, values)
+		runNames = names // overwrites, but it'll be the same data each time -- simpler than making a separate query
 	}
 
-	return metricsValues
+	return metricsValues, runNames
 }
 
 // MetricRollingAverageAndChange for each metric returns average of last `x` published values and
 // change with comparison to the previous period
 // returns empty list if there are no available published metrics values
 func (s *StatsStore) MetricRollingAverageAndChange(x int, filters *StatsFilters) (metricRollingAverage []int64, metricRollingAverageChange []int64) {
-	metricValuesWholePeriod := s.MetricRollingValuesLastXRuns(2*x, 0, filters)
+	metricValuesWholePeriod, _ := s.MetricRollingValuesLastXRuns(2*x, 0, filters)
 
 	if len(metricValuesWholePeriod) == 0 {
 		return []int64{}, []int64{}

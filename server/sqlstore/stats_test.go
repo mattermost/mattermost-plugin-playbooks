@@ -380,14 +380,14 @@ func TestMetricsStats(t *testing.T) {
 		playbookRunStore := setupPlaybookRunStore(t, db)
 		playbookStore := setupPlaybookStore(t, db)
 		statsStore := setupStatsStore(t, db)
-		// _, store := setupSQLStore(t, db)
+		_, store := setupSQLStore(t, db)
 
 		setupChannelsTable(t, db)
 		setupPostsTable(t, db)
 
 		// generate playbooks and runs based on tests array
 		for testNum := range testCases {
-			generateTestData(t, &testCases[testNum], testNum, db, playbookStore, playbookRunStore)
+			generateTestData(t, &testCases[testNum], testNum, store, playbookStore, playbookRunStore)
 		}
 
 		for _, testCase := range testCases {
@@ -410,12 +410,12 @@ func TestMetricsStats(t *testing.T) {
 			})
 
 			t.Run(testCase.Playbook.Title+"-MetricRollingValuesLastXRuns", func(t *testing.T) {
-				actual := statsStore.MetricRollingValuesLastXRuns(x, 0, &filters)
+				actual, _ := statsStore.MetricRollingValuesLastXRuns(x, 0, &filters)
 
 				expected := getMetricRollingValuesLastXRuns(x, 0, &testCase)
 				require.Equal(t, expected, actual)
 
-				actual = statsStore.MetricRollingValuesLastXRuns(x, x, &filters)
+				actual, _ = statsStore.MetricRollingValuesLastXRuns(x, x, &filters)
 
 				expected = getMetricRollingValuesLastXRuns(x, x, &testCase)
 				require.Equal(t, expected, actual)
@@ -441,7 +441,7 @@ func TestMetricsStats(t *testing.T) {
 	}
 }
 
-func generateTestData(t *testing.T, testCase *MetricStatsTest, testNum int, db *sqlx.DB, playbookStore app.PlaybookStore, playbookRunStore app.PlaybookRunStore) {
+func generateTestData(t *testing.T, testCase *MetricStatsTest, testNum int, store *SQLStore, playbookStore app.PlaybookStore, playbookRunStore app.PlaybookRunStore) {
 	//create playbook with metrics
 	playbook := NewPBBuilder().
 		WithTitle(fmt.Sprintf("playbook %d", testNum)).
@@ -468,15 +468,20 @@ func generateTestData(t *testing.T, testCase *MetricStatsTest, testNum int, db *
 	}
 
 	// create and publish runs
+	now := model.GetMillis()
 	numRunsWithMetrics = testCase.numPublishedRuns * testCase.ratioRunsWithMetrics / 100
 	testCase.publishedRunsWithMetrics = make([]*app.PlaybookRun, numRunsWithMetrics)
+	var channels []model.Channel
 	for i := 0; i < testCase.numPublishedRuns; i++ {
-		playbookRun := NewBuilder(t).WithPlaybookID(playbook.ID).ToPlaybookRun()
+		channel := model.Channel{Id: model.NewId(), Type: "O", DisplayName: "displayname for channel", Name: "channel"}
+		channels = append(channels, channel)
+		playbookRun := NewBuilder(t).WithPlaybookID(playbook.ID).WithChannel(&channel).ToPlaybookRun()
 		playbookRun, err = playbookRunStore.CreatePlaybookRun(playbookRun)
 		require.NoError(t, err)
 
 		if i < numRunsWithMetrics {
-			now := model.GetMillis()
+			//Increase time by 10 sec. to avoid duplicate values. Otherwise, metric values sorted by `PublishedAt` may be inconsistent.
+			now += 100000
 			playbookRun.RetrospectivePublishedAt = now
 			playbookRun.RetrospectiveWasCanceled = false
 			playbookRun.MetricsData = generateRandomMetricData(playbook.Metrics)
@@ -484,6 +489,10 @@ func generateTestData(t *testing.T, testCase *MetricStatsTest, testNum int, db *
 			require.NoError(t, err)
 			testCase.publishedRunsWithMetrics[i] = playbookRun
 		}
+	}
+
+	if len(channels) > 0 {
+		createChannels(t, store, channels)
 	}
 }
 
