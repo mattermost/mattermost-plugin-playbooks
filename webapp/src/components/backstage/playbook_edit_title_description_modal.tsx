@@ -1,8 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-
 import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
+
 import styled from 'styled-components';
 
 import {BaseInput} from 'src/components/assets/inputs';
@@ -35,7 +35,10 @@ const EditTitleDescriptionModal = (props: Props) => {
     };
 
     const onTentativeHide = () => {
-        if (props.playbookDescription !== description || props.playbookTitle !== title) {
+        if (
+            props.playbookDescription !== description ||
+            props.playbookTitle !== title
+        ) {
             setShowConfirm(true);
         } else {
             onActualHide();
@@ -53,11 +56,6 @@ const EditTitleDescriptionModal = (props: Props) => {
 
     return (
         <>
-            <UnsavedChangesModal
-                show={showConfirm && props.show}
-                onConfirm={() => onActualHide()}
-                onCancel={() => setShowConfirm(false)}
-            />
             <GenericModal
                 onHide={onTentativeHide}
                 modalHeaderText={formatMessage({
@@ -75,8 +73,11 @@ const EditTitleDescriptionModal = (props: Props) => {
                 enforceFocus={true}
             >
                 <EditTitle>
-                    <InlineLabel>{formatMessage({defaultMessage: 'Playbook name'})}</InlineLabel>
+                    <InlineLabel>
+                        {formatMessage({defaultMessage: 'Playbook name'})}
+                    </InlineLabel>
                     <EditTitleInput
+                        data-testid={'playbook-edit-name-input'}
                         type={'text'}
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
@@ -86,11 +87,19 @@ const EditTitleDescriptionModal = (props: Props) => {
                     value={description}
                     setValue={setDescription}
                     placeholder={formatMessage({
-                        defaultMessage: '(Optional) Describe how this playbook should be used',
+                        defaultMessage:
+                            '(Optional) Describe how this playbook should be used',
                     })}
-                    id={'playbook-edit-name-and-description-modal-description-textbox'}
+                    id={
+                        'playbook-edit-name-and-description-modal-description-textbox'
+                    }
                 />
             </GenericModal>
+            <UnsavedChangesModal
+                show={showConfirm}
+                onConfirm={() => onActualHide()}
+                onCancel={() => setShowConfirm(false)}
+            />
         </>
     );
 };

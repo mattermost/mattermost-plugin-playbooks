@@ -1,14 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import styled from 'styled-components';
 import classNames from 'classnames';
 import React from 'react';
 import {Modal} from 'react-bootstrap';
-
 import {FormattedMessage} from 'react-intl';
 
-import {PrimaryButton, TertiaryButton, DestructiveButton} from 'src/components/assets/buttons';
+import styled from 'styled-components';
+
+import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 type Props = {
     className?: string;
@@ -36,7 +36,7 @@ type Props = {
 
 type State = {
     show: boolean;
-}
+};
 
 export default class GenericModal extends React.PureComponent<Props, State> {
     static defaultProps: Partial<Props> = {
@@ -84,6 +84,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
             confirmButton = (
                 <ButtonComponent
                     type='submit'
+                    data-testid={'modal-confirm-button'}
                     className={classNames('confirm', this.props.confirmButtonClassName, {
                         disabled: this.props.isConfirmDisabled,
                     })}
@@ -104,6 +105,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
 
             cancelButton = (
                 <TertiaryButton
+                    data-testid={'modal-cancel-button'}
                     type='button'
                     className='cancel'
                     onClick={this.handleCancel}
@@ -132,14 +134,10 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                     className='GenericModal__header'
                     closeButton={true}
                 >
-                    <ModalHeading id={`${this.props.id}_heading`}>
-                        {this.props.modalHeaderText}
-                    </ModalHeading>
+                    <ModalHeading id={`${this.props.id}_heading`}>{this.props.modalHeaderText}</ModalHeading>
                 </Header>
                 <form>
-                    <Modal.Body>
-                        {this.props.children}
-                    </Modal.Body>
+                    <Modal.Body>{this.props.children}</Modal.Body>
                     <Modal.Footer>
                         <FooterContainer>
                             <Buttons>
@@ -178,7 +176,7 @@ export const StyledModal = styled(Modal)`
         }
     }
 
-	z-index: 1040;
+    z-index: 1040;
 
     &&&& {
         /* control correction-overrides */

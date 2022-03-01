@@ -1,46 +1,42 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
-import {Redirect, useParams} from 'react-router-dom';
-import {useSelector, useDispatch} from 'react-redux';
-import styled from 'styled-components';
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
-import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
-import {selectTeam} from 'mattermost-redux/actions/teams';
 import {fetchMyChannelsAndMembers} from 'mattermost-redux/actions/channels';
-import {useIntl, FormattedMessage} from 'react-intl';
 import {fetchMyCategories} from 'mattermost-redux/actions/channel_categories';
+import {selectTeam} from 'mattermost-redux/actions/teams';
+import {getProfilesInTeam, searchProfiles} from 'mattermost-redux/actions/users';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import React, {useEffect, useState} from 'react';
+import {FormattedMessage, useIntl} from 'react-intl';
+import {useDispatch, useSelector} from 'react-redux';
+import {Redirect, useParams} from 'react-router-dom';
 
-import {Tabs, TabsContent} from 'src/components/tabs';
-import {PresetTemplates} from 'src/components/templates/template_data';
+import styled from 'styled-components';
+
 import {navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
-import {
-    DraftPlaybookWithChecklist,
-    PlaybookWithChecklist,
-    Checklist,
-    emptyPlaybook,
-    Metric,
-    setPlaybookDefaults,
-} from 'src/types/playbook';
-import {savePlaybook, clientFetchPlaybook} from 'src/client';
-import {StagesAndStepsEdit} from 'src/components/backstage/playbook_edit/stages_and_steps_edit';
-import {ErrorPageTypes, PROFILE_CHUNK_SIZE} from 'src/constants';
+import {clientFetchPlaybook, savePlaybook} from 'src/client';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {BackstageNavbar} from 'src/components/backstage/backstage_navbar';
-import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
-import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
-import {RegularHeading} from 'src/styles/headings';
-import EditTitleDescriptionModal from 'src/components/backstage/playbook_edit_title_description_modal';
-import {useAllowRetrospectiveAccess} from 'src/hooks';
-import StatusUpdatesEdit from 'src/components/backstage/playbook_edit/status_updates_edit';
 import ActionsEdit from 'src/components/backstage/playbook_edit/actions_edit';
 import RetrospectiveEdit from 'src/components/backstage/playbook_edit/retrospective_edit';
-
-import {PlaybookRole} from 'src/types/permissions';
-import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip/tutorial_tour_tip';
+import {StagesAndStepsEdit} from 'src/components/backstage/playbook_edit/stages_and_steps_edit';
+import StatusUpdatesEdit from 'src/components/backstage/playbook_edit/status_updates_edit';
+import EditTitleDescriptionModal from 'src/components/backstage/playbook_edit_title_description_modal';
+import {SecondaryButtonSmaller} from 'src/components/backstage/playbook_runs/shared';
+import RouteLeavingGuard from 'src/components/backstage/route_leaving_guard';
+import {Tabs, TabsContent} from 'src/components/tabs';
+import {PresetTemplates} from 'src/components/templates/template_data';
 import {PlaybookEditTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 import {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip/hooks';
+import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip/tutorial_tour_tip';
+import {ErrorPageTypes, PROFILE_CHUNK_SIZE} from 'src/constants';
+import {useAllowRetrospectiveAccess} from 'src/hooks';
+import {RegularHeading} from 'src/styles/headings';
+import {PlaybookRole} from 'src/types/permissions';
+import {
+    Checklist, DraftPlaybookWithChecklist, emptyPlaybook,
+    Metric, PlaybookWithChecklist, setPlaybookDefaults,
+} from 'src/types/playbook';
 
 interface Props {
     isNew: boolean;
@@ -315,7 +311,10 @@ const PlaybookEdit = (props: Props) => {
             <PlaybookNavbar
                 data-testid='backstage-nav-bar'
             >
-                <TitleAndDescription onClick={() => setShowTitleDescriptionModal(true)}>
+                <TitleAndDescription
+                    data-testid='playbook-title-description'
+                    onClick={() => setShowTitleDescriptionModal(true)}
+                >
                     <Title>
                         {playbookTitle}
                         <i className='editable-trigger icon-pencil-outline'/>
