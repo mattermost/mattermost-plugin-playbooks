@@ -43,7 +43,6 @@ const WelcomeActionChildren = ({action, onUpdate, editable}: Props) => {
             }))}
             id={'channel-actions-modal_welcome-msg'}
             hideHelpText={true}
-            hideButtonsRow={!isChannelAdmin}
             previewByDefault={!isChannelAdmin}
             disabled={!editable}
         />
