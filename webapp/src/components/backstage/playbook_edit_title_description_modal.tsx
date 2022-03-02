@@ -1,13 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import React, {useEffect, useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {BaseInput} from 'src/components/assets/inputs';
-import MarkdownTextbox from 'src/components/markdown_textbox';
 import GenericModal, {InlineLabel} from 'src/components/widgets/generic_modal';
+import MarkdownTextbox from 'src/components/markdown_textbox';
+import {BaseInput} from 'src/components/assets/inputs';
 import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
 
 interface Props {

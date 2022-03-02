@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {Modal} from 'react-bootstrap';
 import styled from 'styled-components';
+import {Modal} from 'react-bootstrap';
 
 import GenericModal, {DefaultFooterContainer} from 'src/components/widgets/generic_modal';
 
