@@ -119,20 +119,6 @@ func (mr *MockPlaybookRunServiceMockRecorder) ChangeOwner(arg0, arg1, arg2 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeOwner", reflect.TypeOf((*MockPlaybookRunService)(nil).ChangeOwner), arg0, arg1, arg2)
 }
 
-// CheckAndSendMessageOnJoin mocks base method
-func (m *MockPlaybookRunService) CheckAndSendMessageOnJoin(arg0, arg1, arg2 string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckAndSendMessageOnJoin", arg0, arg1, arg2)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// CheckAndSendMessageOnJoin indicates an expected call of CheckAndSendMessageOnJoin
-func (mr *MockPlaybookRunServiceMockRecorder) CheckAndSendMessageOnJoin(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAndSendMessageOnJoin", reflect.TypeOf((*MockPlaybookRunService)(nil).CheckAndSendMessageOnJoin), arg0, arg1, arg2)
-}
-
 // CreatePlaybookRun mocks base method
 func (m *MockPlaybookRunService) CreatePlaybookRun(arg0 *app.PlaybookRun, arg1 *app.Playbook, arg2 string, arg3 bool) (*app.PlaybookRun, error) {
 	m.ctrl.T.Helper()
