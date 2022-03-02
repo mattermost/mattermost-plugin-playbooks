@@ -332,21 +332,12 @@ func (e *TestEnvironment) CreateBasicServer() {
 func (e *TestEnvironment) CreateBasicPlaybook() {
 	e.T.Helper()
 
-	id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
-		Title:  "TestPlaybook",
-		TeamID: e.BasicTeam.Id,
-		Public: true,
-		Members: []client.PlaybookMember{
-			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
-			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
-		},
-	})
-	require.NoError(e.T, err)
+	e.CreateBasicPublicPlaybook()
+	e.CreateBasicPrivatePlaybook()
+}
 
-	playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
-	require.NoError(e.T, err)
-
-	e.BasicPlaybook = playbook
+func (e *TestEnvironment) CreateBasicPrivatePlaybook() {
+	e.T.Helper()
 
 	privateID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
 		Title:  "TestPrivatePlaybook",
@@ -363,6 +354,26 @@ func (e *TestEnvironment) CreateBasicPlaybook() {
 	require.NoError(e.T, err)
 
 	e.BasicPrivatePlaybook = privatePlaybook
+}
+
+func (e *TestEnvironment) CreateBasicPublicPlaybook() {
+
+	e.T.Helper()
+	id, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "TestPlaybook",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+		Members: []client.PlaybookMember{
+			{UserID: e.RegularUser.Id, Roles: []string{app.PlaybookRoleMember}},
+			{UserID: e.AdminUser.Id, Roles: []string{app.PlaybookRoleAdmin, app.PlaybookRoleMember}},
+		},
+	})
+	require.NoError(e.T, err)
+
+	playbook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), id)
+	require.NoError(e.T, err)
+
+	e.BasicPlaybook = playbook
 }
 
 func (e *TestEnvironment) CreateBasicRun() {
