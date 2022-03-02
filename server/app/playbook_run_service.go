@@ -132,7 +132,7 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 
 func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
 	return fmt.Sprintf(
-		"**[%s](%s%s)**\n@%s ran the [%s](%s) playbook.",
+		"##### [%s](%s%s)\n@%s ran the [%s](%s) playbook.",
 		playbookRun.Name,
 		getRunDetailsRelativeURL(playbookRun.ID),
 		"%s", // for the telemetry data injection
