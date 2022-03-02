@@ -307,6 +307,12 @@ Cypress.Commands.add('apiDisableTutorials', (userId) => {
             category: 'tutorial_step',
             name: userId,
             value: '999'
+        },
+        {
+            user_id: userId,
+            category: 'crt_tutorial_triggered',
+            name: userId,
+            value: '999'
         }
     ];
 
