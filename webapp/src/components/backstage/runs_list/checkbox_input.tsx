@@ -23,7 +23,7 @@ const Component = styled.label`
     }
 
     input + span::before {
-        content: '\f12c';
+        content: '\f012c';
         font-family: compass-icons;
         font-size: 14px;
 

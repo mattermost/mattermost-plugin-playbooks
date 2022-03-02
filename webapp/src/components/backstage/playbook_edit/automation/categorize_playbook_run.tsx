@@ -56,7 +56,7 @@ const StyledCategorySelector = styled(CategorySelector)`
             top: 8px;
             position: absolute;
             color: var(--center-channel-color-56);
-            content: '\f349';
+            content: '\f0349';
             font-size: 18px;
             font-family: 'compass-icons', mattermosticons;
             -webkit-font-smoothing: antialiased;
