@@ -557,10 +557,6 @@ type PlaybookRunService interface {
 	// CancelRetrospective cancels the retrospective.
 	CancelRetrospective(playbookRunID, userID string) error
 
-	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
-	// playbooRun.MessageOnJoin if it exists. Returns true if the message was sent.
-	CheckAndSendMessageOnJoin(userID, playbookRunID, channelID string) bool
-
 	// UpdateDescription updates the description of the specified playbook run.
 	UpdateDescription(playbookRunID, description string) error
 
@@ -642,13 +638,6 @@ type PlaybookRunStore interface {
 
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
-
-	// HasViewedChannel returns true if userID has viewed channelID
-	HasViewedChannel(userID, channelID string) bool
-
-	// SetViewedChannel records that userID has viewed channelID. NOTE: does not check if there is already a
-	// record of that userID/channelID (i.e., will create duplicate rows)
-	SetViewedChannel(userID, channelID string) error
 
 	// GetBroadcastChannelIDsToRootIDs takes a playbookRunID and returns the mapping of
 	// broadcastChannelID->rootID (to keep track of the status updates thread in each of the

@@ -34,7 +34,7 @@ import {
     Playbook,
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
-
+import {ChannelAction} from 'src/types/channel_actions';
 import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
@@ -159,8 +159,8 @@ export async function fetchPlaybookRunByChannel(channelId: string) {
     return data as PlaybookRun;
 }
 
-export async function fetchCheckAndSendMessageOnJoin(playbookRunID: string, channelId: string) {
-    const data = await doGet(`${apiUrl}/runs/${playbookRunID}/check-and-send-message-on-join/${channelId}`);
+export async function fetchCheckAndSendMessageOnJoin(channelId: string) {
+    const data = await doGet(`${apiUrl}/actions/channels/${channelId}/check-and-send-message-on-join`);
     return Boolean(data.viewed);
 }
 
@@ -593,6 +593,35 @@ export const resetReminder = async (playbookRunId: string, newReminderSeconds: n
             new_reminder_seconds: newReminderSeconds,
         }),
     });
+};
+
+export const fetchChannelActions = async (channelID: string, triggerType?: string): Promise<Record<string, ChannelAction>> => {
+    const queryParams = triggerType ? `?trigger_type=${triggerType}` : '';
+    const data = await doGet(`${apiUrl}/actions/channels/${channelID}${queryParams}`);
+    if (!data) {
+        return {};
+    }
+
+    const actions = data as ChannelAction[];
+    const record: Record<string, ChannelAction> = {};
+    actions.forEach((action) => {
+        record[action.action_type] = action;
+    });
+
+    return record;
+};
+
+export const saveChannelAction = async (action: ChannelAction): Promise<string> => {
+    if (!action.id) {
+        const data = await doPost(`${apiUrl}/actions/channels/${action.channel_id}`, JSON.stringify(action));
+        return data.id;
+    }
+
+    await doFetchWithoutResponse(`${apiUrl}/actions/channels/${action.channel_id}/${action.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(action),
+    });
+    return action.id;
 };
 
 export const doGet = async <TData = any>(url: string) => {

@@ -107,6 +107,13 @@ func (b *Bot) EphemeralPost(userID, channelID string, post *model.Post) {
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
 }
 
+// SystemEphemeralPost sends an ephemeral message to a user authored by the System
+func (b *Bot) SystemEphemeralPost(userID, channelID string, post *model.Post) {
+	post.ChannelId = channelID
+
+	b.pluginAPI.Post.SendEphemeralPost(userID, post)
+}
+
 // EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
 func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, attachments []*model.SlackAttachment, format string, args ...interface{}) {
 	post := &model.Post{

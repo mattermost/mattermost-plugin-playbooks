@@ -227,3 +227,15 @@ func (mr *MockPosterMockRecorder) PublishWebsocketEventToUser(arg0, arg1, arg2 i
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWebsocketEventToUser", reflect.TypeOf((*MockPoster)(nil).PublishWebsocketEventToUser), arg0, arg1, arg2)
 }
+
+// SystemEphemeralPost mocks base method
+func (m *MockPoster) SystemEphemeralPost(arg0, arg1 string, arg2 *model.Post) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SystemEphemeralPost", arg0, arg1, arg2)
+}
+
+// SystemEphemeralPost indicates an expected call of SystemEphemeralPost
+func (mr *MockPosterMockRecorder) SystemEphemeralPost(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SystemEphemeralPost", reflect.TypeOf((*MockPoster)(nil).SystemEphemeralPost), arg0, arg1, arg2)
+}
