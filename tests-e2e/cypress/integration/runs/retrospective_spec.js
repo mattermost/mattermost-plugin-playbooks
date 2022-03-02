@@ -51,11 +51,22 @@ describe('runs > retrospective', () => {
         cy.findByText('Go to channel').click();
 
         // * Verify the modified retro text is posted
-        cy.verifyPostedMessage('Edited retrospective.');
+        cy.getStyledComponent('CustomPostContent').should('exist').contains('Edited retrospective.');
     });
 
     it('prevents repeated publishing', () => {
         editAndPublishRetro(runId);
+
+        // * Verify that can't publish
+        cy.findByText('Publish').should('not.be.enabled');
+
+        // # Navigate to the overview tab
+        cy.findByText('Overview').click();
+
+        // # Navigate directly to the retro tab
+        cy.findByText('Retrospective').click();
+
+        // * Verify that can't publish
         cy.findByText('Publish').should('not.be.enabled');
     });
 });

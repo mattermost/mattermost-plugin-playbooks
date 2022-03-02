@@ -26,6 +26,7 @@ const LineGraph = (props: LineGraphProps) => {
     const buttonBgColor = style.getPropertyValue('--button-bg');
     return (
         <GraphBoxContainer className={props.className}>
+            {/*@ts-ignore*/}
             <Line
                 legend={{display: false}}
                 options={{
@@ -40,7 +41,6 @@ const LineGraph = (props: LineGraphProps) => {
                                 callback: (val: any) => {
                                     return (val % 1 === 0) ? val : null;
                                 },
-                                beginAtZero: true,
                                 fontColor: centerChannelFontColor,
                             },
                         }],
@@ -97,8 +97,8 @@ const LineGraph = (props: LineGraphProps) => {
                 data={{
                     labels: props.labels,
                     datasets: [{
-                        fill: false,
                         tension: 0,
+                        fill: false,
                         backgroundColor: buttonBgColor,
                         borderColor: buttonBgColor,
                         pointBackgroundColor: buttonBgColor,

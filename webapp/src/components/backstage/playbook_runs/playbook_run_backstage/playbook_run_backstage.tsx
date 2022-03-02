@@ -4,7 +4,7 @@
 import React, {useEffect, useState} from 'react';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
-import {Redirect, Route, useRouteMatch, NavLink, Switch, useHistory} from 'react-router-dom';
+import {Redirect, Route, useRouteMatch, Link, NavLink, Switch, useHistory} from 'react-router-dom';
 import {useIntl} from 'react-intl';
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
 
@@ -21,7 +21,7 @@ import {
     SecondaryButtonLarger,
 } from 'src/components/backstage/playbook_runs/shared';
 
-import {PlaybookRun, Metadata as PlaybookRunMetadata} from 'src/types/playbook_run';
+import {PlaybookRun, Metadata as PlaybookRunMetadata, RunMetricData} from 'src/types/playbook_run';
 import {Overview} from 'src/components/backstage/playbook_runs/playbook_run_backstage/overview/overview';
 import {Retrospective} from 'src/components/backstage/playbook_runs/playbook_run_backstage/retrospective/retrospective';
 import {
@@ -33,9 +33,9 @@ import {
     unfollowPlaybookRun,
     getSiteUrl,
 } from 'src/client';
-import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_routing';
+import {pluginUrl, pluginErrorUrl} from 'src/browser_routing';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
-import {useAllowRetrospectiveAccess, useForceDocumentTitle} from 'src/hooks';
+import {useAllowRetrospectiveAccess, useForceDocumentTitle, useRun} from 'src/hooks';
 import {RegularHeading} from 'src/styles/headings';
 import UpgradeBadge from 'src/components/backstage/upgrade_badge';
 import PlaybookIcon from 'src/components/assets/icons/playbook_icon';
@@ -149,7 +149,7 @@ const Title = styled.div`
     color: var(--center-channel-color);
 `;
 
-const PlaybookDiv = styled.div`
+const PlaybookLink = styled(Link)`
     display: flex;
     flex-direction: row;
     color: rgba(var(--center-channel-color-rgb), 0.64);
@@ -238,6 +238,8 @@ const PlaybookRunBackstage = () => {
     const match = useRouteMatch<MatchParams>();
     const history = useHistory();
     const currentUserID = useSelector(getCurrentUserId);
+    const currentRun = useRun(match.params.playbookRunId);
+
     const [following, setFollowing] = useState<string[]>([]);
     const [runLinkCopied, setRunLinkCopied] = useState(false);
 
@@ -250,15 +252,19 @@ const PlaybookRunBackstage = () => {
     useEffect(() => {
         const playbookRunId = match.params.playbookRunId;
 
-        Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
-            setPlaybookRun(playbookRunResult);
-            setPlaybookRunMetadata(playbookRunMetadataResult);
-            setFetchingState(FetchingStateType.fetched);
-            setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
-        }).catch(() => {
-            setFetchingState(FetchingStateType.notFound);
-        });
-    }, [match.params.playbookRunId]);
+        if (currentRun) {
+            setPlaybookRun(currentRun);
+        } else {
+            Promise.all([fetchPlaybookRun(playbookRunId), fetchPlaybookRunMetadata(playbookRunId)]).then(([playbookRunResult, playbookRunMetadataResult]) => {
+                setPlaybookRun(playbookRunResult);
+                setPlaybookRunMetadata(playbookRunMetadataResult);
+                setFetchingState(FetchingStateType.fetched);
+                setFollowing(playbookRunMetadataResult && playbookRunMetadataResult.followers ? playbookRunMetadataResult.followers : []);
+            }).catch(() => {
+                setFetchingState(FetchingStateType.notFound);
+            });
+        }
+    }, [match.params.playbookRunId, currentRun]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -275,6 +281,7 @@ const PlaybookRunBackstage = () => {
         if (!playbookRun) {
             return;
         }
+
         await clientRemoveTimelineEvent(playbookRun.id, id);
         setPlaybookRun({
             ...playbookRun,
@@ -289,6 +296,27 @@ const PlaybookRunBackstage = () => {
         } as PlaybookRun));
     };
 
+    const setMetricsData = (metrics_data: RunMetricData[]) => {
+        setPlaybookRun((run) => ({
+            ...run,
+            metrics_data,
+        } as PlaybookRun));
+    };
+
+    const setPublishedAt = (retrospective_published_at: number) => {
+        setPlaybookRun((run) => ({
+            ...run,
+            retrospective_published_at,
+        } as PlaybookRun));
+    };
+
+    const setCanceled = (retrospective_was_canceled: boolean) => {
+        setPlaybookRun((run) => ({
+            ...run,
+            retrospective_was_canceled,
+        } as PlaybookRun));
+    };
+
     if (fetchingState === FetchingStateType.loading) {
         return null;
     }
@@ -296,10 +324,6 @@ const PlaybookRunBackstage = () => {
     if (fetchingState === FetchingStateType.notFound || playbookRun === null || playbookRunMetadata === null) {
         return <Redirect to={pluginErrorUrl(ErrorPageTypes.PLAYBOOK_RUNS)}/>;
     }
-
-    const goToChannel = () => {
-        navigateToUrl(`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`);
-    };
 
     const onFollow = () => {
         if (following.includes(currentUserID)) {
@@ -371,10 +395,10 @@ const PlaybookRunBackstage = () => {
                         </TitleWithBadgeAndLink>
                         {
                             playbook &&
-                            <PlaybookDiv onClick={() => navigateToPluginUrl(`/playbooks/${playbook?.id}`)}>
+                            <PlaybookLink to={pluginUrl(`/playbooks/${playbook?.id}`)}>
                                 <SmallPlaybookIcon/>
                                 <SubTitle>{playbook?.title}</SubTitle>
-                            </PlaybookDiv>
+                            </PlaybookLink>
                         }
                     </VerticalBlock>
                     <ExpandRight/>
@@ -382,13 +406,14 @@ const PlaybookRunBackstage = () => {
                     {followButton}
                     <Line/>
                     <ExportLink playbookRun={playbookRun}/>
-                    <PrimaryButtonLarger
-                        onClick={goToChannel}
-                        style={{marginLeft: 12}}
+                    <Link
+                        to={`/${playbookRunMetadata.team_name}/channels/${playbookRunMetadata.channel_name}`}
                     >
-                        <Icon16 className={'icon icon-message-text-outline mr-1'}/>
-                        {formatMessage({defaultMessage: 'Go to channel'})}
-                    </PrimaryButtonLarger>
+                        <PrimaryButtonLarger style={{marginLeft: 12}}>
+                            <Icon16 className={'icon icon-message-text-outline mr-1'}/>
+                            {formatMessage({defaultMessage: 'Go to channel'})}
+                        </PrimaryButtonLarger>
+                    </Link>
                 </FirstRow>
                 <SecondRow>
                     <TabItem
@@ -415,8 +440,12 @@ const PlaybookRunBackstage = () => {
                         <Route path={`${match.url}/retrospective`}>
                             <Retrospective
                                 playbookRun={playbookRun}
+                                metricsConfigs={playbook?.metrics}
                                 deleteTimelineEvent={deleteTimelineEvent}
                                 setRetrospective={setRetrospective}
+                                setPublishedAt={setPublishedAt}
+                                setCanceled={setCanceled}
+                                setMetricsData={setMetricsData}
                             />
                         </Route>
                         <Redirect to={`${match.url}/overview`}/>

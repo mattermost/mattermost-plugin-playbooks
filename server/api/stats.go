@@ -22,9 +22,10 @@ type StatsHandler struct {
 	statsStore      *sqlstore.StatsStore
 	playbookService app.PlaybookService
 	permissions     *app.PermissionsService
+	licenseChecker  app.LicenseChecker
 }
 
-func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore, playbookService app.PlaybookService, permissions *app.PermissionsService) *StatsHandler {
+func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, statsStore *sqlstore.StatsStore, playbookService app.PlaybookService, permissions *app.PermissionsService, licenseChecker app.LicenseChecker) *StatsHandler {
 	handler := &StatsHandler{
 		ErrorHandler:    &ErrorHandler{log: log},
 		pluginAPI:       api,
@@ -32,6 +33,7 @@ func NewStatsHandler(router *mux.Router, api *pluginapi.Client, log bot.Logger, 
 		statsStore:      statsStore,
 		playbookService: playbookService,
 		permissions:     permissions,
+		licenseChecker:  licenseChecker,
 	}
 
 	statsRouter := router.PathPrefix("/stats").Subrouter()
@@ -51,7 +53,18 @@ type PlaybookStats struct {
 	ActiveRunsPerDayTimes         [][]int64 `json:"active_runs_per_day_times"`
 	ActiveParticipantsPerDay      []int     `json:"active_participants_per_day"`
 	ActiveParticipantsPerDayTimes [][]int64 `json:"active_participants_per_day_times"`
+	MetricOverallAverage          []int64   `json:"metric_overall_average"`
+	MetricRollingAverage          []int64   `json:"metric_rolling_average"`
+	MetricRollingAverageChange    []int64   `json:"metric_rolling_average_change"`
+	MetricValueRange              [][]int64 `json:"metric_value_range"`
+	MetricRollingValues           [][]int64 `json:"metric_rolling_values"`
+	LastXRunNames                 []string  `json:"last_x_run_names"`
 }
+
+const (
+	MetricChartPeriod          = 10
+	MetricRollingAveragePeriod = 10
+)
 
 func parsePlaybookStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
 	playbookID := u.Query().Get("playbook_id")
@@ -65,6 +78,11 @@ func parsePlaybookStatsFilters(u *url.URL) (*sqlstore.StatsFilters, error) {
 }
 
 func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
+	if !h.licenseChecker.StatsAllowed() {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "timeline feature is not covered by current server license", nil)
+		return
+	}
+
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	filters, err := parsePlaybookStatsFilters(r.URL)
@@ -89,6 +107,11 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 	activeRunsPerDay, activeRunsPerDayTimes := h.statsStore.ActiveRunsPerDayLastXDays(14, filters)
 	activeParticipantsPerDay, activeParticipantsPerDayTimes := h.statsStore.ActiveParticipantsPerDayLastXDays(14, filters)
 
+	metricOverallAverage := h.statsStore.MetricOverallAverage(filters)
+	metricRollingValues, lastXRunNames := h.statsStore.MetricRollingValuesLastXRuns(MetricChartPeriod, 0, filters)
+	metricRollingAverage, metricRollingAverageChange := h.statsStore.MetricRollingAverageAndChange(MetricRollingAveragePeriod, filters)
+	metricValueRange := h.statsStore.MetricValueRange(filters)
+
 	ReturnJSON(w, &PlaybookStats{
 		RunsInProgress:                h.statsStore.TotalInProgressPlaybookRuns(filters),
 		ParticipantsActive:            h.statsStore.TotalActiveParticipants(filters),
@@ -100,5 +123,11 @@ func (h *StatsHandler) playbookStats(w http.ResponseWriter, r *http.Request) {
 		ActiveRunsPerDayTimes:         activeRunsPerDayTimes,
 		ActiveParticipantsPerDay:      activeParticipantsPerDay,
 		ActiveParticipantsPerDayTimes: activeParticipantsPerDayTimes,
+		MetricOverallAverage:          metricOverallAverage,
+		MetricRollingValues:           metricRollingValues,
+		MetricValueRange:              metricValueRange,
+		MetricRollingAverage:          metricRollingAverage,
+		MetricRollingAverageChange:    metricRollingAverageChange,
+		LastXRunNames:                 lastXRunNames,
 	}, http.StatusOK)
 }

@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
@@ -190,6 +192,40 @@ func TestPlaybooks(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 1, playbookResults.TotalCount)
 	})
+
+	t.Run("archived playbooks can be retrieved", func(t *testing.T) {
+		id, err := e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "ArchiveTest 1 -- not archived",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		assert.Nil(t, err)
+		assert.NotEmpty(t, id)
+
+		id, err = e.PlaybooksClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+			Title:  "ArchiveTest 2 -- archived",
+			TeamID: e.BasicTeam.Id,
+			Public: true,
+		})
+		assert.Nil(t, err)
+		assert.NotEmpty(t, id)
+		err = e.PlaybooksClient.Playbooks.Archive(context.Background(), id)
+		assert.NoError(t, err)
+
+		playbookResults, err := e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
+			SearchTeam: "ArchiveTest",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, 1, playbookResults.TotalCount)
+
+		playbookResults, err = e.PlaybooksClient.Playbooks.List(context.Background(), "", 0, 10, client.PlaybookListOptions{
+			SearchTeam:   "ArchiveTest",
+			WithArchived: true,
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, 2, playbookResults.TotalCount)
+
+	})
 }
 
 func TestPlaybooksRetrieval(t *testing.T) {
@@ -233,6 +269,17 @@ func TestPlaybookUpdate(t *testing.T) {
 		e.BasicPlaybook.Description = "unrelated update"
 		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		require.NoError(t, err)
+	})
+
+	t.Run("update playbook with too many webhoooks", func(t *testing.T) {
+		urls := []string{}
+		for i := 0; i < 65; i++ {
+			urls = append(urls, "http://localhost/"+strconv.Itoa(i))
+		}
+		e.BasicPlaybook.WebhookOnCreationEnabled = true
+		e.BasicPlaybook.WebhookOnCreationURLs = urls
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 }
 
@@ -737,6 +784,7 @@ func TestPlaybooksConversions(t *testing.T) {
 		defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
 		defer func() {
 			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
+			e.SetE20Licence()
 		}()
 		e.Permissions.RemovePermissionFromRole(model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
 
@@ -746,9 +794,26 @@ func TestPlaybooksConversions(t *testing.T) {
 
 		e.Permissions.AddPermissionToRole(model.PermissionPublicPlaybookMakePrivate.Id, model.PlaybookMemberRoleId)
 
-		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
-		require.NoError(t, err)
+		t.Run("E0", func(t *testing.T) {
+			e.RemoveLicence()
 
+			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		t.Run("E10", func(t *testing.T) {
+			e.SetE10Licence()
+
+			err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+			requireErrorWithStatusCode(t, err, http.StatusForbidden)
+		})
+
+		t.Run("E20", func(t *testing.T) {
+			e.SetE20Licence()
+
+			err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+			require.NoError(t, err)
+		})
 	})
 
 	t.Run("private to public conversion", func(t *testing.T) {
@@ -796,5 +861,108 @@ func TestPlaybooksImportExport(t *testing.T) {
 
 		assert.Equal(t, e.BasicPlaybook.Title, newPlaybook.Title)
 		assert.NotEqual(t, e.BasicPlaybook.ID, newPlaybook.ID)
+	})
+}
+
+func TestPlaybooksDuplicate(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+	e.SetE20Licence()
+	e.CreateBasicPlaybook()
+
+	t.Run("Duplicate", func(t *testing.T) {
+		newID, err := e.PlaybooksClient.Playbooks.Duplicate(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
+		require.NotEqual(t, e.BasicPlaybook.ID, newID)
+
+		duplicatedPlaybook, err := e.PlaybooksClient.Playbooks.Get(context.Background(), newID)
+		require.NoError(t, err)
+
+		assert.Equal(t, "Copy of "+e.BasicPlaybook.Title, duplicatedPlaybook.Title)
+		assert.Equal(t, e.BasicPlaybook.Description, duplicatedPlaybook.Description)
+		assert.Equal(t, e.BasicPlaybook.TeamID, duplicatedPlaybook.TeamID)
+	})
+}
+
+func TestAddPostToTimeline(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	dialogRequest := model.SubmitDialogRequest{
+		TeamId: e.BasicTeam.Id,
+		UserId: e.RegularUser.Id,
+		State:  fmt.Sprintf(`{"post_id": "%s"}`, e.BasicPublicChannelPost.Id),
+		Submission: map[string]interface{}{
+			app.DialogFieldPlaybookRunKey: e.BasicRun.ID,
+			app.DialogFieldSummary:        "a summary",
+		},
+	}
+
+	// Build the payload for the dialog
+	dialogRequestBytes, err := json.Marshal(dialogRequest)
+	require.NoError(t, err)
+
+	t.Run("unlicensed server", func(t *testing.T) {
+		// Make sure there is no license
+		e.RemoveLicence()
+
+		// Post the request with the dialog payload and verify it is not allowed
+		resp, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
+		require.Error(t, err)
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("E10 server", func(t *testing.T) {
+		// Set an E10 license
+		e.SetE10Licence()
+
+		// Post the request with the dialog payload and verify it is allowed
+		_, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
+		require.NoError(t, err)
+	})
+
+	t.Run("E20 server", func(t *testing.T) {
+		// Set an E20 license
+		e.SetE20Licence()
+
+		// Post the request with the dialog payload and verify it is allowed
+		_, err := e.ServerClient.DoAPIRequestBytes("POST", e.ServerClient.URL+"/plugins/"+manifest.Id+"/api/v0/runs/add-to-timeline-dialog", dialogRequestBytes, "")
+		require.NoError(t, err)
+	})
+}
+
+func TestPlaybookStats(t *testing.T) {
+	e := Setup(t)
+	e.CreateClients()
+	e.CreateBasicServer()
+	e.SetE20Licence()
+	e.CreateBasicPlaybook()
+
+	t.Run("unlicensed server", func(t *testing.T) {
+		// Make sure there is no license
+		e.RemoveLicence()
+
+		// Verify that retrieving stats is not allowed
+		_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("E10 server", func(t *testing.T) {
+		// Set an E10 license
+		e.SetE10Licence()
+
+		// Verify that ertrieving stats is not allowed
+		_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
+		requireErrorWithStatusCode(t, err, http.StatusForbidden)
+	})
+
+	t.Run("E20 server", func(t *testing.T) {
+		// Set an E20 license
+		e.SetE20Licence()
+
+		// Verify that retrieving stats is allowed
+		_, err := e.PlaybooksClient.Playbooks.Stats(context.Background(), e.BasicPlaybook.ID)
+		require.NoError(t, err)
 	})
 }

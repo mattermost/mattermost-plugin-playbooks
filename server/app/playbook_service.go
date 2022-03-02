@@ -60,6 +60,16 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 	return newID, nil
 }
 
+func (s *playbookService) Import(playbook Playbook, userID string) (string, error) {
+	newID, err := s.Create(playbook, userID)
+	if err != nil {
+		return "", err
+	}
+	playbook.ID = newID
+	s.telemetry.ImportPlaybook(playbook, userID)
+	return newID, nil
+}
+
 func (s *playbookService) Get(id string) (Playbook, error) {
 	return s.store.Get(id)
 }
@@ -351,6 +361,19 @@ func (s *playbookService) IsAutoFollowing(playbookID, userID string) (bool, erro
 	}
 
 	return isAutoFollowing, nil
+}
+
+// Duplicate duplicates a playbook
+func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, error) {
+	newPlaybook := playbook.Clone()
+	newPlaybook.ID = ""
+	// Empty metric IDs if there are such. Otherwise, metrics will not be saved in the database.
+	for i := range newPlaybook.Metrics {
+		newPlaybook.Metrics[i].ID = ""
+	}
+	newPlaybook.Title = "Copy of " + playbook.Title
+
+	return s.Create(newPlaybook, userID)
 }
 
 func getPlaybookTriggersForAMessage(playbook *CachedPlaybook, message string) []string {

@@ -10,11 +10,12 @@ import Icon from '@mdi/react';
 import {mdiClipboardPlayOutline} from '@mdi/js';
 
 import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+import {Client4} from 'mattermost-redux/client';
 
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 import {Team} from 'mattermost-redux/types/teams';
 import {GlobalState} from 'mattermost-redux/types/store';
-import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {getCurrentUserId, getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
 import {FormattedMessage, useIntl} from 'react-intl';
 
@@ -22,14 +23,19 @@ import {navigateToUrl, navigateToPluginUrl, pluginErrorUrl} from 'src/browser_ro
 import {useForceDocumentTitle, useHasPlaybookPermission, useStats} from 'src/hooks';
 import PlaybookUsage from 'src/components/backstage/playbooks/playbook_usage';
 import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview';
+import {useToasts} from '../toast_banner';
 
 import {
     clientFetchPlaybook,
+    duplicatePlaybook as clientDuplicatePlaybook,
     clientFetchIsPlaybookFollower,
     autoFollowPlaybook,
     autoUnfollowPlaybook,
     telemetryEventForPlaybook,
     getSiteUrl,
+    playbookExportProps,
+    archivePlaybook,
+    createPlaybookRun,
 } from 'src/client';
 import {ErrorPageTypes, OVERLAY_DELAY} from 'src/constants';
 import {PlaybookWithChecklist} from 'src/types/playbook';
@@ -44,12 +50,18 @@ import {copyToClipboard} from 'src/utils';
 import {CopyIcon} from '../playbook_runs/playbook_run_backstage/playbook_run_backstage';
 import {displayEditPlaybookAccessModal} from 'src/actions';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
-import DotMenu, {DropdownMenuItem} from 'src/components/dot_menu';
+import DotMenu, {DropdownMenuItem, DropdownMenuItemStyled} from 'src/components/dot_menu';
 import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
+import {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip/hooks';
+import {PlaybookPreviewTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
+import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip';
+import PlaybookKeyMetrics from 'src/components/backstage/playbooks/metrics/playbook_key_metrics';
 
 interface MatchParams {
     playbookId: string
 }
+
+const tutorialPlaybookTitle = 'Learn how to use playbooks';
 
 const FetchingStateType = {
     loading: 'loading',
@@ -67,27 +79,29 @@ const MembersIcon = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.56);
     height: 28px;
     line-height: 28px;
-	cursor: pointer;
+    cursor: pointer;
+
     &:hover {
-       background: rgba(var(--center-channel-color-rgb), 0.08);
-       color: rgba(var(--center-channel-color-rgb), 0.72);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.72);
     }
 `;
 
 const TitleButton = styled.div`
-	margin-left: 20px;
+    margin-left: 20px;
     display: inline-flex;
     border-radius: 4px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
     fill: rgba(var(--center-channel-color-rgb), 0.64);
+
     &:hover {
-       background: rgba(var(--link-color-rgb), 0.08);
-       color: rgba(var(--link-color-rgb), 0.72);
+        background: rgba(var(--link-color-rgb), 0.08);
+        color: rgba(var(--link-color-rgb), 0.72);
     }
 `;
 
 const RedText = styled.div`
-	color: var(--error-text);
+    color: var(--error-text);
 `;
 
 const Playbook = () => {
@@ -100,8 +114,17 @@ const Playbook = () => {
     const stats = useStats(match.params.playbookId);
     const [isFollowed, setIsFollowed] = useState(false);
     const currentUserId = useSelector(getCurrentUserId);
+    const currentUser = useSelector(getCurrentUser);
     const [playbookLinkCopied, setPlaybookLinkCopied] = useState(false);
-    const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal();
+    const [modal, openDeletePlaybookModal] = useConfirmPlaybookArchiveModal(() => {
+        if (playbook) {
+            archivePlaybook(playbook.id);
+            navigateToPluginUrl('/playbooks');
+        }
+    });
+    const addToast = useToasts().add;
+    const punchoutTitleRow = useMeasurePunchouts(['title-row'], [], {y: -5, height: 10, x: -5, width: 10});
+    const showRunButtonTutorial = useShowTutorialStep(PlaybookPreviewTutorialSteps.RunButton, TutorialTourCategories.PLAYBOOK_PREVIEW);
 
     const changeFollowing = (check: boolean) => {
         if (playbook?.id) {
@@ -116,18 +139,23 @@ const Playbook = () => {
 
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
 
-    useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
+    const isTutorial = playbook?.title === tutorialPlaybookTitle;
 
-    const activeNavItemStyle = {
-        color: 'var(--button-bg)',
-        boxShadow: 'inset 0px -2px 0px 0px var(--button-bg)',
-    };
+    useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
     const goToPlaybooks = () => {
         navigateToPluginUrl('/playbooks');
     };
 
-    const runPlaybook = () => {
+    const runPlaybook = async () => {
+        if (playbook && isTutorial) {
+            const playbookRun = await createPlaybookRun(playbook.id, currentUserId, playbook.team_id, `${currentUser.username}'s onboarding run`, playbook.description);
+            const channel = await Client4.getChannel(playbookRun.channel_id);
+            const pathname = `/${team.name}/channels/${channel.name}`;
+            const search = '?forceRHSOpen&openTakeATourDialog';
+            navigateToUrl({pathname, search});
+            return;
+        }
         if (playbook?.id) {
             telemetryEventForPlaybook(playbook.id, 'playbook_dashboard_run_clicked');
             navigateToUrl(`/${team.name || ''}/_playbooks/${playbook?.id || ''}/run`);
@@ -212,10 +240,13 @@ const Playbook = () => {
 
     const archived = playbook?.delete_at !== 0;
     const enableRunPlaybook = !archived && hasPermissionToRunPlaybook;
+    const [exportHref, exportFilename] = playbookExportProps(playbook);
 
     return (
         <>
-            <TopContainer>
+            <TopContainer
+                id='title-row'
+            >
                 <TitleRow>
                     <LeftArrow
                         className='icon-arrow-left'
@@ -237,14 +268,32 @@ const Playbook = () => {
                         >
                             <FormattedMessage defaultMessage='Manage access'/>
                         </DropdownMenuItem>
-                        {!archived &&
                         <DropdownMenuItem
-                            onClick={() => openDeletePlaybookModal(playbook)}
+                            onClick={async () => {
+                                const newID = await clientDuplicatePlaybook(playbook.id);
+                                navigateToPluginUrl(`/playbooks/${newID}`);
+                                addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
+                                telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
+                            }}
                         >
-                            <RedText>
-                                <FormattedMessage defaultMessage='Archive playbook'/>
-                            </RedText>
+                            <FormattedMessage defaultMessage='Duplicate'/>
                         </DropdownMenuItem>
+                        <DropdownMenuItemStyled
+                            href={exportHref}
+                            download={exportFilename}
+                            role={'button'}
+                            onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_export_clicked_in_playbook')}
+                        >
+                            <FormattedMessage defaultMessage='Export'/>
+                        </DropdownMenuItemStyled>
+                        {!archived &&
+                            <DropdownMenuItem
+                                onClick={() => openDeletePlaybookModal(playbook)}
+                            >
+                                <RedText>
+                                    <FormattedMessage defaultMessage='Archive playbook'/>
+                                </RedText>
+                            </DropdownMenuItem>
                         }
                     </DotMenu>
                     <MembersIcon
@@ -291,8 +340,23 @@ const Playbook = () => {
                             path={mdiClipboardPlayOutline}
                             size={1.25}
                         />
-                        {formatMessage({defaultMessage: 'Run'})}
+                        {isTutorial ? formatMessage({defaultMessage: 'Start a test run'}) : formatMessage({defaultMessage: 'Run'})}
                     </PrimaryButtonLarger>
+                    {showRunButtonTutorial &&
+                        <TutorialTourTip
+                            title={<FormattedMessage defaultMessage='Run the playbook to see it in action'/>}
+                            screen={<FormattedMessage defaultMessage='Click on edit to start customizing it and tailor it to your own models and processes. You can explore the template in detail on this page.'/>}
+                            tutorialCategory={TutorialTourCategories.PLAYBOOK_PREVIEW}
+                            step={PlaybookPreviewTutorialSteps.RunButton}
+                            placement='bottom-end'
+                            pulsatingDotPlacement='right'
+                            pulsatingDotTranslate={{x: -90, y: 15}}
+                            autoTour={true}
+                            width={352}
+                            punchOut={punchoutTitleRow}
+                            telemetryTag={`tutorial_tip_Playbook_Preview_${PlaybookPreviewTutorialSteps.RunButton}_RunButton`}
+                        />
+                    }
                 </TitleRow>
             </TopContainer>
             <Navbar>
@@ -310,6 +374,13 @@ const Playbook = () => {
                 >
                     {formatMessage({defaultMessage: 'Usage'})}
                 </NavItem>
+                <NavItem
+                    activeStyle={activeNavItemStyle}
+                    to={`${match.url}/metrics`}
+                    onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_metrics_tab_clicked')}
+                >
+                    {formatMessage({defaultMessage: 'Key metrics'})}
+                </NavItem>
             </Navbar>
             <Switch>
                 <Route
@@ -326,6 +397,12 @@ const Playbook = () => {
                 </Route>
                 <Route path={`${match.path}/usage`}>
                     <PlaybookUsage
+                        playbook={playbook}
+                        stats={stats}
+                    />
+                </Route>
+                <Route path={`${match.path}/metrics`}>
+                    <PlaybookKeyMetrics
                         playbook={playbook}
                         stats={stats}
                     />
@@ -367,38 +444,15 @@ const LeftArrow = styled.button`
         color: var(--button-bg);
     }
 `;
-
-const VerticalBlock = styled.div`
-    display: flex;
-    flex-direction: column;
-    font-weight: 400;
-    padding: 0 16px 0 24px;
-`;
-
-const HorizontalBlock = styled.div`
-    display: flex;
-    flex-direction: row;
-    color: rgba(var(--center-channel-color-rgb), 0.64);
-
-    > i {
-        font-size: 12px;
-        margin-left: -3px;
-    }
-`;
-
 const Title = styled.div`
-    ${RegularHeading}
+    ${RegularHeading} {
+    }
 
     font-size: 20px;
     line-height: 28px;
     color: var(--center-channel-color);
-	margin-left: 6px;
-	margin-right: 6px;
-`;
-
-const SubTitle = styled.div`
-    font-size: 11px;
-    line-height: 16px;
+    margin-left: 6px;
+    margin-right: 6px;
 `;
 
 const PrimaryButtonLarger = styled(PrimaryButton)`
@@ -420,6 +474,7 @@ const CheckboxInputStyled = styled(CheckboxInput)`
 interface CheckedProps {
     checked: boolean;
 }
+
 const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <CheckedProps>`
     border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
     color: rgba(var(--center-channel-color-rgb), 0.56);
@@ -433,7 +488,7 @@ const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <Che
         color: var(--button-bg);
 
         &:hover:enabled {
-            background-color: rgba(var(--button-bg-rgb),0.12);
+            background-color: rgba(var(--button-bg-rgb), 0.12);
         }
     `}`;
 
@@ -472,5 +527,10 @@ const NavItem = styled(NavLink)`
 const RightMarginedIcon = styled(Icon)`
     margin-right: 0.5rem;
 `;
+
+const activeNavItemStyle = {
+    color: 'var(--button-bg)',
+    boxShadow: 'inset 0px -2px 0px 0px var(--button-bg)',
+};
 
 export default Playbook;

@@ -56,6 +56,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("", handler.archivePlaybook).Methods(http.MethodDelete)
 	playbookRouter.HandleFunc("/restore", handler.restorePlaybook).Methods(http.MethodPut)
 	playbookRouter.HandleFunc("/export", handler.exportPlaybook).Methods(http.MethodGet)
+	playbookRouter.HandleFunc("/duplicate", handler.duplicatePlaybook).Methods(http.MethodPost)
 
 	autoFollowsRouter := playbookRouter.PathPrefix("/autofollows").Subrouter()
 	autoFollowRouter := autoFollowsRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
@@ -66,7 +67,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	return handler
 }
 
-func (h *PlaybookHandler) validPlaybookCreation(w http.ResponseWriter, playbook *app.Playbook) bool {
+func (h *PlaybookHandler) validPlaybook(w http.ResponseWriter, playbook *app.Playbook) bool {
 	if playbook.WebhookOnCreationEnabled {
 		if len(playbook.WebhookOnCreationURLs) > 64 {
 			msg := "too many registered creation webhook urls, limit to less than 64"
@@ -172,7 +173,12 @@ func (h *PlaybookHandler) createPlaybook(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if !h.validPlaybookCreation(w, &playbook) {
+	if !h.validPlaybook(w, &playbook) {
+		return
+	}
+
+	if err := h.validateMetrics(playbook); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid metrics configs", err)
 		return
 	}
 
@@ -227,6 +233,11 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if err := h.validateMetrics(playbook); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid metrics configs", err)
+		return
+	}
+
 	if !h.PermissionsCheck(w, h.permissions.PlaybookModifyWithFixes(userID, &playbook, oldPlaybook)) {
 		return
 	}
@@ -236,49 +247,8 @@ func (h *PlaybookHandler) updatePlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if playbook.WebhookOnCreationEnabled {
-		for _, webhook := range playbook.WebhookOnCreationURLs {
-			var parsedURL *url.URL
-			parsedURL, err = url.ParseRequestURI(webhook)
-			if err != nil {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid creation webhook URL", err)
-				return
-			}
-
-			if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-				msg := fmt.Sprintf("protocol in creation webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
-				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-				return
-			}
-		}
-	}
-
-	if playbook.WebhookOnStatusUpdateEnabled {
-		for _, webhook := range playbook.WebhookOnStatusUpdateURLs {
-			var parsedURL *url.URL
-			parsedURL, err = url.ParseRequestURI(webhook)
-			if err != nil {
-				h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid update webhook URL", err)
-				return
-			}
-
-			if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-				msg := fmt.Sprintf("protocol in update webhook URL is %s; only HTTP and HTTPS are accepted", parsedURL.Scheme)
-				h.HandleErrorWithCode(w, http.StatusBadRequest, msg, errors.Errorf(msg))
-				return
-			}
-		}
-	}
-
-	if playbook.CategorizeChannelEnabled {
-		if err = h.validateCategoryName(playbook.CategoryName); err != nil {
-			h.HandleErrorWithCode(w, http.StatusBadRequest, "invalid category name", err)
-			return
-		}
-	}
-
-	if len(playbook.SignalAnyKeywords) != 0 {
-		playbook.SignalAnyKeywords = removeDuplicates(playbook.SignalAnyKeywords)
+	if !h.validPlaybook(w, &playbook) {
+		return
 	}
 
 	err = h.playbookService.Update(playbook, userID)
@@ -383,8 +353,9 @@ func (h *PlaybookHandler) getPlaybooksAutoComplete(w http.ResponseWriter, r *htt
 	}
 
 	playbooksResult, err := h.playbookService.GetPlaybooksForTeam(requesterInfo, teamID, app.PlaybookFilterOptions{
-		Page:    0,
-		PerPage: maxPlaybooksToAutocomplete,
+		Page:         0,
+		PerPage:      maxPlaybooksToAutocomplete,
+		WithArchived: query.Get("with_archived") == "true",
 	})
 	if err != nil {
 		h.HandleError(w, err)
@@ -458,12 +429,15 @@ func parseGetPlaybooksOptions(u *url.URL) (app.PlaybookFilterOptions, error) {
 
 	searchTerm := u.Query().Get("search_term")
 
+	withArchived, _ := strconv.ParseBool(u.Query().Get("with_archived"))
+
 	return app.PlaybookFilterOptions{
-		Sort:       sortField,
-		Direction:  sortDirection,
-		Page:       page,
-		PerPage:    perPage,
-		SearchTerm: searchTerm,
+		Sort:         sortField,
+		Direction:    sortDirection,
+		Page:         page,
+		PerPage:      perPage,
+		SearchTerm:   searchTerm,
+		WithArchived: withArchived,
 	}, nil
 }
 
@@ -583,6 +557,39 @@ func (h *PlaybookHandler) exportPlaybook(w http.ResponseWriter, r *http.Request)
 	_, _ = w.Write(export)
 }
 
+func (h *PlaybookHandler) duplicatePlaybook(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playbookID := vars["id"]
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	if !h.PermissionsCheck(w, h.permissions.PlaybookViewWithPlaybook(userID, playbook)) {
+		return
+	}
+
+	if !h.PermissionsCheck(w, h.permissions.PlaybookCreate(userID, playbook)) {
+		return
+	}
+
+	newPlaybookID, err := h.playbookService.Duplicate(playbook, userID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	result := struct {
+		ID string `json:"id"`
+	}{
+		ID: newPlaybookID,
+	}
+	ReturnJSON(w, &result, http.StatusCreated)
+}
+
 func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	teamID := params.Get("team_id")
@@ -623,11 +630,11 @@ func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !h.validPlaybookCreation(w, &playbook) {
+	if !h.validPlaybook(w, &playbook) {
 		return
 	}
 
-	id, err := h.playbookService.Create(playbook, userID)
+	id, err := h.playbookService.Import(playbook, userID)
 	if err != nil {
 		h.HandleError(w, err)
 		return
@@ -641,4 +648,20 @@ func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request)
 	w.Header().Add("Location", makeAPIURL(h.pluginAPI, "playbooks/%s", id))
 
 	ReturnJSON(w, &result, http.StatusCreated)
+}
+
+func (h *PlaybookHandler) validateMetrics(pb app.Playbook) error {
+	if len(pb.Metrics) > app.MaxMetricsPerPlaybook {
+		return errors.Errorf(fmt.Sprintf("playbook cannot have more than %d key metrics", app.MaxMetricsPerPlaybook))
+	}
+
+	//check if titles are unique
+	titles := make(map[string]bool)
+	for _, m := range pb.Metrics {
+		if titles[m.Title] {
+			return errors.Errorf("metrics names must be unique")
+		}
+		titles[m.Title] = true
+	}
+	return nil
 }

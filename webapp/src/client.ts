@@ -19,6 +19,7 @@ import {
     isPlaybookRun,
     isMetadata,
     Metadata,
+    RunMetricData,
 } from 'src/types/playbook_run';
 
 import {setTriggerId} from 'src/actions';
@@ -31,7 +32,6 @@ import {
     PlaybookWithChecklist,
     DraftPlaybookWithChecklist,
     Playbook,
-    FetchPlaybooksCountReturn,
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
 
@@ -82,6 +82,17 @@ export async function fetchPlaybookRun(id: string) {
     }
 
     return data as PlaybookRun;
+}
+
+export async function createPlaybookRun(playbook_id: string, owner_user_id: string, team_id: string, name: string, description: string) {
+    const run = await doPost(`${apiUrl}/runs`, JSON.stringify({
+        owner_user_id,
+        team_id,
+        name,
+        description,
+        playbook_id,
+    }));
+    return run as PlaybookRun;
 }
 
 export async function postStatusUpdate(
@@ -229,6 +240,23 @@ export async function archivePlaybook(playbookId: Playbook['id']) {
         method: 'delete',
     });
     return data;
+}
+
+export async function restorePlaybook(playbookId: Playbook['id']) {
+    const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}/restore`, {
+        method: 'put',
+    });
+    return data;
+}
+
+export async function importFile(file: any, teamId: string) {
+    const data = await doPost(`${apiUrl}/playbooks/import?team_id=${teamId}`, file);
+    return data;
+}
+
+export async function duplicatePlaybook(playbookId: Playbook['id']) {
+    const {id} = await doPost(`${apiUrl}/playbooks/${playbookId}/duplicate`, '');
+    return id;
 }
 
 export async function fetchUsersInChannel(channelId: string): Promise<UserProfile[]> {
@@ -428,18 +456,20 @@ export async function fetchGlobalSettings(): Promise<GlobalSettings> {
     return globalSettingsSetDefaults(data);
 }
 
-export async function updateRetrospective(playbookRunID: string, updatedText: string) {
+export async function updateRetrospective(playbookRunID: string, updatedText: string, metrics: RunMetricData[]) {
     const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective`,
         JSON.stringify({
             retrospective: updatedText,
+            metrics,
         }));
     return data;
 }
 
-export async function publishRetrospective(playbookRunID: string, currentText: string) {
+export async function publishRetrospective(playbookRunID: string, currentText: string, metrics: RunMetricData[]) {
     const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective/publish`,
         JSON.stringify({
             retrospective: currentText,
+            metrics,
         }));
     return data;
 }
@@ -609,7 +639,6 @@ export const doPatch = async <TData = any>(url: string, body = {}) => {
 
 export const doFetchWithResponse = async <TData = any>(url: string, options = {}) => {
     const response = await fetch(url, Client4.getOptions(options));
-
     let data;
     if (response.ok) {
         const contentType = response.headers.get('content-type');
@@ -666,4 +695,10 @@ export const doFetchWithoutResponse = async (url: string, options = {}) => {
         status_code: response.status,
         url,
     });
+};
+
+export const playbookExportProps = (playbook: Playbook) => {
+    const href = `${apiUrl}/playbooks/${playbook.id}/export`;
+    const filename = playbook.title.split(/\s+/).join('_').toLowerCase() + '_playbook.json';
+    return [href, filename];
 };

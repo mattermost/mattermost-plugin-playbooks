@@ -13,6 +13,8 @@ import {mdiArrowDown, mdiArrowRight, mdiPlus} from '@mdi/js';
 
 import {FormattedMessage} from 'react-intl';
 
+import {PresetTemplates} from 'src/components/templates/template_data';
+
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
 import {SemiBoldHeading} from 'src/styles/headings';
 
@@ -41,8 +43,6 @@ import PageRunSvg from 'src/components/assets/page_run_svg';
 import PageRunCollaborationSvg from 'src/components/assets/page_run_collaboration_svg';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
-import {PresetTemplates} from 'src/components/backstage/template_selector';
-
 const WelcomeBlock = styled.div`
     padding: 4rem 3rem 2rem;
     color: rgba(var(--center-channel-color-rgb), 0.72);
@@ -60,6 +60,7 @@ const WelcomeCreateAlt = styled.span`
     align-items: center;
     vertical-align: top;
     padding: 1rem 0;
+
     > svg {
         margin-left: 0.5em;
     }
@@ -69,6 +70,7 @@ const WelcomeButtonCreate = styled(PrimaryButton)`
     margin-right: 2rem;
     margin-bottom: 1rem;
     padding: 0 2rem;
+
     > svg {
         margin-right: 0.5rem;
     }
@@ -79,7 +81,7 @@ const WelcomeWarn = styled(WelcomeDesc)`
 `;
 
 const RunDetailMaskSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="calc(100% - 15px)" viewBox="0 0 400 137" preserveAspectRatio="none"><path d="M0 0H400V122.629C400 122.629 312 137 200 137C101.5 137 0 122.629 0 122.629V0Z"/></svg>';
-type RunDetailProps = {exists: boolean;};
+type RunDetailProps = { exists: boolean; };
 
 const RunDetail = styled.div<RunDetailProps>`
     display: flex;
@@ -146,7 +148,8 @@ const Heading = styled.h4`
 `;
 
 const ListHeading = styled(Heading)`
-    ${SemiBoldHeading}
+    ${SemiBoldHeading} {
+    }
 
     padding-left: 2.75rem;
 `;
@@ -173,7 +176,7 @@ const ListSection = styled.div`
     grid-template-rows: repeat(auto-fill, minmax(100px, 1fr));
     position: relative;
 
-    &::after{
+    &::after {
         content: '';
         display: block;
         position: absolute;
@@ -314,7 +317,7 @@ const RHSHome = () => {
 
                     {Boolean(playbooks?.length) && (
                         <>
-                            <ListHeading>{'Your Playbooks'}</ListHeading>
+                            <ListHeading><FormattedMessage defaultMessage='Your Playbooks'/></ListHeading>
                             <ListSection>
                                 {playbooks?.map((p) => (
                                     <RHSHomePlaybook
@@ -328,7 +331,7 @@ const RHSHome = () => {
                                     <TertiaryButton
                                         onClick={() => setPage()}
                                     >
-                                        {'Show more'}
+                                        <FormattedMessage defaultMessage='Show more'/>
                                     </TertiaryButton>
                                 </PaginationContainer>
                             )}
@@ -337,7 +340,7 @@ const RHSHome = () => {
 
                     {canCreatePlaybooks && (
                         <>
-                            <ListHeading>{'Playbook Templates'}</ListHeading>
+                            <ListHeading><FormattedMessage defaultMessage='Playbook Templates'/></ListHeading>
                             <ListSection>
                                 {PresetTemplates.map(({title, template}) => (
                                     <RHSHomeTemplate

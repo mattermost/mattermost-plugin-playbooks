@@ -1,13 +1,17 @@
 import {useEffect, useState} from 'react';
 import debounce from 'debounce';
+import {useIntl} from 'react-intl';
 
 import {
     archivePlaybook as clientArchivePlaybook,
+    restorePlaybook as clientRestorePlaybook,
+    duplicatePlaybook as clientDuplicatePlaybook,
     clientFetchPlaybook,
     clientFetchPlaybooks,
     savePlaybook,
 } from 'src/client';
 import {FetchPlaybooksParams, Playbook, PlaybookWithChecklist} from 'src/types/playbook';
+import {useToasts} from 'src/components/backstage/toast_banner';
 
 type ParamsState = Required<FetchPlaybooksParams>;
 
@@ -54,6 +58,7 @@ export function usePlaybooksCrud(
     defaultParams: Partial<FetchPlaybooksParams>,
     {infinitePaging} = {infinitePaging: false},
 ) {
+    const {formatMessage} = useIntl();
     const [playbooks, setPlaybooks] = useState<Playbook[] | null>(null);
     const [isLoading, setLoading] = useState(true);
     const [hasMore, setHasMore] = useState(false);
@@ -66,6 +71,7 @@ export function usePlaybooksCrud(
         page: 0,
         per_page: 10,
         search_term: '',
+        with_archived: false,
         ...defaultParams,
     });
 
@@ -76,6 +82,8 @@ export function usePlaybooksCrud(
     useEffect(() => {
         fetchPlaybooks();
     }, [params]);
+
+    const addToast = useToasts().add;
 
     const setSelectedPlaybook = async (nextSelected: Playbook | string | null) => {
         if (typeof nextSelected !== 'string') {
@@ -121,6 +129,17 @@ export function usePlaybooksCrud(
         }
     };
 
+    const restorePlaybook = async (playbookId: Playbook['id']) => {
+        await clientRestorePlaybook(playbookId);
+        await fetchPlaybooks();
+    };
+
+    const duplicatePlaybook = async (playbookId: Playbook['id']) => {
+        await clientDuplicatePlaybook(playbookId);
+        await fetchPlaybooks();
+        addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
+    };
+
     const sortBy = (colName: FetchPlaybooksParams['sort']) => {
         if (params.sort === colName) {
             // we're already sorting on this column; reverse the direction
@@ -138,6 +157,11 @@ export function usePlaybooksCrud(
     };
     const setSearchTermDebounced = debounce(setSearchTerm, searchDebounceDelayMilliseconds);
 
+    const setWithArchived = (with_archived: boolean) => {
+        setLoading(true);
+        setParams({with_archived});
+    };
+
     const isFiltering = (params?.search_term?.length ?? 0) > 0;
 
     return [
@@ -149,7 +173,10 @@ export function usePlaybooksCrud(
             sortBy,
             setSelectedPlaybook,
             archivePlaybook,
+            restorePlaybook,
+            duplicatePlaybook,
             setSearchTerm: setSearchTermDebounced,
+            setWithArchived,
             isFiltering,
         },
     ] as const;

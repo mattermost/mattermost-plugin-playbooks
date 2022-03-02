@@ -49,6 +49,7 @@ describe('channels > rhs > home', () => {
 
             // * Verify the playbook is shown
             cy.findByText('Your Playbooks')
+                .parent()
                 .next()
                 .within(() => {
                     cy.findByText('Team Playbook').should('exist');
@@ -56,13 +57,16 @@ describe('channels > rhs > home', () => {
         });
 
         it('starter templates', () => {
-            // templates are defined in `webapp/src/components/backstage/template_selector.tsx`
+            // templates are defined in webapp/src/components/templates/template_data.tsx
             const templates = [
-                {name: 'Blank', checklists: 'no checklists', actions: 'no actions'},
-                {name: 'Product Release', checklists: '4 checklists', actions: '2 actions'},
-                {name: 'Customer Onboarding', checklists: '4 checklists', actions: '2 actions'},
-                {name: 'Service Reliability Incident', checklists: '4 checklists', actions: '3 actions'},
-                {name: 'Feature Lifecycle', checklists: '5 checklists', actions: '2 actions'},
+                {name: 'Blank', checklists: '1 checklist', actions: '1 action'},
+                {name: 'Product Release', checklists: '4 checklists', actions: '3 actions'},
+                {name: 'Incident Resolution', checklists: '4 checklists', actions: '4 actions'},
+                {name: 'Customer Onboarding', checklists: '4 checklists', actions: '3 actions'},
+                {name: 'Employee Onboarding', checklists: '5 checklists', actions: '2 actions'},
+                {name: 'Feature Lifecycle', checklists: '5 checklists', actions: '3 actions'},
+                {name: 'Bug Bash', checklists: '5 checklists', actions: '3 actions'},
+                {name: 'Learn how to use playbooks', checklists: '2 checklists', actions: '2 actions'},
             ];
 
             // # Click the icon
@@ -72,6 +76,7 @@ describe('channels > rhs > home', () => {
 
             // * Verify the templates are shown
             cy.findByText('Playbook Templates')
+                .parent()
                 .next()
                 .within(() => {
                     cy.findAllByTestId('template-details').each(($templateElement, index) => {
