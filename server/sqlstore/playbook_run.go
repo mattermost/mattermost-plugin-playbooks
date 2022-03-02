@@ -10,10 +10,6 @@ import (
 
 	"gopkg.in/guregu/null.v4"
 
-	"github.com/go-sql-driver/mysql"
-
-	"github.com/lib/pq"
-
 	"github.com/jmoiron/sqlx"
 
 	sq "github.com/Masterminds/squirrel"
@@ -875,56 +871,6 @@ func (s *playbookRunStore) ChangeCreationDate(playbookRunID string, creationTime
 
 	if numRows == 0 {
 		return app.ErrNotFound
-	}
-
-	return nil
-}
-
-// HasViewed returns true if userID has viewed channelID
-func (s *playbookRunStore) HasViewedChannel(userID, channelID string) bool {
-	query := sq.Expr(
-		`SELECT EXISTS(SELECT *
-                         FROM IR_ViewedChannel as vc
-                        WHERE vc.ChannelID = ?
-                          AND vc.UserID = ?)
-             `, channelID, userID)
-
-	var exists bool
-	err := s.store.getBuilder(s.store.db, &exists, query)
-	if err != nil {
-		return false
-	}
-
-	return exists
-}
-
-// SetViewed records that userID has viewed channelID.
-func (s *playbookRunStore) SetViewedChannel(userID, channelID string) error {
-	if s.HasViewedChannel(userID, channelID) {
-		return nil
-	}
-
-	_, err := s.store.execBuilder(s.store.db, sq.
-		Insert("IR_ViewedChannel").
-		SetMap(map[string]interface{}{
-			"ChannelID": channelID,
-			"UserID":    userID,
-		}))
-
-	if err != nil {
-		if s.store.db.DriverName() == model.DatabaseDriverMysql {
-			me, ok := err.(*mysql.MySQLError)
-			if ok && me.Number == 1062 {
-				return errors.Wrap(app.ErrDuplicateEntry, err.Error())
-			}
-		} else {
-			pe, ok := err.(*pq.Error)
-			if ok && pe.Code == "23505" {
-				return errors.Wrap(app.ErrDuplicateEntry, err.Error())
-			}
-		}
-
-		return errors.Wrapf(err, "failed to store userID and channelID")
 	}
 
 	return nil

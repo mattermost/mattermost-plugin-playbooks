@@ -11,6 +11,7 @@ ifneq ($(HAS_SERVER),)
 	mockgen -destination server/app/mocks/mock_playbook_run_store.go github.com/mattermost/mattermost-plugin-playbooks/server/app PlaybookRunStore
 	mockgen -destination server/app/mocks/mock_job_once_scheduler.go github.com/mattermost/mattermost-plugin-playbooks/server/app JobOnceScheduler
 	mockgen -destination server/app/mocks/mock_playbook_service.go github.com/mattermost/mattermost-plugin-playbooks/server/app PlaybookService
+	mockgen -destination server/app/mocks/mock_channel_action_service.go github.com/mattermost/mattermost-plugin-playbooks/server/app ChannelActionService
 	mockgen -destination server/app/mocks/mock_playbook_store.go github.com/mattermost/mattermost-plugin-playbooks/server/app PlaybookStore
 	mockgen -destination server/app/mocks/mock_keywords_ignorer.go github.com/mattermost/mattermost-plugin-playbooks/server/app KeywordsThreadIgnorer
 	mockgen -destination server/app/mocks/mock_user_info_store.go github.com/mattermost/mattermost-plugin-playbooks/server/app UserInfoStore
