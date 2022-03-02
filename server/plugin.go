@@ -44,16 +44,17 @@ type TelemetryClient interface {
 type Plugin struct {
 	plugin.MattermostPlugin
 
-	handler            *api.Handler
-	config             *config.ServiceImpl
-	playbookRunService app.PlaybookRunService
-	playbookService    app.PlaybookService
-	permissions        *app.PermissionsService
-	bot                *bot.Bot
-	pluginAPI          *pluginapi.Client
-	userInfoStore      app.UserInfoStore
-	telemetryClient    TelemetryClient
-	licenseChecker     app.LicenseChecker
+	handler              *api.Handler
+	config               *config.ServiceImpl
+	playbookRunService   app.PlaybookRunService
+	playbookService      app.PlaybookService
+	permissions          *app.PermissionsService
+	channelActionService app.ChannelActionService
+	bot                  *bot.Bot
+	pluginAPI            *pluginapi.Client
+	userInfoStore        app.UserInfoStore
+	telemetryClient      TelemetryClient
+	licenseChecker       app.LicenseChecker
 }
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
@@ -141,6 +142,8 @@ func (p *Plugin) OnActivate() error {
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
+	channelActionStore := sqlstore.NewChannelActionStore(apiClient, p.bot, sqlStore)
+	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.bot, channelActionStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
 
@@ -159,6 +162,7 @@ func (p *Plugin) OnActivate() error {
 		p.telemetryClient,
 		p.API,
 		p.playbookService,
+		p.channelActionService,
 		p.licenseChecker,
 	)
 
@@ -207,6 +211,7 @@ func (p *Plugin) OnActivate() error {
 	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.permissions)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
+	api.NewActionsHandler(p.handler.APIRouter, p.bot, p.channelActionService, p.pluginAPI, p.permissions)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting

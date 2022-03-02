@@ -210,6 +210,14 @@ export const ModalHeading = styled.h1`
     color: var(--center-channel-color);
 `;
 
+export const ModalSubheading = styled.h6`
+    font-size: 12px;
+    line-height: 16px;
+    margin-top: 6px;
+
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+`;
+
 export const Description = styled.p`
     font-size: 12px;
     line-height: 16px;
