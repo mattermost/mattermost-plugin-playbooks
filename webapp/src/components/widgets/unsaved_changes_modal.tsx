@@ -25,28 +25,12 @@ const UnsavedChangesModal = ({
     return (
         <ConfirmModalLight
             show={show}
-            title={
-                title ||
-                formatMessage({
-                    defaultMessage: 'You have unsaved changes',
-                })
-            }
-            message={
-                message ||
-                formatMessage({
-                    defaultMessage:
-                        'Changes that you made will not be saved if you leave this page. Are you sure you want to discard changes and leave?',
-                })
-            }
-            confirmButtonText={
-                confirmButtonText ||
-                formatMessage({
-                    defaultMessage: 'Discard & leave',
-                })
-            }
+            title={title || formatMessage({defaultMessage: 'You have unsaved changes'})}
+            message={message || formatMessage({defaultMessage: 'Changes that you made will not be saved if you leave this page. Are you sure you want to discard changes and leave?'})}
+            confirmButtonText={confirmButtonText || formatMessage({defaultMessage: 'Discard & leave'})}
             isConfirmDestructive={true}
-            onConfirm={() => onConfirm()}
-            onCancel={() => onCancel()}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
         />
     );
 };

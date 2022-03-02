@@ -97,7 +97,7 @@ const EditTitleDescriptionModal = (props: Props) => {
             </GenericModal>
             <UnsavedChangesModal
                 show={showConfirm}
-                onConfirm={() => onActualHide()}
+                onConfirm={onActualHide}
                 onCancel={() => setShowConfirm(false)}
             />
         </>
