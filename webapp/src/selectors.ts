@@ -26,7 +26,7 @@ import Permissions from 'mattermost-redux/constants/permissions';
 import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
 
 import {pluginId} from 'src/manifest';
-import {playbookRunIsActive} from 'src/types/playbook_run';
+import {playbookRunIsActive, PlaybookRun} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter, TimelineEventsFilterDefault} from 'src/types/rhs';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
@@ -73,6 +73,10 @@ export const inPlaybookRunChannel = createSelector(
     (teamId, channelId, playbookRunMapByTeam) => {
         return Boolean(playbookRunMapByTeam[teamId]?.[channelId]);
     },
+);
+
+export const getPlaybookRunByTeamAndChannelId = (state: GlobalState, teamId: string, channelId: string): PlaybookRun | undefined => (
+    myPlaybookRunsByTeam(state)[teamId]?.[channelId]
 );
 
 export const currentPlaybookRun = createSelector(
