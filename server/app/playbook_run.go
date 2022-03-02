@@ -560,6 +560,10 @@ type PlaybookRunService interface {
 	// UpdateDescription updates the description of the specified playbook run.
 	UpdateDescription(playbookRunID, description string) error
 
+	// EphemeralPostTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
+	// and sends an ephemeral post to userID on channelID. Use force = true to post even if there are no items.
+	EphemeralPostTodoDigestToUser(userID string, channelID string, force bool) error
+
 	// DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
 	// and DMs the message to userID. Use force = true to DM even if there are no items.
 	DMTodoDigestToUser(userID string, force bool) error
