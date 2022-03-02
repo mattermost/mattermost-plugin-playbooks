@@ -178,7 +178,7 @@ export const CheckboxContainer = styled.div`
         text-rendering: auto;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        content: "\f12c";
+        content: "\f012c";
         font-size: 12px;
         font-weight: bold;
         color: #ffffff;
