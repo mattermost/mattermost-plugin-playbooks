@@ -23,6 +23,8 @@ type Props = {
     id: string;
     className?: string;
     disabled?: boolean;
+    hideHelpText?: boolean;
+    previewByDefault?: boolean;
 } & ComponentProps<typeof Textbox>;
 
 const MarkdownTextbox = ({
@@ -31,9 +33,11 @@ const MarkdownTextbox = ({
     className,
     placeholder = '',
     disabled,
+    hideHelpText,
+    previewByDefault,
     ...textboxProps
 }: Props) => {
-    const [showPreview, setShowPreview] = useState(false);
+    const [showPreview, setShowPreview] = useState(previewByDefault);
     const config = useSelector(getConfig);
 
     const charLimit = parseInt(config.MaxPostSize || '', 10) || DEFAULT_CHAR_LIMIT;
@@ -63,6 +67,7 @@ const MarkdownTextbox = ({
                 showPreview={showPreview}
                 updatePreview={setShowPreview}
                 message={value}
+                hideHelpText={hideHelpText}
             />
         </Wrapper>
     );
@@ -110,6 +115,7 @@ type TextboxLinksProps = {
     message: string;
     disabled?: boolean;
     className?: string;
+    hideHelpText?: boolean;
 };
 
 function TextboxLinks({
@@ -119,6 +125,7 @@ function TextboxLinks({
     className,
     updatePreview,
     disabled,
+    hideHelpText,
 }: TextboxLinksProps) {
     const togglePreview = (e: MouseEvent) => {
         e.preventDefault();
@@ -143,6 +150,7 @@ function TextboxLinks({
                 style={{visibility: hasText ? 'visible' : 'hidden', opacity: hasText ? '' : '0'}}
                 className={'help__format-text'}
             >
+                {!hideHelpText &&
                 <HelpText>
                     <b>{'**'}{formatMessage({defaultMessage: 'bold'})}{'**'}</b>
                     <i>{'*'}{formatMessage({defaultMessage: 'italic'})}{'*'}</i>
@@ -151,6 +159,7 @@ function TextboxLinks({
                     <span>{'```'}{formatMessage({defaultMessage: 'preformatted'})}{'```'}</span>
                     <span>{'>'}{formatMessage({defaultMessage: 'quote'})}</span>
                 </HelpText>
+                }
             </div>
             <NoWrap>
                 <button
