@@ -56,12 +56,12 @@ const Search = styled.div`
     }
 
     &:before {
-        left: 18px;
-        top: 9px;
+        left: 16px;
+        top: 8px;
         position: absolute;
         color: rgba(var(--center-channel-color-rgb), 0.56);
-        content: '\\f349';
-        font-size: 20px;
+        content: '\\f0349';
+        font-size: 18px;
         font-family: 'compass-icons', mattermosticons;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
