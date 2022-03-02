@@ -23,9 +23,11 @@ require (
 	github.com/mattermost/mattermost-plugin-api v0.0.22-0.20211207232216-3faec618d311
 	github.com/mattermost/mattermost-plugin-playbooks/client v0.7.0
 	github.com/mattermost/mattermost-server/v6 v6.0.0-20211207185652-92e80bd4ed31
+	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1
 	github.com/rudderlabs/analytics-go v3.3.2+incompatible
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/writeas/go-strip-markdown v2.0.1+incompatible
+	gopkg.in/guregu/null.v4 v4.0.0
 )

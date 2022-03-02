@@ -8,6 +8,8 @@ import StatusBadge from 'src/components/backstage/status_badge';
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import {SemiBoldHeading} from 'src/styles/headings';
 
+import {BaseInput} from 'src/components/assets/inputs';
+
 export const Container = styled.div`
     display: flex;
     height: 100%;
@@ -32,8 +34,7 @@ export const TabPageContainer = styled.div`
 export const Title = styled.div`
     ${SemiBoldHeading} {
     }
-
-    color: var(--button-bg);
+    color: var(--center-channel-color);
     font-size: 18px;
     font-weight: 600;
 `;
@@ -76,14 +77,6 @@ export const ExpandRight = styled.div`
     margin-left: auto;
 `;
 
-export const HorizontalSpacer = styled.div<{ size: number }>`
-    margin-left: ${(props) => props.size}px;
-`;
-
-export const VerticalSpacer = styled.div<{ size: number }>`
-    margin-top: ${(props) => props.size}px;
-`;
-
 export const PrimaryButtonRight = styled(PrimaryButton)`
     height: 26px;
     padding: 0 14px;
@@ -109,3 +102,36 @@ export const Icon16 = styled.i`
         font-size: 16px;
     }
 `;
+
+export const HelpText = styled.div`
+    font-size: 12px;
+    line-height: 16px;
+    margin-top: 4px;
+    color: rgba(var(--center-channel-color-rgb), 0.64);
+    font-weight: 400;
+`;
+
+export const ErrorText = styled.div`
+    font-size: 12px;
+    line-height: 16px;
+    margin-top: 4px;
+    color: var(--error-text);
+`;
+
+export const StyledInput = styled(BaseInput)<{error?: boolean}>`
+    height: 40px;
+    width: 100%;
+
+    background-color: ${(props) => (props.disabled ? 'rgba(var(--center-channel-color-rgb), 0.03)' : 'var(--center-channel-bg)')};
+
+    ${(props) => (
+        props.error && css`
+            box-shadow: inset 0 0 0 1px var(--error-text);
+
+            &:focus {
+                box-shadow: inset 0 0 0 2px var(--error-text);
+            }
+        `
+    )}
+`;
+

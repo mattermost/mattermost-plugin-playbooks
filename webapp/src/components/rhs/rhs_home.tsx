@@ -13,6 +13,8 @@ import {mdiArrowDown, mdiArrowRight, mdiPlus} from '@mdi/js';
 
 import {FormattedMessage} from 'react-intl';
 
+import {PresetTemplates} from 'src/components/templates/template_data';
+
 import {Playbook, DraftPlaybookWithChecklist} from 'src/types/playbook';
 import {SemiBoldHeading} from 'src/styles/headings';
 
@@ -40,8 +42,6 @@ import BoxOpenSvg from 'src/components/assets/box_open_svg';
 import PageRunSvg from 'src/components/assets/page_run_svg';
 import PageRunCollaborationSvg from 'src/components/assets/page_run_collaboration_svg';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
-
-import {PresetTemplates} from 'src/components/backstage/template_selector';
 
 const WelcomeBlock = styled.div`
     padding: 4rem 3rem 2rem;

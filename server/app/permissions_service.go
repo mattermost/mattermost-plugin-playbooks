@@ -15,11 +15,19 @@ var ErrNoPermissions = errors.New("does not have permissions")
 // ErrLicensedFeature if the error is caused by the server not having the needed license for the feature
 var ErrLicensedFeature = errors.New("not covered by current server license")
 
+type LicenseChecker interface {
+	PlaybookAllowed(isPlaybookPublic bool) bool
+	RetrospectiveAllowed() bool
+	TimelineAllowed() bool
+	StatsAllowed() bool
+}
+
 type PermissionsService struct {
 	playbookService PlaybookService
 	runService      PlaybookRunService
 	pluginAPI       *pluginapi.Client
 	configService   config.Service
+	licenseChecker  LicenseChecker
 }
 
 func NewPermissionsService(
@@ -27,12 +35,14 @@ func NewPermissionsService(
 	runService PlaybookRunService,
 	pluginAPI *pluginapi.Client,
 	configService config.Service,
+	licenseChecker LicenseChecker,
 ) *PermissionsService {
 	return &PermissionsService{
 		playbookService,
 		runService,
 		pluginAPI,
 		configService,
+		licenseChecker,
 	}
 }
 
@@ -96,6 +106,10 @@ func (p *PermissionsService) canViewTeam(userID string, teamID string) bool {
 }
 
 func (p *PermissionsService) PlaybookCreate(userID string, playbook Playbook) error {
+	if !p.licenseChecker.PlaybookAllowed(p.PlaybookIsPublic(playbook)) {
+		return errors.Wrapf(ErrLicensedFeature, "the playbook is not valid with the current license")
+	}
+
 	// Check the user has permissions over all broadcast channels
 	for _, channelID := range playbook.BroadcastChannelIDs {
 		if !p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionCreatePost) {
@@ -223,6 +237,10 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 				return errors.Wrap(err, "attempted to make playbook public without permissions")
 			}
 		}
+	}
+
+	if !p.licenseChecker.PlaybookAllowed(p.PlaybookIsPublic(*playbook)) {
+		return errors.Wrapf(ErrLicensedFeature, "the playbook is not valid with the current license")
 	}
 
 	return nil
@@ -378,9 +396,48 @@ func (p *PermissionsService) RunViewByChannel(userID, channelID string) error {
 	return p.RunView(userID, runID)
 }
 
+func (p *PermissionsService) ChannelActionCreate(userID, channelID string) error {
+	if IsSystemAdmin(userID, p.pluginAPI) || CanManageChannelProperties(userID, channelID, p.pluginAPI) {
+		return nil
+	}
+
+	return ErrNoPermissions
+}
+
+func (p *PermissionsService) ChannelActionView(userID, channelID string) error {
+	if p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		return nil
+	}
+
+	return ErrNoPermissions
+}
+
+func (p *PermissionsService) ChannelActionUpdate(userID, channelID string) error {
+	if IsSystemAdmin(userID, p.pluginAPI) || CanManageChannelProperties(userID, channelID, p.pluginAPI) {
+		return nil
+	}
+
+	return ErrNoPermissions
+}
+
 // IsSystemAdmin returns true if the userID is a system admin
 func IsSystemAdmin(userID string, pluginAPI *pluginapi.Client) bool {
 	return pluginAPI.User.HasPermissionTo(userID, model.PermissionManageSystem)
+}
+
+// CanManageChannelProperties returns true if the userID is allowed to manage the properties of channelID
+func CanManageChannelProperties(userID, channelID string, pluginAPI *pluginapi.Client) bool {
+	channel, err := pluginAPI.Channel.Get(channelID)
+	if err != nil {
+		return false
+	}
+
+	permission := model.PermissionManagePublicChannelProperties
+	if channel.Type == model.ChannelTypePrivate {
+		permission = model.PermissionManagePrivateChannelProperties
+	}
+
+	return pluginAPI.User.HasPermissionToChannel(userID, channelID, permission)
 }
 
 func CanPostToChannel(userID, channelID string, pluginAPI *pluginapi.Client) bool {

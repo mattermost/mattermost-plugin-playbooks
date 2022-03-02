@@ -120,8 +120,7 @@ commands:
           command: |
             TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
             TOKEN=${TOKEN//$'\r'/}
-            STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
-            if test $STATUSCODE -ne 200; then exit 1; fi
+            curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr -m 5 || true
       - *restore_cypress_cache
       - run:
           name: Getting Cypress & JavaScript dependencies
@@ -143,16 +142,11 @@ commands:
             cd tests-e2e
             circleci tests glob "cypress/integration/**/*.js" | circleci tests split --split-by=timings > ./tests-to-run
             npm run test -- --spec "$(cat ./tests-to-run | tr '\n' ',')"
-            echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?><testsuites name=\"Cypress tests\">" > ./cypress/results/junit.xml
-            cat temp-results.txt >> ./cypress/results/junit.xml
-            echo "</testsuites>" >> ./cypress/results/junit.xml
       - *save_cypress_cache
       - store_test_results:
           path: tests-e2e/cypress/results
       - store_artifacts:
           path: tests-e2e/cypress/videos
-      - store_artifacts:
-          path: tests-e2e/cypress/results/junit.xml
 
 jobs:
   lint:

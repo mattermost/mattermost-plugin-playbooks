@@ -34,8 +34,9 @@ import RHSTitle from 'src/components/rhs/rhs_title';
 import {AttachToPlaybookRunPostMenu, StartPlaybookRunPostMenu} from 'src/components/post_menu';
 import Backstage from 'src/components/backstage/backstage';
 import PostMenuModal from 'src/components/post_menu_modal';
+import ActionsModal from 'src/components/actions_modal';
 import {
-    setToggleRHSAction, actionSetGlobalSettings,
+    setToggleRHSAction, actionSetGlobalSettings, showActionsModal,
 } from 'src/actions';
 import reducer from 'src/reducer';
 import {
@@ -63,6 +64,7 @@ import {UpdatePost} from 'src/components/update_post';
 import {UpdateRequestPost} from 'src/components/update_request_post';
 
 import {PlaybookRole} from './types/permissions';
+import {RetrospectivePost} from './components/retrospective_post';
 
 const GlobalHeaderCenter = () => {
     return null;
@@ -116,9 +118,11 @@ export default class Plugin {
 
         // Buttons and menus
         registry.registerChannelHeaderButtonAction(ChannelHeaderButton, boundToggleRHSAction, ChannelHeaderText, ChannelHeaderTooltip);
+        registry.registerChannelHeaderMenuAction('Channel Actions', () => store.dispatch(showActionsModal()));
         registry.registerPostDropdownMenuComponent(StartPlaybookRunPostMenu);
         registry.registerPostDropdownMenuComponent(AttachToPlaybookRunPostMenu);
         registry.registerRootComponent(PostMenuModal);
+        registry.registerRootComponent(ActionsModal);
 
         // Websocket listeners
         registry.registerReconnectHandler(handleReconnect(store.getState, store.dispatch));
@@ -147,6 +151,7 @@ export default class Plugin {
         registry.registerPostTypeComponent('custom_cloud_upgrade', CloudUpgradePost);
         registry.registerPostTypeComponent('custom_run_update', UpdatePost);
         registry.registerPostTypeComponent('custom_update_status', UpdateRequestPost);
+        registry.registerPostTypeComponent('custom_retro', RetrospectivePost);
     }
 
     userActivityWatch(): void {

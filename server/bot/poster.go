@@ -107,6 +107,13 @@ func (b *Bot) EphemeralPost(userID, channelID string, post *model.Post) {
 	b.pluginAPI.Post.SendEphemeralPost(userID, post)
 }
 
+// SystemEphemeralPost sends an ephemeral message to a user authored by the System
+func (b *Bot) SystemEphemeralPost(userID, channelID string, post *model.Post) {
+	post.ChannelId = channelID
+
+	b.pluginAPI.Post.SendEphemeralPost(userID, post)
+}
+
 // EphemeralPostWithAttachments sends an ephemeral message to a user with Slack attachments.
 func (b *Bot) EphemeralPostWithAttachments(userID, channelID, postID string, attachments []*model.SlackAttachment, format string, args ...interface{}) {
 	post := &model.Post{
@@ -206,7 +213,7 @@ func (b *Bot) NotifyAdmins(messageType, authorUserID string, isTeamEdition bool)
 	case "start_trial_to_access_playbook_dashboard":
 		message = fmt.Sprintf("@%s requested access to view playbook statistics", author.Username)
 		title = "All the statistics you need"
-		text = "View trends for total runs, active runs and participants involved in runs of this playbook. Notify your system admin to upgrade."
+		text = "View trends for total runs, active runs, and participants involved in runs of this playbook."
 	}
 
 	actions := []*model.PostAction{

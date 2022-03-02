@@ -3,7 +3,7 @@
 
 import styled, {css} from 'styled-components';
 import React, {useEffect, useState} from 'react';
-import {useIntl} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 import {useRouteMatch} from 'react-router-dom';
 
 import Icon from '@mdi/react';
@@ -15,6 +15,9 @@ import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs
 import {BackstageID} from 'src/components/backstage/backstage';
 import {useHasPlaybookPermissionById} from 'src/hooks';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
+import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip/tutorial_tour_tip';
+import {PlaybookPreviewTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
+import {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip/hooks';
 
 const prefix = 'playbooks-playbookPreview-';
 
@@ -46,6 +49,10 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
     const {formatMessage} = useIntl();
     const match = useRouteMatch();
     const [activeId, setActiveId] = useState(SectionID.Description);
+    const punchoutEdit = useMeasurePunchouts(['edit-playbook'], [], {y: -5, height: 10, x: -5, width: 10});
+    const punchoutNavbar = useMeasurePunchouts(['playbook-preview-navbar'], [], {y: -5, height: 10, x: -5, width: 10});
+    const showEditTutorial = useShowTutorialStep(PlaybookPreviewTutorialSteps.EditButton, TutorialTourCategories.PLAYBOOK_PREVIEW);
+    const showNavbarTutorial = useShowTutorialStep(PlaybookPreviewTutorialSteps.Navbar, TutorialTourCategories.PLAYBOOK_PREVIEW);
 
     const hasEditPermissions = useHasPlaybookPermissionById(PlaybookPermissionGeneral.ManageProperties, playbookId);
 
@@ -144,50 +151,85 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
 
     return (
         <Wrapper>
+            {showEditTutorial &&
+            <TutorialTourTip
+                title={<FormattedMessage defaultMessage='Welcome to the playbook preview page!'/>}
+                screen={<FormattedMessage defaultMessage='This is where you can explore your playbook components in detail. Select Edit to customize your playbook to fit your processes and models.'/>}
+                tutorialCategory={TutorialTourCategories.PLAYBOOK_PREVIEW}
+                step={PlaybookPreviewTutorialSteps.EditButton}
+                placement='left'
+                pulsatingDotPlacement='left'
+                pulsatingDotTranslate={{x: -10, y: -135}}
+                autoTour={true}
+                width={370}
+                punchOut={punchoutEdit}
+                telemetryTag={`tutorial_tip_Playbook_Preview_${PlaybookPreviewTutorialSteps.EditButton}_EditButton`}
+            />
+            }
+            {showNavbarTutorial &&
+            <TutorialTourTip
+                title={<FormattedMessage defaultMessage='See what’s in this playbook at any time'/>}
+                screen={<FormattedMessage defaultMessage='You can check out different sections of the playbook in detail on this page.'/>}
+                tutorialCategory={TutorialTourCategories.PLAYBOOK_PREVIEW}
+                step={PlaybookPreviewTutorialSteps.Navbar}
+                placement='left'
+                pulsatingDotPlacement='left'
+                pulsatingDotTranslate={{x: -10, y: -50}}
+                autoTour={true}
+                width={360}
+                punchOut={punchoutNavbar}
+                telemetryTag={`tutorial_tip_Playbook_Preview_${PlaybookPreviewTutorialSteps.Navbar}_Navbar`}
+            />
+            }
             <EditButton
                 onClick={() => navigateToUrl(match.url.replace('/preview', '/edit'))}
                 disabled={!hasEditPermissions || archived}
                 title={hasEditPermissions ? formatMessage({defaultMessage: 'Edit'}) : formatMessage({defaultMessage: 'You do not have permissions'})}
+                id='edit-playbook'
                 data-testid='edit-playbook'
             >
                 <i className={'icon-pencil-outline icon-16'}/>
                 {formatMessage({defaultMessage: 'Edit'})}
             </EditButton>
-            <Header>
-                {formatMessage({defaultMessage: 'In this playbook'})}
-            </Header>
-            <Items>
-                <Item
-                    id={SectionID.Description}
-                    iconName={'information-outline'}
-                    title={formatMessage({defaultMessage: 'Description'})}
-                    show={showElements.description}
-                />
-                <Item
-                    id={SectionID.Checklists}
-                    iconName={'check-all'}
-                    title={formatMessage({defaultMessage: 'Checklists'})}
-                    show={showElements.checklists}
-                />
-                <Item
-                    id={SectionID.Actions}
-                    iconName={'sync'}
-                    title={formatMessage({defaultMessage: 'Actions'})}
-                    show={showElements.actions}
-                />
-                <Item
-                    id={SectionID.StatusUpdates}
-                    iconName={'update'}
-                    title={formatMessage({defaultMessage: 'Status updates'})}
-                    show={showElements.statusUpdates}
-                />
-                <Item
-                    id={SectionID.Retrospective}
-                    iconName={'lightbulb-outline'}
-                    title={formatMessage({defaultMessage: 'Retrospective'})}
-                    show={showElements.retrospective}
-                />
-            </Items>
+            <div
+                id={'playbook-preview-navbar'}
+            >
+                <Header>
+                    {formatMessage({defaultMessage: 'In this playbook'})}
+                </Header>
+                <Items >
+                    <Item
+                        id={SectionID.Description}
+                        iconName={'information-outline'}
+                        title={formatMessage({defaultMessage: 'Description'})}
+                        show={showElements.description}
+                    />
+                    <Item
+                        id={SectionID.Checklists}
+                        iconName={'check-all'}
+                        title={formatMessage({defaultMessage: 'Checklists'})}
+                        show={showElements.checklists}
+                    />
+                    <Item
+                        id={SectionID.Actions}
+                        iconName={'sync'}
+                        title={formatMessage({defaultMessage: 'Actions'})}
+                        show={showElements.actions}
+                    />
+                    <Item
+                        id={SectionID.StatusUpdates}
+                        iconName={'update'}
+                        title={formatMessage({defaultMessage: 'Status updates'})}
+                        show={showElements.statusUpdates}
+                    />
+                    <Item
+                        id={SectionID.Retrospective}
+                        iconName={'lightbulb-outline'}
+                        title={formatMessage({defaultMessage: 'Retrospective'})}
+                        show={showElements.retrospective}
+                    />
+                </Items>
+            </div>
             <UsageButton
                 playbookId={playbookId}
                 activeRuns={runsInProgress}

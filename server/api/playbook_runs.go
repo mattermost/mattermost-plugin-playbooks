@@ -28,6 +28,7 @@ type PlaybookRunHandler struct {
 	playbookRunService app.PlaybookRunService
 	playbookService    app.PlaybookService
 	permissions        *app.PermissionsService
+	licenseChecker     app.LicenseChecker
 	pluginAPI          *pluginapi.Client
 	poster             bot.Poster
 	log                bot.Logger
@@ -39,6 +40,7 @@ func NewPlaybookRunHandler(
 	playbookRunService app.PlaybookRunService,
 	playbookService app.PlaybookService,
 	permissions *app.PermissionsService,
+	licenseChecker app.LicenseChecker,
 	api *pluginapi.Client,
 	poster bot.Poster,
 	log bot.Logger,
@@ -53,6 +55,7 @@ func NewPlaybookRunHandler(
 		log:                log,
 		config:             configService,
 		permissions:        permissions,
+		licenseChecker:     licenseChecker,
 	}
 
 	playbookRunsRouter := router.PathPrefix("/runs").Subrouter()
@@ -82,7 +85,6 @@ func NewPlaybookRunHandler(
 	playbookRunRouterAuthorized.HandleFunc("/reminder", handler.reminderReset).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/no-retrospective-button", handler.noRetrospectiveButton).Methods(http.MethodPost)
 	playbookRunRouterAuthorized.HandleFunc("/timeline/{eventID:[A-Za-z0-9]+}", handler.removeTimelineEvent).Methods(http.MethodDelete)
-	playbookRunRouterAuthorized.HandleFunc("/check-and-send-message-on-join/{channel_id:[A-Za-z0-9]+}", handler.checkAndSendMessageOnJoin).Methods(http.MethodGet)
 	playbookRunRouterAuthorized.HandleFunc("/update-description", handler.updateDescription).Methods(http.MethodPut)
 	playbookRunRouterAuthorized.HandleFunc("/restore", handler.restore).Methods(http.MethodPut)
 
@@ -314,6 +316,11 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 // addToTimelineDialog handles the interactive dialog submission when a user clicks the
 // corresponding post action.
 func (h *PlaybookRunHandler) addToTimelineDialog(w http.ResponseWriter, r *http.Request) {
+	if !h.licenseChecker.TimelineAllowed() {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "timeline feature is not covered by current server license", nil)
+		return
+	}
+
 	userID := r.Header.Get("Mattermost-User-ID")
 
 	var request *model.SubmitDialogRequest
@@ -449,10 +456,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.WebhookOnStatusUpdateURLs = []string{}
 		if pb.WebhookOnStatusUpdateEnabled {
 			playbookRun.WebhookOnStatusUpdateURLs = pb.WebhookOnStatusUpdateURLs
-		}
-
-		if pb.MessageOnJoinEnabled {
-			playbookRun.MessageOnJoin = pb.MessageOnJoin
 		}
 
 		if pb.CategorizeChannelEnabled {
@@ -965,17 +968,6 @@ func (h *PlaybookRunHandler) removeTimelineEvent(w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// checkAndSendMessageOnJoin handles the GET /run/{id}/check_and_send_message_on_join/{channel_id} endpoint.
-func (h *PlaybookRunHandler) checkAndSendMessageOnJoin(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	playbookRunID := vars["id"]
-	channelID := vars["channel_id"]
-	userID := r.Header.Get("Mattermost-User-ID")
-
-	hasViewed := h.playbookRunService.CheckAndSendMessageOnJoin(userID, playbookRunID, channelID)
-	ReturnJSON(w, map[string]interface{}{"viewed": hasViewed}, http.StatusOK)
-}
-
 func (h *PlaybookRunHandler) updateDescription(w http.ResponseWriter, r *http.Request) {
 	playbookRunID := mux.Vars(r)["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
@@ -1472,16 +1464,14 @@ func (h *PlaybookRunHandler) updateRetrospective(w http.ResponseWriter, r *http.
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	var retroUpdate struct {
-		Retrospective string `json:"retrospective"`
-	}
+	var retroUpdate app.RetrospectiveUpdate
 
 	if err := json.NewDecoder(r.Body).Decode(&retroUpdate); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
 		return
 	}
 
-	if err := h.playbookRunService.UpdateRetrospective(playbookRunID, userID, retroUpdate.Retrospective); err != nil {
+	if err := h.playbookRunService.UpdateRetrospective(playbookRunID, userID, retroUpdate); err != nil {
 		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to update retrospective", err)
 		return
 	}
@@ -1494,16 +1484,14 @@ func (h *PlaybookRunHandler) publishRetrospective(w http.ResponseWriter, r *http
 	playbookRunID := vars["id"]
 	userID := r.Header.Get("Mattermost-User-ID")
 
-	var retroUpdate struct {
-		Retrospective string `json:"retrospective"`
-	}
+	var retroUpdate app.RetrospectiveUpdate
 
 	if err := json.NewDecoder(r.Body).Decode(&retroUpdate); err != nil {
 		h.HandleErrorWithCode(w, http.StatusBadRequest, "unable to decode payload", err)
 		return
 	}
 
-	if err := h.playbookRunService.PublishRetrospective(playbookRunID, retroUpdate.Retrospective, userID); err != nil {
+	if err := h.playbookRunService.PublishRetrospective(playbookRunID, userID, retroUpdate); err != nil {
 		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to publish retrospective", err)
 		return
 	}

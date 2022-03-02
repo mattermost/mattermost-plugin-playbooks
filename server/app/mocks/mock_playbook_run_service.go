@@ -119,20 +119,6 @@ func (mr *MockPlaybookRunServiceMockRecorder) ChangeOwner(arg0, arg1, arg2 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeOwner", reflect.TypeOf((*MockPlaybookRunService)(nil).ChangeOwner), arg0, arg1, arg2)
 }
 
-// CheckAndSendMessageOnJoin mocks base method
-func (m *MockPlaybookRunService) CheckAndSendMessageOnJoin(arg0, arg1, arg2 string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckAndSendMessageOnJoin", arg0, arg1, arg2)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// CheckAndSendMessageOnJoin indicates an expected call of CheckAndSendMessageOnJoin
-func (mr *MockPlaybookRunServiceMockRecorder) CheckAndSendMessageOnJoin(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAndSendMessageOnJoin", reflect.TypeOf((*MockPlaybookRunService)(nil).CheckAndSendMessageOnJoin), arg0, arg1, arg2)
-}
-
 // CreatePlaybookRun mocks base method
 func (m *MockPlaybookRunService) CreatePlaybookRun(arg0 *app.PlaybookRun, arg1 *app.Playbook, arg2 string, arg3 bool) (*app.PlaybookRun, error) {
 	m.ctrl.T.Helper()
@@ -522,7 +508,7 @@ func (mr *MockPlaybookRunServiceMockRecorder) OpenUpdateStatusDialog(arg0, arg1 
 }
 
 // PublishRetrospective mocks base method
-func (m *MockPlaybookRunService) PublishRetrospective(arg0, arg1, arg2 string) error {
+func (m *MockPlaybookRunService) PublishRetrospective(arg0, arg1 string, arg2 app.RetrospectiveUpdate) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PublishRetrospective", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
@@ -575,20 +561,6 @@ func (mr *MockPlaybookRunServiceMockRecorder) RemoveReminder(arg0 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveReminder", reflect.TypeOf((*MockPlaybookRunService)(nil).RemoveReminder), arg0)
 }
 
-// RemoveReminderPost mocks base method
-func (m *MockPlaybookRunService) RemoveReminderPost(arg0 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveReminderPost", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RemoveReminderPost indicates an expected call of RemoveReminderPost
-func (mr *MockPlaybookRunServiceMockRecorder) RemoveReminderPost(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveReminderPost", reflect.TypeOf((*MockPlaybookRunService)(nil).RemoveReminderPost), arg0)
-}
-
 // RemoveTimelineEvent mocks base method
 func (m *MockPlaybookRunService) RemoveTimelineEvent(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
@@ -615,20 +587,6 @@ func (m *MockPlaybookRunService) RenameChecklist(arg0, arg1 string, arg2 int, ar
 func (mr *MockPlaybookRunServiceMockRecorder) RenameChecklist(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameChecklist", reflect.TypeOf((*MockPlaybookRunService)(nil).RenameChecklist), arg0, arg1, arg2, arg3)
-}
-
-// ResetReminderTimer mocks base method
-func (m *MockPlaybookRunService) ResetReminderTimer(arg0 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResetReminderTimer", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ResetReminderTimer indicates an expected call of ResetReminderTimer
-func (mr *MockPlaybookRunServiceMockRecorder) ResetReminderTimer(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetReminderTimer", reflect.TypeOf((*MockPlaybookRunService)(nil).ResetReminderTimer), arg0)
 }
 
 // RestoreChecklistItem mocks base method
@@ -773,7 +731,7 @@ func (mr *MockPlaybookRunServiceMockRecorder) UpdateDescription(arg0, arg1 inter
 }
 
 // UpdateRetrospective mocks base method
-func (m *MockPlaybookRunService) UpdateRetrospective(arg0, arg1, arg2 string) error {
+func (m *MockPlaybookRunService) UpdateRetrospective(arg0, arg1 string, arg2 app.RetrospectiveUpdate) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateRetrospective", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

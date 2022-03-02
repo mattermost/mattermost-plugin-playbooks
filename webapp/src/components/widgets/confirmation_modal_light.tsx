@@ -3,6 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
+import {Modal} from 'react-bootstrap';
 
 import GenericModal, {DefaultFooterContainer} from 'src/components/widgets/generic_modal';
 
@@ -13,9 +14,20 @@ interface Props {
     confirmButtonText: React.ReactNode;
     onConfirm: () => void;
     onCancel: () => void;
-}
+    components?: Partial<{
+        Header: typeof Modal.Header;
+        FooterContainer: typeof DefaultFooterContainer;
+    }>;}
 
-const ConfirmModalLight = ({show, title, message, confirmButtonText, onConfirm, onCancel}: Props) => {
+const ConfirmModalLight = ({
+    show,
+    title,
+    message,
+    confirmButtonText,
+    onConfirm,
+    onCancel,
+    components,
+}: Props) => {
     return (
         <ConfirmModal
             id={'confirm-modal-light'}
@@ -26,7 +38,10 @@ const ConfirmModalLight = ({show, title, message, confirmButtonText, onConfirm, 
             handleConfirm={onConfirm}
             handleCancel={onCancel}
             onHide={onCancel}
-            components={{FooterContainer: ConfirmModalFooter}}
+            components={{
+                FooterContainer: ConfirmModalFooter,
+                ...components,
+            }}
         >
             <ConfirmModalTitle>
                 {title}

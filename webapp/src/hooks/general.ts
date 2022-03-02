@@ -18,7 +18,11 @@ import {
     getUser,
     getProfilesInCurrentTeam,
 } from 'mattermost-redux/selectors/entities/users';
-import {getCurrentChannelId, getChannelsNameMapInTeam, getChannel as getChannelFromState} from 'mattermost-redux/selectors/entities/channels';
+import {
+    getCurrentChannelId,
+    getChannelsNameMapInTeam,
+    getChannel as getChannelFromState,
+} from 'mattermost-redux/selectors/entities/channels';
 import {DispatchFunc} from 'mattermost-redux/types/actions';
 import {getProfilesByIds, getProfilesInChannel, getProfilesInTeam} from 'mattermost-redux/actions/users';
 import {Client4} from 'mattermost-redux/client';
@@ -180,7 +184,7 @@ export function useCanCreatePlaybooksOnAnyTeam() {
     return useSelector((state: GlobalState) => (
         teams.some((team: Team) => (
             haveITeamPermission(state, team.id, 'playbook_public_create') ||
-			haveITeamPermission(state, team.id, 'playbook_private_create')
+            haveITeamPermission(state, team.id, 'playbook_private_create')
         ))
     ));
 }
@@ -345,10 +349,28 @@ export function useAllowPlaybookStatsView() {
     return useSelector(isE20LicensedOrDevelopment);
 }
 
+// useAllowPlaybookAndRunMetrics returns whether the server is licensed to
+// enter and show playbook and run metrics
+export function useAllowPlaybookAndRunMetrics() {
+    return useSelector(isE20LicensedOrDevelopment);
+}
+
 // useAllowRetrospectiveAccess returns whether the server is licenced for
 // the retrospective feature.
 export function useAllowRetrospectiveAccess() {
     return useSelector(isE10LicensedOrDevelopment);
+}
+
+// useAllowPrivatePlaybooks returns whether the server is licenced for
+// creating private playbooks
+export function useAllowPrivatePlaybooks() {
+    return useSelector(isE20LicensedOrDevelopment);
+}
+
+// useAllowMakePlaybookPrivate returns whether the server is licenced for
+// converting public playbooks to private
+export function useAllowMakePlaybookPrivate() {
+    return useSelector(isE20LicensedOrDevelopment);
 }
 
 export function useEnsureProfiles(userIds: string[]) {

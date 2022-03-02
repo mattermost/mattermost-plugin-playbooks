@@ -9,6 +9,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/command"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/enterprise"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -43,15 +44,17 @@ type TelemetryClient interface {
 type Plugin struct {
 	plugin.MattermostPlugin
 
-	handler            *api.Handler
-	config             *config.ServiceImpl
-	playbookRunService app.PlaybookRunService
-	playbookService    app.PlaybookService
-	permissions        *app.PermissionsService
-	bot                *bot.Bot
-	pluginAPI          *pluginapi.Client
-	userInfoStore      app.UserInfoStore
-	telemetryClient    TelemetryClient
+	handler              *api.Handler
+	config               *config.ServiceImpl
+	playbookRunService   app.PlaybookRunService
+	playbookService      app.PlaybookService
+	permissions          *app.PermissionsService
+	channelActionService app.ChannelActionService
+	bot                  *bot.Bot
+	pluginAPI            *pluginapi.Client
+	userInfoStore        app.UserInfoStore
+	telemetryClient      TelemetryClient
+	licenseChecker       app.LicenseChecker
 }
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
@@ -139,11 +142,15 @@ func (p *Plugin) OnActivate() error {
 	playbookStore := sqlstore.NewPlaybookStore(apiClient, p.bot, sqlStore)
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
+	channelActionStore := sqlstore.NewChannelActionStore(apiClient, p.bot, sqlStore)
+	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.bot, channelActionStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
 	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
+
+	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
 	p.playbookRunService = app.NewPlaybookRunService(
 		pluginAPIClient,
@@ -155,6 +162,8 @@ func (p *Plugin) OnActivate() error {
 		p.telemetryClient,
 		p.API,
 		p.playbookService,
+		p.channelActionService,
+		p.licenseChecker,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
@@ -176,7 +185,7 @@ func (p *Plugin) OnActivate() error {
 	}
 	mutex.Unlock()
 
-	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config)
+	p.permissions = app.NewPermissionsService(p.playbookService, p.playbookRunService, pluginAPIClient, p.config, p.licenseChecker)
 
 	api.NewPlaybookHandler(
 		p.handler.APIRouter,
@@ -191,16 +200,18 @@ func (p *Plugin) OnActivate() error {
 		p.playbookRunService,
 		p.playbookService,
 		p.permissions,
+		p.licenseChecker,
 		pluginAPIClient,
 		p.bot,
 		p.bot,
 		p.config,
 	)
-	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService, p.permissions)
+	api.NewStatsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, statsStore, p.playbookService, p.permissions, p.licenseChecker)
 	api.NewBotHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.bot, p.config, p.playbookRunService, p.userInfoStore)
 	api.NewTelemetryHandler(p.handler.APIRouter, p.playbookRunService, pluginAPIClient, p.bot, p.telemetryClient, p.playbookService, p.telemetryClient, p.telemetryClient, p.permissions)
 	api.NewSignalHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.playbookRunService, p.playbookService, keywordsThreadIgnorer)
 	api.NewSettingsHandler(p.handler.APIRouter, pluginAPIClient, p.bot, p.config)
+	api.NewActionsHandler(p.handler.APIRouter, p.bot, p.channelActionService, p.pluginAPI, p.permissions)
 
 	isTestingEnabled := false
 	flag := p.API.GetConfig().ServiceSettings.EnableTesting

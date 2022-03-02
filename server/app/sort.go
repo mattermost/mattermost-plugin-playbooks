@@ -39,6 +39,12 @@ const (
 
 	// SortByLastStatusUpdateAt sorts by when the playbook run was last updated.
 	SortByLastStatusUpdateAt SortField = "last_status_update_at"
+
+	// SortByMetric0 ..3 sorts by the playbook's metric index
+	SortByMetric0 SortField = "metric0"
+	SortByMetric1 SortField = "metric1"
+	SortByMetric2 SortField = "metric2"
+	SortByMetric3 SortField = "metric3"
 )
 
 // SortDirection is the type used to specify the ascending or descending order of returned results.

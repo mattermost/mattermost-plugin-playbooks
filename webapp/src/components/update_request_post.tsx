@@ -14,7 +14,7 @@ import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 import {Team} from 'mattermost-redux/types/teams';
 import {getTeam} from 'mattermost-redux/selectors/entities/teams';
 
-import {currentPlaybookRun} from 'src/selectors';
+import {getPlaybookRunByTeamAndChannelId} from 'src/selectors';
 import PostText from 'src/components/post_text';
 import {PrimaryButton} from 'src/components/assets/buttons';
 import {promptUpdateStatus} from 'src/actions';
@@ -25,6 +25,7 @@ import {nearest} from 'src/utils';
 import {optionFromSeconds} from 'src/components/modals/update_run_status_modal';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {useClientRect} from 'src/hooks';
+import {PlaybookRun} from 'src/types/playbook_run';
 
 interface Props {
     post: Post;
@@ -35,7 +36,7 @@ export const UpdateRequestPost = (props: Props) => {
     const {formatMessage} = useIntl();
     const channel = useSelector<GlobalState, Channel>((state) => getChannel(state, props.post.channel_id));
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, channel.team_id));
-    const currentRun = useSelector(currentPlaybookRun);
+    const playbookRun = useSelector<GlobalState, PlaybookRun | undefined>((state) => getPlaybookRunByTeamAndChannelId(state, team?.id, channel?.id));
     const targetUsername = props.post.props.targetUsername ?? '';
 
     // Decide whether to open the snooze menu above or below
@@ -49,7 +50,7 @@ export const UpdateRequestPost = (props: Props) => {
         setSnoozeMenuPos((rect.top < 250) ? 'bottom' : 'top');
     }, [rect]);
 
-    if (!currentRun) {
+    if (!playbookRun) {
         return null;
     }
 
@@ -64,16 +65,16 @@ export const UpdateRequestPost = (props: Props) => {
             options.push(option);
         }
     };
-    if (currentRun.previous_reminder) {
-        pushIfNotIn(optionFromSeconds(nearest(currentRun.previous_reminder * 1e-9, 1)));
+    if (playbookRun.previous_reminder) {
+        pushIfNotIn(optionFromSeconds(nearest(playbookRun.previous_reminder * 1e-9, 1)));
     }
-    if (currentRun.reminder_timer_default_seconds) {
-        pushIfNotIn(optionFromSeconds(currentRun.reminder_timer_default_seconds));
+    if (playbookRun.reminder_timer_default_seconds) {
+        pushIfNotIn(optionFromSeconds(playbookRun.reminder_timer_default_seconds));
     }
     options.sort((a, b) => ms(a.value) - ms(b.value));
 
     const snoozeFor = (option: Option) => {
-        resetReminder(currentRun.id, ms(option.value) / 1000);
+        resetReminder(playbookRun.id, ms(option.value) / 1000);
     };
 
     const SelectContainer = ({children, ...ownProps}: ContainerProps<Option, boolean>) => {
@@ -100,7 +101,7 @@ export const UpdateRequestPost = (props: Props) => {
                     onClick={() => {
                         dispatch(promptUpdateStatus(
                             team.id,
-                            currentRun?.id,
+                            playbookRun?.id,
                             props.post.channel_id,
                         ));
                     }}

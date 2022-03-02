@@ -7,11 +7,12 @@ import {Team} from 'mattermost-redux/types/teams';
 import React, {useRef, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
-
 import styled from 'styled-components';
 
+import {Redirect} from 'react-router-dom';
+
 import {displayPlaybookCreateModal} from 'src/actions';
-import {PrimaryButton, UpgradeButtonProps} from 'src/components/assets/buttons';
+import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
 import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
@@ -19,16 +20,13 @@ import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
 import PlaybookListRow from 'src/components/backstage/playbook_list_row';
-import {ExpandRight, HorizontalSpacer} from 'src/components/backstage/playbook_runs/shared';
+import {ExpandRight} from 'src/components/backstage/playbook_runs/shared';
 import SearchInput from 'src/components/backstage/search_input';
-import {BackstageSubheader} from 'src/components/backstage/styles';
-import TemplateSelector, {
-    isPlaybookCreationAllowed,
-} from 'src/components/backstage/template_selector';
-import UpgradeModal from 'src/components/backstage/upgrade_modal';
+import {BackstageSubheader, HorizontalSpacer} from 'src/components/backstage/styles';
+import TemplateSelector from 'src/components/templates/template_selector';
 import {PaginationRow} from 'src/components/pagination_row';
 import {SortableColHeader} from 'src/components/sortable_col_header';
-import {AdminNotificationType, BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
+import {BACKSTAGE_LIST_PER_PAGE} from 'src/constants';
 import {
     useCanCreatePlaybooksOnAnyTeam,
     usePlaybooksCrud,
@@ -36,46 +34,116 @@ import {
 } from 'src/hooks';
 import {Playbook} from 'src/types/playbook';
 
+import PresetTemplates from 'src/components/templates/template_data';
+
+import {RegularHeading} from 'src/styles/headings';
+
+import {importFile, fetchPlaybookRuns} from 'src/client';
+
+import Spinner from '../assets/icons/spinner';
+
+import TeamSelector from '../team/team_selector';
+
+import {navigateToPluginUrl, pluginUrl} from 'src/browser_routing';
+
+import CheckboxInput from './runs_list/checkbox_input';
+
 import useConfirmPlaybookArchiveModal from './archive_playbook_modal';
+import NoContentPage from './playbook_list_getting_started';
+import useConfirmPlaybookRestoreModal from './restore_playbook_modal';
 
 const PlaybooksHeader = styled(BackstageSubheader)`
     display: flex;
     padding: 4rem 0 3.2rem;
+    align-items: center;
 `;
 
-const ContainerMedium = styled.div`
+const ContainerMedium = styled.article`
     margin: 0 auto;
     max-width: 1160px;
     padding: 0 20px;
+    scroll-margin-top: 20px;
 `;
 
-const PlaybookContainer = styled.div`
+const PlaybookListContainer = styled.div`
     font-family: $font-family;
     color: rgba(var(--center-channel-color-rgb), 0.90);
+
 `;
 
-const PlaybookList = () => {
+const CreatePlaybookHeader = styled(BackstageSubheader)`
+    margin-top: 4rem;
+    padding: 4rem 0 3.2rem;
+`;
+export const Heading = styled.h1`
+    ${RegularHeading} {
+    }
+    font-size: 2.8rem;
+    line-height: 3.6rem;
+    margin: 0;
+`;
+
+const Sub = styled.p`
+    font-size: 16px;
+    line-height: 24px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+    font-weight: 400;
+    max-width: 650px;
+    margin-top: 12px;
+`;
+
+const AltCreatePlaybookHeader = styled(BackstageSubheader)`
+    margin-top: 1rem;
+    padding-top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+`;
+
+export const AltHeading = styled(Heading)`
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 28px;
+    text-align: center;
+`;
+
+const AltSub = styled(Sub)`
+    text-align: center;
+    margin-bottom: 36px;
+`;
+
+const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const {formatMessage} = useIntl();
     const canCreatePlaybooks = useCanCreatePlaybooksOnAnyTeam();
     const teams = useSelector<GlobalState, Team[]>(getMyTeams);
-    const bottomHalf = useRef<JSX.Element | null>(null);
+    const content = useRef<JSX.Element | null>(null);
     const dispatch = useDispatch();
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [importUploading, setImportUploading] = useState(false);
+    const [importTargetTeam, setImportTargetTeam] = useState('');
+    const selectorRef = useRef<HTMLDivElement>(null);
 
     const [
         playbooks,
-        {isLoading, totalCount, params, selectedPlaybook},
-        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, duplicatePlaybook, setSearchTerm, isFiltering},
+        {isLoading, totalCount, params},
+        {setPage, sortBy, setSelectedPlaybook, archivePlaybook, restorePlaybook, duplicatePlaybook, setSearchTerm, isFiltering, setWithArchived},
     ] = usePlaybooksCrud({team_id: '', per_page: BACKSTAGE_LIST_PER_PAGE});
 
     const [confirmArchiveModal, openConfirmArchiveModal] = useConfirmPlaybookArchiveModal(archivePlaybook);
+    const [confirmRestoreModal, openConfirmRestoreModal] = useConfirmPlaybookRestoreModal();
 
     const {view, edit} = usePlaybooksRouting<Playbook>({onGo: setSelectedPlaybook});
 
-    const newPlaybook = (team: Team, templateTitle?: string) => {
-        dispatch(displayPlaybookCreateModal({startingTeamId: team.id, startingTemplate: templateTitle}));
+    const hasPlaybooks = Boolean(playbooks?.length);
+
+    if (props.firstTimeUserExperience && hasPlaybooks) {
+        return <Redirect to={pluginUrl('/playbooks')}/>;
+    }
+
+    const scrollToTemplates = () => {
+        selectorRef.current?.scrollIntoView({behavior: 'smooth'});
     };
 
-    const hasPlaybooks = playbooks?.length !== 0;
     let listBody: JSX.Element | JSX.Element[] | null = null;
     if (!hasPlaybooks && isFiltering) {
         listBody = (
@@ -91,23 +159,45 @@ const PlaybookList = () => {
                 displayTeam={teams.length > 1}
                 onClick={() => view(p)}
                 onEdit={() => edit(p)}
+                onRestore={() => openConfirmRestoreModal(p)}
                 onArchive={() => openConfirmArchiveModal(p)}
                 onDuplicate={() => duplicatePlaybook(p.id)}
             />
         ));
     }
 
-    const makeBottomHalf = () => {
-        if (!hasPlaybooks && !isFiltering) {
+    const makePlaybookList = () => {
+        if (props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering)) {
             return (
                 <>
                     <NoContentPage
                         canCreatePlaybooks={canCreatePlaybooks}
+                        scrollToNext={scrollToTemplates}
                     />
                     <NoContentPlaybookSvg/>
                 </>
             );
         }
+
+        const importUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                let teamId = teams[0].id;
+
+                if (teams.length !== 1) {
+                    teamId = importTargetTeam;
+                }
+
+                setImportUploading(true);
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    const {id} = await importFile(ev?.target?.result, teamId);
+                    setImportUploading(false);
+                    navigateToPluginUrl(`/playbooks/${id}`);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        };
 
         return (
             <>
@@ -117,7 +207,9 @@ const PlaybookList = () => {
                 <LeftFade/>
                 <ContainerMedium>
                     <PlaybooksHeader data-testid='titlePlaybook'>
-                        <FormattedMessage defaultMessage='Playbooks'/>
+                        <Heading>
+                            {formatMessage({defaultMessage: 'Playbooks'})}
+                        </Heading>
                         <ExpandRight/>
                         <SearchInput
                             testId={'search-filter'}
@@ -125,6 +217,49 @@ const PlaybookList = () => {
                             onSearch={setSearchTerm}
                             placeholder={formatMessage({defaultMessage: 'Search for a playbook'})}
                         />
+                        <HorizontalSpacer size={12}/>
+                        <CheckboxInput
+                            testId={'with-archived'}
+                            text={formatMessage({defaultMessage: 'With archived'})}
+                            checked={params.with_archived}
+                            onChange={setWithArchived}
+                        />
+                        <HorizontalSpacer size={12}/>
+                        <input
+                            type='file'
+                            accept='*.json,application/JSON'
+                            onChange={importUpload}
+                            ref={fileInputRef}
+                            style={{display: 'none'}}
+                        />
+                        { teams.length > 1 &&
+                        <TeamSelector
+                            placeholder={
+                                <ImportButton
+                                    spin={importUploading}
+                                />
+                            }
+                            onlyPlaceholder={true}
+                            enableEdit={true}
+                            teams={teams}
+                            onSelectedChange={(teamId: string) => {
+                                setImportTargetTeam(teamId);
+                                if (fileInputRef && fileInputRef.current) {
+                                    fileInputRef.current.click();
+                                }
+                            }}
+                        />
+                        }
+                        { teams.length <= 1 &&
+                        <ImportButton
+                            onClick={() => {
+                                if (fileInputRef && fileInputRef.current) {
+                                    fileInputRef.current.click();
+                                }
+                            }}
+                            spin={importUploading}
+                        />
+                        }
                         {canCreatePlaybooks &&
                         <>
                             <HorizontalSpacer size={12}/>
@@ -184,19 +319,59 @@ const PlaybookList = () => {
     };
 
     // If we don't have a bottomHalf, create it. Or if we're loading new playbooks, use the previous body.
-    if (!bottomHalf.current || !isLoading) {
-        bottomHalf.current = makeBottomHalf();
+    if (!content.current || !isLoading) {
+        content.current = makePlaybookList();
     }
 
     return (
-        <PlaybookContainer>
-            {
-                canCreatePlaybooks &&
-                <TemplateSelector/>
-            }
-            {bottomHalf.current}
+        <PlaybookListContainer>
+            {content.current}
+            {canCreatePlaybooks && (
+                <>
+                    <ContainerMedium ref={selectorRef}>
+                        {props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? (
+                            <AltCreatePlaybookHeader>
+                                <AltHeading>
+                                    {formatMessage({defaultMessage: 'Choose a template'})}
+                                </AltHeading>
+                                <AltSub>
+                                    {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
+                                </AltSub>
+                            </AltCreatePlaybookHeader>
+                        ) : (
+                            <CreatePlaybookHeader>
+                                <Heading>
+                                    {formatMessage({defaultMessage: 'Do more with Playbooks'})}
+                                </Heading>
+                                <Sub>
+                                    {formatMessage({defaultMessage: 'There are templates for a range of use cases and events. You can use a playbook as-is or customize it—then share it with your team.'})}
+                                </Sub>
+                            </CreatePlaybookHeader>
+                        )}
+                        <TemplateSelector
+                            templates={props.firstTimeUserExperience || (!hasPlaybooks && !isFiltering) ? swapEnds(PresetTemplates) : PresetTemplates}
+                        />
+                    </ContainerMedium>
+                </>
+            )}
             {confirmArchiveModal}
-        </PlaybookContainer>
+            {confirmRestoreModal}
+        </PlaybookListContainer>
+    );
+};
+
+function swapEnds(arr: Array<any>) {
+    return [arr[arr.length - 1], ...arr.slice(1, -1), arr[0]];
+}
+
+const ImportButton = (props: {onClick?: () => void, spin: boolean}) => {
+    return (
+        <TertiaryButton
+            onClick={props.onClick}
+        >
+            <FormattedMessage defaultMessage='Import'/>
+            {props.spin && <Spinner/>}
+        </TertiaryButton>
     );
 };
 
@@ -218,18 +393,6 @@ const CreatePlaybookButton = styled(PrimaryButton)`
     display: flex;
     align-items: center;
 `;
-
-const NotAllowedIcon = styled.i`
-    color: var(--online-indicator);
-    position: absolute;
-    top: -4px;
-    right: -6px;
-    width: 16px;
-    height: 16px;
-    background-color: white;
-    border-radius: 50%;
-`;
-
 export const useUpgradeModalVisibility = (initialState: boolean): [boolean, () => void, () => void] => {
     const [isModalShown, setShowModal] = useState(initialState);
 
@@ -241,61 +404,6 @@ export const useUpgradeModalVisibility = (initialState: boolean): [boolean, () =
     };
 
     return [isModalShown, showUpgradeModal, hideUpgradeModal];
-};
-
-const Container = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0 20px;
-`;
-
-const Title = styled.h2`
-    padding-top: 110px;
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: normal;
-    font-size: 28px;
-    color: var(--center-channel-color);
-    text-align: center;
-`;
-
-const Description = styled.h5`
-    font-family: Open Sans;
-    font-style: normal;
-    font-weight: normal;
-    font-size: 16px;
-    line-height: 24px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-    text-align: center;
-    max-width: 800px;
-`;
-
-const DescriptionWarn = styled(Description)`
-    color: rgba(var(--error-text-color-rgb), 0.72);
-`;
-
-const NoContentPage = (props: { canCreatePlaybooks: boolean }) => {
-    return (
-        <Container>
-            <Title><FormattedMessage defaultMessage='What is a playbook?'/></Title>
-            <Description>
-                <FormattedMessage
-                    defaultMessage='A playbook is a workflow that your teams and tools should follow, including everything from checklists, actions, templates, and retrospectives.'
-                />
-            </Description>
-            {props.canCreatePlaybooks &&
-            <PlaybookModalButton/>
-            }
-            {!props.canCreatePlaybooks &&
-            <DescriptionWarn>
-                <FormattedMessage
-                    defaultMessage="There are no playbooks to view. You don't have permission to create playbooks in this workspace."
-                />
-            </DescriptionWarn>
-            }
-        </Container>
-    );
 };
 
 export default PlaybookList;

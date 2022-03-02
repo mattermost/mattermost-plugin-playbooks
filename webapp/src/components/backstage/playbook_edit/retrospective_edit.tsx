@@ -14,6 +14,8 @@ import {
 } from 'src/components/backstage/styles';
 import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playbook';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
+import Metrics from 'src/components/backstage/playbook_edit/metrics/metrics';
+import {EditingMetric} from 'src/components/backstage/playbook_edit/playbook_edit';
 
 const retrospectiveReminderOptions = [
     {value: 0, label: 'Once'},
@@ -26,8 +28,10 @@ const retrospectiveReminderOptions = [
 interface Props {
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
     retrospectiveAccess: boolean;
-    setPlaybook: (playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist) => void;
+    setPlaybook: React.Dispatch<React.SetStateAction<DraftPlaybookWithChecklist | PlaybookWithChecklist>>;
     setChangesMade: (b: boolean) => void;
+    curEditingMetric: EditingMetric | null;
+    setCurEditingMetric: React.Dispatch<React.SetStateAction<EditingMetric | null>>;
 }
 
 const RetrospectiveEdit = ({
@@ -35,6 +39,8 @@ const RetrospectiveEdit = ({
     retrospectiveAccess,
     setPlaybook,
     setChangesMade,
+    curEditingMetric,
+    setCurEditingMetric,
 }: Props) => {
     const {formatMessage} = useIntl();
 
@@ -63,7 +69,6 @@ const RetrospectiveEdit = ({
                     {formatMessage({defaultMessage: 'Enable retrospective'})}
                 </BackstageGroupToggleHeader>
             </SidebarBlock>
-
             <SidebarBlock id={'retrospective-reminder-interval'}>
                 <BackstageSubheader>
                     {formatMessage({defaultMessage: 'Retrospective reminder interval'})}
@@ -83,6 +88,22 @@ const RetrospectiveEdit = ({
                     options={retrospectiveReminderOptions}
                     isClearable={false}
                     isDisabled={!playbook.retrospective_enabled}
+                />
+            </SidebarBlock>
+            <SidebarBlock id={'retrospective-metrics'}>
+                <BackstageSubheader>
+                    {formatMessage({defaultMessage: 'Key metrics'})}
+                    <BackstageSubheaderDescription>
+                        {formatMessage({defaultMessage: 'Configure custom metrics to fill out with the retrospective report'})}
+                    </BackstageSubheaderDescription>
+                </BackstageSubheader>
+                <Metrics
+                    playbook={playbook}
+                    setPlaybook={setPlaybook}
+                    setChangesMade={setChangesMade}
+                    curEditingMetric={curEditingMetric}
+                    setCurEditingMetric={setCurEditingMetric}
+                    disabled={!playbook.retrospective_enabled}
                 />
             </SidebarBlock>
             <SidebarBlock>

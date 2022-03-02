@@ -19,6 +19,7 @@ import {
     isPlaybookRun,
     isMetadata,
     Metadata,
+    RunMetricData,
 } from 'src/types/playbook_run';
 
 import {setTriggerId} from 'src/actions';
@@ -31,10 +32,9 @@ import {
     PlaybookWithChecklist,
     DraftPlaybookWithChecklist,
     Playbook,
-    FetchPlaybooksCountReturn,
 } from 'src/types/playbook';
 import {PROFILE_CHUNK_SIZE, AdminNotificationType} from 'src/constants';
-
+import {ChannelAction} from 'src/types/channel_actions';
 import {EmptyPlaybookStats, PlaybookStats, Stats} from 'src/types/stats';
 
 import {pluginId} from './manifest';
@@ -82,6 +82,17 @@ export async function fetchPlaybookRun(id: string) {
     }
 
     return data as PlaybookRun;
+}
+
+export async function createPlaybookRun(playbook_id: string, owner_user_id: string, team_id: string, name: string, description: string) {
+    const run = await doPost(`${apiUrl}/runs`, JSON.stringify({
+        owner_user_id,
+        team_id,
+        name,
+        description,
+        playbook_id,
+    }));
+    return run as PlaybookRun;
 }
 
 export async function postStatusUpdate(
@@ -148,8 +159,8 @@ export async function fetchPlaybookRunByChannel(channelId: string) {
     return data as PlaybookRun;
 }
 
-export async function fetchCheckAndSendMessageOnJoin(playbookRunID: string, channelId: string) {
-    const data = await doGet(`${apiUrl}/runs/${playbookRunID}/check-and-send-message-on-join/${channelId}`);
+export async function fetchCheckAndSendMessageOnJoin(channelId: string) {
+    const data = await doGet(`${apiUrl}/actions/channels/${channelId}/check-and-send-message-on-join`);
     return Boolean(data.viewed);
 }
 
@@ -228,6 +239,18 @@ export async function archivePlaybook(playbookId: Playbook['id']) {
     const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}`, {
         method: 'delete',
     });
+    return data;
+}
+
+export async function restorePlaybook(playbookId: Playbook['id']) {
+    const {data} = await doFetchWithTextResponse(`${apiUrl}/playbooks/${playbookId}/restore`, {
+        method: 'put',
+    });
+    return data;
+}
+
+export async function importFile(file: any, teamId: string) {
+    const data = await doPost(`${apiUrl}/playbooks/import?team_id=${teamId}`, file);
     return data;
 }
 
@@ -433,18 +456,20 @@ export async function fetchGlobalSettings(): Promise<GlobalSettings> {
     return globalSettingsSetDefaults(data);
 }
 
-export async function updateRetrospective(playbookRunID: string, updatedText: string) {
+export async function updateRetrospective(playbookRunID: string, updatedText: string, metrics: RunMetricData[]) {
     const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective`,
         JSON.stringify({
             retrospective: updatedText,
+            metrics,
         }));
     return data;
 }
 
-export async function publishRetrospective(playbookRunID: string, currentText: string) {
+export async function publishRetrospective(playbookRunID: string, currentText: string, metrics: RunMetricData[]) {
     const data = await doPost(`${apiUrl}/runs/${playbookRunID}/retrospective/publish`,
         JSON.stringify({
             retrospective: currentText,
+            metrics,
         }));
     return data;
 }
@@ -570,6 +595,35 @@ export const resetReminder = async (playbookRunId: string, newReminderSeconds: n
     });
 };
 
+export const fetchChannelActions = async (channelID: string, triggerType?: string): Promise<Record<string, ChannelAction>> => {
+    const queryParams = triggerType ? `?trigger_type=${triggerType}` : '';
+    const data = await doGet(`${apiUrl}/actions/channels/${channelID}${queryParams}`);
+    if (!data) {
+        return {};
+    }
+
+    const actions = data as ChannelAction[];
+    const record: Record<string, ChannelAction> = {};
+    actions.forEach((action) => {
+        record[action.action_type] = action;
+    });
+
+    return record;
+};
+
+export const saveChannelAction = async (action: ChannelAction): Promise<string> => {
+    if (!action.id) {
+        const data = await doPost(`${apiUrl}/actions/channels/${action.channel_id}`, JSON.stringify(action));
+        return data.id;
+    }
+
+    await doFetchWithoutResponse(`${apiUrl}/actions/channels/${action.channel_id}/${action.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(action),
+    });
+    return action.id;
+};
+
 export const doGet = async <TData = any>(url: string) => {
     const {data} = await doFetchWithResponse<TData>(url, {method: 'get'});
 
@@ -670,4 +724,10 @@ export const doFetchWithoutResponse = async (url: string, options = {}) => {
         status_code: response.status,
         url,
     });
+};
+
+export const playbookExportProps = (playbook: Playbook) => {
+    const href = `${apiUrl}/playbooks/${playbook.id}/export`;
+    const filename = playbook.title.split(/\s+/).join('_').toLowerCase() + '_playbook.json';
+    return [href, filename];
 };

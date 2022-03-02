@@ -9,12 +9,11 @@ import {DraftPlaybookWithChecklist, PlaybookWithChecklist} from 'src/types/playb
 import {PatternedInput} from 'src/components/backstage/playbook_edit/automation/patterned_input';
 import {AutomationHeader, AutomationTitle} from 'src/components/backstage/playbook_edit/automation/styles';
 import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
-import {RadioInput} from 'src/components/backstage/styles';
-import {HorizontalSpacer} from 'src/components/backstage/playbook_runs/shared';
+import {HorizontalSpacer, RadioInput} from 'src/components/backstage/styles';
 
 interface Props {
     playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist;
-    setPlaybook: (playbook: DraftPlaybookWithChecklist | PlaybookWithChecklist) => void;
+    setPlaybook: React.Dispatch<React.SetStateAction<DraftPlaybookWithChecklist | PlaybookWithChecklist>>;
     setChangesMade: (b: boolean) => void;
 }
 
