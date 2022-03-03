@@ -251,6 +251,7 @@
   "XmUdvV": "All the statistics you need",
   "XpDetT": "Opt out of these tips.",
   "Y4MU/9": "Select <strong>Start a test run</strong> to see it in action.",
+  "Y69m2M": "{followers, plural, =0 {No users} =1 {One user} other {# users}} automatically following this run",
   "YDuW/T": "{num_runs, plural, =0 {Not run yet} one {# run} other {# total runs}}",
   "YKn+7s": "This channel is not running any playbook.",
   "YMrTRm": "Run Summary",
