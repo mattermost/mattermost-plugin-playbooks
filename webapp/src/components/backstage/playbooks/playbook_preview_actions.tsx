@@ -19,6 +19,7 @@ import Tooltip from 'src/components/widgets/tooltip';
 interface Props {
     id: string;
     playbook: PlaybookWithChecklist;
+    followerIds: string[];
 }
 
 const PlaybookPreviewActions = (props: Props) => {
@@ -68,7 +69,7 @@ const PlaybookPreviewActions = (props: Props) => {
             id={props.id}
             title={formatMessage({defaultMessage: 'Actions'})}
         >
-            <Card>
+            <Card data-testid='playbook-preview-actions'>
                 <CardEntry
                     title={formatMessage(
                         {defaultMessage: 'Prompt to run this playbook when a message contains {numKeywords, select, 1 {the keyword} other {one or more of these}}'},
@@ -111,6 +112,21 @@ const PlaybookPreviewActions = (props: Props) => {
                             </UserRow>
                         )}
                         enabled={inviteUsersEnabled}
+                    />
+                    <CardSubEntry
+                        title={formatMessage(
+                            {defaultMessage: '{followers, plural, =0 {No users} =1 {One user} other {# users}} automatically following this run'},
+                            {followers: props.followerIds.length}
+                        )}
+                        extraInfo={(
+                            <UserRow>
+                                <UserList
+                                    userIds={props.followerIds}
+                                    sizeInPx={20}
+                                />
+                            </UserRow>
+                        )}
+                        enabled={true}
                     />
                     <CardSubEntry
                         title={formatMessage({

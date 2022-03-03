@@ -102,3 +102,8 @@ type PlaybookStats struct {
 	ActiveParticipantsPerDay      []int     `json:"active_participants_per_day"`
 	ActiveParticipantsPerDayTimes [][]int64 `json:"active_participants_per_day_times"`
 }
+
+type GetPlaybookFollowersResults struct {
+	TotalCount int      `json:"total_count"`
+	Items      []string `json:"items"`
+}

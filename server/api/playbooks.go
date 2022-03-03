@@ -59,6 +59,7 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	playbookRouter.HandleFunc("/duplicate", handler.duplicatePlaybook).Methods(http.MethodPost)
 
 	autoFollowsRouter := playbookRouter.PathPrefix("/autofollows").Subrouter()
+	autoFollowsRouter.HandleFunc("", handler.getAutoFollows).Methods(http.MethodGet)
 	autoFollowRouter := autoFollowsRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
 	autoFollowRouter.HandleFunc("", handler.autoFollow).Methods(http.MethodPut)
 	autoFollowRouter.HandleFunc("", handler.autoUnfollow).Methods(http.MethodDelete)
@@ -529,6 +530,31 @@ func (h *PlaybookHandler) isAutoFollowing(w http.ResponseWriter, r *http.Request
 	}
 
 	ReturnJSON(w, isAutoFollowing, http.StatusOK)
+}
+
+// getAutoFollows returns the list of users that have marked this playbook for auto-following runs
+func (h *PlaybookHandler) getAutoFollows(w http.ResponseWriter, r *http.Request) {
+	playbookID := mux.Vars(r)["id"]
+	currentUserID := r.Header.Get("Mattermost-User-ID")
+
+	if !h.PermissionsCheck(w, h.permissions.PlaybookView(currentUserID, playbookID)) {
+		return
+	}
+
+	autoFollowers, err := h.playbookService.GetAutoFollows(playbookID)
+	if err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	result := struct {
+		Items      []string `json:"items"`
+		TotalCount int      `json:"total_count"`
+	}{
+		Items:      autoFollowers,
+		TotalCount: len(autoFollowers),
+	}
+	ReturnJSON(w, result, http.StatusOK)
 }
 
 func (h *PlaybookHandler) exportPlaybook(w http.ResponseWriter, r *http.Request) {

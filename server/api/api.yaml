@@ -1652,6 +1652,39 @@ paths:
         500:
           $ref: "#/components/schemas/500"
 
+  /playbooks/{id}/autofollows:
+    get:
+      summary: Get the list of followers user ids of a playbook
+      operationId: getAutoFollows
+      security:
+        - BearerAuth: []
+      tags:
+        - PlaybookAutofollows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the playbook to retrieve followers from.
+          schema:
+            type: string
+            example: iz0g457ikesz55dhxcfa0fk9yy
+      x-codeSamples:
+        - lang: curl
+          source: |
+            curl -X GET 'http://localhost:8065/plugins/playbooks/api/v0/playbooks/iz0g457ikesz55dhxcfa0fk9yy/autofollows' \
+            -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
+      responses:
+        200:
+          description: List of the user ids who follow the playbook.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaybookAutofollows"
+        403:
+          $ref: "#/components/schemas/403"
+        500:
+          $ref: "#/components/schemas/500"
+
 components:
   securitySchemes:
     BearerAuth:
@@ -1796,6 +1829,19 @@ components:
           description: The playbook runs in this page.
           items:
             $ref: "#/components/schemas/PlaybookRun"
+    PlaybookAutofollows:
+      type: object
+      properties:
+        total_count:
+          type: integer
+          description: The total number of users who marked this playbook to auto-follow runs.
+          format: int32
+          example: 12
+        items:
+          type: array
+          description: The user ids of who marked this playbook to auto-follow.
+          items:
+            type: string
     OwnerInfo:
       type: object
       required:
@@ -1987,7 +2033,7 @@ components:
               example: http://example.com/ad-1/playbooks/runs/playbookRunID
     WebhookOnStatusUpdatePayload:
       allOf:
-        - $ref: '#/components/schemas/PlaybookRun'
+        - $ref: "#/components/schemas/PlaybookRun"
         - type: object
           properties:
             channel_url:

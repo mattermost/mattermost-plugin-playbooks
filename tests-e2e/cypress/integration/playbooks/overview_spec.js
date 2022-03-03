@@ -10,6 +10,7 @@ import {stubClipboard} from '../../utils';
 describe('playbooks > overview', () => {
     let testTeam;
     let testUser;
+    let testUserFollower;
     let testPublicPlaybook;
     let testPrivateOnlyMinePlaybook;
     let testPrivateSharedPlaybook;
@@ -18,6 +19,11 @@ describe('playbooks > overview', () => {
         cy.apiInitSetup().then(({team, user}) => {
             testTeam = team;
             testUser = user;
+            // # Create a dedicated run follower
+            cy.apiCreateUser().then(({user: createdUser}) => {
+                testUserFollower = createdUser;
+                cy.apiAddUserToTeam(testTeam.id, createdUser.id);
+            });
 
             // # Create another user
             cy.apiCreateUser().then(({user: anotherUser}) => {
@@ -53,6 +59,8 @@ describe('playbooks > overview', () => {
                     testPrivateSharedPlaybook = playbook;
                 });
             });
+
+
         });
     });
 
@@ -150,6 +158,59 @@ describe('playbooks > overview', () => {
             });
         });
     });
+
+    it.only('show followers in actions preview', () => {
+        let playbookId ;
+        cy.apiCreatePlaybook({
+            teamId: testTeam.id,
+            title: 'Playbook',
+            description: 'Cypress Playbook',
+            memberIDs: [testUser.id],
+            checklists: [
+                {
+                    title: 'Stage 1',
+                    items: [
+                        {title: 'Step 1'},
+                        {title: 'Step 2'},
+                    ],
+                },
+            ],
+            retrospectiveTemplate: 'Cypress test template'
+        }).then((playbook) => {
+            playbookId = playbook.id
+            cy.visit(`/playbooks/playbooks/${playbook.id}`);
+
+            // * Verify we don't have any follower
+            cy.findByTestId('preview-content').within(() => {
+                cy.findByText('No users automatically following this run').should('exist');
+            });
+            // * set myself as follower and check message in preview
+            cy.findByTestId('auto-follow-runs').click({force:true});
+            cy.findByTestId('preview-content').within(() => {
+                cy.findByText('One user automatically following this run').should('exist');
+            });
+
+            // # login as other follower and follow playbook
+            cy.apiLogin(testUserFollower)
+            cy.visit(`/playbooks/playbooks/${playbook.id}`);
+
+            // * set testUserFollower as follower and check message in preview
+            cy.findByTestId('auto-follow-runs').click({force:true});
+            cy.findByTestId('preview-content').within(() => {
+                cy.findByText('2 users automatically following this run').should('exist');
+            });
+
+            // * set testUserFollower as no follower and check message in preview
+            cy.findByTestId('auto-follow-runs').click({force:true});
+            cy.findByTestId('preview-content').within(() => {
+                cy.findByText('One user automatically following this run').should('exist');
+            });
+        });
+
+
+
+
+    })
 
     it('shows status update timer', () => {
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
