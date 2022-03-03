@@ -42,6 +42,8 @@ type Client struct {
 	Playbooks *PlaybooksService
 	// Settings is a collection of methods used to interact with settings.
 	Settings *SettingsService
+	// Actions is a collection of methods used to interact with actions.
+	Actions *ActionsService
 }
 
 // New creates a new instance of Client using the configuration from the given Mattermost Client.
@@ -65,6 +67,7 @@ func newClient(mattermostSiteURL string, httpClient *http.Client) (*Client, erro
 	c.PlaybookRuns = &PlaybookRunService{c}
 	c.Playbooks = &PlaybooksService{c}
 	c.Settings = &SettingsService{c}
+	c.Actions = &ActionsService{c}
 	return c, nil
 }
 

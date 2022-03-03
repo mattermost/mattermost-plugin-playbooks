@@ -13,7 +13,7 @@ interface ToggleProps {
 
 export const Toggle = (props: ToggleProps) => {
     return (
-        <Label>
+        <Label disabled={props.disabled}>
             <InvisibleInput
                 type='checkbox'
                 onChange={props.onChange}
@@ -25,14 +25,13 @@ export const Toggle = (props: ToggleProps) => {
     );
 };
 
-interface RoundSwitchProps {
+interface DisabledProps {
     disabled?: boolean;
 }
 
-const RoundSwitch = styled.span<RoundSwitchProps>`
+const RoundSwitch = styled.span<DisabledProps>`
     position: relative;
     display: inline-block;
-    cursor: pointer;
     top: 0;
     left: 0;
     right: 0;
@@ -75,7 +74,7 @@ const InvisibleInput = styled.input`
     display: none;
 `;
 
-const Label = styled.label`
-    margin: 0 12px 0 0;
+const Label = styled.label<DisabledProps>`
     line-height: 0;
+    cursor: ${({disabled}) => (disabled ? 'default' : 'pointer')};
 `;

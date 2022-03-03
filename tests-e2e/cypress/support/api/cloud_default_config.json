@@ -29,7 +29,9 @@
         "EnableSVGs": true,
         "EnableLatex": false,
         "EnableLegacySidebar": false,
-        "EnableOnboardingFlow": false
+        "EnableOnboardingFlow": false,
+        "ThreadAutoFollow": true,
+        "CollapsedThreads": "default_off"
     },
     "TeamSettings": {
         "SiteName": "Mattermost",
