@@ -31,7 +31,7 @@ const PlaybookUsage = (props: Props) => {
 
     useEffect(() => {
         setFetchParams((oldParams) => {
-            return {...oldParams, playbook_id: props.playbook.id};
+            return {...oldParams, playbook_id: props.playbook.id, page: 0};
         });
     }, [props.playbook.id, setFetchParams]);
 
