@@ -839,8 +839,7 @@ func TestPlaybooksImportExport(t *testing.T) {
 	e := Setup(t)
 	e.CreateClients()
 	e.CreateBasicServer()
-	e.SetE20Licence()
-	e.CreateBasicPlaybook()
+	e.CreateBasicPublicPlaybook()
 
 	t.Run("Export", func(t *testing.T) {
 		result, err := e.PlaybooksClient.Playbooks.Export(context.Background(), e.BasicPlaybook.ID)
