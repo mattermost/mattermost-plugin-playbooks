@@ -336,8 +336,8 @@ type SQLStatusPost struct {
 }
 
 type RunMetricData struct {
-	MetricConfigID string
-	Value          null.Int
+	MetricConfigID string   `json:"metric_config_id"`
+	Value          null.Int `json:"value"`
 }
 
 type RetrospectiveUpdate struct {
@@ -557,12 +557,12 @@ type PlaybookRunService interface {
 	// CancelRetrospective cancels the retrospective.
 	CancelRetrospective(playbookRunID, userID string) error
 
-	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
-	// playbooRun.MessageOnJoin if it exists. Returns true if the message was sent.
-	CheckAndSendMessageOnJoin(userID, playbookRunID, channelID string) bool
-
 	// UpdateDescription updates the description of the specified playbook run.
 	UpdateDescription(playbookRunID, description string) error
+
+	// EphemeralPostTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
+	// and sends an ephemeral post to userID on channelID. Use force = true to post even if there are no items.
+	EphemeralPostTodoDigestToUser(userID string, channelID string, force bool) error
 
 	// DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
 	// and DMs the message to userID. Use force = true to DM even if there are no items.
@@ -638,13 +638,6 @@ type PlaybookRunStore interface {
 
 	// ChangeCreationDate changes the creation date of the specified playbook run.
 	ChangeCreationDate(playbookRunID string, creationTimestamp time.Time) error
-
-	// HasViewedChannel returns true if userID has viewed channelID
-	HasViewedChannel(userID, channelID string) bool
-
-	// SetViewedChannel records that userID has viewed channelID. NOTE: does not check if there is already a
-	// record of that userID/channelID (i.e., will create duplicate rows)
-	SetViewedChannel(userID, channelID string) error
 
 	// GetBroadcastChannelIDsToRootIDs takes a playbookRunID and returns the mapping of
 	// broadcastChannelID->rootID (to keep track of the status updates thread in each of the
@@ -848,6 +841,7 @@ func (o PlaybookRunFilterOptions) Validate() (PlaybookRunFilterOptions, error) {
 	case SortByEndAt:
 	case SortByStatus:
 	case SortByLastStatusUpdateAt:
+	case SortByMetric0, SortByMetric1, SortByMetric2, SortByMetric3:
 	case "": // default
 		options.Sort = SortByCreateAt
 	default:

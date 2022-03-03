@@ -30,7 +30,6 @@ import Profile from 'src/components/profile/profile';
 import ProfileSelector, {Option as ProfileOption} from 'src/components/profile/profile_selector';
 import {HoverMenu, HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
 import {useClickOutsideRef, useProfilesInCurrentChannel, useTimeout, useProfilesInTeam} from 'src/hooks';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
@@ -179,7 +178,7 @@ export const CheckboxContainer = styled.div`
         text-rendering: auto;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        content: "\f12c";
+        content: "\f012c";
         font-size: 12px;
         font-weight: bold;
         color: #ffffff;
@@ -384,8 +383,6 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const [running, setRunning] = useState(false);
     const [lastRun, setLastRun] = useState(props.checklistItem.command_last_run);
     const [showMenu, setShowMenu] = useState(false);
-    const [showSkipConfirm, setShowSkipConfirm] = useState(false);
-    const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
 
     // Immediately stop the running indicator when we get notified of a more recent execution.
@@ -492,9 +489,15 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                     className={(props.checklistItem.state === ChecklistItemState.Skip) ? 'icon-refresh icon-16 btn-icon' : 'icon-close-circle-outline icon-16 btn-icon'}
                                     onClick={() => {
                                         if (props.checklistItem.state === ChecklistItemState.Skip) {
-                                            setShowRestoreConfirm(true);
+                                            clientRestoreChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
+                                            if (props.onChange) {
+                                                props.onChange(ChecklistItemState.Open);
+                                            }
                                         } else {
-                                            setShowSkipConfirm(true);
+                                            clientSkipChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
+                                            if (props.onChange) {
+                                                props.onChange(ChecklistItemState.Skip);
+                                            }
                                         }
                                     }}
                                 />
@@ -562,36 +565,6 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     }
                 </ExtrasRow>
             </ItemContainer>
-            <ConfirmModal
-                show={showSkipConfirm}
-                title={formatMessage({defaultMessage: 'Skip task'})}
-                message={formatMessage({defaultMessage: 'Are you sure you want to skip this task? This will be crossed from this run but will not affect the playbook.'})}
-                confirmButtonText={formatMessage({defaultMessage: 'Skip'})}
-                onConfirm={() => {
-                    clientSkipChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
-                    if (props.onChange) {
-                        props.onChange(ChecklistItemState.Skip);
-                    }
-                    setShowSkipConfirm(false);
-                }
-                }
-                onCancel={() => setShowSkipConfirm(false)}
-            />
-            <ConfirmModal
-                show={showRestoreConfirm}
-                title={formatMessage({defaultMessage: 'Restore task'})}
-                message={formatMessage({defaultMessage: 'Are you sure you want to Restore this task? This Task will be added to this run'})}
-                confirmButtonText={formatMessage({defaultMessage: 'Restore'})}
-                onConfirm={() => {
-                    clientRestoreChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum);
-                    if (props.onChange) {
-                        props.onChange(ChecklistItemState.Open);
-                    }
-                    setShowRestoreConfirm(false);
-                }
-                }
-                onCancel={() => setShowRestoreConfirm(false)}
-            />
             <ChecklistItemEditModal
                 show={showEditDialog}
                 playbookRunId={props.playbookRunId}

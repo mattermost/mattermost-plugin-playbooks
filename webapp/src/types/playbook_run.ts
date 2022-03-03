@@ -35,6 +35,7 @@ export interface PlaybookRun {
     retrospective_reminder_interval_seconds: number;
     retrospective_enabled: boolean;
     participant_ids: string[];
+    metrics_data: RunMetricData[];
 }
 
 export interface StatusPost {
@@ -62,6 +63,11 @@ export interface FetchPlaybookRunsReturn {
 export enum PlaybookRunStatus {
     InProgress = 'InProgress',
     Finished = 'Finished',
+}
+
+export interface RunMetricData {
+    metric_config_id: string;
+    value: number | null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

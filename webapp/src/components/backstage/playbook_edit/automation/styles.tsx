@@ -15,6 +15,7 @@ export const AutomationTitle = styled.div`
     flex-direction: row;
     width: 350px;
     align-items: center;
+    column-gap: 12px;
 `;
 
 export const SelectorWrapper = styled.div`

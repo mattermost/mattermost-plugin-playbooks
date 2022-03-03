@@ -425,9 +425,48 @@ func (p *PermissionsService) RunViewByChannel(userID, channelID string) error {
 	return p.RunView(userID, runID)
 }
 
+func (p *PermissionsService) ChannelActionCreate(userID, channelID string) error {
+	if IsSystemAdmin(userID, p.pluginAPI) || CanManageChannelProperties(userID, channelID, p.pluginAPI) {
+		return nil
+	}
+
+	return ErrNoPermissions
+}
+
+func (p *PermissionsService) ChannelActionView(userID, channelID string) error {
+	if p.pluginAPI.User.HasPermissionToChannel(userID, channelID, model.PermissionReadChannel) {
+		return nil
+	}
+
+	return ErrNoPermissions
+}
+
+func (p *PermissionsService) ChannelActionUpdate(userID, channelID string) error {
+	if IsSystemAdmin(userID, p.pluginAPI) || CanManageChannelProperties(userID, channelID, p.pluginAPI) {
+		return nil
+	}
+
+	return ErrNoPermissions
+}
+
 // IsSystemAdmin returns true if the userID is a system admin
 func IsSystemAdmin(userID string, pluginAPI *pluginapi.Client) bool {
 	return pluginAPI.User.HasPermissionTo(userID, model.PermissionManageSystem)
+}
+
+// CanManageChannelProperties returns true if the userID is allowed to manage the properties of channelID
+func CanManageChannelProperties(userID, channelID string, pluginAPI *pluginapi.Client) bool {
+	channel, err := pluginAPI.Channel.Get(channelID)
+	if err != nil {
+		return false
+	}
+
+	permission := model.PermissionManagePublicChannelProperties
+	if channel.Type == model.ChannelTypePrivate {
+		permission = model.PermissionManagePrivateChannelProperties
+	}
+
+	return pluginAPI.User.HasPermissionToChannel(userID, channelID, permission)
 }
 
 func CanPostToChannel(userID, channelID string, pluginAPI *pluginapi.Client) bool {

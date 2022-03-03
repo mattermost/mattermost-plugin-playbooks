@@ -8,9 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
-
-	"github.com/lib/pq"
+	"gopkg.in/guregu/null.v4"
 
 	"github.com/jmoiron/sqlx"
 
@@ -34,18 +32,26 @@ type sqlPlaybookRun struct {
 	ConcatenatedBroadcastChannelIDs       string
 	ConcatenatedWebhookOnCreationURLs     string
 	ConcatenatedWebhookOnStatusUpdateURLs string
+	Metric                                null.Int
+}
+
+type sqlRunMetricData struct {
+	IncidentID     string
+	MetricConfigID string
+	Value          null.Int
 }
 
 // playbookRunStore holds the information needed to fulfill the methods in the store interface.
 type playbookRunStore struct {
-	pluginAPI            PluginAPIClient
-	log                  bot.Logger
-	store                *SQLStore
-	queryBuilder         sq.StatementBuilderType
-	playbookRunSelect    sq.SelectBuilder
-	statusPostsSelect    sq.SelectBuilder
-	timelineEventsSelect sq.SelectBuilder
-	metricsDataSelect    sq.SelectBuilder
+	pluginAPI                        PluginAPIClient
+	log                              bot.Logger
+	store                            *SQLStore
+	queryBuilder                     sq.StatementBuilderType
+	playbookRunSelect                sq.SelectBuilder
+	statusPostsSelect                sq.SelectBuilder
+	timelineEventsSelect             sq.SelectBuilder
+	metricsDataSelectSingleRun       sq.SelectBuilder
+	sqlMetricsDataSelectMultipleRuns sq.SelectBuilder
 }
 
 // Ensure playbookRunStore implements the app.PlaybookRunStore interface.
@@ -78,6 +84,8 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 	case "":
 		// Default to a stable sort if none explicitly provided.
 		sort = "ID"
+	case app.SortByMetric0, app.SortByMetric1, app.SortByMetric2, app.SortByMetric3:
+		// Will handle below
 	default:
 		return sq.SelectBuilder{}, errors.Errorf("unsupported sort parameter '%s'", options.Sort)
 	}
@@ -95,8 +103,6 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 		return sq.SelectBuilder{}, errors.Errorf("unsupported direction parameter '%s'", options.Direction)
 	}
 
-	builder = builder.OrderByClause(fmt.Sprintf("%s %s", sort, direction))
-
 	page := options.Page
 	perPage := options.PerPage
 	if page < 0 {
@@ -109,6 +115,39 @@ func applyPlaybookRunFilterOptionsSort(builder sq.SelectBuilder, options app.Pla
 	builder = builder.
 		Offset(uint64(page * perPage)).
 		Limit(uint64(perPage))
+
+	switch options.Sort {
+	case app.SortByMetric0, app.SortByMetric1, app.SortByMetric2, app.SortByMetric3:
+		if options.PlaybookID == "" {
+			return sq.SelectBuilder{}, errors.New("sorting by metric requires a playbook_id")
+		}
+
+		ordering := 0
+		switch options.Sort {
+		case app.SortByMetric1:
+			ordering = 1
+		case app.SortByMetric2:
+			ordering = 2
+		case app.SortByMetric3:
+			ordering = 3
+		}
+
+		// Since we're sorting by metric, we need to create the correct metric column to sort by
+		builder = builder.Column(
+			sq.Alias(
+				sq.Select("m.Value").
+					From("IR_Metric AS m").
+					InnerJoin("IR_MetricConfig AS mc ON (mc.ID = m.MetricConfigID)").
+					Where("mc.DeleteAt = 0").
+					Where(sq.Eq{"mc.PlaybookID": options.PlaybookID}).
+					Where("m.IncidentID = i.ID").
+					Where(sq.Eq{"mc.Ordering": ordering}),
+				"Metric",
+			)).
+			OrderByClause("Metric " + direction)
+	default:
+		builder = builder.OrderByClause(fmt.Sprintf("%s %s", sort, direction))
+	}
 
 	return builder, nil
 }
@@ -184,21 +223,29 @@ func NewPlaybookRunStore(pluginAPI PluginAPIClient, log bot.Logger, sqlStore *SQ
 		).
 		From("IR_TimelineEvent as te")
 
-	metricsDataSelect := sqlStore.builder.
+	metricsDataSelectSingleRun := sqlStore.builder.
 		Select("MetricConfigID", "Value").
 		From("IR_Metric AS m").
 		Join("IR_MetricConfig AS mc ON (mc.ID = m.MetricConfigID)").
 		Where("mc.DeleteAt = 0")
 
+	sqlMetricsDataSelectMultipleRuns := sqlStore.builder.
+		Select("IncidentID", "MetricConfigID", "Value").
+		From("IR_Metric AS m").
+		Join("IR_MetricConfig AS mc ON (mc.ID = m.MetricConfigID)").
+		Where("mc.DeleteAt = 0").
+		OrderBy("mc.Ordering ASC")
+
 	return &playbookRunStore{
-		pluginAPI:            pluginAPI,
-		log:                  log,
-		store:                sqlStore,
-		queryBuilder:         sqlStore.builder,
-		playbookRunSelect:    playbookRunSelect,
-		statusPostsSelect:    statusPostsSelect,
-		timelineEventsSelect: timelineEventsSelect,
-		metricsDataSelect:    metricsDataSelect,
+		pluginAPI:                        pluginAPI,
+		log:                              log,
+		store:                            sqlStore,
+		queryBuilder:                     sqlStore.builder,
+		playbookRunSelect:                playbookRunSelect,
+		statusPostsSelect:                statusPostsSelect,
+		timelineEventsSelect:             timelineEventsSelect,
+		metricsDataSelectSingleRun:       metricsDataSelectSingleRun,
+		sqlMetricsDataSelectMultipleRuns: sqlMetricsDataSelectMultipleRuns,
 	}
 }
 
@@ -339,12 +386,18 @@ func (s *playbookRunStore) GetPlaybookRuns(requesterInfo app.RequesterInfo, opti
 		return nil, err
 	}
 
+	metricsData, err := s.getMetricsForPlaybookRun(tx, playbookRunIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "could not commit transaction")
 	}
 
 	addStatusPostsToPlaybookRuns(statusPosts, playbookRuns)
 	addTimelineEventsToPlaybookRuns(timelineEvents, playbookRuns)
+	addMetricsToPlaybookRuns(metricsData, playbookRuns)
 
 	return &app.GetPlaybookRunsResults{
 		TotalCount: total,
@@ -656,7 +709,7 @@ func (s *playbookRunStore) GetPlaybookRun(playbookRunID string) (*app.PlaybookRu
 
 	var metricsData []app.RunMetricData
 
-	err = s.store.selectBuilder(tx, &metricsData, s.metricsDataSelect.
+	err = s.store.selectBuilder(tx, &metricsData, s.metricsDataSelectSingleRun.
 		Where(sq.Eq{"IncidentID": playbookRunID}).
 		OrderBy("MetricConfigID")) // Entirely for consistency for the tests)
 
@@ -691,6 +744,20 @@ func (s *playbookRunStore) getTimelineEventsForPlaybookRun(q sqlx.Queryer, playb
 	}
 
 	return timelineEvents, nil
+}
+
+func (s *playbookRunStore) getMetricsForPlaybookRun(q sqlx.Queryer, playbookRunIDs []string) ([]sqlRunMetricData, error) {
+	var metricsData []sqlRunMetricData
+
+	sqlMetricsDataSelect := s.sqlMetricsDataSelectMultipleRuns.
+		Where(sq.Eq{"IncidentID": playbookRunIDs})
+
+	err := s.store.selectBuilder(q, &metricsData, sqlMetricsDataSelect)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, errors.Wrap(err, "failed to get metricsData")
+	}
+
+	return metricsData, nil
 }
 
 // GetTimelineEvent returns the timeline event by id for the given playbook run.
@@ -804,56 +871,6 @@ func (s *playbookRunStore) ChangeCreationDate(playbookRunID string, creationTime
 
 	if numRows == 0 {
 		return app.ErrNotFound
-	}
-
-	return nil
-}
-
-// HasViewed returns true if userID has viewed channelID
-func (s *playbookRunStore) HasViewedChannel(userID, channelID string) bool {
-	query := sq.Expr(
-		`SELECT EXISTS(SELECT *
-                         FROM IR_ViewedChannel as vc
-                        WHERE vc.ChannelID = ?
-                          AND vc.UserID = ?)
-             `, channelID, userID)
-
-	var exists bool
-	err := s.store.getBuilder(s.store.db, &exists, query)
-	if err != nil {
-		return false
-	}
-
-	return exists
-}
-
-// SetViewed records that userID has viewed channelID.
-func (s *playbookRunStore) SetViewedChannel(userID, channelID string) error {
-	if s.HasViewedChannel(userID, channelID) {
-		return nil
-	}
-
-	_, err := s.store.execBuilder(s.store.db, sq.
-		Insert("IR_ViewedChannel").
-		SetMap(map[string]interface{}{
-			"ChannelID": channelID,
-			"UserID":    userID,
-		}))
-
-	if err != nil {
-		if s.store.db.DriverName() == model.DatabaseDriverMysql {
-			me, ok := err.(*mysql.MySQLError)
-			if ok && me.Number == 1062 {
-				return errors.Wrap(app.ErrDuplicateEntry, err.Error())
-			}
-		} else {
-			pe, ok := err.(*pq.Error)
-			if ok && pe.Code == "23505" {
-				return errors.Wrap(app.ErrDuplicateEntry, err.Error())
-			}
-		}
-
-		return errors.Wrapf(err, "failed to store userID and channelID")
 	}
 
 	return nil
@@ -1280,6 +1297,21 @@ func addTimelineEventsToPlaybookRuns(timelineEvents []app.TimelineEvent, playboo
 	}
 	for i, playbookRun := range playbookRuns {
 		playbookRuns[i].TimelineEvents = iToTe[playbookRun.ID]
+	}
+}
+
+func addMetricsToPlaybookRuns(metrics []sqlRunMetricData, playbookRuns []app.PlaybookRun) {
+	playbookRunToMetrics := make(map[string][]app.RunMetricData)
+	for _, metric := range metrics {
+		playbookRunToMetrics[metric.IncidentID] = append(playbookRunToMetrics[metric.IncidentID],
+			app.RunMetricData{
+				MetricConfigID: metric.MetricConfigID,
+				Value:          metric.Value,
+			})
+	}
+
+	for i, run := range playbookRuns {
+		playbookRuns[i].MetricsData = playbookRunToMetrics[run.ID]
 	}
 }
 

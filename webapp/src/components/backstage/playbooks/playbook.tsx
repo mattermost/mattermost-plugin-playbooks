@@ -55,13 +55,13 @@ import useConfirmPlaybookArchiveModal from '../archive_playbook_modal';
 import {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip/hooks';
 import {PlaybookPreviewTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip';
-import PlaybookKeyMetrics from 'src/components/backstage/playbooks/playbook_key_metrics';
+import PlaybookKeyMetrics from 'src/components/backstage/playbooks/metrics/playbook_key_metrics';
 
 interface MatchParams {
     playbookId: string
 }
 
-const tutorialPlaybookTitle = 'Learn how to use playbooks';
+const LEARN_PLAYBOOKS_TITLE = 'Learn how to use playbooks';
 
 const FetchingStateType = {
     loading: 'loading',
@@ -139,7 +139,7 @@ const Playbook = () => {
 
     const hasPermissionToRunPlaybook = useHasPlaybookPermission(PlaybookPermissionGeneral.RunCreate, playbook);
 
-    const isTutorial = playbook?.title === tutorialPlaybookTitle;
+    const isTutorialPlaybook = playbook?.title === LEARN_PLAYBOOKS_TITLE;
 
     useForceDocumentTitle(playbook?.title ? (playbook.title + ' - Playbooks') : 'Playbooks');
 
@@ -148,7 +148,7 @@ const Playbook = () => {
     };
 
     const runPlaybook = async () => {
-        if (playbook && isTutorial) {
+        if (playbook && isTutorialPlaybook) {
             const playbookRun = await createPlaybookRun(playbook.id, currentUserId, playbook.team_id, `${currentUser.username}'s onboarding run`, playbook.description);
             const channel = await Client4.getChannel(playbookRun.channel_id);
             const pathname = `/${team.name}/channels/${channel.name}`;
@@ -273,6 +273,7 @@ const Playbook = () => {
                                 const newID = await clientDuplicatePlaybook(playbook.id);
                                 navigateToPluginUrl(`/playbooks/${newID}`);
                                 addToast(formatMessage({defaultMessage: 'Successfully duplicated playbook'}));
+                                telemetryEventForPlaybook(playbook.id, 'playbook_duplicate_clicked_in_playbook');
                             }}
                         >
                             <FormattedMessage defaultMessage='Duplicate'/>
@@ -281,6 +282,7 @@ const Playbook = () => {
                             href={exportHref}
                             download={exportFilename}
                             role={'button'}
+                            onClick={() => telemetryEventForPlaybook(playbook.id, 'playbook_export_clicked_in_playbook')}
                         >
                             <FormattedMessage defaultMessage='Export'/>
                         </DropdownMenuItemStyled>
@@ -338,12 +340,17 @@ const Playbook = () => {
                             path={mdiClipboardPlayOutline}
                             size={1.25}
                         />
-                        {isTutorial ? formatMessage({defaultMessage: 'Start a test run'}) : formatMessage({defaultMessage: 'Run'})}
+                        {isTutorialPlaybook ? formatMessage({defaultMessage: 'Start a test run'}) : formatMessage({defaultMessage: 'Run'})}
                     </PrimaryButtonLarger>
                     {showRunButtonTutorial &&
                         <TutorialTourTip
-                            title={<FormattedMessage defaultMessage='Run the playbook to see it in action'/>}
-                            screen={<FormattedMessage defaultMessage='Click on edit to start customizing it and tailor it to your own models and processes. You can explore the template in detail on this page.'/>}
+                            {...isTutorialPlaybook ? {
+                                title: formatMessage({defaultMessage: 'Test your new playbook out!'}),
+                                screen: formatMessage({defaultMessage: 'Select <strong>Start a test run</strong> to see it in action.'}, {strong: (x) => <strong>{x}</strong>}),
+                            } : {
+                                title: formatMessage({defaultMessage: 'Ready run to your playbook?'}),
+                                screen: formatMessage({defaultMessage: 'Select <strong>Run</strong> to see it in action.'}, {strong: (x) => <strong>{x}</strong>}),
+                            }}
                             tutorialCategory={TutorialTourCategories.PLAYBOOK_PREVIEW}
                             step={PlaybookPreviewTutorialSteps.RunButton}
                             placement='bottom-end'

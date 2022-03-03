@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/client"
@@ -268,6 +269,17 @@ func TestPlaybookUpdate(t *testing.T) {
 		e.BasicPlaybook.Description = "unrelated update"
 		err = e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
 		require.NoError(t, err)
+	})
+
+	t.Run("update playbook with too many webhoooks", func(t *testing.T) {
+		urls := []string{}
+		for i := 0; i < 65; i++ {
+			urls = append(urls, "http://localhost/"+strconv.Itoa(i))
+		}
+		e.BasicPlaybook.WebhookOnCreationEnabled = true
+		e.BasicPlaybook.WebhookOnCreationURLs = urls
+		err := e.PlaybooksClient.Playbooks.Update(context.Background(), *e.BasicPlaybook)
+		requireErrorWithStatusCode(t, err, http.StatusBadRequest)
 	})
 }
 
@@ -908,8 +920,7 @@ func TestPlaybooksImportExport(t *testing.T) {
 	e := Setup(t)
 	e.CreateClients()
 	e.CreateBasicServer()
-	e.SetE20Licence()
-	e.CreateBasicPlaybook()
+	e.CreateBasicPublicPlaybook()
 
 	t.Run("Export", func(t *testing.T) {
 		result, err := e.PlaybooksClient.Playbooks.Export(context.Background(), e.BasicPlaybook.ID)
