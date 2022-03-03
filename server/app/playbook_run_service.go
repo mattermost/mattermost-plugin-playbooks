@@ -131,35 +131,15 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 }
 
 func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
-	playbookRunChannel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get playbook run channel")
-	}
-
-	announcementMsg := fmt.Sprintf(
-		"**[%s](%s%s)**\n",
+	return fmt.Sprintf(
+		"##### [%s](%s%s)\n@%s ran the [%s](%s) playbook.",
 		playbookRun.Name,
 		getRunDetailsRelativeURL(playbookRun.ID),
 		"%s", // for the telemetry data injection
-	)
-
-	announcementMsg += fmt.Sprintf(
-		"@%s just ran the [%s](%s) playbook.",
 		reporter.Username,
 		playbookTitle,
 		getPlaybookDetailsRelativeURL(playbookID),
-	)
-
-	if playbookRunChannel.Type == model.ChannelTypeOpen {
-		announcementMsg += fmt.Sprintf(
-			" Visit the link above for more information or join ~%v to participate.",
-			playbookRunChannel.Name,
-		)
-	} else {
-		announcementMsg += " Visit the link above for more information."
-	}
-
-	return announcementMsg, nil
+	), nil
 }
 
 // PlaybookRunWebhookPayload is the body of the payload sent via playbook run webhooks.
