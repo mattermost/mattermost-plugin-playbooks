@@ -69,7 +69,7 @@ const StatsView = (props: Props) => {
 
             props.setFilterPill(pill(text));
             props.setFetchParams((oldParams) => {
-                return {...oldParams, ...nextFetchParamsTime};
+                return {...oldParams, ...nextFetchParamsTime, page: 0};
             });
         }
     };
@@ -103,7 +103,7 @@ const StatsView = (props: Props) => {
 
             props.setFilterPill(pill(text));
             props.setFetchParams((oldParams) => {
-                return {...oldParams, ...nextFetchParamsTime};
+                return {...oldParams, ...nextFetchParamsTime, page: 0};
             });
         }
     };
@@ -111,7 +111,7 @@ const StatsView = (props: Props) => {
     const clearFilter = () => {
         props.setFilterPill(null);
         props.setFetchParams((oldParams) => {
-            return {...oldParams, ...DefaultFetchPlaybookRunsParamsTime};
+            return {...oldParams, ...DefaultFetchPlaybookRunsParamsTime, page: 0};
         });
     };
 
