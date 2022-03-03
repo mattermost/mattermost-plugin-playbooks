@@ -83,7 +83,7 @@ const Filters = ({fetchParams, setFetchParams, fixedTeam, fixedPlaybook, fixedFi
     const myRunsOnly = fetchParams.participant_or_follower_id === 'me';
     const setMyRunsOnly = (checked?: boolean) => {
         setFetchParams((oldParams) => {
-            return {...oldParams, participant_or_follower_id: checked ? 'me' : ''};
+            return {...oldParams, participant_or_follower_id: checked ? 'me' : '', page: 0};
         });
     };
 
