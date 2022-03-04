@@ -119,11 +119,6 @@ export interface DraftPlaybookWithChecklist extends Omit<PlaybookWithChecklist, 
     id?: string;
 }
 
-export interface FetchPlaybookFollowers {
-    items: string[];
-    total_count: number;
-}
-
 // setPlaybookDefaults fills in a playbook with defaults for any fields left empty.
 export const setPlaybookDefaults = (playbook: DraftPlaybookWithChecklist) => ({
     ...playbook,
@@ -198,13 +193,6 @@ export function emptyChecklistItem(): ChecklistItem {
         command: '',
         description: '',
         command_last_run: 0,
-    };
-}
-
-export function emptyFetchPlaybookFollowers(): FetchPlaybookFollowers {
-    return {
-        total_count: 0,
-        items: [],
     };
 }
 

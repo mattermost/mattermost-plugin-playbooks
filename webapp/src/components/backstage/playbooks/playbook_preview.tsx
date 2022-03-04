@@ -17,7 +17,6 @@ interface Props {
     playbook: PlaybookWithChecklist;
     runsInProgress: number;
     followerIds: string[];
-
 }
 
 const PlaybookPreview = (props: Props) => {

@@ -59,8 +59,6 @@ describe('playbooks > overview', () => {
                     testPrivateSharedPlaybook = playbook;
                 });
             });
-
-
         });
     });
 
@@ -159,8 +157,8 @@ describe('playbooks > overview', () => {
         });
     });
 
-    it.only('show followers in actions preview', () => {
-        let playbookId ;
+    it('show followers in actions preview', () => {
+        let playbookId;
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
             title: 'Playbook',
@@ -182,7 +180,7 @@ describe('playbooks > overview', () => {
 
             // * Verify we don't have any follower
             cy.findByTestId('preview-content').within(() => {
-                cy.findByText('No users automatically following this run').should('exist');
+                cy.findByText('automatically following this run').should('not.exist');
             });
             // * set myself as follower and check message in preview
             cy.findByTestId('auto-follow-runs').click({force:true});
@@ -206,10 +204,6 @@ describe('playbooks > overview', () => {
                 cy.findByText('One user automatically following this run').should('exist');
             });
         });
-
-
-
-
     })
 
     it('shows status update timer', () => {

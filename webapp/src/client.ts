@@ -25,12 +25,10 @@ import {
 import {setTriggerId} from 'src/actions';
 import {OwnerInfo} from 'src/types/backstage';
 import {
-    emptyFetchPlaybookFollowers,
     Checklist,
     ChecklistItemState,
     FetchPlaybooksParams,
     FetchPlaybooksReturn,
-    FetchPlaybookFollowers,
     PlaybookWithChecklist,
     DraftPlaybookWithChecklist,
     Playbook,
@@ -588,11 +586,11 @@ export async function clientFetchIsPlaybookFollower(playbookId: string, userId: 
     return data as boolean;
 }
 
-export async function clientFetchPlaybookFollowers(playbookId: string): Promise<FetchPlaybookFollowers> {
-    const data = await doGet<FetchPlaybookFollowers>(`${apiUrl}/playbooks/${playbookId}/autofollows`);
+export async function clientFetchPlaybookFollowers(playbookId: string): Promise<string[]> {
+    const data = await doGet<string[]>(`${apiUrl}/playbooks/${playbookId}/autofollows`);
 
     if (!data) {
-        return emptyFetchPlaybookFollowers();
+        return [];
     }
 
     return data;

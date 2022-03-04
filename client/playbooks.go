@@ -223,7 +223,7 @@ func (s *PlaybooksService) Stats(ctx context.Context, playbookID string) (*Playb
 	return stats, nil
 }
 
-func (s *PlaybooksService) Follow(ctx context.Context, playbookID string, userID string) error {
+func (s *PlaybooksService) AutoFollow(ctx context.Context, playbookID string, userID string) error {
 	followsURL := fmt.Sprintf("playbooks/%s/autofollows/%s", playbookID, userID)
 	req, err := s.client.newRequest(http.MethodPut, followsURL, nil)
 	if err != nil {
@@ -237,7 +237,7 @@ func (s *PlaybooksService) Follow(ctx context.Context, playbookID string, userID
 	return nil
 }
 
-func (s *PlaybooksService) Unfollow(ctx context.Context, playbookID string, userID string) error {
+func (s *PlaybooksService) AutoUnfollow(ctx context.Context, playbookID string, userID string) error {
 	followsURL := fmt.Sprintf("playbooks/%s/autofollows/%s", playbookID, userID)
 	req, err := s.client.newRequest(http.MethodDelete, followsURL, nil)
 	if err != nil {
@@ -251,15 +251,15 @@ func (s *PlaybooksService) Unfollow(ctx context.Context, playbookID string, user
 	return nil
 }
 
-func (s *PlaybooksService) GetFollowers(ctx context.Context, playbookID string) (*GetPlaybookFollowersResults, error) {
+func (s *PlaybooksService) GetAutoFollows(ctx context.Context, playbookID string) ([]string, error) {
 	autofollowsURL := fmt.Sprintf("playbooks/%s/autofollows", playbookID)
 	req, err := s.client.newRequest(http.MethodGet, autofollowsURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	followers := new(GetPlaybookFollowersResults)
-	resp, err := s.client.do(ctx, req, followers)
+	var followers []string
+	resp, err := s.client.do(ctx, req, &followers)
 	if err != nil {
 		return nil, err
 	}

@@ -169,13 +169,25 @@ const Playbook = () => {
             if (playbookId) {
                 try {
                     const fetchedPlaybook = await clientFetchPlaybook(playbookId);
-                    const fetchedFollowerIds = await clientFetchPlaybookFollowers(playbookId);
-                    setFollowerIds(fetchedFollowerIds.items);
                     setPlaybook(fetchedPlaybook!);
                     setFetchingState(FetchingStateType.fetched);
-                    setIsFollowed(fetchedFollowerIds.items.indexOf(currentUserId) !== -1);
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
+                }
+            }
+        };
+        fetchData();
+    }, [match.params.playbookId, currentUserId]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const playbookId = match.params.playbookId;
+            if (playbookId) {
+                try {
+                    const fetchedFollowerIds = await clientFetchPlaybookFollowers(playbookId);
+                    setFollowerIds(fetchedFollowerIds);
+                    setIsFollowed(fetchedFollowerIds.includes(currentUserId));
+                } catch {
                     setIsFollowed(false);
                 }
             }

@@ -1654,7 +1654,7 @@ paths:
 
   /playbooks/{id}/autofollows:
     get:
-      summary: Get the list of followers user ids of a playbook
+      summary: Get the list of followers' user IDs of a playbook
       operationId: getAutoFollows
       security:
         - BearerAuth: []
@@ -1675,7 +1675,7 @@ paths:
             -H 'Authorization: Bearer 9g64ig7q9pds8yjz8rsgd6e36e'
       responses:
         200:
-          description: List of the user ids who follow the playbook.
+          description: List of the user IDs who follow the playbook.
           content:
             application/json:
               schema:
@@ -1839,8 +1839,7 @@ components:
           example: 12
         items:
           type: array
-          description: The user ids of who marked this playbook to auto-follow.
-          items:
+          description: The user IDs of who marked this playbook to auto-follow.
             type: string
     OwnerInfo:
       type: object

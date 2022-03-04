@@ -546,15 +546,7 @@ func (h *PlaybookHandler) getAutoFollows(w http.ResponseWriter, r *http.Request)
 		h.HandleError(w, err)
 		return
 	}
-
-	result := struct {
-		Items      []string `json:"items"`
-		TotalCount int      `json:"total_count"`
-	}{
-		Items:      autoFollowers,
-		TotalCount: len(autoFollowers),
-	}
-	ReturnJSON(w, result, http.StatusOK)
+	ReturnJSON(w, autoFollowers, http.StatusOK)
 }
 
 func (h *PlaybookHandler) exportPlaybook(w http.ResponseWriter, r *http.Request) {

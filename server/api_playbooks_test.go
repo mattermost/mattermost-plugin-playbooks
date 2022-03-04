@@ -967,7 +967,7 @@ func TestPlaybookStats(t *testing.T) {
 	})
 }
 
-func TestPlaybookGetFollowers(t *testing.T) {
+func TestPlaybookGetAutoFollows(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
@@ -977,7 +977,7 @@ func TestPlaybookGetFollowers(t *testing.T) {
 		Public: true,
 	})
 	require.NoError(t, err)
-	err = e.PlaybooksClient.Playbooks.Follow(context.Background(), p1ID, e.RegularUser.Id)
+	err = e.PlaybooksClient.Playbooks.AutoFollow(context.Background(), p1ID, e.RegularUser.Id)
 	require.NoError(t, err)
 
 	p2ID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -986,9 +986,9 @@ func TestPlaybookGetFollowers(t *testing.T) {
 		Public: true,
 	})
 	require.NoError(t, err)
-	err = e.PlaybooksClient.Playbooks.Follow(context.Background(), p2ID, e.RegularUser.Id)
+	err = e.PlaybooksClient.Playbooks.AutoFollow(context.Background(), p2ID, e.RegularUser.Id)
 	require.NoError(t, err)
-	err = e.PlaybooksClient2.Playbooks.Follow(context.Background(), p2ID, e.RegularUser2.Id)
+	err = e.PlaybooksClient2.Playbooks.AutoFollow(context.Background(), p2ID, e.RegularUser2.Id)
 	require.NoError(t, err)
 
 	p3ID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
@@ -1055,14 +1055,16 @@ func TestPlaybookGetFollowers(t *testing.T) {
 	}
 
 	for _, c := range testCases {
-		res, err := c.client.Playbooks.GetFollowers(context.Background(), c.playbookID)
-		if c.expectedError != 0 {
-			requireErrorWithStatusCode(t, err, c.expectedError)
-		} else {
-			require.NoError(t, err, "failed error at' %s' case", c.testName)
-			require.Equal(t, c.expectedTotalCount, res.TotalCount, "failed totalCount at '%s' case", c.testName)
-			require.Equal(t, c.expectedFollowers, res.Items, "failed followers at '%s' case", c.testName)
-		}
+		t.Run(c.testName, func(t *testing.T) {
+			res, err := c.client.Playbooks.GetAutoFollows(context.Background(), c.playbookID)
+			if c.expectedError != 0 {
+				requireErrorWithStatusCode(t, err, c.expectedError)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, c.expectedTotalCount, len(res))
+				require.Equal(t, c.expectedFollowers, res)
+			}
+		})
 
 	}
 

@@ -320,7 +320,7 @@ func (p *playbookStore) Get(id string) (app.Playbook, error) {
 }
 
 // GetPlaybooks retrieves all playbooks that are not deleted.
-// Members are not retrieved for this as the query would be large and we don't need it for this for nwo.
+// Members are not retrieved for this as the query would be large and we don't need it for this for now.
 // This is only used for the keywords feature
 func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 	tx, err := p.store.db.Beginx()

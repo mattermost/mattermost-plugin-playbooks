@@ -34,6 +34,7 @@ const PlaybookPreviewActions = (props: Props) => {
     const showPromptCardEntry = props.playbook.signal_any_keywords_enabled && props.playbook.signal_any_keywords.length !== 0;
 
     const createChannelEnabled = true;
+    const autofollowsEnabled = props.followerIds.length > 0;
     const inviteUsersEnabled = props.playbook.invite_users_enabled && props.playbook.invited_user_ids.length !== 0;
     const defaultOwnerEnabled = props.playbook.default_owner_enabled && props.playbook.default_owner_id !== '';
     const broadcastEnabled = props.playbook.broadcast_enabled && props.playbook.broadcast_channel_ids.length !== 0;
@@ -126,7 +127,7 @@ const PlaybookPreviewActions = (props: Props) => {
                                 />
                             </UserRow>
                         )}
-                        enabled={true}
+                        enabled={autofollowsEnabled}
                     />
                     <CardSubEntry
                         title={formatMessage({
