@@ -185,7 +185,7 @@ describe('playbooks > overview', () => {
             // * set myself as follower and check message in preview
             cy.findByTestId('auto-follow-runs').click({force:true});
             cy.findByTestId('preview-content').within(() => {
-                cy.findByText('One user automatically following this run').should('exist');
+                cy.findByText('One member automatically following this run').should('exist');
             });
 
             // # login as other follower and follow playbook
@@ -195,13 +195,13 @@ describe('playbooks > overview', () => {
             // * set testUserFollower as follower and check message in preview
             cy.findByTestId('auto-follow-runs').click({force:true});
             cy.findByTestId('preview-content').within(() => {
-                cy.findByText('2 users automatically following this run').should('exist');
+                cy.findByText('2 members automatically following this run').should('exist');
             });
 
             // * set testUserFollower as no follower and check message in preview
             cy.findByTestId('auto-follow-runs').click({force:true});
             cy.findByTestId('preview-content').within(() => {
-                cy.findByText('One user automatically following this run').should('exist');
+                cy.findByText('One member automatically following this run').should('exist');
             });
         });
     })
