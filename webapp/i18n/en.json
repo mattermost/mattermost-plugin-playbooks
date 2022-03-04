@@ -254,7 +254,7 @@
   "Y69m2M": "{followers, plural, =0 {No users} =1 {One user} other {# users}} automatically following this run",
   "YDuW/T": "{num_runs, plural, =0 {Not run yet} one {# run} other {# total runs}}",
   "YKn+7s": "This channel is not running any playbook.",
-  "YMrTRm": "Run summary",
+  "YMrTRm": "Run Summary",
   "YORRGQ": "Post update",
   "Z/hwEf": "The channel will be reminded to perform the retrospective {reminderEnabled, select, true {every} other {}}",
   "Z7vWDQ": "There was an error",
