@@ -47,7 +47,8 @@ const PlaybookPreviewActions = (props: Props) => {
         broadcastEnabled ||
         defaultOwnerEnabled ||
         runSummaryEnabled ||
-        webhookOnCreationEnabled;
+        webhookOnCreationEnabled ||
+        autofollowsEnabled;
 
     const messageOnJoinEnabled = props.playbook.message_on_join_enabled && props.playbook.message_on_join !== '';
     const categorizeChannelEnabled = props.playbook.categorize_channel_enabled && props.playbook.category_name !== '';
@@ -116,7 +117,7 @@ const PlaybookPreviewActions = (props: Props) => {
                     />
                     <CardSubEntry
                         title={formatMessage(
-                            {defaultMessage: '{followers, plural, =0 {No users} =1 {One user} other {# users}} automatically following this run'},
+                            {defaultMessage: '{followers, plural, =0 {No member} =1 {One member} other {# members}} automatically following this run'},
                             {followers: props.followerIds.length}
                         )}
                         extraInfo={(
