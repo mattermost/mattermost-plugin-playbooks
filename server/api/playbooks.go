@@ -63,7 +63,6 @@ func NewPlaybookHandler(router *mux.Router, playbookService app.PlaybookService,
 	autoFollowRouter := autoFollowsRouter.PathPrefix("/{userID:[A-Za-z0-9]+}").Subrouter()
 	autoFollowRouter.HandleFunc("", handler.autoFollow).Methods(http.MethodPut)
 	autoFollowRouter.HandleFunc("", handler.autoUnfollow).Methods(http.MethodDelete)
-	autoFollowRouter.HandleFunc("", handler.isAutoFollowing).Methods(http.MethodGet)
 
 	return handler
 }
@@ -507,29 +506,6 @@ func (h *PlaybookHandler) autoUnfollow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-func (h *PlaybookHandler) isAutoFollowing(w http.ResponseWriter, r *http.Request) {
-	playbookID := mux.Vars(r)["id"]
-	currentUserID := r.Header.Get("Mattermost-User-ID")
-	userID := mux.Vars(r)["userID"]
-
-	if currentUserID != userID && !app.IsSystemAdmin(currentUserID, h.pluginAPI) {
-		h.HandleErrorWithCode(w, http.StatusForbidden, "Current user doesn't have permissions to check whether user is autofollowing or not.", nil)
-		return
-	}
-
-	if !h.PermissionsCheck(w, h.permissions.PlaybookView(userID, playbookID)) {
-		return
-	}
-
-	isAutoFollowing, err := h.playbookService.IsAutoFollowing(playbookID, userID)
-	if err != nil {
-		h.HandleError(w, err)
-		return
-	}
-
-	ReturnJSON(w, isAutoFollowing, http.StatusOK)
 }
 
 // getAutoFollows returns the list of users that have marked this playbook for auto-following runs

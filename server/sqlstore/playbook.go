@@ -813,23 +813,6 @@ func (p *playbookStore) GetAutoFollows(playbookID string) ([]string, error) {
 	return autoFollows, nil
 }
 
-func (p *playbookStore) IsAutoFollowing(playbookID, userID string) (bool, error) {
-	query := p.queryBuilder.
-		Select("TRUE").
-		From("IR_PlaybookAutoFollow").
-		Where(sq.And{sq.Eq{"PlaybookID": playbookID}, sq.Eq{"UserID": userID}})
-
-	var isAutoFollowing bool
-	err := p.store.getBuilder(p.store.db, &isAutoFollowing, query)
-	if err == sql.ErrNoRows {
-		return false, nil
-	} else if err != nil {
-		return false, errors.Wrapf(err, "failed to get follower status for playbook '%s'", playbookID)
-	}
-
-	return isAutoFollowing, nil
-}
-
 func generatePlaybookSchemeRoles(member playbookMember, playbook *app.Playbook) []string {
 	schemeRoles := []string{}
 	for _, role := range strings.Fields(member.Roles) {
