@@ -241,7 +241,7 @@ func (p *Plugin) OnActivate() error {
 	// run metrics server to expose data
 	p.runMetricsServer()
 	// run metrics updater recuring task
-	p.runMetricsUpdaterTask(playbookStore, playbookRunStore)
+	p.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
 
 	// prevent a recursive OnConfigurationChange
 	go func() {
@@ -314,34 +314,42 @@ func (p *Plugin) runMetricsServer() {
 	}()
 }
 
-func (p *Plugin) runMetricsUpdaterTask(playbookStore app.PlaybookStore, playbookRunStore app.PlaybookRunStore) {
+func (p *Plugin) runMetricsUpdaterTask(playbookStore app.PlaybookStore, playbookRunStore app.PlaybookRunStore, updateMetricsTaskFrequency time.Duration) {
 	metricsUpdater := func() {
-		playbooksActiveTotal, err := playbookStore.GetPlaybooksActiveTotal()
-		if err != nil {
-			p.pluginAPI.Log.Error("error updating metrics, playbooks_active_total", err)
-		} else {
+		if playbooksActiveTotal, err := playbookStore.GetPlaybooksActiveTotal(); err == nil {
 			p.metricsService.ObservePlaybooksActiveTotal(playbooksActiveTotal)
+		} else {
+			p.pluginAPI.Log.Error("error updating metrics, playbooks_active_total", err)
 		}
 
-		runsActiveTotal, err := playbookRunStore.GetRunsActiveTotal()
-		if err != nil {
-			p.pluginAPI.Log.Error("error updating metrics, runs_active_total", err)
-		} else {
+		if runsActiveTotal, err := playbookRunStore.GetRunsActiveTotal(); err == nil {
 			p.metricsService.ObserveRunsActiveTotal(runsActiveTotal)
+		} else {
+			p.pluginAPI.Log.Error("error updating metrics, runs_active_total", err)
 		}
 
-		remindersOverdueTotal, err := playbookRunStore.GetOverdueUpdateRunsTotal()
-		if err != nil {
-			p.pluginAPI.Log.Error("error updating metrics, reminders_outstanding_total", err)
-		} else {
+		if remindersOverdueTotal, err := playbookRunStore.GetOverdueUpdateRunsTotal(); err == nil {
 			p.metricsService.ObserveRemindersOutstandingTotal(remindersOverdueTotal)
+		} else {
+			p.pluginAPI.Log.Error("error updating metrics, reminders_outstanding_total", err)
 		}
 
-		retrosOverdueTotal, err := playbookRunStore.GetOverdueRetroRunsTotal()
-		if err != nil {
-			p.pluginAPI.Log.Error("error updating metrics, retros_outstanding_total", err)
-		} else {
+		if retrosOverdueTotal, err := playbookRunStore.GetOverdueRetroRunsTotal(); err == nil {
 			p.metricsService.ObserveRetrosOutstandingTotal(retrosOverdueTotal)
+		} else {
+			p.pluginAPI.Log.Error("error updating metrics, retros_outstanding_total", err)
+		}
+
+		if followersActiveTotal, err := playbookRunStore.GetFollowersActiveTotal(); err == nil {
+			p.metricsService.ObserveFollowersActiveTotal(followersActiveTotal)
+		} else {
+			p.pluginAPI.Log.Error("error updating metrics, followers_active_total", err)
+		}
+
+		if participantsActiveTotal, err := playbookRunStore.GetParticipantsActiveTotal(); err == nil {
+			p.metricsService.ObserveParticipantsActiveTotal(participantsActiveTotal)
+		} else {
+			p.pluginAPI.Log.Error("error updating metrics, participants_active_total", err)
 		}
 	}
 

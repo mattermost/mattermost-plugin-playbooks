@@ -680,6 +680,12 @@ type PlaybookRunStore interface {
 
 	// GetOverdueRetroRunsTotal returns the number of completed runs without retro and with reminder
 	GetOverdueRetroRunsTotal() (int64, error)
+
+	// GetFollowersActiveTotal returns number of active followers.
+	GetFollowersActiveTotal() (int64, error)
+
+	// GetParticipantsActiveTotal returns number of active participants.
+	GetParticipantsActiveTotal() (int64, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

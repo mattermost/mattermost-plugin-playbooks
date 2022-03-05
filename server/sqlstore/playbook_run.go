@@ -1234,7 +1234,7 @@ func (s *playbookRunStore) GetFollowers(playbookRunID string) ([]string, error) 
 	return followers, nil
 }
 
-// Get number of active playbooks.
+// Get number of active runs.
 func (s *playbookRunStore) GetRunsActiveTotal() (int64, error) {
 	var count int64
 
@@ -1285,6 +1285,42 @@ func (s *playbookRunStore) GetOverdueRetroRunsTotal() (int64, error) {
 	var count int64
 	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
 		return 0, errors.Wrap(err, "failed to count finished runs without retro")
+	}
+
+	return count, nil
+}
+
+// GetFollowersActiveTotal returns number of active followers.
+func (s *playbookRunStore) GetFollowersActiveTotal() (int64, error) {
+	var count int64
+
+	query := s.store.builder.
+		Select("COUNT(*)").
+		From("IR_Run_Participants as rp").
+		Join("IR_Incident AS i ON (i.ID = rp.IncidentID)").
+		Where(sq.Eq{"rp.IsFollower": true}).
+		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress})
+
+	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count active followers'")
+	}
+
+	return count, nil
+}
+
+// GetParticipantsActiveTotal returns number of active participants.
+func (s *playbookRunStore) GetParticipantsActiveTotal() (int64, error) {
+	var count int64
+
+	query := s.store.builder.
+		Select("COUNT(*)").
+		From("ChannelMembers as cm").
+		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
+		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
+		Where(sq.Expr("cm.UserId NOT IN (SELECT UserId FROM Bots)"))
+
+	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count active participants")
 	}
 
 	return count, nil

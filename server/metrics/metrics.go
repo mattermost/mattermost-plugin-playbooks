@@ -38,6 +38,8 @@ type Metrics struct {
 	runsActiveTotal           prometheus.Gauge
 	remindersOutstandingTotal prometheus.Gauge
 	retrosOutstandingTotal    prometheus.Gauge
+	followersActiveTotal      prometheus.Gauge
+	participantsActiveTotal   prometheus.Gauge
 }
 
 // NewMetrics Factory method to create a new metrics collector.
@@ -131,7 +133,7 @@ func NewMetrics(info InstanceInfo) *Metrics {
 
 	m.runsActiveTotal = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace:   MetricsNamespace,
-		Subsystem:   MetricsSubsystemPlaybooks,
+		Subsystem:   MetricsSubsystemRuns,
 		Name:        "runs_active_total",
 		Help:        "Total number of active runs.",
 		ConstLabels: additionalLabels,
@@ -140,7 +142,7 @@ func NewMetrics(info InstanceInfo) *Metrics {
 
 	m.remindersOutstandingTotal = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace:   MetricsNamespace,
-		Subsystem:   MetricsSubsystemPlaybooks,
+		Subsystem:   MetricsSubsystemRuns,
 		Name:        "reminders_outstanding_total",
 		Help:        "Total number of outstanding reminders.",
 		ConstLabels: additionalLabels,
@@ -149,13 +151,30 @@ func NewMetrics(info InstanceInfo) *Metrics {
 
 	m.retrosOutstandingTotal = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace:   MetricsNamespace,
-		Subsystem:   MetricsSubsystemPlaybooks,
+		Subsystem:   MetricsSubsystemRuns,
 		Name:        "retros_outstanding_total",
 		Help:        "Total number of outstanding retrospective reminders.",
 		ConstLabels: additionalLabels,
 	})
 	m.registry.MustRegister(m.retrosOutstandingTotal)
 
+	m.followersActiveTotal = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace:   MetricsNamespace,
+		Subsystem:   MetricsSubsystemRuns,
+		Name:        "followers_active_total",
+		Help:        "Total number of active followers.",
+		ConstLabels: additionalLabels,
+	})
+	m.registry.MustRegister(m.followersActiveTotal)
+
+	m.participantsActiveTotal = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace:   MetricsNamespace,
+		Subsystem:   MetricsSubsystemRuns,
+		Name:        "participants_active_total",
+		Help:        "Total number of active participants (i.e. members of the playbook run channel when the run is active).",
+		ConstLabels: additionalLabels,
+	})
+	m.registry.MustRegister(m.participantsActiveTotal)
 	return m
 }
 
@@ -216,5 +235,17 @@ func (m *Metrics) ObserveRemindersOutstandingTotal(count int64) {
 func (m *Metrics) ObserveRetrosOutstandingTotal(count int64) {
 	if m != nil {
 		m.retrosOutstandingTotal.Set(float64(count))
+	}
+}
+
+func (m *Metrics) ObserveFollowersActiveTotal(count int64) {
+	if m != nil {
+		m.followersActiveTotal.Set(float64(count))
+	}
+}
+
+func (m *Metrics) ObserveParticipantsActiveTotal(count int64) {
+	if m != nil {
+		m.participantsActiveTotal.Set(float64(count))
 	}
 }
