@@ -32,7 +32,7 @@ const RunListHeader = ({fetchParams, setFetchParams}: Props) => {
             const newDirection = fetchParams.direction === 'asc' ? 'desc' : 'asc';
 
             setFetchParams((oldParams: FetchPlaybookRunsParams) => {
-                return {...oldParams, direction: newDirection};
+                return {...oldParams, direction: newDirection, page: 0};
             });
             return;
         }
@@ -44,7 +44,7 @@ const RunListHeader = ({fetchParams, setFetchParams}: Props) => {
         }
 
         setFetchParams((oldParams: FetchPlaybookRunsParams) => {
-            return {...oldParams, sort: colName, direction: newDirection};
+            return {...oldParams, sort: colName, direction: newDirection, page: 0};
         });
     }
     return (

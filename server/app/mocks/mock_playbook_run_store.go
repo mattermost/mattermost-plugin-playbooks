@@ -347,20 +347,6 @@ func (mr *MockPlaybookRunStoreMockRecorder) GetTimelineEvent(arg0, arg1 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimelineEvent", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetTimelineEvent), arg0, arg1)
 }
 
-// HasViewedChannel mocks base method.
-func (m *MockPlaybookRunStore) HasViewedChannel(arg0, arg1 string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasViewedChannel", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// HasViewedChannel indicates an expected call of HasViewedChannel.
-func (mr *MockPlaybookRunStoreMockRecorder) HasViewedChannel(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasViewedChannel", reflect.TypeOf((*MockPlaybookRunStore)(nil).HasViewedChannel), arg0, arg1)
-}
-
 // NukeDB mocks base method.
 func (m *MockPlaybookRunStore) NukeDB() error {
 	m.ctrl.T.Helper()
@@ -401,20 +387,6 @@ func (m *MockPlaybookRunStore) SetBroadcastChannelIDsToRootID(arg0 string, arg1 
 func (mr *MockPlaybookRunStoreMockRecorder) SetBroadcastChannelIDsToRootID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBroadcastChannelIDsToRootID", reflect.TypeOf((*MockPlaybookRunStore)(nil).SetBroadcastChannelIDsToRootID), arg0, arg1)
-}
-
-// SetViewedChannel mocks base method.
-func (m *MockPlaybookRunStore) SetViewedChannel(arg0, arg1 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetViewedChannel", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetViewedChannel indicates an expected call of SetViewedChannel.
-func (mr *MockPlaybookRunStoreMockRecorder) SetViewedChannel(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetViewedChannel", reflect.TypeOf((*MockPlaybookRunStore)(nil).SetViewedChannel), arg0, arg1)
 }
 
 // Unfollow mocks base method.

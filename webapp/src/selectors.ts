@@ -9,7 +9,7 @@ import {GlobalState as WebGlobalState} from 'mattermost-webapp/types/store';
 import {getConfig} from 'mattermost-redux/selectors/entities/general';
 import {getCurrentTeamId, getMyTeams} from 'mattermost-redux/selectors/entities/teams';
 import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
-import {getUsers} from 'mattermost-redux/selectors/entities/common';
+import {getUsers, getMyCurrentChannelMembership} from 'mattermost-redux/selectors/entities/common';
 import {UserProfile} from 'mattermost-redux/types/users';
 import {sortByUsername} from 'mattermost-redux/utils/user_utils';
 import {IDMappedObjects} from 'mattermost-redux/types/utilities';
@@ -26,7 +26,7 @@ import Permissions from 'mattermost-redux/constants/permissions';
 import {Team} from 'mattermost-webapp/packages/mattermost-redux/src/types/teams';
 
 import {pluginId} from 'src/manifest';
-import {playbookRunIsActive} from 'src/types/playbook_run';
+import {playbookRunIsActive, PlaybookRun} from 'src/types/playbook_run';
 import {RHSState, TimelineEventsFilter, TimelineEventsFilterDefault} from 'src/types/rhs';
 import {findLastUpdated} from 'src/utils';
 import {GlobalSettings} from 'src/types/settings';
@@ -73,6 +73,10 @@ export const inPlaybookRunChannel = createSelector(
     (teamId, channelId, playbookRunMapByTeam) => {
         return Boolean(playbookRunMapByTeam[teamId]?.[channelId]);
     },
+);
+
+export const getPlaybookRunByTeamAndChannelId = (state: GlobalState, teamId: string, channelId: string): PlaybookRun | undefined => (
+    myPlaybookRunsByTeam(state)[teamId]?.[channelId]
 );
 
 export const currentPlaybookRun = createSelector(
@@ -198,12 +202,23 @@ export const getProfileSetForChannel = (state: GlobalState, channelId: string) =
 export const isPostMenuModalVisible = (state: GlobalState): boolean =>
     pluginState(state).postMenuModalVisibility;
 
+export const isActionsModalVisible = (state: GlobalState): boolean =>
+    pluginState(state).postActionsModalVisibility;
+
 export const isCurrentUserAdmin = createSelector(
     'isCurrentUserAdmin',
     getCurrentUser,
     (user) => {
         const rolesArray = user.roles.split(' ');
         return rolesArray.includes(General.SYSTEM_ADMIN_ROLE);
+    },
+);
+
+export const isCurrentUserChannelAdmin = createSelector(
+    'isCurrentUserChannelAdmin',
+    getMyCurrentChannelMembership,
+    (membership) => {
+        return membership?.scheme_admin || false;
     },
 );
 

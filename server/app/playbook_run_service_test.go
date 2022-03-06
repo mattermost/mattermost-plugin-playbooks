@@ -39,6 +39,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		teamID := model.NewId()
@@ -54,7 +55,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		_, err := s.CreatePlaybookRun(playbookRun, nil, "testUserID", true)
 		require.Equal(t, err, app.ErrChannelDisplayNameInvalid)
@@ -71,6 +72,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		teamID := model.NewId()
@@ -86,7 +88,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
 		pluginAPI.On("CreateChannel", mock.Anything).Return(nil, &model.AppError{Id: "model.channel.is_valid.2_or_more.app_error"})
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		_, err := s.CreatePlaybookRun(playbookRun, nil, "testUserID", true)
 		require.Equal(t, err, app.ErrChannelDisplayNameInvalid)
@@ -103,6 +105,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		teamID := model.NewId()
@@ -145,7 +148,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 			Return(&model.Post{Id: "testPostId"}, nil)
 		store.EXPECT().SetBroadcastChannelIDsToRootID(playbookRunWithID.ID, map[string]string{"channel_id": "testPostId"}).Return(nil)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		_, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
 		require.NoError(t, err)
@@ -162,6 +165,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		teamID := model.NewId()
@@ -178,7 +182,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
 		pluginAPI.On("CreateChannel", mock.Anything).Return(nil, &model.AppError{Id: "store.sql_channel.save_channel.exists.app_error"})
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		_, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
 		require.EqualError(t, err, "failed to create channel: : , ")
@@ -195,6 +199,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		teamID := model.NewId()
@@ -230,7 +235,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 			Return(&model.Post{Id: "testPostId"}, nil)
 		store.EXPECT().SetBroadcastChannelIDsToRootID(playbookRunWithID.ID, map[string]string{"channel_id": "testPostId"}).Return(nil)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		_, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
 		require.NoError(t, err)
@@ -247,6 +252,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		teamID := model.NewId()
@@ -281,7 +287,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		store.EXPECT().GetBroadcastChannelIDsToRootIDs(playbookRunWithID.ID).Return(map[string]string{}, nil)
 		store.EXPECT().SetBroadcastChannelIDsToRootID(playbookRunWithID.ID, map[string]string{"channel_id": "testPostId"}).Return(nil)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		_, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
 		pluginAPI.AssertExpectations(t)
@@ -299,6 +305,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		type webhookPayload struct {
@@ -361,7 +368,7 @@ func TestCreatePlaybookRun(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Id: "channel_id", Name: "channel-name"}, nil)
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		createdPlaybookRun, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
 		require.NoError(t, err)
@@ -396,6 +403,7 @@ func TestUpdateStatus(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		type webhookPayload struct {
@@ -489,7 +497,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 		})
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		err := s.UpdateStatus(playbookRun.ID, "user_id", statusUpdateOptions)
 		require.NoError(t, err)
@@ -522,6 +530,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		now := model.GetMillis()
@@ -554,7 +563,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		err := s.RestorePlaybookRun("testPlaybookRunID", "testUserID")
 		require.NoError(t, err)
@@ -571,6 +580,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		playbookRun := &app.PlaybookRun{
@@ -587,7 +597,7 @@ func TestRestorePlaybookRun(t *testing.T) {
 		mattermostConfig.SetDefaults()
 		pluginAPI.On("GetConfig").Return(mattermostConfig)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		err := s.RestorePlaybookRun("testPlaybookRunID", "testUserID")
 		require.NoError(t, err)
@@ -605,6 +615,7 @@ func TestUpdateStatusWebhookFailure(t *testing.T) {
 	telemetryService := &telemetry.NoopTelemetry{}
 	scheduler := mock_app.NewMockJobOnceScheduler(controller)
 	playbookService := mock_app.NewMockPlaybookService(controller)
+	channelActionService := mock_app.NewMockChannelActionService(controller)
 	licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 	type webhookPayload struct {
@@ -689,7 +700,7 @@ func TestUpdateStatusWebhookFailure(t *testing.T) {
 	pluginAPI.On("LogWarn", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 	poster.EXPECT().PostMessage(homeChannelID, gomock.Any()).Return(nil, nil)
 
-	s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+	s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 	err := s.UpdateStatus(playbookRun.ID, "user_id", statusUpdateOptions)
 	require.NoError(t, err)
@@ -819,8 +830,9 @@ func TestOpenCreatePlaybookRunDialog(t *testing.T) {
 			scheduler := mock_app.NewMockJobOnceScheduler(controller)
 			tt.prepMocks(t, store, poster, api, configService)
 			playbookService := mock_app.NewMockPlaybookService(controller)
+			channelActionService := mock_app.NewMockChannelActionService(controller)
 			licenseChecker := mock_app.NewMockLicenseChecker(controller)
-			service := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, api, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+			service := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, api, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 			err := service.OpenCreatePlaybookRunDialog(tt.args.teamID, tt.args.ownerID, tt.args.triggerID, tt.args.postID, tt.args.clientID, tt.args.playbooks, tt.args.isMobileApp)
 			if (err != nil) != tt.wantErr {
@@ -897,6 +909,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		playbookRun := &app.PlaybookRun{ID: "playbook_run_id", CategoryName: "Playbook Runs"}
@@ -935,7 +948,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		).Return(newSidebarCategory, nil)
 		pluginAPI.On("GetConfig").Return(&model.Config{})
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		userID := "user_id"
 		channelID := "channel_id"
@@ -1009,6 +1022,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		playbookRun := &app.PlaybookRun{ID: "playbook_run_id", CategoryName: "Playbook Runs 2"}
@@ -1047,7 +1061,7 @@ func TestUserHasJoinedChannel(t *testing.T) {
 		).Return(newSidebarCategory, nil)
 		pluginAPI.On("GetConfig").Return(&model.Config{})
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		userID := "user_id"
 		channelID := "channel_id"
@@ -1069,6 +1083,7 @@ func TestMultipleWebhooks(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		type webhookPayload struct {
@@ -1136,7 +1151,7 @@ func TestMultipleWebhooks(t *testing.T) {
 		pluginAPI.On("GetChannel", mock.Anything).Return(&model.Channel{Id: "channel_id", Name: "channel-name"}, nil)
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		createdPlaybookRun, err := s.CreatePlaybookRun(playbookRun, nil, "user_id", true)
 		require.NoError(t, err)
@@ -1171,6 +1186,7 @@ func TestMultipleWebhooks(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		scheduler := mock_app.NewMockJobOnceScheduler(controller)
 		playbookService := mock_app.NewMockPlaybookService(controller)
+		channelActionService := mock_app.NewMockChannelActionService(controller)
 		licenseChecker := mock_app.NewMockLicenseChecker(controller)
 
 		type webhookPayload struct {
@@ -1268,7 +1284,7 @@ func TestMultipleWebhooks(t *testing.T) {
 		pluginAPI.On("GetTeam", teamID).Return(&model.Team{Id: teamID, Name: "team_name"}, nil)
 		pluginAPI.On("GetUser", "user_id").Return(&model.User{}, nil)
 
-		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
+		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		err := s.UpdateStatus(playbookRun.ID, "user_id", statusUpdateOptions)
 		require.NoError(t, err)

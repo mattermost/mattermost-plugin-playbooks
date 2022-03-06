@@ -11,6 +11,8 @@ const Component = styled.label`
     cursor: pointer;
     user-select: none;
     width: fit-content;
+    white-space: nowrap;
+
 
     transition: background-color 0.2s;
 
@@ -23,7 +25,7 @@ const Component = styled.label`
     }
 
     input + span::before {
-        content: '\f12c';
+        content: '\f012c';
         font-family: compass-icons;
         font-size: 14px;
 

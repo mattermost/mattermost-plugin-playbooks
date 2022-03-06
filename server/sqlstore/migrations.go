@@ -1817,4 +1817,89 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.49.0"),
+		toVersion:   semver.MustParse("0.50.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			if e.DriverName() == model.DatabaseDriverMysql {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_ChannelAction (
+						ID VARCHAR(26) PRIMARY KEY,
+						ChannelID VARCHAR(26),
+						Enabled BOOLEAN DEFAULT FALSE,
+						DeleteAt BIGINT NOT NULL DEFAULT 0,
+						ActionType TEXT NOT NULL,
+						TriggerType TEXT NOT NULL,
+						Payload JSON NOT NULL,
+						INDEX IR_ChannelAction_ChannelID (ChannelID)
+					)
+				` + MySQLCharset); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_ChannelAction")
+				}
+			} else {
+				if _, err := e.Exec(`
+					CREATE TABLE IF NOT EXISTS IR_ChannelAction (
+						ID TEXT PRIMARY KEY,
+						ChannelID VARCHAR(26),
+						Enabled BOOLEAN DEFAULT FALSE,
+						DeleteAt BIGINT NOT NULL DEFAULT 0,
+						ActionType TEXT NOT NULL,
+						TriggerType TEXT NOT NULL,
+						Payload JSON NOT NULL
+					)
+				`); err != nil {
+					return errors.Wrapf(err, "failed creating table IR_ChannelAction")
+				}
+
+				if _, err := e.Exec(createPGIndex("IR_ChannelAction_ChannelID", "IR_ChannelAction", "ChannelID")); err != nil {
+					return errors.Wrapf(err, "failed creating index IR_ChannelAction_ChannelID")
+				}
+			}
+
+			// Retrieve the channel ID and welcome message of every run
+
+			selectQuery := sqlStore.builder.
+				Select("ChannelID", "MessageOnJoin").
+				From("IR_Incident").
+				Where(sq.And{
+					sq.NotEq{"MessageOnJoin": ""},
+				})
+
+			var rows []struct {
+				ChannelID     string
+				MessageOnJoin string
+			}
+
+			if err := sqlStore.selectBuilder(e, &rows, selectQuery); err != nil {
+				return errors.Wrapf(err, "failed to retrieve the ChannelID and MessageOnJoin from IR_Incident")
+			}
+
+			// Create a new action for every row returned before
+
+			if len(rows) > 0 {
+				insertQuery := sqlStore.builder.
+					Insert("IR_ChannelAction").
+					Columns("ID", "ChannelID", "Enabled", "ActionType", "TriggerType", "Payload")
+
+				for _, row := range rows {
+					payload := struct {
+						Message string
+					}{row.MessageOnJoin}
+
+					payloadJSON, err := json.Marshal(payload)
+					if err != nil {
+						return errors.Wrapf(err, "failed to marshal welcome message payload: %v", payload)
+					}
+
+					insertQuery = insertQuery.Values(model.NewId(), row.ChannelID, true, "send_welcome_message", "new_member_joins", payloadJSON)
+				}
+
+				if _, err := sqlStore.execBuilder(e, insertQuery); err != nil {
+					return errors.Wrapf(err, "failed to create the channel actions for the existing runs")
+				}
+			}
+
+			return nil
+		},
+	},
 }

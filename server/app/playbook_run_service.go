@@ -43,6 +43,7 @@ type PlaybookRunServiceImpl struct {
 	telemetry       PlaybookRunTelemetry
 	api             plugin.API
 	playbookService PlaybookService
+	actionService   ChannelActionService
 	permissions     *PermissionsService
 	licenseChecker  LicenseChecker
 	metricsService  *metrics.Metrics
@@ -94,6 +95,7 @@ func NewPlaybookRunService(
 	telemetry PlaybookRunTelemetry,
 	api plugin.API,
 	playbookService PlaybookService,
+	channelActionService ChannelActionService,
 	licenseChecker LicenseChecker,
 	metricsService *metrics.Metrics,
 ) *PlaybookRunServiceImpl {
@@ -108,6 +110,7 @@ func NewPlaybookRunService(
 		httpClient:      httptools.MakeClient(pluginAPI),
 		api:             api,
 		playbookService: playbookService,
+		actionService:   channelActionService,
 		licenseChecker:  licenseChecker,
 		metricsService:  metricsService,
 	}
@@ -132,35 +135,15 @@ func (s *PlaybookRunServiceImpl) GetPlaybookRuns(requesterInfo RequesterInfo, op
 }
 
 func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playbookTitle, playbookID string, playbookRun *PlaybookRun, reporter *model.User) (string, error) {
-	playbookRunChannel, err := s.pluginAPI.Channel.Get(playbookRun.ChannelID)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get playbook run channel")
-	}
-
-	announcementMsg := fmt.Sprintf(
-		"**[%s](%s%s)**\n",
+	return fmt.Sprintf(
+		"##### [%s](%s%s)\n@%s ran the [%s](%s) playbook.",
 		playbookRun.Name,
 		getRunDetailsRelativeURL(playbookRun.ID),
 		"%s", // for the telemetry data injection
-	)
-
-	announcementMsg += fmt.Sprintf(
-		"@%s just ran the [%s](%s) playbook.",
 		reporter.Username,
 		playbookTitle,
 		getPlaybookDetailsRelativeURL(playbookID),
-	)
-
-	if playbookRunChannel.Type == model.ChannelTypeOpen {
-		announcementMsg += fmt.Sprintf(
-			" Visit the link above for more information or join ~%v to participate.",
-			playbookRunChannel.Name,
-		)
-	} else {
-		announcementMsg += " Visit the link above for more information."
-	}
-
-	return announcementMsg, nil
+	), nil
 }
 
 // PlaybookRunWebhookPayload is the body of the payload sent via playbook run webhooks.
@@ -264,6 +247,24 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		playbookRun.Name = channel.Name
+	}
+
+	if pb != nil && pb.MessageOnJoinEnabled && pb.MessageOnJoin != "" {
+		welcomeAction := GenericChannelAction{
+			GenericChannelActionWithoutPayload: GenericChannelActionWithoutPayload{
+				ChannelID:   playbookRun.ChannelID,
+				Enabled:     true,
+				ActionType:  ActionTypeWelcomeMessage,
+				TriggerType: TriggerTypeNewMemberJoins,
+			},
+			Payload: WelcomeMessagePayload{
+				Message: pb.MessageOnJoin,
+			},
+		}
+
+		if _, err := s.actionService.Create(welcomeAction); err != nil {
+			s.logger.Errorf(errors.Wrapf(err, "unable to create welcome action for new run in channel %q", playbookRun.ChannelID).Error())
+		}
 	}
 
 	now := model.GetMillis()
@@ -1693,34 +1694,34 @@ func (s *PlaybookRunServiceImpl) GetChecklistItemAutocomplete(playbookRunID stri
 	return ret, nil
 }
 
-// DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
-// and DMs the message to userID. Use force = true to DM even if there are no items.
-func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) error {
+// buildTodoDigestMessage
+// gathers the list of assigned tasks, participating runs, and overdue updates and builds a combined message with them
+func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force bool) (*model.Post, error) {
 	runsOverdue, err := s.GetOverdueUpdateRuns(userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	user, err := s.pluginAPI.User.Get(userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	part1 := buildRunsOverdueMessage(runsOverdue, user.Locale)
 
 	runsAssigned, err := s.GetRunsWithAssignedTasks(userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	part2 := buildAssignedTaskMessageAndTotal(runsAssigned, user.Locale)
 
 	if force {
 		runsInProgress, err := s.GetParticipatingRuns(userID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		part3 := buildRunsInProgressMessage(runsInProgress, user.Locale)
 
-		return s.poster.DM(userID, &model.Post{Message: part1 + part2 + part3})
+		return &model.Post{Message: part1 + part2 + part3}, nil
 	}
 
 	// !force, so only return sections that have information.
@@ -1732,9 +1733,41 @@ func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) e
 		message += part2
 	}
 	if message == "" {
+		return nil, nil
+	}
+
+	return &model.Post{Message: message}, nil
+}
+
+// EphemeralPostTodoDigestToUser
+// builds todo digest message and sends an ephemeral post to userID, channelID. Use force = true to send post even if there are no items.
+func (s *PlaybookRunServiceImpl) EphemeralPostTodoDigestToUser(userID string, channelID string, force bool) error {
+	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force)
+	if err != nil {
+		return err
+	}
+
+	if todoDigestMessage != nil {
+		s.poster.EphemeralPost(userID, channelID, todoDigestMessage)
 		return nil
 	}
-	return s.poster.DM(userID, &model.Post{Message: message})
+
+	return nil
+}
+
+// DMTodoDigestToUser
+// DMs the message to userID. Use force = true to DM even if there are no items.
+func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) error {
+	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force)
+	if err != nil {
+		return err
+	}
+
+	if todoDigestMessage != nil {
+		return s.poster.DM(userID, todoDigestMessage)
+	}
+
+	return nil
 }
 
 // GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
@@ -1940,46 +1973,6 @@ func sliceContains(strs []string, target string) bool {
 		}
 	}
 	return false
-}
-
-// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
-// playbookRun.MessageOnJoin if it exists. Returns true if the message was sent.
-func (s *PlaybookRunServiceImpl) CheckAndSendMessageOnJoin(userID, givenPlaybookRunID, channelID string) bool {
-	hasViewed := s.store.HasViewedChannel(userID, channelID)
-
-	if hasViewed {
-		return true
-	}
-
-	playbookRunID, err := s.store.GetPlaybookRunIDForChannel(channelID)
-	if err != nil {
-		s.logger.Errorf("failed to resolve playbook run for channelID '%s'; error: %s", channelID, err.Error())
-		return false
-	}
-
-	if playbookRunID != givenPlaybookRunID {
-		s.logger.Errorf("endpoint's playbookRunID does not match channelID's playbookRunID")
-		return false
-	}
-
-	playbookRun, err := s.store.GetPlaybookRun(playbookRunID)
-	if err != nil {
-		s.logger.Errorf("failed to resolve playbook run for playbookRunID '%s'; error: %s", playbookRunID, err.Error())
-		return false
-	}
-
-	if err = s.store.SetViewedChannel(userID, channelID); err != nil {
-		// If duplicate entry, userID has viewed channelID. If not a duplicate, assume they haven't.
-		return errors.Is(err, ErrDuplicateEntry)
-	}
-
-	if playbookRun.MessageOnJoin != "" {
-		s.poster.EphemeralPost(userID, channelID, &model.Post{
-			Message: playbookRun.MessageOnJoin,
-		})
-	}
-
-	return true
 }
 
 func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description string) error {
