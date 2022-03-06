@@ -1071,6 +1071,207 @@ func TestGetOverdueRetroRunsTotal(t *testing.T) {
 	}
 }
 
+func TestGetFollowersActiveTotal(t *testing.T) {
+	createRuns := func(
+		store *SQLStore,
+		playbookRunStore app.PlaybookRunStore,
+		playbookID string,
+		followers []string,
+		teamID string,
+		num int,
+		status string,
+	) {
+
+		for i := 0; i < num; i++ {
+			run := NewBuilder(t).
+				WithCurrentStatus(status).
+				WithPlaybookID(playbookID).
+				WithTeamID(teamID).
+				ToPlaybookRun()
+
+			returned, err := playbookRunStore.CreatePlaybookRun(run)
+			require.NoError(t, err)
+			for _, f := range followers {
+				err = playbookRunStore.Follow(returned.ID, f)
+				require.NoError(t, err)
+			}
+			createPlaybookRunChannel(t, store, returned)
+		}
+	}
+
+	alice := userInfo{
+		ID:   model.NewId(),
+		Name: "alice",
+	}
+	bob := userInfo{
+		ID:   model.NewId(),
+		Name: "bob",
+	}
+
+	playbook1 := NewPBBuilder().
+		WithTitle("playbook 1").
+		ToPlaybook()
+	playbook2 := NewPBBuilder().
+		WithTitle("playbook 2").
+		ToPlaybook()
+
+	users := []userInfo{alice, bob}
+	teamID := model.NewId()
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		playbookStore := setupPlaybookStore(t, db)
+		_, store := setupSQLStore(t, db)
+		setupChannelsTable(t, db)
+		setupTeamMembersTable(t, db)
+
+		addUsers(t, store, users)
+		addUsersToTeam(t, store, users, teamID)
+
+		// create playbook with two folllowers
+		playbook1ID, err := playbookStore.Create(playbook1)
+		require.NoError(t, err)
+		err = playbookStore.AutoFollow(playbook1ID, alice.ID)
+		require.NoError(t, err)
+		err = playbookStore.AutoFollow(playbook1ID, bob.ID)
+		require.NoError(t, err)
+		followers1, err := playbookStore.GetAutoFollows(playbook1ID)
+		require.NoError(t, err)
+
+		// create playbook with one follower
+		playbook2ID, err := playbookStore.Create(playbook2)
+		require.NoError(t, err)
+		err = playbookStore.AutoFollow(playbook2ID, alice.ID)
+		require.NoError(t, err)
+		followers2, err := playbookStore.GetAutoFollows(playbook2ID)
+		require.NoError(t, err)
+
+		// create active runs without followers
+		createRuns(store, playbookRunStore, "", nil, teamID, 2, app.StatusInProgress)
+		// create finished runs with followers
+		createRuns(store, playbookRunStore, playbook1ID, followers1, teamID, 3, app.StatusFinished)
+
+		t.Run("zero active followers", func(t *testing.T) {
+			actual, err := playbookRunStore.GetFollowersActiveTotal()
+			require.NoError(t, err)
+			require.Equal(t, int64(0), actual)
+		})
+
+		// create active runs based on playbooks that have autofollowers
+		createRuns(store, playbookRunStore, playbook1ID, followers1, teamID, 3, app.StatusInProgress)
+		createRuns(store, playbookRunStore, playbook2ID, followers2, teamID, 2, app.StatusInProgress)
+
+		t.Run("runs with active followers", func(t *testing.T) {
+			expected := 2*3 + 1*2
+			actual, err := playbookRunStore.GetFollowersActiveTotal()
+			require.NoError(t, err)
+			require.Equal(t, int64(expected), actual)
+		})
+	}
+}
+
+func TestGetParticipantsActiveTotal(t *testing.T) {
+	createRuns := func(
+		store *SQLStore,
+		playbookRunStore app.PlaybookRunStore,
+		playbookID string,
+		participants []userInfo,
+		teamID string,
+		num int,
+		status string,
+	) {
+
+		for i := 0; i < num; i++ {
+			run := NewBuilder(t).
+				WithCurrentStatus(status).
+				WithPlaybookID(playbookID).
+				WithTeamID(teamID).
+				ToPlaybookRun()
+
+			returned, err := playbookRunStore.CreatePlaybookRun(run)
+			require.NoError(t, err)
+			if len(participants) > 0 {
+				addUsersToChannels(t, store, participants, []string{run.ChannelID})
+			}
+
+			createPlaybookRunChannel(t, store, returned)
+		}
+	}
+
+	alice := userInfo{
+		ID:   model.NewId(),
+		Name: "alice",
+	}
+	bob := userInfo{
+		ID:   model.NewId(),
+		Name: "bob",
+	}
+	tom := userInfo{
+		ID:   model.NewId(),
+		Name: "tom",
+	}
+	bot1 := userInfo{
+		ID:   model.NewId(),
+		Name: "Mr. Bot",
+	}
+
+	playbook1 := NewPBBuilder().
+		WithTitle("playbook 1").
+		ToPlaybook()
+	playbook2 := NewPBBuilder().
+		WithTitle("playbook 2").
+		ToPlaybook()
+
+	team1ID := model.NewId()
+	team2ID := model.NewId()
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookRunStore := setupPlaybookRunStore(t, db)
+		playbookStore := setupPlaybookStore(t, db)
+		_, store := setupSQLStore(t, db)
+		setupTeamMembersTable(t, db)
+		setupChannelMembersTable(t, db)
+		setupChannelMemberHistoryTable(t, db)
+		setupChannelsTable(t, db)
+
+		addUsers(t, store, []userInfo{alice, bob, tom})
+		addBots(t, store, []userInfo{bot1})
+
+		addUsersToTeam(t, store, []userInfo{alice, bob, bot1}, team1ID)
+		addUsersToTeam(t, store, []userInfo{tom, bob, bot1}, team2ID)
+
+		// create two playbooks
+		playbook1ID, err := playbookStore.Create(playbook1)
+		require.NoError(t, err)
+		playbook2ID, err := playbookStore.Create(playbook2)
+		require.NoError(t, err)
+
+		// create active runs without participants
+		createRuns(store, playbookRunStore, "", nil, team1ID, 2, app.StatusInProgress)
+		// create finished runs with participants
+		createRuns(store, playbookRunStore, playbook1ID, nil, team1ID, 3, app.StatusInProgress)
+
+		t.Run("zero active participants", func(t *testing.T) {
+			actual, err := playbookRunStore.GetParticipantsActiveTotal()
+			require.NoError(t, err)
+			require.Equal(t, int64(0), actual)
+		})
+
+		// create active runs with participants
+		createRuns(store, playbookRunStore, playbook1ID, []userInfo{alice, bob, bot1}, team1ID, 3, app.StatusInProgress)
+		createRuns(store, playbookRunStore, playbook2ID, []userInfo{tom, bob}, team2ID, 5, app.StatusInProgress)
+
+		t.Run("runs with active participants", func(t *testing.T) {
+			expected := 2*3 + 2*5 // ignore bots
+			actual, err := playbookRunStore.GetParticipantsActiveTotal()
+			require.NoError(t, err)
+			require.Equal(t, int64(expected), actual)
+		})
+	}
+}
+
 func setupPlaybookRunStore(t *testing.T, db *sqlx.DB) app.PlaybookRunStore {
 	mockCtrl := gomock.NewController(t)
 

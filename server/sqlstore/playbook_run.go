@@ -1290,7 +1290,7 @@ func (s *playbookRunStore) GetOverdueRetroRunsTotal() (int64, error) {
 	return count, nil
 }
 
-// GetFollowersActiveTotal returns number of active followers.
+// GetFollowersActiveTotal returns number of active followers
 func (s *playbookRunStore) GetFollowersActiveTotal() (int64, error) {
 	var count int64
 
@@ -1320,6 +1320,18 @@ func (s *playbookRunStore) GetParticipantsActiveTotal() (int64, error) {
 		Where(sq.Expr("cm.UserId NOT IN (SELECT UserId FROM Bots)"))
 
 	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count active participants")
+	}
+
+	var ids []string
+	query = s.store.builder.
+		Select("cm.UserId").
+		From("ChannelMembers as cm").
+		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
+		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
+		Where(sq.Expr("cm.UserId NOT IN (SELECT UserId FROM Bots)"))
+
+	if err := s.store.selectBuilder(s.store.db, &ids, query); err != nil {
 		return 0, errors.Wrap(err, "failed to count active participants")
 	}
 
