@@ -493,5 +493,15 @@
     "9a9+ww": "Title",
     "69nlA3": "Please enter a duration in the format: dd:hh:mm (e.g., 14:00:00).",
     "5AJmOz": "When a user joins the channel",
-    "0RlzlZ": "Send a temporary welcome message to the user"
+    "0RlzlZ": "Send a temporary welcome message to the user",
+    "u7qh13": "Ready run to your playbook?",
+    "p1I/Fx": "Your run has been auto-created",
+    "c23IHq": "Channel actions allow you to automate activities for this channel",
+    "ao44YC": "Configure metrics",
+    "Y4MU/9": "Select <strong>Start a test run</strong> to see it in action.",
+    "RUlvbf": "Test your new playbook!",
+    "MHzP9I": "Define a message to welcome users joining the channel.",
+    "MBNMo9": "Channel Actions",
+    "DPj6DM": "Select <strong>Run</strong> to see it in action.",
+    "B3Q5mz": "Trigger"
 }
