@@ -1269,18 +1269,6 @@ func (s *playbookRunStore) GetParticipantsActiveTotal() (int64, error) {
 		return 0, errors.Wrap(err, "failed to count active participants")
 	}
 
-	var ids []string
-	query = s.store.builder.
-		Select("cm.UserId").
-		From("ChannelMembers as cm").
-		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
-		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
-		Where(sq.Expr("cm.UserId NOT IN (SELECT UserId FROM Bots)"))
-
-	if err := s.store.selectBuilder(s.store.db, &ids, query); err != nil {
-		return 0, errors.Wrap(err, "failed to count active participants")
-	}
-
 	return count, nil
 }
 
