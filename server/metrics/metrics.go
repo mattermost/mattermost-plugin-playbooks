@@ -27,12 +27,12 @@ type Metrics struct {
 
 	instance *prometheus.GaugeVec
 
-	playbooksCreatedTotal  prometheus.Counter
-	playbooksArchivedTotal prometheus.Counter
-	playbooksRestoredTotal prometheus.Counter
-	runsCreatedTotal       prometheus.Counter
-	runsFinishedTotal      prometheus.Counter
-	errorsTotal            prometheus.Counter
+	playbooksCreatedCount  prometheus.Counter
+	playbooksArchivedCount prometheus.Counter
+	playbooksRestoredCount prometheus.Counter
+	runsCreatedCount       prometheus.Counter
+	runsFinishedCount      prometheus.Counter
+	errorsCount            prometheus.Counter
 
 	playbooksActiveTotal      prometheus.Gauge
 	runsActiveTotal           prometheus.Gauge
@@ -68,59 +68,59 @@ func NewMetrics(info InstanceInfo) *Metrics {
 	m.registry.MustRegister(m.instance)
 	m.instance.WithLabelValues(info.Version).Set(1)
 
-	m.playbooksCreatedTotal = prometheus.NewCounter(prometheus.CounterOpts{
+	m.playbooksCreatedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemPlaybooks,
-		Name:        "playbook_created_total",
-		Help:        "Total number of playbooks created.",
+		Name:        "playbook_created_count",
+		Help:        "Total number of playbooks created since the last launch.",
 		ConstLabels: additionalLabels,
 	})
-	m.registry.MustRegister(m.playbooksCreatedTotal)
+	m.registry.MustRegister(m.playbooksCreatedCount)
 
-	m.playbooksArchivedTotal = prometheus.NewCounter(prometheus.CounterOpts{
+	m.playbooksArchivedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemPlaybooks,
-		Name:        "playbook_archived_total",
-		Help:        "Total number of playbooks archived.",
+		Name:        "playbook_archived_count",
+		Help:        "Total number of playbooks archived since the last launch.",
 		ConstLabels: additionalLabels,
 	})
-	m.registry.MustRegister(m.playbooksArchivedTotal)
+	m.registry.MustRegister(m.playbooksArchivedCount)
 
-	m.playbooksRestoredTotal = prometheus.NewCounter(prometheus.CounterOpts{
+	m.playbooksRestoredCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemPlaybooks,
-		Name:        "playbook_restored_total",
-		Help:        "Total number of playbooks restored.",
+		Name:        "playbook_restored_count",
+		Help:        "Total number of playbooks restored since the last launch.",
 		ConstLabels: additionalLabels,
 	})
-	m.registry.MustRegister(m.playbooksRestoredTotal)
+	m.registry.MustRegister(m.playbooksRestoredCount)
 
-	m.runsCreatedTotal = prometheus.NewCounter(prometheus.CounterOpts{
+	m.runsCreatedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemRuns,
-		Name:        "runs_created_total",
-		Help:        "Total number of runs created.",
+		Name:        "runs_created_count",
+		Help:        "Total number of runs created since the last launch.",
 		ConstLabels: additionalLabels,
 	})
-	m.registry.MustRegister(m.runsCreatedTotal)
+	m.registry.MustRegister(m.runsCreatedCount)
 
-	m.runsFinishedTotal = prometheus.NewCounter(prometheus.CounterOpts{
+	m.runsFinishedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemRuns,
-		Name:        "runs_finished_total",
-		Help:        "Total number of runs finished.",
+		Name:        "runs_finished_count",
+		Help:        "Total number of runs finished since the last launch.",
 		ConstLabels: additionalLabels,
 	})
-	m.registry.MustRegister(m.runsFinishedTotal)
+	m.registry.MustRegister(m.runsFinishedCount)
 
-	m.errorsTotal = prometheus.NewCounter(prometheus.CounterOpts{
+	m.errorsCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemSystem,
-		Name:        "errors_total",
-		Help:        "Total number of errors.",
+		Name:        "errors_count",
+		Help:        "Total number of errors since the last launch.",
 		ConstLabels: additionalLabels,
 	})
-	m.registry.MustRegister(m.errorsTotal)
+	m.registry.MustRegister(m.errorsCount)
 
 	m.playbooksActiveTotal = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace:   MetricsNamespace,
@@ -180,37 +180,37 @@ func NewMetrics(info InstanceInfo) *Metrics {
 
 func (m *Metrics) IncrementPlaybookCreatedTotal(num int) {
 	if m != nil {
-		m.playbooksCreatedTotal.Add(float64(num))
+		m.playbooksCreatedCount.Add(float64(num))
 	}
 }
 
 func (m *Metrics) IncrementPlaybookArchivedTotal(num int) {
 	if m != nil {
-		m.playbooksArchivedTotal.Add(float64(num))
+		m.playbooksArchivedCount.Add(float64(num))
 	}
 }
 
 func (m *Metrics) IncrementPlaybookRestoredTotal(num int) {
 	if m != nil {
-		m.playbooksRestoredTotal.Add(float64(num))
+		m.playbooksRestoredCount.Add(float64(num))
 	}
 }
 
 func (m *Metrics) IncrementRunsCreatedTotal(num int) {
 	if m != nil {
-		m.runsCreatedTotal.Add(float64(num))
+		m.runsCreatedCount.Add(float64(num))
 	}
 }
 
 func (m *Metrics) IncrementRunsFinishedTotal(num int) {
 	if m != nil {
-		m.runsFinishedTotal.Add(float64(num))
+		m.runsFinishedCount.Add(float64(num))
 	}
 }
 
 func (m *Metrics) IncrementErrorsTotal(num int) {
 	if m != nil {
-		m.errorsTotal.Add(float64(num))
+		m.errorsCount.Add(float64(num))
 	}
 }
 
