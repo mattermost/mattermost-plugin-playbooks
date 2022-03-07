@@ -81,6 +81,8 @@ const Container = styled.main`
     padding-top: 40px;
 
     background-color: rgba(var(--center-channel-color-rgb),0.04);
+
+    z-index: 1;
 `;
 
 const Content = styled.div`
