@@ -2,35 +2,19 @@
 // See LICENSE.txt for license information.
 
 import React, {useState} from 'react';
-import styled from 'styled-components';
 
 import {OptionTypeBase, StylesConfig} from 'react-select';
-
 import CreatableSelect from 'react-select/creatable';
-
-import {AutomationHeader, AutomationTitle, SelectorWrapper} from 'src/components/backstage/playbook_edit/automation/styles';
-import {Toggle} from 'src/components/backstage/playbook_edit/automation/toggle';
 
 interface Props {
     enabled: boolean;
-    textOnToggle: string;
-    onToggle: () => void;
     placeholderText: string;
     keywords: string[];
     onKeywordsChange: (keywords: string[]) => void;
+    className?: string;
 }
 
-const selectComponents = {
-    DropdownIndicator: null,
-    ClearIndicator: null,
-};
-
-const createOption = (label: string) => ({
-    label,
-    value: label,
-});
-
-export const InputKeywords = (props: Props) => {
+const KeywordsSelector = (props: Props) => {
     const [inputValue, setInputValue] = useState('');
     const [values, setValues] = useState(props.keywords.map(createOption));
 
@@ -73,34 +57,34 @@ export const InputKeywords = (props: Props) => {
     };
 
     return (
-        <KeywordsAutomationHeader>
-            <KeywordsAutomationTitle>
-                <Toggle
-                    isChecked={props.enabled}
-                    onChange={props.onToggle}
-                />
-                <div>{props.textOnToggle}</div>
-            </KeywordsAutomationTitle>
-            <KeywordsSelectorWrapper>
-                <CreatableSelect
-                    components={selectComponents}
-                    isDisabled={!props.enabled}
-                    inputValue={inputValue}
-                    isClearable={true}
-                    isMulti={true}
-                    menuIsOpen={false}
-                    placeholder={props.placeholderText}
-                    value={props.enabled ? values : []}
-                    onKeyDown={handleKeyDown}
-                    onChange={handleChange}
-                    onInputChange={handleInputChange}
-                    onBlur={handleBlur}
-                    styles={selectStyles}
-                />
-            </KeywordsSelectorWrapper>
-        </KeywordsAutomationHeader>
+        <CreatableSelect
+            className={props.className}
+            components={selectComponents}
+            isDisabled={!props.enabled}
+            inputValue={inputValue}
+            isClearable={true}
+            isMulti={true}
+            menuIsOpen={false}
+            placeholder={props.placeholderText}
+            value={props.enabled ? values : []}
+            onKeyDown={handleKeyDown}
+            onChange={handleChange}
+            onInputChange={handleInputChange}
+            onBlur={handleBlur}
+            styles={selectStyles}
+        />
     );
 };
+
+const selectComponents = {
+    DropdownIndicator: null,
+    ClearIndicator: null,
+};
+
+const createOption = (label: string) => ({
+    label,
+    value: label,
+});
 
 // styles for the select component
 const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
@@ -155,14 +139,4 @@ const selectStyles: StylesConfig<OptionTypeBase, boolean> = {
     }),
 };
 
-const KeywordsAutomationHeader = styled(AutomationHeader)`
-    align-items: flex-start;
-`;
-
-const KeywordsAutomationTitle = styled(AutomationTitle)`
-    margin: 8px 0px 8px 0px;
-`;
-
-const KeywordsSelectorWrapper = styled(SelectorWrapper)`
-    height: 100%;
-`;
+export default KeywordsSelector;
