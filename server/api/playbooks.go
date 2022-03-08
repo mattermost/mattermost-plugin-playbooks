@@ -616,6 +616,9 @@ func (h *PlaybookHandler) importPlaybook(w http.ResponseWriter, r *http.Request)
 		},
 	}
 
+	// Force the imported playbook to be public to avoid licencing issues
+	playbook.Public = true
+
 	if teamID != "" {
 		playbook.TeamID = teamID
 	}

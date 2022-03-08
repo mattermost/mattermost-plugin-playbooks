@@ -213,6 +213,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
         margin-top: 0;
         background: rgba(var(--center-channel-color-rgb), 0.08);
         color: var(--center-channel-color);
+        border-radius: 100px;
 
         :hover {
             background: rgba(var(--center-channel-color-rgb), 0.16);

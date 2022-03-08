@@ -11,6 +11,8 @@ const Component = styled.label`
     cursor: pointer;
     user-select: none;
     width: fit-content;
+    white-space: nowrap;
+
 
     transition: background-color 0.2s;
 
