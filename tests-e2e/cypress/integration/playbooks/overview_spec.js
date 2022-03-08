@@ -157,7 +157,7 @@ describe('playbooks > overview', () => {
         });
     });
 
-    it('show followers in actions preview', () => {
+    it('shows followers in actions preview', () => {
         let playbookId;
         cy.apiCreatePlaybook({
             teamId: testTeam.id,
