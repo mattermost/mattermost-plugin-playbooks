@@ -509,5 +509,6 @@
     "DPj6DM": "Wählen Sie <strong>Lauf</strong>, um es in Aktion zu sehen.",
     "B3Q5mz": "Auslöser",
     "5AJmOz": "Wenn ein Benutzer dem Kanal beitritt",
-    "0RlzlZ": "Senden einer temporären Willkommensnachricht an den Benutzer"
+    "0RlzlZ": "Senden einer temporären Willkommensnachricht an den Benutzer",
+    "hCMWC+": "Starte Folgen für {folgende, plural, =0 {keinen Benutzer} =1 {einen Benutzer} other {# Benutzer}}"
 }
