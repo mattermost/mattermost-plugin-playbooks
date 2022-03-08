@@ -204,7 +204,7 @@ describe('playbooks > overview', () => {
                 cy.findByText('One member automatically following this run').should('exist');
             });
         });
-    })
+    });
 
     it('shows status update timer', () => {
         cy.visit(`/playbooks/playbooks/${testPublicPlaybook.id}`);
