@@ -39,6 +39,10 @@ import {
     HidePostMenuModal,
     SHOW_POST_MENU_MODAL,
     HIDE_POST_MENU_MODAL,
+    ShowActionsModal,
+    HideActionsModal,
+    SHOW_ACTIONS_MODAL,
+    HIDE_ACTIONS_MODAL,
     SetHasViewedChannel,
     SET_HAS_VIEWED_CHANNEL,
     SetRHSAboutCollapsedState,
@@ -205,6 +209,17 @@ const postMenuModalVisibility = (state = false, action: ShowPostMenuModal | Hide
     }
 };
 
+const postActionsModalVisibility = (state = false, action: ShowActionsModal | HideActionsModal) => {
+    switch (action.type) {
+    case SHOW_ACTIONS_MODAL:
+        return true;
+    case HIDE_ACTIONS_MODAL:
+        return false;
+    default:
+        return state;
+    }
+};
+
 const hasViewedByChannel = (state: Record<string, boolean> = {}, action: SetHasViewedChannel) => {
     switch (action.type) {
     case SET_HAS_VIEWED_CHANNEL:
@@ -292,6 +307,7 @@ const reducer = combineReducers({
     eventsFilterByChannel,
     globalSettings,
     postMenuModalVisibility,
+    postActionsModalVisibility,
     hasViewedByChannel,
     rhsAboutCollapsedByChannel,
     checklistCollapsedState,
