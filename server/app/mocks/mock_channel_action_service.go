@@ -7,6 +7,7 @@ package mock_app
 import (
 	gomock "github.com/golang/mock/gomock"
 	app "github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	model "github.com/mattermost/mattermost-server/v6/model"
 	reflect "reflect"
 )
 
@@ -78,7 +79,7 @@ func (mr *MockChannelActionServiceMockRecorder) Get(arg0 interface{}) *gomock.Ca
 }
 
 // GetChannelActions mocks base method
-func (m *MockChannelActionService) GetChannelActions(arg0, arg1 string) ([]app.GenericChannelAction, error) {
+func (m *MockChannelActionService) GetChannelActions(arg0 string, arg1 app.GetChannelActionOptions) ([]app.GenericChannelAction, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetChannelActions", arg0, arg1)
 	ret0, _ := ret[0].([]app.GenericChannelAction)
@@ -90,6 +91,18 @@ func (m *MockChannelActionService) GetChannelActions(arg0, arg1 string) ([]app.G
 func (mr *MockChannelActionServiceMockRecorder) GetChannelActions(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChannelActions", reflect.TypeOf((*MockChannelActionService)(nil).GetChannelActions), arg0, arg1)
+}
+
+// MessageHasBeenPosted mocks base method
+func (m *MockChannelActionService) MessageHasBeenPosted(arg0 string, arg1 *model.Post) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "MessageHasBeenPosted", arg0, arg1)
+}
+
+// MessageHasBeenPosted indicates an expected call of MessageHasBeenPosted
+func (mr *MockChannelActionServiceMockRecorder) MessageHasBeenPosted(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MessageHasBeenPosted", reflect.TypeOf((*MockChannelActionService)(nil).MessageHasBeenPosted), arg0, arg1)
 }
 
 // Update mocks base method
