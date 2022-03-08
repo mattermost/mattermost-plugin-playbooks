@@ -58,9 +58,7 @@ const EditTitleDescriptionModal = (props: Props) => {
         <>
             <GenericModal
                 onHide={onTentativeHide}
-                modalHeaderText={formatMessage({
-                    defaultMessage: 'Edit name and description',
-                })}
+                modalHeaderText={formatMessage({defaultMessage: 'Edit name and description'})}
                 show={props.show && !showConfirm}
                 handleConfirm={handleConfirmNameDescriptionModal}
                 handleCancel={onTentativeHide}
@@ -86,13 +84,8 @@ const EditTitleDescriptionModal = (props: Props) => {
                 <MarkdownTextbox
                     value={description}
                     setValue={setDescription}
-                    placeholder={formatMessage({
-                        defaultMessage:
-                            '(Optional) Describe how this playbook should be used',
-                    })}
-                    id={
-                        'playbook-edit-name-and-description-modal-description-textbox'
-                    }
+                    placeholder={formatMessage({defaultMessage: '(Optional) Describe how this playbook should be used'})}
+                    id={'playbook-edit-name-and-description-modal-description-textbox'}
                 />
             </GenericModal>
             <UnsavedChangesModal
