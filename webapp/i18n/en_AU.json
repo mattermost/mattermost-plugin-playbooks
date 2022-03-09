@@ -503,5 +503,6 @@
     "MHzP9I": "Define a message to welcome users joining the channel.",
     "MBNMo9": "Channel Actions",
     "DPj6DM": "Select <strong>Run</strong> to see it in action.",
-    "B3Q5mz": "Trigger"
+    "B3Q5mz": "Trigger",
+    "hCMWC+": "Begin following for {followers, plural, =0 {no user} =1 {one user} other {# users}}"
 }
