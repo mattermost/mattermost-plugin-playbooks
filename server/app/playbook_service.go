@@ -300,62 +300,6 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []Play
 	return attachment
 }
 
-type cachedPlaybookTriggers struct {
-	playbook *CachedPlaybook
-	triggers []string
-}
-
-func (s *playbookService) GetSuggestedPlaybooks(teamID, userID, message string) ([]*CachedPlaybook, []string) {
-	triggeredPlaybooks := []cachedPlaybookTriggers{}
-
-	playbooks := s.keywordsCacher.GetPlaybooks()
-	for i := range playbooks {
-		if playbooks[i].TeamID != teamID {
-			continue
-		}
-
-		triggers := getPlaybookTriggersForAMessage(playbooks[i], message)
-		if len(triggers) == 0 {
-			continue
-		}
-
-		triggeredPlaybooks = append(triggeredPlaybooks, cachedPlaybookTriggers{
-			playbook: playbooks[i],
-			triggers: triggers,
-		})
-	}
-
-	// return early if no triggered playbooks
-	if len(triggeredPlaybooks) == 0 {
-		return nil, nil
-	}
-
-	return s.getPlaybooksAndTriggersByAccess(triggeredPlaybooks, userID, teamID)
-}
-
-// filters out playbooks user has no access to and returns playbooks with
-func (s *playbookService) getPlaybooksAndTriggersByAccess(triggeredPlaybooks []cachedPlaybookTriggers, userID, teamID string) ([]*CachedPlaybook, []string) {
-	resultPlaybooks := []*CachedPlaybook{}
-	resultTriggers := []string{}
-
-	playbookIDs, err := s.store.GetPlaybookIDsForUser(userID, teamID)
-	if err != nil {
-		s.api.Log.Error("can't get playbookIDs", "userID", userID, "err", err.Error())
-		return nil, nil
-	}
-
-	playbookIDsMap := sliceToMap(playbookIDs)
-
-	for i := range triggeredPlaybooks {
-		if ok := playbookIDsMap[triggeredPlaybooks[i].playbook.ID]; ok {
-			resultPlaybooks = append(resultPlaybooks, triggeredPlaybooks[i].playbook)
-			resultTriggers = append(resultTriggers, triggeredPlaybooks[i].triggers...)
-		}
-	}
-
-	return resultPlaybooks, removeDuplicates(resultTriggers)
-}
-
 // AutoFollow method lets user to auto-follow all runs of a specific playbook
 func (s *playbookService) AutoFollow(playbookID, userID string) error {
 	if err := s.store.AutoFollow(playbookID, userID); err != nil {
@@ -405,34 +349,4 @@ func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, e
 	newPlaybook.Title = "Copy of " + playbook.Title
 
 	return s.Create(newPlaybook, userID)
-}
-
-func getPlaybookTriggersForAMessage(playbook *CachedPlaybook, message string) []string {
-	triggers := []string{}
-	for _, keyword := range playbook.SignalAnyKeywords {
-		if strings.Contains(message, keyword) {
-			triggers = append(triggers, keyword)
-		}
-	}
-	return removeDuplicates(triggers)
-}
-
-func sliceToMap(strs []string) map[string]bool {
-	res := make(map[string]bool, len(strs))
-	for _, s := range strs {
-		res[s] = true
-	}
-	return res
-}
-
-func removeDuplicates(a []string) []string {
-	items := make(map[string]bool)
-	for _, item := range a {
-		items[item] = true
-	}
-	res := make([]string, 0, len(items))
-	for item := range items {
-		res = append(res, item)
-	}
-	return res
 }

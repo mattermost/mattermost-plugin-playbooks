@@ -278,9 +278,6 @@ type PlaybookService interface {
 	// GetPlaybooksForTeam retrieves all playbooks on the specified team given the provided options
 	GetPlaybooksForTeam(requesterInfo RequesterInfo, teamID string, opts PlaybookFilterOptions) (GetPlaybooksResults, error)
 
-	// GetSuggestedPlaybooks returns suggested playbooks and triggers for the user message
-	GetSuggestedPlaybooks(teamID, userID, message string) ([]*CachedPlaybook, []string)
-
 	// Update updates a playbook
 	Update(playbook Playbook, userID string) error
 
