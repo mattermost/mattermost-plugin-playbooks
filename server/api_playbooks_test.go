@@ -965,3 +965,106 @@ func TestPlaybookStats(t *testing.T) {
 		require.NoError(t, err)
 	})
 }
+
+func TestPlaybookGetAutoFollows(t *testing.T) {
+	e := Setup(t)
+	e.CreateBasic()
+
+	p1ID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "test1",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+	})
+	require.NoError(t, err)
+	err = e.PlaybooksClient.Playbooks.AutoFollow(context.Background(), p1ID, e.RegularUser.Id)
+	require.NoError(t, err)
+
+	p2ID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "test2",
+		TeamID: e.BasicTeam.Id,
+		Public: true,
+	})
+	require.NoError(t, err)
+	err = e.PlaybooksClient.Playbooks.AutoFollow(context.Background(), p2ID, e.RegularUser.Id)
+	require.NoError(t, err)
+	err = e.PlaybooksClient2.Playbooks.AutoFollow(context.Background(), p2ID, e.RegularUser2.Id)
+	require.NoError(t, err)
+
+	p3ID, err := e.PlaybooksAdminClient.Playbooks.Create(context.Background(), client.PlaybookCreateOptions{
+		Title:  "test3",
+		TeamID: e.BasicTeam2.Id,
+		Public: false,
+	})
+	require.NoError(t, err)
+
+	testCases := []struct {
+		testName           string
+		playbookID         string
+		expectedError      int
+		expectedTotalCount int
+		expectedFollowers  []string
+		client             *client.Client
+	}{
+		{
+			testName:           "Public playbook without followers",
+			client:             e.PlaybooksClient,
+			playbookID:         e.BasicPlaybook.ID,
+			expectedTotalCount: 0,
+			expectedFollowers:  []string{},
+		},
+		{
+			testName:           "Private playbook without followers",
+			client:             e.PlaybooksClient,
+			playbookID:         e.BasicPrivatePlaybook.ID,
+			expectedTotalCount: 0,
+			expectedFollowers:  []string{},
+		},
+		{
+			testName:           "Public playbook with 1 follower",
+			client:             e.PlaybooksClient,
+			playbookID:         p1ID,
+			expectedTotalCount: 1,
+			expectedFollowers:  []string{e.RegularUser.Id},
+		},
+		{
+			testName:           "Public playbook with 2 followers",
+			client:             e.PlaybooksClient,
+			playbookID:         p2ID,
+			expectedTotalCount: 2,
+			expectedFollowers:  []string{e.RegularUser.Id, e.RegularUser2.Id},
+		},
+		{
+			testName:      "Playbook does not exist",
+			client:        e.PlaybooksClient,
+			playbookID:    "fake playbook id",
+			expectedError: http.StatusNotFound,
+		},
+		{
+			testName:      "Playbook belongs to other team",
+			client:        e.PlaybooksClient,
+			playbookID:    p3ID,
+			expectedError: http.StatusForbidden,
+		},
+		{
+			testName:      "Playbook in same team but user lacks permission",
+			client:        e.PlaybooksClient2,
+			playbookID:    e.BasicPrivatePlaybook.ID,
+			expectedError: http.StatusForbidden,
+		},
+	}
+
+	for _, c := range testCases {
+		t.Run(c.testName, func(t *testing.T) {
+			res, err := c.client.Playbooks.GetAutoFollows(context.Background(), c.playbookID)
+			if c.expectedError != 0 {
+				requireErrorWithStatusCode(t, err, c.expectedError)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, c.expectedTotalCount, len(res))
+				require.Equal(t, c.expectedFollowers, res)
+			}
+		})
+
+	}
+
+}
