@@ -19,20 +19,10 @@ import 'cypress-plugin-tab';
 import addContext from 'mochawesome/addContext';
 
 import './api';
-import './api_commands'; // soon to deprecate
-import './client';
-import './common_login_commands';
+
 import './db_commands';
-import './email';
+
 import './external_commands';
-import './extended_commands';
-import './fetch_commands';
-import './keycloak_commands';
-import './ldap_commands';
-import './ldap_server_commands';
-import './okta_commands';
-import './saml_commands';
-import './storybook_commands';
 import './task_commands';
 import './ui';
 import './ui_commands'; // soon to deprecate
