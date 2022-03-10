@@ -85,8 +85,8 @@ func (a *channelActionServiceImpl) Get(id string) (GenericChannelAction, error) 
 	return a.store.Get(id)
 }
 
-func (a *channelActionServiceImpl) GetChannelActions(channelID, triggerType string) ([]GenericChannelAction, error) {
-	return a.store.GetChannelActions(channelID, triggerType)
+func (a *channelActionServiceImpl) GetChannelActions(channelID string, options GetChannelActionOptions) ([]GenericChannelAction, error) {
+	return a.store.GetChannelActions(channelID, options)
 }
 
 func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
@@ -150,7 +150,9 @@ func (a *channelActionServiceImpl) CheckAndSendMessageOnJoin(userID, channelID s
 		return true
 	}
 
-	actions, err := a.store.GetChannelActions(channelID, TriggerTypeNewMemberJoins)
+	actions, err := a.store.GetChannelActions(channelID, GetChannelActionOptions{
+		TriggerType: TriggerTypeNewMemberJoins,
+	})
 	if err != nil {
 		a.logger.Errorf("failed to resolve actions for channelID %q and trigger type %q; error: %q", channelID, TriggerTypeNewMemberJoins, err.Error())
 		return false

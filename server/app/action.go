@@ -1,12 +1,12 @@
 package app
 
 type GenericChannelActionWithoutPayload struct {
-	ID          string `json:"id"`
-	ChannelID   string `json:"channel_id"`
-	Enabled     bool   `json:"enabled"`
-	DeleteAt    int64  `json:"delete_at"`
-	ActionType  string `json:"action_type"`
-	TriggerType string `json:"trigger_type"`
+	ID          string      `json:"id"`
+	ChannelID   string      `json:"channel_id"`
+	Enabled     bool        `json:"enabled"`
+	DeleteAt    int64       `json:"delete_at"`
+	ActionType  ActionType  `json:"action_type"`
+	TriggerType TriggerType `json:"trigger_type"`
 }
 
 type GenericChannelAction struct {
@@ -18,13 +18,29 @@ type WelcomeMessagePayload struct {
 	Message string `json:"message" mapstructure:"message"`
 }
 
-const (
-	// Action types
-	ActionTypeWelcomeMessage = "send_welcome_message"
+type ActionType string
+type TriggerType string
 
-	// Trigger types
-	TriggerTypeNewMemberJoins = "new_member_joins"
+const (
+	// Action types: add new types to the ValidTriggerTypes array below
+	ActionTypeWelcomeMessage    ActionType = "send_welcome_message"
+
+	// Trigger types: add new types to the ValidTriggerTypes array below
+	TriggerTypeNewMemberJoins TriggerType = "new_member_joins"
 )
+
+var ValidActionTypes = []ActionType{
+	ActionTypeWelcomeMessage,
+}
+
+var ValidTriggerTypes = []TriggerType{
+	TriggerTypeNewMemberJoins,
+}
+
+type GetChannelActionOptions struct {
+	ActionType  ActionType
+	TriggerType TriggerType
+}
 
 type ChannelActionService interface {
 	// Create creates a new action
@@ -34,8 +50,8 @@ type ChannelActionService interface {
 	Get(id string) (GenericChannelAction, error)
 
 	// GetChannelActions returns all actions in channelID,
-	// filtering by trigger type if triggerType is not empty
-	GetChannelActions(channelID, triggerType string) ([]GenericChannelAction, error)
+	// filtered with the options if different from its zero value
+	GetChannelActions(channelID string, options GetChannelActionOptions) ([]GenericChannelAction, error)
 
 	// Validate checks that the action type, trigger type and
 	// payload are all valid and consistent with each other
@@ -57,8 +73,8 @@ type ChannelActionStore interface {
 	Get(id string) (GenericChannelAction, error)
 
 	// GetChannelActions returns all actions in channelID,
-	// filtering by trigger type if triggerType is not empty
-	GetChannelActions(channelID, triggerType string) ([]GenericChannelAction, error)
+	// filtered with the options if different from its zero value
+	GetChannelActions(channelID string, options GetChannelActionOptions) ([]GenericChannelAction, error)
 
 	// Update updates an existing action identified by action.ID
 	Update(action GenericChannelAction) error
