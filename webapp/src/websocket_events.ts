@@ -221,7 +221,10 @@ export const handleWebsocketChannelViewed = (getState: GetStateFunc, dispatch: D
 
         // If there are no welcome message actions enabled, stop
         const actions = await fetchChannelActions(channelId, ChannelTriggerType.NewMemberJoins);
-        const welcomeAction = actions[ChannelActionType.WelcomeMessage];
+
+        const welcomeAction = actions.find((action) =>
+            action.trigger_type === ChannelTriggerType.NewMemberJoins && action.action_type === ChannelActionType.WelcomeMessage
+        );
         if (!welcomeAction?.enabled) {
             return;
         }
