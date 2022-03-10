@@ -744,7 +744,6 @@ func TestPlaybooksPermissions(t *testing.T) {
 
 	t.Run("update playbook", func(t *testing.T) {
 		e.BasicPlaybook.Description = "updated"
-		e.BasicPrivatePlaybook.Description = "updated"
 
 		t.Run("user not in private", func(t *testing.T) {
 			err := e.PlaybooksClient2.Playbooks.Update(context.Background(), *e.BasicPrivatePlaybook)
@@ -773,6 +772,7 @@ func TestPlaybooksPermissions(t *testing.T) {
 			assert.NoError(t, err)
 		})
 
+		e.BasicPrivatePlaybook.Description = "updated"
 		t.Run("private with no permissions", func(t *testing.T) {
 			defaultRolePermissions := e.Permissions.SaveDefaultRolePermissions()
 			defer func() {
