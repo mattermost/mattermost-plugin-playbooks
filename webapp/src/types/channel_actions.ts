@@ -24,3 +24,5 @@ export enum ChannelTriggerType {
 export interface WelcomeMessageActionPayload {
     message: string;
 }
+
+export type ActionsByTrigger = Record<ChannelTriggerType, ChannelAction[]>;

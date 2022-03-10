@@ -9,7 +9,7 @@ import MarkdownTextbox from 'src/components/markdown_textbox';
 
 interface Props {
     action: ChannelAction;
-    onUpdate: (update: (prevActions: Record<string, ChannelAction>) => Record<string, ChannelAction>) => void;
+    onUpdate: (action: ChannelAction) => void;
     editable: boolean;
 }
 
@@ -28,16 +28,13 @@ const WelcomeActionChildren = ({action, onUpdate, editable}: Props) => {
     return (
         <MarkdownTextbox
             placeholder={formatMessage({defaultMessage: 'Define a message to welcome users joining the channel.'})}
-            value={action.payload.message}
-            setValue={(newMessage: string) => onUpdate((prevActions: Record<string, ChannelAction>) => ({
-                ...prevActions,
-                [action.action_type]: {
-                    ...prevActions[action.action_type],
-                    payload: {
-                        message: newMessage,
-                    },
-                },
-            }))}
+            value={(action.payload as WelcomeMessageActionPayload).message}
+            setValue={(newMessage: string) => {
+                onUpdate({
+                    ...action,
+                    payload: {message: newMessage} as WelcomeMessageActionPayload,
+                });
+            }}
             id={'channel-actions-modal_welcome-msg'}
             hideHelpText={true}
             previewByDefault={!editable}
