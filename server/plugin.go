@@ -143,12 +143,13 @@ func (p *Plugin) OnActivate() error {
 	statsStore := sqlstore.NewStatsStore(apiClient, p.bot, sqlStore)
 	p.userInfoStore = sqlstore.NewUserInfoStore(sqlStore)
 	channelActionStore := sqlstore.NewChannelActionStore(apiClient, p.bot, sqlStore)
-	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.bot, channelActionStore)
 
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
 
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient)
+
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer, p.channelActionService)
+	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer)
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
@@ -270,5 +271,5 @@ func (p *Plugin) UserHasLeftChannel(c *plugin.Context, channelMember *model.Chan
 }
 
 func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
-	p.playbookService.MessageHasBeenPosted(c.SessionId, post)
+	p.channelActionService.MessageHasBeenPosted(c.SessionId, post)
 }

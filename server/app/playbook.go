@@ -6,7 +6,6 @@ import (
 
 	"gopkg.in/guregu/null.v4"
 
-	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/pkg/errors"
 )
 
@@ -283,9 +282,6 @@ type PlaybookService interface {
 
 	// Archive archives a playbook
 	Archive(playbook Playbook, userID string) error
-
-	// MessageHasBeenPosted suggests playbooks to the user if triggered
-	MessageHasBeenPosted(sessionID string, post *model.Post)
 
 	// Restores an archived playbook
 	Restore(playbook Playbook, userID string) error

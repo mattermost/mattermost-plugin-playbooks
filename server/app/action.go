@@ -1,5 +1,7 @@
 package app
 
+import "github.com/mattermost/mattermost-server/v6/model"
+
 type GenericChannelActionWithoutPayload struct {
 	ID          string      `json:"id"`
 	ChannelID   string      `json:"channel_id"`
@@ -72,6 +74,9 @@ type ChannelActionService interface {
 	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
 	// the registered welcome message action. Returns true if the message was sent.
 	CheckAndSendMessageOnJoin(userID, channelID string) bool
+
+	// MessageHasBeenPosted suggests playbooks to the user if triggered
+	MessageHasBeenPosted(sessionID string, post *model.Post)
 }
 
 type ChannelActionStore interface {
