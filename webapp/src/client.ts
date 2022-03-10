@@ -586,6 +586,16 @@ export async function clientFetchIsPlaybookFollower(playbookId: string, userId: 
     return data as boolean;
 }
 
+export async function clientFetchPlaybookFollowers(playbookId: string): Promise<string[]> {
+    const data = await doGet<string[]>(`${apiUrl}/playbooks/${playbookId}/autofollows`);
+
+    if (!data) {
+        return [];
+    }
+
+    return data;
+}
+
 export const resetReminder = async (playbookRunId: string, newReminderSeconds: number) => {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/reminder`, {
         method: 'POST',
