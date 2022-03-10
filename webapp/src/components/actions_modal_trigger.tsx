@@ -11,6 +11,11 @@ interface Props {
     children: React.ReactNode;
 }
 
+const titles = {
+    [ChannelTriggerType.NewMemberJoins]: <FormattedMessage defaultMessage={'When a user joins the channel'}/>,
+    [ChannelTriggerType.KeywordsPosted]: <FormattedMessage defaultMessage={'When a message with these keywords is posted'}/>,
+};
+
 const Trigger = (props: Props) => {
     const {formatMessage} = useIntl();
 
@@ -19,7 +24,7 @@ const Trigger = (props: Props) => {
             <Header>
                 <Legend>
                     <Label>{formatMessage({defaultMessage: 'Trigger'})}</Label>
-                    <Title>{props.title}</Title>
+                    <Title>{titles[props.triggerType]}</Title>
                 </Legend>
             </Header>
             <Body>

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {useIntl} from 'react-intl';
+import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
 import {Toggle as BasicToggle} from 'src/components/backstage/playbook_edit/automation/toggle';
@@ -17,6 +17,10 @@ interface Props {
 
 const Action = (props: Props) => {
     const {formatMessage} = useIntl();
+const titles = {
+    [ChannelActionType.WelcomeMessage]: <FormattedMessage defaultMessage={'Send a temporary welcome message to the user'}/>,
+    [ChannelActionType.PromptRunPlaybook]: <FormattedMessage defaultMessage={'Prompt to run a playbook'}/>,
+};
 
     const onToggle = () => props.onUpdate((prevActions: Record<string, ChannelAction>) => ({
         ...prevActions,
@@ -27,10 +31,6 @@ const Action = (props: Props) => {
     }));
 
     const onChange = props.editable ? onToggle : () => {/* do nothing */};
-
-    const titles: Record<string, string> = {
-        [ChannelActionType.WelcomeMessage]: formatMessage({defaultMessage: 'Send a temporary welcome message to the user'}),
-    };
 
     return (
         <Wrapper>
