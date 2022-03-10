@@ -18,23 +18,32 @@ type WelcomeMessagePayload struct {
 	Message string `json:"message" mapstructure:"message"`
 }
 
+type PromptRunPlaybookFromKeywordsPayload struct {
+	Keywords   []string `json:"keywords" mapstructure:"keywords"`
+	PlaybookID string   `json:"playbook_id" mapstructure:"playbook_id"`
+}
+
 type ActionType string
 type TriggerType string
 
 const (
 	// Action types: add new types to the ValidTriggerTypes array below
 	ActionTypeWelcomeMessage    ActionType = "send_welcome_message"
+	ActionTypePromptRunPlaybook ActionType = "prompt_run_playbook"
 
 	// Trigger types: add new types to the ValidTriggerTypes array below
 	TriggerTypeNewMemberJoins TriggerType = "new_member_joins"
+	TriggerTypeKeywordsPosted TriggerType = "keywords"
 )
 
 var ValidActionTypes = []ActionType{
 	ActionTypeWelcomeMessage,
+	ActionTypePromptRunPlaybook,
 }
 
 var ValidTriggerTypes = []TriggerType{
 	TriggerTypeNewMemberJoins,
+	TriggerTypeKeywordsPosted,
 }
 
 type GetChannelActionOptions struct {

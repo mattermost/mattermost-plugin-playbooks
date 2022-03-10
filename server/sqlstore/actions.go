@@ -135,6 +135,18 @@ func (c *channelActionStore) GetChannelActions(channelID string, options app.Get
 			}
 
 			actions = append(actions, action)
+		case app.ActionTypePromptRunPlaybook:
+			var promptRunPlaybookPayload app.PromptRunPlaybookFromKeywordsPayload
+			if err := json.Unmarshal(sqlAction.Payload, &promptRunPlaybookPayload); err != nil {
+				return nil, errors.Wrapf(err, fmt.Sprintf("unable to unmarshal payload for action with ID %q and type %q", sqlAction.ID, sqlAction.ActionType), channelID)
+			}
+
+			action := app.GenericChannelAction{
+				GenericChannelActionWithoutPayload: sqlAction.GenericChannelActionWithoutPayload,
+				Payload:                            promptRunPlaybookPayload,
+			}
+
+			actions = append(actions, action)
 		}
 	}
 

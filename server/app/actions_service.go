@@ -96,6 +96,10 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 		if action.ActionType != ActionTypeWelcomeMessage {
 			return fmt.Errorf("action type %q is not valid for trigger type %q", action.ActionType, action.TriggerType)
 		}
+	case TriggerTypeKeywordsPosted:
+		if action.ActionType != ActionTypePromptRunPlaybook {
+			return fmt.Errorf("action type %q is not valid for trigger type %q", action.ActionType, action.TriggerType)
+		}
 	default:
 		return fmt.Errorf("trigger type %q not recognized", action.TriggerType)
 	}
@@ -110,6 +114,14 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 		if err := checkValidWelcomeMessagePayload(payload); err != nil {
 			return err
 		}
+	case ActionTypePromptRunPlaybook:
+		var payload PromptRunPlaybookFromKeywordsPayload
+		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
+			return fmt.Errorf("unable to decode payload from action")
+		}
+		if err := checkValidPromptRunPlaybookFromKeywordsPayload(payload); err != nil {
+			return err
+		}
 
 	default:
 		return fmt.Errorf("action type %q not recognized", action.ActionType)
@@ -121,6 +133,24 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 func checkValidWelcomeMessagePayload(payload WelcomeMessagePayload) error {
 	if payload.Message == "" {
 		return fmt.Errorf("payload field 'message' must be non-empty")
+	}
+
+	return nil
+}
+
+func checkValidPromptRunPlaybookFromKeywordsPayload(payload PromptRunPlaybookFromKeywordsPayload) error {
+	if len(payload.Keywords) == 0 {
+		return fmt.Errorf("payload field 'keywords' must contain at least one keyword")
+	}
+
+	for _, keyword := range payload.Keywords {
+		if keyword == "" {
+			return fmt.Errorf("payload field 'keywords' must contain only non-empty keywords")
+		}
+	}
+
+	if !model.IsValidId(payload.PlaybookID) {
+		return fmt.Errorf("payload field 'playbook_id' must be a valid ID")
 	}
 
 	return nil
