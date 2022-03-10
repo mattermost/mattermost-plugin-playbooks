@@ -7,10 +7,11 @@ import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
-import Icon from '@mdi/react';
 import {mdiLightningBoltOutline} from '@mdi/js';
 
 import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
+
+import Icon from '@mdi/react';
 
 import {fetchChannelActions, saveChannelAction} from 'src/client';
 import {hideActionsModal} from 'src/actions';
@@ -29,6 +30,18 @@ const defaultActions: ActionsByTrigger = {
             trigger_type: ChannelTriggerType.NewMemberJoins,
             payload: {
                 message: '',
+            },
+        },
+    ],
+    [ChannelTriggerType.KeywordsPosted]: [
+        {
+            channel_id: '',
+            enabled: false,
+            action_type: ChannelActionType.PromptRunPlaybook,
+            trigger_type: ChannelTriggerType.KeywordsPosted,
+            payload: {
+                keywords: [],
+                playbook_id: '',
             },
         },
     ],

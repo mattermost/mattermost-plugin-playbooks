@@ -8,21 +8,28 @@ export interface ChannelAction {
     delete_at?: number;
     action_type: ChannelActionType;
     trigger_type: ChannelTriggerType;
-
-    // TODO: Add a union type here when more payloads are added
-    payload: WelcomeMessageActionPayload;
+    payload: PayloadType;
 }
 
 export enum ChannelActionType {
     WelcomeMessage = 'send_welcome_message',
+    PromptRunPlaybook = 'prompt_run_playbook',
 }
 
 export enum ChannelTriggerType {
     NewMemberJoins = 'new_member_joins',
+    KeywordsPosted = 'keywords',
 }
+
+type PayloadType = WelcomeMessageActionPayload | PromptRunPlaybookFromKeywordsPayload;
 
 export interface WelcomeMessageActionPayload {
     message: string;
+}
+
+export interface PromptRunPlaybookFromKeywordsPayload {
+    keywords: string[];
+    playbook_id: string;
 }
 
 export type ActionsByTrigger = Record<ChannelTriggerType, ChannelAction[]>;

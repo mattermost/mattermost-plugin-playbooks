@@ -4,8 +4,10 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import {ChannelAction, ChannelActionType} from 'src/types/channel_actions';
+import {ChannelAction, ChannelActionType, PromptRunPlaybookFromKeywordsPayload, WelcomeMessageActionPayload} from 'src/types/channel_actions';
 import MarkdownTextbox from 'src/components/markdown_textbox';
+import {usePlaybooksCrud} from 'src/hooks';
+import {StyledSelect} from 'src/components/backstage/styles';
 
 interface Props {
     action: ChannelAction;
@@ -17,6 +19,8 @@ const ActionChildren = (props: Props) => {
     switch (props.action.action_type) {
     case ChannelActionType.WelcomeMessage:
         return <WelcomeActionChildren {...props}/>;
+    case ChannelActionType.PromptRunPlaybook:
+        return <RunPlaybookChildren {...props}/>;
     }
 
     return null;
@@ -39,6 +43,44 @@ const WelcomeActionChildren = ({action, onUpdate, editable}: Props) => {
             hideHelpText={true}
             previewByDefault={!editable}
             disabled={!editable}
+        />
+    );
+};
+
+const RunPlaybookChildren = ({action, onUpdate, editable}: Props) => {
+    const {formatMessage} = useIntl();
+    const [playbooks] = usePlaybooksCrud({sort: 'title'}, {infinitePaging: true});
+
+    const playbookOptions = playbooks?.map((playbook) => (
+        {
+            value: playbook.title,
+            label: playbook.title,
+            id: playbook.id,
+        }
+    ));
+
+    const payload = action.payload as PromptRunPlaybookFromKeywordsPayload;
+
+    const onSelectedChange = ({id}: {id: string}) => {
+        onUpdate({
+            ...action,
+            payload: {
+                ...action.payload,
+                playbook_id: id,
+            },
+        });
+    };
+
+    return (
+        <StyledSelect
+            placeholder={formatMessage({defaultMessage: 'Select a playbook'})}
+            onChange={onSelectedChange}
+            options={playbookOptions || []}
+            value={playbookOptions?.find((p) => p.id === payload.playbook_id)}
+            isClearable={false}
+            maxMenuHeight={250}
+            styles={{indicatorSeparator: () => null}}
+            isDisabled={!editable}
         />
     );
 };
