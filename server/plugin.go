@@ -29,7 +29,7 @@ import (
 const (
 	updateMetricsTaskFrequency = 15 * time.Minute
 
-	metricsExposePort = ":9092"
+	metricsExposePort = ":9093"
 )
 
 // These credentials for Rudder need to be populated at build-time,
