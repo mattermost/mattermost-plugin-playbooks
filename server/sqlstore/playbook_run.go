@@ -1236,7 +1236,8 @@ func (s *playbookRunStore) GetOverdueRetroRunsTotal() (int64, error) {
 	return count, nil
 }
 
-// GetFollowersActiveTotal returns number of active followers
+// GetFollowersActiveTotal returns total number of active followers, including duplicates
+// if a user is following more than one run, it will be counted multiple times
 func (s *playbookRunStore) GetFollowersActiveTotal() (int64, error) {
 	var count int64
 
@@ -1254,7 +1255,9 @@ func (s *playbookRunStore) GetFollowersActiveTotal() (int64, error) {
 	return count, nil
 }
 
-// GetParticipantsActiveTotal returns number of active participants.
+// GetParticipantsActiveTotal returns number of active participants
+// (i.e. members of the playbook run channel when the run is active)
+// if a user is member of more than one channel, it will be counted multiple times
 func (s *playbookRunStore) GetParticipantsActiveTotal() (int64, error) {
 	var count int64
 

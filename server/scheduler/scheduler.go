@@ -19,6 +19,7 @@ type ScheduledTask struct {
 	cancelled chan struct{}
 }
 
+// WARNING: Tasks will run on every cluster node, so use this carefully.
 func CreateTask(name string, function TaskFunc, timeToExecution time.Duration) *ScheduledTask {
 	return createTask(name, function, timeToExecution, false)
 }

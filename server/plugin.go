@@ -84,7 +84,7 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "unable to load translation files")
 	}
 
-	p.metricsService = p.getMetricsInstance()
+	p.metricsService = p.newMetricsInstance()
 	pluginAPIClient := pluginapi.NewClient(p.API, p.Driver)
 	p.pluginAPI = pluginAPIClient
 
@@ -245,7 +245,7 @@ func (p *Plugin) OnActivate() error {
 
 	// run metrics server to expose data
 	p.runMetricsServer()
-	// run metrics updater recuring task
+	// run metrics updater recurring task
 	p.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
 
 	// prevent a recursive OnConfigurationChange
@@ -299,7 +299,7 @@ func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 	p.playbookService.MessageHasBeenPosted(c.SessionId, post)
 }
 
-func (p *Plugin) getMetricsInstance() *metrics.Metrics {
+func (p *Plugin) newMetricsInstance() *metrics.Metrics {
 	// Init metrics
 	instanceInfo := metrics.InstanceInfo{
 		Version:        manifest.Version,

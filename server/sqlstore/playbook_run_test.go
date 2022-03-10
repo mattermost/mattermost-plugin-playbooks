@@ -926,7 +926,7 @@ func TestGetOverdueUpdateRunsTotal(t *testing.T) {
 		// add active runs with due reminder
 		createRuns(store, playbookRunStore, 4, app.StatusInProgress, -1)
 
-		t.Run("few active runs with overdue", func(t *testing.T) {
+		t.Run("few active runs with due reminder", func(t *testing.T) {
 			actual, err := playbookRunStore.GetOverdueUpdateRunsTotal()
 			require.NoError(t, err)
 			require.Equal(t, int64(9), actual)
@@ -935,7 +935,6 @@ func TestGetOverdueUpdateRunsTotal(t *testing.T) {
 }
 
 func TestGetOverdueRetroRunsTotal(t *testing.T) {
-	// overdue: 0 means no reminders at all. -1 means set only due reminders. 1 means set only overdue reminders.
 	createRuns := func(
 		store *SQLStore,
 		playbookRunStore app.PlaybookRunStore,
@@ -1185,7 +1184,7 @@ func TestGetParticipantsActiveTotal(t *testing.T) {
 		// create active runs without participants
 		createRuns(store, playbookRunStore, "", nil, team1ID, 2, app.StatusInProgress)
 		// create finished runs with participants
-		createRuns(store, playbookRunStore, playbook1ID, nil, team1ID, 3, app.StatusInProgress)
+		createRuns(store, playbookRunStore, playbook1ID, []userInfo{alice, bob, bot1}, team1ID, 3, app.StatusFinished)
 
 		t.Run("zero active participants", func(t *testing.T) {
 			actual, err := playbookRunStore.GetParticipantsActiveTotal()

@@ -60,7 +60,7 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 		"teamID": playbook.TeamID,
 	}, playbook.TeamID)
 
-	s.metricsService.IncrementPlaybookCreatedTotal(1)
+	s.metricsService.IncrementPlaybookCreatedCount(1)
 	return newID, nil
 }
 
@@ -112,7 +112,7 @@ func (s *playbookService) Archive(playbook Playbook, userID string) error {
 	}
 
 	s.telemetry.DeletePlaybook(playbook, userID)
-	s.metricsService.IncrementPlaybookArchivedTotal(1)
+	s.metricsService.IncrementPlaybookArchivedCount(1)
 
 	s.poster.PublishWebsocketEventToTeam(playbookArchivedWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,
@@ -135,7 +135,7 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 	}
 
 	s.telemetry.RestorePlaybook(playbook, userID)
-	s.metricsService.IncrementPlaybookRestoredTotal(1)
+	s.metricsService.IncrementPlaybookRestoredCount(1)
 
 	s.poster.PublishWebsocketEventToTeam(playbookRestoredWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,

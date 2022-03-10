@@ -288,7 +288,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	s.telemetry.CreatePlaybookRun(playbookRun, userID, public)
-	s.metricsService.IncrementRunsCreatedTotal(1)
+	s.metricsService.IncrementRunsCreatedCount(1)
 
 	// Add users to channel after creating playbook run so that all automations trigger.
 	err = s.addPlaybookRunUsers(playbookRun, channel)
@@ -924,7 +924,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	s.telemetry.FinishPlaybookRun(playbookRunToModify, userID)
-	s.metricsService.IncrementRunsFinishedTotal(1)
+	s.metricsService.IncrementRunsFinishedCount(1)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
 		return err

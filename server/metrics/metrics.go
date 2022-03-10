@@ -72,7 +72,7 @@ func NewMetrics(info InstanceInfo) *Metrics {
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemPlaybooks,
 		Name:        "playbook_created_count",
-		Help:        "Total number of playbooks created since the last launch.",
+		Help:        "Number of playbooks created since the last launch.",
 		ConstLabels: additionalLabels,
 	})
 	m.registry.MustRegister(m.playbooksCreatedCount)
@@ -81,7 +81,7 @@ func NewMetrics(info InstanceInfo) *Metrics {
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemPlaybooks,
 		Name:        "playbook_archived_count",
-		Help:        "Total number of playbooks archived since the last launch.",
+		Help:        "Number of playbooks archived since the last launch.",
 		ConstLabels: additionalLabels,
 	})
 	m.registry.MustRegister(m.playbooksArchivedCount)
@@ -90,7 +90,7 @@ func NewMetrics(info InstanceInfo) *Metrics {
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemPlaybooks,
 		Name:        "playbook_restored_count",
-		Help:        "Total number of playbooks restored since the last launch.",
+		Help:        "Number of playbooks restored since the last launch.",
 		ConstLabels: additionalLabels,
 	})
 	m.registry.MustRegister(m.playbooksRestoredCount)
@@ -99,7 +99,7 @@ func NewMetrics(info InstanceInfo) *Metrics {
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemRuns,
 		Name:        "runs_created_count",
-		Help:        "Total number of runs created since the last launch.",
+		Help:        "Number of runs created since the last launch.",
 		ConstLabels: additionalLabels,
 	})
 	m.registry.MustRegister(m.runsCreatedCount)
@@ -108,7 +108,7 @@ func NewMetrics(info InstanceInfo) *Metrics {
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemRuns,
 		Name:        "runs_finished_count",
-		Help:        "Total number of runs finished since the last launch.",
+		Help:        "Number of runs finished since the last launch.",
 		ConstLabels: additionalLabels,
 	})
 	m.registry.MustRegister(m.runsFinishedCount)
@@ -117,7 +117,7 @@ func NewMetrics(info InstanceInfo) *Metrics {
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemSystem,
 		Name:        "errors_count",
-		Help:        "Total number of errors since the last launch.",
+		Help:        "Number of errors since the last launch.",
 		ConstLabels: additionalLabels,
 	})
 	m.registry.MustRegister(m.errorsCount)
@@ -162,7 +162,7 @@ func NewMetrics(info InstanceInfo) *Metrics {
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemRuns,
 		Name:        "followers_active_total",
-		Help:        "Total number of active followers.",
+		Help:        "Total number of active followers, including duplicates.",
 		ConstLabels: additionalLabels,
 	})
 	m.registry.MustRegister(m.followersActiveTotal)
@@ -171,44 +171,44 @@ func NewMetrics(info InstanceInfo) *Metrics {
 		Namespace:   MetricsNamespace,
 		Subsystem:   MetricsSubsystemRuns,
 		Name:        "participants_active_total",
-		Help:        "Total number of active participants (i.e. members of the playbook run channel when the run is active).",
+		Help:        "Total number of active participants (i.e. members of the playbook run channel when the run is active), including duplicates",
 		ConstLabels: additionalLabels,
 	})
 	m.registry.MustRegister(m.participantsActiveTotal)
 	return m
 }
 
-func (m *Metrics) IncrementPlaybookCreatedTotal(num int) {
+func (m *Metrics) IncrementPlaybookCreatedCount(num int) {
 	if m != nil {
 		m.playbooksCreatedCount.Add(float64(num))
 	}
 }
 
-func (m *Metrics) IncrementPlaybookArchivedTotal(num int) {
+func (m *Metrics) IncrementPlaybookArchivedCount(num int) {
 	if m != nil {
 		m.playbooksArchivedCount.Add(float64(num))
 	}
 }
 
-func (m *Metrics) IncrementPlaybookRestoredTotal(num int) {
+func (m *Metrics) IncrementPlaybookRestoredCount(num int) {
 	if m != nil {
 		m.playbooksRestoredCount.Add(float64(num))
 	}
 }
 
-func (m *Metrics) IncrementRunsCreatedTotal(num int) {
+func (m *Metrics) IncrementRunsCreatedCount(num int) {
 	if m != nil {
 		m.runsCreatedCount.Add(float64(num))
 	}
 }
 
-func (m *Metrics) IncrementRunsFinishedTotal(num int) {
+func (m *Metrics) IncrementRunsFinishedCount(num int) {
 	if m != nil {
 		m.runsFinishedCount.Add(float64(num))
 	}
 }
 
-func (m *Metrics) IncrementErrorsTotal(num int) {
+func (m *Metrics) IncrementErrorsCount(num int) {
 	if m != nil {
 		m.errorsCount.Add(float64(num))
 	}
