@@ -25,7 +25,7 @@ require (
 	github.com/mattermost/mattermost-server/v6 v6.0.0-20220303161041-4ecd0712756e
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.12.1
 	github.com/rudderlabs/analytics-go v3.3.2+incompatible
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
