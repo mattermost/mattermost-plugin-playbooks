@@ -177,14 +177,16 @@ const ActionsModal = () => {
                         actions={actions}
                         onUpdate={onUpdateAction}
                     >
-                        {actions.map((action) => (
-                            <Action
-                                key={action.id}
-                                action={action}
-                                editable={editable}
-                                onUpdate={onUpdateAction}
-                            />
-                        ))}
+                        <ActionsContainer>
+                            {actions.map((action) => (
+                                <Action
+                                    key={action.id}
+                                    action={action}
+                                    editable={editable}
+                                    onUpdate={onUpdateAction}
+                                />
+                            ))}
+                        </ActionsContainer>
                     </Trigger>
                 ))}
             </TriggersContainer>
@@ -207,6 +209,12 @@ const TriggersContainer = styled.div`
     display: flex;
     flex-direction: column;
     row-gap: 16px;
+`;
+
+const ActionsContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    row-gap: 20px;
 `;
 
 export default ActionsModal;
