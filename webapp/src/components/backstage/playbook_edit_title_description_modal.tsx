@@ -35,10 +35,7 @@ const EditTitleDescriptionModal = (props: Props) => {
     };
 
     const onTentativeHide = () => {
-        if (
-            props.playbookDescription !== description ||
-            props.playbookTitle !== title
-        ) {
+        if (props.playbookDescription !== description || props.playbookTitle !== title) {
             setShowConfirm(true);
         } else {
             onActualHide();
