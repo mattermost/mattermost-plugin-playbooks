@@ -19,6 +19,7 @@ import Tooltip from 'src/components/widgets/tooltip';
 interface Props {
     id: string;
     playbook: PlaybookWithChecklist;
+    followerIds: string[];
 }
 
 const PlaybookPreviewActions = (props: Props) => {
@@ -33,6 +34,7 @@ const PlaybookPreviewActions = (props: Props) => {
     const showPromptCardEntry = props.playbook.signal_any_keywords_enabled && props.playbook.signal_any_keywords.length !== 0;
 
     const createChannelEnabled = true;
+    const autofollowsEnabled = props.followerIds.length > 0;
     const inviteUsersEnabled = props.playbook.invite_users_enabled && props.playbook.invited_user_ids.length !== 0;
     const defaultOwnerEnabled = props.playbook.default_owner_enabled && props.playbook.default_owner_id !== '';
     const broadcastEnabled = props.playbook.broadcast_enabled && props.playbook.broadcast_channel_ids.length !== 0;
@@ -45,7 +47,8 @@ const PlaybookPreviewActions = (props: Props) => {
         broadcastEnabled ||
         defaultOwnerEnabled ||
         runSummaryEnabled ||
-        webhookOnCreationEnabled;
+        webhookOnCreationEnabled ||
+        autofollowsEnabled;
 
     const messageOnJoinEnabled = props.playbook.message_on_join_enabled && props.playbook.message_on_join !== '';
     const categorizeChannelEnabled = props.playbook.categorize_channel_enabled && props.playbook.category_name !== '';
@@ -68,7 +71,7 @@ const PlaybookPreviewActions = (props: Props) => {
             id={props.id}
             title={formatMessage({defaultMessage: 'Actions'})}
         >
-            <Card>
+            <Card data-testid='playbook-preview-actions'>
                 <CardEntry
                     title={formatMessage(
                         {defaultMessage: 'Prompt to run this playbook when a message contains {numKeywords, select, 1 {the keyword} other {one or more of these}}'},
@@ -111,6 +114,21 @@ const PlaybookPreviewActions = (props: Props) => {
                             </UserRow>
                         )}
                         enabled={inviteUsersEnabled}
+                    />
+                    <CardSubEntry
+                        title={formatMessage(
+                            {defaultMessage: 'Begin following for {followers, plural, =0 {no user} =1 {one user} other {# users}}'},
+                            {followers: props.followerIds.length}
+                        )}
+                        extraInfo={(
+                            <UserRow>
+                                <UserList
+                                    userIds={props.followerIds}
+                                    sizeInPx={20}
+                                />
+                            </UserRow>
+                        )}
+                        enabled={autofollowsEnabled}
                     />
                     <CardSubEntry
                         title={formatMessage({

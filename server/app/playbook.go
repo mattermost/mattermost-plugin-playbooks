@@ -302,9 +302,6 @@ type PlaybookService interface {
 	// GetAutoFollows returns list of users who auto-follows a playbook
 	GetAutoFollows(playbookID string) ([]string, error)
 
-	// IsAutoFollowing returns weather user is auto-following a playbook
-	IsAutoFollowing(playbookID, userID string) (bool, error)
-
 	// Duplicate duplicates a playbook
 	Duplicate(playbook Playbook, userID string) (string, error)
 }
@@ -351,9 +348,6 @@ type PlaybookStore interface {
 
 	// GetAutoFollows returns list of users who auto-follows a playbook
 	GetAutoFollows(playbookID string) ([]string, error)
-
-	// IsAutoFollowing returns weather user is auto-following a playbook
-	IsAutoFollowing(playbookID, userID string) (bool, error)
 
 	// GetPlaybooksActiveTotal returns number of active playbooks
 	GetPlaybooksActiveTotal() (int64, error)

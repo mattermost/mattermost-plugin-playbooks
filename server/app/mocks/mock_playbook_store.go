@@ -211,21 +211,6 @@ func (mr *MockPlaybookStoreMockRecorder) GetTimeLastUpdated(arg0 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeLastUpdated", reflect.TypeOf((*MockPlaybookStore)(nil).GetTimeLastUpdated), arg0)
 }
 
-// IsAutoFollowing mocks base method.
-func (m *MockPlaybookStore) IsAutoFollowing(arg0, arg1 string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsAutoFollowing", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IsAutoFollowing indicates an expected call of IsAutoFollowing.
-func (mr *MockPlaybookStoreMockRecorder) IsAutoFollowing(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAutoFollowing", reflect.TypeOf((*MockPlaybookStore)(nil).IsAutoFollowing), arg0, arg1)
-}
-
 // Restore mocks base method.
 func (m *MockPlaybookStore) Restore(arg0 string) error {
 	m.ctrl.T.Helper()
