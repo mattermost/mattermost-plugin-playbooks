@@ -33,3 +33,30 @@ export interface PromptRunPlaybookFromKeywordsPayload {
 }
 
 export type ActionsByTrigger = Record<ChannelTriggerType, ChannelAction[]>;
+
+export const equalActionType = (a: ChannelAction, b: ChannelAction) => {
+    if (a.action_type !== b.action_type) {
+        return false;
+    }
+
+    if (a.trigger_type !== b.trigger_type) {
+        return false;
+    }
+
+    switch (a.trigger_type) {
+    case ChannelTriggerType.NewMemberJoins:
+        return true;
+    case ChannelTriggerType.KeywordsPosted: {
+        const aPayload = a.payload as PromptRunPlaybookFromKeywordsPayload;
+        const bPayload = b.payload as PromptRunPlaybookFromKeywordsPayload;
+
+        return arrayEquals(aPayload.keywords, bPayload.keywords);
+    }
+    }
+
+    return false;
+};
+
+function arrayEquals<T>(a: T[], b: T[]) {
+    return a.length === b.length && a.every((val, index) => val === b[index]);
+}

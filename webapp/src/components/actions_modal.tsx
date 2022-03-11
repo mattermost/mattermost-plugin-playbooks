@@ -19,7 +19,7 @@ import {isActionsModalVisible, isCurrentUserChannelAdmin, isCurrentUserAdmin} fr
 import GenericModal, {ModalSubheading} from 'src/components/widgets/generic_modal';
 import Action from 'src/components/actions_modal_action';
 import Trigger from 'src/components/actions_modal_trigger';
-import {ChannelAction, ChannelActionType, ActionsByTrigger, ChannelTriggerType} from 'src/types/channel_actions';
+import {ChannelAction, ChannelActionType, ActionsByTrigger, ChannelTriggerType, equalActionType} from 'src/types/channel_actions';
 
 const defaultActions: ActionsByTrigger = {
     [ChannelTriggerType.NewMemberJoins]: [
@@ -72,6 +72,21 @@ const ActionsModal = () => {
                 } else {
                     record[action.trigger_type] = [action];
                 }
+            });
+
+            // Merge the fetched actions with the default ones
+            Object.entries(record).forEach(([triggerString, actionsInRecord]) => {
+                const trigger = triggerString as ChannelTriggerType;
+                const finalActions = [] as ChannelAction[];
+                defaultActions[trigger].forEach((defaultAction: ChannelAction) => {
+                    const actionFetched = actionsInRecord.find((actionInRecord) => equalActionType(actionInRecord, defaultAction));
+                    if (actionFetched) {
+                        finalActions.push(actionFetched);
+                    } else {
+                        finalActions.push(defaultAction);
+                    }
+                });
+                record[trigger] = finalActions;
             });
 
             setOriginalActions(record);
