@@ -18,6 +18,7 @@ interface Props {
 const titles = {
     [ChannelActionType.WelcomeMessage]: <FormattedMessage defaultMessage={'Send a temporary welcome message to the user'}/>,
     [ChannelActionType.PromptRunPlaybook]: <FormattedMessage defaultMessage={'Prompt to run a playbook'}/>,
+    [ChannelActionType.CategorizeChannel]: <FormattedMessage defaultMessage={'Add the channel to a sidebar category for the user'}/>,
 };
 
 const Action = (props: Props) => {

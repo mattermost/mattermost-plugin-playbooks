@@ -32,6 +32,15 @@ const defaultActions: ActionsByTrigger = {
                 message: '',
             },
         },
+        {
+            channel_id: '',
+            enabled: false,
+            action_type: ChannelActionType.CategorizeChannel,
+            trigger_type: ChannelTriggerType.NewMemberJoins,
+            payload: {
+                category_name: '',
+            },
+        },
     ],
     [ChannelTriggerType.KeywordsPosted]: [
         {
