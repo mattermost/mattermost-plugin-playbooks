@@ -57,6 +57,7 @@ const ActionsModal = () => {
 
     const editable = isChannelAdmin || isSysAdmin;
 
+    const [actionsChanged, setActionsChanged] = useState(false);
     const [originalActions, setOriginalActions] = useState({} as ActionsByTrigger);
     const [currentActions, setCurrentActions] = useState(defaultActions);
 
@@ -105,16 +106,23 @@ const ActionsModal = () => {
     };
 
     const onSave = () => {
+        if (!actionsChanged) {
+            return;
+        }
+
         Object.values(currentActions).forEach((actions) => {
             actions.forEach((action) => {
                 action.channel_id = channelID;
                 saveChannelAction(action);
             });
         });
+
         setOriginalActions(currentActions);
     };
 
     const onUpdateAction = (newAction: ChannelAction) => {
+        setActionsChanged(true);
+
         setCurrentActions((prevActions: ActionsByTrigger) => {
             // TODO: Change this deep cloning
             const newActions = JSON.parse(JSON.stringify(prevActions));
