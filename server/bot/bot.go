@@ -2,7 +2,6 @@ package bot
 
 import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
-	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-server/v6/model"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -11,12 +10,11 @@ import (
 // Bot stores the information for the plugin configuration, and implements the Poster and Logger
 // interfaces.
 type Bot struct {
-	configService  config.Service
-	pluginAPI      *pluginapi.Client
-	botUserID      string
-	logContext     LogContext
-	telemetry      Telemetry
-	metricsService *metrics.Metrics
+	configService config.Service
+	pluginAPI     *pluginapi.Client
+	botUserID     string
+	logContext    LogContext
+	telemetry     Telemetry
 }
 
 // Logger interface - a logging system that will tee logs to a DM channel.
@@ -84,24 +82,22 @@ type Telemetry interface {
 }
 
 // New creates a new bot poster/logger.
-func New(api *pluginapi.Client, botUserID string, configService config.Service, telemetry Telemetry, metrics *metrics.Metrics) *Bot {
+func New(api *pluginapi.Client, botUserID string, configService config.Service, telemetry Telemetry) *Bot {
 	return &Bot{
-		pluginAPI:      api,
-		botUserID:      botUserID,
-		configService:  configService,
-		telemetry:      telemetry,
-		metricsService: metrics,
+		pluginAPI:     api,
+		botUserID:     botUserID,
+		configService: configService,
+		telemetry:     telemetry,
 	}
 }
 
 // Clone shallow copies
 func (b *Bot) clone() *Bot {
 	return &Bot{
-		configService:  b.configService,
-		pluginAPI:      b.pluginAPI,
-		botUserID:      b.botUserID,
-		logContext:     b.logContext.copyShallow(),
-		telemetry:      b.telemetry,
-		metricsService: b.metricsService,
+		configService: b.configService,
+		pluginAPI:     b.pluginAPI,
+		botUserID:     b.botUserID,
+		logContext:    b.logContext.copyShallow(),
+		telemetry:     b.telemetry,
 	}
 }

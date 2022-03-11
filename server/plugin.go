@@ -68,9 +68,26 @@ type Plugin struct {
 	metricsService       *metrics.Metrics
 }
 
+type StatusRecorder struct {
+	http.ResponseWriter
+	Status int
+}
+
+func (r *StatusRecorder) WriteHeader(status int) {
+	r.Status = status
+	r.ResponseWriter.WriteHeader(status)
+}
+
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	p.handler.ServeHTTP(w, r)
+	recorder := &StatusRecorder{
+		ResponseWriter: w,
+		Status:         200,
+	}
+	p.handler.ServeHTTP(recorder, r)
+	if recorder.Status < 200 || recorder.Status > 299 {
+		p.metricsService.IncrementErrorsCount(1)
+	}
 }
 
 // OnActivate Called when this plugin is activated.
@@ -142,7 +159,7 @@ func (p *Plugin) OnActivate() error {
 	p.config.RegisterConfigChangeListener(toggleTelemetry)
 
 	apiClient := sqlstore.NewClient(pluginAPIClient)
-	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient, p.metricsService)
+	p.bot = bot.New(pluginAPIClient, p.config.GetConfiguration().BotUserID, p.config, p.telemetryClient)
 	scheduler := cluster.GetJobOnceScheduler(p.API)
 
 	sqlStore, err := sqlstore.New(apiClient, p.bot, scheduler)

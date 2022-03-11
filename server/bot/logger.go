@@ -84,8 +84,6 @@ func (b *Bot) Errorf(format string, args ...interface{}) {
 	if level(b.configService.GetConfiguration().AdminLogLevel) >= 1 {
 		b.logToAdmins("ERROR", message)
 	}
-
-	b.metricsService.IncrementErrorsCount(1)
 }
 
 // Infof .
