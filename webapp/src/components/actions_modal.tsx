@@ -149,6 +149,7 @@ const ActionsModal = () => {
                 {Object.entries(currentActions).map(([trigger, actions]) => (
                     <Trigger
                         key={trigger}
+                        editable={editable}
                         triggerType={trigger as ChannelTriggerType}
                         actions={actions}
                         onUpdate={onUpdateAction}

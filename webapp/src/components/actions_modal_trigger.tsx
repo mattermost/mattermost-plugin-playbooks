@@ -10,6 +10,7 @@ import KeywordsSelector from 'src/components/keywords_selector';
 import {ChannelAction, ChannelTriggerType, PromptRunPlaybookFromKeywordsPayload} from 'src/types/channel_actions';
 
 interface Props {
+    editable: boolean;
     children: React.ReactNode;
     triggerType: ChannelTriggerType;
     actions: ChannelAction[];
@@ -33,6 +34,7 @@ const Trigger = (props: Props) => {
                 </Legend>
                 {props.triggerType === ChannelTriggerType.KeywordsPosted &&
                 <TriggerKeywords
+                    editable={props.editable}
                     actions={props.actions}
                     onUpdate={props.onUpdate}
                 />
@@ -46,11 +48,12 @@ const Trigger = (props: Props) => {
 };
 
 interface TriggerKeywordsProps {
+    editable: boolean;
     actions: ChannelAction[];
     onUpdate: (newAction: ChannelAction) => void;
 }
 
-const TriggerKeywords = ({actions, onUpdate}: TriggerKeywordsProps) => {
+const TriggerKeywords = ({editable, actions, onUpdate}: TriggerKeywordsProps) => {
     let initialKeywords = [] as string[];
     if (actions.length > 0) {
         // All actions should have the same keywords as trigger, so pick the first one
@@ -76,7 +79,7 @@ const TriggerKeywords = ({actions, onUpdate}: TriggerKeywordsProps) => {
 
     return (
         <StyledKeywordsSelector
-            enabled={true}
+            enabled={editable}
             placeholderText={'Add keywords'}
             keywords={keywords}
             onKeywordsChange={onKeywordsChange}

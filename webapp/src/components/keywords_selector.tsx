@@ -66,7 +66,7 @@ const KeywordsSelector = (props: Props) => {
             isMulti={true}
             menuIsOpen={false}
             placeholder={props.placeholderText}
-            value={props.enabled ? values : []}
+            value={values}
             onKeyDown={handleKeyDown}
             onChange={handleChange}
             onInputChange={handleInputChange}
