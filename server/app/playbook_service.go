@@ -6,6 +6,7 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -21,23 +22,23 @@ const (
 type playbookService struct {
 	store                 PlaybookStore
 	poster                bot.Poster
-	keywordsCacher        KeywordsCacher
 	keywordsThreadIgnorer KeywordsThreadIgnorer
 	telemetry             PlaybookTelemetry
 	api                   *pluginapi.Client
 	configService         config.Service
+	channelActionService  ChannelActionService
 }
 
 // NewPlaybookService returns a new playbook service
-func NewPlaybookService(store PlaybookStore, poster bot.Poster, telemetry PlaybookTelemetry, api *pluginapi.Client, configService config.Service, keywordsThreadIgnorer KeywordsThreadIgnorer) PlaybookService {
+func NewPlaybookService(store PlaybookStore, poster bot.Poster, telemetry PlaybookTelemetry, api *pluginapi.Client, configService config.Service, keywordsThreadIgnorer KeywordsThreadIgnorer, channelActionService ChannelActionService) PlaybookService {
 	return &playbookService{
 		store:                 store,
 		poster:                poster,
-		keywordsCacher:        NewPlaybookKeywordsCacher(store, api.Log),
 		keywordsThreadIgnorer: keywordsThreadIgnorer,
 		telemetry:             telemetry,
 		api:                   api,
 		configService:         configService,
+		channelActionService:  channelActionService,
 	}
 }
 
@@ -139,19 +140,21 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 }
 
 func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Post) {
-	if post.IsSystemMessage() || s.keywordsThreadIgnorer.IsIgnored(post.RootId, post.UserId) {
+	if post.IsSystemMessage() || s.keywordsThreadIgnorer.IsIgnored(post.RootId, post.UserId) || s.poster.IsFromPoster(post) {
 		return
 	}
 
-	channel, channelErr := s.api.Channel.Get(post.ChannelId)
-	if channelErr != nil {
-		s.api.Log.Error("can't get channel", "err", channelErr.Error())
+	actions, err := s.channelActionService.GetChannelActions(post.ChannelId, GetChannelActionOptions{
+		TriggerType: TriggerTypeKeywordsPosted,
+		ActionType:  ActionTypePromptRunPlaybook,
+	})
+	if err != nil {
+		s.api.Log.Error("unable to retrieve channel actions", "channelID", post.ChannelId, "triggerType", TriggerTypeKeywordsPosted)
 		return
 	}
-	teamID := channel.TeamId
 
-	suggestedPlaybooks, triggers := s.GetSuggestedPlaybooks(teamID, post.UserId, post.Message)
-	if len(suggestedPlaybooks) == 0 {
+	// Finish early if there are no actions to prompt running a playbook
+	if len(actions) == 0 {
 		return
 	}
 
@@ -161,17 +164,58 @@ func (s *playbookService) MessageHasBeenPosted(sessionID string, post *model.Pos
 		return
 	}
 
-	message := s.getPlaybookSuggestionsMessage(suggestedPlaybooks, triggers)
-	attachment := s.getPlaybookSuggestionsSlackAttachment(suggestedPlaybooks, post.Id, session.IsMobileApp())
+	triggeredPlaybooksMap := make(map[string]Playbook)
+	presentTriggers := []string{}
+	for _, action := range actions {
+		var payload PromptRunPlaybookFromKeywordsPayload
+		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
+			s.api.Log.Error("unable to decode payload from action", "payload", payload, "actionType", action.ActionType, "triggerType", action.TriggerType)
+			continue
+		}
+
+		suggestedPlaybook, err := s.Get(payload.PlaybookID)
+		if err != nil {
+			s.api.Log.Error("unable to get playbook to run action", "playbookID", payload.PlaybookID)
+			continue
+		}
+
+		triggers := payload.Keywords
+		for _, trigger := range triggers {
+			if strings.Contains(post.Message, trigger) {
+				triggeredPlaybooksMap[payload.PlaybookID] = suggestedPlaybook
+				presentTriggers = append(presentTriggers, trigger)
+			}
+		}
+	}
+
+	if len(triggeredPlaybooksMap) == 0 {
+		return
+	}
+
+	triggeredPlaybooks := []Playbook{}
+	for _, playbook := range triggeredPlaybooksMap {
+		triggeredPlaybooks = append(triggeredPlaybooks, playbook)
+	}
+
+	message := s.getPlaybookSuggestionsMessage(triggeredPlaybooks, presentTriggers)
+	attachment := s.getPlaybookSuggestionsSlackAttachment(triggeredPlaybooks, post.Id, session.IsMobileApp())
 
 	rootID := post.RootId
 	if rootID == "" {
 		rootID = post.Id
 	}
-	s.poster.EphemeralPostWithAttachments(post.UserId, post.ChannelId, rootID, []*model.SlackAttachment{attachment}, message)
+
+	newPost := &model.Post{
+		Message:   message,
+		ChannelId: post.ChannelId,
+	}
+	model.ParseSlackAttachment(newPost, []*model.SlackAttachment{attachment})
+	if err := s.poster.PostMessageToThread(rootID, newPost); err != nil {
+		s.api.Log.Error("unable to post message with suggestions to run playbooks", "error", err)
+	}
 }
 
-func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []*CachedPlaybook, triggers []string) string {
+func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []Playbook, triggers []string) string {
 	message := ""
 	triggerMessage := ""
 	if len(triggers) == 1 {
@@ -190,12 +234,12 @@ func (s *playbookService) getPlaybookSuggestionsMessage(suggestedPlaybooks []*Ca
 	return message
 }
 
-func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*CachedPlaybook, postID string, isMobile bool) *model.SlackAttachment {
+func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, isMobile bool) *model.SlackAttachment {
 	pluginID := s.configService.GetManifest().Id
 
 	ignoreButton := &model.PostAction{
 		Id:   "ignoreKeywordsButton",
-		Name: "No, ignore",
+		Name: "No, ignore thread",
 		Type: model.PostActionTypeButton,
 		Integration: &model.PostActionIntegration{
 			URL: fmt.Sprintf("/plugins/%s/api/v0/signal/keywords/ignore-thread", pluginID),
@@ -203,7 +247,6 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 				"postID": postID,
 			},
 		},
-		Style: "primary",
 	}
 
 	if len(playbooks) == 1 {
@@ -224,7 +267,6 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 
 		attachment := &model.SlackAttachment{
 			Actions: []*model.PostAction{yesButton, ignoreButton},
-			Text:    fmt.Sprintf("You can configure the trigger and actions for the playbook [here](%s)", getActionsTabRelativeURL(playbooks[0].ID)),
 		}
 		return attachment
 	}
@@ -254,7 +296,6 @@ func (s *playbookService) getPlaybookSuggestionsSlackAttachment(playbooks []*Cac
 
 	attachment := &model.SlackAttachment{
 		Actions: []*model.PostAction{playbookChooser, ignoreButton},
-		Text:    fmt.Sprintf("You can access these playbooks to configure their triggers and actions [here](%s)", PlaybooksPath),
 	}
 	return attachment
 }

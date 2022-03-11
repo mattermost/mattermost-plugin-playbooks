@@ -148,7 +148,7 @@ func (p *Plugin) OnActivate() error {
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
+	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer, p.channelActionService)
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
