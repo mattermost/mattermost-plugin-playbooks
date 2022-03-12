@@ -80,14 +80,7 @@ func (r *StatusRecorder) WriteHeader(status int) {
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	recorder := &StatusRecorder{
-		ResponseWriter: w,
-		Status:         200,
-	}
-	p.handler.ServeHTTP(recorder, r)
-	if recorder.Status < 200 || recorder.Status > 299 {
-		p.metricsService.IncrementErrorsCount(1)
-	}
+	p.handler.ServeHTTP(w, r)
 }
 
 // OnActivate Called when this plugin is activated.
@@ -264,6 +257,8 @@ func (p *Plugin) OnActivate() error {
 	p.runMetricsServer()
 	// run metrics updater recurring task
 	p.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
+	// set error counter middleware handler
+	p.handler.APIRouter.Use(p.getErrorCounterHandler())
 
 	// prevent a recursive OnConfigurationChange
 	go func() {
@@ -376,4 +371,19 @@ func (p *Plugin) runMetricsUpdaterTask(playbookStore app.PlaybookStore, playbook
 	}
 
 	scheduler.CreateRecurringTask("metricsUpdater", metricsUpdater, updateMetricsTaskFrequency)
+}
+
+func (p *Plugin) getErrorCounterHandler() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			recorder := &StatusRecorder{
+				ResponseWriter: w,
+				Status:         200,
+			}
+			next.ServeHTTP(recorder, r)
+			if recorder.Status < 200 || recorder.Status > 299 {
+				p.metricsService.IncrementErrorsCount(1)
+			}
+		})
+	}
 }
