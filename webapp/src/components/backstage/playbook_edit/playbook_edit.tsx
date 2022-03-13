@@ -315,7 +315,10 @@ const PlaybookEdit = (props: Props) => {
             <PlaybookNavbar
                 data-testid='backstage-nav-bar'
             >
-                <TitleAndDescription onClick={() => setShowTitleDescriptionModal(true)}>
+                <TitleAndDescription
+                    data-testid='playbook-title-description'
+                    onClick={() => setShowTitleDescriptionModal(true)}
+                >
                     <Title>
                         {playbookTitle}
                         <i className='editable-trigger icon-pencil-outline'/>
