@@ -700,6 +700,22 @@ func (p *playbookStore) Restore(id string) error {
 	return nil
 }
 
+// Get number of active playbooks.
+func (p *playbookStore) GetPlaybooksActiveTotal() (int64, error) {
+	var count int64
+
+	query := p.store.builder.
+		Select("COUNT(*)").
+		From("IR_Playbook").
+		Where(sq.Eq{"DeleteAt": 0})
+
+	if err := p.store.getBuilder(p.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count active playbooks'")
+	}
+
+	return count, nil
+}
+
 // replacePlaybookMembers replaces the members of a playbook
 func (p *playbookStore) replacePlaybookMembers(q queryExecer, playbook app.Playbook) error {
 	// Delete existing members who are not in the new playbook.MemberIDs list

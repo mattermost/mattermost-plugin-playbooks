@@ -341,6 +341,9 @@ type PlaybookStore interface {
 
 	// GetAutoFollows returns list of users who auto-follows a playbook
 	GetAutoFollows(playbookID string) ([]string, error)
+
+	// GetPlaybooksActiveTotal returns number of active playbooks
+	GetPlaybooksActiveTotal() (int64, error)
 }
 
 // PlaybookTelemetry defines the methods that the Playbook service needs from the RudderTelemetry.

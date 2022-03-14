@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 )
 
 const (
@@ -15,19 +16,21 @@ const (
 )
 
 type playbookService struct {
-	store     PlaybookStore
-	poster    bot.Poster
-	telemetry PlaybookTelemetry
-	api       *pluginapi.Client
+	store          PlaybookStore
+	poster         bot.Poster
+	telemetry      PlaybookTelemetry
+	api            *pluginapi.Client
+	metricsService *metrics.Metrics
 }
 
 // NewPlaybookService returns a new playbook service
-func NewPlaybookService(store PlaybookStore, poster bot.Poster, telemetry PlaybookTelemetry, api *pluginapi.Client) PlaybookService {
+func NewPlaybookService(store PlaybookStore, poster bot.Poster, telemetry PlaybookTelemetry, api *pluginapi.Client, metricsService *metrics.Metrics) PlaybookService {
 	return &playbookService{
-		store:     store,
-		poster:    poster,
-		telemetry: telemetry,
-		api:       api,
+		store:          store,
+		poster:         poster,
+		telemetry:      telemetry,
+		api:            api,
+		metricsService: metricsService,
 	}
 }
 
@@ -47,6 +50,7 @@ func (s *playbookService) Create(playbook Playbook, userID string) (string, erro
 		"teamID": playbook.TeamID,
 	}, playbook.TeamID)
 
+	s.metricsService.IncrementPlaybookCreatedCount(1)
 	return newID, nil
 }
 
@@ -98,6 +102,7 @@ func (s *playbookService) Archive(playbook Playbook, userID string) error {
 	}
 
 	s.telemetry.DeletePlaybook(playbook, userID)
+	s.metricsService.IncrementPlaybookArchivedCount(1)
 
 	s.poster.PublishWebsocketEventToTeam(playbookArchivedWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,
@@ -120,6 +125,7 @@ func (s *playbookService) Restore(playbook Playbook, userID string) error {
 	}
 
 	s.telemetry.RestorePlaybook(playbook, userID)
+	s.metricsService.IncrementPlaybookRestoredCount(1)
 
 	s.poster.PublishWebsocketEventToTeam(playbookRestoredWSEvent, map[string]interface{}{
 		"teamID": playbook.TeamID,
