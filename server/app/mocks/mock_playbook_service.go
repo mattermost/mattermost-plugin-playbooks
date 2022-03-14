@@ -196,21 +196,6 @@ func (mr *MockPlaybookServiceMockRecorder) Import(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Import", reflect.TypeOf((*MockPlaybookService)(nil).Import), arg0, arg1)
 }
 
-// IsAutoFollowing mocks base method
-func (m *MockPlaybookService) IsAutoFollowing(arg0, arg1 string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsAutoFollowing", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IsAutoFollowing indicates an expected call of IsAutoFollowing
-func (mr *MockPlaybookServiceMockRecorder) IsAutoFollowing(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAutoFollowing", reflect.TypeOf((*MockPlaybookService)(nil).IsAutoFollowing), arg0, arg1)
-}
-
 // MessageHasBeenPosted mocks base method
 func (m *MockPlaybookService) MessageHasBeenPosted(arg0 string, arg1 *model.Post) {
 	m.ctrl.T.Helper()

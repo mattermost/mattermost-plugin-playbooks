@@ -13,8 +13,9 @@ import {navigateToUrl} from 'src/browser_routing';
 import {telemetryEventForPlaybook} from 'src/client';
 import {SecondaryButtonLargerRight} from 'src/components/backstage/playbook_runs/shared';
 import {BackstageID} from 'src/components/backstage/backstage';
-import {useHasPlaybookPermissionById} from 'src/hooks';
+import {useHasPlaybookPermission} from 'src/hooks';
 import {PlaybookPermissionGeneral} from 'src/types/permissions';
+import {PlaybookWithChecklist} from 'src/types/playbook';
 import TutorialTourTip from 'src/components/tutorial/tutorial_tour_tip/tutorial_tour_tip';
 import {PlaybookPreviewTutorialSteps, TutorialTourCategories} from 'src/components/tutorial/tours';
 import {useMeasurePunchouts, useShowTutorialStep} from 'src/components/tutorial/tutorial_tour_tip/hooks';
@@ -30,7 +31,7 @@ export enum SectionID {
 }
 
 interface Props {
-    playbookId: string;
+    playbook: PlaybookWithChecklist;
     runsInProgress: number;
     archived: boolean;
     showElements: {
@@ -45,7 +46,7 @@ interface Props {
 // Height of the headers in pixels
 const headersOffset = 140;
 
-const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElements}: Props) => {
+const PlaybookPreviewNavbar = ({playbook, runsInProgress, archived, showElements}: Props) => {
     const {formatMessage} = useIntl();
     const match = useRouteMatch();
     const [activeId, setActiveId] = useState(SectionID.Description);
@@ -54,7 +55,7 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
     const showEditTutorial = useShowTutorialStep(PlaybookPreviewTutorialSteps.EditButton, TutorialTourCategories.PLAYBOOK_PREVIEW);
     const showNavbarTutorial = useShowTutorialStep(PlaybookPreviewTutorialSteps.Navbar, TutorialTourCategories.PLAYBOOK_PREVIEW);
 
-    const hasEditPermissions = useHasPlaybookPermissionById(PlaybookPermissionGeneral.ManageProperties, playbookId);
+    const hasEditPermissions = useHasPlaybookPermission(PlaybookPermissionGeneral.ManageProperties, playbook);
 
     const updateActiveSection = () => {
         const threshold = (window.innerHeight / 2) - headersOffset;
@@ -96,7 +97,7 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
 
     const scrollToSection = (id: SectionID) => {
         const idWithoutPrefix = String(id).replace(prefix, '');
-        telemetryEventForPlaybook(playbookId, `playbook_preview_navbar_section_${idWithoutPrefix}_clicked`);
+        telemetryEventForPlaybook(playbook.id, `playbook_preview_navbar_section_${idWithoutPrefix}_clicked`);
 
         if (isSectionActive(id)) {
             return;
@@ -231,7 +232,7 @@ const PlaybookPreviewNavbar = ({playbookId, runsInProgress, archived, showElemen
                 </Items>
             </div>
             <UsageButton
-                playbookId={playbookId}
+                playbookId={playbook.id}
                 activeRuns={runsInProgress}
             />
         </Wrapper>

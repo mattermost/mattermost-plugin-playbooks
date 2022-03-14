@@ -5,7 +5,7 @@ import React, {useEffect, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {Prompt} from 'react-router-dom';
 
-import ConfirmModal from 'src/components/widgets/confirmation_modal';
+import UnsavedChangesModal from 'src/components/widgets/unsaved_changes_modal';
 
 interface Props {
     when?: boolean | undefined;
@@ -52,11 +52,8 @@ const RouteLeavingGuard = (props: Props) => {
                 when={props.when}
                 message={handleBlockedNavigation}
             />
-            <ConfirmModal
+            <UnsavedChangesModal
                 show={modalVisible}
-                title={formatMessage({defaultMessage: 'Discard changes'})}
-                message={formatMessage({defaultMessage: 'Are you sure you want to discard your changes?'})}
-                confirmButtonText={formatMessage({defaultMessage: 'Discard'})}
                 onConfirm={handleConfirmNavigationClick}
                 onCancel={closeModal}
             />

@@ -353,16 +353,6 @@ func (s *playbookService) GetAutoFollows(playbookID string) ([]string, error) {
 	return autoFollows, nil
 }
 
-// IsAutoFollowing returns weather user is auto-following a playbook
-func (s *playbookService) IsAutoFollowing(playbookID, userID string) (bool, error) {
-	isAutoFollowing, err := s.store.IsAutoFollowing(playbookID, userID)
-	if err != nil {
-		return false, errors.Wrapf(err, "failed to get if user follows for the playbook `%s`", playbookID)
-	}
-
-	return isAutoFollowing, nil
-}
-
 // Duplicate duplicates a playbook
 func (s *playbookService) Duplicate(playbook Playbook, userID string) (string, error) {
 	newPlaybook := playbook.Clone()

@@ -16,6 +16,7 @@ import Navbar, {SectionID} from 'src/components/backstage/playbooks/playbook_pre
 interface Props {
     playbook: PlaybookWithChecklist;
     runsInProgress: number;
+    followerIds: string[];
 }
 
 const PlaybookPreview = (props: Props) => {
@@ -32,6 +33,7 @@ const PlaybookPreview = (props: Props) => {
     const actions = renderActions({
         id: SectionID.Actions,
         playbook: props.playbook,
+        followerIds: props.followerIds,
     });
 
     const statusUpdates = renderStatusUpdates({
@@ -54,7 +56,7 @@ const PlaybookPreview = (props: Props) => {
                 {retrospective}
             </Content>
             <Navbar
-                playbookId={props.playbook.id}
+                playbook={props.playbook}
                 runsInProgress={props.runsInProgress}
                 archived={props.playbook.delete_at !== 0}
                 showElements={{
