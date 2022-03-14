@@ -267,6 +267,8 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 			if err != nil {
 				a.logger.Errorf("failed to categorize channel; error: %s", err.Error())
 			}
+
+			a.telemetry.RunChannelAction(action, userID)
 		}()
 	}
 }
