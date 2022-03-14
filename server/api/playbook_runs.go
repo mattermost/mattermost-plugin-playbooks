@@ -458,10 +458,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 			playbookRun.WebhookOnStatusUpdateURLs = pb.WebhookOnStatusUpdateURLs
 		}
 
-		if pb.CategorizeChannelEnabled {
-			playbookRun.CategoryName = pb.CategoryName
-		}
-
 		playbookRun.RetrospectiveEnabled = pb.RetrospectiveEnabled
 		if pb.RetrospectiveEnabled {
 			playbookRun.RetrospectiveReminderIntervalSeconds = pb.RetrospectiveReminderIntervalSeconds

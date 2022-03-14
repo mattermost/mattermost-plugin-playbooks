@@ -267,6 +267,24 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 	}
 
+	if pb != nil && pb.CategorizeChannelEnabled && pb.CategoryName != "" {
+		categorizeChannelAction := GenericChannelAction{
+			GenericChannelActionWithoutPayload: GenericChannelActionWithoutPayload{
+				ChannelID:   playbookRun.ChannelID,
+				Enabled:     true,
+				ActionType:  ActionTypeCategorizeChannel,
+				TriggerType: TriggerTypeNewMemberJoins,
+			},
+			Payload: CategorizeChannelPayload{
+				CategoryName: pb.CategoryName,
+			},
+		}
+
+		if _, err := s.actionService.Create(categorizeChannelAction); err != nil {
+			s.logger.Errorf(errors.Wrapf(err, "unable to create welcome action for new run in channel %q", playbookRun.ChannelID).Error())
+		}
+	}
+
 	now := model.GetMillis()
 	playbookRun.CreateAt = now
 	playbookRun.LastStatusUpdateAt = now
