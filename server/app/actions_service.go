@@ -226,7 +226,32 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 		return
 	}
 
-	if playbookRun.CategoryName != "" {
+	actions, err := a.GetChannelActions(channelID, GetChannelActionOptions{
+		ActionType:  ActionTypeCategorizeChannel,
+		TriggerType: TriggerTypeNewMemberJoins,
+	})
+	if err != nil {
+		a.logger.Errorf("failed to get the channel actions for channelID %q; error: %s", channelID, err.Error())
+		return
+	}
+
+	if len(actions) != 1 {
+		a.logger.Errorf("only one action of action type %s and trigger type %s is expected, but %d were retrieved", ActionTypeCategorizeChannel, TriggerTypeNewMemberJoins, len(actions))
+		return
+	}
+
+	action := actions[0]
+	if !action.Enabled {
+		return
+	}
+
+	var payload CategorizeChannelPayload
+	if err := mapstructure.Decode(action.Payload, &payload); err != nil {
+		a.logger.Errorf("unable to decode payload of CategorizeChannelPayload")
+		return
+	}
+
+	if payload.CategoryName != "" {
 		// Update sidebar category in the go-routine not to block the UserHasJoinedChannel hook
 		go func() {
 			// Wait for 5 seconds(a magic number) for the webapp to get the `user_added` event,
@@ -238,7 +263,7 @@ func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actor
 			// distributed lock here.
 			time.Sleep(5 * time.Second)
 
-			err = a.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, playbookRun.CategoryName)
+			err = a.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, payload.CategoryName)
 			if err != nil {
 				a.logger.Errorf("failed to categorize channel; error: %s", err.Error())
 			}
