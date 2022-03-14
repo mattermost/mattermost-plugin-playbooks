@@ -510,5 +510,8 @@
     "B3Q5mz": "Auslöser",
     "5AJmOz": "Wenn ein Benutzer dem Kanal beitritt",
     "0RlzlZ": "Senden einer temporären Willkommensnachricht an den Benutzer",
-    "hCMWC+": "Starte Folgen für {folgende, plural, =0 {keinen Benutzer} =1 {einen Benutzer} other {# Benutzer}}"
+    "hCMWC+": "Starte Folgen für {folgende, plural, =0 {keinen Benutzer} =1 {einen Benutzer} other {# Benutzer}}",
+    "u4L4yd": "Du hast ungesicherte Änderungen",
+    "e3z3P8": "Änderungen verwerfen",
+    "Ob5cSv": "Änderungen, die du vorgenommen hast, werden nicht gespeichert, wenn du diese Seite verläss. Bist du sicher, dass du die Änderungen verwerfen willst?"
 }
