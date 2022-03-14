@@ -268,11 +268,17 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 		}
 
 		triggers := payload.Keywords
+		actionExecuted := false
 		for _, trigger := range triggers {
 			if strings.Contains(post.Message, trigger) {
 				triggeredPlaybooksMap[payload.PlaybookID] = suggestedPlaybook
 				presentTriggers = append(presentTriggers, trigger)
+				actionExecuted = true
 			}
+		}
+
+		if actionExecuted {
+			a.telemetry.RunChannelAction(action, session.UserId)
 		}
 	}
 
