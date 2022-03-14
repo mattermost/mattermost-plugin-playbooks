@@ -77,6 +77,10 @@ type ChannelActionService interface {
 	// Update updates an existing action identified by action.ID
 	Update(action GenericChannelAction) error
 
+	// UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
+	// was invited by actorID.
+	UserHasJoinedChannel(userID, channelID, actorID string)
+
 	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
 	// the registered welcome message action. Returns true if the message was sent.
 	CheckAndSendMessageOnJoin(userID, channelID string) bool

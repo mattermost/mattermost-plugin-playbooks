@@ -291,6 +291,7 @@ func (p *Plugin) UserHasJoinedChannel(c *plugin.Context, channelMember *model.Ch
 		actorID = actor.Id
 	}
 	p.playbookRunService.UserHasJoinedChannel(channelMember.UserId, channelMember.ChannelId, actorID)
+	p.channelActionService.UserHasJoinedChannel(channelMember.UserId, channelMember.ChannelId, actorID)
 }
 
 func (p *Plugin) UserHasLeftChannel(c *plugin.Context, channelMember *model.ChannelMember, actor *model.User) {

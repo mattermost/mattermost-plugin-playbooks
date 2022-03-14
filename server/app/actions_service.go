@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -204,6 +205,111 @@ func (a *channelActionServiceImpl) Update(action GenericChannelAction) error {
 	}
 
 	return a.store.Update(action)
+}
+
+// UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
+// was invited by actorID.
+func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
+	user, err := a.api.User.Get(userID)
+	if err != nil {
+		a.logger.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
+		return
+	}
+
+	channel, err := a.api.Channel.Get(channelID)
+	if err != nil {
+		a.logger.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
+		return
+	}
+
+	if user.IsBot {
+		return
+	}
+
+	if playbookRun.CategoryName != "" {
+		// Update sidebar category in the go-routine not to block the UserHasJoinedChannel hook
+		go func() {
+			// Wait for 5 seconds(a magic number) for the webapp to get the `user_added` event,
+			// finish channel categorization and update it's state in redux.
+			// Currently there is no way to detect when webapp finishes the job.
+			// After that we can update the categories safely.
+			// Technically if user starts multiple runs simultaneously we will still get the race condition
+			// on category update. Since that's not realistic at the moment we are not adding the
+			// distributed lock here.
+			time.Sleep(5 * time.Second)
+
+			err = a.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, playbookRun.CategoryName)
+			if err != nil {
+				a.logger.Errorf("failed to categorize channel; error: %s", err.Error())
+			}
+		}()
+	}
+}
+
+// createOrUpdatePlaybookRunSidebarCategory creates or updates a "Playbook Runs" sidebar category if
+// it does not already exist and adds the channel within the sidebar category
+func (a *channelActionServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID, categoryName string) error {
+	sidebar, err := a.api.Channel.GetSidebarCategories(userID, teamID)
+	if err != nil {
+		return err
+	}
+
+	var categoryID string
+	for _, category := range sidebar.Categories {
+		if strings.EqualFold(category.DisplayName, categoryName) {
+			categoryID = category.Id
+			if !sliceContains(category.Channels, channelID) {
+				category.Channels = append(category.Channels, channelID)
+			}
+			break
+		}
+	}
+
+	if categoryID == "" {
+		err = a.api.Channel.CreateSidebarCategory(userID, teamID, &model.SidebarCategoryWithChannels{
+			SidebarCategory: model.SidebarCategory{
+				UserId:      userID,
+				TeamId:      teamID,
+				DisplayName: categoryName,
+				Muted:       false,
+			},
+			Channels: []string{channelID},
+		})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// remove channel from previous category
+	for _, category := range sidebar.Categories {
+		if strings.EqualFold(category.DisplayName, categoryName) {
+			continue
+		}
+		for i, channel := range category.Channels {
+			if channel == channelID {
+				category.Channels = append(category.Channels[:i], category.Channels[i+1:]...)
+				break
+			}
+		}
+	}
+
+	err = a.api.Channel.UpdateSidebarCategories(userID, teamID, sidebar.Categories)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func sliceContains(strs []string, target string) bool {
+	for _, s := range strs {
+		if s == target {
+			return true
+		}
+	}
+	return false
 }
 
 // CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
