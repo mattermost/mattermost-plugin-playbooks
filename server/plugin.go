@@ -2,7 +2,9 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
@@ -10,6 +12,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/command"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/enterprise"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/scheduler"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/sqlstore"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
@@ -20,6 +24,12 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/cluster"
+)
+
+const (
+	updateMetricsTaskFrequency = 15 * time.Minute
+
+	metricsExposePort = ":9093"
 )
 
 // These credentials for Rudder need to be populated at build-time,
@@ -56,6 +66,17 @@ type Plugin struct {
 	userInfoStore        app.UserInfoStore
 	telemetryClient      TelemetryClient
 	licenseChecker       app.LicenseChecker
+	metricsService       *metrics.Metrics
+}
+
+type StatusRecorder struct {
+	http.ResponseWriter
+	Status int
+}
+
+func (r *StatusRecorder) WriteHeader(status int) {
+	r.Status = status
+	r.ResponseWriter.WriteHeader(status)
 }
 
 // ServeHTTP routes incoming HTTP requests to the plugin's REST API.
@@ -74,6 +95,7 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "unable to load translation files")
 	}
 
+	p.metricsService = p.newMetricsInstance()
 	pluginAPIClient := pluginapi.NewClient(p.API, p.Driver)
 	p.pluginAPI = pluginAPIClient
 
@@ -149,7 +171,15 @@ func (p *Plugin) OnActivate() error {
 	p.handler = api.NewHandler(pluginAPIClient, p.config, p.bot)
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
-	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient, p.config, keywordsThreadIgnorer)
+	p.playbookService = app.NewPlaybookService(
+		playbookStore,
+		p.bot,
+		p.telemetryClient,
+		pluginAPIClient,
+		p.config,
+		keywordsThreadIgnorer,
+		p.metricsService,
+	)
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 
@@ -165,6 +195,7 @@ func (p *Plugin) OnActivate() error {
 		p.playbookService,
 		p.channelActionService,
 		p.licenseChecker,
+		p.metricsService,
 	)
 
 	if err = scheduler.SetCallback(p.playbookRunService.HandleReminder); err != nil {
@@ -223,6 +254,13 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrapf(err, "failed register commands")
 	}
 
+	// run metrics server to expose data
+	p.runMetricsServer()
+	// run metrics updater recurring task
+	p.runMetricsUpdaterTask(playbookStore, playbookRunStore, updateMetricsTaskFrequency)
+	// set error counter middleware handler
+	p.handler.APIRouter.Use(p.getErrorCounterHandler())
+
 	// prevent a recursive OnConfigurationChange
 	go func() {
 		// Remove the prepackaged old versions of the plugin
@@ -272,4 +310,81 @@ func (p *Plugin) UserHasLeftChannel(c *plugin.Context, channelMember *model.Chan
 
 func (p *Plugin) MessageHasBeenPosted(c *plugin.Context, post *model.Post) {
 	p.playbookService.MessageHasBeenPosted(c.SessionId, post)
+}
+
+func (p *Plugin) newMetricsInstance() *metrics.Metrics {
+	// Init metrics
+	instanceInfo := metrics.InstanceInfo{
+		Version:        manifest.Version,
+		InstallationID: os.Getenv("MM_CLOUD_INSTALLATION_ID"),
+	}
+	return metrics.NewMetrics(instanceInfo)
+}
+
+func (p *Plugin) runMetricsServer() {
+	metricServer := metrics.NewMetricsServer(metricsExposePort, p.metricsService, &p.pluginAPI.Log)
+	// Run server to expose metrics
+	go func() {
+		err := metricServer.Run()
+		if err != nil {
+			p.pluginAPI.Log.Error("Metrics server could not be started", "Error", err)
+		}
+	}()
+}
+
+func (p *Plugin) runMetricsUpdaterTask(playbookStore app.PlaybookStore, playbookRunStore app.PlaybookRunStore, updateMetricsTaskFrequency time.Duration) {
+	metricsUpdater := func() {
+		if playbooksActiveTotal, err := playbookStore.GetPlaybooksActiveTotal(); err == nil {
+			p.metricsService.ObservePlaybooksActiveTotal(playbooksActiveTotal)
+		} else {
+			p.pluginAPI.Log.Error("error updating metrics, playbooks_active_total", err)
+		}
+
+		if runsActiveTotal, err := playbookRunStore.GetRunsActiveTotal(); err == nil {
+			p.metricsService.ObserveRunsActiveTotal(runsActiveTotal)
+		} else {
+			p.pluginAPI.Log.Error("error updating metrics, runs_active_total", err)
+		}
+
+		if remindersOverdueTotal, err := playbookRunStore.GetOverdueUpdateRunsTotal(); err == nil {
+			p.metricsService.ObserveRemindersOutstandingTotal(remindersOverdueTotal)
+		} else {
+			p.pluginAPI.Log.Error("error updating metrics, reminders_outstanding_total", err)
+		}
+
+		if retrosOverdueTotal, err := playbookRunStore.GetOverdueRetroRunsTotal(); err == nil {
+			p.metricsService.ObserveRetrosOutstandingTotal(retrosOverdueTotal)
+		} else {
+			p.pluginAPI.Log.Error("error updating metrics, retros_outstanding_total", err)
+		}
+
+		if followersActiveTotal, err := playbookRunStore.GetFollowersActiveTotal(); err == nil {
+			p.metricsService.ObserveFollowersActiveTotal(followersActiveTotal)
+		} else {
+			p.pluginAPI.Log.Error("error updating metrics, followers_active_total", err)
+		}
+
+		if participantsActiveTotal, err := playbookRunStore.GetParticipantsActiveTotal(); err == nil {
+			p.metricsService.ObserveParticipantsActiveTotal(participantsActiveTotal)
+		} else {
+			p.pluginAPI.Log.Error("error updating metrics, participants_active_total", err)
+		}
+	}
+
+	scheduler.CreateRecurringTask("metricsUpdater", metricsUpdater, updateMetricsTaskFrequency)
+}
+
+func (p *Plugin) getErrorCounterHandler() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			recorder := &StatusRecorder{
+				ResponseWriter: w,
+				Status:         200,
+			}
+			next.ServeHTTP(recorder, r)
+			if recorder.Status < 200 || recorder.Status > 299 {
+				p.metricsService.IncrementErrorsCount(1)
+			}
+		})
+	}
 }

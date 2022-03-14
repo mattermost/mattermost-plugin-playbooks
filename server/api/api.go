@@ -60,7 +60,7 @@ func HandleErrorWithCode(logger bot.Logger, w http.ResponseWriter, code int, pub
 		details = internalErr.Error()
 	}
 
-	logger.Warnf("public error message: %v; internal details: %v", publicErrorMsg, details)
+	logger.Errorf("public error message: %v; internal details: %v", publicErrorMsg, details)
 
 	responseMsg, _ := json.Marshal(struct {
 		Error string `json:"error"` // A public facing message providing details about the error.

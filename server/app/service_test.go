@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
@@ -429,7 +430,7 @@ func TestMessageHasBeenPosted(t *testing.T) {
 		telemetryService := &telemetry.NoopTelemetry{}
 		configService := mock_config.NewMockService(controller)
 		keywordsIgnorer := mock_playbook.NewMockKeywordsThreadIgnorer(controller)
-		s := app.NewPlaybookService(store, poster, telemetryService, client, configService, keywordsIgnorer)
+		s := app.NewPlaybookService(store, poster, telemetryService, client, configService, keywordsIgnorer, metrics.NewMetrics(metrics.InstanceInfo{}))
 
 		sessionID := model.NewId()
 		userID := model.NewId()
@@ -488,5 +489,5 @@ func getMockPlaybookService(t *testing.T) (app.PlaybookService, *mock_playbook.M
 	telemetryService := &telemetry.NoopTelemetry{}
 	configService := mock_config.NewMockService(controller)
 	keywordsIgnorer := mock_playbook.NewMockKeywordsThreadIgnorer(controller)
-	return app.NewPlaybookService(store, poster, telemetryService, client, configService, keywordsIgnorer), store, pluginAPI, keywordsIgnorer
+	return app.NewPlaybookService(store, poster, telemetryService, client, configService, keywordsIgnorer, metrics.NewMetrics(metrics.InstanceInfo{})), store, pluginAPI, keywordsIgnorer
 }
