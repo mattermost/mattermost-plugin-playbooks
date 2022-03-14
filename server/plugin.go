@@ -35,6 +35,7 @@ type TelemetryClient interface {
 	app.PlaybookTelemetry
 	bot.Telemetry
 	app.UserInfoTelemetry
+	app.ChannelActionTelemetry
 	Enable() error
 	Disable() error
 }
@@ -149,7 +150,7 @@ func (p *Plugin) OnActivate() error {
 	p.playbookService = app.NewPlaybookService(playbookStore, p.bot, p.telemetryClient, pluginAPIClient)
 
 	keywordsThreadIgnorer := app.NewKeywordsThreadIgnorer()
-	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer)
+	p.channelActionService = app.NewChannelActionsService(pluginAPIClient, p.bot, p.bot, p.config, channelActionStore, p.playbookService, keywordsThreadIgnorer, p.telemetryClient)
 
 	p.licenseChecker = enterprise.NewLicenseChecker(pluginAPIClient)
 

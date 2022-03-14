@@ -6,6 +6,7 @@ import (
 	"github.com/golang/mock/gomock"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/telemetry"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
 	"github.com/stretchr/testify/mock"
@@ -40,7 +41,7 @@ func TestMessageHasBeenPosted(t *testing.T) {
 		keywordsIgnorer = mock_app.NewMockKeywordsThreadIgnorer(controller)
 		playbookService = mock_app.NewMockPlaybookService(controller)
 
-		channelActionService = app.NewChannelActionsService(client, logger, poster, configService, store, playbookService, keywordsIgnorer)
+		channelActionService = app.NewChannelActionsService(client, logger, poster, configService, store, playbookService, keywordsIgnorer, &telemetry.NoopTelemetry{})
 	}
 
 	t.Run("message is ignored", func(t *testing.T) {
