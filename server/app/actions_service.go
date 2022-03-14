@@ -107,7 +107,12 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 	// Validate the trigger type and action types
 	switch action.TriggerType {
 	case TriggerTypeNewMemberJoins:
-		if action.ActionType != ActionTypeWelcomeMessage {
+		switch action.ActionType {
+		case ActionTypeWelcomeMessage:
+			break
+		case ActionTypeCategorizeChannel:
+			break
+		default:
 			return fmt.Errorf("action type %q is not valid for trigger type %q", action.ActionType, action.TriggerType)
 		}
 	case TriggerTypeKeywordsPosted:
@@ -134,6 +139,14 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 			return fmt.Errorf("unable to decode payload from action")
 		}
 		if err := checkValidPromptRunPlaybookFromKeywordsPayload(payload); err != nil {
+			return err
+		}
+	case ActionTypeCategorizeChannel:
+		var payload CategorizeChannelPayload
+		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
+			return fmt.Errorf("unable to decode payload from action")
+		}
+		if err := checkValidCategorizeChannelPayload(payload); err != nil {
 			return err
 		}
 
@@ -165,6 +178,14 @@ func checkValidPromptRunPlaybookFromKeywordsPayload(payload PromptRunPlaybookFro
 
 	if !model.IsValidId(payload.PlaybookID) {
 		return fmt.Errorf("payload field 'playbook_id' must be a valid ID")
+	}
+
+	return nil
+}
+
+func checkValidCategorizeChannelPayload(payload CategorizeChannelPayload) error {
+	if payload.CategoryName == "" {
+		return fmt.Errorf("payload field 'category_name' must be non-empty")
 	}
 
 	return nil
