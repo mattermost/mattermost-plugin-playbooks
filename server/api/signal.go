@@ -100,7 +100,7 @@ func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 	post.Message = fmt.Sprintf("@%s ran the [%s](%s) playbook.", user.Username, pbook.Title, app.GetPlaybookDetailsRelativeURL(pbook.ID))
 	model.ParseSlackAttachment(post, []*model.SlackAttachment{})
 
-	h.api.Post.UpdatePost(post)
+	_ = h.api.Post.UpdatePost(post)
 }
 
 func (h *SignalHandler) ignoreKeywords(w http.ResponseWriter, r *http.Request) {
