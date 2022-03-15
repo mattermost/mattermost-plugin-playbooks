@@ -72,6 +72,17 @@ func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	post, err := h.api.Post.GetPost(req.PostId)
+	if err != nil {
+		h.returnError(fmt.Sprintf("unable to get original post with ID %q", postID), err, w)
+		return
+	}
+
+	user, err := h.api.User.Get(req.UserId)
+	if err != nil {
+		h.returnError(fmt.Sprintf("unable to get user with ID %q", req.UserId), err, w)
+	}
+
 	pbook, err := h.playbookService.Get(id)
 	if err != nil {
 		h.returnError("can't get chosen playbook", errors.Wrapf(err, "can't get chosen playbook, id - %s", id), w)
@@ -84,10 +95,12 @@ func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ReturnJSON(w, &model.PostActionIntegrationResponse{}, http.StatusOK)
-	h.api.Post.UpdateEphemeralPost(req.UserId, &model.Post{
-		Id:      req.PostId,
-		Message: fmt.Sprintf("You've selected playbook %s to run", pbook.Title),
-	})
+
+	// Update the post message and remove the buttons in the attachment
+	post.Message = fmt.Sprintf("@%s ran the [%s](%s) playbook.", user.Username, pbook.Title, app.GetPlaybookDetailsRelativeURL(pbook.ID))
+	model.ParseSlackAttachment(post, []*model.SlackAttachment{})
+
+	h.api.Post.UpdatePost(post)
 }
 
 func (h *SignalHandler) ignoreKeywords(w http.ResponseWriter, r *http.Request) {
