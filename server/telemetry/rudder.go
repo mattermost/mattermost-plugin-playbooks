@@ -72,6 +72,9 @@ const (
 
 	eventSettings = "settings"
 	actionDigest  = "digest"
+
+	eventChannelAction     = "channel_action"
+	actionRunChannelAction = "run_channel_action"
 )
 
 // NewRudder builds a new RudderTelemetry client that will send the events to
@@ -548,4 +551,18 @@ func (t *RudderTelemetry) ChangeDigestSettings(userID string, old app.DigestNoti
 	properties["OldDisableDailyDigest"] = old.DisableDailyDigest
 	properties["NewDisableDailyDigest"] = new.DisableDailyDigest
 	t.track(eventSettings, properties)
+}
+
+func channelActionProperties(action app.GenericChannelAction, userID string) map[string]interface{} {
+	return map[string]interface{}{
+		"UserActualID": userID,
+		"ActionType":   action.ActionType,
+		"TriggerType":  action.TriggerType,
+	}
+}
+
+func (t *RudderTelemetry) RunChannelAction(action app.GenericChannelAction, userID string) {
+	properties := channelActionProperties(action, userID)
+	properties["Action"] = actionRunChannelAction
+	t.track(eventChannelAction, properties)
 }

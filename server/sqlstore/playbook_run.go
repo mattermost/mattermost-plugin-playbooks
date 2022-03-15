@@ -1180,6 +1180,101 @@ func (s *playbookRunStore) GetFollowers(playbookRunID string) ([]string, error) 
 	return followers, nil
 }
 
+// Get number of active runs.
+func (s *playbookRunStore) GetRunsActiveTotal() (int64, error) {
+	var count int64
+
+	query := s.store.builder.
+		Select("COUNT(*)").
+		From("IR_Incident").
+		Where(sq.Eq{"CurrentStatus": app.StatusInProgress})
+
+	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count active runs'")
+	}
+
+	return count, nil
+}
+
+// GetOverdueUpdateRunsTotal returns number of runs that have overdue status updates.
+func (s *playbookRunStore) GetOverdueUpdateRunsTotal() (int64, error) {
+	query := s.store.builder.
+		Select("COUNT(*)").
+		From("IR_Incident").
+		Where(sq.Eq{"CurrentStatus": app.StatusInProgress}).
+		Where(sq.NotEq{"PreviousReminder": 0})
+
+	if s.store.db.DriverName() == model.DatabaseDriverMysql {
+		query = query.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(UNIX_TIMESTAMP() * 1000)"))
+	} else {
+		query = query.Where(sq.Expr("(PreviousReminder / 1e6 + LastStatusUpdateAt) <= FLOOR(EXTRACT (EPOCH FROM now())::float*1000)"))
+	}
+
+	var count int64
+	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count active runs that have overdue status updates")
+	}
+
+	return count, nil
+}
+
+// GetOverdueRetroRunsTotal returns the number of completed runs without retro and with reminder
+func (s *playbookRunStore) GetOverdueRetroRunsTotal() (int64, error) {
+	query := s.store.builder.
+		Select("COUNT(*)").
+		From("IR_Incident").
+		Where(sq.Eq{"CurrentStatus": app.StatusFinished}).
+		Where(sq.Eq{"RetrospectiveEnabled": true}).
+		Where(sq.Eq{"RetrospectivePublishedAt": 0}).
+		Where(sq.NotEq{"RetrospectiveReminderIntervalSeconds": 0})
+
+	var count int64
+	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count finished runs without retro")
+	}
+
+	return count, nil
+}
+
+// GetFollowersActiveTotal returns total number of active followers, including duplicates
+// if a user is following more than one run, it will be counted multiple times
+func (s *playbookRunStore) GetFollowersActiveTotal() (int64, error) {
+	var count int64
+
+	query := s.store.builder.
+		Select("COUNT(*)").
+		From("IR_Run_Participants as rp").
+		Join("IR_Incident AS i ON (i.ID = rp.IncidentID)").
+		Where(sq.Eq{"rp.IsFollower": true}).
+		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress})
+
+	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count active followers'")
+	}
+
+	return count, nil
+}
+
+// GetParticipantsActiveTotal returns number of active participants
+// (i.e. members of the playbook run channel when the run is active)
+// if a user is member of more than one channel, it will be counted multiple times
+func (s *playbookRunStore) GetParticipantsActiveTotal() (int64, error) {
+	var count int64
+
+	query := s.store.builder.
+		Select("COUNT(*)").
+		From("ChannelMembers as cm").
+		Join("IR_Incident AS i ON i.ChannelId = cm.ChannelId").
+		Where(sq.Eq{"i.CurrentStatus": app.StatusInProgress}).
+		Where(sq.Expr("cm.UserId NOT IN (SELECT UserId FROM Bots)"))
+
+	if err := s.store.getBuilder(s.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count active participants")
+	}
+
+	return count, nil
+}
+
 // updateRunMetrics updates run metrics values.
 func (s *playbookRunStore) updateRunMetrics(q queryExecer, playbookRun app.PlaybookRun) error {
 	if len(playbookRun.MetricsData) == 0 {
