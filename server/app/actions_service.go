@@ -319,7 +319,7 @@ func getPlaybookSuggestionsMessage(suggestedPlaybooks []Playbook, triggers []str
 	}
 
 	if len(suggestedPlaybooks) == 1 {
-		playbookURL := fmt.Sprintf("[%s](%s)", suggestedPlaybooks[0].Title, getPlaybookDetailsRelativeURL(suggestedPlaybooks[0].ID))
+		playbookURL := fmt.Sprintf("[%s](%s)", suggestedPlaybooks[0].Title, GetPlaybookDetailsRelativeURL(suggestedPlaybooks[0].ID))
 		message = fmt.Sprintf("%s for the %s playbook, would you like to run it?", triggerMessage, playbookURL)
 	} else {
 		message = fmt.Sprintf("%s for the multiple playbooks, would you like to run one of them?", triggerMessage)

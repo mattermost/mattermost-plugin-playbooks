@@ -30,7 +30,7 @@ func TestGetPlaybooksURL(t *testing.T) {
 func TestGetPlaybookDetailsRelativeURL(t *testing.T) {
 	require.Equal(t,
 		"/playbooks/playbooks/testPlaybookId",
-		getPlaybookDetailsRelativeURL("testPlaybookId"),
+		GetPlaybookDetailsRelativeURL("testPlaybookId"),
 	)
 }
 
