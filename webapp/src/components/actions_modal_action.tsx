@@ -76,7 +76,7 @@ const Toggle = styled(BasicToggle)`
 `;
 
 const ChildrenContainer = styled.div`
-    margin-top: 12px;
+    margin-top: 8px;
 `;
 
 export default Action;
