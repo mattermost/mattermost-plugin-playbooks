@@ -37,7 +37,7 @@ func TestGetPlaybookDetailsRelativeURL(t *testing.T) {
 func TestGetRunDetailsRelativeURL(t *testing.T) {
 	require.Equal(t,
 		"/playbooks/runs/testPlaybookRunId",
-		getRunDetailsRelativeURL("testPlaybookRunId"),
+		GetRunDetailsRelativeURL("testPlaybookRunId"),
 	)
 }
 
