@@ -36,7 +36,7 @@
     "b40Pr7": "Reporter",
     "VmpFFw": "Es ist keine Beschreibung verfügbar.",
     "T7Ry38": "Nachricht",
-    "RthEJt": "Rückblickend",
+    "RthEJt": "Retrospektive",
     "R+JQaJ": "Kanalmitglieder",
     "Q8Qw5B": "Beschreibung",
     "IuFETn": "Dauer",
@@ -136,7 +136,7 @@
     "JeqL8w": "Rückwirkender Bericht von {Name} abgebrochen",
     "I2zEie": "Feiern Sie Erfolge und lernen Sie aus Fehlern mit retrospektiven Berichten. Filtern Sie Zeitplan-Ereignisse für Prozessüberprüfung, Stakeholder-Engagement und Auditing-Zwecke.",
     "FEGywG": "Bitte geben Sie ein zukünftiges Datum/Uhrzeit für die Aktualisierungserinnerung an.",
-    "DXACD6": "Rückblickender Bericht veröffentlichen und auf die Zeitleiste zugreifen",
+    "DXACD6": "Retrospektive veröffentlichen und auf die Zeitleiste zugreifen",
     "ArpdYl": "Ereignisse in der Zeitleiste werden hier angezeigt, sobald sie auftreten. Bewegen Sie den Mauszeiger über ein Ereignis, um es zu entfernen.",
     "AML4RW": "Zugewiesene Aufgaben",
     "9Obw6C": "Filter",
@@ -513,5 +513,8 @@
     "hCMWC+": "Starte Folgen für {folgende, plural, =0 {keinen Benutzer} =1 {einen Benutzer} other {# Benutzer}}",
     "u4L4yd": "Du hast ungesicherte Änderungen",
     "e3z3P8": "Änderungen verwerfen",
-    "Ob5cSv": "Änderungen, die du vorgenommen hast, werden nicht gespeichert, wenn du diese Seite verläss. Bist du sicher, dass du die Änderungen verwerfen willst?"
+    "Ob5cSv": "Änderungen, die du vorgenommen hast, werden nicht gespeichert, wenn du diese Seite verläss. Bist du sicher, dass du die Änderungen verwerfen willst?",
+    "Ek1Fx2": "Wenn eine Nachricht mit diesen Schlüsselwörtern gesendet wird",
+    "2Q5PhZ": "Ausführen eines Playbooks bestätigen",
+    "+/x2FM": "Wähle ein Playbook aus"
 }
