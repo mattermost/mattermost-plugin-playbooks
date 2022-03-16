@@ -452,7 +452,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 }
 
 // OpenCreatePlaybookRunDialog opens a interactive dialog to start a new playbook run.
-func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error {
+func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error {
 
 	filteredPlaybooks := make([]Playbook, 0, len(playbooks))
 	for _, playbook := range playbooks {

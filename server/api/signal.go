@@ -89,7 +89,7 @@ func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.playbookRunService.OpenCreatePlaybookRunDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, isMobile); err != nil {
+	if err := h.playbookRunService.OpenCreatePlaybookRunDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, isMobile, post.Id); err != nil {
 		h.returnError("can't open dialog", errors.Wrap(err, "can't open a dialog"), w)
 		return
 	}
