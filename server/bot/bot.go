@@ -74,6 +74,9 @@ type Poster interface {
 
 	// PromptForFeedback sends a DM as the surveybot to the given user, prompting for product feedback.
 	PromptForFeedback(userID string) error
+
+	// IsFromPoster returns whether the provided post was sent by this poster
+	IsFromPoster(post *model.Post) bool
 }
 
 type Telemetry interface {

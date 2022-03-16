@@ -142,7 +142,7 @@ func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playboo
 		"%s", // for the telemetry data injection
 		reporter.Username,
 		playbookTitle,
-		getPlaybookDetailsRelativeURL(playbookID),
+		GetPlaybookDetailsRelativeURL(playbookID),
 	), nil
 }
 
@@ -218,7 +218,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
 		if pb != nil {
 			overviewURL := getRunDetailsRelativeURL(playbookRun.ID)
-			playbookURL := getPlaybookDetailsRelativeURL(pb.ID)
+			playbookURL := GetPlaybookDetailsRelativeURL(pb.ID)
 			header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
 				pb.Title, playbookURL, overviewURL)
 		}

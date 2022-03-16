@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
@@ -86,6 +88,52 @@ func (a *ActionsHandler) createChannelAction(w http.ResponseWriter, r *http.Requ
 	ReturnJSON(w, &result, http.StatusCreated)
 }
 
+func isValidTrigger(trigger string) bool {
+	if trigger == "" {
+		return true
+	}
+
+	for _, elem := range app.ValidTriggerTypes {
+		if trigger == string(elem) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isValidAction(action string) bool {
+	if action == "" {
+		return true
+	}
+
+	for _, elem := range app.ValidActionTypes {
+		if action == string(elem) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func parseGetChannelActionsOptions(query url.Values) (*app.GetChannelActionOptions, error) {
+	actionTypeStr := query.Get("action_type")
+	triggerTypeStr := query.Get("trigger_type")
+
+	if !isValidAction(actionTypeStr) {
+		return nil, fmt.Errorf("action_type %q not recognized; valid values are %v", actionTypeStr, app.ValidActionTypes)
+	}
+
+	if !isValidTrigger(triggerTypeStr) {
+		return nil, fmt.Errorf("trigger_type %q not recognized; valid values are %v", triggerTypeStr, app.ValidTriggerTypes)
+	}
+
+	return &app.GetChannelActionOptions{
+		ActionType:  app.ActionType(actionTypeStr),
+		TriggerType: app.TriggerType(triggerTypeStr),
+	}, nil
+}
+
 func (a *ActionsHandler) getChannelActions(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("Mattermost-User-ID")
 
@@ -96,10 +144,12 @@ func (a *ActionsHandler) getChannelActions(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	params := r.URL.Query()
-	triggerType := params.Get("trigger_type")
+	options, err := parseGetChannelActionsOptions(r.URL.Query())
+	if err != nil {
+		a.HandleErrorWithCode(w, http.StatusBadRequest, errors.Wrapf(err, "bad options").Error(), err)
+	}
 
-	actions, err := a.channelActionsService.GetChannelActions(channelID, triggerType)
+	actions, err := a.channelActionsService.GetChannelActions(channelID, *options)
 	if err != nil {
 		a.HandleErrorWithCode(w, http.StatusInternalServerError, fmt.Sprintf("unable to retrieve actions for channel %s", channelID), err)
 		return

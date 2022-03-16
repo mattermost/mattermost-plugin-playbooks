@@ -97,14 +97,19 @@ type sqlGenericChannelAction struct {
 	Payload json.RawMessage
 }
 
-func (c *channelActionStore) GetChannelActions(channelID, triggerType string) ([]app.GenericChannelAction, error) {
+func (c *channelActionStore) GetChannelActions(channelID string, options app.GetChannelActionOptions) ([]app.GenericChannelAction, error) {
 	if !model.IsValidId(channelID) {
 		return nil, errors.New("ID is not valid")
 	}
 
 	query := c.channelActionSelect.Where(sq.Eq{"c.ChannelID": channelID})
-	if triggerType != "" {
-		query.Where(sq.Eq{"c.TriggerType": triggerType})
+
+	if options.TriggerType != "" {
+		query = query.Where(sq.Eq{"c.TriggerType": options.TriggerType})
+	}
+
+	if options.ActionType != "" {
+		query = query.Where(sq.Eq{"c.ActionType": options.ActionType})
 	}
 
 	sqlActions := []sqlGenericChannelAction{}
@@ -127,6 +132,18 @@ func (c *channelActionStore) GetChannelActions(channelID, triggerType string) ([
 			action := app.GenericChannelAction{
 				GenericChannelActionWithoutPayload: sqlAction.GenericChannelActionWithoutPayload,
 				Payload:                            welcomePayload,
+			}
+
+			actions = append(actions, action)
+		case app.ActionTypePromptRunPlaybook:
+			var promptRunPlaybookPayload app.PromptRunPlaybookFromKeywordsPayload
+			if err := json.Unmarshal(sqlAction.Payload, &promptRunPlaybookPayload); err != nil {
+				return nil, errors.Wrapf(err, fmt.Sprintf("unable to unmarshal payload for action with ID %q and type %q", sqlAction.ID, sqlAction.ActionType), channelID)
+			}
+
+			action := app.GenericChannelAction{
+				GenericChannelActionWithoutPayload: sqlAction.GenericChannelActionWithoutPayload,
+				Payload:                            promptRunPlaybookPayload,
 			}
 
 			actions = append(actions, action)
