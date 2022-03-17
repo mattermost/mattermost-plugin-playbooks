@@ -117,6 +117,7 @@ const Backstage = () => {
                 <Switch>
                     <Route path={`${match.url}/error`}/>
                     <Route path={`${match.url}/start`}/>
+                    <Route path={`${match.url}/playbooks/:playbookId/editor`}/>
                     <Route>
                         <BackstageNavbar className='flex justify-content-between'>
                             <div className='d-flex items-center'>
