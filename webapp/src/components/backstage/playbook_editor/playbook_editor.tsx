@@ -260,7 +260,7 @@ const Playbook = () => {
             <TopContainer
                 id='title-row'
             >
-                <TitleRow>
+                <Header>
                     <LeftArrow
                         className='icon-arrow-left'
                         onClick={goToPlaybooks}
@@ -375,8 +375,9 @@ const Playbook = () => {
                             telemetryTag={`tutorial_tip_Playbook_Preview_${PlaybookPreviewTutorialSteps.RunButton}_RunButton`}
                         />
                     }
-                </TitleRow>
+                </Header>
             </TopContainer>
+            <Hero/>
             <Navbar>
                 <NavItem
                     activeStyle={activeNavItemStyle}
@@ -401,50 +402,37 @@ const Playbook = () => {
                     {formatMessage({defaultMessage: 'Reports'})}
                 </NavItem>
             </Navbar>
-            <Switch>
-                <Route
-                    path={`${match.path}`}
-                    exact={true}
-                >
-                    <PlaybookPreview
-                        playbook={playbook}
-                        followerIds={followerIds}
-                        runsInProgress={stats.runs_in_progress}
-                    />
-                </Route>
-                <Route path={`${match.path}/usage`}>
-                    <PlaybookUsage
-                        playbook={playbook}
-                        stats={stats}
-                    />
-                </Route>
-                <Route path={`${match.path}/metrics`}>
-                    <PlaybookKeyMetrics
-                        playbook={playbook}
-                        stats={stats}
-                    />
-                </Route>
-            </Switch>
+            <ContentContainer>
+                <Switch>
+                    <Route
+                        path={`${match.path}`}
+                        exact={true}
+                    >
+                        <PlaybookPreview
+                            playbook={playbook}
+                            followerIds={followerIds}
+                            runsInProgress={stats.runs_in_progress}
+                        />
+                    </Route>
+                    <Route path={`${match.path}/usage`}>
+                        <PlaybookUsage
+                            playbook={playbook}
+                            stats={stats}
+                        />
+                    </Route>
+                    <Route path={`${match.path}/metrics`}>
+                        <PlaybookKeyMetrics
+                            playbook={playbook}
+                            stats={stats}
+                        />
+                    </Route>
+                </Switch>
+            </ContentContainer>
+
             {modal}
         </>
     );
 };
-
-const TopContainer = styled.div`
-    position: sticky;
-    z-index: 2;
-    top: 0;
-    background: var(--center-channel-bg);
-    width: 100%;
-    box-shadow: inset 0px -1px 0px rgba(var(--center-channel-color-rgb), 0.16);
-`;
-
-const TitleRow = styled.div`
-    display: flex;
-    align-items: center;
-    margin: 0 32px;
-    height: 82px;
-`;
 
 const LeftArrow = styled.button`
     display: block;
@@ -467,7 +455,7 @@ const Title = styled.div`
 
     font-size: 20px;
     line-height: 28px;
-    height: 36px;
+    height: 28px;
     color: var(--center-channel-color);
     margin-left: 6px;
     margin-right: 6px;
@@ -510,16 +498,24 @@ const SecondaryButtonLargerRightStyled = styled(SecondaryButtonLargerRight) <Che
         }
     `}`;
 
-const Navbar = styled.nav`
+const TopContainer = styled.div`
+    position: sticky;
+    z-index: 2;
+    top: 0;
     background: var(--center-channel-bg);
-    height: 55px;
     width: 100%;
-    box-shadow: inset 0px -1px 0px 0px rgba(var(--center-channel-color-rgb), 0.16);
+    box-shadow: inset 0 -1px 0 0 rgba(var(--center-channel-color-rgb), 0.08);
+`;
 
+const Header = styled.div`
     display: flex;
-    flex-direction: row;
-    padding-left: 80px;
-    margin: 0;
+    align-items: center;
+    padding: 0 32px;
+    height: 82px;
+`;
+
+const Hero = styled.div`
+    min-height: 200px;
 `;
 
 const NavItem = styled(NavLink)`
@@ -536,10 +532,21 @@ const NavItem = styled(NavLink)`
             color: var(--button-bg);
         }
 
-        :hover, :focus {
+        :hover,
+        :focus {
             text-decoration: none;
         }
     }
+`;
+
+const Navbar = styled.nav`
+    height: 55px;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin: 0;
+    box-shadow: inset 0 -1px 0 0 rgba(var(--center-channel-color-rgb), 0.08);
 `;
 
 const RightMarginedIcon = styled(Icon)`
@@ -550,5 +557,12 @@ const activeNavItemStyle = {
     color: 'var(--button-bg)',
     boxShadow: 'inset 0px -2px 0px 0px var(--button-bg)',
 };
+
+const ContentContainer = styled.div`
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    background-color: rgba(var(--center-channel-color-rgb),0.04);
+`;
 
 export default Playbook;
