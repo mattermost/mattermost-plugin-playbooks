@@ -73,7 +73,7 @@ export type Option = {
     mode?: Mode.DateTimeValue | Mode.DurationValue;
 }
 
-const defaultMakeOptions: Props['makeOptions'] = (query, datetimes, durations, mode) => {
+export const defaultMakeOptions: Props['makeOptions'] = (query, datetimes, durations, mode) => {
     if (!query) {
         return null;
     }

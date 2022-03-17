@@ -23,6 +23,7 @@ import {
     clientRunChecklistItemSlashCommand,
     setAssignee,
     clientEditChecklistItem,
+    setDueDate,
 } from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import {ChecklistItemButton} from 'src/components/checklist_item_input';
@@ -40,7 +41,8 @@ import MarkdownTextbox from 'src/components/markdown_textbox';
 import CommandInput from './command_input';
 import GenericModal from './widgets/generic_modal';
 import {BaseInput} from './assets/inputs';
-
+import DateTimeSelector, {DateTimeOption} from './datetime_selector';
+import {Mode} from './datetime_input';
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
     checklistNum: number;
@@ -358,6 +360,17 @@ const ControlComponent = (ownProps: ControlProps<ProfileOption, boolean>) => (
     </div>
 );
 
+const ControlComponentDueDate = (ownProps: ControlProps<DateTimeOption, boolean>) => (
+    <div>
+        <components.Control {...ownProps}/>
+        {ownProps.selectProps.showCustomReset && (
+            <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
+                <FormattedMessage defaultMessage='No due date'/>
+            </ControlComponentAnchor>
+        )}
+    </div>
+);
+
 const portal: HTMLElement = document.createElement('div');
 document.body.appendChild(portal);
 
@@ -413,6 +426,21 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
         }
     };
 
+    const onDueDateChange = async (value?: DateTimeOption | undefined | null) => {
+        if (!props.playbookRunId) {
+            return;
+        }
+        let timestamp = 0;
+        if (value?.value) {
+            timestamp = value?.value.toMillis();
+        }
+        const response = await setDueDate(props.playbookRunId, props.checklistNum, props.itemNum, timestamp, value?.mode);
+        if (response.error) {
+            // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
+            console.log(response.error); // eslint-disable-line no-console
+        }
+    };
+
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
     const assignee_id = props.checklistItem.assignee_id; // to make typescript happy
 
@@ -425,6 +453,12 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     };
 
     const toggleDescription = () => setShowDescription(!showDescription);
+
+    const [dateTimeSelectorToggle, setDateTimeSelectorToggle] = useState(false);
+    const resetDueDate = () => {
+        onDueDateChange();
+        setDateTimeSelectorToggle(!dateTimeSelectorToggle);
+    };
 
     const content = (
         <>
@@ -475,6 +509,25 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                         onCustomReset: resetAssignee,
                                     }}
                                     controlledOpenToggle={profileSelectorToggle}
+                                    showOnRight={true}
+                                />
+                                <DateTimeSelector
+                                    date={props.checklistItem.due_date}
+                                    mode={Mode.DateTimeValue}
+                                    onlyPlaceholder={true}
+                                    placeholder={
+                                        <HoverMenuButton
+                                            title={formatMessage({defaultMessage: 'Add due date'})}
+                                            className={'icon-calendar-outline icon-16 btn-icon'}
+                                        />
+                                    }
+                                    onSelectedChange={onDueDateChange}
+                                    customControl={ControlComponentDueDate}
+                                    customControlProps={{
+                                        showCustomReset: Boolean(props.checklistItem.due_date),
+                                        onCustomReset: resetDueDate,
+                                    }}
+                                    controlledOpenToggle={dateTimeSelectorToggle}
                                     showOnRight={true}
                                 />
                                 <HoverMenuButton
