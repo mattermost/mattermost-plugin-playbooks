@@ -3,8 +3,6 @@ import {SelectComponentsConfig, components as defaultComponents} from 'react-sel
 import {useSelector} from 'react-redux';
 import {makeGetCategoriesForTeam} from 'mattermost-redux/selectors/entities/channel_categories';
 
-import {useIntl} from 'react-intl';
-
 import {ChannelCategory} from 'mattermost-redux/types/channel_categories';
 import {GlobalState} from 'mattermost-redux/types/store';
 
@@ -19,15 +17,14 @@ export interface Props {
     isDisabled: boolean;
     captureMenuScroll: boolean;
     shouldRenderValue: boolean;
-    placeholder?: string;
+    placeholder: string;
+    menuPlacement?: string;
 }
 
 const getCategoriesForTeam = makeGetCategoriesForTeam();
 const getMyCategories = (state: GlobalState) => getCategoriesForTeam(state, state.entities.teams.currentTeamId);
 
 const CategorySelector = (props: Props & { className?: string }) => {
-    const {formatMessage} = useIntl();
-
     const selectableCategories = useSelector(getMyCategories);
 
     const options = React.useMemo(() => {
@@ -56,13 +53,13 @@ const CategorySelector = (props: Props & { className?: string }) => {
             defaultMenuIsOpen={false}
             openMenuOnClick={true}
             isClearable={props.isClearable}
-            value={{value: props.categoryName, label: props.categoryName}}
-            placeholder={props.placeholder || formatMessage({defaultMessage: 'Add channel to category'})}
+            value={props.categoryName && {value: props.categoryName, label: props.categoryName}}
+            placeholder={props.placeholder}
             classNamePrefix='channel-selector'
             components={components}
             isDisabled={props.isDisabled}
             captureMenuScroll={props.captureMenuScroll}
-            menuPlacement={'top'}
+            menuPlacement={props.menuPlacement ?? 'top'}
         />
     );
 };

@@ -119,6 +119,18 @@ func (mr *MockChannelActionServiceMockRecorder) Update(arg0 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockChannelActionService)(nil).Update), arg0)
 }
 
+// UserHasJoinedChannel mocks base method
+func (m *MockChannelActionService) UserHasJoinedChannel(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UserHasJoinedChannel", arg0, arg1, arg2)
+}
+
+// UserHasJoinedChannel indicates an expected call of UserHasJoinedChannel
+func (mr *MockChannelActionServiceMockRecorder) UserHasJoinedChannel(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserHasJoinedChannel", reflect.TypeOf((*MockChannelActionService)(nil).UserHasJoinedChannel), arg0, arg1, arg2)
+}
+
 // Validate mocks base method
 func (m *MockChannelActionService) Validate(arg0 app.GenericChannelAction) error {
 	m.ctrl.T.Helper()
