@@ -614,20 +614,14 @@ export const resetReminder = async (playbookRunId: string, newReminderSeconds: n
     });
 };
 
-export const fetchChannelActions = async (channelID: string, triggerType?: string): Promise<Record<string, ChannelAction>> => {
+export const fetchChannelActions = async (channelID: string, triggerType?: string): Promise<ChannelAction[]> => {
     const queryParams = triggerType ? `?trigger_type=${triggerType}` : '';
     const data = await doGet(`${apiUrl}/actions/channels/${channelID}${queryParams}`);
     if (!data) {
-        return {};
+        return [];
     }
 
-    const actions = data as ChannelAction[];
-    const record: Record<string, ChannelAction> = {};
-    actions.forEach((action) => {
-        record[action.action_type] = action;
-    });
-
-    return record;
+    return data;
 };
 
 export const saveChannelAction = async (action: ChannelAction): Promise<string> => {

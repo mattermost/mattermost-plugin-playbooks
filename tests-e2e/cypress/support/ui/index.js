@@ -6,8 +6,6 @@ import './announcement_bar';
 import './channel';
 import './channel_sidebar';
 import './common';
-import './compliance_export';
-import './data_retention';
 import './extend_testing_library';
 import './menu';
 import './modal';

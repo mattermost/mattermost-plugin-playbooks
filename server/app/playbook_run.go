@@ -667,6 +667,24 @@ type PlaybookRunStore interface {
 
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
+
+	// GetRunsActiveTotal returns number of active runs
+	GetRunsActiveTotal() (int64, error)
+
+	// GetOverdueUpdateRunsTotal returns number of runs that have overdue status updates
+	GetOverdueUpdateRunsTotal() (int64, error)
+
+	// GetOverdueRetroRunsTotal returns the number of completed runs without retro and with reminder
+	GetOverdueRetroRunsTotal() (int64, error)
+
+	// GetFollowersActiveTotal returns total number of active followers, including duplicates
+	// if a user is following more than one run, it will be counted multiple times
+	GetFollowersActiveTotal() (int64, error)
+
+	// GetParticipantsActiveTotal returns number of active participants
+	// (i.e. members of the playbook run channel when the run is active)
+	// if a user is member of more than one channel, it will be counted multiple times
+	GetParticipantsActiveTotal() (int64, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

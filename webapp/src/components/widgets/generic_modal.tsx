@@ -31,6 +31,7 @@ type Props = {
         Header: typeof Modal.Header;
         FooterContainer: typeof DefaultFooterContainer;
     }>;
+    adjustTop?: number;
 };
 
 type State = {
@@ -43,6 +44,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         autoCloseOnCancelButton: true,
         autoCloseOnConfirmButton: true,
         enforceFocus: true,
+        adjustTop: 260,
     };
 
     state = {show: true};
@@ -128,6 +130,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 role='dialog'
                 aria-labelledby={`${this.props.id}_heading`}
                 id={this.props.id}
+                adjustTop={this.props.adjustTop}
             >
                 <Header
                     className='GenericModal__header'
@@ -152,7 +155,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
     }
 }
 
-export const StyledModal = styled(Modal)`
+export const StyledModal = styled(Modal)<{adjustTop: number}>`
     &&& {
         /* content-spacing */
         .modal-header {
@@ -171,7 +174,7 @@ export const StyledModal = styled(Modal)`
             margin: 12px 12px 0 0;
         }
         .modal-dialog {
-            margin-top: calc(50vh - 260px);
+            margin-top: calc(50vh - ${({adjustTop}) => adjustTop}px);
         }
     }
 

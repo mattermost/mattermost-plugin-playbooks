@@ -12,16 +12,12 @@ func getRunDetailsRelativeURL(playbookRunID string) string {
 	return fmt.Sprintf("%s/%s", RunsPath, playbookRunID)
 }
 
-func getPlaybookDetailsRelativeURL(playbookID string) string {
+func GetPlaybookDetailsRelativeURL(playbookID string) string {
 	return fmt.Sprintf("%s/%s", PlaybooksPath, playbookID)
 }
 
 func getPlaybooksNewRelativeURL() string {
 	return fmt.Sprintf("%s/new", PlaybooksPath)
-}
-
-func getActionsTabRelativeURL(playbookID string) string {
-	return fmt.Sprintf("%s/%s/edit/actions", PlaybooksPath, playbookID)
 }
 
 // absolute urls
@@ -42,7 +38,7 @@ func getPlaybooksNewURL(siteURL string) string {
 }
 
 func getPlaybookDetailsURL(siteURL string, playbookID string) string {
-	return fmt.Sprintf("%s%s", siteURL, getPlaybookDetailsRelativeURL(playbookID))
+	return fmt.Sprintf("%s%s", siteURL, GetPlaybookDetailsRelativeURL(playbookID))
 }
 
 func getChannelURL(siteURL string, teamName string, channelName string) string {

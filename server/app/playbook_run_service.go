@@ -16,6 +16,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/httptools"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/shared/i18n"
@@ -45,6 +46,7 @@ type PlaybookRunServiceImpl struct {
 	actionService   ChannelActionService
 	permissions     *PermissionsService
 	licenseChecker  LicenseChecker
+	metricsService  *metrics.Metrics
 }
 
 var allNonSpaceNonWordRegex = regexp.MustCompile(`[^\w\s]`)
@@ -95,6 +97,7 @@ func NewPlaybookRunService(
 	playbookService PlaybookService,
 	channelActionService ChannelActionService,
 	licenseChecker LicenseChecker,
+	metricsService *metrics.Metrics,
 ) *PlaybookRunServiceImpl {
 	service := &PlaybookRunServiceImpl{
 		pluginAPI:       pluginAPI,
@@ -109,6 +112,7 @@ func NewPlaybookRunService(
 		playbookService: playbookService,
 		actionService:   channelActionService,
 		licenseChecker:  licenseChecker,
+		metricsService:  metricsService,
 	}
 
 	service.permissions = NewPermissionsService(service.playbookService, service, service.pluginAPI, service.configService, service.licenseChecker)
@@ -138,7 +142,7 @@ func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playboo
 		"%s", // for the telemetry data injection
 		reporter.Username,
 		playbookTitle,
-		getPlaybookDetailsRelativeURL(playbookID),
+		GetPlaybookDetailsRelativeURL(playbookID),
 	), nil
 }
 
@@ -214,7 +218,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
 		if pb != nil {
 			overviewURL := getRunDetailsRelativeURL(playbookRun.ID)
-			playbookURL := getPlaybookDetailsRelativeURL(pb.ID)
+			playbookURL := GetPlaybookDetailsRelativeURL(pb.ID)
 			header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
 				pb.Title, playbookURL, overviewURL)
 		}
@@ -284,6 +288,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	}
 
 	s.telemetry.CreatePlaybookRun(playbookRun, userID, public)
+	s.metricsService.IncrementRunsCreatedCount(1)
 
 	// Add users to channel after creating playbook run so that all automations trigger.
 	err = s.addPlaybookRunUsers(playbookRun, channel)
@@ -919,6 +924,7 @@ func (s *PlaybookRunServiceImpl) FinishPlaybookRun(playbookRunID, userID string)
 	}
 
 	s.telemetry.FinishPlaybookRun(playbookRunToModify, userID)
+	s.metricsService.IncrementRunsFinishedCount(1)
 
 	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
 		return err

@@ -31,8 +31,6 @@ const PlaybookPreviewActions = (props: Props) => {
     // hiding them if they don't have any visible subentries.
     // If a new CardSubEntry is added or the conditions are changed, these booleans need to be updated.
 
-    const showPromptCardEntry = props.playbook.signal_any_keywords_enabled && props.playbook.signal_any_keywords.length !== 0;
-
     const createChannelEnabled = true;
     const autofollowsEnabled = props.followerIds.length > 0;
     const inviteUsersEnabled = props.playbook.invite_users_enabled && props.playbook.invited_user_ids.length !== 0;
@@ -58,7 +56,6 @@ const PlaybookPreviewActions = (props: Props) => {
         categorizeChannelEnabled;
 
     const allCardEntriesEmpty =
-        !showPromptCardEntry &&
         !showRunStartCardEntry &&
         !showNewMemberCardEntry;
 
@@ -72,15 +69,6 @@ const PlaybookPreviewActions = (props: Props) => {
             title={formatMessage({defaultMessage: 'Actions'})}
         >
             <Card data-testid='playbook-preview-actions'>
-                <CardEntry
-                    title={formatMessage(
-                        {defaultMessage: 'Prompt to run this playbook when a message contains {numKeywords, select, 1 {the keyword} other {one or more of these}}'},
-                        {numKeywords: props.playbook.signal_any_keywords.length},
-                    )}
-                    iconName={'message-text-outline'}
-                    extraInfo={<KeywordsExtraInfo keywords={props.playbook.signal_any_keywords}/>}
-                    enabled={showPromptCardEntry}
-                />
                 <CardEntry
                     title={formatMessage({
                         defaultMessage: 'When a run starts',

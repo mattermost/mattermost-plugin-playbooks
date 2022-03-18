@@ -7,10 +7,11 @@ import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
-import Icon from '@mdi/react';
 import {mdiLightningBoltOutline} from '@mdi/js';
 
 import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/src/selectors/entities/common';
+
+import Icon from '@mdi/react';
 
 import {fetchChannelActions, saveChannelAction} from 'src/client';
 import {hideActionsModal} from 'src/actions';
@@ -18,18 +19,32 @@ import {isActionsModalVisible, isCurrentUserChannelAdmin, isCurrentUserAdmin} fr
 import GenericModal, {ModalSubheading} from 'src/components/widgets/generic_modal';
 import Action from 'src/components/actions_modal_action';
 import Trigger from 'src/components/actions_modal_trigger';
-import {ChannelAction, ChannelActionType, ChannelTriggerType} from 'src/types/channel_actions';
+import {ChannelAction, ChannelActionType, ActionsByTrigger, ChannelTriggerType} from 'src/types/channel_actions';
 
-const defaultActions: Record<string, ChannelAction> = {
-    [ChannelActionType.WelcomeMessage]: {
-        channel_id: '',
-        enabled: false,
-        action_type: ChannelActionType.WelcomeMessage,
-        trigger_type: ChannelTriggerType.NewMemberJoins,
-        payload: {
-            message: '',
+const defaultActions: ActionsByTrigger = {
+    [ChannelTriggerType.NewMemberJoins]: [
+        {
+            channel_id: '',
+            enabled: false,
+            action_type: ChannelActionType.WelcomeMessage,
+            trigger_type: ChannelTriggerType.NewMemberJoins,
+            payload: {
+                message: '',
+            },
         },
-    },
+    ],
+    [ChannelTriggerType.KeywordsPosted]: [
+        {
+            channel_id: '',
+            enabled: false,
+            action_type: ChannelActionType.PromptRunPlaybook,
+            trigger_type: ChannelTriggerType.KeywordsPosted,
+            payload: {
+                keywords: [],
+                playbook_id: '',
+            },
+        },
+    ],
 };
 
 const ActionsModal = () => {
@@ -42,14 +57,25 @@ const ActionsModal = () => {
 
     const editable = isChannelAdmin || isSysAdmin;
 
-    const [originalActions, setOriginalActions] = useState({} as Record<string, ChannelAction>);
+    const [originalActions, setOriginalActions] = useState({} as ActionsByTrigger);
     const [currentActions, setCurrentActions] = useState(defaultActions);
 
     useEffect(() => {
         const getActions = async (id: string) => {
             const fetchedActions = await fetchChannelActions(id);
-            setOriginalActions(fetchedActions);
-            setCurrentActions({...defaultActions, ...fetchedActions});
+
+            const record = {} as ActionsByTrigger;
+            fetchedActions.forEach((action) => {
+                const array = record[action.trigger_type];
+                if (array) {
+                    record[action.trigger_type].push(action);
+                } else {
+                    record[action.trigger_type] = [action];
+                }
+            });
+
+            setOriginalActions(record);
+            setCurrentActions({...defaultActions, ...record});
         };
 
         if (channelID) {
@@ -64,11 +90,27 @@ const ActionsModal = () => {
     };
 
     const onSave = () => {
-        Object.values(currentActions).forEach((action) => {
-            action.channel_id = channelID;
-            saveChannelAction(action);
+        Object.values(currentActions).forEach((actions) => {
+            actions.forEach((action) => {
+                action.channel_id = channelID;
+                saveChannelAction(action);
+            });
         });
         setOriginalActions(currentActions);
+    };
+
+    const onUpdateAction = (newAction: ChannelAction) => {
+        setCurrentActions((prevActions: ActionsByTrigger) => {
+            // TODO: Change this deep cloning
+            const newActions = JSON.parse(JSON.stringify(prevActions));
+
+            const idx = prevActions[newAction.trigger_type]?.findIndex((action) => action.action_type === newAction.action_type);
+            if (idx !== null) {
+                newActions[newAction.trigger_type][idx] = newAction;
+            }
+
+            return newActions;
+        });
     };
 
     const header = (
@@ -101,17 +143,28 @@ const ActionsModal = () => {
             autoCloseOnCancelButton={true}
             autoCloseOnConfirmButton={true}
             enforceFocus={true}
+            adjustTop={400}
         >
-            <Trigger title={formatMessage({defaultMessage: 'When a user joins the channel'})}>
-                {Object.values(currentActions).map((action) => (
-                    <Action
-                        key={action.id}
-                        action={action}
+            <TriggersContainer>
+                {Object.entries(currentActions).map(([trigger, actions]) => (
+                    <Trigger
+                        key={trigger}
                         editable={editable}
-                        onUpdate={setCurrentActions}
-                    />
+                        triggerType={trigger as ChannelTriggerType}
+                        actions={actions}
+                        onUpdate={onUpdateAction}
+                    >
+                        {actions.map((action) => (
+                            <Action
+                                key={action.id}
+                                action={action}
+                                editable={editable}
+                                onUpdate={onUpdateAction}
+                            />
+                        ))}
+                    </Trigger>
                 ))}
-            </Trigger>
+            </TriggersContainer>
         </GenericModal>
     );
 };
@@ -125,6 +178,12 @@ const ActionsIcon = styled(Icon)`
     color: rgba(var(--center-channel-color-rgb), 0.56);
     margin-right: 14px;
     margin-top: 2px;
+`;
+
+const TriggersContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    row-gap: 16px;
 `;
 
 export default ActionsModal;
