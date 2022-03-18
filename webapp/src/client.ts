@@ -300,8 +300,8 @@ export async function setAssignee(playbookRunId: string, checklistNum: number, i
     }
 }
 
-export async function setDueDate(playbookRunId: string, checklistNum: number, itemNum: number, date?: number, mode?: string) {
-    const body = JSON.stringify({due_date: date, due_date_mode: mode});
+export async function setDueDate(playbookRunId: string, checklistNum: number, itemNum: number, date?: number) {
+    const body = JSON.stringify({due_date: date});
     try {
         return await doPut(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/duedate`, body);
     } catch (error) {

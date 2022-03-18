@@ -434,7 +434,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
         if (value?.value) {
             timestamp = value?.value.toMillis();
         }
-        const response = await setDueDate(props.playbookRunId, props.checklistNum, props.itemNum, timestamp, value?.mode);
+        const response = await setDueDate(props.playbookRunId, props.checklistNum, props.itemNum, timestamp);
         if (response.error) {
             // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console

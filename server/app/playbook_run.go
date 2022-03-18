@@ -480,6 +480,9 @@ type PlaybookRunService interface {
 	// Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 	SetAssignee(playbookRunID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
+	// SetDueDate sets absolute due date timestamp for the specified checklist item
+	SetDueDate(playbookRunID, userID string, duedate int64, checklistNumber, itemNumber int) error
+
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
 	RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error)
 

@@ -233,6 +233,11 @@ type ChecklistItem struct {
 	// LastSkipped is the timestamp, in milliseconds since epoch, of the last time the item
 	// was skipped. 0 if it was never skipped.
 	LastSkipped int64 `json:"delete_at" export:"-"`
+
+	// DueDate is the timestamp, in milliseconds since epoch. indicates relative or absolute due date
+	// of the checklist item. 0 if not set.
+	// Playbook can have only relative timstamp, run can have only absolute timestamp.
+	DueDate int64 `json:"due_date" export:"due_date"`
 }
 
 type GetPlaybooksResults struct {

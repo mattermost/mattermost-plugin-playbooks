@@ -113,7 +113,6 @@ export interface ChecklistItem {
     assignee_modified?: number;
     command: string;
     command_last_run: number;
-    due_date_mode: string;
     due_date: number;
 }
 
@@ -195,7 +194,6 @@ export function emptyChecklistItem(): ChecklistItem {
         command: '',
         description: '',
         command_last_run: 0,
-        due_date_mode: '',
         due_date: 0,
     };
 }
@@ -206,7 +204,6 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     command,
     command_last_run: 0,
     state,
-    due_date_mode: '',
     due_date: 0,
 });
 

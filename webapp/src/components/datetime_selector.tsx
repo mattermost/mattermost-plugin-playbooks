@@ -65,7 +65,7 @@ const makeDefaultOptions = (mode: Mode.DateTimeValue | Mode.DurationValue) => {
     const list: DateTimeOption[] = [];
     list.push(
         {
-            ...optionFromMillis(dateTime.millisecond, mode),
+            ...optionFromMillis(dateTime.toMillis(), mode),
             label: <FormattedMessage defaultMessage='Today'/>,
             labelRHS: (<LabelRight>{dateTime.weekdayShort}</LabelRight>),
         }
@@ -74,7 +74,7 @@ const makeDefaultOptions = (mode: Mode.DateTimeValue | Mode.DurationValue) => {
     dateTime = dateTime.plus({days: 1});
     list.push(
         {
-            ...optionFromMillis(dateTime.millisecond, mode),
+            ...optionFromMillis(dateTime.toMillis(), mode),
             label: <FormattedMessage defaultMessage='Tomorrow'/>,
             labelRHS: (<LabelRight>{dateTime.weekdayShort}</LabelRight>),
         }
@@ -83,7 +83,7 @@ const makeDefaultOptions = (mode: Mode.DateTimeValue | Mode.DurationValue) => {
     dateTime = dateTime.plus({days: 6});
     list.push(
         {
-            ...optionFromMillis(dateTime.millisecond, mode),
+            ...optionFromMillis(dateTime.toMillis(), mode),
             label: <FormattedMessage defaultMessage='Next week'/>,
             labelRHS: (<LabelRight>{dateTime.toLocaleString({weekday: 'short', day: '2-digit', month: 'short'})}</LabelRight>),
         }
