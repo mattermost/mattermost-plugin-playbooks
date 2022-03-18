@@ -34,13 +34,16 @@ const Action = (props: Props) => {
     return (
         <Wrapper>
             <Container
-                onClick={onChange}
+                onClick={(e: React.MouseEvent) => {
+                    e.preventDefault();
+                    onChange();
+                }}
                 clickable={props.editable}
             >
                 <Title clickable={props.editable}>{titles[props.action.action_type]}</Title>
                 <Toggle
                     isChecked={props.action.enabled}
-                    onChange={onChange}
+                    onChange={() => {/* do nothing, clicking logic lives in Container's onClick */}}
                     disabled={!props.editable}
                 />
             </Container>
