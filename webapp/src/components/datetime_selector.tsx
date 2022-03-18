@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React, {useEffect, useMemo, useState} from 'react';
-import {useIntl, FormattedMessage} from 'react-intl';
+import {useIntl} from 'react-intl';
 import ReactSelect, {ActionTypes, ControlProps, StylesConfig} from 'react-select';
 import styled from 'styled-components';
 
@@ -37,7 +37,7 @@ type Props = {
     mode?: Mode.DateTimeValue | Mode.DurationValue;
     placeholder: React.ReactNode;
     onlyPlaceholder?: boolean;
-    isClearable?: boolean;
+    suggestedOptions: DateTimeOption[]
     customControl?: (props: ControlProps<DateTimeOption, boolean>) => React.ReactElement;
     controlledOpenToggle?: boolean;
     onSelectedChange: (value: DateTimeOption | undefined | null) => void;
@@ -53,43 +53,10 @@ type Props = {
 
 }
 
-const optionFromMillis = (ms: number, mode: Mode.DateTimeValue | Mode.DurationValue) => ({
+export const optionFromMillis = (ms: number, mode: Mode.DateTimeValue | Mode.DurationValue) => ({
     value: mode === Mode.DateTimeValue ? DateTime.fromMillis(ms) : Duration.fromMillis(ms),
     mode,
 });
-
-const makeDefaultOptions = (mode: Mode.DateTimeValue | Mode.DurationValue) => {
-    let dateTime = DateTime.now();
-    dateTime = dateTime.endOf('day');
-
-    const list: DateTimeOption[] = [];
-    list.push(
-        {
-            ...optionFromMillis(dateTime.toMillis(), mode),
-            label: <FormattedMessage defaultMessage='Today'/>,
-            labelRHS: (<LabelRight>{dateTime.weekdayShort}</LabelRight>),
-        }
-    );
-
-    dateTime = dateTime.plus({days: 1});
-    list.push(
-        {
-            ...optionFromMillis(dateTime.toMillis(), mode),
-            label: <FormattedMessage defaultMessage='Tomorrow'/>,
-            labelRHS: (<LabelRight>{dateTime.weekdayShort}</LabelRight>),
-        }
-    );
-
-    dateTime = dateTime.plus({days: 6});
-    list.push(
-        {
-            ...optionFromMillis(dateTime.toMillis(), mode),
-            label: <FormattedMessage defaultMessage='Next week'/>,
-            labelRHS: (<LabelRight>{dateTime.toLocaleString({weekday: 'short', day: '2-digit', month: 'short'})}</LabelRight>),
-        }
-    );
-    return list;
-};
 
 const selectedValueOption = (value: number, mode: Mode.DateTimeValue | Mode.DurationValue) => ({
     ...optionFromMillis(value, mode),
@@ -101,6 +68,7 @@ const chronoParsingOptions: ParsingOption = {forwardDate: true};
 export const DateTimeSelector = ({
     date,
     mode = Mode.DateTimeValue,
+    suggestedOptions,
     makeOptions = defaultMakeOptions,
     ...props
 }: Props) => {
@@ -130,10 +98,19 @@ export const DateTimeSelector = ({
         props.onSelectedChange(value);
     };
 
+    const optionsPlaceholder = useMemo(() => {
+        const defaults = suggestedOptions;
+
+        if (date) {
+            defaults.push(selectedValueOption(date, mode));
+        }
+        return defaults;
+    }, [date]);
+
     // Decide where to open the datetime selector
     const [rect, ref] = useClientRect();
     const [moveUp, setMoveUp] = useState(0);
-    const [options, setOptionsDateTime] = useState<DateTimeOption[] | null>(null);
+    const [options, setOptionsDateTime] = useState<DateTimeOption[]>(optionsPlaceholder);
 
     useEffect(() => {
         if (!rect) {
@@ -142,14 +119,14 @@ export const DateTimeSelector = ({
         }
 
         const innerHeight = window.innerHeight;
-        const numProfilesShown = Math.min(6, options ? options.length : optionsDefault.length);
+        const numProfilesShown = Math.min(6, options.length);
         const spacePerProfile = 48;
         const dropdownYShift = 27;
         const dropdownReqSpace = 80;
         const extraSpace = 10;
         const dropdownBottom = rect.top + dropdownYShift + dropdownReqSpace + (numProfilesShown * spacePerProfile) + extraSpace;
         setMoveUp(Math.max(0, dropdownBottom - innerHeight));
-    }, [rect, options?.length]);
+    }, [rect, options.length]);
 
     let target;
     if (props.onlyPlaceholder) {
@@ -171,15 +148,6 @@ export const DateTimeSelector = ({
         </div>
     );
 
-    const optionsDefault = useMemo(() => {
-        const defaults = makeDefaultOptions(mode);
-
-        if (date) {
-            defaults.push(selectedValueOption(date, mode));
-        }
-        return defaults;
-    }, [date]);
-
     const updateOptions = useMemo(() => debounce((query: string) => {
         // eslint-disable-next-line no-undefined
         const datetimes = parse(query, undefined, chronoParsingOptions).map(({start}) => DateTime.fromJSDate(start.date()));
@@ -188,7 +156,7 @@ export const DateTimeSelector = ({
         if (makeOptions) {
             optionsNew = makeOptions(query, datetimes, duration ? [duration] : [], mode) as DateTimeOption[];
         }
-        setOptionsDateTime(optionsNew || optionsDefault);
+        setOptionsDateTime(optionsNew || optionsPlaceholder);
     }, 150), [setOptionsDateTime, makeOptions]);
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
@@ -213,7 +181,7 @@ export const DateTimeSelector = ({
                 components={components}
                 controlShouldRenderValue={false}
                 menuIsOpen={true}
-                options={options || optionsDefault}
+                options={options}
                 placeholder={formatMessage({defaultMessage: 'Specify date/time (“in 4 hours”, “May 1”...)'})}
                 styles={selectStyles}
                 onChange={onSelectedChange}
@@ -293,11 +261,4 @@ const Right = styled.div`
 const CheckIcon = styled.i`
     color: var(--button-bg);
 	font-size: 22px;
-`;
-
-const LabelRight = styled.div`
-    font-weight: 400;
-    font-size: 12px;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.56);
 `;
