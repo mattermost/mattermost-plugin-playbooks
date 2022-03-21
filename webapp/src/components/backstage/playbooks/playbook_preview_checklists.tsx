@@ -8,7 +8,7 @@ import styled from 'styled-components';
 
 import {Checklist, ChecklistItem, PlaybookWithChecklist} from 'src/types/playbook';
 import Section from 'src/components/backstage/playbooks/playbook_preview_section';
-import {ChecklistItemDetails} from 'src/components/checklist_item';
+import {ChecklistItemDetails} from 'src/components/checklist_item/checklist_item';
 import CollapsibleChecklist, {TitleHelpTextWrapper} from 'src/components/collapsible_checklist';
 
 interface Props {

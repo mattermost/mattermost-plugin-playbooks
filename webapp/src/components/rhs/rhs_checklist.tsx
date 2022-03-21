@@ -17,7 +17,7 @@ import {
     ChecklistItemsFilter,
     ChecklistItemState,
 } from 'src/types/playbook';
-import RHSChecklistItem from 'src/components/rhs/rhs_checklist_item';
+import DraggableChecklistItem from 'src/components/checklist_item/checklist_item_draggable';
 import {currentChecklistItemsFilter} from 'src/selectors';
 
 // disable all react-beautiful-dnd development warnings
@@ -116,7 +116,7 @@ const RHSChecklist = (props: Props) => {
                             }
 
                             return (
-                                <RHSChecklistItem
+                                <DraggableChecklistItem
                                     key={checklistItem.title}
                                     playbookRun={props.playbookRun}
                                     checklistIndex={props.checklistIndex}
