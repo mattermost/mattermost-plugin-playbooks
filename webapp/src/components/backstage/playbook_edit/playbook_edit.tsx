@@ -179,6 +179,7 @@ const PlaybookEdit = (props: Props) => {
             width={352}
             punchOut={punchout}
             onNextNavigateTo={() => setCurrentTab(1)}
+            onFinish={() => setCurrentTab(0)}
             telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.Checklists}_Checklists`}
         />
     );
@@ -197,6 +198,7 @@ const PlaybookEdit = (props: Props) => {
             punchOut={punchout}
             onNextNavigateTo={() => setCurrentTab(2)}
             onPrevNavigateTo={() => setCurrentTab(0)}
+            onFinish={() => setCurrentTab(0)}
             telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.Actions}_Actions`}
         />
     );
@@ -215,6 +217,7 @@ const PlaybookEdit = (props: Props) => {
             punchOut={punchout}
             onNextNavigateTo={() => setCurrentTab(3)}
             onPrevNavigateTo={() => setCurrentTab(1)}
+            onFinish={() => setCurrentTab(0)}
             telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.StatusUpdates}_StatusUpdates`}
         />
     );
@@ -232,7 +235,7 @@ const PlaybookEdit = (props: Props) => {
             width={352}
             punchOut={punchout}
             onPrevNavigateTo={() => setCurrentTab(2)}
-            onNextNavigateTo={() => setCurrentTab(0)}
+            onFinish={() => setCurrentTab(0)}
             telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.Retrospective}_Retrospective`}
         />
     );

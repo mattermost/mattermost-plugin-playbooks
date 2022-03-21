@@ -36,6 +36,7 @@ type Props = {
     step: number;
     onNextNavigateTo?: () => void;
     onPrevNavigateTo?: () => void;
+    onFinish?: () => void;
     stopPropagation?: boolean;
     preventDefault?: boolean;
 }
@@ -46,6 +47,7 @@ const useTutorialTourTipManager = ({
     tutorialCategory,
     onNextNavigateTo,
     onPrevNavigateTo,
+    onFinish,
     stopPropagation,
     preventDefault,
 }: Props): TutorialTourTipManager => {
@@ -126,10 +128,12 @@ const useTutorialTourTipManager = ({
         }
         handleHide();
         savePreferences(currentUserId, stepValue.toString());
-        if (onNextNavigateTo && (nextStep === true || nextStep === FINISHED) && autoTour) {
+        if (onNextNavigateTo && nextStep === true && autoTour) {
             onNextNavigateTo();
         } else if (onPrevNavigateTo && nextStep === false && autoTour) {
             onPrevNavigateTo();
+        } else if (onFinish && (nextStep === FINISHED || nextStep === SKIPPED)) {
+            onFinish();
         }
     };
 
