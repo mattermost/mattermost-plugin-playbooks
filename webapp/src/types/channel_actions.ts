@@ -14,6 +14,7 @@ export interface ChannelAction {
 export enum ChannelActionType {
     WelcomeMessage = 'send_welcome_message',
     PromptRunPlaybook = 'prompt_run_playbook',
+    CategorizeChannel = 'categorize_channel',
 }
 
 export enum ChannelTriggerType {
@@ -21,7 +22,10 @@ export enum ChannelTriggerType {
     KeywordsPosted = 'keywords',
 }
 
-type PayloadType = WelcomeMessageActionPayload | PromptRunPlaybookFromKeywordsPayload;
+type PayloadType =
+    | WelcomeMessageActionPayload
+    | PromptRunPlaybookFromKeywordsPayload
+    | CategorizeChannelPayload;
 
 export interface WelcomeMessageActionPayload {
     message: string;
@@ -32,4 +36,12 @@ export interface PromptRunPlaybookFromKeywordsPayload {
     playbook_id: string;
 }
 
+export interface CategorizeChannelPayload {
+    category_name: string;
+}
+
 export type ActionsByTrigger = Record<ChannelTriggerType, ChannelAction[]>;
+
+export const equalActionType = (a: ChannelAction, b: ChannelAction) => {
+    return a.action_type === b.action_type && a.trigger_type === b.trigger_type;
+};

@@ -4,6 +4,8 @@
 import React, {useState, useEffect} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import {useIntl} from 'react-intl';
+import {Scrollbars} from 'react-custom-scrollbars';
+import {Modal} from 'react-bootstrap';
 
 import styled from 'styled-components';
 
@@ -16,10 +18,10 @@ import Icon from '@mdi/react';
 import {fetchChannelActions, saveChannelAction} from 'src/client';
 import {hideActionsModal} from 'src/actions';
 import {isActionsModalVisible, isCurrentUserChannelAdmin, isCurrentUserAdmin} from 'src/selectors';
-import GenericModal, {ModalSubheading} from 'src/components/widgets/generic_modal';
+import GenericModal, {ModalSubheading, DefaultFooterContainer} from 'src/components/widgets/generic_modal';
 import Action from 'src/components/actions_modal_action';
 import Trigger from 'src/components/actions_modal_trigger';
-import {ChannelAction, ChannelActionType, ActionsByTrigger, ChannelTriggerType} from 'src/types/channel_actions';
+import {ChannelAction, ChannelActionType, ActionsByTrigger, ChannelTriggerType, equalActionType} from 'src/types/channel_actions';
 
 const defaultActions: ActionsByTrigger = {
     [ChannelTriggerType.NewMemberJoins]: [
@@ -30,6 +32,15 @@ const defaultActions: ActionsByTrigger = {
             trigger_type: ChannelTriggerType.NewMemberJoins,
             payload: {
                 message: '',
+            },
+        },
+        {
+            channel_id: '',
+            enabled: false,
+            action_type: ChannelActionType.CategorizeChannel,
+            trigger_type: ChannelTriggerType.NewMemberJoins,
+            payload: {
+                category_name: '',
             },
         },
     ],
@@ -57,6 +68,7 @@ const ActionsModal = () => {
 
     const editable = isChannelAdmin || isSysAdmin;
 
+    const [actionsChanged, setActionsChanged] = useState(false);
     const [originalActions, setOriginalActions] = useState({} as ActionsByTrigger);
     const [currentActions, setCurrentActions] = useState(defaultActions);
 
@@ -72,6 +84,21 @@ const ActionsModal = () => {
                 } else {
                     record[action.trigger_type] = [action];
                 }
+            });
+
+            // Merge the fetched actions with the default ones
+            Object.entries(record).forEach(([triggerString, actionsInRecord]) => {
+                const trigger = triggerString as ChannelTriggerType;
+                const finalActions = [] as ChannelAction[];
+                defaultActions[trigger].forEach((defaultAction: ChannelAction) => {
+                    const actionFetched = actionsInRecord.find((actionInRecord) => equalActionType(actionInRecord, defaultAction));
+                    if (actionFetched) {
+                        finalActions.push(actionFetched);
+                    } else {
+                        finalActions.push(defaultAction);
+                    }
+                });
+                record[trigger] = finalActions;
             });
 
             setOriginalActions(record);
@@ -90,16 +117,23 @@ const ActionsModal = () => {
     };
 
     const onSave = () => {
+        if (!actionsChanged) {
+            return;
+        }
+
         Object.values(currentActions).forEach((actions) => {
             actions.forEach((action) => {
                 action.channel_id = channelID;
                 saveChannelAction(action);
             });
         });
+
         setOriginalActions(currentActions);
     };
 
     const onUpdateAction = (newAction: ChannelAction) => {
+        setActionsChanged(true);
+
         setCurrentActions((prevActions: ActionsByTrigger) => {
             // TODO: Change this deep cloning
             const newActions = JSON.parse(JSON.stringify(prevActions));
@@ -144,30 +178,103 @@ const ActionsModal = () => {
             autoCloseOnConfirmButton={true}
             enforceFocus={true}
             adjustTop={400}
+            components={{
+                Header: ModalHeader,
+                FooterContainer: ModalFooter,
+            }}
         >
-            <TriggersContainer>
-                {Object.entries(currentActions).map(([trigger, actions]) => (
-                    <Trigger
-                        key={trigger}
-                        editable={editable}
-                        triggerType={trigger as ChannelTriggerType}
-                        actions={actions}
-                        onUpdate={onUpdateAction}
-                    >
-                        {actions.map((action) => (
-                            <Action
-                                key={action.id}
-                                action={action}
-                                editable={editable}
-                                onUpdate={onUpdateAction}
-                            />
-                        ))}
-                    </Trigger>
-                ))}
-            </TriggersContainer>
+            <Scrollbars
+                autoHeight={true}
+                autoHeightMax={500}
+                renderThumbVertical={renderThumbVertical}
+                renderTrackVertical={renderTrackVertical}
+            >
+                <TriggersContainer>
+                    {Object.entries(currentActions).map(([trigger, actions]) => (
+                        <Trigger
+                            key={trigger}
+                            editable={editable}
+                            triggerType={trigger as ChannelTriggerType}
+                            actions={actions}
+                            onUpdate={onUpdateAction}
+                        >
+                            <ActionsContainer>
+                                {actions.map((action) => (
+                                    <Action
+                                        key={action.id}
+                                        action={action}
+                                        editable={editable}
+                                        onUpdate={onUpdateAction}
+                                    />
+                                ))}
+                            </ActionsContainer>
+                        </Trigger>
+                    ))}
+                </TriggersContainer>
+            </Scrollbars>
         </GenericModal>
     );
 };
+
+const ModalHeader = styled(Modal.Header)`
+    :after {
+        content: '';
+        height: 1px;
+        width: 100%;
+        position: absolute;
+        left: 0px;
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+
+    &&&& {
+        margin-bottom: 0;
+    }
+`;
+
+const ModalFooter = styled(DefaultFooterContainer)`
+    :after {
+        content: '';
+        height: 1px;
+        width: 100%;
+        position: absolute;
+        left: 0px;
+        margin-top: -24px;
+
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+`;
+
+const renderThumbVertical = ({style, ...props}: any) => (
+    <div
+        {...props}
+        style={{
+            ...style,
+            width: '4px',
+            background: 'var(--center-channel-color)',
+            opacity: '0.24',
+            borderRadius: '4px',
+            position: 'fixed',
+            right: '8px',
+        }}
+    />
+);
+
+const renderTrackVertical = ({style, ...props}: any) => (
+    <div
+        {...props}
+        style={{
+            ...style,
+            paddingTop: '8px',
+            paddingBottom: '8px',
+
+            // The following three props are needed to actually render the track;
+            // without them, the scrollbar disappears
+            height: '100%',
+            top: '0',
+            right: '0',
+        }}
+    />
+);
 
 const Header = styled.div`
     display: flex;
@@ -184,6 +291,12 @@ const TriggersContainer = styled.div`
     display: flex;
     flex-direction: column;
     row-gap: 16px;
+`;
+
+const ActionsContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    row-gap: 20px;
 `;
 
 export default ActionsModal;

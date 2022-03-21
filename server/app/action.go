@@ -25,6 +25,10 @@ type PromptRunPlaybookFromKeywordsPayload struct {
 	PlaybookID string   `json:"playbook_id" mapstructure:"playbook_id"`
 }
 
+type CategorizeChannelPayload struct {
+	CategoryName string `json:"category_name" mapstructure:"category_name"`
+}
+
 type ActionType string
 type TriggerType string
 
@@ -32,6 +36,7 @@ const (
 	// Action types: add new types to the ValidTriggerTypes array below
 	ActionTypeWelcomeMessage    ActionType = "send_welcome_message"
 	ActionTypePromptRunPlaybook ActionType = "prompt_run_playbook"
+	ActionTypeCategorizeChannel ActionType = "categorize_channel"
 
 	// Trigger types: add new types to the ValidTriggerTypes array below
 	TriggerTypeNewMemberJoins TriggerType = "new_member_joins"
@@ -41,6 +46,7 @@ const (
 var ValidActionTypes = []ActionType{
 	ActionTypeWelcomeMessage,
 	ActionTypePromptRunPlaybook,
+	ActionTypeCategorizeChannel,
 }
 
 var ValidTriggerTypes = []TriggerType{
@@ -70,6 +76,10 @@ type ChannelActionService interface {
 
 	// Update updates an existing action identified by action.ID
 	Update(action GenericChannelAction) error
+
+	// UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
+	// was invited by actorID.
+	UserHasJoinedChannel(userID, channelID, actorID string)
 
 	// CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
 	// the registered welcome message action. Returns true if the message was sent.
