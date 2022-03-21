@@ -259,7 +259,7 @@ jobs:
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
-      - image: circleci/mysql:5.7.17
+      - image: cimg/mysql:5.7
         environment:
           MYSQL_ROOT_PASSWORD: mostest
           MYSQL_DATABASE: mattermost_test
@@ -277,7 +277,7 @@ jobs:
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
-      - image: circleci/mysql:8.0.21
+      - image: cimg/mysql:8.0
         environment:
           MYSQL_ROOT_PASSWORD: mostest
           MYSQL_DATABASE: mattermost_test
@@ -314,7 +314,7 @@ jobs:
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
-      - image: circleci/mysql:latest
+      - image: cimg/mysql:8.0
         environment:
           MYSQL_ROOT_PASSWORD: mostest
           MYSQL_DATABASE: mattermost_test
