@@ -295,7 +295,7 @@ jobs:
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
-      - image: circleci/mariadb:latest
+      - image: cimg/mariadb:10.6
         environment:
           MARIADB_ROOT_PASSWORD: mostest
           MARIADB_DATABASE: mattermost_test
