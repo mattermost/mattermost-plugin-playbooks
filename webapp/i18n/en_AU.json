@@ -507,5 +507,11 @@
     "hCMWC+": "Begin following for {followers, plural, =0 {no user} =1 {one user} other {# users}}",
     "u4L4yd": "You have unsaved changes",
     "e3z3P8": "Discard changes and leave",
-    "Ob5cSv": "Changes that you made will not be saved if you leave this page. Are you sure you want to discard changes and leave?"
+    "Ob5cSv": "Changes that you made will not be saved if you leave this page. Are you sure you want to discard changes and leave?",
+    "dCtjdj": "Ready to run your playbook?",
+    "Z3ybv/": "Add the channel to a sidebar category for the user",
+    "Ek1Fx2": "When a message with these keywords is posted",
+    "9j5KzL": "Enter category name",
+    "2Q5PhZ": "Prompt to run a playbook",
+    "+/x2FM": "Select a playbook"
 }
