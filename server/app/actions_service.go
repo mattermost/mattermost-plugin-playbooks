@@ -513,6 +513,7 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, 
 
 		attachment := &model.SlackAttachment{
 			Actions: []*model.PostAction{yesButton, ignoreButton},
+			Text:    "Open Channel Actions in the channel header to view and edit keywords.",
 		}
 		return attachment
 	}

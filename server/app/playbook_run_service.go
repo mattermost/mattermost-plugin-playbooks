@@ -138,7 +138,7 @@ func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playboo
 	return fmt.Sprintf(
 		"##### [%s](%s%s)\n@%s ran the [%s](%s) playbook.",
 		playbookRun.Name,
-		getRunDetailsRelativeURL(playbookRun.ID),
+		GetRunDetailsRelativeURL(playbookRun.ID),
 		"%s", // for the telemetry data injection
 		reporter.Username,
 		playbookTitle,
@@ -217,7 +217,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	if playbookRun.ChannelID == "" {
 		header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
 		if pb != nil {
-			overviewURL := getRunDetailsRelativeURL(playbookRun.ID)
+			overviewURL := GetRunDetailsRelativeURL(playbookRun.ID)
 			playbookURL := GetPlaybookDetailsRelativeURL(pb.ID)
 			header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
 				pb.Title, playbookURL, overviewURL)
@@ -396,7 +396,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	// Do we send a DM to the new owner?
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		startMessage := fmt.Sprintf("You have been assigned ownership of the run: [%s](%s), reported by @%s.",
-			playbookRun.Name, getRunDetailsRelativeURL(playbookRun.ID), reporter.Username)
+			playbookRun.Name, GetRunDetailsRelativeURL(playbookRun.ID), reporter.Username)
 
 		if err = s.poster.DM(playbookRun.OwnerUserID, &model.Post{Message: startMessage}); err != nil {
 			return nil, errors.Wrapf(err, "failed to send DM on CreatePlaybookRun")
@@ -470,7 +470,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 }
 
 // OpenCreatePlaybookRunDialog opens a interactive dialog to start a new playbook run.
-func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error {
+func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error {
 
 	filteredPlaybooks := make([]Playbook, 0, len(playbooks))
 	for _, playbook := range playbooks {
@@ -479,7 +479,7 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID
 		}
 	}
 
-	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, isMobileApp)
+	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, isMobileApp, promptPostID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new playbook run dialog")
 	}
@@ -855,14 +855,14 @@ func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRu
 	announcementMsg := fmt.Sprintf(
 		"### Run finished: [%s](%s%s)\n",
 		playbookRun.Name,
-		getRunDetailsRelativeURL(playbookRun.ID),
+		GetRunDetailsRelativeURL(playbookRun.ID),
 		telemetryString,
 	)
 	announcementMsg += fmt.Sprintf(
 		"@%s just marked [%s](%s%s) as finished. Visit the link above for more information.",
 		userName,
 		playbookRun.Name,
-		getRunDetailsRelativeURL(playbookRun.ID),
+		GetRunDetailsRelativeURL(playbookRun.ID),
 		telemetryString,
 	)
 
@@ -1147,7 +1147,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	// Do we send a DM to the new owner?
 	if ownerID != userID {
 		msg := fmt.Sprintf("@%s changed the owner for run: [%s](%s) from **@%s** to **@%s**",
-			subjectUser.Username, playbookRunToModify.Name, getRunDetailsRelativeURL(playbookRunToModify.ID),
+			subjectUser.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunToModify.ID),
 			oldOwner.Username, newOwner.Username)
 		if err = s.poster.DM(ownerID, &model.Post{Message: msg}); err != nil {
 			return errors.Wrapf(err, "failed to send DM in ChangeOwner")
@@ -2068,15 +2068,16 @@ func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(outstanding int) *mo
 	}
 }
 
-func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) (*model.Dialog, error) {
+func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(ownerID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch owner user")
 	}
 
 	state, err := json.Marshal(DialogState{
-		PostID:   postID,
-		ClientID: clientID,
+		PostID:       postID,
+		ClientID:     clientID,
+		PromptPostID: promptPostID,
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal DialogState")
