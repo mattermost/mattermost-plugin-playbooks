@@ -126,7 +126,7 @@ const useTutorialTourTipManager = ({
         }
         handleHide();
         savePreferences(currentUserId, stepValue.toString());
-        if (onNextNavigateTo && nextStep === true && autoTour) {
+        if (onNextNavigateTo && (nextStep === true || nextStep === FINISHED) && autoTour) {
             onNextNavigateTo();
         } else if (onPrevNavigateTo && nextStep === false && autoTour) {
             onPrevNavigateTo();

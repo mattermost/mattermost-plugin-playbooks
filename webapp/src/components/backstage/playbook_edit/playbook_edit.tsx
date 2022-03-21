@@ -232,6 +232,7 @@ const PlaybookEdit = (props: Props) => {
             width={352}
             punchOut={punchout}
             onPrevNavigateTo={() => setCurrentTab(2)}
+            onNextNavigateTo={() => setCurrentTab(0)}
             telemetryTag={`tutorial_tip_Playbook_Edit_${PlaybookEditTutorialSteps.Retrospective}_Retrospective`}
         />
     );
