@@ -22,7 +22,7 @@ interface Props {
 }
 
 /** @alpha replace/copy-pasta/unfold sections as-needed*/
-const PlaybookPreview = (props: Props) => {
+const Outline = (props: Props) => {
     const description = renderDescription({
         id: SectionID.Description,
         playbook: props.playbook,
@@ -80,7 +80,7 @@ const Container = styled.main`
     flex-direction: row;
     justify-content: center;
     flex-grow: 1;
-    column-gap: 114px;
+    column-gap: 7rem;
     padding: 40px 20px 20px;
     z-index: 1;
 
@@ -98,4 +98,4 @@ const Content = styled.div`
     flex-grow: 1;
 `;
 
-export default PlaybookPreview;
+export default Outline;
