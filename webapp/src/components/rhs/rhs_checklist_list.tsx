@@ -20,6 +20,7 @@ import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels'
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 import {getTeammateNameDisplaySetting} from 'mattermost-redux/selectors/entities/preferences';
 import {displayUsername} from 'mattermost-redux/utils/user_utils';
+import {DateTime} from 'luxon';
 
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 import {
@@ -95,6 +96,7 @@ const RHSChecklistList = (props: Props) => {
     const active = props.playbookRun.current_status === PlaybookRunStatus.InProgress;
     const finished = props.playbookRun.current_status === PlaybookRunStatus.Finished;
     const filterOptions = makeFilterOptions(checklistItemsFilter, preferredName);
+    const overdueTasksNum = overdueTasks(props.playbookRun.checklists);
 
     const selectOption = (value: string, checked: boolean) => {
         telemetryEventForPlaybookRun(props.playbookRun.id, 'checklists_filter_selected');
@@ -212,6 +214,15 @@ const RHSChecklistList = (props: Props) => {
             <MainTitleBG numChecklists={checklists.length}>
                 <MainTitle>
                     {formatMessage({defaultMessage: 'Checklists'})}
+                    {
+                        overdueTasksNum > 0 &&
+                        <OverdueTasksToggle
+                            toggled={checklistItemsFilter.overdueOnly}
+                            onClick={() => selectOption('overdueOnly', !checklistItemsFilter.overdueOnly)}
+                        >
+                            {formatMessage({defaultMessage: '{num} tasks overdue'}, {num: overdueTasksNum})}
+                        </OverdueTasksToggle>
+                    }
                     {
                         showMenu &&
                         <HoverRow>
@@ -394,13 +405,39 @@ const StyledPrimaryButton = styled(PrimaryButton)`
     margin: 12px 0;
 `;
 
+const OverdueTasksToggle = styled.div<{toggled: boolean}>`
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 16px;
+    display: inline-block;
+    margin-left: 5px;
+    padding: 2px 4px;
+    align-items: center;
+    border-radius: 4px;
+    user-select: none;
+    background-color: ${(props) => (props.toggled ? 'var(--dnd-indicator)' : 'rgba(var(--dnd-indicator-rgb), 0.08)')};
+    color: ${(props) => (props.toggled ? 'var(--button-color)' : 'var(--dnd-indicator)')};
+`;
+
 export default RHSChecklistList;
 
-const allComplete = (checklists: Checklist[]) => {
-    return outstandingTasks(checklists) === 0;
+const overdueTasks = (checklists: Checklist[]) => {
+    let count = 0;
+    for (const list of checklists) {
+        for (const item of list.items) {
+            if (item.due_date > 0 && DateTime.fromMillis(item.due_date) <= DateTime.now()) {
+                count++;
+            }
+        }
+    }
+    return count;
 };
 
-const outstandingTasks = (checklists: Checklist[]) => {
+const allComplete = (checklists: Checklist[]) => {
+    return notFinishedTasks(checklists) === 0;
+};
+
+const notFinishedTasks = (checklists: Checklist[]) => {
     let count = 0;
     for (const list of checklists) {
         for (const item of list.items) {
