@@ -5,37 +5,36 @@
 package mock_app
 
 import (
-	reflect "reflect"
-	time "time"
-
 	gomock "github.com/golang/mock/gomock"
 	app "github.com/mattermost/mattermost-plugin-playbooks/server/app"
+	reflect "reflect"
+	time "time"
 )
 
-// MockPlaybookRunStore is a mock of PlaybookRunStore interface.
+// MockPlaybookRunStore is a mock of PlaybookRunStore interface
 type MockPlaybookRunStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockPlaybookRunStoreMockRecorder
 }
 
-// MockPlaybookRunStoreMockRecorder is the mock recorder for MockPlaybookRunStore.
+// MockPlaybookRunStoreMockRecorder is the mock recorder for MockPlaybookRunStore
 type MockPlaybookRunStoreMockRecorder struct {
 	mock *MockPlaybookRunStore
 }
 
-// NewMockPlaybookRunStore creates a new mock instance.
+// NewMockPlaybookRunStore creates a new mock instance
 func NewMockPlaybookRunStore(ctrl *gomock.Controller) *MockPlaybookRunStore {
 	mock := &MockPlaybookRunStore{ctrl: ctrl}
 	mock.recorder = &MockPlaybookRunStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockPlaybookRunStore) EXPECT() *MockPlaybookRunStoreMockRecorder {
 	return m.recorder
 }
 
-// ChangeCreationDate mocks base method.
+// ChangeCreationDate mocks base method
 func (m *MockPlaybookRunStore) ChangeCreationDate(arg0 string, arg1 time.Time) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangeCreationDate", arg0, arg1)
@@ -43,13 +42,13 @@ func (m *MockPlaybookRunStore) ChangeCreationDate(arg0 string, arg1 time.Time) e
 	return ret0
 }
 
-// ChangeCreationDate indicates an expected call of ChangeCreationDate.
+// ChangeCreationDate indicates an expected call of ChangeCreationDate
 func (mr *MockPlaybookRunStoreMockRecorder) ChangeCreationDate(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeCreationDate", reflect.TypeOf((*MockPlaybookRunStore)(nil).ChangeCreationDate), arg0, arg1)
 }
 
-// CreatePlaybookRun mocks base method.
+// CreatePlaybookRun mocks base method
 func (m *MockPlaybookRunStore) CreatePlaybookRun(arg0 *app.PlaybookRun) (*app.PlaybookRun, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePlaybookRun", arg0)
@@ -58,13 +57,13 @@ func (m *MockPlaybookRunStore) CreatePlaybookRun(arg0 *app.PlaybookRun) (*app.Pl
 	return ret0, ret1
 }
 
-// CreatePlaybookRun indicates an expected call of CreatePlaybookRun.
+// CreatePlaybookRun indicates an expected call of CreatePlaybookRun
 func (mr *MockPlaybookRunStoreMockRecorder) CreatePlaybookRun(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePlaybookRun", reflect.TypeOf((*MockPlaybookRunStore)(nil).CreatePlaybookRun), arg0)
 }
 
-// CreateTimelineEvent mocks base method.
+// CreateTimelineEvent mocks base method
 func (m *MockPlaybookRunStore) CreateTimelineEvent(arg0 *app.TimelineEvent) (*app.TimelineEvent, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateTimelineEvent", arg0)
@@ -73,13 +72,13 @@ func (m *MockPlaybookRunStore) CreateTimelineEvent(arg0 *app.TimelineEvent) (*ap
 	return ret0, ret1
 }
 
-// CreateTimelineEvent indicates an expected call of CreateTimelineEvent.
+// CreateTimelineEvent indicates an expected call of CreateTimelineEvent
 func (mr *MockPlaybookRunStoreMockRecorder) CreateTimelineEvent(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTimelineEvent", reflect.TypeOf((*MockPlaybookRunStore)(nil).CreateTimelineEvent), arg0)
 }
 
-// FinishPlaybookRun mocks base method.
+// FinishPlaybookRun mocks base method
 func (m *MockPlaybookRunStore) FinishPlaybookRun(arg0 string, arg1 int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FinishPlaybookRun", arg0, arg1)
@@ -87,13 +86,13 @@ func (m *MockPlaybookRunStore) FinishPlaybookRun(arg0 string, arg1 int64) error 
 	return ret0
 }
 
-// FinishPlaybookRun indicates an expected call of FinishPlaybookRun.
+// FinishPlaybookRun indicates an expected call of FinishPlaybookRun
 func (mr *MockPlaybookRunStoreMockRecorder) FinishPlaybookRun(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishPlaybookRun", reflect.TypeOf((*MockPlaybookRunStore)(nil).FinishPlaybookRun), arg0, arg1)
 }
 
-// Follow mocks base method.
+// Follow mocks base method
 func (m *MockPlaybookRunStore) Follow(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Follow", arg0, arg1)
@@ -101,13 +100,13 @@ func (m *MockPlaybookRunStore) Follow(arg0, arg1 string) error {
 	return ret0
 }
 
-// Follow indicates an expected call of Follow.
+// Follow indicates an expected call of Follow
 func (mr *MockPlaybookRunStoreMockRecorder) Follow(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Follow", reflect.TypeOf((*MockPlaybookRunStore)(nil).Follow), arg0, arg1)
 }
 
-// GetBroadcastChannelIDsToRootIDs mocks base method.
+// GetBroadcastChannelIDsToRootIDs mocks base method
 func (m *MockPlaybookRunStore) GetBroadcastChannelIDsToRootIDs(arg0 string) (map[string]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBroadcastChannelIDsToRootIDs", arg0)
@@ -116,13 +115,13 @@ func (m *MockPlaybookRunStore) GetBroadcastChannelIDsToRootIDs(arg0 string) (map
 	return ret0, ret1
 }
 
-// GetBroadcastChannelIDsToRootIDs indicates an expected call of GetBroadcastChannelIDsToRootIDs.
+// GetBroadcastChannelIDsToRootIDs indicates an expected call of GetBroadcastChannelIDsToRootIDs
 func (mr *MockPlaybookRunStoreMockRecorder) GetBroadcastChannelIDsToRootIDs(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBroadcastChannelIDsToRootIDs", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetBroadcastChannelIDsToRootIDs), arg0)
 }
 
-// GetFollowers mocks base method.
+// GetFollowers mocks base method
 func (m *MockPlaybookRunStore) GetFollowers(arg0 string) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFollowers", arg0)
@@ -131,13 +130,13 @@ func (m *MockPlaybookRunStore) GetFollowers(arg0 string) ([]string, error) {
 	return ret0, ret1
 }
 
-// GetFollowers indicates an expected call of GetFollowers.
+// GetFollowers indicates an expected call of GetFollowers
 func (mr *MockPlaybookRunStoreMockRecorder) GetFollowers(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFollowers", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetFollowers), arg0)
 }
 
-// GetFollowersActiveTotal mocks base method.
+// GetFollowersActiveTotal mocks base method
 func (m *MockPlaybookRunStore) GetFollowersActiveTotal() (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFollowersActiveTotal")
@@ -146,13 +145,13 @@ func (m *MockPlaybookRunStore) GetFollowersActiveTotal() (int64, error) {
 	return ret0, ret1
 }
 
-// GetFollowersActiveTotal indicates an expected call of GetFollowersActiveTotal.
+// GetFollowersActiveTotal indicates an expected call of GetFollowersActiveTotal
 func (mr *MockPlaybookRunStoreMockRecorder) GetFollowersActiveTotal() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFollowersActiveTotal", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetFollowersActiveTotal))
 }
 
-// GetHistoricalPlaybookRunParticipantsCount mocks base method.
+// GetHistoricalPlaybookRunParticipantsCount mocks base method
 func (m *MockPlaybookRunStore) GetHistoricalPlaybookRunParticipantsCount(arg0 string) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHistoricalPlaybookRunParticipantsCount", arg0)
@@ -161,13 +160,13 @@ func (m *MockPlaybookRunStore) GetHistoricalPlaybookRunParticipantsCount(arg0 st
 	return ret0, ret1
 }
 
-// GetHistoricalPlaybookRunParticipantsCount indicates an expected call of GetHistoricalPlaybookRunParticipantsCount.
+// GetHistoricalPlaybookRunParticipantsCount indicates an expected call of GetHistoricalPlaybookRunParticipantsCount
 func (mr *MockPlaybookRunStoreMockRecorder) GetHistoricalPlaybookRunParticipantsCount(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHistoricalPlaybookRunParticipantsCount", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetHistoricalPlaybookRunParticipantsCount), arg0)
 }
 
-// GetOverdueRetroRunsTotal mocks base method.
+// GetOverdueRetroRunsTotal mocks base method
 func (m *MockPlaybookRunStore) GetOverdueRetroRunsTotal() (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOverdueRetroRunsTotal")
@@ -176,13 +175,13 @@ func (m *MockPlaybookRunStore) GetOverdueRetroRunsTotal() (int64, error) {
 	return ret0, ret1
 }
 
-// GetOverdueRetroRunsTotal indicates an expected call of GetOverdueRetroRunsTotal.
+// GetOverdueRetroRunsTotal indicates an expected call of GetOverdueRetroRunsTotal
 func (mr *MockPlaybookRunStoreMockRecorder) GetOverdueRetroRunsTotal() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOverdueRetroRunsTotal", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetOverdueRetroRunsTotal))
 }
 
-// GetOverdueUpdateRuns mocks base method.
+// GetOverdueUpdateRuns mocks base method
 func (m *MockPlaybookRunStore) GetOverdueUpdateRuns(arg0 string) ([]app.RunLink, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOverdueUpdateRuns", arg0)
@@ -191,13 +190,13 @@ func (m *MockPlaybookRunStore) GetOverdueUpdateRuns(arg0 string) ([]app.RunLink,
 	return ret0, ret1
 }
 
-// GetOverdueUpdateRuns indicates an expected call of GetOverdueUpdateRuns.
+// GetOverdueUpdateRuns indicates an expected call of GetOverdueUpdateRuns
 func (mr *MockPlaybookRunStoreMockRecorder) GetOverdueUpdateRuns(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOverdueUpdateRuns", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetOverdueUpdateRuns), arg0)
 }
 
-// GetOverdueUpdateRunsTotal mocks base method.
+// GetOverdueUpdateRunsTotal mocks base method
 func (m *MockPlaybookRunStore) GetOverdueUpdateRunsTotal() (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOverdueUpdateRunsTotal")
@@ -206,13 +205,13 @@ func (m *MockPlaybookRunStore) GetOverdueUpdateRunsTotal() (int64, error) {
 	return ret0, ret1
 }
 
-// GetOverdueUpdateRunsTotal indicates an expected call of GetOverdueUpdateRunsTotal.
+// GetOverdueUpdateRunsTotal indicates an expected call of GetOverdueUpdateRunsTotal
 func (mr *MockPlaybookRunStoreMockRecorder) GetOverdueUpdateRunsTotal() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOverdueUpdateRunsTotal", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetOverdueUpdateRunsTotal))
 }
 
-// GetOwners mocks base method.
+// GetOwners mocks base method
 func (m *MockPlaybookRunStore) GetOwners(arg0 app.RequesterInfo, arg1 app.PlaybookRunFilterOptions) ([]app.OwnerInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOwners", arg0, arg1)
@@ -221,13 +220,13 @@ func (m *MockPlaybookRunStore) GetOwners(arg0 app.RequesterInfo, arg1 app.Playbo
 	return ret0, ret1
 }
 
-// GetOwners indicates an expected call of GetOwners.
+// GetOwners indicates an expected call of GetOwners
 func (mr *MockPlaybookRunStoreMockRecorder) GetOwners(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOwners", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetOwners), arg0, arg1)
 }
 
-// GetParticipantsActiveTotal mocks base method.
+// GetParticipantsActiveTotal mocks base method
 func (m *MockPlaybookRunStore) GetParticipantsActiveTotal() (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetParticipantsActiveTotal")
@@ -236,13 +235,13 @@ func (m *MockPlaybookRunStore) GetParticipantsActiveTotal() (int64, error) {
 	return ret0, ret1
 }
 
-// GetParticipantsActiveTotal indicates an expected call of GetParticipantsActiveTotal.
+// GetParticipantsActiveTotal indicates an expected call of GetParticipantsActiveTotal
 func (mr *MockPlaybookRunStoreMockRecorder) GetParticipantsActiveTotal() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParticipantsActiveTotal", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetParticipantsActiveTotal))
 }
 
-// GetParticipatingRuns mocks base method.
+// GetParticipatingRuns mocks base method
 func (m *MockPlaybookRunStore) GetParticipatingRuns(arg0 string) ([]app.RunLink, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetParticipatingRuns", arg0)
@@ -251,13 +250,13 @@ func (m *MockPlaybookRunStore) GetParticipatingRuns(arg0 string) ([]app.RunLink,
 	return ret0, ret1
 }
 
-// GetParticipatingRuns indicates an expected call of GetParticipatingRuns.
+// GetParticipatingRuns indicates an expected call of GetParticipatingRuns
 func (mr *MockPlaybookRunStoreMockRecorder) GetParticipatingRuns(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParticipatingRuns", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetParticipatingRuns), arg0)
 }
 
-// GetPlaybookRun mocks base method.
+// GetPlaybookRun mocks base method
 func (m *MockPlaybookRunStore) GetPlaybookRun(arg0 string) (*app.PlaybookRun, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPlaybookRun", arg0)
@@ -266,13 +265,13 @@ func (m *MockPlaybookRunStore) GetPlaybookRun(arg0 string) (*app.PlaybookRun, er
 	return ret0, ret1
 }
 
-// GetPlaybookRun indicates an expected call of GetPlaybookRun.
+// GetPlaybookRun indicates an expected call of GetPlaybookRun
 func (mr *MockPlaybookRunStoreMockRecorder) GetPlaybookRun(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybookRun", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetPlaybookRun), arg0)
 }
 
-// GetPlaybookRunIDForChannel mocks base method.
+// GetPlaybookRunIDForChannel mocks base method
 func (m *MockPlaybookRunStore) GetPlaybookRunIDForChannel(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPlaybookRunIDForChannel", arg0)
@@ -281,13 +280,13 @@ func (m *MockPlaybookRunStore) GetPlaybookRunIDForChannel(arg0 string) (string, 
 	return ret0, ret1
 }
 
-// GetPlaybookRunIDForChannel indicates an expected call of GetPlaybookRunIDForChannel.
+// GetPlaybookRunIDForChannel indicates an expected call of GetPlaybookRunIDForChannel
 func (mr *MockPlaybookRunStoreMockRecorder) GetPlaybookRunIDForChannel(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybookRunIDForChannel", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetPlaybookRunIDForChannel), arg0)
 }
 
-// GetPlaybookRuns mocks base method.
+// GetPlaybookRuns mocks base method
 func (m *MockPlaybookRunStore) GetPlaybookRuns(arg0 app.RequesterInfo, arg1 app.PlaybookRunFilterOptions) (*app.GetPlaybookRunsResults, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPlaybookRuns", arg0, arg1)
@@ -296,13 +295,13 @@ func (m *MockPlaybookRunStore) GetPlaybookRuns(arg0 app.RequesterInfo, arg1 app.
 	return ret0, ret1
 }
 
-// GetPlaybookRuns indicates an expected call of GetPlaybookRuns.
+// GetPlaybookRuns indicates an expected call of GetPlaybookRuns
 func (mr *MockPlaybookRunStoreMockRecorder) GetPlaybookRuns(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybookRuns", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetPlaybookRuns), arg0, arg1)
 }
 
-// GetRunsActiveTotal mocks base method.
+// GetRunsActiveTotal mocks base method
 func (m *MockPlaybookRunStore) GetRunsActiveTotal() (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRunsActiveTotal")
@@ -311,13 +310,13 @@ func (m *MockPlaybookRunStore) GetRunsActiveTotal() (int64, error) {
 	return ret0, ret1
 }
 
-// GetRunsActiveTotal indicates an expected call of GetRunsActiveTotal.
+// GetRunsActiveTotal indicates an expected call of GetRunsActiveTotal
 func (mr *MockPlaybookRunStoreMockRecorder) GetRunsActiveTotal() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunsActiveTotal", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetRunsActiveTotal))
 }
 
-// GetRunsWithAssignedTasks mocks base method.
+// GetRunsWithAssignedTasks mocks base method
 func (m *MockPlaybookRunStore) GetRunsWithAssignedTasks(arg0 string) ([]app.AssignedRun, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRunsWithAssignedTasks", arg0)
@@ -326,13 +325,13 @@ func (m *MockPlaybookRunStore) GetRunsWithAssignedTasks(arg0 string) ([]app.Assi
 	return ret0, ret1
 }
 
-// GetRunsWithAssignedTasks indicates an expected call of GetRunsWithAssignedTasks.
+// GetRunsWithAssignedTasks indicates an expected call of GetRunsWithAssignedTasks
 func (mr *MockPlaybookRunStoreMockRecorder) GetRunsWithAssignedTasks(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRunsWithAssignedTasks", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetRunsWithAssignedTasks), arg0)
 }
 
-// GetTimelineEvent mocks base method.
+// GetTimelineEvent mocks base method
 func (m *MockPlaybookRunStore) GetTimelineEvent(arg0, arg1 string) (*app.TimelineEvent, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTimelineEvent", arg0, arg1)
@@ -341,13 +340,13 @@ func (m *MockPlaybookRunStore) GetTimelineEvent(arg0, arg1 string) (*app.Timelin
 	return ret0, ret1
 }
 
-// GetTimelineEvent indicates an expected call of GetTimelineEvent.
+// GetTimelineEvent indicates an expected call of GetTimelineEvent
 func (mr *MockPlaybookRunStoreMockRecorder) GetTimelineEvent(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimelineEvent", reflect.TypeOf((*MockPlaybookRunStore)(nil).GetTimelineEvent), arg0, arg1)
 }
 
-// NukeDB mocks base method.
+// NukeDB mocks base method
 func (m *MockPlaybookRunStore) NukeDB() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NukeDB")
@@ -355,13 +354,13 @@ func (m *MockPlaybookRunStore) NukeDB() error {
 	return ret0
 }
 
-// NukeDB indicates an expected call of NukeDB.
+// NukeDB indicates an expected call of NukeDB
 func (mr *MockPlaybookRunStoreMockRecorder) NukeDB() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NukeDB", reflect.TypeOf((*MockPlaybookRunStore)(nil).NukeDB))
 }
 
-// RestorePlaybookRun mocks base method.
+// RestorePlaybookRun mocks base method
 func (m *MockPlaybookRunStore) RestorePlaybookRun(arg0 string, arg1 int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RestorePlaybookRun", arg0, arg1)
@@ -369,13 +368,13 @@ func (m *MockPlaybookRunStore) RestorePlaybookRun(arg0 string, arg1 int64) error
 	return ret0
 }
 
-// RestorePlaybookRun indicates an expected call of RestorePlaybookRun.
+// RestorePlaybookRun indicates an expected call of RestorePlaybookRun
 func (mr *MockPlaybookRunStoreMockRecorder) RestorePlaybookRun(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestorePlaybookRun", reflect.TypeOf((*MockPlaybookRunStore)(nil).RestorePlaybookRun), arg0, arg1)
 }
 
-// SetBroadcastChannelIDsToRootID mocks base method.
+// SetBroadcastChannelIDsToRootID mocks base method
 func (m *MockPlaybookRunStore) SetBroadcastChannelIDsToRootID(arg0 string, arg1 map[string]string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetBroadcastChannelIDsToRootID", arg0, arg1)
@@ -383,13 +382,13 @@ func (m *MockPlaybookRunStore) SetBroadcastChannelIDsToRootID(arg0 string, arg1 
 	return ret0
 }
 
-// SetBroadcastChannelIDsToRootID indicates an expected call of SetBroadcastChannelIDsToRootID.
+// SetBroadcastChannelIDsToRootID indicates an expected call of SetBroadcastChannelIDsToRootID
 func (mr *MockPlaybookRunStoreMockRecorder) SetBroadcastChannelIDsToRootID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBroadcastChannelIDsToRootID", reflect.TypeOf((*MockPlaybookRunStore)(nil).SetBroadcastChannelIDsToRootID), arg0, arg1)
 }
 
-// Unfollow mocks base method.
+// Unfollow mocks base method
 func (m *MockPlaybookRunStore) Unfollow(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Unfollow", arg0, arg1)
@@ -397,13 +396,13 @@ func (m *MockPlaybookRunStore) Unfollow(arg0, arg1 string) error {
 	return ret0
 }
 
-// Unfollow indicates an expected call of Unfollow.
+// Unfollow indicates an expected call of Unfollow
 func (mr *MockPlaybookRunStoreMockRecorder) Unfollow(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unfollow", reflect.TypeOf((*MockPlaybookRunStore)(nil).Unfollow), arg0, arg1)
 }
 
-// UpdatePlaybookRun mocks base method.
+// UpdatePlaybookRun mocks base method
 func (m *MockPlaybookRunStore) UpdatePlaybookRun(arg0 *app.PlaybookRun) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdatePlaybookRun", arg0)
@@ -411,13 +410,13 @@ func (m *MockPlaybookRunStore) UpdatePlaybookRun(arg0 *app.PlaybookRun) error {
 	return ret0
 }
 
-// UpdatePlaybookRun indicates an expected call of UpdatePlaybookRun.
+// UpdatePlaybookRun indicates an expected call of UpdatePlaybookRun
 func (mr *MockPlaybookRunStoreMockRecorder) UpdatePlaybookRun(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePlaybookRun", reflect.TypeOf((*MockPlaybookRunStore)(nil).UpdatePlaybookRun), arg0)
 }
 
-// UpdateStatus mocks base method.
+// UpdateStatus mocks base method
 func (m *MockPlaybookRunStore) UpdateStatus(arg0 *app.SQLStatusPost) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateStatus", arg0)
@@ -425,13 +424,13 @@ func (m *MockPlaybookRunStore) UpdateStatus(arg0 *app.SQLStatusPost) error {
 	return ret0
 }
 
-// UpdateStatus indicates an expected call of UpdateStatus.
+// UpdateStatus indicates an expected call of UpdateStatus
 func (mr *MockPlaybookRunStoreMockRecorder) UpdateStatus(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockPlaybookRunStore)(nil).UpdateStatus), arg0)
 }
 
-// UpdateTimelineEvent mocks base method.
+// UpdateTimelineEvent mocks base method
 func (m *MockPlaybookRunStore) UpdateTimelineEvent(arg0 *app.TimelineEvent) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateTimelineEvent", arg0)
@@ -439,7 +438,7 @@ func (m *MockPlaybookRunStore) UpdateTimelineEvent(arg0 *app.TimelineEvent) erro
 	return ret0
 }
 
-// UpdateTimelineEvent indicates an expected call of UpdateTimelineEvent.
+// UpdateTimelineEvent indicates an expected call of UpdateTimelineEvent
 func (mr *MockPlaybookRunStoreMockRecorder) UpdateTimelineEvent(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTimelineEvent", reflect.TypeOf((*MockPlaybookRunStore)(nil).UpdateTimelineEvent), arg0)

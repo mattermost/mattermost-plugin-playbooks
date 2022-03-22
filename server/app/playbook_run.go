@@ -381,8 +381,9 @@ type OwnerInfo struct {
 // DialogState holds the start playbook run interactive dialog's state as it appears in the client
 // and is submitted back to the server.
 type DialogState struct {
-	PostID   string `json:"post_id"`
-	ClientID string `json:"client_id"`
+	PostID       string `json:"post_id"`
+	ClientID     string `json:"client_id"`
+	PromptPostID string `json:"prompt_post_id"`
 }
 
 type DialogStateAddToTimeline struct {
@@ -423,7 +424,7 @@ type PlaybookRunService interface {
 	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool) (*PlaybookRun, error)
 
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
-	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error
+	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the playbook run's status.
 	OpenUpdateStatusDialog(playbookRunID, triggerID string) error

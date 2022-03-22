@@ -4,10 +4,15 @@
 import React from 'react';
 import {useIntl} from 'react-intl';
 
-import {ChannelAction, ChannelActionType, PromptRunPlaybookFromKeywordsPayload, WelcomeMessageActionPayload} from 'src/types/channel_actions';
-import MarkdownTextbox from 'src/components/markdown_textbox';
+import {CategorizeChannelPayload, ChannelAction, ChannelActionType, PromptRunPlaybookFromKeywordsPayload, WelcomeMessageActionPayload} from 'src/types/channel_actions';
+
 import {usePlaybooksCrud} from 'src/hooks';
+
+import MarkdownTextbox from 'src/components/markdown_textbox';
 import {StyledSelect} from 'src/components/backstage/styles';
+import CategorySelector from 'src/components/backstage/category_selector';
+import ClearIndicator from 'src/components/backstage/playbook_edit/automation/clear_indicator';
+import MenuList from 'src/components/backstage/playbook_edit/automation/menu_list';
 
 interface Props {
     action: ChannelAction;
@@ -21,6 +26,8 @@ const ActionChildren = (props: Props) => {
         return <WelcomeActionChildren {...props}/>;
     case ChannelActionType.PromptRunPlaybook:
         return <RunPlaybookChildren {...props}/>;
+    case ChannelActionType.CategorizeChannel:
+        return <CategorizeChannelChildren {...props}/>;
     }
 
     return null;
@@ -81,6 +88,36 @@ const RunPlaybookChildren = ({action, onUpdate, editable}: Props) => {
             maxMenuHeight={250}
             styles={{indicatorSeparator: () => null}}
             isDisabled={!editable}
+        />
+    );
+};
+
+const CategorizeChannelChildren = ({action, onUpdate, editable}: Props) => {
+    const {formatMessage} = useIntl();
+    const payload = action.payload as CategorizeChannelPayload;
+
+    const onCategorySelected = (name: string) => {
+        onUpdate({
+            ...action,
+            payload: {
+                ...action.payload,
+                category_name: name,
+            },
+        });
+    };
+
+    return (
+        <CategorySelector
+            id='channel-actions-categorize-playbook-run'
+            onCategorySelected={onCategorySelected}
+            categoryName={payload.category_name}
+            isClearable={true}
+            selectComponents={{ClearIndicator, IndicatorSeparator: () => null}}
+            isDisabled={!editable}
+            captureMenuScroll={false}
+            shouldRenderValue={true}
+            placeholder={formatMessage({defaultMessage: 'Enter category name'})}
+            menuPlacement={'bottom'}
         />
     );
 };

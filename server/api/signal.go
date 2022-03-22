@@ -78,29 +78,18 @@ func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.api.User.Get(req.UserId)
-	if err != nil {
-		h.returnError(fmt.Sprintf("unable to get user with ID %q", req.UserId), err, w)
-	}
-
 	pbook, err := h.playbookService.Get(id)
 	if err != nil {
 		h.returnError("can't get chosen playbook", errors.Wrapf(err, "can't get chosen playbook, id - %s", id), w)
 		return
 	}
 
-	if err := h.playbookRunService.OpenCreatePlaybookRunDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, isMobile); err != nil {
+	if err := h.playbookRunService.OpenCreatePlaybookRunDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, isMobile, post.Id); err != nil {
 		h.returnError("can't open dialog", errors.Wrap(err, "can't open a dialog"), w)
 		return
 	}
 
 	ReturnJSON(w, &model.PostActionIntegrationResponse{}, http.StatusOK)
-
-	// Update the post message and remove the buttons in the attachment
-	post.Message = fmt.Sprintf("@%s ran the [%s](%s) playbook.", user.Username, pbook.Title, app.GetPlaybookDetailsRelativeURL(pbook.ID))
-	model.ParseSlackAttachment(post, []*model.SlackAttachment{})
-
-	_ = h.api.Post.UpdatePost(post)
 }
 
 func (h *SignalHandler) ignoreKeywords(w http.ResponseWriter, r *http.Request) {

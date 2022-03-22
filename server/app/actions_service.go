@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/bot"
@@ -107,7 +108,12 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 	// Validate the trigger type and action types
 	switch action.TriggerType {
 	case TriggerTypeNewMemberJoins:
-		if action.ActionType != ActionTypeWelcomeMessage {
+		switch action.ActionType {
+		case ActionTypeWelcomeMessage:
+			break
+		case ActionTypeCategorizeChannel:
+			break
+		default:
 			return fmt.Errorf("action type %q is not valid for trigger type %q", action.ActionType, action.TriggerType)
 		}
 	case TriggerTypeKeywordsPosted:
@@ -134,6 +140,14 @@ func (a *channelActionServiceImpl) Validate(action GenericChannelAction) error {
 			return fmt.Errorf("unable to decode payload from action")
 		}
 		if err := checkValidPromptRunPlaybookFromKeywordsPayload(payload); err != nil {
+			return err
+		}
+	case ActionTypeCategorizeChannel:
+		var payload CategorizeChannelPayload
+		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
+			return fmt.Errorf("unable to decode payload from action")
+		}
+		if err := checkValidCategorizeChannelPayload(payload); err != nil {
 			return err
 		}
 
@@ -170,6 +184,14 @@ func checkValidPromptRunPlaybookFromKeywordsPayload(payload PromptRunPlaybookFro
 	return nil
 }
 
+func checkValidCategorizeChannelPayload(payload CategorizeChannelPayload) error {
+	if payload.CategoryName == "" {
+		return fmt.Errorf("payload field 'category_name' must be non-empty")
+	}
+
+	return nil
+}
+
 func (a *channelActionServiceImpl) Update(action GenericChannelAction) error {
 	oldAction, err := a.Get(action.ID)
 	if err != nil {
@@ -183,6 +205,138 @@ func (a *channelActionServiceImpl) Update(action GenericChannelAction) error {
 	}
 
 	return a.store.Update(action)
+}
+
+// UserHasJoinedChannel is called when userID has joined channelID. If actorID is not blank, userID
+// was invited by actorID.
+func (a *channelActionServiceImpl) UserHasJoinedChannel(userID, channelID, actorID string) {
+	user, err := a.api.User.Get(userID)
+	if err != nil {
+		a.logger.Errorf("failed to resolve user for userID '%s'; error: %s", userID, err.Error())
+		return
+	}
+
+	channel, err := a.api.Channel.Get(channelID)
+	if err != nil {
+		a.logger.Errorf("failed to resolve channel for channelID '%s'; error: %s", channelID, err.Error())
+		return
+	}
+
+	if user.IsBot {
+		return
+	}
+
+	actions, err := a.GetChannelActions(channelID, GetChannelActionOptions{
+		ActionType:  ActionTypeCategorizeChannel,
+		TriggerType: TriggerTypeNewMemberJoins,
+	})
+	if err != nil {
+		a.logger.Errorf("failed to get the channel actions for channelID %q; error: %s", channelID, err.Error())
+		return
+	}
+
+	if len(actions) != 1 {
+		a.logger.Errorf("only one action of action type %s and trigger type %s is expected, but %d were retrieved", ActionTypeCategorizeChannel, TriggerTypeNewMemberJoins, len(actions))
+		return
+	}
+
+	action := actions[0]
+	if !action.Enabled {
+		return
+	}
+
+	var payload CategorizeChannelPayload
+	if err := mapstructure.Decode(action.Payload, &payload); err != nil {
+		a.logger.Errorf("unable to decode payload of CategorizeChannelPayload")
+		return
+	}
+
+	if payload.CategoryName != "" {
+		// Update sidebar category in the go-routine not to block the UserHasJoinedChannel hook
+		go func() {
+			// Wait for 5 seconds(a magic number) for the webapp to get the `user_added` event,
+			// finish channel categorization and update it's state in redux.
+			// Currently there is no way to detect when webapp finishes the job.
+			// After that we can update the categories safely.
+			// Technically if user starts multiple runs simultaneously we will still get the race condition
+			// on category update. Since that's not realistic at the moment we are not adding the
+			// distributed lock here.
+			time.Sleep(5 * time.Second)
+
+			err = a.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, payload.CategoryName)
+			if err != nil {
+				a.logger.Errorf("failed to categorize channel; error: %s", err.Error())
+			}
+
+			a.telemetry.RunChannelAction(action, userID)
+		}()
+	}
+}
+
+// createOrUpdatePlaybookRunSidebarCategory creates or updates a "Playbook Runs" sidebar category if
+// it does not already exist and adds the channel within the sidebar category
+func (a *channelActionServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID, categoryName string) error {
+	sidebar, err := a.api.Channel.GetSidebarCategories(userID, teamID)
+	if err != nil {
+		return err
+	}
+
+	var categoryID string
+	for _, category := range sidebar.Categories {
+		if strings.EqualFold(category.DisplayName, categoryName) {
+			categoryID = category.Id
+			if !sliceContains(category.Channels, channelID) {
+				category.Channels = append(category.Channels, channelID)
+			}
+			break
+		}
+	}
+
+	if categoryID == "" {
+		err = a.api.Channel.CreateSidebarCategory(userID, teamID, &model.SidebarCategoryWithChannels{
+			SidebarCategory: model.SidebarCategory{
+				UserId:      userID,
+				TeamId:      teamID,
+				DisplayName: categoryName,
+				Muted:       false,
+			},
+			Channels: []string{channelID},
+		})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// remove channel from previous category
+	for _, category := range sidebar.Categories {
+		if strings.EqualFold(category.DisplayName, categoryName) {
+			continue
+		}
+		for i, channel := range category.Channels {
+			if channel == channelID {
+				category.Channels = append(category.Channels[:i], category.Channels[i+1:]...)
+				break
+			}
+		}
+	}
+
+	err = a.api.Channel.UpdateSidebarCategories(userID, teamID, sidebar.Categories)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func sliceContains(strs []string, target string) bool {
+	for _, s := range strs {
+		if s == target {
+			return true
+		}
+	}
+	return false
 }
 
 // CheckAndSendMessageOnJoin checks if userID has viewed channelID and sends
@@ -359,6 +513,7 @@ func getPlaybookSuggestionsSlackAttachment(playbooks []Playbook, postID string, 
 
 		attachment := &model.SlackAttachment{
 			Actions: []*model.PostAction{yesButton, ignoreButton},
+			Text:    "Open Channel Actions in the channel header to view and edit keywords.",
 		}
 		return attachment
 	}

@@ -18,6 +18,7 @@ interface Props {
 const titles = {
     [ChannelActionType.WelcomeMessage]: <FormattedMessage defaultMessage={'Send a temporary welcome message to the user'}/>,
     [ChannelActionType.PromptRunPlaybook]: <FormattedMessage defaultMessage={'Prompt to run a playbook'}/>,
+    [ChannelActionType.CategorizeChannel]: <FormattedMessage defaultMessage={'Add the channel to a sidebar category for the user'}/>,
 };
 
 const Action = (props: Props) => {
@@ -33,13 +34,16 @@ const Action = (props: Props) => {
     return (
         <Wrapper>
             <Container
-                onClick={onChange}
+                onClick={(e: React.MouseEvent) => {
+                    e.preventDefault();
+                    onChange();
+                }}
                 clickable={props.editable}
             >
                 <Title clickable={props.editable}>{titles[props.action.action_type]}</Title>
                 <Toggle
                     isChecked={props.action.enabled}
-                    onChange={onChange}
+                    onChange={() => {/* do nothing, clicking logic lives in Container's onClick */}}
                     disabled={!props.editable}
                 />
             </Container>
@@ -75,7 +79,7 @@ const Toggle = styled(BasicToggle)`
 `;
 
 const ChildrenContainer = styled.div`
-    margin-top: 12px;
+    margin-top: 8px;
 `;
 
 export default Action;

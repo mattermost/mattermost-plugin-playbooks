@@ -77,4 +77,5 @@ const InvisibleInput = styled.input`
 const Label = styled.label<DisabledProps>`
     line-height: 0;
     cursor: ${({disabled}) => (disabled ? 'default' : 'pointer')};
+    margin-bottom: 0;
 `;

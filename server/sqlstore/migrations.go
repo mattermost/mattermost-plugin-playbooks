@@ -1902,4 +1902,52 @@ var migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		fromVersion: semver.MustParse("0.50.0"),
+		toVersion:   semver.MustParse("0.51.0"),
+		migrationFunc: func(e sqlx.Ext, sqlStore *SQLStore) error {
+			// Retrieve the channel ID and category name of every run
+
+			selectQuery := sqlStore.builder.
+				Select("ChannelID", "CategoryName").
+				From("IR_Incident").
+				Where(sq.NotEq{"CategoryName": ""})
+
+			var rows []struct {
+				ChannelID    string
+				CategoryName string
+			}
+
+			if err := sqlStore.selectBuilder(e, &rows, selectQuery); err != nil {
+				return errors.Wrapf(err, "failed to retrieve the ChannelID and CategoryName from IR_Incident")
+			}
+
+			// Create a new action for every row returned before
+
+			if len(rows) > 0 {
+				insertQuery := sqlStore.builder.
+					Insert("IR_ChannelAction").
+					Columns("ID", "ChannelID", "Enabled", "ActionType", "TriggerType", "Payload")
+
+				for _, row := range rows {
+					payload := struct {
+						CategoryName string `json:"category_name"`
+					}{row.CategoryName}
+
+					payloadJSON, err := json.Marshal(payload)
+					if err != nil {
+						return errors.Wrapf(err, "failed to marshal category name payload: %v", payload)
+					}
+
+					insertQuery = insertQuery.Values(model.NewId(), row.ChannelID, true, "categorize_channel", "new_member_joins", payloadJSON)
+				}
+
+				if _, err := sqlStore.execBuilder(e, insertQuery); err != nil {
+					return errors.Wrapf(err, "failed to create the channel actions for the existing runs")
+				}
+			}
+
+			return nil
+		},
+	},
 }
