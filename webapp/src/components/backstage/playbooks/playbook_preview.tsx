@@ -19,6 +19,7 @@ interface Props {
     followerIds: string[];
 }
 
+/** @deprecated this page and some inner sections will be deprecated in the future. See `playbook_editor/outline.tsx`.*/
 const PlaybookPreview = (props: Props) => {
     const description = renderDescription({
         id: SectionID.Description,
