@@ -138,11 +138,11 @@ func (s *PlaybookRunServiceImpl) buildPlaybookRunCreationMessageTemplate(playboo
 	return fmt.Sprintf(
 		"##### [%s](%s%s)\n@%s ran the [%s](%s) playbook.",
 		playbookRun.Name,
-		getRunDetailsRelativeURL(playbookRun.ID),
+		GetRunDetailsRelativeURL(playbookRun.ID),
 		"%s", // for the telemetry data injection
 		reporter.Username,
 		playbookTitle,
-		getPlaybookDetailsRelativeURL(playbookID),
+		GetPlaybookDetailsRelativeURL(playbookID),
 	), nil
 }
 
@@ -217,8 +217,8 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	if playbookRun.ChannelID == "" {
 		header := "This channel was created as part of a playbook run. To view more information, select the shield icon then select *Tasks* or *Overview*."
 		if pb != nil {
-			overviewURL := getRunDetailsRelativeURL(playbookRun.ID)
-			playbookURL := getPlaybookDetailsRelativeURL(pb.ID)
+			overviewURL := GetRunDetailsRelativeURL(playbookRun.ID)
+			playbookURL := GetPlaybookDetailsRelativeURL(pb.ID)
 			header = fmt.Sprintf("This channel was created as part of the [%s](%s) playbook. Visit [the overview page](%s) for more information.",
 				pb.Title, playbookURL, overviewURL)
 		}
@@ -263,6 +263,24 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 		}
 
 		if _, err := s.actionService.Create(welcomeAction); err != nil {
+			s.logger.Errorf(errors.Wrapf(err, "unable to create welcome action for new run in channel %q", playbookRun.ChannelID).Error())
+		}
+	}
+
+	if pb != nil && pb.CategorizeChannelEnabled && pb.CategoryName != "" {
+		categorizeChannelAction := GenericChannelAction{
+			GenericChannelActionWithoutPayload: GenericChannelActionWithoutPayload{
+				ChannelID:   playbookRun.ChannelID,
+				Enabled:     true,
+				ActionType:  ActionTypeCategorizeChannel,
+				TriggerType: TriggerTypeNewMemberJoins,
+			},
+			Payload: CategorizeChannelPayload{
+				CategoryName: pb.CategoryName,
+			},
+		}
+
+		if _, err := s.actionService.Create(categorizeChannelAction); err != nil {
 			s.logger.Errorf(errors.Wrapf(err, "unable to create welcome action for new run in channel %q", playbookRun.ChannelID).Error())
 		}
 	}
@@ -378,7 +396,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 	// Do we send a DM to the new owner?
 	if playbookRun.OwnerUserID != playbookRun.ReporterUserID {
 		startMessage := fmt.Sprintf("You have been assigned ownership of the run: [%s](%s), reported by @%s.",
-			playbookRun.Name, getRunDetailsRelativeURL(playbookRun.ID), reporter.Username)
+			playbookRun.Name, GetRunDetailsRelativeURL(playbookRun.ID), reporter.Username)
 
 		if err = s.poster.DM(playbookRun.OwnerUserID, &model.Post{Message: startMessage}); err != nil {
 			return nil, errors.Wrapf(err, "failed to send DM on CreatePlaybookRun")
@@ -452,7 +470,7 @@ func (s *PlaybookRunServiceImpl) CreatePlaybookRun(playbookRun *PlaybookRun, pb 
 }
 
 // OpenCreatePlaybookRunDialog opens a interactive dialog to start a new playbook run.
-func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error {
+func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error {
 
 	filteredPlaybooks := make([]Playbook, 0, len(playbooks))
 	for _, playbook := range playbooks {
@@ -461,7 +479,7 @@ func (s *PlaybookRunServiceImpl) OpenCreatePlaybookRunDialog(teamID, requesterID
 		}
 	}
 
-	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, isMobileApp)
+	dialog, err := s.newPlaybookRunDialog(teamID, requesterID, postID, clientID, filteredPlaybooks, isMobileApp, promptPostID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new playbook run dialog")
 	}
@@ -837,14 +855,14 @@ func (s *PlaybookRunServiceImpl) buildRunFinishedMessage(playbookRun *PlaybookRu
 	announcementMsg := fmt.Sprintf(
 		"### Run finished: [%s](%s%s)\n",
 		playbookRun.Name,
-		getRunDetailsRelativeURL(playbookRun.ID),
+		GetRunDetailsRelativeURL(playbookRun.ID),
 		telemetryString,
 	)
 	announcementMsg += fmt.Sprintf(
 		"@%s just marked [%s](%s%s) as finished. Visit the link above for more information.",
 		userName,
 		playbookRun.Name,
-		getRunDetailsRelativeURL(playbookRun.ID),
+		GetRunDetailsRelativeURL(playbookRun.ID),
 		telemetryString,
 	)
 
@@ -1129,7 +1147,7 @@ func (s *PlaybookRunServiceImpl) ChangeOwner(playbookRunID, userID, ownerID stri
 	// Do we send a DM to the new owner?
 	if ownerID != userID {
 		msg := fmt.Sprintf("@%s changed the owner for run: [%s](%s) from **@%s** to **@%s**",
-			subjectUser.Username, playbookRunToModify.Name, getRunDetailsRelativeURL(playbookRunToModify.ID),
+			subjectUser.Username, playbookRunToModify.Name, GetRunDetailsRelativeURL(playbookRunToModify.ID),
 			oldOwner.Username, newOwner.Username)
 		if err = s.poster.DM(ownerID, &model.Post{Message: msg}); err != nil {
 			return errors.Wrapf(err, "failed to send DM in ChangeOwner")
@@ -1888,91 +1906,6 @@ func (s *PlaybookRunServiceImpl) UserHasJoinedChannel(userID, channelID, actorID
 	if err := s.Follow(playbookRun.ID, userID); err != nil {
 		s.logger.Errorf("user `%s` was not able to follow the run `%s`; error: %s", userID, playbookRun.ID, err.Error())
 	}
-
-	if playbookRun.CategoryName != "" {
-		// Update sidebar category in the go-routine not to block the UserHasJoinedChannel hook
-		go func() {
-			// Wait for 5 seconds(a magic number) for the webapp to get the `user_added` event,
-			// finish channel categorization and update it's state in redux.
-			// Currently there is no way to detect when webapp finishes the job.
-			// After that we can update the categories safely.
-			// Technically if user starts multiple runs simultaneously we will still get the race condition
-			// on category update. Since that's not realistic at the moment we are not adding the
-			// distributed lock here.
-			time.Sleep(5 * time.Second)
-
-			err = s.createOrUpdatePlaybookRunSidebarCategory(userID, channelID, channel.TeamId, playbookRun.CategoryName)
-			if err != nil {
-				s.logger.Errorf("failed to categorize channel; error: %s", err.Error())
-			}
-		}()
-	}
-}
-
-// createOrUpdatePlaybookRunSidebarCategory creates or updates a "Playbook Runs" sidebar category if
-// it does not already exist and adds the channel within the sidebar category
-func (s *PlaybookRunServiceImpl) createOrUpdatePlaybookRunSidebarCategory(userID, channelID, teamID, categoryName string) error {
-	sidebar, err := s.pluginAPI.Channel.GetSidebarCategories(userID, teamID)
-	if err != nil {
-		return err
-	}
-
-	var categoryID string
-	for _, category := range sidebar.Categories {
-		if strings.EqualFold(category.DisplayName, categoryName) {
-			categoryID = category.Id
-			if !sliceContains(category.Channels, channelID) {
-				category.Channels = append(category.Channels, channelID)
-			}
-			break
-		}
-	}
-
-	if categoryID == "" {
-		err = s.pluginAPI.Channel.CreateSidebarCategory(userID, teamID, &model.SidebarCategoryWithChannels{
-			SidebarCategory: model.SidebarCategory{
-				UserId:      userID,
-				TeamId:      teamID,
-				DisplayName: categoryName,
-				Muted:       false,
-			},
-			Channels: []string{channelID},
-		})
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	// remove channel from previous category
-	for _, category := range sidebar.Categories {
-		if strings.EqualFold(category.DisplayName, categoryName) {
-			continue
-		}
-		for i, channel := range category.Channels {
-			if channel == channelID {
-				category.Channels = append(category.Channels[:i], category.Channels[i+1:]...)
-				break
-			}
-		}
-	}
-
-	err = s.pluginAPI.Channel.UpdateSidebarCategories(userID, teamID, sidebar.Categories)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func sliceContains(strs []string, target string) bool {
-	for _, s := range strs {
-		if s == target {
-			return true
-		}
-	}
-	return false
 }
 
 func (s *PlaybookRunServiceImpl) UpdateDescription(playbookRunID, description string) error {
@@ -2135,15 +2068,16 @@ func (s *PlaybookRunServiceImpl) newFinishPlaybookRunDialog(outstanding int) *mo
 	}
 }
 
-func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) (*model.Dialog, error) {
+func (s *PlaybookRunServiceImpl) newPlaybookRunDialog(teamID, ownerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) (*model.Dialog, error) {
 	user, err := s.pluginAPI.User.Get(ownerID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch owner user")
 	}
 
 	state, err := json.Marshal(DialogState{
-		PostID:   postID,
-		ClientID: clientID,
+		PostID:       postID,
+		ClientID:     clientID,
+		PromptPostID: promptPostID,
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to marshal DialogState")

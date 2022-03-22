@@ -72,22 +72,24 @@ func (h *SignalHandler) playbookRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	post, err := h.api.Post.GetPost(req.PostId)
+	if err != nil {
+		h.returnError(fmt.Sprintf("unable to get original post with ID %q", postID), err, w)
+		return
+	}
+
 	pbook, err := h.playbookService.Get(id)
 	if err != nil {
 		h.returnError("can't get chosen playbook", errors.Wrapf(err, "can't get chosen playbook, id - %s", id), w)
 		return
 	}
 
-	if err := h.playbookRunService.OpenCreatePlaybookRunDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, isMobile); err != nil {
+	if err := h.playbookRunService.OpenCreatePlaybookRunDialog(req.TeamId, req.UserId, req.TriggerId, postID, "", []app.Playbook{pbook}, isMobile, post.Id); err != nil {
 		h.returnError("can't open dialog", errors.Wrap(err, "can't open a dialog"), w)
 		return
 	}
 
 	ReturnJSON(w, &model.PostActionIntegrationResponse{}, http.StatusOK)
-	h.api.Post.UpdateEphemeralPost(req.UserId, &model.Post{
-		Id:      req.PostId,
-		Message: fmt.Sprintf("You've selected playbook %s to run", pbook.Title),
-	})
 }
 
 func (h *SignalHandler) ignoreKeywords(w http.ResponseWriter, r *http.Request) {

@@ -289,6 +289,10 @@ func (b *Bot) PromptForFeedback(userID string) error {
 	return nil
 }
 
+func (b *Bot) IsFromPoster(post *model.Post) bool {
+	return post.UserId == b.botUserID
+}
+
 func (b *Bot) makePayloadMap(payload interface{}) map[string]interface{} {
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {

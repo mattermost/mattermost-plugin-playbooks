@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
@@ -20,47 +20,34 @@ interface Props {
     onCategorySelected: (categoryName: string) => void;
 }
 
-export const CategorizePlaybookRun = (props: Props) => (
-    <AutomationHeader>
-        <AutomationTitle>
-            <Toggle
-                isChecked={props.enabled}
-                onChange={props.onToggle}
-            />
-            <div><FormattedMessage defaultMessage='Add the channel to a sidebar category'/></div>
-        </AutomationTitle>
-        <SelectorWrapper>
-            <StyledCategorySelector
-                id='playbook-automation-categorize-playbook-run'
-                onCategorySelected={props.onCategorySelected}
-                categoryName={props.categoryName}
-                isClearable={true}
-                selectComponents={{ClearIndicator, DropdownIndicator: () => null, IndicatorSeparator: () => null, MenuList}}
-                isDisabled={!props.enabled}
-                captureMenuScroll={false}
-                shouldRenderValue={props.enabled}
-            />
-        </SelectorWrapper>
-    </AutomationHeader>
-);
+export const CategorizePlaybookRun = (props: Props) => {
+    const {formatMessage} = useIntl();
+    return (
+        <AutomationHeader>
+            <AutomationTitle>
+                <Toggle
+                    isChecked={props.enabled}
+                    onChange={props.onToggle}
+                />
+                <div><FormattedMessage defaultMessage='Add the channel to a sidebar category'/></div>
+            </AutomationTitle>
+            <SelectorWrapper>
+                <StyledCategorySelector
+                    id='playbook-automation-categorize-playbook-run'
+                    onCategorySelected={props.onCategorySelected}
+                    categoryName={props.categoryName}
+                    isClearable={true}
+                    selectComponents={{ClearIndicator, IndicatorSeparator: () => null, MenuList}}
+                    isDisabled={!props.enabled}
+                    captureMenuScroll={false}
+                    shouldRenderValue={props.enabled}
+                    placeholder={formatMessage({defaultMessage: 'Enter category name'})}
+                />
+            </SelectorWrapper>
+        </AutomationHeader>
+    );
+};
 
 const StyledCategorySelector = styled(CategorySelector)`
     background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
-
-    .channel-selector__control {
-        padding: 4px 16px 4px 3.2rem;
-        background-color: ${(props) => (props.isDisabled ? 'rgba(var(--center-channel-bg-rgb), 0.16)' : 'var(--center-channel-bg)')};
-
-        &:before {
-            left: 16px;
-            top: 8px;
-            position: absolute;
-            color: var(--center-channel-color-56);
-            content: '\f0349';
-            font-size: 18px;
-            font-family: 'compass-icons', mattermosticons;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-    }
 `;

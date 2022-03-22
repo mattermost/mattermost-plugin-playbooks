@@ -362,7 +362,7 @@ const Playbook = () => {
                                 title: formatMessage({defaultMessage: 'Test your new playbook out!'}),
                                 screen: formatMessage({defaultMessage: 'Select <strong>Start a test run</strong> to see it in action.'}, {strong: (x) => <strong>{x}</strong>}),
                             } : {
-                                title: formatMessage({defaultMessage: 'Ready run to your playbook?'}),
+                                title: formatMessage({defaultMessage: 'Ready to run your playbook?'}),
                                 screen: formatMessage({defaultMessage: 'Select <strong>Run</strong> to see it in action.'}, {strong: (x) => <strong>{x}</strong>}),
                             }}
                             tutorialCategory={TutorialTourCategories.PLAYBOOK_PREVIEW}
