@@ -79,7 +79,12 @@ Cypress.Commands.add('startPlaybookRunFromPostMenu', (playbookName, playbookRunN
     cy.findByTestId('post_textbox').clear().type('new message here{enter}');
 
     // post a second message because cypress has trouble finding latest post when there's only one message
-    cy.findByTestId('post_textbox').clear().type('another new message here{enter}');
+    cy.findByTestId('post_textbox').clear();
+    for (let i = 0; i < 10; i++) {
+        cy.findByTestId('post_textbox').type('longpostlongpostpongpostlongpost');
+    }
+    cy.findByTestId('post_textbox').type('{enter}');
+
     cy.clickPostDotMenu();
     cy.findByTestId('playbookRunPostMenuIcon').click();
     cy.startPlaybookRun(playbookName, playbookRunName);
