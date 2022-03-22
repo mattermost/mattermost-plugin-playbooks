@@ -423,9 +423,10 @@ export default RHSChecklistList;
 
 const overdueTasks = (checklists: Checklist[]) => {
     let count = 0;
+    const now = DateTime.now();
     for (const list of checklists) {
         for (const item of list.items) {
-            if (item.due_date > 0 && DateTime.fromMillis(item.due_date) <= DateTime.now()) {
+            if (item.due_date > 0 && DateTime.fromMillis(item.due_date) <= now) {
                 count++;
             }
         }
