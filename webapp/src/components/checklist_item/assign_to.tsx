@@ -38,7 +38,7 @@ const StyledProfileSelector = styled(ProfileSelector)`
         border: none;
 
         font-weight: 400;
-        font-size: 11px;
+        font-size: 12px;
         line-height: 10px;
 
         :hover {
@@ -60,7 +60,12 @@ const StyledProfileSelector = styled(ProfileSelector)`
         }
     }
     .NoName-Assigned-button {
-        background:none
+        background: none;
+        padding: 0px;
+
+        .image {
+            margin: 0px;
+        }
     }
 `;
 

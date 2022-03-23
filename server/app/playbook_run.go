@@ -482,7 +482,10 @@ type PlaybookRunService interface {
 
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
 	RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error)
-
+	
+	// DuplicateChecklistItem duplicates the checklist item.
+	DuplicateChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error
+	
 	// AddChecklistItem adds an item to the specified checklist
 	AddChecklistItem(playbookRunID, userID string, checklistNumber int, checklistItem ChecklistItem) error
 

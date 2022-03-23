@@ -1393,6 +1393,30 @@ func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, use
 	return cmdResponse.TriggerId, nil
 }
 
+func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int) error {
+	playbookRunToModify, err := s.checklistParamsVerify(playbookRunID, userID, checklistNumber)
+	if err != nil {
+		return err
+	}
+
+	if len(playbookRunToModify.Checklists[checklistNumber].Items) <= itemNumber {
+		return errors.New("can't find the item")
+	}
+	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+	checklistItem.ID = ""
+
+	playbookRunToModify.Checklists[checklistNumber].Items = append(playbookRunToModify.Checklists[checklistNumber].Items, checklistItem)
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+	s.telemetry.AddTask(playbookRunID, userID, checklistItem)
+
+	return nil
+}
+
 // AddChecklist adds a checklist to the specified run
 func (s *PlaybookRunServiceImpl) AddChecklist(playbookRunID, userID string, checklist Checklist) error {
 	playbookRunToModify, err := s.store.GetPlaybookRun(playbookRunID)
@@ -1549,9 +1573,17 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 		return err
 	}
 
-	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
-	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
-	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Description = newDescription
+	println(newTitle, newCommand, newDescription)
+
+	if newTitle != "" {
+		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
+	}
+	if newCommand != "" {
+		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
+	}
+	if newDescription != "" {
+		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Description = newDescription
+	}
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {

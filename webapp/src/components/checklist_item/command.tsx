@@ -1,7 +1,7 @@
 import React, {useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch} from 'react-redux';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 
 import {
     clientRunChecklistItemSlashCommand,
@@ -34,7 +34,7 @@ const Command = (props: CommandProps) => {
     const [lastRun, setLastRun] = useState(props.command_last_run);
     const dispatch = useDispatch();
 
-    const [commandOpen, setCommandOpen] = useState(props.command.length > 0);
+    const [commandOpen, setCommandOpen] = useState(false);
     const [wasOpened, setWasOpened] = useState(false);
 
     // Immediately stop the running indicator when we get notified of a more recent execution.
@@ -45,6 +45,11 @@ const Command = (props: CommandProps) => {
 
     // Setting running to true triggers the timeout by setting the delay to RunningTimeout
     useTimeout(() => setRunning(false), running ? RunningTimeout : null);
+
+    // nothing to show if we have not selected command and we are not editing
+    if (props.command === '' && !props.isEditing) {
+        return null;
+    }
 
     const placeholder = (
         <PlaceholderDiv
@@ -60,73 +65,95 @@ const Command = (props: CommandProps) => {
             <CommandTextContainer>
                 {formatMessage({defaultMessage: 'Add slash command'})}
             </CommandTextContainer>
+            {props.isEditing && <i className={'icon-chevron-down'}/>}
         </PlaceholderDiv>
     );
-    let slashCommandBox = placeholder;
 
-    if (props.command === '') {
-        slashCommandBox = (
-            <>
-                {placeholder}
-                {commandOpen &&
-                    <EditCommandDropdown
-                        playbookRunId={props.playbookRunId}
-                        checklistNum={props.checklistNum}
-                        itemNum={props.itemNum}
-                        onDone={() => setCommandOpen(false)}
-                        taskCommand={props.command}
-                        grabFocus={wasOpened}
-                    />
+    const runButton = (
+        <Run
+            data-testid={'run'}
+            running={running}
+            onClick={() => {
+                if (!running) {
+                    setRunning(true);
+                    clientRunChecklistItemSlashCommand(dispatch, props.playbookRunId, props.checklistNum, props.itemNum);
                 }
-            </>
-        );
-    }
+            }}
+        >
+            {props.command_last_run ? 'Rerun' : 'Run'}
+        </Run>
+    );
+
+    const commandButton = (
+        <CommandText
+            onClick={() => {
+                setWasOpened(true);
+                setCommandOpen(true);
+            }}
+        >
+            <TextWithTooltipWhenEllipsis
+                id={props.checklistNum.toString(10)}
+                text={props.command}
+                parentRef={commandRef}
+            />
+            {props.isEditing && <i className={'icon-chevron-down'}/>}
+        </CommandText>
+    );
+
+    const commandDropdown = (
+        <EditCommandDropdown
+            playbookRunId={props.playbookRunId}
+            checklistNum={props.checklistNum}
+            itemNum={props.itemNum}
+            onDone={() => setCommandOpen(false)}
+            taskCommand={props.command}
+            grabFocus={wasOpened}
+        />
+    );
+
+    const notEditingCommand = (
+        <>
+            {!props.disabled && runButton}
+            {commandButton}
+            {!props.disabled && running && <StyledSpinner/>}
+        </>
+    );
+
+    const editingCommand = (
+        <>
+            {props.command === '' ? placeholder : commandButton}
+            {commandOpen && commandDropdown}
+        </>
+    );
 
     return (
-        <CommandContainer ref={commandRef}>
-            {!props.disabled && props.command !== '' &&
-                <Run
-                    data-testid={'run'}
-                    running={running}
-                    onClick={() => {
-                        if (!running) {
-                            setRunning(true);
-                            clientRunChecklistItemSlashCommand(dispatch, props.playbookRunId, props.checklistNum, props.itemNum);
-                        }
-                    }}
-                >
-                    {props.command_last_run ? 'Rerun' : 'Run'}
-                </Run>
-            }
-            {props.command !== '' &&
-                <>
-                    <CommandText
-                        onClick={() => {
-                            setWasOpened(true);
-                            setCommandOpen(true);
-                        }}
-                    >
-                        <TextWithTooltipWhenEllipsis
-                            id={props.checklistNum.toString(10)}
-                            text={props.command}
-                            parentRef={commandRef}
-                        />
-                    </CommandText>
-                    {running && <StyledSpinner/>}
-                </>
-            }
-            {props.command === '' &&
-                slashCommandBox
-            }
+        <CommandContainer
+            ref={commandRef}
+            editing={props.isEditing}
+        >
+            {props.isEditing ? editingCommand : notEditingCommand}
         </CommandContainer>
     );
 };
 
-const CommandContainer = styled.div`
+const PlaceholderDiv = styled.div`
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+`;
+
+const CommandContainer = styled.div<{editing: boolean}>`
     :not(:first-child) {
         margin-left: 6px;
     }
-    z-index: 50;
+    ${({editing}) => editing && css`
+        z-index: 49;
+    `}
+
+    background: var(--center-channel-color-08);
+    border-radius: 54px;
+    padding: 0px 4px;
+    height: 24px;
 `;
 
 interface RunProps {
@@ -163,7 +190,7 @@ const CommandText = styled.div`
     white-space: nowrap;
     padding: 2px 4px;
     border-radius: 4px;
-    font-size: 11px;
+    font-size: 12px;
 `;
 
 const StyledSpinner = styled(Spinner)`
@@ -171,17 +198,9 @@ const StyledSpinner = styled(Spinner)`
     padding-top: 3px;
 `;
 
-const PlaceholderDiv = styled.div`
-    display: flex;
-    align-items: center;
-    flex-direction: row;
-    background: var(--center-channel-color-08);
-    border-radius: 100px;
-`;
-
 const CommandIcon = styled.i`
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     text-align: center;
@@ -206,23 +225,6 @@ interface EditCommandDropdownProps {
     taskCommand: string;
     grabFocus: boolean;
 }
-
-const FormContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    width: 320px;
-    height: 116px;
-    box-sizing: border-box;
-    box-shadow: 0px 20px 32px rgba(0, 0, 0, 0.12);
-    border-radius: 8px;
-    background: var(--center-channel-bg);
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-
-    > * {
-        margin-bottom: 10px;
-    }
-`;
 
 const EditCommandDropdown = (props: EditCommandDropdownProps) => {
     const [command, setCommand] = useState(props.taskCommand);
@@ -249,6 +251,25 @@ const EditCommandDropdown = (props: EditCommandDropdownProps) => {
         </FormContainer>
     );
 };
+
+const FormContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    height: 116px;
+    box-sizing: border-box;
+    box-shadow: 0px 20px 32px rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    background: var(--center-channel-bg);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    margin-top: 4px;
+    left: 50px;
+    right: 50px;
+
+    > * {
+        margin-bottom: 10px;
+    }
+`;
 
 const CommandInputContainer = styled.div`
     margin: 16px;

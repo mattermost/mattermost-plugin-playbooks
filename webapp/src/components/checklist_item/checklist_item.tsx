@@ -220,9 +220,10 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     checklistNum={props.checklistNum}
                     command={props.checklistItem.command}
                     command_last_run={props.checklistItem.command_last_run}
-                    disabled={false}
+                    disabled={props.disabled}
                     itemNum={props.itemNum}
                     playbookRunId={props.playbookRunId}
+                    isEditing={isEditing}
                 />
             }
         </Row>
@@ -360,7 +361,6 @@ const DragButton = styled.i<{isVisible: boolean}>`
         visibility: hidden
     `}
 `;
-
 
 const StrikeThrough = styled.text`
     text-decoration: line-through;
