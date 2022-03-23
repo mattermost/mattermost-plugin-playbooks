@@ -349,12 +349,13 @@ const WarningLine = styled.p`
 const FooterContainer = styled.div`
     display: flex;
     flex-direction: row-reverse;
-    align-items: flex-end;
+    align-items: center;
 `;
 
 const StyledCheckboxInput = styled(CheckboxInput)`
     padding: 10px 16px 10px 0;
     margin-right: auto;
+    white-space: normal;
 
     &:hover {
         background-color: transparent;

@@ -105,7 +105,7 @@ const PlaybookPreviewActions = (props: Props) => {
                     />
                     <CardSubEntry
                         title={formatMessage(
-                            {defaultMessage: 'Begin following for {followers, plural, =0 {no user} =1 {one user} other {# users}}'},
+                            {defaultMessage: 'Begin following for {followers, plural, =1 {one user} other {# users}}'},
                             {followers: props.followerIds.length}
                         )}
                         extraInfo={(
