@@ -39,6 +39,7 @@ export const PrimaryButton = styled(Button)`
     background: var(--button-bg);
     color: var(--button-color);
     transition: background 0.15s ease-out;
+    white-space: nowrap;
 
     &:active:not([disabled])  {
         background: rgba(var(--button-bg-rgb), 0.8);

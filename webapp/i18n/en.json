@@ -1,6 +1,7 @@
 {
   "+/x2FM": "Select a playbook",
   "+8G9qr": "Default text for the retrospective.",
+  "+PMJAg": "Begin following for {followers, plural, =1 {one user} other {# users}}",
   "+QgvjN": "Assign the owner role to",
   "+Tmpup": "You automatically receive updates when this playbook is run.",
   "+hddg7": "Add to run timeline",
@@ -319,7 +320,6 @@
   "gt6BhE": "Run details",
   "guunZt": "Assign",
   "gy/Kkr": "(edited)",
-  "hCMWC+": "Begin following for {followers, plural, =0 {no user} =1 {one user} other {# users}}",
   "hO9EdA": "Invite {numInvitedUsers, plural, =0 {no members} =1 {one member} other {# members}} to the channel",
   "hVFgh4": "Include finished",
   "hXIYHG": "Install and enable the Channel Export plugin to support exporting the channel",
