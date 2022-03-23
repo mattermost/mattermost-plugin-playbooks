@@ -337,9 +337,9 @@ export async function clientRestoreChecklistItem(playbookRunID: string, checklis
 }
 
 interface ChecklistItemUpdate {
-    title: string
+    title?: string
     command: string
-    description: string
+    description?: string
 }
 
 export async function clientEditChecklistItem(playbookRunID: string, checklistNum: number, itemNum: number, itemUpdate: ChecklistItemUpdate) {

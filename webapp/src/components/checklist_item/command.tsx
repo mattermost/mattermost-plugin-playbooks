@@ -5,10 +5,14 @@ import styled from 'styled-components';
 
 import {
     clientRunChecklistItemSlashCommand,
+    clientEditChecklistItem,
 } from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import {useTimeout} from 'src/hooks';
 import TextWithTooltipWhenEllipsis from 'src/components/widgets/text_with_tooltip_when_ellipsis';
+import CommandInput from 'src/components/command_input';
+
+import {CancelSaveButtons} from './inputs';
 
 interface CommandProps {
     playbookRunId: string;
@@ -18,6 +22,7 @@ interface CommandProps {
     disabled: boolean;
     command_last_run: number;
     command: string;
+    isEditing: boolean;
 }
 
 const RunningTimeout = 1000;
@@ -29,6 +34,9 @@ const Command = (props: CommandProps) => {
     const [lastRun, setLastRun] = useState(props.command_last_run);
     const dispatch = useDispatch();
 
+    const [commandOpen, setCommandOpen] = useState(props.command.length > 0);
+    const [wasOpened, setWasOpened] = useState(false);
+
     // Immediately stop the running indicator when we get notified of a more recent execution.
     if (props.command_last_run > lastRun) {
         setRunning(false);
@@ -37,6 +45,42 @@ const Command = (props: CommandProps) => {
 
     // Setting running to true triggers the timeout by setting the delay to RunningTimeout
     useTimeout(() => setRunning(false), running ? RunningTimeout : null);
+
+    const placeholder = (
+        <PlaceholderDiv
+            onClick={() => {
+                setWasOpened(true);
+                setCommandOpen(true);
+            }}
+        >
+            <CommandIcon
+                title={formatMessage({defaultMessage: 'Add slash command'})}
+                className={'icon-slash-forward icon-16 btn-icon'}
+            />
+            <CommandTextContainer>
+                {formatMessage({defaultMessage: 'Add slash command'})}
+            </CommandTextContainer>
+        </PlaceholderDiv>
+    );
+    let slashCommandBox = placeholder;
+
+    if (props.command === '') {
+        slashCommandBox = (
+            <>
+                {placeholder}
+                {commandOpen &&
+                    <EditCommandDropdown
+                        playbookRunId={props.playbookRunId}
+                        checklistNum={props.checklistNum}
+                        itemNum={props.itemNum}
+                        onDone={() => setCommandOpen(false)}
+                        taskCommand={props.command}
+                        grabFocus={wasOpened}
+                    />
+                }
+            </>
+        );
+    }
 
     return (
         <CommandContainer ref={commandRef}>
@@ -56,7 +100,12 @@ const Command = (props: CommandProps) => {
             }
             {props.command !== '' &&
                 <>
-                    <CommandText>
+                    <CommandText
+                        onClick={() => {
+                            setWasOpened(true);
+                            setCommandOpen(true);
+                        }}
+                    >
                         <TextWithTooltipWhenEllipsis
                             id={props.checklistNum.toString(10)}
                             text={props.command}
@@ -67,15 +116,7 @@ const Command = (props: CommandProps) => {
                 </>
             }
             {props.command === '' &&
-                <PlaceholderDiv>
-                    <CommandIcon
-                        title={formatMessage({defaultMessage: 'Add slash command'})}
-                        className={'icon-slash-forward icon-16 btn-icon'}
-                    />
-                    <CommandTextContainer>
-                        {formatMessage({defaultMessage: 'Add slash command'})}
-                    </CommandTextContainer>
-                </PlaceholderDiv>
+                slashCommandBox
             }
         </CommandContainer>
     );
@@ -85,6 +126,7 @@ const CommandContainer = styled.div`
     :not(:first-child) {
         margin-left: 6px;
     }
+    z-index: 50;
 `;
 
 interface RunProps {
@@ -155,3 +197,60 @@ const CommandTextContainer = styled.div`
 `;
 
 export default Command;
+
+interface EditCommandDropdownProps {
+    onDone: () => void;
+    checklistNum: number;
+    playbookRunId: string;
+    itemNum: number;
+    taskCommand: string;
+    grabFocus: boolean;
+}
+
+const FormContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    width: 320px;
+    height: 116px;
+    box-sizing: border-box;
+    box-shadow: 0px 20px 32px rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    background: var(--center-channel-bg);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+
+    > * {
+        margin-bottom: 10px;
+    }
+`;
+
+const EditCommandDropdown = (props: EditCommandDropdownProps) => {
+    const [command, setCommand] = useState(props.taskCommand);
+
+    return (
+        <FormContainer>
+            <CommandInputContainer>
+                <CommandInput
+                    command={command === '' ? '/' : command}
+                    setCommand={setCommand}
+                    autocompleteOnBottom={true}
+                    grabFocus={props.grabFocus}
+                />
+            </CommandInputContainer>
+            <CancelSaveButtons
+                onCancel={props.onDone}
+                onSave={() => {
+                    clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
+                        command,
+                    });
+                    props.onDone();
+                }}
+            />
+        </FormContainer>
+    );
+};
+
+const CommandInputContainer = styled.div`
+    margin: 16px;
+    border-radius: 4px;
+`;

@@ -3,9 +3,10 @@ import styled from 'styled-components';
 
 import {useIntl} from 'react-intl';
 
+import {DotMenuIcon, StyledDotMenuButton, StyledDropdownMenu, StyledDropdownMenuItem, DropdownIcon} from 'src/components/collapsible_checklist_hover_menu';
+
 import DotMenu from 'src/components/dot_menu';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import {DotMenuIcon, StyledDotMenuButton, StyledDropdownMenu, StyledDropdownMenuItem, DropdownIcon} from 'src/components/checklist/checklist_collapsible_hover_menu';
 import {ChecklistItemState} from 'src/types/playbook';
 
 import {

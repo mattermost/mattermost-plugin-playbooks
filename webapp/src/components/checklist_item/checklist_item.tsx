@@ -25,7 +25,7 @@ import ChecklistItemHoverMenu from './hover_menu';
 import ChecklistItemDescription from './description';
 import AssignTo from './assign_to';
 import Command from './command';
-import {CheckBoxButton, CollapsibleChecklistItemDescription} from './inputs';
+import {CheckBoxButton, CollapsibleChecklistItemDescription, CancelSaveButtons} from './inputs';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
@@ -322,29 +322,21 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 </CheckboxContainer>
                 {itemDescription}
                 {isEditing &&
-                    <CancelSaveContainer>
-                        <CancelButton
-                            onClick={() => {
-                                setIsEditing(false);
-                                setTitleValue(props.checklistItem.title);
-                                setDescValue(props.checklistItem.description);
-                            }}
-                        >
-                            {'Cancel'}
-                        </CancelButton>
-                        <SaveButton
-                            onClick={() => {
-                                setIsEditing(false);
-                                clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
-                                    title: titleValue,
-                                    command: props.checklistItem.command,
-                                    description: descValue,
-                                });
-                            }}
-                        >
-                            {'Save'}
-                        </SaveButton>
-                    </CancelSaveContainer>
+                    <CancelSaveButtons
+                        onCancel={() => {
+                            setIsEditing(false);
+                            setTitleValue(props.checklistItem.title);
+                            setDescValue(props.checklistItem.description);
+                        }}
+                        onSave={() => {
+                            setIsEditing(false);
+                            clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
+                                title: titleValue,
+                                command: props.checklistItem.command,
+                                description: descValue,
+                            });
+                        }}
+                    />
                 }
             </ItemContainer>
         </>
@@ -369,27 +361,9 @@ const DragButton = styled.i<{isVisible: boolean}>`
     `}
 `;
 
-const CancelButton = styled(SecondaryButton)`
-    height: 32px;
-    padding: 10px 16px;
-    margin: 0px 4px;
-    border-radius: 4px;
-`;
-
-const SaveButton = styled(PrimaryButton)`
-    height: 32px;
-    padding: 10px 16px;
-    margin: 0px 4px;
-    border-radius: 4px;
-`;
 
 const StrikeThrough = styled.text`
     text-decoration: line-through;
-`;
-
-const CancelSaveContainer = styled.div`
-    text-align: right;
-    padding: 4px;
 `;
 
 const LabelInput = styled.input`

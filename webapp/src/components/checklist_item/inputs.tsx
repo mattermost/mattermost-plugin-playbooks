@@ -14,6 +14,8 @@ import {useClickOutsideRef, useProfilesInCurrentChannel, useTimeout, useProfiles
 import {
     setAssignee,
 } from 'src/client';
+import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
+
 interface CheckBoxButtonProps {
     onChange: (item: ChecklistItemState) => void;
     item: ChecklistItem;
@@ -85,4 +87,40 @@ const ChecklistItemDescription = styled.div<{height: string}>`
 
     transition: height 0.2s ease-in-out;
     overflow: hidden;
+`;
+
+export const CancelSaveButtons = (props: {onCancel: () => void, onSave: () => void}) => {
+    return (<CancelSaveContainer>
+        <CancelButton
+            onClick={props.onCancel}
+        >
+            {'Cancel'}
+        </CancelButton>
+        <SaveButton
+            onClick={props.onSave}
+        >
+            {'Save'}
+        </SaveButton>
+    </CancelSaveContainer>
+    );
+};
+
+const CancelSaveContainer = styled.div`
+    text-align: right;
+    padding: 4px;
+    // z-index: 1;
+`;
+
+const CancelButton = styled(SecondaryButton)`
+    height: 32px;
+    padding: 10px 16px;
+    margin: 0px 4px;
+    border-radius: 4px;
+`;
+
+const SaveButton = styled(PrimaryButton)`
+    height: 32px;
+    padding: 10px 16px;
+    margin: 0px 4px;
+    border-radius: 4px;
 `;
