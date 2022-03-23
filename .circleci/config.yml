@@ -288,7 +288,7 @@ jobs:
     steps:
       - test-with-db
 
-  test-MariaDB-Postgres12:
+  test-MariaDB10-Postgres12:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: cimg/postgres:12.9
@@ -306,7 +306,8 @@ jobs:
     steps:
       - test-with-db
 
-  test-MySQL-Postgres-latest:
+  # "latest" major of both
+  test-MySQL8-Postgres14:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: cimg/postgres:14.1
