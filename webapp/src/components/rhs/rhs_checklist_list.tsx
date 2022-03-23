@@ -426,7 +426,8 @@ const overdueTasks = (checklists: Checklist[]) => {
     const now = DateTime.now();
     for (const list of checklists) {
         for (const item of list.items) {
-            if (item.due_date > 0 && DateTime.fromMillis(item.due_date) <= now) {
+            if ((item.state === ChecklistItemState.Open || item.state === ChecklistItemState.InProgress) &&
+                item.due_date > 0 && DateTime.fromMillis(item.due_date) <= now) {
                 count++;
             }
         }
