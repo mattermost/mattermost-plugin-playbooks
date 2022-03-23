@@ -252,7 +252,7 @@ jobs:
           command: |
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -b "$(< ./dist/release-notes.md)" -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -delete ${CIRCLE_TAG} dist/*.tar.gz
 
-  test-MySQL5717-Postgres10:
+  test-MySQL57-Postgres10:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
       - image: cimg/postgres:10.17
@@ -306,7 +306,7 @@ jobs:
     steps:
       - test-with-db
 
-  # "latest" major of both
+  # "latest" db versions
   test-MySQL8-Postgres14:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
@@ -480,10 +480,10 @@ workflows:
   ci:
     jobs:
       - lint
-      - test-MySQL5717-Postgres10
+      - test-MySQL57-Postgres10
       - test-MySQL8-Postgres11
-      - test-MariaDB-Postgres12
-      - test-MySQL-Postgres-latest
+      - test-MariaDB10-Postgres12
+      - test-MySQL8-Postgres14
       - e2e-cypress-tests-cloud
       - e2e-cypress-tests-master
       - build:
@@ -498,10 +498,10 @@ workflows:
               only: master
           requires:
             - lint
-            - test-MySQL5717-Postgres10
+            - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
-            - test-MariaDB-Postgres12
-            - test-MySQL-Postgres-latest
+            - test-MariaDB10-Postgres12
+            - test-MySQL8-Postgres14
             #- e2e-cypress-tests-cloud
             - build
       - deploy-release:
@@ -513,10 +513,10 @@ workflows:
               ignore: /.*/
           requires:
             - lint
-            - test-MySQL5717-Postgres10
+            - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
-            - test-MariaDB-Postgres12
-            - test-MySQL-Postgres-latest
+            - test-MariaDB10-Postgres12
+            - test-MySQL8-Postgres14
             # - e2e-cypress-tests-cloud
             - build
       - deploy-release-github:
@@ -528,9 +528,9 @@ workflows:
               ignore: /.*/
           requires:
             - lint
-            - test-MySQL5717-Postgres10
+            - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
-            - test-MariaDB-Postgres12
-            - test-MySQL-Postgres-latest
+            - test-MariaDB10-Postgres12
+            - test-MySQL8-Postgres14
             # - e2e-cypress-tests-cloud
             - build
