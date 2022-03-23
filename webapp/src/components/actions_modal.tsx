@@ -15,6 +15,8 @@ import {getCurrentChannelId} from 'mattermost-webapp/packages/mattermost-redux/s
 
 import Icon from '@mdi/react';
 
+import cloneDeep from 'lodash';
+
 import {fetchChannelActions, saveChannelAction} from 'src/client';
 import {hideActionsModal} from 'src/actions';
 import {isActionsModalVisible, isCurrentUserChannelAdmin, isCurrentUserAdmin} from 'src/selectors';
@@ -121,14 +123,29 @@ const ActionsModal = () => {
             return;
         }
 
-        Object.values(currentActions).forEach((actions) => {
+        const newActions = cloneDeep(currentActions).value();
+        const saveActionPromises = [] as Promise<void>[];
+
+        Object.values(newActions).forEach((actions) => {
             actions.forEach((action) => {
                 action.channel_id = channelID;
-                saveChannelAction(action);
+                const promise = saveChannelAction(action).then((newID) => {
+                    if (!action.id) {
+                        action.id = newID;
+                    }
+                });
+                saveActionPromises.push(promise);
             });
         });
 
-        setOriginalActions(currentActions);
+        // Wait until all save calls have ended (successfully or not)
+        // before setting both the current and original actions
+        Promise.allSettled(saveActionPromises).then(() => {
+            setCurrentActions(newActions);
+            setOriginalActions(newActions);
+        });
+
+        dispatch(hideActionsModal());
     };
 
     const onUpdateAction = (newAction: ChannelAction) => {
@@ -175,7 +192,7 @@ const ActionsModal = () => {
             isConfirmDisabled={!editable}
             isConfirmDestructive={false}
             autoCloseOnCancelButton={true}
-            autoCloseOnConfirmButton={true}
+            autoCloseOnConfirmButton={false}
             enforceFocus={true}
             adjustTop={400}
             components={{
