@@ -220,7 +220,7 @@ const RHSChecklistList = (props: Props) => {
                             toggled={checklistItemsFilter.overdueOnly}
                             onClick={() => selectOption('overdueOnly', !checklistItemsFilter.overdueOnly)}
                         >
-                            {formatMessage({defaultMessage: '{num} tasks overdue'}, {num: overdueTasksNum})}
+                            {formatMessage({defaultMessage: '{num} {num, plural, =1 {task} other {tasks}} overdue'}, {num: overdueTasksNum})}
                         </OverdueTasksToggle>
                     }
                     {
