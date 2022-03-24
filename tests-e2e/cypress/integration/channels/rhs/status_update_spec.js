@@ -136,7 +136,7 @@ describe('channels > rhs > status update', () => {
             });
         });
 
-        it.only('confirms finishing the run, and remembers changes and reminder when canceled', () => {
+        it('confirms finishing the run, and remembers changes and reminder when canceled', () => {
             const updateMessage = 'This is the update text to test with.';
             const reminderTime = 'in 24 hours';
 
