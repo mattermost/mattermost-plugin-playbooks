@@ -148,6 +148,20 @@ func (mr *MockPlaybookRunServiceMockRecorder) DMTodoDigestToUser(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DMTodoDigestToUser", reflect.TypeOf((*MockPlaybookRunService)(nil).DMTodoDigestToUser), arg0, arg1)
 }
 
+// DuplicateChecklistItem mocks base method
+func (m *MockPlaybookRunService) DuplicateChecklistItem(arg0, arg1 string, arg2, arg3 int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DuplicateChecklistItem", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DuplicateChecklistItem indicates an expected call of DuplicateChecklistItem
+func (mr *MockPlaybookRunServiceMockRecorder) DuplicateChecklistItem(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DuplicateChecklistItem", reflect.TypeOf((*MockPlaybookRunService)(nil).DuplicateChecklistItem), arg0, arg1, arg2, arg3)
+}
+
 // EditChecklistItem mocks base method
 func (m *MockPlaybookRunService) EditChecklistItem(arg0, arg1 string, arg2, arg3 int, arg4, arg5, arg6 string) error {
 	m.ctrl.T.Helper()
@@ -160,6 +174,20 @@ func (m *MockPlaybookRunService) EditChecklistItem(arg0, arg1 string, arg2, arg3
 func (mr *MockPlaybookRunServiceMockRecorder) EditChecklistItem(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditChecklistItem", reflect.TypeOf((*MockPlaybookRunService)(nil).EditChecklistItem), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+}
+
+// EphemeralPostTodoDigestToUser mocks base method
+func (m *MockPlaybookRunService) EphemeralPostTodoDigestToUser(arg0, arg1 string, arg2 bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EphemeralPostTodoDigestToUser", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EphemeralPostTodoDigestToUser indicates an expected call of EphemeralPostTodoDigestToUser
+func (mr *MockPlaybookRunServiceMockRecorder) EphemeralPostTodoDigestToUser(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EphemeralPostTodoDigestToUser", reflect.TypeOf((*MockPlaybookRunService)(nil).EphemeralPostTodoDigestToUser), arg0, arg1, arg2)
 }
 
 // FinishPlaybookRun mocks base method
