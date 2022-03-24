@@ -256,7 +256,6 @@ const FormContainer = styled.div`
     display: flex;
     flex-direction: column;
     position: absolute;
-    height: 116px;
     box-sizing: border-box;
     box-shadow: 0px 20px 32px rgba(0, 0, 0, 0.12);
     border-radius: 8px;

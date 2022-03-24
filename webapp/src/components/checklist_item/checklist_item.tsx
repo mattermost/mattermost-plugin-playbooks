@@ -16,7 +16,6 @@ import {handleFormattedTextClick} from 'src/browser_routing';
 import {
     clientEditChecklistItem,
 } from 'src/client';
-import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
@@ -41,9 +40,8 @@ interface ChecklistItemDetailsProps {
 }
 
 const ItemContainer = styled.div<{editing: boolean}>`
-    margin-top: 11px;
-    padding-top: 4px;
     border-radius: 4px;
+    padding-top: 4px;
 
     :first-child {
         padding-top: 0.4rem;
@@ -241,7 +239,6 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     let itemDescription = (
         <>
             <CollapsibleChecklistItemDescription expanded={showDescription || isEditing}>
-                {/* {messageHtmlToComponent(formatText(props.checklistItem.description, {...markdownOptions, singleline: false}), true, {})} */}
                 <ChecklistItemDescription
                     editingItem={isEditing}
                     onEdit={setDescValue}
@@ -297,6 +294,10 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             onEdit={() => setIsEditing(true)}
                             isEditing={isEditing}
                             onChange={props.onChange}
+                            description={props.checklistItem.description}
+                            showDescription={showDescription}
+                            toggleDescription={toggleDescription}
+                            assignee_id={props.checklistItem.assignee_id || ''}
                         />
                     }
                     <DragButton
@@ -397,4 +398,5 @@ const Row = styled.div`
     margin-bottom: 8px;
     margin-left: 35px;
     margin-top: 8px;
+    padding-bottom: 8px;
 `;

@@ -1,19 +1,8 @@
 
-import React, {useRef, useState} from 'react';
+import React, {useRef} from 'react';
 import styled from 'styled-components';
-import {FormattedMessage, useIntl} from 'react-intl';
-import ReactSelect, {ActionTypes, ControlProps, components} from 'react-select';
-
-import {UserProfile} from 'mattermost-redux/types/users';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
-import ProfileSelector from 'src/components/profile/profile_selector';
-
-import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
-import {useClickOutsideRef, useProfilesInCurrentChannel, useTimeout, useProfilesInTeam} from 'src/hooks';
-import {
-    setAssignee,
-} from 'src/client';
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
 
 interface CheckBoxButtonProps {
@@ -107,8 +96,7 @@ export const CancelSaveButtons = (props: {onCancel: () => void, onSave: () => vo
 
 const CancelSaveContainer = styled.div`
     text-align: right;
-    padding: 4px;
-    // z-index: 1;
+    padding: 8px;
 `;
 
 const CancelButton = styled(SecondaryButton)`

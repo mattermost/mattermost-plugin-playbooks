@@ -7,6 +7,7 @@ import {UserProfile} from 'mattermost-redux/types/users';
 import ProfileSelector from 'src/components/profile/profile_selector';
 import {useProfilesInCurrentChannel, useProfilesInTeam} from 'src/hooks';
 import {setAssignee} from 'src/client';
+import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 export interface Option {
     value: string;
@@ -22,6 +23,7 @@ interface AssignedToProps {
     assignee_id: string;
     editable: boolean;
     withoutName?: boolean;
+    inHoverMenu?: boolean;
 }
 
 const StyledProfileSelector = styled(ProfileSelector)`
@@ -147,6 +149,33 @@ const AssignTo = (props: AssignedToProps) => {
         onAssigneeChange();
         setProfileSelectorToggle(!profileSelectorToggle);
     };
+
+    if (props.inHoverMenu) {
+        return (
+            <ProfileSelector
+                selectedUserId={props.assignee_id}
+                onlyPlaceholder={true}
+                placeholder={
+                    <HoverMenuButton
+                        title={formatMessage({defaultMessage: 'Assign'})}
+                        className={'icon-account-plus-outline icon-16 btn-icon'}
+                    />
+                }
+                enableEdit={true}
+                getUsers={fetchUsers}
+                getUsersInTeam={fetchUsersInTeam}
+                onSelectedChange={onAssigneeChange}
+                selfIsFirstOption={true}
+                customControl={ControlComponent}
+                customControlProps={{
+                    showCustomReset: Boolean(props.assignee_id),
+                    onCustomReset: resetAssignee,
+                }}
+                controlledOpenToggle={profileSelectorToggle}
+                showOnRight={true}
+            />
+        );
+    }
 
     return (
         <AssignToContainer>
