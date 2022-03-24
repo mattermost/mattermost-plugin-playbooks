@@ -29,22 +29,6 @@ export interface Props {
     assignee_id: string;
 }
 
-const HoverMenu = styled.div`
-    display: flex;
-    padding: 4px;
-    position: absolute;
-    right: 0;
-    top: -8px;
-    box-shadow: none;
-    background: none;
-    border: none;
-`;
-
-const ToggleDescriptionButton = styled(HoverMenuButton) <{showDescription: boolean}>`
-    transition: all 0.2s linear;
-    transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
-`;
-
 const ChecklistItemHoverMenu = (props: Props) => {
     const {formatMessage} = useIntl();
     return (
@@ -115,5 +99,21 @@ const ChecklistItemHoverMenu = (props: Props) => {
         </HoverMenu>
     );
 };
+
+const HoverMenu = styled.div`
+    display: flex;
+    padding: 4px;
+    position: absolute;
+    right: 0;
+    top: -8px;
+    box-shadow: none;
+    background: none;
+    border: none;
+`;
+
+const ToggleDescriptionButton = styled(HoverMenuButton) <{showDescription: boolean}>`
+    transition: all 0.2s linear;
+    transform: ${({showDescription}) => (showDescription ? 'rotate(0deg)' : 'rotate(180deg)')};
+`;
 
 export default ChecklistItemHoverMenu;

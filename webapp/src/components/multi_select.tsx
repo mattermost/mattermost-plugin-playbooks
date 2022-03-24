@@ -4,7 +4,7 @@
 import React, {useState, useRef} from 'react';
 import styled from 'styled-components';
 
-import {CheckboxContainer} from 'src/components/checklist_item';
+import {CheckboxContainer} from 'src/components/checklist_item/checklist_item';
 import {useKeyPress, useClickOutsideRef} from 'src/hooks';
 
 export interface SelectOption{

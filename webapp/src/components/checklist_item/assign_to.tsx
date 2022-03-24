@@ -26,100 +26,6 @@ interface AssignedToProps {
     inHoverMenu?: boolean;
 }
 
-const StyledProfileSelector = styled(ProfileSelector)`
-    .Assigned-button, .NoAssignee-button, .NoName-Assigned-button {
-        display: flex;
-        align-items: center;
-        max-width: 100%;
-        height: 24px;
-        padding: 2px 6px 2px 2px;
-        margin-top: 0;
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-        color: var(--center-channel-color);
-        border-radius: 100px;
-        border: none;
-
-        font-weight: 400;
-        font-size: 12px;
-        line-height: 10px;
-
-        :hover {
-            background: rgba(var(--center-channel-color-rgb), 0.16);
-        }
-
-        .image {
-            width: 20px;
-            height: 20px;
-        }
-
-        .icon-chevron-down{
-            font-weight: 400;
-            font-size: 14.4px;
-            line-height: 14px;
-            display: flex;
-            align-items: center;
-            text-align: center;
-        }
-    }
-    .NoName-Assigned-button {
-        background: none;
-        padding: 0px;
-
-        .image {
-            margin: 0px;
-        }
-    }
-`;
-
-const PlaceholderDiv = styled.div`
-    display: flex;
-    align-items: center;
-    flex-direction: row;
-`;
-
-const AssignToTextContainer = styled.div`
-    color: var(--center-channel-color);
-    font-weight: 600;
-    font-size: 12px;
-    line-height: 15px;
-`;
-
-const AssignToIcon = styled.i`
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    text-align: center;
-    flex: table;
-`;
-
-const AssignToContainer = styled.div`
-    :not(:first-child) {
-        margin-left: 36px;
-    }
-    max-width: calc(100% - 210px);
-`;
-
-const ControlComponentAnchor = styled.a`
-    display: inline-block;
-    margin: 0 0 8px 12px;
-    font-weight: 600;
-    font-size: 12px;
-    position: relative;
-    top: -4px;
-`;
-
-const ControlComponent = (ownProps: ControlProps<Option, boolean>) => (
-    <div>
-        <components.Control {...ownProps}/>
-        {ownProps.selectProps.showCustomReset && (
-            <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
-                <FormattedMessage defaultMessage='No Assignee'/>
-            </ControlComponentAnchor>
-        )}
-    </div>
-);
-
 const AssignTo = (props: AssignedToProps) => {
     const {formatMessage} = useIntl();
     const profilesInChannel = useProfilesInCurrentChannel();
@@ -212,3 +118,97 @@ const AssignTo = (props: AssignedToProps) => {
 };
 
 export default AssignTo;
+
+const ControlComponent = (ownProps: ControlProps<Option, boolean>) => (
+    <div>
+        <components.Control {...ownProps}/>
+        {ownProps.selectProps.showCustomReset && (
+            <ControlComponentAnchor onClick={ownProps.selectProps.onCustomReset}>
+                <FormattedMessage defaultMessage='No Assignee'/>
+            </ControlComponentAnchor>
+        )}
+    </div>
+);
+
+const StyledProfileSelector = styled(ProfileSelector)`
+    .Assigned-button, .NoAssignee-button, .NoName-Assigned-button {
+        display: flex;
+        align-items: center;
+        max-width: 100%;
+        height: 24px;
+        padding: 2px 6px 2px 2px;
+        margin-top: 0;
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: var(--center-channel-color);
+        border-radius: 100px;
+        border: none;
+
+        font-weight: 400;
+        font-size: 12px;
+        line-height: 10px;
+
+        :hover {
+            background: rgba(var(--center-channel-color-rgb), 0.16);
+        }
+
+        .image {
+            width: 20px;
+            height: 20px;
+        }
+
+        .icon-chevron-down{
+            font-weight: 400;
+            font-size: 14.4px;
+            line-height: 14px;
+            display: flex;
+            align-items: center;
+            text-align: center;
+        }
+    }
+    .NoName-Assigned-button {
+        background: none;
+        padding: 0px;
+
+        .image {
+            margin: 0px;
+        }
+    }
+`;
+
+const PlaceholderDiv = styled.div`
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+`;
+
+const AssignToTextContainer = styled.div`
+    color: var(--center-channel-color);
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 15px;
+`;
+
+const AssignToIcon = styled.i`
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    flex: table;
+`;
+
+const AssignToContainer = styled.div`
+    :not(:first-child) {
+        margin-left: 36px;
+    }
+    max-width: calc(100% - 210px);
+`;
+
+const ControlComponentAnchor = styled.a`
+    display: inline-block;
+    margin: 0 0 8px 12px;
+    font-weight: 600;
+    font-size: 12px;
+    position: relative;
+    top: -4px;
+`;

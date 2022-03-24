@@ -39,140 +39,6 @@ interface ChecklistItemDetailsProps {
     collapsibleDescription: boolean;
 }
 
-const ItemContainer = styled.div<{editing: boolean}>`
-    border-radius: 4px;
-    padding-top: 4px;
-
-    :first-child {
-        padding-top: 0.4rem;
-    }
-
-    
-
-    ${({editing}) => editing && css`
-        background-color: var(--button-bg-08);
-    `}
-
-    ${({editing}) => !editing && css`
-        &:hover{
-            background: var(--center-channel-color-08);
-        }
-    `}
-`;
-
-export const CheckboxContainer = styled.div`
-    align-items: center;
-    display: flex;
-    position: relative;
-
-    button {
-        width: 53px;
-        height: 29px;
-        border: 1px solid #166DE0;
-        box-sizing: border-box;
-        border-radius: 4px;
-        font-family: Open Sans;
-        font-style: normal;
-        font-weight: 600;
-        font-size: 12px;
-        line-height: 17px;
-        text-align: center;
-        background: #ffffff;
-        color: #166DE0;
-        cursor: pointer;
-        margin-right: 13px;
-    }
-
-    button:disabled {
-        border: 0px;
-        color: var(--button-color);
-        background: rgba(var(--center-channel-color-rgb), 0.56);
-        cursor: default;
-    }
-
-    &:hover {
-        .checkbox-container__close {
-            opacity: 1;
-        }
-    }
-
-    .icon-bars {
-        padding: 0 0.8rem 0 0;
-    }
-
-    input[type="checkbox"] {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        background: #ffffff;
-        margin: 0;
-        cursor: pointer;
-        margin-right: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 16px;
-        min-width: 16px;
-        height: 16px;
-        border: 1px solid rgba(var(--center-channel-color-rgb),0.24);
-        box-sizing: border-box;
-        border-radius: 2px;
-    }
-
-    input[type="checkbox"]:checked {
-        background: var(--button-bg);
-        border: 1px solid var(--button-bg);
-        box-sizing: border-box;
-    }
-
-    input[type="checkbox"]::before {
-        font-family: 'compass-icons', mattermosticons;
-        text-rendering: auto;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        content: "\f012c";
-        font-size: 12px;
-        font-weight: bold;
-        color: #ffffff;
-        transition: transform 0.15s;
-        transform: scale(0) rotate(90deg);
-        position: relative;
-    }
-
-    input[type="checkbox"]:checked::before {
-        transform: scale(1) rotate(0deg);
-    }
-
-    input[type="checkbox"]:disabled {
-        opacity: 0.38;
-    }
-
-    label {
-        font-weight: normal;
-        word-break: break-word;
-        display: inline;
-        margin: 0;
-        margin-right: 8px;
-        flex-grow: 1;
-    }
-`;
-
-const ChecklistItemLabel = styled.div<{clickable: boolean}>`
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-
-    ${({clickable}) => clickable && css`
-        cursor: pointer;
-
-        // This is somehow needed to override the
-        // cursor style in the item title
-        label {
-            cursor: pointer;
-        }
-    `}
-`;
-
 const portal: HTMLElement = document.createElement('div');
 document.body.appendChild(portal);
 
@@ -350,6 +216,138 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
 
     return content;
 };
+
+const ItemContainer = styled.div<{editing: boolean}>`
+    border-radius: 4px;
+    padding-top: 4px;
+
+    :first-child {
+        padding-top: 0.4rem;
+    }
+
+    ${({editing}) => editing && css`
+        background-color: var(--button-bg-08);
+    `}
+
+    ${({editing}) => !editing && css`
+        &:hover{
+            background: var(--center-channel-color-08);
+        }
+    `}
+`;
+
+export const CheckboxContainer = styled.div`
+    align-items: center;
+    display: flex;
+    position: relative;
+
+    button {
+        width: 53px;
+        height: 29px;
+        border: 1px solid #166DE0;
+        box-sizing: border-box;
+        border-radius: 4px;
+        font-family: Open Sans;
+        font-style: normal;
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 17px;
+        text-align: center;
+        background: #ffffff;
+        color: #166DE0;
+        cursor: pointer;
+        margin-right: 13px;
+    }
+
+    button:disabled {
+        border: 0px;
+        color: var(--button-color);
+        background: rgba(var(--center-channel-color-rgb), 0.56);
+        cursor: default;
+    }
+
+    &:hover {
+        .checkbox-container__close {
+            opacity: 1;
+        }
+    }
+
+    .icon-bars {
+        padding: 0 0.8rem 0 0;
+    }
+
+    input[type="checkbox"] {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background: #ffffff;
+        margin: 0;
+        cursor: pointer;
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        min-width: 16px;
+        height: 16px;
+        border: 1px solid rgba(var(--center-channel-color-rgb),0.24);
+        box-sizing: border-box;
+        border-radius: 2px;
+    }
+
+    input[type="checkbox"]:checked {
+        background: var(--button-bg);
+        border: 1px solid var(--button-bg);
+        box-sizing: border-box;
+    }
+
+    input[type="checkbox"]::before {
+        font-family: 'compass-icons', mattermosticons;
+        text-rendering: auto;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        content: "\f012c";
+        font-size: 12px;
+        font-weight: bold;
+        color: #ffffff;
+        transition: transform 0.15s;
+        transform: scale(0) rotate(90deg);
+        position: relative;
+    }
+
+    input[type="checkbox"]:checked::before {
+        transform: scale(1) rotate(0deg);
+    }
+
+    input[type="checkbox"]:disabled {
+        opacity: 0.38;
+    }
+
+    label {
+        font-weight: normal;
+        word-break: break-word;
+        display: inline;
+        margin: 0;
+        margin-right: 8px;
+        flex-grow: 1;
+    }
+`;
+
+const ChecklistItemLabel = styled.div<{clickable: boolean}>`
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    ${({clickable}) => clickable && css`
+        cursor: pointer;
+
+        // This is somehow needed to override the
+        // cursor style in the item title
+        label {
+            cursor: pointer;
+        }
+    `}
+`;
 
 const DragButton = styled.i<{isVisible: boolean}>`
     cursor: pointer;
