@@ -1626,4 +1626,158 @@ describe('playbooks > edit', () => {
             });
         });
     });
+
+    describe('Edit playbook name', () => {
+        it('can be updated', () => {
+            // # Open Playbooks
+            cy.visit('/playbooks/playbooks');
+
+            // # Start a blank playbook
+            cy.findByText('Blank').click();
+            cy.get('#edit-playbook').click();
+            // * edit
+            cy.findByTestId('playbook-title-description').click();
+            cy.get('#playbook-edit-name-and-description-modal').should('exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByTestId('playbook-edit-name-input').clear().type("playbook updated name");
+            cy.findByTestId('modal-confirm-button').click();
+
+            // * check modals are hidden and name is changed
+            cy.get('#playbook-edit-name-and-description-modal').should('not.exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByText('playbook updated name').should('exist');
+        });
+
+        it('update, leave and discard', () => {
+            // # Open Playbooks
+            cy.visit('/playbooks/playbooks');
+
+            // # Start a blank playbook
+            cy.findByText('Blank').click();
+            cy.get('#edit-playbook').click();
+            // * edit
+            cy.findByTestId('playbook-title-description').click();
+            cy.get('#playbook-edit-name-and-description-modal').should('exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByTestId('playbook-edit-name-input').clear().type("playbook updated name");
+
+            // * leave without save, show confirm modal and discard
+            cy.findByTestId('modal-cancel-button').click();
+            cy.get('#playbook-edit-name-and-description-modal').should('not.exist');
+            cy.get('#confirm-modal-light').should('exist');
+            cy.findByTestId('modal-confirm-button').click();
+
+            // * check modals are hidden and name is not changed
+            cy.get('#playbook-edit-name-and-description-modal').should('not.exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByText('playbook updated name').should('not.exist');
+
+        });
+        it('update, leave and go back to edit', () => {
+            // # Open Playbooks
+            cy.visit('/playbooks/playbooks');
+
+            // # Start a blank playbook
+            cy.findByText('Blank').click();
+            cy.get('#edit-playbook').click();
+            // * edit
+            cy.findByTestId('playbook-title-description').click();
+            cy.get('#playbook-edit-name-and-description-modal').should('exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByTestId('playbook-edit-name-input').clear().type("playbook updated name");
+
+            // * leave without save, show confirm modal and cancel
+            cy.findByTestId('modal-cancel-button').click();
+            cy.get('#playbook-edit-name-and-description-modal').should('not.exist');
+            cy.get('#confirm-modal-light').should('exist');
+            cy.findByTestId('modal-cancel-button').click();
+
+            // * check modals are hidden and name is not changed
+            cy.get('#playbook-edit-name-and-description-modal').should('exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByTestId('modal-confirm-button').click();
+
+            // * modals are hidden and text is changed
+            cy.get('#playbook-edit-name-and-description-modal').should('not.exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByText('playbook updated name').should('exist');
+        });
+    })
+
+    describe('Edit playbook description', () => {
+        it('can be updated', () => {
+            // # Open Playbooks
+            cy.visit('/playbooks/playbooks');
+
+            // # Start a blank playbook
+            cy.findByText('Blank').click();
+            cy.get('#edit-playbook').click();
+            // * edit
+            cy.findByTestId('playbook-title-description').click();
+            cy.get('#playbook-edit-name-and-description-modal').should('exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByTestId('playbook-edit-name-and-description-modal-description-textbox').clear().type("playbook updated desc");
+            cy.findByTestId('modal-confirm-button').click();
+
+            // * check modals are hidden and name is changed
+            cy.get('#playbook-edit-name-and-description-modal').should('not.exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByText('playbook updated desc').should('exist');
+        });
+
+        it('update, leave and discard', () => {
+            // # Open Playbooks
+            cy.visit('/playbooks/playbooks');
+
+            // # Start a blank playbook
+            cy.findByText('Blank').click();
+            cy.get('#edit-playbook').click();
+            // * edit
+            cy.findByTestId('playbook-title-description').click();
+            cy.get('#playbook-edit-name-and-description-modal').should('exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByTestId('playbook-edit-name-and-description-modal-description-textbox').clear().type("playbook updated desc");
+
+            // * leave without save, show confirm modal and discard
+            cy.findByTestId('modal-cancel-button').click();
+            cy.get('#playbook-edit-name-and-description-modal').should('not.exist');
+            cy.get('#confirm-modal-light').should('exist');
+            cy.findByTestId('modal-confirm-button').click();
+
+            // * check modals are hidden and name is not changed
+            cy.get('#playbook-edit-name-and-description-modal').should('not.exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByText('playbook updated desc').should('not.exist');
+
+        });
+        it('update, leave and go back to edit', () => {
+            // # Open Playbooks
+            cy.visit('/playbooks/playbooks');
+
+            // # Start a blank playbook
+            cy.findByText('Blank').click();
+            cy.get('#edit-playbook').click();
+            // * edit
+            cy.findByTestId('playbook-title-description').click();
+            cy.get('#playbook-edit-name-and-description-modal').should('exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByTestId('playbook-edit-name-and-description-modal-description-textbox').clear().type("playbook updated desc");
+
+            // * leave without save, show confirm modal and cancel
+            cy.findByTestId('modal-cancel-button').click();
+            cy.get('#playbook-edit-name-and-description-modal').should('not.exist');
+            cy.get('#confirm-modal-light').should('exist');
+            cy.findByTestId('modal-cancel-button').click();
+
+            // * check modals are hidden and name is not changed
+            cy.get('#playbook-edit-name-and-description-modal').should('exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByTestId('modal-confirm-button').click();
+
+            // * modals are hidden and text is changed
+            cy.get('#playbook-edit-name-and-description-modal').should('not.exist');
+            cy.get('#confirm-modal-light').should('not.exist');
+            cy.findByText('playbook updated desc').should('exist');
+        });
+    })
 });

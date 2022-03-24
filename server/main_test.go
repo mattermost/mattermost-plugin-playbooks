@@ -159,7 +159,8 @@ func Setup(t *testing.T) *TestEnvironment {
 	}
 	server, err := sapp.NewServer(options...)
 	require.NoError(t, err)
-	api4.Init(server)
+	_, err = api4.Init(server)
+	require.NoError(t, err)
 	err = server.Start()
 	require.NoError(t, err)
 

@@ -164,3 +164,7 @@ func (t *NoopTelemetry) AutoFollowPlaybook(playbook app.Playbook, userID string)
 // AutoUnfollowPlaybook tracks the auto-unfollow of a playbook.
 func (t *NoopTelemetry) AutoUnfollowPlaybook(playbook app.Playbook, userID string) {
 }
+
+// RunChannelAction does nothing
+func (t *NoopTelemetry) RunChannelAction(action app.GenericChannelAction, userID string) {
+}

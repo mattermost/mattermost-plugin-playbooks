@@ -5,10 +5,9 @@ import styled from 'styled-components';
 import classNames from 'classnames';
 import React from 'react';
 import {Modal} from 'react-bootstrap';
-
 import {FormattedMessage} from 'react-intl';
 
-import {PrimaryButton, TertiaryButton, DestructiveButton} from 'src/components/assets/buttons';
+import {DestructiveButton, PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 
 type Props = {
     className?: string;
@@ -32,11 +31,12 @@ type Props = {
         Header: typeof Modal.Header;
         FooterContainer: typeof DefaultFooterContainer;
     }>;
+    adjustTop?: number;
 };
 
 type State = {
     show: boolean;
-}
+};
 
 export default class GenericModal extends React.PureComponent<Props, State> {
     static defaultProps: Partial<Props> = {
@@ -44,6 +44,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
         autoCloseOnCancelButton: true,
         autoCloseOnConfirmButton: true,
         enforceFocus: true,
+        adjustTop: 260,
     };
 
     state = {show: true};
@@ -84,6 +85,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
             confirmButton = (
                 <ButtonComponent
                     type='submit'
+                    data-testid={'modal-confirm-button'}
                     className={classNames('confirm', this.props.confirmButtonClassName, {
                         disabled: this.props.isConfirmDisabled,
                     })}
@@ -104,6 +106,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
 
             cancelButton = (
                 <TertiaryButton
+                    data-testid={'modal-cancel-button'}
                     type='button'
                     className='cancel'
                     onClick={this.handleCancel}
@@ -127,19 +130,16 @@ export default class GenericModal extends React.PureComponent<Props, State> {
                 role='dialog'
                 aria-labelledby={`${this.props.id}_heading`}
                 id={this.props.id}
+                adjustTop={this.props.adjustTop}
             >
                 <Header
                     className='GenericModal__header'
                     closeButton={true}
                 >
-                    <ModalHeading id={`${this.props.id}_heading`}>
-                        {this.props.modalHeaderText}
-                    </ModalHeading>
+                    <ModalHeading id={`${this.props.id}_heading`}>{this.props.modalHeaderText}</ModalHeading>
                 </Header>
                 <form>
-                    <Modal.Body>
-                        {this.props.children}
-                    </Modal.Body>
+                    <Modal.Body>{this.props.children}</Modal.Body>
                     <Modal.Footer>
                         <FooterContainer>
                             <Buttons>
@@ -155,7 +155,7 @@ export default class GenericModal extends React.PureComponent<Props, State> {
     }
 }
 
-export const StyledModal = styled(Modal)`
+export const StyledModal = styled(Modal)<{adjustTop: number}>`
     &&& {
         /* content-spacing */
         .modal-header {
@@ -174,11 +174,11 @@ export const StyledModal = styled(Modal)`
             margin: 12px 12px 0 0;
         }
         .modal-dialog {
-            margin-top: calc(50vh - 260px);
+            margin-top: calc(50vh - ${({adjustTop}) => adjustTop}px);
         }
     }
 
-	z-index: 1040;
+    z-index: 1040;
 
     &&&& {
         /* control correction-overrides */

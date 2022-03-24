@@ -27,6 +27,10 @@ const StyledContent = styled(Content)`
     font-size: 14px;
     margin: 8px 0 0 0;
     padding: 20px 24px 14px 24px;
+
+    p {
+        white-space: pre-wrap;
+    }
 `;
 
 interface MatchParams {
