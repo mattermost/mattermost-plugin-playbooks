@@ -1162,7 +1162,6 @@ func (h *PlaybookRunHandler) itemDuplicate(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusCreated)
 }
 
-
 func (h *PlaybookRunHandler) addChecklist(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
