@@ -134,9 +134,10 @@ describe('channels > general actions', () => {
                 cy.findByRole('button', {name: /save/i}).click();
 
                 // # Post the trigger phrase
+                cy.uiPostMessageQuickly('error detected red alert!');
+
                 // * Verify that the bot posts the expected prompt
                 // # Open the playbook run modal
-                cy.uiPostMessageQuickly('error detected red alert!');
                 cy.getLastPostId().then((postId) => {
                     cy.get(`#post_${postId}`).within(() => {
                         cy.contains('trigger for the Public Playbook').should('exist');
