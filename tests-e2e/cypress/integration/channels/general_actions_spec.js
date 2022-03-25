@@ -103,12 +103,13 @@ describe('channels > general actions', () => {
                 teamId: testTeam.id,
                 title: 'Public Playbook',
                 memberIDs: [],
-                retrospectiveTemplate: 'Retro template text',
-                retrospectiveReminderIntervalSeconds: 60 * 60 * 24 * 7 // 7 days
             });
 
-            // # Use the basic user to create their own channel,
-            // # so they only see one playbook in the list
+            // # Login as the non-sysadmin user first
+            // # to do the channel & action creation.
+            // # In the 'Select a playbook' dropdown later in this test,
+            // # sysadmin users could potentially see many other playbooks
+            // # besides the one created directly above. `testUser` will not.
             cy.apiLogin(testUser);
             cy.apiCreateChannel(
                 testTeam.id,
