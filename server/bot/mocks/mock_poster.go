@@ -76,6 +76,20 @@ func (mr *MockPosterMockRecorder) EphemeralPostWithAttachments(arg0, arg1, arg2,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EphemeralPostWithAttachments", reflect.TypeOf((*MockPoster)(nil).EphemeralPostWithAttachments), varargs...)
 }
 
+// IsFromPoster mocks base method
+func (m *MockPoster) IsFromPoster(arg0 *model.Post) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsFromPoster", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsFromPoster indicates an expected call of IsFromPoster
+func (mr *MockPosterMockRecorder) IsFromPoster(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFromPoster", reflect.TypeOf((*MockPoster)(nil).IsFromPoster), arg0)
+}
+
 // NotifyAdmins mocks base method
 func (m *MockPoster) NotifyAdmins(arg0, arg1 string, arg2 bool) error {
 	m.ctrl.T.Helper()

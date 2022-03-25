@@ -586,6 +586,16 @@ export async function clientFetchIsPlaybookFollower(playbookId: string, userId: 
     return data as boolean;
 }
 
+export async function clientFetchPlaybookFollowers(playbookId: string): Promise<string[]> {
+    const data = await doGet<string[]>(`${apiUrl}/playbooks/${playbookId}/autofollows`);
+
+    if (!data) {
+        return [];
+    }
+
+    return data;
+}
+
 export const resetReminder = async (playbookRunId: string, newReminderSeconds: number) => {
     await doFetchWithoutResponse(`${apiUrl}/runs/${playbookRunId}/reminder`, {
         method: 'POST',
@@ -595,20 +605,14 @@ export const resetReminder = async (playbookRunId: string, newReminderSeconds: n
     });
 };
 
-export const fetchChannelActions = async (channelID: string, triggerType?: string): Promise<Record<string, ChannelAction>> => {
+export const fetchChannelActions = async (channelID: string, triggerType?: string): Promise<ChannelAction[]> => {
     const queryParams = triggerType ? `?trigger_type=${triggerType}` : '';
     const data = await doGet(`${apiUrl}/actions/channels/${channelID}${queryParams}`);
     if (!data) {
-        return {};
+        return [];
     }
 
-    const actions = data as ChannelAction[];
-    const record: Record<string, ChannelAction> = {};
-    actions.forEach((action) => {
-        record[action.action_type] = action;
-    });
-
-    return record;
+    return data;
 };
 
 export const saveChannelAction = async (action: ChannelAction): Promise<string> => {

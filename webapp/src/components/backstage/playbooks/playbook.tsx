@@ -26,9 +26,9 @@ import PlaybookPreview from 'src/components/backstage/playbooks/playbook_preview
 import {useToasts} from '../toast_banner';
 
 import {
+    clientFetchPlaybookFollowers,
     clientFetchPlaybook,
     duplicatePlaybook as clientDuplicatePlaybook,
-    clientFetchIsPlaybookFollower,
     autoFollowPlaybook,
     autoUnfollowPlaybook,
     telemetryEventForPlaybook,
@@ -109,6 +109,7 @@ const Playbook = () => {
     const {formatMessage} = useIntl();
     const match = useRouteMatch<MatchParams>();
     const [playbook, setPlaybook] = useState<PlaybookWithChecklist>();
+    const [followerIds, setFollowerIds] = useState<string[]>([]);
     const [fetchingState, setFetchingState] = useState(FetchingStateType.loading);
     const team = useSelector<GlobalState, Team>((state) => getTeam(state, playbook?.team_id || ''));
     const stats = useStats(match.params.playbookId);
@@ -168,19 +169,31 @@ const Playbook = () => {
             if (playbookId) {
                 try {
                     const fetchedPlaybook = await clientFetchPlaybook(playbookId);
-                    const isPlaybookFollower = await clientFetchIsPlaybookFollower(playbookId, currentUserId);
                     setPlaybook(fetchedPlaybook!);
                     setFetchingState(FetchingStateType.fetched);
-                    setIsFollowed(isPlaybookFollower);
                 } catch {
                     setFetchingState(FetchingStateType.notFound);
+                }
+            }
+        };
+        fetchData();
+    }, [match.params.playbookId, currentUserId]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const playbookId = match.params.playbookId;
+            if (playbookId) {
+                try {
+                    const fetchedFollowerIds = await clientFetchPlaybookFollowers(playbookId);
+                    setFollowerIds(fetchedFollowerIds);
+                    setIsFollowed(fetchedFollowerIds.includes(currentUserId));
+                } catch {
                     setIsFollowed(false);
                 }
             }
         };
-
         fetchData();
-    }, [match.params.playbookId]);
+    }, [match.params.playbookId, currentUserId, isFollowed]);
 
     if (fetchingState === FetchingStateType.loading) {
         return null;
@@ -348,7 +361,7 @@ const Playbook = () => {
                                 title: formatMessage({defaultMessage: 'Test your new playbook out!'}),
                                 screen: formatMessage({defaultMessage: 'Select <strong>Start a test run</strong> to see it in action.'}, {strong: (x) => <strong>{x}</strong>}),
                             } : {
-                                title: formatMessage({defaultMessage: 'Ready run to your playbook?'}),
+                                title: formatMessage({defaultMessage: 'Ready to run your playbook?'}),
                                 screen: formatMessage({defaultMessage: 'Select <strong>Run</strong> to see it in action.'}, {strong: (x) => <strong>{x}</strong>}),
                             }}
                             tutorialCategory={TutorialTourCategories.PLAYBOOK_PREVIEW}
@@ -397,6 +410,7 @@ const Playbook = () => {
                 <Route path={`${match.path}/preview`}>
                     <PlaybookPreview
                         playbook={playbook}
+                        followerIds={followerIds}
                         runsInProgress={stats.runs_in_progress}
                     />
                 </Route>

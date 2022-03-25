@@ -150,6 +150,21 @@ func (mr *MockPlaybookStoreMockRecorder) GetPlaybooks() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooks", reflect.TypeOf((*MockPlaybookStore)(nil).GetPlaybooks))
 }
 
+// GetPlaybooksActiveTotal mocks base method
+func (m *MockPlaybookStore) GetPlaybooksActiveTotal() (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPlaybooksActiveTotal")
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPlaybooksActiveTotal indicates an expected call of GetPlaybooksActiveTotal
+func (mr *MockPlaybookStoreMockRecorder) GetPlaybooksActiveTotal() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaybooksActiveTotal", reflect.TypeOf((*MockPlaybookStore)(nil).GetPlaybooksActiveTotal))
+}
+
 // GetPlaybooksForTeam mocks base method
 func (m *MockPlaybookStore) GetPlaybooksForTeam(arg0 app.RequesterInfo, arg1 string, arg2 app.PlaybookFilterOptions) (app.GetPlaybooksResults, error) {
 	m.ctrl.T.Helper()
@@ -193,21 +208,6 @@ func (m *MockPlaybookStore) GetTimeLastUpdated(arg0 bool) (int64, error) {
 func (mr *MockPlaybookStoreMockRecorder) GetTimeLastUpdated(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeLastUpdated", reflect.TypeOf((*MockPlaybookStore)(nil).GetTimeLastUpdated), arg0)
-}
-
-// IsAutoFollowing mocks base method
-func (m *MockPlaybookStore) IsAutoFollowing(arg0, arg1 string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsAutoFollowing", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IsAutoFollowing indicates an expected call of IsAutoFollowing
-func (mr *MockPlaybookStoreMockRecorder) IsAutoFollowing(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAutoFollowing", reflect.TypeOf((*MockPlaybookStore)(nil).IsAutoFollowing), arg0, arg1)
 }
 
 // Restore mocks base method

@@ -75,8 +75,10 @@ function roleDisplayText(roles: string[]) {
 
 const SelectUsersBelow = (props: SelectUsersBelowProps) => {
     const permissionToEditMembers = useHasPlaybookPermission(PlaybookPermissionGeneral.ManageMembers, props.playbook);
+    const permissionToEditRoles = useHasPlaybookPermission(PlaybookPermissionGeneral.ManageRoles, props.playbook);
     const teammateNameDisplaySetting = useSelector(getTeammateNameDisplaySetting) || '';
     const users = useSelector(getUsers);
+    const currentUserId = useSelector(getCurrentUserId);
 
     const handleAddUser = (userId: string) => {
         props.onAddMember({user_id: userId, roles: [PlaybookRole.Member]});
@@ -103,7 +105,8 @@ const SelectUsersBelow = (props: SelectUsersBelowProps) => {
                     <UserLine
                         data-testid='user-line'
                         key={member.user_id}
-                        hasPermissionsToEditMembers={permissionToEditMembers}
+                        currentUserId={currentUserId}
+                        hasPermissionsToEditRoles={permissionToEditRoles}
                         member={member}
                         onRemoveUser={props.onRemoveUser}
                         onMakeAdmin={props.onMakeAdmin}
@@ -116,8 +119,9 @@ const SelectUsersBelow = (props: SelectUsersBelowProps) => {
 };
 
 interface UserLineProps {
-    hasPermissionsToEditMembers: boolean
+    hasPermissionsToEditRoles: boolean
     member: PlaybookMember
+    currentUserId: string
     onRemoveUser: (userid: string) => void;
     onMakeAdmin: (userid: string) => void;
     onMakeMember: (userid: string) => void;
@@ -143,7 +147,7 @@ const UserLine = (props: UserLineProps) => {
         </IconWrapper>
     );
 
-    if (props.hasPermissionsToEditMembers) {
+    if (props.hasPermissionsToEditRoles && props.member.user_id !== props.currentUserId) {
         let permissionsChangeOption = (
             <DropdownMenuItem
                 onClick={() => props.onMakeAdmin(props.member.user_id)}

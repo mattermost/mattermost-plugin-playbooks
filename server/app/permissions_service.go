@@ -2,6 +2,7 @@ package app
 
 import (
 	"reflect"
+	"strings"
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
@@ -224,6 +225,24 @@ func (p *PermissionsService) PlaybookModifyWithFixes(userID string, playbook *Pl
 		if err := p.PlaybookManageMembers(userID, oldPlaybook); err != nil {
 			return errors.Wrap(err, "attempted to modify members without permissions")
 		}
+
+		oldMemberRoles := map[string]string{}
+		for _, member := range oldPlaybook.Members {
+			oldMemberRoles[member.UserID] = strings.Join(member.Roles, ",")
+		}
+
+		// Also need to check if roles changed. If so we need to check manage roles permission.
+		for _, member := range playbook.Members {
+			oldRoles, memberExisted := oldMemberRoles[member.UserID]
+			userAddedAsMember := !memberExisted && len(member.Roles) == 1 && member.Roles[0] == PlaybookRoleMember
+			rolesHaveNotChanged := memberExisted && strings.Join(member.Roles, ",") == oldRoles
+			if !(userAddedAsMember || rolesHaveNotChanged) {
+				if err := p.PlaybookManageRoles(userID, oldPlaybook); err != nil {
+					return errors.Wrap(err, "attempted to modify members without permissions")
+				}
+				break
+			}
+		}
 	}
 
 	// Check if we have done a public conversion
@@ -275,6 +294,19 @@ func (p *PermissionsService) PlaybookManageMembers(userID string, playbook Playb
 	permission := model.PermissionPrivatePlaybookManageMembers
 	if p.PlaybookIsPublic(playbook) {
 		permission = model.PermissionPublicPlaybookManageMembers
+	}
+
+	if p.hasPermissionsToPlaybook(userID, playbook, permission) {
+		return nil
+	}
+
+	return ErrNoPermissions
+}
+
+func (p *PermissionsService) PlaybookManageRoles(userID string, playbook Playbook) error {
+	permission := model.PermissionPrivatePlaybookManageRoles
+	if p.PlaybookIsPublic(playbook) {
+		permission = model.PermissionPublicPlaybookManageRoles
 	}
 
 	if p.hasPermissionsToPlaybook(userID, playbook, permission) {

@@ -320,7 +320,7 @@ func (p *playbookStore) Get(id string) (app.Playbook, error) {
 }
 
 // GetPlaybooks retrieves all playbooks that are not deleted.
-// Members are not retrived for this as the query would be large and we don't need it for this for nwo.
+// Members are not retrieved for this as the query would be large and we don't need it for this for now.
 // This is only used for the keywords feature
 func (p *playbookStore) GetPlaybooks() ([]app.Playbook, error) {
 	tx, err := p.store.db.Beginx()
@@ -700,6 +700,22 @@ func (p *playbookStore) Restore(id string) error {
 	return nil
 }
 
+// Get number of active playbooks.
+func (p *playbookStore) GetPlaybooksActiveTotal() (int64, error) {
+	var count int64
+
+	query := p.store.builder.
+		Select("COUNT(*)").
+		From("IR_Playbook").
+		Where(sq.Eq{"DeleteAt": 0})
+
+	if err := p.store.getBuilder(p.store.db, &count, query); err != nil {
+		return 0, errors.Wrap(err, "failed to count active playbooks'")
+	}
+
+	return count, nil
+}
+
 // replacePlaybookMembers replaces the members of a playbook
 func (p *playbookStore) replacePlaybookMembers(q queryExecer, playbook app.Playbook) error {
 	// Delete existing members who are not in the new playbook.MemberIDs list
@@ -802,7 +818,7 @@ func (p *playbookStore) GetAutoFollows(playbookID string) ([]string, error) {
 		From("IR_PlaybookAutoFollow").
 		Where(sq.Eq{"PlaybookID": playbookID})
 
-	var autoFollows []string
+	autoFollows := make([]string, 0)
 	err := p.store.selectBuilder(p.store.db, &autoFollows, query)
 	if err == sql.ErrNoRows {
 		return []string{}, nil
@@ -811,23 +827,6 @@ func (p *playbookStore) GetAutoFollows(playbookID string) ([]string, error) {
 	}
 
 	return autoFollows, nil
-}
-
-func (p *playbookStore) IsAutoFollowing(playbookID, userID string) (bool, error) {
-	query := p.queryBuilder.
-		Select("TRUE").
-		From("IR_PlaybookAutoFollow").
-		Where(sq.And{sq.Eq{"PlaybookID": playbookID}, sq.Eq{"UserID": userID}})
-
-	var isAutoFollowing bool
-	err := p.store.getBuilder(p.store.db, &isAutoFollowing, query)
-	if err == sql.ErrNoRows {
-		return false, nil
-	} else if err != nil {
-		return false, errors.Wrapf(err, "failed to get follower status for playbook '%s'", playbookID)
-	}
-
-	return isAutoFollowing, nil
 }
 
 func generatePlaybookSchemeRoles(member playbookMember, playbook *app.Playbook) []string {

@@ -381,8 +381,9 @@ type OwnerInfo struct {
 // DialogState holds the start playbook run interactive dialog's state as it appears in the client
 // and is submitted back to the server.
 type DialogState struct {
-	PostID   string `json:"post_id"`
-	ClientID string `json:"client_id"`
+	PostID       string `json:"post_id"`
+	ClientID     string `json:"client_id"`
+	PromptPostID string `json:"prompt_post_id"`
 }
 
 type DialogStateAddToTimeline struct {
@@ -423,7 +424,7 @@ type PlaybookRunService interface {
 	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool) (*PlaybookRun, error)
 
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
-	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error
+	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the playbook run's status.
 	OpenUpdateStatusDialog(playbookRunID, triggerID string) error
@@ -664,6 +665,24 @@ type PlaybookRunStore interface {
 
 	// GetFollowers returns list of followers for a specific playbook run
 	GetFollowers(playbookRunID string) ([]string, error)
+
+	// GetRunsActiveTotal returns number of active runs
+	GetRunsActiveTotal() (int64, error)
+
+	// GetOverdueUpdateRunsTotal returns number of runs that have overdue status updates
+	GetOverdueUpdateRunsTotal() (int64, error)
+
+	// GetOverdueRetroRunsTotal returns the number of completed runs without retro and with reminder
+	GetOverdueRetroRunsTotal() (int64, error)
+
+	// GetFollowersActiveTotal returns total number of active followers, including duplicates
+	// if a user is following more than one run, it will be counted multiple times
+	GetFollowersActiveTotal() (int64, error)
+
+	// GetParticipantsActiveTotal returns number of active participants
+	// (i.e. members of the playbook run channel when the run is active)
+	// if a user is member of more than one channel, it will be counted multiple times
+	GetParticipantsActiveTotal() (int64, error)
 }
 
 // PlaybookRunTelemetry defines the methods that the PlaybookRunServiceImpl needs from the RudderTelemetry.

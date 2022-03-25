@@ -162,6 +162,20 @@ func (mr *MockPlaybookRunServiceMockRecorder) EditChecklistItem(arg0, arg1, arg2
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditChecklistItem", reflect.TypeOf((*MockPlaybookRunService)(nil).EditChecklistItem), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
+// EphemeralPostTodoDigestToUser mocks base method
+func (m *MockPlaybookRunService) EphemeralPostTodoDigestToUser(arg0, arg1 string, arg2 bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EphemeralPostTodoDigestToUser", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EphemeralPostTodoDigestToUser indicates an expected call of EphemeralPostTodoDigestToUser
+func (mr *MockPlaybookRunServiceMockRecorder) EphemeralPostTodoDigestToUser(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EphemeralPostTodoDigestToUser", reflect.TypeOf((*MockPlaybookRunService)(nil).EphemeralPostTodoDigestToUser), arg0, arg1, arg2)
+}
+
 // FinishPlaybookRun mocks base method
 func (m *MockPlaybookRunService) FinishPlaybookRun(arg0, arg1 string) error {
 	m.ctrl.T.Helper()

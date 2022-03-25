@@ -1618,6 +1618,62 @@ func TestGetPlaybookIDsForUser(t *testing.T) {
 	}
 }
 
+func TestGetPlaybooksActiveTotal(t *testing.T) {
+	teamIDs := []string{model.NewId(), model.NewId(), model.NewId()}
+
+	createPlaybooks := func(store app.PlaybookStore, num int) []string {
+		t.Helper()
+		playbooksIDs := make([]string, num)
+
+		for i := range playbooksIDs {
+			pb := NewPBBuilder().
+				WithTitle(fmt.Sprintf("playbook %d", i)).
+				WithTeamID(teamIDs[i%len(teamIDs)]).
+				WithUpdateAt(int64(i * 100)).
+				ToPlaybook()
+
+			id, err := store.Create(pb)
+			require.NoError(t, err)
+			playbooksIDs[i] = id
+		}
+		return playbooksIDs
+	}
+
+	for _, driverName := range driverNames {
+		db := setupTestDB(t, driverName)
+		playbookStore := setupPlaybookStore(t, db)
+
+		t.Run("zero playbooks", func(t *testing.T) {
+			actual, err := playbookStore.GetPlaybooksActiveTotal()
+			require.NoError(t, err)
+			require.Equal(t, int64(0), actual)
+		})
+
+		playbooksNum := 20
+		playbooksIDs := createPlaybooks(playbookStore, playbooksNum)
+
+		t.Run(driverName+" - only active playbooks", func(t *testing.T) {
+			actual, err := playbookStore.GetPlaybooksActiveTotal()
+
+			require.NoError(t, err)
+			require.Equal(t, int64(playbooksNum), actual)
+		})
+
+		// archive 1/3 of playbooks
+		for i := 0; i < playbooksNum/3; i++ {
+			err := playbookStore.Archive(playbooksIDs[i])
+			require.NoError(t, err)
+		}
+
+		t.Run(driverName+" - both active and archived playbooks", func(t *testing.T) {
+			actual, err := playbookStore.GetPlaybooksActiveTotal()
+
+			require.NoError(t, err)
+			require.Equal(t, int64(playbooksNum-playbooksNum/3), actual)
+		})
+	}
+}
+
 // PlaybookBuilder is a utility to build playbooks with a default base.
 // Use it as:
 // NewBuilder.WithName("name").WithXYZ(xyz)....ToPlaybook()

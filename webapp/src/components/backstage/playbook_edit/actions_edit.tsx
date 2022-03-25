@@ -14,7 +14,6 @@ import {AutoAssignOwner} from 'src/components/backstage/playbook_edit/automation
 import {PatternedTextArea} from 'src/components/backstage/playbook_edit/automation/patterned_text_area';
 import {MessageOnJoin} from 'src/components/backstage/playbook_edit/automation/message_on_join';
 import {CategorizePlaybookRun} from 'src/components/backstage/playbook_edit/automation/categorize_playbook_run';
-import {InputKeywords} from 'src/components/backstage/playbook_edit/automation/input_keywords';
 import RunSummary from 'src/components/backstage/playbook_edit/automation/run_summary';
 import {CreateAChannel} from 'src/components/backstage/playbook_edit/automation/channel_access';
 
@@ -28,22 +27,6 @@ interface Props {
 
 const ActionsEdit = ({playbook, setPlaybook, setChangesMade, searchUsers, getUsers}: Props) => {
     const {formatMessage} = useIntl();
-
-    const handleSignalAnyKeywordsChange = (keywords: string[]) => {
-        setPlaybook({
-            ...playbook,
-            signal_any_keywords: [...keywords],
-        });
-        setChangesMade(true);
-    };
-
-    const handleToggleSignalAnyKeywords = () => {
-        setPlaybook({
-            ...playbook,
-            signal_any_keywords_enabled: !playbook.signal_any_keywords_enabled,
-        });
-        setChangesMade(true);
-    };
 
     const handleAddUserInvited = (userId: string) => {
         if (!playbook.invited_user_ids.includes(userId)) {
@@ -160,21 +143,6 @@ const ActionsEdit = ({playbook, setPlaybook, setChangesMade, searchUsers, getUse
 
     return (
         <TabContainer>
-            <Section>
-                <SectionTitle>
-                    {formatMessage({defaultMessage: 'Prompt to run the playbook when a user posts a message'})}
-                </SectionTitle>
-                <Setting id={'signal-any-keywords'}>
-                    <InputKeywords
-                        enabled={playbook.signal_any_keywords_enabled}
-                        onToggle={handleToggleSignalAnyKeywords}
-                        textOnToggle={formatMessage({defaultMessage: 'Containing any of these keywords'})}
-                        placeholderText={formatMessage({defaultMessage: 'Add keywords'})}
-                        keywords={playbook.signal_any_keywords}
-                        onKeywordsChange={handleSignalAnyKeywordsChange}
-                    />
-                </Setting>
-            </Section>
             <Section>
                 <SectionTitle style={{marginBottom: '24px'}}>
                     {formatMessage({defaultMessage: 'When a run starts'})}
