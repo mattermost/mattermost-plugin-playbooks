@@ -570,7 +570,7 @@ type PlaybookRunService interface {
 
 	// DMTodoDigestToUser gathers the list of assigned tasks, participating runs, and overdue updates,
 	// and DMs the message to userID. Use force = true to DM even if there are no items.
-	DMTodoDigestToUser(userID string, force bool) error
+	DMTodoDigestToUser(userID string, force bool, timezone *time.Location) error
 
 	// GetRunsWithAssignedTasks returns the list of runs that have tasks assigned to userID
 	GetRunsWithAssignedTasks(userID string) ([]AssignedRun, error)
