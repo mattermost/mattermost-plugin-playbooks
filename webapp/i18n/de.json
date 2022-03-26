@@ -19,7 +19,7 @@
     "RoGxij": "Läuft aktiv am {date}",
     "Q7aZO4": "{numParticipants, plural, =0 {keine aktive Teilnehmer} =1 {# aktiver Teilnehmer} other {# aktive Teilnehmer}}",
     "KiXNvz": "Ausführen",
-    "AF9wda": "Diese Aktualisierung wird auf der <OverviewLink>Übersichtsseite</OverviewLink>{hasBroadcast, select, true { gespeichert und an <ChannelsTooltip>{broadcastChannelCount, plural, =1 {einen Kanal} andere {{broadcastChannelCount, number} Kanäle}}</ChannelsTooltip>} andere {}} gesendet.",
+    "AF9wda": "Diese Aktualisierung wird auf der <OverviewLink>Übersichtsseite</OverviewLink>{hasBroadcast, select, true { gespeichert und an <ChannelsTooltip>{broadcastChannelCount, plural, =1 {ein Kanal gesendet} other {{broadcastChannelCount, number} Kanäle gesendet}}</ChannelsTooltip>} other {}}.",
     "6Lwe7T": "Jeder in {team} kann auf dieses Playbook zugreifen",
     "1MQ3XZ": "{numActiveRuns, plural, =0 {Kein aktiver Lauf} =1 {# aktiver Lauf} other {# aktive Läufe}}",
     "/jUtaM": "AKTIVE LÄUFE pro Tag über die letzten 14 Tagen",
@@ -119,7 +119,7 @@
     "v1DNMW": "Rückwirkender Bericht von {name} veröffentlicht",
     "syEQFE": "Veröffentlichen",
     "pKLw8O": "Sind Sie sicher, dass Sie dieses Ereignis löschen möchten? Gelöschte Ereignisse werden dauerhaft aus der Zeitleiste entfernt.",
-    "o2eHmz": "Lauf beendet von {Name}",
+    "o2eHmz": "Durchlauf von {name} beendet",
     "jnmORb": "In diesem Playbook",
     "fXGjhC": "Besitzer geändert von {summary}",
     "fUEpLA": "Es gibt keine Timeline-Ereignisse, die diesen Filtern entsprechen.",
@@ -133,7 +133,7 @@
     "N1U/QR": "Änderung des Aufgabenstatus",
     "MvEydR": "{name} hat ein Status-Update gepostet",
     "LmhSmU": "Bestätige Löschung",
-    "JeqL8w": "Rückwirkender Bericht von {Name} abgebrochen",
+    "JeqL8w": "Retrospektive von {name} abgebrochen",
     "I2zEie": "Feiern Sie Erfolge und lernen Sie aus Fehlern mit retrospektiven Berichten. Filtern Sie Zeitplan-Ereignisse für Prozessüberprüfung, Stakeholder-Engagement und Auditing-Zwecke.",
     "FEGywG": "Bitte geben Sie ein zukünftiges Datum/Uhrzeit für die Aktualisierungserinnerung an.",
     "DXACD6": "Retrospektive veröffentlichen und auf die Zeitleiste zugreifen",
@@ -352,7 +352,7 @@
     "C6Oghd": "Zusammenfassung bearbeiten",
     "3MSGcL": "Der Kanalname ist nicht gültig.",
     "0oL1zz": "Kopiert!",
-    "d4g2r8": "Gelöscht: {tinestamp}",
+    "d4g2r8": "Gelöscht: {timestamp}",
     "4vuNrq": "{duration} nach Start des Laufs",
     "/gbqA6": "{duration} vor Beginn des Laufs",
     "Mu2aDs": "Alle Mitglieder des Teams (<b>{team}</b>) haben Zugang.",
@@ -519,5 +519,6 @@
     "+/x2FM": "Wähle ein Playbook aus",
     "dCtjdj": "Bereit dein Playbook zu starten?",
     "Z3ybv/": "Kanal zu einer Seitenleisten-Kategorie des Benutzers hinzufügen",
-    "9j5KzL": "Kategorienamen eingeben"
+    "9j5KzL": "Kategorienamen eingeben",
+    "+PMJAg": "Starte folgendes für {followers, plural, =1 {einen Benutzer} other {# Benutzer}}"
 }

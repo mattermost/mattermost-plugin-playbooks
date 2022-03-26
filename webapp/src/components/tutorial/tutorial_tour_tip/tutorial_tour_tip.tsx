@@ -54,6 +54,7 @@ type Props = {
     tutorialCategory: string;
     onNextNavigateTo?: () => void;
     onPrevNavigateTo?: () => void;
+    onFinish?: () => void;
     autoTour?: boolean;
     pulsatingDotPlacement?: Omit<Placement, 'auto' | 'auto-end'>;
     pulsatingDotTranslate?: {x: number; y: number};
@@ -71,6 +72,7 @@ const TutorialTourTip = ({
     step,
     onNextNavigateTo,
     onPrevNavigateTo,
+    onFinish,
     telemetryTag,
     placement,
     showOptOut,
@@ -99,6 +101,7 @@ const TutorialTourTip = ({
         tutorialCategory,
         onNextNavigateTo,
         onPrevNavigateTo,
+        onFinish,
         stopPropagation,
         preventDefault,
     });
