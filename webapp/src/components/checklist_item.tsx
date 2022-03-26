@@ -417,6 +417,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     };
 
     const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
+        setShowMenu(false);
         if (!props.playbookRunId) {
             return;
         }
@@ -428,6 +429,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     };
 
     const onDueDateChange = async (value?: DateTimeOption | undefined | null) => {
+        setShowMenu(false);
         if (!props.playbookRunId) {
             return;
         }
