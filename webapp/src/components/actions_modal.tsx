@@ -180,7 +180,7 @@ const ActionsModal = () => {
     );
 
     return (
-        <GenericModal
+        <StyledModal
             id={'channel-actions-modal'}
             modalHeaderText={header}
             show={show}
@@ -229,22 +229,27 @@ const ActionsModal = () => {
                     ))}
                 </TriggersContainer>
             </Scrollbars>
-        </GenericModal>
+        </StyledModal>
     );
 };
 
 const ModalHeader = styled(Modal.Header)`
-    :after {
-        content: '';
-        height: 1px;
-        width: 100%;
-        position: absolute;
-        left: 0px;
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-    }
-
     &&&& {
         margin-bottom: 0;
+    }
+`;
+
+const StyledModal = styled(GenericModal)`
+    .modal-body {
+        :before {
+            content: '';
+            height: 1px;
+            width: 600px;
+            position: absolute;
+            left: -24px;
+            top: 0px;
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+        }
     }
 `;
 
