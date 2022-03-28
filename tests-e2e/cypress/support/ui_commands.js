@@ -424,6 +424,15 @@ Cypress.Commands.add('clickPostCommentIcon', (postId, location = 'CENTER') => {
     clickPostHeaderItem(postId, location, 'commentIcon');
 });
 
+/**
+ * Click actions menu by post ID or to most recent post (if post ID is not provided)
+ * @param {String} postId - Post ID
+ * @param {String} location - as 'CENTER', 'SEARCH'
+ */
+Cypress.Commands.add('clickPostActionsMenu', (postId, location = 'CENTER') => {
+    clickPostHeaderItem(postId, location, 'actions_button');
+});
+
 // Close RHS by clicking close button
 Cypress.Commands.add('closeRHS', () => {
     cy.get('#rhsCloseButton').should('be.visible').click();

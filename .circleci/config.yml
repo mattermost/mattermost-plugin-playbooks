@@ -120,7 +120,8 @@ commands:
           command: |
             TOKEN=`curl -i -d '{"login_id":"'${MM_ADMIN_USERNAME}'","password":"'${MM_ADMIN_PASSWORD}'"}' $MM_SERVICESETTINGS_SITEURL/api/v4/users/login | grep Token | cut -d' ' -f2`
             TOKEN=${TOKEN//$'\r'/}
-            curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr -m 5 || true
+            STATUSCODE=$(curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"trialreceive_emails_accepted": true, "terms_accepted": true, "users": 100}' $MM_SERVICESETTINGS_SITEURL/api/v4/trial-license -w "%{http_code}" -o /dev/stderr)
+            if test $STATUSCODE -ne 200; then exit 1; fi
       - *restore_cypress_cache
       - run:
           name: Getting Cypress & JavaScript dependencies
@@ -216,7 +217,7 @@ jobs:
 
   deploy-ci:
     docker:
-      - image: circleci/python:2.7
+      - image: cimg/python:2.7
     steps:
       - attach_workspace:
           at: dist
@@ -227,7 +228,7 @@ jobs:
 
   deploy-release:
     docker:
-      - image: circleci/python:2.7
+      - image: cimg/python:2.7
     steps:
       - attach_workspace:
           at: dist
@@ -251,14 +252,14 @@ jobs:
           command: |
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -b "$(< ./dist/release-notes.md)" -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -delete ${CIRCLE_TAG} dist/*.tar.gz
 
-  test-MySQL5717-Postgres10:
+  test-MySQL57-Postgres10:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
-      - image: circleci/postgres:10-alpine
+      - image: cimg/postgres:10.17
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
-      - image: circleci/mysql:5.7.17
+      - image: cimg/mysql:5.7
         environment:
           MYSQL_ROOT_PASSWORD: mostest
           MYSQL_DATABASE: mattermost_test
@@ -272,11 +273,11 @@ jobs:
   test-MySQL8-Postgres11:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
-      - image: circleci/postgres:11-alpine
+      - image: cimg/postgres:11.13
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
-      - image: circleci/mysql:8.0.21
+      - image: cimg/mysql:8.0
         environment:
           MYSQL_ROOT_PASSWORD: mostest
           MYSQL_DATABASE: mattermost_test
@@ -287,14 +288,14 @@ jobs:
     steps:
       - test-with-db
 
-  test-MariaDB-Postgres12:
+  test-MariaDB10-Postgres12:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
-      - image: circleci/postgres:12-alpine
+      - image: cimg/postgres:12.9
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
-      - image: circleci/mariadb:latest
+      - image: cimg/mariadb:10.6
         environment:
           MARIADB_ROOT_PASSWORD: mostest
           MARIADB_DATABASE: mattermost_test
@@ -305,15 +306,16 @@ jobs:
     steps:
       - test-with-db
 
-  test-MySQL-Postgres-latest:
+  # "latest" db versions
+  test-MySQL8-Postgres14:
     docker:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
-      - image: circleci/postgres:latest
+      - image: cimg/postgres:14.1
         environment:
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_USER: mmuser
           POSTGRES_DB: mattermost_test
-      - image: circleci/mysql:latest
+      - image: cimg/mysql:8.0
         environment:
           MYSQL_ROOT_PASSWORD: mostest
           MYSQL_DATABASE: mattermost_test
@@ -330,7 +332,7 @@ jobs:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
-      - image: circleci/postgres:10-alpine-ram
+      - image: cimg/postgres:10.17
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_PASSWORD: mostest
@@ -404,7 +406,7 @@ jobs:
       - image: docker.io/mattermost/builder:go-1.16.5-node-16.4.0
         environment:
           TEST_DATABASE_URL: postgres://mmuser:mostest@localhost:5432/mattermost_test
-      - image: circleci/postgres:10-alpine-ram
+      - image: cimg/postgres:10.17
         environment:
           POSTGRES_USER: mmuser
           POSTGRES_PASSWORD: mostest
@@ -478,10 +480,10 @@ workflows:
   ci:
     jobs:
       - lint
-      - test-MySQL5717-Postgres10
+      - test-MySQL57-Postgres10
       - test-MySQL8-Postgres11
-      - test-MariaDB-Postgres12
-      - test-MySQL-Postgres-latest
+      - test-MariaDB10-Postgres12
+      - test-MySQL8-Postgres14
       - e2e-cypress-tests-cloud
       - e2e-cypress-tests-master
       - build:
@@ -496,10 +498,10 @@ workflows:
               only: master
           requires:
             - lint
-            - test-MySQL5717-Postgres10
+            - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
-            - test-MariaDB-Postgres12
-            - test-MySQL-Postgres-latest
+            - test-MariaDB10-Postgres12
+            - test-MySQL8-Postgres14
             #- e2e-cypress-tests-cloud
             - build
       - deploy-release:
@@ -511,10 +513,10 @@ workflows:
               ignore: /.*/
           requires:
             - lint
-            - test-MySQL5717-Postgres10
+            - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
-            - test-MariaDB-Postgres12
-            - test-MySQL-Postgres-latest
+            - test-MariaDB10-Postgres12
+            - test-MySQL8-Postgres14
             # - e2e-cypress-tests-cloud
             - build
       - deploy-release-github:
@@ -526,9 +528,9 @@ workflows:
               ignore: /.*/
           requires:
             - lint
-            - test-MySQL5717-Postgres10
+            - test-MySQL57-Postgres10
             - test-MySQL8-Postgres11
-            - test-MariaDB-Postgres12
-            - test-MySQL-Postgres-latest
+            - test-MariaDB10-Postgres12
+            - test-MySQL8-Postgres14
             # - e2e-cypress-tests-cloud
             - build
