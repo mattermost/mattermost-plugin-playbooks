@@ -5,7 +5,7 @@ import styled, {css} from 'styled-components';
 
 import {
     clientRunChecklistItemSlashCommand,
-    clientEditChecklistItem,
+    clientSetChecklistItemCommand,
 } from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import {useTimeout} from 'src/hooks';
@@ -242,9 +242,7 @@ const EditCommandDropdown = (props: EditCommandDropdownProps) => {
             <CancelSaveButtons
                 onCancel={props.onDone}
                 onSave={() => {
-                    clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
-                        command,
-                    });
+                    clientSetChecklistItemCommand(props.playbookRunId, props.checklistNum, props.itemNum, command);
                     props.onDone();
                 }}
             />

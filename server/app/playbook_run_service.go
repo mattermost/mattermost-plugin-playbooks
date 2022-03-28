@@ -1354,6 +1354,28 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	return nil
 }
 
+// SetCommandToChecklistItem sets command to checklist item
+func (s *PlaybookRunServiceImpl) SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error {
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indices")
+	}
+
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run")
+	}
+
+	s.poster.PublishWebsocketEventToChannel(playbookRunUpdatedWSEvent, playbookRunToModify, playbookRunToModify.ChannelID)
+
+	return nil
+}
+
 // RunChecklistItemSlashCommand executes the slash command associated with the specified checklist
 // item.
 func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error) {
@@ -1423,9 +1445,10 @@ func (s *PlaybookRunServiceImpl) DuplicateChecklistItem(playbookRunID, userID st
 		return err
 	}
 
-	if len(playbookRunToModify.Checklists[checklistNumber].Items) <= itemNumber {
-		return errors.New("can't find the item")
+	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indicies")
 	}
+
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 	checklistItem.ID = ""
 
@@ -1596,18 +1619,10 @@ func (s *PlaybookRunServiceImpl) EditChecklistItem(playbookRunID, userID string,
 	if err != nil {
 		return err
 	}
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Description = newDescription
 
-	println(newTitle, newCommand, newDescription)
-
-	if newTitle != "" {
-		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Title = newTitle
-	}
-	if newCommand != "" {
-		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Command = newCommand
-	}
-	if newDescription != "" {
-		playbookRunToModify.Checklists[checklistNumber].Items[itemNumber].Description = newDescription
-	}
 	checklistItem := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
 
 	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {

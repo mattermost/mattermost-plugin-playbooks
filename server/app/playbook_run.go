@@ -481,6 +481,9 @@ type PlaybookRunService interface {
 	// Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 	SetAssignee(playbookRunID, userID, assigneeID string, checklistNumber, itemNumber int) error
 
+	// SetCommandToChecklistItem sets command to checklist item
+	SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error
+
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
 	RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error)
 
