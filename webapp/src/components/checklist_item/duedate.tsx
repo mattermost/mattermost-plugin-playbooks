@@ -93,7 +93,8 @@ const makeDefaultDateTimeOptions = () => {
         }
     );
 
-    dateTime = dateTime.plus({days: 7});
+    // plus only 6 because earlier we did plus 1
+    dateTime = dateTime.plus({days: 6});
     list.push(
         {
             ...optionFromMillis(dateTime.toMillis(), Mode.DateTimeValue),
