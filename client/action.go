@@ -18,6 +18,15 @@ type WelcomeMessagePayload struct {
 	Message string `json:"message" mapstructure:"message"`
 }
 
+type PromptRunPlaybookFromKeywordsPayload struct {
+	Keywords   []string `json:"keywords" mapstructure:"keywords"`
+	PlaybookID string   `json:"playbook_id" mapstructure:"playbook_id"`
+}
+
+type CategorizeChannelPayload struct {
+	CategoryName string `json:"category_name" mapstructure:"category_name"`
+}
+
 type WelcomeMessageAction struct {
 	GenericChannelActionWithoutPayload
 	Payload WelcomeMessagePayload `json:"payload"`
@@ -25,16 +34,20 @@ type WelcomeMessageAction struct {
 
 const (
 	// Action types
-	ActionTypeWelcomeMessage = "send_welcome_message"
+	ActionTypeWelcomeMessage    = "send_welcome_message"
+	ActionTypePromptRunPlaybook = "prompt_run_playbook"
+	ActionTypeCategorizeChannel = "categorize_channel"
 
 	// Trigger types
 	TriggerTypeNewMemberJoins = "new_member_joins"
+	TriggerTypeKeywordsPosted = "keywords"
 )
 
 // ChannelActionListOptions specifies the optional parameters to the
 // ActionsService.List method.
 type ChannelActionListOptions struct {
 	TriggerType string `url:"trigger_type,omitempty"`
+	ActionType  string `url:"action_type,omitempty"`
 }
 
 // ChannelActionCreateOptions specifies the parameters for ActionsService.Create method.
