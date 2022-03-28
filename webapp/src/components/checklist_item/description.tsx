@@ -14,10 +14,13 @@ import {GlobalState} from 'mattermost-redux/types/store';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
 
+import {CollapsibleChecklistItemDescription} from './inputs';
+
 interface DescriptionProps {
     value: string;
     onEdit: (value: string) => void;
     editingItem: boolean;
+    showDescription: boolean;
 }
 
 const ChecklistItemDescription = (props: DescriptionProps) => {
@@ -26,7 +29,6 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
 
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
-    const [editingDescription, setEditingDescription] = useState(false);
     const [editedValue, setEditedValue] = useState(props.value);
 
     const markdownOptions = {
@@ -41,52 +43,47 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
         setEditedValue(props.value);
     }, [props.value]);
 
-    if (!props.editingItem || !editingDescription) {
-        return (
-            <RenderedDescription
-                data-testid='rendered-checklist-item-description'
-                onClick={(event) => {
-                    // Enter edit mode only if the user is not clicking a link
-                    const targetNode = event.target as Node;
-                    if (targetNode.nodeName !== 'A') {
-                        setEditingDescription(true);
-                    }
-                }}
-            >
-                {editedValue ? (
-                    <RenderedDescription>
-                        {messageHtmlToComponent(formatText(editedValue, {...markdownOptions, singleline: false}), true, {})}
-                    </RenderedDescription>
-                ) : (
-                    props.editingItem && <PlaceholderText>{placeholder}</PlaceholderText>
-                )}
-            </RenderedDescription>
-        );
-    }
-
     const computeHeight = (e: React.FocusEvent<HTMLTextAreaElement>) => {
         e.target.style.height = '5px';
         e.target.style.height = (e.target.scrollHeight) + 'px';
     };
 
+    if (props.editingItem) {
+        return (
+            <ChecklistItemDescriptionContainer>
+                <DescriptionTextArea
+                    data-testid='checklist-item-textarea-description'
+                    value={editedValue}
+                    placeholder={placeholder}
+                    onChange={(e) => {
+                        setEditedValue(e.target.value);
+                        props.onEdit(e.target.value);
+                    }}
+                    autoFocus={true}
+                    onFocus={(e) => {
+                        const val = e.target.value;
+                        e.target.value = '';
+                        e.target.value = val;
+                        computeHeight(e);
+                    }}
+                    onInput={computeHeight}
+                />
+            </ChecklistItemDescriptionContainer>
+        );
+    }
+
     return (
-        <DescriptionTextArea
-            data-testid='checklist-item-textarea-description'
-            value={editedValue}
-            placeholder={placeholder}
-            onChange={(e) => {
-                setEditedValue(e.target.value);
-                props.onEdit(e.target.value);
-            }}
-            autoFocus={true}
-            onFocus={(e) => {
-                const val = e.target.value;
-                e.target.value = '';
-                e.target.value = val;
-                computeHeight(e);
-            }}
-            onInput={computeHeight}
-        />
+        <CollapsibleChecklistItemDescription expanded={props.showDescription}>
+            <RenderedDescription data-testid='rendered-checklist-item-description'>
+                {editedValue ? (
+                    <RenderedDescription>
+                        {messageHtmlToComponent(formatText(editedValue, {...markdownOptions, singleline: false}), true, {})}
+                    </RenderedDescription>
+                ) : (
+                    <PlaceholderText>{placeholder}</PlaceholderText>
+                )}
+            </RenderedDescription>
+        </CollapsibleChecklistItemDescription>
     );
 };
 
@@ -96,25 +93,24 @@ const PlaceholderText = styled.span`
 
 const commonDescriptionStyle = css`
     border-radius: 5px;
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--center-channel-color-72);
 
     :hover {
         cursor: text;
     }
 
     p {
-        white-space: pre-wrap;
+        white - space: pre-wrap;
     }
-
-    font-size: 12px;
-    line-height: 16px;
-    color: var(--center-channel-color-72);
 `;
 
 const RenderedDescription = styled.div`
     ${commonDescriptionStyle}
 
     p:last-child {
-        margin-bottom: 0;
+        margin - bottom: 0;
     }
 `;
 
@@ -133,8 +129,20 @@ const DescriptionTextArea = styled.textarea`
     background: none;
 
     &:focus {
-        box-shadow: none;
+        box - shadow: none;
     }
+`;
+
+const ChecklistItemDescriptionContainer = styled.div`
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 16px;
+    color: rgba(var(--center-channel-color-rgb), 0.72);
+
+    max-width: 630px;
+    margin: 4px 0 0 35px;
+    overflow: hidden;
 `;
 
 export default ChecklistItemDescription;

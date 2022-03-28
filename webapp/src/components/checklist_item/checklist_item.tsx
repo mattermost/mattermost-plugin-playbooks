@@ -24,7 +24,7 @@ import ChecklistItemHoverMenu from './hover_menu';
 import ChecklistItemDescription from './description';
 import AssignTo from './assign_to';
 import Command from './command';
-import {CheckBoxButton, CollapsibleChecklistItemDescription, CancelSaveButtons} from './inputs';
+import {CheckBoxButton, CancelSaveButtons} from './inputs';
 
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
@@ -102,19 +102,6 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             </div>
         </label>
     );
-    let itemDescription = (
-        <>
-            <CollapsibleChecklistItemDescription expanded={showDescription || isEditing}>
-                <ChecklistItemDescription
-                    editingItem={isEditing}
-                    onEdit={setDescValue}
-                    value={props.checklistItem.description}
-                />
-            </CollapsibleChecklistItemDescription>
-            {extraRow}
-        </>
-    );
-
     if (isEditing) {
         itemLabel = (
             <LabelInput
@@ -126,88 +113,84 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                 }}
             />
         );
-        itemDescription = (
-            <>
-                <ChecklistItemDescriptionContainer>
-                    <ChecklistItemDescription
-                        editingItem={isEditing}
-                        onEdit={setDescValue}
-                        value={props.checklistItem.description}
-                    />
-                </ChecklistItemDescriptionContainer>
-                {extraRow}
-            </>
-        );
     }
 
+    const itemDescription = (
+        <ChecklistItemDescription
+            editingItem={isEditing}
+            showDescription={showDescription}
+            onEdit={setDescValue}
+            value={props.checklistItem.description}
+        />
+    );
+
     const content = (
-        <>
-            <ItemContainer
-                ref={props.draggableProvided?.innerRef}
-                {...props.draggableProvided?.draggableProps}
-                onMouseEnter={() => setShowMenu(true)}
-                onMouseLeave={() => setShowMenu(false)}
-                data-testid='checkbox-item-container'
-                editing={isEditing}
-            >
-                <CheckboxContainer>
-                    {showMenu && !props.disabled &&
-                        <ChecklistItemHoverMenu
-                            playbookRunId={props.playbookRunId}
-                            checklistNum={props.checklistNum}
-                            itemNum={props.itemNum}
-                            isSkipped={props.checklistItem.state === ChecklistItemState.Skip}
-                            onEdit={() => setIsEditing(true)}
-                            isEditing={isEditing}
-                            onChange={props.onChange}
-                            description={props.checklistItem.description}
-                            showDescription={showDescription}
-                            toggleDescription={toggleDescription}
-                            assignee_id={props.checklistItem.assignee_id || ''}
-                        />
-                    }
-                    <DragButton
-                        title={formatMessage({defaultMessage: 'Drag me to reorder'})}
-                        className={'icon icon-drag-vertical'}
-                        {...props.draggableProvided?.dragHandleProps}
-                        isVisible={showMenu && !props.disabled}
-                    />
-                    <CheckBoxButton
-                        disabled={props.disabled || props.checklistItem.state === ChecklistItemState.Skip}
-                        item={props.checklistItem}
-                        onChange={(item: ChecklistItemState) => {
-                            if (props.onChange) {
-                                props.onChange(item);
-                            }
-                        }}
-                    />
-                    <ChecklistItemLabel
-                        onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
-                        clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
-                    >
-                        {itemLabel}
-                    </ChecklistItemLabel>
-                </CheckboxContainer>
-                {itemDescription}
-                {isEditing &&
-                    <CancelSaveButtons
-                        onCancel={() => {
-                            setIsEditing(false);
-                            setTitleValue(props.checklistItem.title);
-                            setDescValue(props.checklistItem.description);
-                        }}
-                        onSave={() => {
-                            setIsEditing(false);
-                            clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
-                                title: titleValue,
-                                command: props.checklistItem.command,
-                                description: descValue,
-                            });
-                        }}
+        <ItemContainer
+            ref={props.draggableProvided?.innerRef}
+            {...props.draggableProvided?.draggableProps}
+            onMouseEnter={() => setShowMenu(true)}
+            onMouseLeave={() => setShowMenu(false)}
+            data-testid='checkbox-item-container'
+            editing={isEditing}
+        >
+            <CheckboxContainer>
+                {showMenu && !props.disabled &&
+                    <ChecklistItemHoverMenu
+                        playbookRunId={props.playbookRunId}
+                        checklistNum={props.checklistNum}
+                        itemNum={props.itemNum}
+                        isSkipped={props.checklistItem.state === ChecklistItemState.Skip}
+                        onEdit={() => setIsEditing(true)}
+                        isEditing={isEditing}
+                        onChange={props.onChange}
+                        description={props.checklistItem.description}
+                        showDescription={showDescription}
+                        toggleDescription={toggleDescription}
+                        assignee_id={props.checklistItem.assignee_id || ''}
                     />
                 }
-            </ItemContainer>
-        </>
+                <DragButton
+                    title={formatMessage({defaultMessage: 'Drag me to reorder'})}
+                    className={'icon icon-drag-vertical'}
+                    {...props.draggableProvided?.dragHandleProps}
+                    isVisible={showMenu && !props.disabled}
+                />
+                <CheckBoxButton
+                    disabled={props.disabled || props.checklistItem.state === ChecklistItemState.Skip}
+                    item={props.checklistItem}
+                    onChange={(item: ChecklistItemState) => {
+                        if (props.onChange) {
+                            props.onChange(item);
+                        }
+                    }}
+                />
+                <ChecklistItemLabel
+                    onClick={() => props.collapsibleDescription && props.checklistItem.description !== '' && toggleDescription()}
+                    clickable={props.collapsibleDescription && props.checklistItem.description !== ''}
+                >
+                    {itemLabel}
+                </ChecklistItemLabel>
+            </CheckboxContainer>
+            {itemDescription}
+            {extraRow}
+            {isEditing &&
+                <CancelSaveButtons
+                    onCancel={() => {
+                        setIsEditing(false);
+                        setTitleValue(props.checklistItem.title);
+                        setDescValue(props.checklistItem.description);
+                    }}
+                    onSave={() => {
+                        setIsEditing(false);
+                        clientEditChecklistItem(props.playbookRunId, props.checklistNum, props.itemNum, {
+                            title: titleValue,
+                            command: props.checklistItem.command,
+                            description: descValue,
+                        });
+                    }}
+                />
+            }
+        </ItemContainer>
     );
 
     if (props.dragging) {
@@ -373,18 +356,6 @@ const LabelInput = styled.input`
     font-size: 14px;
     line-height: 20px;
     padding: 0px;
-`;
-
-const ChecklistItemDescriptionContainer = styled.div`
-    font-size: 12px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: 16px;
-    color: rgba(var(--center-channel-color-rgb), 0.72);
-
-    max-width: 630px;
-    margin: 4px 0 0 35px;
-    overflow: hidden;
 `;
 
 const Row = styled.div`
