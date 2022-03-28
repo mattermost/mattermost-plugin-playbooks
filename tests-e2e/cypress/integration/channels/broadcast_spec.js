@@ -161,39 +161,47 @@ describe('channels > broadcast', () => {
     });
 
     it('does not broadcast when broadcast is disabled, even if broadcastChannelIds contain data', () => {
-        // # Create a playbook with broadcast disabled, but with broadcastChannelIds containing channel1
-        cy.apiCreateTestPlaybook({
-            teamId: testTeam.id,
-            title: 'Playbook - disabled public broadcast',
-            userId: testUser.id,
-            broadcastChannelIds: [testPublicChannel1.id],
-            broadcastEnabled: false,
-        }).then((playbook) => {
-            // # Create a new playbook run with that playbook
-            const now = Date.now();
-            const playbookRunName = `Playbook Run (${now})`;
-            const playbookRunChannelName = `playbook-run-${now}`;
-            cy.apiRunPlaybook({
+        // # Create a brand new channel
+        cy.apiCreateChannel(
+            testTeam.id,
+            'public-channel-do-not-broadcast',
+            'Public Channel 1 - do not broadcast',
+            'O',
+        ).then(({channel}) => {
+            // # Create a playbook with broadcast disabled, but with broadcastChannelIds containing channel1
+            cy.apiCreateTestPlaybook({
                 teamId: testTeam.id,
-                playbookId: playbook.id,
-                playbookRunName,
-                ownerUserId: testUser.id,
-            });
+                title: 'Playbook - disabled public broadcast',
+                userId: testUser.id,
+                broadcastChannelIds: [channel.id],
+                broadcastEnabled: false,
+            }).then((playbook) => {
+                // # Create a new playbook run with that playbook
+                const now = Date.now();
+                const playbookRunName = `Playbook Run (${now})`;
+                const playbookRunChannelName = `playbook-run-${now}`;
+                cy.apiRunPlaybook({
+                    teamId: testTeam.id,
+                    playbookId: playbook.id,
+                    playbookRunName,
+                    ownerUserId: testUser.id,
+                });
 
-            // # Navigate directly to the application and the playbook run channel
-            cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
+                // # Navigate directly to the application and the playbook run channel
+                cy.visit(`/${testTeam.name}/channels/${playbookRunChannelName}`);
 
-            // # Update the playbook run's status
-            const updateMessage = 'Update - ' + now;
-            cy.updateStatus(updateMessage);
+                // # Update the playbook run's status
+                const updateMessage = 'Update - ' + now;
+                cy.updateStatus(updateMessage);
 
-            // # Navigate to the broadcast channel
-            cy.visit(`/${testTeam.name}/channels/${testPublicChannel1.name}`);
+                // # Navigate to the broadcast channel
+                cy.visit(`/${testTeam.name}/channels/${channel.name}`);
 
-            // * Verify that the last post is the system post containing the join message,
-            // so no announcement nor update was posted
-            cy.getLastPostId().then((lastPostId) => {
-                cy.get(`#postMessageText_${lastPostId}`).contains('You joined the channel');
+                // * Verify that the last post is the system post containing the join message,
+                // so no announcement nor update was posted
+                cy.getLastPostId().then((lastPostId) => {
+                    cy.get(`#postMessageText_${lastPostId}`).contains('You joined the channel');
+                });
             });
         });
     });
