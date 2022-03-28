@@ -15,7 +15,6 @@ import {HoverMenuButton} from '../rhs/rhs_shared';
 interface Props {
     date?: number;
     mode: Mode.DateTimeValue | Mode.DurationValue;
-    suggestedOptions?: DateTimeOption[]
 
     onSelectedChange: (value?: DateTimeOption | undefined | null) => void;
 }
@@ -34,10 +33,14 @@ const ControlComponentDueDate = (ownProps: ControlProps<DateTimeOption, boolean>
 const DueDate = ({
     date,
     mode,
-    suggestedOptions = makeDefaultDateTimeOptions(),
     ...props
 }: Props) => {
     const {formatMessage} = useIntl();
+
+    const suggestedOptions = makeDefaultDateTimeOptions();
+    if (date) {
+        suggestedOptions.push(selectedValueOption(date, mode));
+    }
 
     const [dateTimeSelectorToggle, setDateTimeSelectorToggle] = useState(false);
     const resetDueDate = () => {
@@ -101,6 +104,11 @@ const makeDefaultDateTimeOptions = () => {
     return list;
 };
 
+const selectedValueOption = (value: number, mode: Mode.DateTimeValue | Mode.DurationValue) => ({
+    ...optionFromMillis(value, mode),
+    labelRHS: (<CheckIcon className={'icon icon-check'}/>),
+});
+
 const ControlComponentAnchor = styled.a`
     display: inline-block;
     margin: 0 0 8px 12px;
@@ -115,6 +123,11 @@ const LabelRight = styled.div`
     font-size: 12px;
     line-height: 16px;
     color: rgba(var(--center-channel-color-rgb), 0.56);
+`;
+
+const CheckIcon = styled.i`
+    color: var(--button-bg);
+	font-size: 22px;
 `;
 
 export default DueDate;
