@@ -104,6 +104,7 @@ const RedText = styled.div`
     color: var(--error-text);
 `;
 
+/** @deprecated this page and potentially some inner sections will be deprecated in the future. See `playbook_editor/playbook_editor.tsx`. */
 const Playbook = () => {
     const dispatch = useDispatch();
     const {formatMessage} = useIntl();

@@ -32,7 +32,7 @@ export const useHasPlaybookPermissionById = (permission: PlaybookPermissionGener
     return useHasPlaybookPermission(permission, playbook);
 };
 
-export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, playbook?: Playbook) => {
+export const useHasPlaybookPermission = (permission: PlaybookPermissionGeneral, playbook: Maybe<Playbook>) => {
     const dispatch = useDispatch();
     const currentUserId = useSelector(getCurrentUserId);
     const roles = useSelector(getRoles);

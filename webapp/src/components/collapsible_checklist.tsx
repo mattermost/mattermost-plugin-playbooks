@@ -148,7 +148,7 @@ const ProgressLine = styled.div<{ width: number }>`
     }
 `;
 
-const HorizontalBG = styled.div<{checklistIndex: number, numChecklists: number}>`
+export const HorizontalBG = styled.div<{checklistIndex: number, numChecklists: number}>`
     background-color: var(--center-channel-bg);
     z-index: ${({checklistIndex, numChecklists}) => 1 + (numChecklists - checklistIndex)};
     position: sticky;
