@@ -73,7 +73,7 @@ export type Option = {
     mode?: Mode.DateTimeValue | Mode.DurationValue;
 }
 
-const defaultMakeOptions: Props['makeOptions'] = (query, datetimes, durations, mode) => {
+export const defaultMakeOptions: Props['makeOptions'] = (query, datetimes, durations, mode) => {
     if (!query) {
         return null;
     }
@@ -85,11 +85,11 @@ const defaultMakeOptions: Props['makeOptions'] = (query, datetimes, durations, m
     }
 
     if (durations.length) {
-        if (
-            mode === Mode.DurationValue ||
-            (mode === Mode.DateTimeValue && !options.length)
-        ) {
+        if (mode === Mode.DurationValue) {
             options = options.concat(durations.map((duration) => ({value: duration, mode})));
+        } else if (mode === Mode.DateTimeValue && !options.length) {
+            const now = DateTime.now();
+            options = options.concat(durations.map((duration) => ({value: now.plus(duration), mode})));
         }
     }
 

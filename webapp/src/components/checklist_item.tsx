@@ -23,6 +23,7 @@ import {
     clientRunChecklistItemSlashCommand,
     setAssignee,
     clientEditChecklistItem,
+    setDueDate,
 } from 'src/client';
 import Spinner from 'src/components/assets/icons/spinner';
 import {ChecklistItemButton} from 'src/components/checklist_item_input';
@@ -40,7 +41,9 @@ import MarkdownTextbox from 'src/components/markdown_textbox';
 import CommandInput from './command_input';
 import GenericModal from './widgets/generic_modal';
 import {BaseInput} from './assets/inputs';
-
+import {DateTimeOption} from './datetime_selector';
+import {Mode} from './datetime_input';
+import DueDate from './checklist_item/duedate';
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
     checklistNum: number;
@@ -403,12 +406,29 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     };
 
     const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
+        setShowMenu(false);
         if (!props.playbookRunId) {
             return;
         }
         const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, user?.id);
         if (response.error) {
             // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
+            console.log(response.error); // eslint-disable-line no-console
+        }
+    };
+
+    const onDueDateChange = async (value?: DateTimeOption | undefined | null) => {
+        setShowMenu(false);
+        if (!props.playbookRunId) {
+            return;
+        }
+        let timestamp = 0;
+        if (value?.value) {
+            timestamp = value?.value.toMillis();
+        }
+        const response = await setDueDate(props.playbookRunId, props.checklistNum, props.itemNum, timestamp);
+        if (response.error) {
+            // TODO: Should be presented to the user?
             console.log(response.error); // eslint-disable-line no-console
         }
     };
@@ -476,6 +496,11 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                     }}
                                     controlledOpenToggle={profileSelectorToggle}
                                     showOnRight={true}
+                                />
+                                <DueDate
+                                    date={props.checklistItem.due_date}
+                                    mode={Mode.DateTimeValue}
+                                    onSelectedChange={onDueDateChange}
                                 />
                                 <HoverMenuButton
                                     title={formatMessage({defaultMessage: 'Edit'})}

@@ -1354,6 +1354,32 @@ func (s *PlaybookRunServiceImpl) SetAssignee(playbookRunID, userID, assigneeID s
 	return nil
 }
 
+// SetDueDate sets absolute due date timestamp for the specified checklist item
+func (s *PlaybookRunServiceImpl) SetDueDate(playbookRunID, userID string, duedate int64, checklistNumber, itemNumber int) error {
+	playbookRunToModify, err := s.checklistItemParamsVerify(playbookRunID, userID, checklistNumber, itemNumber)
+	if err != nil {
+		return err
+	}
+
+	if !IsValidChecklistItemIndex(playbookRunToModify.Checklists, checklistNumber, itemNumber) {
+		return errors.New("invalid checklist item indices")
+	}
+
+	itemToCheck := playbookRunToModify.Checklists[checklistNumber].Items[itemNumber]
+	itemToCheck.DueDate = duedate
+	playbookRunToModify.Checklists[checklistNumber].Items[itemNumber] = itemToCheck
+
+	if err = s.store.UpdatePlaybookRun(playbookRunToModify); err != nil {
+		return errors.Wrapf(err, "failed to update playbook run; it is now in an inconsistent state")
+	}
+
+	if err = s.sendPlaybookRunToClient(playbookRunID); err != nil {
+		return errors.Wrap(err, "failed to send playbook run to client")
+	}
+
+	return nil
+}
+
 // RunChecklistItemSlashCommand executes the slash command associated with the specified checklist
 // item.
 func (s *PlaybookRunServiceImpl) RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error) {
