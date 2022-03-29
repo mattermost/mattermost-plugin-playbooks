@@ -87,6 +87,18 @@ func (a *channelActionServiceImpl) setViewedChannelForEveryMember(channelID stri
 }
 
 func (a *channelActionServiceImpl) Create(action GenericChannelAction) (string, error) {
+	actions, err := a.store.GetChannelActions(action.ChannelID, GetChannelActionOptions{
+		ActionType:  action.ActionType,
+		TriggerType: action.TriggerType,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if len(actions) > 0 {
+		return "", fmt.Errorf("only one action of action type %q and trigger type %q is allowed", string(action.ActionType), string(action.TriggerType))
+	}
+
 	if action.ActionType == ActionTypeWelcomeMessage && action.Enabled {
 		if err := a.setViewedChannelForEveryMember(action.ChannelID); err != nil {
 			return "", err
