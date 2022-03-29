@@ -355,7 +355,7 @@
     "djALPR": "{activeRuns, number} {activeRuns, plural, one {izvođenje} few {izvođenja} other {izvođenja}} u tijeku",
     "d8KvXJ": "Tvoja licenca probnog razdoblja istječe {expiryDate}. Za izbjegavanje poremećaja, licencu možeš kupiti u bilo kojem trenutku putem <PortalLink>korisničkog portala</PortalLink>.",
     "QpUBDr": "{members, plural, =0 {Nitko ne može} =1 {Jedna osoba može} few {# osobe mogu} other {# osoba mogu}} pristupiti ovom priručniku.",
-    "JJMNME": "{withRunName, select, true {@{authorUsername} je objavio/la aktualiziranje za [{runName}]({overviewURL})} drugi {@{authorUsername} je objavio/la aktualiziranje}}",
+    "JJMNME": "{withRunName, select, true {@{authorUsername} je objavio/la aktualiziranje za [{runName}]({overviewURL})} other {@{authorUsername} je objavio/la aktualiziranje}}",
     "BNB75h": "Priručnik propisuje popise zadataka, automatizacije i predloške za sve ponavljajuće postupke. {br} Pomaže timovima da smanje greške, steknu povjerenje sudionika i postanu učinkovitiji sa svakim ponavljanjem.",
     "AF9wda": "Ovo aktualiziranje će se spremiti na <OverviewLink>stranici pregleda</OverviewLink>{hasBroadcast, select, true { i emitirati na <ChannelsTooltip>{broadcastChannelCount, plural, =1 {jednom kanalu} other {{broadcastChannelCount, number} kanala}}</ChannelsTooltip>} other {}}.",
     "h+e7G+": "Zatraži izvođenje ovog priručnika kad poruka sadrži {numKeywords, select, 1 {ključnu riječ} other {jednu ili više ključnih riječi}}",

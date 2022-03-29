@@ -1,0 +1,54 @@
+[
+    {
+        "id": "app.user.digest.tasks.zero_outstanding",
+        "translation": "У вас 0 нерешенных задач."
+    },
+    {
+        "id": "app.user.digest.tasks.num_outstanding",
+        "translation": {
+            "one": "У вас {{.Count}} нерешенная задача:",
+            "few": "У вас {{.Count}} нерешенных задачи:",
+            "many": "У вас {{.Count}} нерешенных задач:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.heading",
+        "translation": "Ваши нерешенные задачи"
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.zero_in_progress",
+        "translation": "В настоящее время у вас нет запусков."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.num_in_progress",
+        "translation": {
+            "one": "У вас запущен {{.Count}}:",
+            "few": "У вас запущено {{.Count}}:",
+            "many": "У вас запущены {{.Count}}:"
+        }
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.heading",
+        "translation": "Выполняется"
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.zero_overdue",
+        "translation": "У вас просрочено 0 запусков."
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.num_overdue",
+        "translation": {
+            "one": "У вас есть {{.Count}} просроченный запуск для обновления статуса:",
+            "few": "У вас есть {{.Count}} просроченных запуска для обновления статуса:",
+            "many": "У вас есть {{.Count}} просроченных запусков для обновления статуса:"
+        }
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.heading",
+        "translation": "Просроченные обновления статуса"
+    },
+    {
+        "id": "app.command.execute.error",
+        "translation": "Невозможно выполнить команду."
+    }
+]

@@ -513,5 +513,6 @@
     "Ek1Fx2": "When a message with these keywords is posted",
     "9j5KzL": "Enter category name",
     "2Q5PhZ": "Prompt to run a playbook",
-    "+/x2FM": "Select a playbook"
+    "+/x2FM": "Select a playbook",
+    "+PMJAg": "Begin following for {followers, plural, =1 {one user} other {# users}}"
 }
