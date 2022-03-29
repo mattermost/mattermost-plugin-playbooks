@@ -1331,14 +1331,14 @@ func TestDMTodoDigestToUser(t *testing.T) {
 
 	// get path to the project root folder
 	root, _ := filepath.Abs("../../")
-
+	// init i18n, we need it to extract translations
 	err := i18n.TranslationsPreInit(filepath.Join(root, "/assets/i18n"))
 	require.NoError(t, err)
 
 	timezone, _ := time.LoadLocation("Asia/Tbilisi")
 	day := time.Hour.Milliseconds() * 24
 
-	t.Run("TODO digest message with tasks due today, after/before today and no due date", func(t *testing.T) {
+	t.Run("digest message with tasks due today, after/before today and no due date", func(t *testing.T) {
 		expected := "##### Your assigned tasks\n" +
 			"You have 4 total assigned tasks due until today:\n\n" +
 			"[name2](/team2/channels/channel2?telem_action=todo_assignedtask_clicked&telem_run_id=2&forceRHSOpen)\n" +
@@ -1398,7 +1398,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 		require.Equal(t, expected, digestPost.Message)
 	})
 
-	t.Run("TODO digest message with no tasks", func(t *testing.T) {
+	t.Run("digest message with no tasks", func(t *testing.T) {
 		assignedRuns := []app.AssignedRun{}
 
 		store.EXPECT().GetRunsWithAssignedTasks(user.Id).Return(assignedRuns, nil)
@@ -1418,7 +1418,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 		require.Equal(t, false, dmCalled)
 	})
 
-	t.Run("TODO digest message with tasks no due date set", func(t *testing.T) {
+	t.Run("digest message with tasks no due date set", func(t *testing.T) {
 		expected := "##### Your assigned tasks\n" +
 			":information_source: You have **5 assigned tasks without a due date**. Please use `/playbook todo` to see all your tasks."
 
@@ -1442,6 +1442,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 		store.EXPECT().GetRunsWithAssignedTasks(user.Id).Return(assignedRuns, nil)
 		var digestPost *model.Post
 		poster := mock_bot.NewMockPoster(controller)
+		// catch post object passed to DM function to check text
 		poster.EXPECT().DM(user.Id, gomock.Any()).DoAndReturn(
 			func(userID string, post *model.Post) interface{} {
 				digestPost = post
@@ -1456,7 +1457,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 		require.Equal(t, expected, digestPost.Message)
 	})
 
-	t.Run("TODO digest message with tasks due after today", func(t *testing.T) {
+	t.Run("digest message with tasks due after today", func(t *testing.T) {
 		expected := "##### Your assigned tasks\n" +
 			":information_source: You have **3 tasks due after today**. Please use `/playbook todo` to see all your tasks."
 
@@ -1528,7 +1529,7 @@ func TestEphemeralPostTodoDigestToUser(t *testing.T) {
 	require.NoError(t, err)
 	day := time.Hour.Milliseconds() * 24
 
-	t.Run("TODO digest message with tasks due today, after/before today and no due date", func(t *testing.T) {
+	t.Run("todo command message with tasks due today, after/before today and no due date", func(t *testing.T) {
 		expected := "##### Your assigned tasks\n" +
 			"You have 12 total assigned tasks:\n\n" +
 			"[name1](/team1/channels/channel1?telem_action=todo_assignedtask_clicked&telem_run_id=1&forceRHSOpen)\n" +

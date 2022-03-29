@@ -2694,6 +2694,7 @@ func buildAssignedTaskMessageSummery(runs []AssignedRun, locale string, timezone
 			tasksDoAfterToday++
 		}
 
+		// omit run's title if tasks info is empty
 		if tasksInfo.String() != "" {
 			runsInfo.WriteString(fmt.Sprintf("[%s](/%s/channels/%s?telem_action=todo_assignedtask_clicked&telem_run_id=%s&forceRHSOpen)\n",
 				run.ChannelDisplayName, run.TeamName, run.ChannelName, run.PlaybookRunID))
@@ -2701,6 +2702,7 @@ func buildAssignedTaskMessageSummery(runs []AssignedRun, locale string, timezone
 		}
 	}
 
+	// omit assigned tasks header if runs info is empty
 	if runsInfo.String() != "" {
 		if onlyDueUntilToday {
 			msg.WriteString(T("app.user.digest.tasks.num_assigned_due_until_today", total-tasksNoDueDate-tasksDoAfterToday))
@@ -2711,6 +2713,7 @@ func buildAssignedTaskMessageSummery(runs []AssignedRun, locale string, timezone
 		msg.WriteString(runsInfo.String())
 	}
 
+	// add summery info for tasks without a due date or due date after today
 	if tasksNoDueDate+tasksDoAfterToday > 0 && onlyDueUntilToday {
 		msg.WriteString(T("app.user.digest.tasks.you_have"))
 		msg.WriteString(" ")
