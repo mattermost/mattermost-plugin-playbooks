@@ -81,6 +81,7 @@ export interface EditingMetric {
     metric: Metric;
 }
 
+/** @deprecated will be deprecated in the future. See `playbook_editor/outline.tsx`. */
 const PlaybookEdit = (props: Props) => {
     const dispatch = useDispatch();
 
