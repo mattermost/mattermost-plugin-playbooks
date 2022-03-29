@@ -1,1 +1,54 @@
-{}
+[
+    {
+        "id": "app.user.digest.tasks.zero_outstanding",
+        "translation": "Imaš 0 neobavljenih zadataka."
+    },
+    {
+        "id": "app.user.digest.tasks.num_outstanding",
+        "translation": {
+            "one": "Imaš {{.Count}} neobavljeni zadatak:",
+            "few": "Imaš {{.Count}} neobavljena zadatka:",
+            "other": "Imaš {{.Count}} neobavljenih zadataka:"
+        }
+    },
+    {
+        "id": "app.user.digest.tasks.heading",
+        "translation": "Tvoji neobavljeni zadaci"
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.zero_in_progress",
+        "translation": "Imaš 0 izvođenja trenutačno u tijeku."
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.num_in_progress",
+        "translation": {
+            "one": "Imaš {{.Count}} izvođenje trenutačno u tijeku:",
+            "few": "Imaš {{.Count}} izvođenja trenutačno u tijeku:",
+            "other": "Imaš {{.Count}} izvođenja trenutačno u tijeku:"
+        }
+    },
+    {
+        "id": "app.user.digest.runs_in_progress.heading",
+        "translation": "Izvođenja u tijeku"
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.zero_overdue",
+        "translation": "Imaš 0 zakašnjelih izvođenja."
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.num_overdue",
+        "translation": {
+            "one": "Imaš {{.Count}} zakašnjelo izvođenje za aktualiziranje stanja:",
+            "few": "Imaš {{.Count}} zakašnjela izvođenja za aktualiziranje stanja:",
+            "other": "Imaš {{.Count}} zakašnjelih izvođenja za aktualiziranje stanja:"
+        }
+    },
+    {
+        "id": "app.user.digest.overdue_status_updates.heading",
+        "translation": "Aktualiziranja stanja kašnjenja"
+    },
+    {
+        "id": "app.command.execute.error",
+        "translation": "Nije moguće izvršiti naredbu."
+    }
+]
