@@ -62,9 +62,15 @@ const LineGraph = (props: LineGraphProps) => {
                     tooltips: {
                         callbacks: {
                             title(tooltipItems: any) {
-                                if (props.tooltipTitleCallback) {
-                                    return props.tooltipTitleCallback(tooltipItems[0].xLabel);
+                                if (props.labels) {
+                                    const label = props.labels[tooltipItems[0].index];
+                                    if (props.tooltipTitleCallback) {
+                                        return props.tooltipTitleCallback(label);
+                                    }
+
+                                    return label;
                                 }
+
                                 return tooltipItems[0].xLabel;
                             },
                             label(tooltipItem: any) {
