@@ -98,23 +98,11 @@ interface ParticipantProps {
 }
 
 function Participant({userId, teamName, isOwner}: ParticipantProps) {
-    const [showMessage, setShowMessage] = useState(Boolean(isOwner));
     const user = useSelector<GlobalState, UserProfile>((state) => getUser(state, userId));
-    const {formatMessage} = useIntl();
 
     return (
-        <ParticipantRow
-            onMouseEnter={() => setShowMessage(true)}
-            onMouseLeave={() => !isOwner && setShowMessage(false)}
-        >
+        <ParticipantRow>
             <ProfileWithPosition userId={userId}/>
-            {showMessage && (
-                <SecondaryButtonRight
-                    onClick={() => navigateToUrl(`/${teamName}/messages/@${user.username}`)}
-                >
-                    {formatMessage({defaultMessage: 'Message'})}
-                </SecondaryButtonRight>
-            )}
         </ParticipantRow>
     );
 }
