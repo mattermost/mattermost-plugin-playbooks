@@ -4,17 +4,10 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {ControlProps, components} from 'react-select';
 import {UserProfile} from 'mattermost-redux/types/users';
 
-import ProfileSelector from 'src/components/profile/profile_selector';
+import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
 import {useProfilesInCurrentChannel, useProfilesInTeam} from 'src/hooks';
 import {setAssignee} from 'src/client';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
-
-export interface Option {
-    value: string;
-    label: JSX.Element | string;
-    userType: string;
-    user: UserProfile;
-}
 
 interface AssignedToProps {
     playbookRunId: string;
@@ -32,21 +25,12 @@ const AssignTo = (props: AssignedToProps) => {
     const profilesInTeam = useProfilesInTeam();
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
 
-    const fetchUsers = async () => {
-        return profilesInChannel;
-    };
-
-    const fetchUsersInTeam = async () => {
-        return profilesInTeam;
-    };
-
     const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
         if (!props.playbookRunId) {
             return;
         }
         const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, user?.id);
         if (response.error) {
-            // TODO: Should be presented to the user? https://mattermost.atlassian.net/browse/MM-24271
             console.log(response.error); // eslint-disable-line no-console
         }
     };
@@ -68,8 +52,12 @@ const AssignTo = (props: AssignedToProps) => {
                     />
                 }
                 enableEdit={true}
-                getUsers={fetchUsers}
-                getUsersInTeam={fetchUsersInTeam}
+                getUsers={async () => {
+                    return profilesInChannel;
+                }}
+                getUsersInTeam={async () => {
+                    return profilesInTeam;
+                }}
                 onSelectedChange={onAssigneeChange}
                 selfIsFirstOption={true}
                 customControl={ControlComponent}
@@ -102,8 +90,12 @@ const AssignTo = (props: AssignedToProps) => {
                 placeholderButtonClass={'NoAssignee-button'}
                 profileButtonClass={props.withoutName ? 'NoName-Assigned-button' : 'Assigned-button'}
                 enableEdit={props.editable}
-                getUsers={fetchUsers}
-                getUsersInTeam={fetchUsersInTeam}
+                getUsers={async () => {
+                    return profilesInChannel;
+                }}
+                getUsersInTeam={async () => {
+                    return profilesInTeam;
+                }}
                 onSelectedChange={onAssigneeChange}
                 selfIsFirstOption={true}
                 customControl={ControlComponent}

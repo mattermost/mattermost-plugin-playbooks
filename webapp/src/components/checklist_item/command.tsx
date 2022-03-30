@@ -31,17 +31,10 @@ const Command = (props: CommandProps) => {
     const {formatMessage} = useIntl();
     const commandRef = useRef(null);
     const [running, setRunning] = useState(false);
-    const [lastRun, setLastRun] = useState(props.command_last_run);
     const dispatch = useDispatch();
 
     const [commandOpen, setCommandOpen] = useState(false);
     const [wasOpened, setWasOpened] = useState(false);
-
-    // Immediately stop the running indicator when we get notified of a more recent execution.
-    if (props.command_last_run > lastRun) {
-        setRunning(false);
-        setLastRun(props.command_last_run);
-    }
 
     // Setting running to true triggers the timeout by setting the delay to RunningTimeout
     useTimeout(() => setRunning(false), running ? RunningTimeout : null);
@@ -92,7 +85,7 @@ const Command = (props: CommandProps) => {
             }}
         >
             <TextWithTooltipWhenEllipsis
-                id={props.checklistNum.toString(10)}
+                id={`checklist-command-button-tooltip-${props.checklistNum}`}
                 text={props.command}
                 parentRef={commandRef}
             />

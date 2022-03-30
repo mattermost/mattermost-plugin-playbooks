@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, useEffect} from 'react';
+import React from 'react';
 import styled, {css} from 'styled-components';
 import {useIntl} from 'react-intl';
 
@@ -29,7 +29,6 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
 
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
-    const [editedValue, setEditedValue] = useState(props.value);
 
     const markdownOptions = {
         singleline: true,
@@ -38,10 +37,6 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
         team,
         channelNamesMap,
     };
-
-    useEffect(() => {
-        setEditedValue(props.value);
-    }, [props.value]);
 
     const computeHeight = (e: React.FocusEvent<HTMLTextAreaElement>) => {
         e.target.style.height = '5px';
@@ -53,10 +48,9 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
             <ChecklistItemDescriptionContainer>
                 <DescriptionTextArea
                     data-testid='checklist-item-textarea-description'
-                    value={editedValue}
+                    value={props.value}
                     placeholder={placeholder}
                     onChange={(e) => {
-                        setEditedValue(e.target.value);
                         props.onEdit(e.target.value);
                     }}
                     autoFocus={true}
@@ -75,9 +69,9 @@ const ChecklistItemDescription = (props: DescriptionProps) => {
     return (
         <CollapsibleChecklistItemDescription expanded={props.showDescription}>
             <RenderedDescription data-testid='rendered-checklist-item-description'>
-                {editedValue ? (
+                {props.value ? (
                     <RenderedDescription>
-                        {messageHtmlToComponent(formatText(editedValue, {...markdownOptions, singleline: false}), true, {})}
+                        {messageHtmlToComponent(formatText(props.value, {...markdownOptions, singleline: false}), true, {})}
                     </RenderedDescription>
                 ) : (
                     <PlaceholderText>{placeholder}</PlaceholderText>

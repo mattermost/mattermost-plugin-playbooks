@@ -5,14 +5,14 @@ import React from 'react';
 import {Draggable, DraggableProvided, DraggableStateSnapshot} from 'react-beautiful-dnd';
 
 import {setChecklistItemState} from 'src/client';
-import {ChecklistItemDetails} from 'src/components/checklist_item/checklist_item';
-import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+import {ChecklistItem} from 'src/components/checklist_item/checklist_item';
+import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 import {PlaybookRun, PlaybookRunStatus} from 'src/types/playbook_run';
 
 interface Props {
     playbookRun: PlaybookRun;
     checklistIndex: number;
-    item: ChecklistItem;
+    item: ChecklistItemType;
     itemIndex: number;
 }
 
@@ -25,7 +25,7 @@ const DraggableChecklistItem = (props: Props) => {
             index={props.itemIndex}
         >
             {(draggableProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
-                <ChecklistItemDetails
+                <ChecklistItem
                     checklistItem={props.item}
                     checklistNum={props.checklistIndex}
                     itemNum={props.itemIndex}

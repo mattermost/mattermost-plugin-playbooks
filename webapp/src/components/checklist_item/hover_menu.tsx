@@ -49,7 +49,6 @@ const ChecklistItemHoverMenu = (props: Props) => {
                         itemNum={props.itemNum}
                         playbookRunId={props.playbookRunId}
                         editable={props.isEditing}
-                        withoutName={false}
                         inHoverMenu={true}
                     />
                     <HoverMenuButton

@@ -6,9 +6,9 @@ import {useIntl} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {Checklist, ChecklistItem, PlaybookWithChecklist} from 'src/types/playbook';
+import {Checklist, ChecklistItem as ChecklistItemType, PlaybookWithChecklist} from 'src/types/playbook';
 import Section from 'src/components/backstage/playbooks/playbook_preview_section';
-import {ChecklistItemDetails} from 'src/components/checklist_item/checklist_item';
+import {ChecklistItem} from 'src/components/checklist_item/checklist_item';
 import CollapsibleChecklist, {TitleHelpTextWrapper} from 'src/components/collapsible_checklist';
 
 interface Props {
@@ -55,9 +55,9 @@ const PlaybookPreviewChecklists = (props: Props) => {
                     disabledOrRunID={true}
                 >
                     <ChecklistContainer className='checklist'>
-                        {checklist.items.map((checklistItem: ChecklistItem, index: number) => {
+                        {checklist.items.map((checklistItem: ChecklistItemType, index: number) => {
                             return (
-                                <ChecklistItemDetails
+                                <ChecklistItem
                                     key={checklist.title + checklistItem.title}
                                     checklistItem={checklistItem}
                                     checklistNum={checklistIndex}

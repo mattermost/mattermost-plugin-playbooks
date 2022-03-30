@@ -18,7 +18,8 @@ import {
 } from 'src/client';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
-import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
+import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
+import {usePortal} from 'src/hooks';
 
 import ChecklistItemHoverMenu from './hover_menu';
 import ChecklistItemDescription from './description';
@@ -26,8 +27,8 @@ import AssignTo from './assign_to';
 import Command from './command';
 import {CheckBoxButton, CancelSaveButtons} from './inputs';
 
-interface ChecklistItemDetailsProps {
-    checklistItem: ChecklistItem;
+interface ChecklistItemProps {
+    checklistItem: ChecklistItemType;
     checklistNum: number;
     itemNum: number;
     channelId: string;
@@ -39,10 +40,7 @@ interface ChecklistItemDetailsProps {
     collapsibleDescription: boolean;
 }
 
-const portal: HTMLElement = document.createElement('div');
-document.body.appendChild(portal);
-
-export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.ReactElement => {
+export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => {
     const {formatMessage} = useIntl();
     const channelNamesMap = useSelector<GlobalState, ChannelNamesMap>(getChannelsNameMapInCurrentTeam);
     const team = useSelector<GlobalState, Team>(getCurrentTeam);
@@ -51,6 +49,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
     const [isEditing, setIsEditing] = useState(false);
     const [titleValue, setTitleValue] = useState(props.checklistItem.title);
     const [descValue, setDescValue] = useState(props.checklistItem.description);
+    const portal = usePortal(document.body);
 
     const markdownOptions = {
         singleline: true,
@@ -120,7 +119,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
             editingItem={isEditing}
             showDescription={showDescription}
             onEdit={setDescValue}
-            value={props.checklistItem.description}
+            value={descValue || props.checklistItem.description}
         />
     );
 
