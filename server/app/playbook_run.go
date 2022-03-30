@@ -483,6 +483,9 @@ type PlaybookRunService interface {
 
 	// SetCommandToChecklistItem sets command to checklist item
 	SetCommandToChecklistItem(playbookRunID, userID string, checklistNumber, itemNumber int, newCommand string) error
+	
+	// SetDueDate sets absolute due date timestamp for the specified checklist item
+	SetDueDate(playbookRunID, userID string, duedate int64, checklistNumber, itemNumber int) error
 
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
 	RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error)

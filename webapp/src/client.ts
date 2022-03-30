@@ -300,6 +300,15 @@ export async function setAssignee(playbookRunId: string, checklistNum: number, i
     }
 }
 
+export async function setDueDate(playbookRunId: string, checklistNum: number, itemNum: number, date?: number) {
+    const body = JSON.stringify({due_date: date});
+    try {
+        return await doPut(`${apiUrl}/runs/${playbookRunId}/checklists/${checklistNum}/item/${itemNum}/duedate`, body);
+    } catch (error) {
+        return {error};
+    }
+}
+
 export async function setChecklistItemState(playbookRunID: string, checklistNum: number, itemNum: number, newState: ChecklistItemState) {
     return doPut(`${apiUrl}/runs/${playbookRunID}/checklists/${checklistNum}/item/${itemNum}/state`,
         JSON.stringify({

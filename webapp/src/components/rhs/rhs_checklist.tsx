@@ -8,6 +8,7 @@ import styled from 'styled-components';
 import {Droppable, DroppableProvided} from 'react-beautiful-dnd';
 
 import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
+import {DateTime} from 'luxon';
 
 import {PlaybookRun} from 'src/types/playbook_run';
 import {addNewTask} from 'src/actions';
@@ -58,6 +59,11 @@ const RHSChecklist = (props: Props) => {
 
         // "Others" is not checked, so if item has someone else as the assignee, don't show it.
         if (!filter.others && checklistItem.assignee_id !== '' && checklistItem.assignee_id !== myId) {
+            return false;
+        }
+
+        // "Overdue" is checked, so if item is not overdue or due date is not set, don't show it.
+        if (filter.overdueOnly && (checklistItem.due_date === 0 || DateTime.fromMillis(checklistItem.due_date) > DateTime.now())) {
             return false;
         }
 

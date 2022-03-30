@@ -15,6 +15,7 @@ import {DraggableProvided} from 'react-beautiful-dnd';
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {
     clientEditChecklistItem,
+    setDueDate,
 } from 'src/client';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
@@ -26,6 +27,7 @@ import ChecklistItemDescription from './description';
 import AssignTo from './assign_to';
 import Command from './command';
 import {CheckBoxButton, CancelSaveButtons} from './inputs';
+import {DateTimeOption} from './../datetime_selector';
 
 interface ChecklistItemProps {
     checklistItem: ChecklistItemType;
@@ -65,6 +67,21 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     const labelText = messageHtmlToComponent(formatText(props.checklistItem.title, markdownOptions), true, {});
 
     const toggleDescription = () => setShowDescription(!showDescription);
+
+    const onDueDateChange = async (value?: DateTimeOption | undefined | null) => {
+        setShowMenu(false);
+        if (!props.playbookRunId) {
+            return;
+        }
+        let timestamp = 0;
+        if (value?.value) {
+            timestamp = value?.value.toMillis();
+        }
+        const response = await setDueDate(props.playbookRunId, props.checklistNum, props.itemNum, timestamp);
+        if (response.error) {
+            console.log(response.error); // eslint-disable-line no-console
+        }
+    };
 
     const extraRow = (
         <Row>
@@ -147,6 +164,8 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         showDescription={showDescription}
                         toggleDescription={toggleDescription}
                         assignee_id={props.checklistItem.assignee_id || ''}
+                        due_date={props.checklistItem.due_date}
+                        onDueDateChange={onDueDateChange}
                     />
                 }
                 <DragButton

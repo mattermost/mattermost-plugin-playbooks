@@ -21,6 +21,7 @@ import PlaybookRunBackstage
     from 'src/components/backstage/playbook_runs/playbook_run_backstage/playbook_run_backstage';
 import PlaybookList from 'src/components/backstage/playbook_list';
 import PlaybookEdit from 'src/components/backstage/playbook_edit/playbook_edit';
+import PlaybookEditor from 'src/components/backstage/playbook_editor/playbook_editor';
 import {NewPlaybook} from 'src/components/backstage/new_playbook';
 import {ErrorPageTypes} from 'src/constants';
 import {pluginErrorUrl} from 'src/browser_routing';
@@ -116,6 +117,7 @@ const Backstage = () => {
                 <Switch>
                     <Route path={`${match.url}/error`}/>
                     <Route path={`${match.url}/start`}/>
+                    <Route path={`${match.url}/playbooks/:playbookId/editor`}/>
                     <Route>
                         <BackstageNavbar className='flex justify-content-between'>
                             <div className='d-flex items-center'>
@@ -163,6 +165,11 @@ const Backstage = () => {
                     <Switch>
                         <Route path={`${match.url}/playbooks/new`}>
                             <NewPlaybook/>
+                        </Route>
+                        <Route
+                            path={`${match.url}/playbooks/:playbookId/editor`}
+                        >
+                            <PlaybookEditor/>
                         </Route>
                         <Route path={`${match.url}/playbooks/:playbookId/edit/:tabId?`}>
                             <PlaybookEdit

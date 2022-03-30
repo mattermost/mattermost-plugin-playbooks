@@ -14,6 +14,9 @@ import {
 } from 'src/client';
 
 import AssignTo from './assign_to';
+import {DateTimeOption} from './../datetime_selector';
+import {Mode} from './../datetime_input';
+import DueDate from './../checklist_item/duedate';
 
 export interface Props {
     playbookRunId: string;
@@ -27,6 +30,8 @@ export interface Props {
     showDescription: boolean;
     toggleDescription: () => void;
     assignee_id: string;
+    due_date: number;
+    onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
 }
 
 const ChecklistItemHoverMenu = (props: Props) => {
@@ -51,6 +56,11 @@ const ChecklistItemHoverMenu = (props: Props) => {
                 playbookRunId={props.playbookRunId}
                 editable={props.isEditing}
                 inHoverMenu={true}
+            />
+            <DueDate
+                date={props.due_date}
+                mode={Mode.DateTimeValue}
+                onSelectedChange={props.onDueDateChange}
             />
             <HoverMenuButton
                 title={formatMessage({defaultMessage: 'Edit'})}

@@ -32,6 +32,32 @@ func TestActionCreation(t *testing.T) {
 		assert.NotEmpty(t, actionID)
 	})
 
+	t.Run("create invalid action - duplicate action and trigger types", func(t *testing.T) {
+		// Define an action
+		action := client.ChannelActionCreateOptions{
+			ChannelID:   e.BasicPublicChannel.Id,
+			Enabled:     true,
+			ActionType:  client.ActionTypeCategorizeChannel,
+			TriggerType: client.TriggerTypeNewMemberJoins,
+			Payload: client.CategorizeChannelPayload{
+				CategoryName: "category",
+			},
+		}
+
+		// Create a valid action
+		actionID, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, action)
+
+		// Verify that the API succeeds
+		assert.NoError(t, err)
+		assert.NotEmpty(t, actionID)
+
+		// Try to create the same action again
+		_, err = e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, action)
+
+		// Verify that the API fails with a 500 error
+		requireErrorWithStatusCode(t, err, http.StatusInternalServerError)
+	})
+
 	t.Run("create invalid action - wrong action type", func(t *testing.T) {
 		// Create an action with a wrong action type
 		_, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
@@ -117,10 +143,11 @@ func TestActionCreation(t *testing.T) {
 		actionID, err := e.PlaybooksAdminClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
 			ChannelID:   e.BasicPublicChannel.Id,
 			Enabled:     true,
-			ActionType:  client.ActionTypeWelcomeMessage,
-			TriggerType: client.TriggerTypeNewMemberJoins,
-			Payload: client.WelcomeMessagePayload{
-				Message: "Hello!",
+			ActionType:  client.ActionTypePromptRunPlaybook,
+			TriggerType: client.TriggerTypeKeywordsPosted,
+			Payload: client.PromptRunPlaybookFromKeywordsPayload{
+				Keywords:   []string{"one", "two"},
+				PlaybookID: model.NewId(),
 			},
 		})
 
@@ -134,26 +161,42 @@ func TestActionList(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	createValidWelcomeMessageAction := func(msg string) string {
-		id, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
-			ChannelID:   e.BasicPublicChannel.Id,
-			Enabled:     true,
-			ActionType:  client.ActionTypeWelcomeMessage,
-			TriggerType: client.TriggerTypeNewMemberJoins,
-			Payload: client.WelcomeMessagePayload{
-				Message: msg,
-			},
-		})
-		assert.NoError(t, err)
+	// Create three valid actions
 
-		return id
-	}
+	welcomeActionID, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+		ChannelID:   e.BasicPublicChannel.Id,
+		Enabled:     true,
+		ActionType:  client.ActionTypeWelcomeMessage,
+		TriggerType: client.TriggerTypeNewMemberJoins,
+		Payload: client.WelcomeMessagePayload{
+			Message: "msg",
+		},
+	})
+	assert.NoError(t, err)
 
-	// Create four valid actions
-	actionID01 := createValidWelcomeMessageAction("01")
-	actionID02 := createValidWelcomeMessageAction("02")
-	actionID03 := createValidWelcomeMessageAction("03")
-	actionID04 := createValidWelcomeMessageAction("04")
+	categorizeActionID, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+		ChannelID:   e.BasicPublicChannel.Id,
+		Enabled:     true,
+		ActionType:  client.ActionTypeCategorizeChannel,
+		TriggerType: client.TriggerTypeNewMemberJoins,
+		Payload: client.CategorizeChannelPayload{
+			CategoryName: "category",
+		},
+	})
+	assert.NoError(t, err)
+
+	playbookID := model.NewId()
+	promptActionID, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+		ChannelID:   e.BasicPublicChannel.Id,
+		Enabled:     true,
+		ActionType:  client.ActionTypePromptRunPlaybook,
+		TriggerType: client.TriggerTypeKeywordsPosted,
+		Payload: client.PromptRunPlaybookFromKeywordsPayload{
+			Keywords:   []string{"one", "two"},
+			PlaybookID: playbookID,
+		},
+	})
+	assert.NoError(t, err)
 
 	t.Run("view list allowed", func(t *testing.T) {
 		// List the actions with the default options
@@ -161,27 +204,31 @@ func TestActionList(t *testing.T) {
 
 		// Verify that the API succeeds and that it returns the correct number of actions
 		assert.NoError(t, err)
-		assert.Len(t, actions, 4)
+		assert.Len(t, actions, 3)
 
-		// Verify that the returned actions contain the correct messages
+		// Verify that the returned actions contain the correct payloads
 		for _, action := range actions {
-			var payload client.WelcomeMessagePayload
-			err = mapstructure.Decode(action.Payload, &payload)
-			assert.NoError(t, err)
-
-			var msg string
 			switch action.ID {
-			case actionID01:
-				msg = "01"
-			case actionID02:
-				msg = "02"
-			case actionID03:
-				msg = "03"
-			case actionID04:
-				msg = "04"
-			}
+			case welcomeActionID:
+				var payload client.WelcomeMessagePayload
+				err = mapstructure.Decode(action.Payload, &payload)
+				assert.NoError(t, err)
+				assert.Equal(t, "msg", payload.Message)
 
-			assert.Equal(t, msg, payload.Message)
+			case categorizeActionID:
+				var payload client.CategorizeChannelPayload
+				err = mapstructure.Decode(action.Payload, &payload)
+				assert.NoError(t, err)
+				assert.Equal(t, "category", payload.CategoryName)
+
+			case promptActionID:
+				var payload client.PromptRunPlaybookFromKeywordsPayload
+				err = mapstructure.Decode(action.Payload, &payload)
+				assert.NoError(t, err)
+				assert.EqualValues(t, []string{"one", "two"}, payload.Keywords)
+				assert.Equal(t, playbookID, payload.PlaybookID)
+
+			}
 		}
 	})
 
@@ -206,7 +253,8 @@ func TestActionUpdate(t *testing.T) {
 	e := Setup(t)
 	e.CreateBasic()
 
-	defaultAction := client.GenericChannelAction{
+	// Create a valid action
+	action := client.GenericChannelAction{
 		GenericChannelActionWithoutPayload: client.GenericChannelActionWithoutPayload{
 			ChannelID:   e.BasicPublicChannel.Id,
 			Enabled:     true,
@@ -218,28 +266,19 @@ func TestActionUpdate(t *testing.T) {
 		},
 	}
 
-	createAction := func() client.GenericChannelAction {
-		action := defaultAction
+	id, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
+		ChannelID:   e.BasicPublicChannel.Id,
+		Enabled:     action.Enabled,
+		ActionType:  action.ActionType,
+		TriggerType: action.TriggerType,
+		Payload:     action.Payload,
+	})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, id)
 
-		id, err := e.PlaybooksClient.Actions.Create(context.Background(), e.BasicPublicChannel.Id, client.ChannelActionCreateOptions{
-			ChannelID:   e.BasicPublicChannel.Id,
-			Enabled:     action.Enabled,
-			ActionType:  action.ActionType,
-			TriggerType: action.TriggerType,
-			Payload:     action.Payload,
-		})
-		assert.NoError(t, err)
-		assert.NotEmpty(t, id)
-
-		action.ID = id
-
-		return action
-	}
+	action.ID = id
 
 	t.Run("valid update", func(t *testing.T) {
-		// Create the action
-		action := createAction()
-
 		// Make a valid modification
 		action.Enabled = false
 
@@ -251,9 +290,6 @@ func TestActionUpdate(t *testing.T) {
 	})
 
 	t.Run("invalid update - wrong action type", func(t *testing.T) {
-		// Create the action
-		action := createAction()
-
 		// Make an invalid modification
 		action.ActionType = "wrong"
 
@@ -265,9 +301,6 @@ func TestActionUpdate(t *testing.T) {
 	})
 
 	t.Run("invalid update - wrong trigger type", func(t *testing.T) {
-		// Create the action
-		action := createAction()
-
 		// Make an invalid modification
 		action.TriggerType = "wrong"
 
@@ -279,9 +312,6 @@ func TestActionUpdate(t *testing.T) {
 	})
 
 	t.Run("invalid update - wrong payload type", func(t *testing.T) {
-		// Create the action
-		action := createAction()
-
 		// Make an invalid modification
 		action.Payload = client.WelcomeMessagePayload{Message: ""}
 
@@ -297,9 +327,6 @@ func TestActionUpdate(t *testing.T) {
 		defer func() {
 			e.Permissions.RestoreDefaultRolePermissions(defaultRolePermissions)
 		}()
-
-		// Create the action
-		action := createAction()
 
 		// Tweak the permissions so that the user is no longer channel admin
 		e.Permissions.RemovePermissionFromRole(model.PermissionManagePublicChannelProperties.Id, model.ChannelUserRoleId)

@@ -113,6 +113,7 @@ export interface ChecklistItem {
     assignee_modified?: number;
     command: string;
     command_last_run: number;
+    due_date: number;
 }
 
 export interface DraftPlaybookWithChecklist extends Omit<PlaybookWithChecklist, 'id'> {
@@ -193,6 +194,7 @@ export function emptyChecklistItem(): ChecklistItem {
         command: '',
         description: '',
         command_last_run: 0,
+        due_date: 0,
     };
 }
 
@@ -202,6 +204,7 @@ export const newChecklistItem = (title = '', description = '', command = '', sta
     command,
     command_last_run: 0,
     state,
+    due_date: 0,
 });
 
 export interface ChecklistItemsFilter extends Record<string, boolean> {
@@ -210,6 +213,7 @@ export interface ChecklistItemsFilter extends Record<string, boolean> {
     me: boolean;
     unassigned: boolean;
     others: boolean;
+    overdueOnly: boolean;
 }
 
 export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
@@ -218,6 +222,7 @@ export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
     me: true,
     unassigned: true,
     others: true,
+    overdueOnly: false,
 };
 
 // eslint-disable-next-line
