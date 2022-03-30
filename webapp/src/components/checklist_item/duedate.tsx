@@ -11,10 +11,14 @@ import {DateTime} from 'luxon';
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from '../datetime_selector';
 import {Mode} from '../datetime_input';
 import {HoverMenuButton} from '../rhs/rhs_shared';
+import {Timestamp} from 'src/webapp_globals';
+import {FutureTimeSpec, PastTimeSpec} from '../rhs/rhs_post_update';
 
 interface Props {
     date?: number;
     mode: Mode.DateTimeValue | Mode.DurationValue;
+    inHoverMenu?: boolean;
+    editable?: boolean;
 
     onSelectedChange: (value?: DateTimeOption | undefined | null) => void;
 }
@@ -47,27 +51,80 @@ const DueDate = ({
         props.onSelectedChange();
         setDateTimeSelectorToggle(!dateTimeSelectorToggle);
     };
-    return (
-        <DateTimeSelector
-            date={date}
-            mode={mode}
-            onlyPlaceholder={true}
-            placeholder={
-                <HoverMenuButton
-                    title={formatMessage({defaultMessage: 'Add due date'})}
-                    className={'icon-calendar-outline icon-16 btn-icon'}
+
+    if (props.inHoverMenu) {
+        return (
+            <DateTimeSelector
+                date={date}
+                mode={mode}
+                onlyPlaceholder={true}
+                placeholder={
+                    <HoverMenuButton
+                        title={formatMessage({defaultMessage: 'Add due date'})}
+                        className={'icon-calendar-outline icon-16 btn-icon'}
+                    />
+                }
+                suggestedOptions={suggestedOptions}
+                onSelectedChange={props.onSelectedChange}
+                customControl={ControlComponentDueDate}
+                customControlProps={{
+                    showCustomReset: Boolean(date),
+                    onCustomReset: resetDueDate,
+                }}
+                controlledOpenToggle={dateTimeSelectorToggle}
+                showOnRight={true}
+            />
+        );
+    }
+
+    let className = 'NoDueDate';
+    let label = <FormattedMessage defaultMessage='Add time frame'/>;
+    if (date) {
+        const timespec = (date < DateTime.now().toMillis()) ? PastTimeSpec : FutureTimeSpec;
+        const timestamp = DateTime.fromMillis(date);
+        label = (
+            <>
+                {formatMessage({defaultMessage: 'Due'})}
+                {' '}
+                <Timestamp
+                    value={timestamp.toJSDate()}
+                    units={timespec}
+                    useTime={false}
                 />
-            }
-            suggestedOptions={suggestedOptions}
-            onSelectedChange={props.onSelectedChange}
-            customControl={ControlComponentDueDate}
-            customControlProps={{
-                showCustomReset: Boolean(date),
-                onCustomReset: resetDueDate,
-            }}
-            controlledOpenToggle={dateTimeSelectorToggle}
-            showOnRight={true}
-        />
+            </>
+        );
+        className = dueUntilToday(date) ? 'NowDue' : 'FutureDue';
+    }
+
+    return (
+        <DueDateContainer className={className}>
+            <DateTimeSelector
+                placeholder={
+                    <PlaceholderDiv>
+                        <DueDateIcon
+                            className={'icon-calendar-outline icon-14 btn-icon'}
+                        />
+                        <DueDateTextContainer editable={props.editable}>
+                            {label}
+                        </DueDateTextContainer>
+                        {props.editable && <i className='icon-chevron-down icon--small ml-2'/>}
+                    </PlaceholderDiv>
+                }
+
+                date={date}
+                mode={mode}
+                onlyPlaceholder={true}
+                suggestedOptions={suggestedOptions}
+                onSelectedChange={props.onSelectedChange}
+                customControl={ControlComponentDueDate}
+                customControlProps={{
+                    showCustomReset: Boolean(date),
+                    onCustomReset: resetDueDate,
+                }}
+                controlledOpenToggle={dateTimeSelectorToggle}
+                showOnRight={true}
+            />
+        </DueDateContainer>
     );
 };
 
@@ -110,6 +167,14 @@ const selectedValueOption = (value: number, mode: Mode.DateTimeValue | Mode.Dura
     labelRHS: (<CheckIcon className={'icon icon-check'}/>),
 });
 
+const dueUntilToday = (date: number) => {
+    const dueDate = DateTime.fromMillis(date);
+    const now = DateTime.now();
+    const dueToday = now.day === dueDate.day && now.year === dueDate.year && now.month === dueDate.month;
+    const overdue = date < now.toMillis();
+    return dueToday || overdue;
+};
+
 const ControlComponentAnchor = styled.a`
     display: inline-block;
     margin: 0 0 8px 12px;
@@ -129,6 +194,50 @@ const LabelRight = styled.div`
 const CheckIcon = styled.i`
     color: var(--button-bg);
 	font-size: 22px;
+`;
+
+const PlaceholderDiv = styled.div`
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    white-space: nowrap;    
+`;
+
+const DueDateTextContainer = styled.div<{editable?: boolean}>`
+    font-size: 12px;
+    line-height: 15px;
+    font-weight: ${(props) => (props.editable ? '600' : '400')};
+`;
+
+const DueDateIcon = styled.i`
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    flex: table;
+    margin-right: 5px;
+    color: inherit;
+    pointer-events: none;
+`;
+
+const DueDateContainer = styled.div`
+    max-width: calc(100% - 210px);
+
+    &.NowDue {
+        background-color: rgba(var(--dnd-indicator-rgb), 0.08);
+        color: var(--dnd-indicator);
+    }
+
+    &.FutureDue {
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
+        color: var(--center-channel-color);
+    }    
+
+    &.NoDueDate {
+        background-color: rgba(var(--center-channel-color-rgb), 0.08);
+        color: var(--center-channel-color);
+    }    
 `;
 
 export default DueDate;

@@ -501,6 +501,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                     date={props.checklistItem.due_date}
                                     mode={Mode.DateTimeValue}
                                     onSelectedChange={onDueDateChange}
+                                    inHoverMenu={true}
                                 />
                                 <HoverMenuButton
                                     title={formatMessage({defaultMessage: 'Edit'})}
@@ -587,6 +588,14 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                             </Command>
                             {running && <StyledSpinner/>}
                         </div>
+                    }
+                    {
+                        props.checklistItem.due_date > 0 &&
+                        <DueDate
+                            date={props.checklistItem.due_date}
+                            mode={Mode.DateTimeValue}
+                            onSelectedChange={onDueDateChange}
+                        />
                     }
                 </ExtrasRow>
             </ItemContainer>

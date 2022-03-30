@@ -242,6 +242,10 @@ export default DateTimeSelector;
 const Wrapper = styled.div`
     display: flex;
     flex: 1;
+    color: var(--center-channel-color);
+    font-weight 400;
+    font-size: 14px;
+    line-height: 20px;
 `;
 
 const Right = styled.div`
