@@ -75,7 +75,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                     itemNum={props.itemNum}
                     playbookRunId={props.playbookRunId}
                     editable={isEditing}
-                    withoutName={props.checklistItem.command !== ''}
+                    withoutName={props.checklistItem.command !== '' && !isEditing}
                 />
             }
             {(props.checklistItem.command !== '' || isEditing) &&
@@ -115,6 +115,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
     }
 
     const itemDescription = (
+        (descValue || props.checklistItem.description || isEditing) &&
         <ChecklistItemDescription
             editingItem={isEditing}
             showDescription={showDescription}
@@ -219,7 +220,7 @@ const ItemContainer = styled.div<{editing: boolean}>`
 `;
 
 export const CheckboxContainer = styled.div`
-    align-items: center;
+    align-items: flex-start;
     display: flex;
     position: relative;
 
@@ -266,6 +267,7 @@ export const CheckboxContainer = styled.div`
         margin: 0;
         cursor: pointer;
         margin-right: 8px;
+        margin-top: 2px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -334,9 +336,9 @@ const ChecklistItemLabel = styled.div<{clickable: boolean}>`
 const DragButton = styled.i<{isVisible: boolean}>`
     cursor: pointer;
     width: 4px;
-    height: 12px;
     margin-right: 4px; 
-    margin-left: 4px;   
+    margin-left: 4px;  
+    margin-top: 1px; 
     color: rgba(var(--center-channel-color-rgb), 0.56);
     ${({isVisible}) => !isVisible && `
         visibility: hidden

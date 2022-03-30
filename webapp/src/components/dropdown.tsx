@@ -14,7 +14,7 @@ const Blanket = styled.div`
     top: 0;
     right: 0;
     position: fixed;
-    z-index: 1;
+    z-index: 50;
 `;
 
 interface ChildContainerProps {

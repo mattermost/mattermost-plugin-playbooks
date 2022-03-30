@@ -31,35 +31,34 @@ export interface Props {
 
 const ChecklistItemHoverMenu = (props: Props) => {
     const {formatMessage} = useIntl();
+    if (props.isEditing) {
+        return null;
+    }
     return (
         <HoverMenu>
-            {!props.isEditing &&
-                <>
-                    {props.description !== '' &&
-                        <ToggleDescriptionButton
-                            title={formatMessage({defaultMessage: 'Toggle description'})}
-                            className={'icon icon-chevron-up'}
-                            showDescription={props.showDescription}
-                            onClick={props.toggleDescription}
-                        />
-                    }
-                    <AssignTo
-                        assignee_id={props.assignee_id}
-                        checklistNum={props.checklistNum}
-                        itemNum={props.itemNum}
-                        playbookRunId={props.playbookRunId}
-                        editable={props.isEditing}
-                        inHoverMenu={true}
-                    />
-                    <HoverMenuButton
-                        title={formatMessage({defaultMessage: 'Edit'})}
-                        className={'icon-pencil-outline icon-16 btn-icon'}
-                        onClick={() => {
-                            props.onEdit();
-                        }}
-                    />
-                </>
+            {props.description !== '' &&
+                <ToggleDescriptionButton
+                    title={formatMessage({defaultMessage: 'Toggle description'})}
+                    className={'icon icon-chevron-up'}
+                    showDescription={props.showDescription}
+                    onClick={props.toggleDescription}
+                />
             }
+            <AssignTo
+                assignee_id={props.assignee_id}
+                checklistNum={props.checklistNum}
+                itemNum={props.itemNum}
+                playbookRunId={props.playbookRunId}
+                editable={props.isEditing}
+                inHoverMenu={true}
+            />
+            <HoverMenuButton
+                title={formatMessage({defaultMessage: 'Edit'})}
+                className={'icon-pencil-outline icon-16 btn-icon'}
+                onClick={() => {
+                    props.onEdit();
+                }}
+            />
             <DotMenu
                 icon={<DotMenuIcon/>}
                 dotMenuButton={StyledDotMenuButton}
@@ -101,13 +100,15 @@ const ChecklistItemHoverMenu = (props: Props) => {
 
 const HoverMenu = styled.div`
     display: flex;
-    padding: 4px;
+    padding: 2px;
     position: absolute;
+    height: 32px;
     right: 0;
     top: -8px;
-    box-shadow: none;
-    background: none;
-    border: none;
+    border: 1px solid var(--center-channel-color-08);
+    box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    background: var(--center-channel-bg);
 `;
 
 const ToggleDescriptionButton = styled(HoverMenuButton) <{showDescription: boolean}>`

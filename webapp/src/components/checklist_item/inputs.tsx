@@ -97,6 +97,7 @@ export const CancelSaveButtons = (props: {onCancel: () => void, onSave: () => vo
 const CancelSaveContainer = styled.div`
     text-align: right;
     padding: 8px;
+    z-index: 2;
 `;
 
 const CancelButton = styled(SecondaryButton)`
