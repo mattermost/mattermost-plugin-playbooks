@@ -85,11 +85,11 @@ export const defaultMakeOptions: Props['makeOptions'] = (query, datetimes, durat
     }
 
     if (durations.length) {
-        if (
-            mode === Mode.DurationValue ||
-            (mode === Mode.DateTimeValue && !options.length)
-        ) {
+        if (mode === Mode.DurationValue) {
             options = options.concat(durations.map((duration) => ({value: duration, mode})));
+        } else if (mode === Mode.DateTimeValue && !options.length) {
+            const now = DateTime.now();
+            options = options.concat(durations.map((duration) => ({value: now.plus(duration), mode})));
         }
     }
 

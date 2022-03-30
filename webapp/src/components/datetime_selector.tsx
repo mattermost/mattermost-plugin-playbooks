@@ -58,11 +58,6 @@ export const optionFromMillis = (ms: number, mode: Mode.DateTimeValue | Mode.Dur
     mode,
 });
 
-const selectedValueOption = (value: number, mode: Mode.DateTimeValue | Mode.DurationValue) => ({
-    ...optionFromMillis(value, mode),
-    labelRHS: (<CheckIcon className={'icon icon-check'}/>),
-});
-
 const chronoParsingOptions: ParsingOption = {forwardDate: true};
 
 export const DateTimeSelector = ({
@@ -98,19 +93,15 @@ export const DateTimeSelector = ({
         props.onSelectedChange(value);
     };
 
-    const optionsPlaceholder = useMemo(() => {
-        const defaults = suggestedOptions;
+    const [options, setOptionsDateTime] = useState<DateTimeOption[]>([]);
 
-        if (date) {
-            defaults.push(selectedValueOption(date, mode));
-        }
-        return defaults;
-    }, [date]);
+    useEffect(() => {
+        setOptionsDateTime(suggestedOptions);
+    }, [suggestedOptions]);
 
     // Decide where to open the datetime selector
     const [rect, ref] = useClientRect();
     const [moveUp, setMoveUp] = useState(0);
-    const [options, setOptionsDateTime] = useState<DateTimeOption[]>(optionsPlaceholder);
 
     useEffect(() => {
         if (!rect) {
@@ -156,8 +147,9 @@ export const DateTimeSelector = ({
         if (makeOptions) {
             optionsNew = makeOptions(query, datetimes, duration ? [duration] : [], mode) as DateTimeOption[];
         }
-        setOptionsDateTime(optionsNew || optionsPlaceholder);
-    }, 150), [setOptionsDateTime, makeOptions]);
+
+        setOptionsDateTime(optionsNew || suggestedOptions);
+    }, 150), [makeOptions, suggestedOptions, mode]);
 
     const noDropdown = {DropdownIndicator: null, IndicatorSeparator: null};
     const components = props.customControl ? {
@@ -256,9 +248,4 @@ const Right = styled.div`
     flex-grow: 1;
     display: flex;
     justify-content: flex-end;
-`;
-
-const CheckIcon = styled.i`
-    color: var(--button-bg);
-	font-size: 22px;
 `;
