@@ -381,8 +381,9 @@ type OwnerInfo struct {
 // DialogState holds the start playbook run interactive dialog's state as it appears in the client
 // and is submitted back to the server.
 type DialogState struct {
-	PostID   string `json:"post_id"`
-	ClientID string `json:"client_id"`
+	PostID       string `json:"post_id"`
+	ClientID     string `json:"client_id"`
+	PromptPostID string `json:"prompt_post_id"`
 }
 
 type DialogStateAddToTimeline struct {
@@ -423,7 +424,7 @@ type PlaybookRunService interface {
 	CreatePlaybookRun(playbookRun *PlaybookRun, playbook *Playbook, userID string, public bool) (*PlaybookRun, error)
 
 	// OpenCreatePlaybookRunDialog opens an interactive dialog to start a new playbook run.
-	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool) error
+	OpenCreatePlaybookRunDialog(teamID, ownerID, triggerID, postID, clientID string, playbooks []Playbook, isMobileApp bool, promptPostID string) error
 
 	// OpenUpdateStatusDialog opens an interactive dialog so the user can update the playbook run's status.
 	OpenUpdateStatusDialog(playbookRunID, triggerID string) error
@@ -479,6 +480,9 @@ type PlaybookRunService interface {
 	// SetAssignee sets the assignee for the specified checklist item
 	// Idempotent, will not perform any actions if the checklist item is already assigned to assigneeID
 	SetAssignee(playbookRunID, userID, assigneeID string, checklistNumber, itemNumber int) error
+
+	// SetDueDate sets absolute due date timestamp for the specified checklist item
+	SetDueDate(playbookRunID, userID string, duedate int64, checklistNumber, itemNumber int) error
 
 	// RunChecklistItemSlashCommand executes the slash command associated with the specified checklist item.
 	RunChecklistItemSlashCommand(playbookRunID, userID string, checklistNumber, itemNumber int) (string, error)

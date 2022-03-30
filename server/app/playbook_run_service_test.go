@@ -834,7 +834,7 @@ func TestOpenCreatePlaybookRunDialog(t *testing.T) {
 			licenseChecker := mock_app.NewMockLicenseChecker(controller)
 			service := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, api, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
-			err := service.OpenCreatePlaybookRunDialog(tt.args.teamID, tt.args.ownerID, tt.args.triggerID, tt.args.postID, tt.args.clientID, tt.args.playbooks, tt.args.isMobileApp)
+			err := service.OpenCreatePlaybookRunDialog(tt.args.teamID, tt.args.ownerID, tt.args.triggerID, tt.args.postID, tt.args.clientID, tt.args.playbooks, tt.args.isMobileApp, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("OpenCreatePlaybookRunDialog() error = %v, wantErr %v", err, tt.wantErr)
 				return

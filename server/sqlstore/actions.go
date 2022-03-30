@@ -147,6 +147,18 @@ func (c *channelActionStore) GetChannelActions(channelID string, options app.Get
 			}
 
 			actions = append(actions, action)
+		case app.ActionTypeCategorizeChannel:
+			var categorizeChannelPayload app.CategorizeChannelPayload
+			if err := json.Unmarshal(sqlAction.Payload, &categorizeChannelPayload); err != nil {
+				return nil, errors.Wrapf(err, fmt.Sprintf("unable to unmarshal payload for action with ID %q and type %q", sqlAction.ID, sqlAction.ActionType), channelID)
+			}
+
+			action := app.GenericChannelAction{
+				GenericChannelActionWithoutPayload: sqlAction.GenericChannelActionWithoutPayload,
+				Payload:                            categorizeChannelPayload,
+			}
+
+			actions = append(actions, action)
 		}
 	}
 

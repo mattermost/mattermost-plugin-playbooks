@@ -24,12 +24,15 @@ export async function getPlaybookOrFetch(id: string, playbooks: Playbook[] | nul
 /**
  * Read-only logic to fetch playbook
  * @param id identifier of playbook to fetch
- * @remarks lightweight alternative to {@link usePlaybooksCrud} for read-only usage
+ * @remarks lightweight alternative to {@link usePlaybooksCrud}
+ * @returns undefined == loading; null == not found
  */
 export function usePlaybook(id: Playbook['id']) {
-    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | undefined>();
+    const [playbook, setPlaybook] = useState<PlaybookWithChecklist | undefined | null>();
     useEffect(() => {
-        clientFetchPlaybook(id).then(setPlaybook);
+        clientFetchPlaybook(id)
+            .then(setPlaybook)
+            .catch(() => setPlaybook(null));
     }, [id]);
 
     return playbook;

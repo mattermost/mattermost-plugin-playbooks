@@ -184,6 +184,44 @@ export const StyledSelect = styled(Select).attrs((props) => {
 
 export const StyledCreatable = styled(Creatable)`
     ${commonSelectStyle}
+
+    ${({classNamePrefix}) => css`
+        .${classNamePrefix}__control {
+            background-color: var(--center-channel-bg);
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+        }
+
+        .${classNamePrefix}__input {
+            color: var(--center-channel-color);
+        }
+
+        .${classNamePrefix}__control.${classNamePrefix}__control--is-disabled {
+            background-color: rgba(var(--center-channel-bg-rgb), 0.16);
+        }
+
+        .${classNamePrefix}__single-value {
+            color: var(--center-channel-color);
+        }
+
+        .${classNamePrefix}__menu-list {
+            background-color: var(--center-channel-bg);
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+            border-radius: 4px;
+        }
+
+        .${classNamePrefix}__option {
+            color: var(--center-channel-color);
+        }
+
+        .${classNamePrefix}__option--is-focused {
+            background-color: rgba(var(--center-channel-color-rgb), 0.1);
+        }
+
+        .${classNamePrefix}__option--is-selected {
+            background-color: rgba(var(--center-channel-color-rgb), 0.2);
+        }
+    `}
+
 `;
 
 export const BackstageHorizontalContentSquish = styled.div`

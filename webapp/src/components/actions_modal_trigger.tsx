@@ -93,6 +93,14 @@ const Container = styled.fieldset`
 
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
     border-radius: 4px;
+
+    :first-child {
+        margin-top: 28px;
+    }
+
+    :last-child {
+        margin-bottom: 28px;
+    }
 `;
 
 const Header = styled.div`
@@ -113,12 +121,12 @@ const Legend = styled.legend`
     margin: 0;
 `;
 
-const Label = styled.span`
+const Label = styled.div`
     font-size: 11px;
     color: rgba(var(--center-channel-color-rgb), 0.64);
 `;
 
-const Title = styled.span`
+const Title = styled.div`
     font-size: 14px;
     font-weight: 600;
     color: var(--center-channel-color);

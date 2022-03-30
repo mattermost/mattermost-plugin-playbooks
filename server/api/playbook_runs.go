@@ -110,6 +110,7 @@ func NewPlaybookRunHandler(
 	checklistItem.HandleFunc("/state", handler.itemSetState).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/assignee", handler.itemSetAssignee).Methods(http.MethodPut)
 	checklistItem.HandleFunc("/run", handler.itemRun).Methods(http.MethodPost)
+	checklistItem.HandleFunc("/duedate", handler.itemSetDueDate).Methods(http.MethodPut)
 
 	retrospectiveRouter := playbookRunRouterAuthorized.PathPrefix("/retrospective").Subrouter()
 	retrospectiveRouter.HandleFunc("", handler.updateRetrospective).Methods(http.MethodPost)
@@ -285,6 +286,14 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 		return
 	}
 
+	// If the dialog was spawn from a prompt post (the one that is automatically sent when
+	// certain keywords are posted in a channel), then we need to edit that original post
+	if state.PromptPostID != "" {
+		if err := h.editPromptPost(state.PromptPostID, playbookID, playbookRun.ID, userID, name); err != nil {
+			h.log.Warnf("failed editing the prompt post; error: %s", err.Error())
+		}
+	}
+
 	channel, err := h.pluginAPI.Channel.Get(playbookRun.ChannelID)
 	if err != nil {
 		h.HandleErrorWithCode(w, http.StatusInternalServerError, "unable to get new channel", err)
@@ -311,6 +320,33 @@ func (h *PlaybookRunHandler) createPlaybookRunFromDialog(w http.ResponseWriter, 
 
 	w.Header().Add("Location", fmt.Sprintf("/api/v0/runs/%s", playbookRun.ID))
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *PlaybookRunHandler) editPromptPost(promptPostID string, playbookID string, runID string, userID string, runName string) error {
+	post, err := h.pluginAPI.Post.GetPost(promptPostID)
+	if err != nil {
+		return errors.Wrapf(err, "unable to retrieve the post with ID %q", promptPostID)
+	}
+
+	playbook, err := h.playbookService.Get(playbookID)
+	if err != nil {
+		return errors.Wrapf(err, "unable to retrieve the playbook with ID %q", playbookID)
+	}
+
+	user, err := h.pluginAPI.User.Get(userID)
+	if err != nil {
+		return errors.Wrapf(err, "unable to retrieve the user with ID %q", userID)
+	}
+
+	// Update the message and remove the attachments; i.e., the buttons
+	post.Message = fmt.Sprintf("@%s started the run [%s](%s) using the [%s](%s) playbook.",
+		user.Username, runName, app.GetRunDetailsRelativeURL(runID), playbook.Title, app.GetPlaybookDetailsRelativeURL(playbookID))
+	model.ParseSlackAttachment(post, []*model.SlackAttachment{})
+	if err := h.pluginAPI.Post.UpdatePost(post); err != nil {
+		return errors.Wrapf(err, "unable to update the post with ID %q", post.Id)
+	}
+
+	return nil
 }
 
 // addToTimelineDialog handles the interactive dialog submission when a user clicks the
@@ -456,10 +492,6 @@ func (h *PlaybookRunHandler) createPlaybookRun(playbookRun app.PlaybookRun, user
 		playbookRun.WebhookOnStatusUpdateURLs = []string{}
 		if pb.WebhookOnStatusUpdateEnabled {
 			playbookRun.WebhookOnStatusUpdateURLs = pb.WebhookOnStatusUpdateURLs
-		}
-
-		if pb.CategorizeChannelEnabled {
-			playbookRun.CategoryName = pb.CategoryName
 		}
 
 		playbookRun.RetrospectiveEnabled = pb.RetrospectiveEnabled
@@ -1107,6 +1139,37 @@ func (h *PlaybookRunHandler) itemSetAssignee(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err := h.playbookRunService.SetAssignee(id, userID, params.AssigneeID, checklistNum, itemNum); err != nil {
+		h.HandleError(w, err)
+		return
+	}
+
+	ReturnJSON(w, map[string]interface{}{}, http.StatusOK)
+}
+
+func (h *PlaybookRunHandler) itemSetDueDate(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	checklistNum, err := strconv.Atoi(vars["checklist"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse checklist", err)
+		return
+	}
+	itemNum, err := strconv.Atoi(vars["item"])
+	if err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to parse item", err)
+		return
+	}
+	userID := r.Header.Get("Mattermost-User-ID")
+
+	var params struct {
+		DueDate int64 `json:"due_date"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		h.HandleErrorWithCode(w, http.StatusBadRequest, "failed to unmarshal", err)
+		return
+	}
+
+	if err := h.playbookRunService.SetDueDate(id, userID, params.DueDate, checklistNum, itemNum); err != nil {
 		h.HandleError(w, err)
 		return
 	}

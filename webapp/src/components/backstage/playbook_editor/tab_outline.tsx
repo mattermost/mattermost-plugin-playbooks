@@ -11,7 +11,9 @@ import renderChecklists from 'src/components/backstage/playbooks/playbook_previe
 import renderDescription from 'src/components/backstage/playbooks/playbook_preview_description';
 import renderRetrospective from 'src/components/backstage/playbooks/playbook_preview_retrospective';
 import renderStatusUpdates from 'src/components/backstage/playbooks/playbook_preview_status_updates';
-import Navbar, {SectionID} from 'src/components/backstage/playbooks/playbook_preview_navbar';
+import {HorizontalBG} from 'src/components/collapsible_checklist';
+
+import Navbar, {SectionID} from './tab_outline_navbar';
 
 interface Props {
     playbook: PlaybookWithChecklist;
@@ -19,8 +21,8 @@ interface Props {
     followerIds: string[];
 }
 
-/** @deprecated this page and some inner sections will be deprecated in the future. See `playbook_editor/outline.tsx`.*/
-const PlaybookPreview = (props: Props) => {
+/** @alpha replace/copy-pasta/unfold sections as-needed*/
+const Outline = (props: Props) => {
     const description = renderDescription({
         id: SectionID.Description,
         playbook: props.playbook,
@@ -49,13 +51,6 @@ const PlaybookPreview = (props: Props) => {
 
     return (
         <Container>
-            <Content data-testid='preview-content'>
-                {description}
-                {checklists}
-                {actions}
-                {statusUpdates}
-                {retrospective}
-            </Content>
             <Navbar
                 playbook={props.playbook}
                 runsInProgress={props.runsInProgress}
@@ -68,6 +63,13 @@ const PlaybookPreview = (props: Props) => {
                     retrospective: retrospective !== null,
                 }}
             />
+            <Content data-testid='preview-content'>
+                {description}
+                {checklists}
+                {actions}
+                {statusUpdates}
+                {retrospective}
+            </Content>
         </Container>
     );
 };
@@ -78,14 +80,14 @@ const Container = styled.main`
     flex-direction: row;
     justify-content: center;
     flex-grow: 1;
-
-    column-gap: 114px;
-
-    padding-top: 40px;
-
-    background-color: rgba(var(--center-channel-color-rgb),0.04);
-
+    column-gap: 7rem;
+    padding: 40px 20px 20px;
     z-index: 1;
+
+    ${HorizontalBG} {
+        /* sticky checklist header */
+        top: 82px;
+    }
 `;
 
 const Content = styled.div`
@@ -93,8 +95,7 @@ const Content = styled.div`
     flex-direction: column;
     max-width: 780px;
     margin-bottom: 40px;
-
     flex-grow: 1;
 `;
 
-export default PlaybookPreview;
+export default Outline;
