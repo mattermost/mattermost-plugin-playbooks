@@ -1,9 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {memo, useState, ComponentProps, useMemo, useEffect, ReactNode} from 'react';
-import {Chrono, ParsingOption, en, nl, de, fr, ja, pt} from 'chrono-node';
-import parseDuration from 'parse-duration';
+import React, {useState, ComponentProps, useMemo, useEffect, ReactNode} from 'react';
 
 import {debounce} from 'debounce';
 import Select from 'react-select';
@@ -17,69 +15,7 @@ import {StyledSelect} from 'src/components/backstage/styles';
 import {Timestamp} from 'src/webapp_globals';
 import {formatDuration} from 'src/components/formatted_duration';
 
-const ChronoLocales: {[locale: string]: Pick<Chrono, 'parse' | 'parseDate'>} = {nl, de, fr, ja, pt};
-
-export enum Mode {
-    DateTimeValue = 'DateTimeValue',
-
-    DurationValue = 'DurationValue',
-
-    /** DateTime takes priority, or duration if parsable */
-    AutoValue = 'AutoValue'
-}
-
-const chronoParsingOptions: ParsingOption = {forwardDate: true};
-
-const durationFromQuery = (locale: string, query: string | DurationLikeObject): Duration | null => {
-    if (typeof query !== 'string') {
-        return Duration.fromObject(query);
-    }
-
-    localizeParseDuration(locale);
-
-    const ms = parseDuration(query);
-    return (ms && Duration.fromMillis(ms)) || null;
-};
-
-const parseDateTime = (locale: string, query: string) => {
-    // eslint-disable-next-line no-undefined
-    return ChronoLocales[locale.split('-')[0]]?.parseDate(query, undefined, chronoParsingOptions) ?? en.parseDate(query, undefined, chronoParsingOptions);
-};
-const dateTimeFromQuery = (locale: string, query: string | DateObjectUnits, acceptDurationInput = false): DateTime | null => {
-    if (typeof query !== 'string') {
-        return DateTime.fromObject(query);
-    }
-
-    const date = parseDateTime(locale, query);
-
-    if (date == null && acceptDurationInput) {
-        const duration = durationFromQuery(locale, query);
-
-        if (duration?.isValid) {
-            return DateTime.now().plus(duration);
-        }
-    }
-    return (date && DateTime.fromJSDate(date)) || null;
-};
-
-export function infer(locale: string, query: string, mode?: Mode.DateTimeValue): DateTime | null;
-export function infer(locale: string, query: DateObjectUnits, mode?: Mode.DateTimeValue): DateTime;
-
-export function infer(locale: string, query: string, mode?: Mode.DurationValue): Duration | null;
-export function infer(locale: string, query: DurationLikeObject, mode?: Mode.DurationValue): Duration;
-
-export function infer(locale: string, query: string | DateObjectUnits | DurationLikeObject, mode?: Mode): Option['value'];
-export function infer(locale: string, query: string | DateObjectUnits | DurationLikeObject, mode = Mode.AutoValue): Option['value'] {
-    switch (mode) {
-    case Mode.DateTimeValue:
-        return dateTimeFromQuery(locale, query, true);
-    case Mode.DurationValue:
-        return durationFromQuery(locale, query);
-    case Mode.AutoValue:
-    default:
-        return dateTimeFromQuery(locale, query) ?? durationFromQuery(locale, query);
-    }
-}
+import {infer, parseDateTimes, Mode} from './datetime_parsing';
 
 export const ms = (value: Option['value']): number => value?.valueOf() ?? 0;
 
@@ -163,13 +99,7 @@ const DateTimeInput = ({
     const {locale, formatMessage} = useIntl();
 
     const updateOptions = useMemo(() => debounce((query: string) => {
-        const datetimes = (
-            // eslint-disable-next-line no-undefined
-            ChronoLocales[locale.split('-')[0]]?.parse(query, undefined, chronoParsingOptions) ??
-            // eslint-disable-next-line no-undefined
-            en.parse(query, undefined, chronoParsingOptions)
-        ).map(({start}) => DateTime.fromJSDate(start.date()));
-
+        const datetimes = parseDateTimes(locale, query)?.map(({start}) => DateTime.fromJSDate(start.date()));
         const duration = infer(locale, query, Mode.DurationValue);
         setOptions(makeOptions(query, datetimes, duration ? [duration] : [], mode) || null);
     }, 150), [locale, setOptions, makeOptions]);
@@ -233,7 +163,6 @@ export const useDateTimeInput = ({defaultValue, ...props}: Partial<Exclude<Props
     const [value, setValue] = useState<Option | null>();
 
     useEffect(() => {
-        // eslint-disable-next-line no-undefined
         if (value === undefined) {
             setValue(defaultValue);
         }
@@ -251,30 +180,4 @@ export const useDateTimeInput = ({defaultValue, ...props}: Partial<Exclude<Props
 };
 
 export default DateTimeInput;
-
-const parseDurationLocales: {[locale: string]: boolean} = {};
-const localizeParseDuration = (locale: string): void => {
-    if (parseDurationLocales[locale]) {
-        return;
-    }
-    Object.entries(baseUnits).forEach(([unit, ratio]) => {
-        [0, 1, 2]
-            .forEach((plural) => getUnits(unit, plural, locale).forEach((unitLabel) => {
-                if (unitLabel) {
-                    parseDuration[unitLabel.toLowerCase().replace(/[.\s]/g, '')] = ratio;
-                }
-            }));
-    });
-    parseDurationLocales[locale] = true;
-};
-
-const baseUnits = (() => {
-    const {nanosecond, microsecond, millisecond, second, minute, hour, day, week, month, year} = parseDuration;
-    return {millisecond, second, minute, hour, day, week, month, year};
-})();
-
-function getUnits(unit: string, value: number, locale: string) {
-    return ['narrow', 'short', 'long']
-        .map((unitDisplay) => new Intl.NumberFormat(locale, {style: 'unit', unit, unitDisplay})
-            .formatToParts(value).find((x) => x.type === 'unit')?.value);
-}
+export {Mode};
