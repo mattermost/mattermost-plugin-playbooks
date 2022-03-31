@@ -7,6 +7,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {components, ControlProps} from 'react-select';
 import styled from 'styled-components';
 import {DateTime} from 'luxon';
+import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import DateTimeSelector, {DateTimeOption, optionFromMillis} from '../datetime_selector';
 import {Mode} from '../datetime_input';
@@ -15,7 +16,8 @@ import {Timestamp} from 'src/webapp_globals';
 import {FutureTimeSpec, PastTimeSpec} from '../rhs/rhs_post_update';
 import {useAllowSetTaskDueDate} from 'src/hooks';
 import UpgradeModal from 'src/components/backstage/upgrade_modal';
-import {AdminNotificationType} from 'src/constants';
+
+import {AdminNotificationType, OVERLAY_DELAY} from 'src/constants';
 
 interface Props {
     date?: number;
@@ -126,8 +128,11 @@ const DueDate = ({
         }
         licenseControl(e);
     };
-    return (
-        <DueDateContainer className={className}>
+
+    const dueDateButton = (
+        <DueDateContainer
+            className={className}
+        >
             <DateTimeSelector
                 placeholder={
                     <PlaceholderDiv onClick={handleEditable}>
@@ -156,6 +161,24 @@ const DueDate = ({
             />
             {upgradeModal}
         </DueDateContainer>
+    );
+
+    const dateInfo = date ? DateTime.fromMillis(date).toLocaleString({month: 'short', day: '2-digit'}) : '';
+    const toolTip = formatMessage({defaultMessage: 'Due on {date}'}, {date: dateInfo});
+
+    if (props.editable || !date) {
+        return dueDateButton;
+    }
+
+    return (
+        <OverlayTrigger
+            placement='bottom'
+            delay={OVERLAY_DELAY}
+            shouldUpdatePosition={true}
+            overlay={<Tooltip id='due-date-tooltip'>{toolTip}</Tooltip>}
+        >
+            {dueDateButton}
+        </OverlayTrigger>
     );
 };
 
