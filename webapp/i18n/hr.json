@@ -521,5 +521,6 @@
     "iMjjOH": "Sljedeći tjedan",
     "MtrTNy": "Sutra",
     "I7+d55": "Odredi datum/vrijeme („za 4 sata”, „1. svibnja” …)",
-    "AF7+5o": "Dodaj datum roka"
+    "AF7+5o": "Dodaj datum roka",
+    "MbapTE": "{num} {num, plural, =1 {zadatak} few {# zadatka} other {# zadataka}} s prekoračenim rokom"
 }
