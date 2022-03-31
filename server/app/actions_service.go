@@ -421,6 +421,10 @@ func (a *channelActionServiceImpl) MessageHasBeenPosted(sessionID string, post *
 	triggeredPlaybooksMap := make(map[string]Playbook)
 	presentTriggers := []string{}
 	for _, action := range actions {
+		if !action.Enabled {
+			continue
+		}
+
 		var payload PromptRunPlaybookFromKeywordsPayload
 		if err := mapstructure.Decode(action.Payload, &payload); err != nil {
 			a.api.Log.Error("unable to decode payload from action", "payload", payload, "actionType", action.ActionType, "triggerType", action.TriggerType)
