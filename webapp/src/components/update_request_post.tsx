@@ -83,6 +83,8 @@ export const UpdateRequestPost = (props: Props) => {
         return (
             <components.SelectContainer
                 {...ownProps}
+
+                //@ts-ignore
                 innerProps={{...ownProps.innerProps, role: 'button'}}
             >
                 {children}
