@@ -38,14 +38,10 @@
     "translation": "Please use `/playbook todo` to see all your tasks."
   },
   {
-    "id": "app.user.digest.tasks.and",
-    "translation": "and"
-  },
-  {
     "id": "app.user.digest.tasks.due_after_today",
     "translation": {
-      "one": "{{.Count}} task due after today",
-      "other": "{{.Count}} tasks due after today"
+      "one": "You have **{{.Count}} assigned task due after today**.",
+      "other": "You have **{{.Count}} assigned tasks due after today**."
     }
   },
   {
@@ -72,22 +68,11 @@
     "translation": "Your assigned tasks"
   },
   {
-    "id": "app.user.digest.tasks.no_due_date",
-    "translation": {
-      "one": "{{.Count}} assigned task without a due date",
-      "other": "{{.Count}} assigned tasks without a due date"
-    }
-  },
-  {
     "id": "app.user.digest.tasks.num_assigned_due_until_today",
     "translation": {
-      "one": "You have {{.Count}} assigned task due until today:",
-      "other": "You have {{.Count}} total assigned tasks due until today:"
+      "one": "You have {{.Count}} assigned task that is now due:",
+      "other": "You have {{.Count}} assigned tasks that are now due:"
     }
-  },
-  {
-    "id": "app.user.digest.tasks.you_have",
-    "translation": ":information_source: You have"
   },
   {
     "id": "app.user.digest.tasks.zero_assigned",

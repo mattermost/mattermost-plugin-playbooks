@@ -1340,14 +1340,22 @@ func TestDMTodoDigestToUser(t *testing.T) {
 
 	t.Run("digest message with tasks due today, after/before today and no due date", func(t *testing.T) {
 		expected := "##### Your assigned tasks\n" +
-			"You have 4 total assigned tasks due until today:\n\n" +
+			"You have 10 assigned tasks that are now due:\n\n" +
+			"[name1](/team1/channels/channel1?telem_action=todo_assignedtask_clicked&telem_run_id=1&forceRHSOpen)\n" +
+			"  - [ ] list1: task1\n" +
+			"  - [ ] list1: task2\n" +
+			"  - [ ] list1: task3\n" +
 			"[name2](/team2/channels/channel2?telem_action=todo_assignedtask_clicked&telem_run_id=2&forceRHSOpen)\n" +
+			"  - [ ] list2: task1\n" +
 			"  - [ ] list2: task2 **`Due today`**\n" +
 			"[name3](/team3/channels/channel3?telem_action=todo_assignedtask_clicked&telem_run_id=3&forceRHSOpen)\n" +
 			"  - [ ] list3: task1 **`Due yesterday`**\n" +
 			"  - [ ] list3: task2 **`Due 2 days ago`**\n" +
 			"  - [ ] list3: task3 **`Due 5 days ago`**\n" +
-			":information_source: You have **6 assigned tasks without a due date** and **2 tasks due after today**. Please use `/playbook todo` to see all your tasks."
+			"[name4](/team4/channels/channel4?telem_action=todo_assignedtask_clicked&telem_run_id=4&forceRHSOpen)\n" +
+			"  - [ ] list4: task2\n" +
+			"  - [ ] list4: task3\n" +
+			":information_source: You have **2 assigned tasks due after today**. Please use `/playbook todo` to see all your tasks."
 
 		now := model.GetMillis()
 		assignedRuns := []app.AssignedRun{
@@ -1420,7 +1428,14 @@ func TestDMTodoDigestToUser(t *testing.T) {
 
 	t.Run("digest message with tasks no due date set", func(t *testing.T) {
 		expected := "##### Your assigned tasks\n" +
-			":information_source: You have **5 assigned tasks without a due date**. Please use `/playbook todo` to see all your tasks."
+			"You have 5 assigned tasks that are now due:\n\n" +
+			"[name1](/team1/channels/channel1?telem_action=todo_assignedtask_clicked&telem_run_id=1&forceRHSOpen)\n" +
+			"  - [ ] list1: task1\n" +
+			"  - [ ] list1: task2\n" +
+			"  - [ ] list1: task3\n" +
+			"[name2](/team2/channels/channel2?telem_action=todo_assignedtask_clicked&telem_run_id=2&forceRHSOpen)\n" +
+			"  - [ ] list2: task1\n" +
+			"  - [ ] list2: task2\n"
 
 		assignedRuns := []app.AssignedRun{
 			{
@@ -1459,7 +1474,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 
 	t.Run("digest message with tasks due after today", func(t *testing.T) {
 		expected := "##### Your assigned tasks\n" +
-			":information_source: You have **3 tasks due after today**. Please use `/playbook todo` to see all your tasks."
+			":information_source: You have **3 assigned tasks due after today**. Please use `/playbook todo` to see all your tasks."
 
 		now := model.GetMillis()
 		assignedRuns := []app.AssignedRun{

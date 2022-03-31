@@ -2663,9 +2663,7 @@ func buildAssignedTaskMessageSummery(runs []AssignedRun, locale string, timezone
 		for _, task := range run.Tasks {
 			// no due date
 			if task.ChecklistItem.DueDate == 0 {
-				if !onlyDueUntilToday {
-					tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title))
-				}
+				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s\n", task.ChecklistTitle, task.Title))
 				tasksNoDueDate++
 				continue
 			}
@@ -2705,7 +2703,7 @@ func buildAssignedTaskMessageSummery(runs []AssignedRun, locale string, timezone
 	// omit assigned tasks header if runs info is empty
 	if runsInfo.String() != "" {
 		if onlyDueUntilToday {
-			msg.WriteString(T("app.user.digest.tasks.num_assigned_due_until_today", total-tasksNoDueDate-tasksDoAfterToday))
+			msg.WriteString(T("app.user.digest.tasks.num_assigned_due_until_today", total-tasksDoAfterToday))
 		} else {
 			msg.WriteString(T("app.user.digest.tasks.num_assigned", total))
 		}
@@ -2714,28 +2712,10 @@ func buildAssignedTaskMessageSummery(runs []AssignedRun, locale string, timezone
 	}
 
 	// add summery info for tasks without a due date or due date after today
-	if tasksNoDueDate+tasksDoAfterToday > 0 && onlyDueUntilToday {
-		msg.WriteString(T("app.user.digest.tasks.you_have"))
+	if tasksDoAfterToday > 0 && onlyDueUntilToday {
+		msg.WriteString(":information_source: ")
+		msg.WriteString(T("app.user.digest.tasks.due_after_today", tasksDoAfterToday))
 		msg.WriteString(" ")
-
-		if tasksNoDueDate > 0 && tasksDoAfterToday > 0 {
-			msg.WriteString("**")
-			msg.WriteString(T("app.user.digest.tasks.no_due_date", tasksNoDueDate))
-			msg.WriteString("** ")
-			msg.WriteString(T("app.user.digest.tasks.and"))
-			msg.WriteString(" **")
-			msg.WriteString(T("app.user.digest.tasks.due_after_today", tasksDoAfterToday))
-			msg.WriteString("**. ")
-		} else if tasksNoDueDate > 0 {
-			msg.WriteString("**")
-			msg.WriteString(T("app.user.digest.tasks.no_due_date", tasksNoDueDate))
-			msg.WriteString("**. ")
-		} else if tasksDoAfterToday > 0 {
-			msg.WriteString("**")
-			msg.WriteString(T("app.user.digest.tasks.due_after_today", tasksDoAfterToday))
-			msg.WriteString("**. ")
-
-		}
 		msg.WriteString(T("app.user.digest.tasks.all_tasks_command"))
 	}
 	return msg.String()
