@@ -6,17 +6,15 @@ import {UserProfile} from 'mattermost-redux/types/users';
 
 import ProfileSelector, {Option} from 'src/components/profile/profile_selector';
 import {useProfilesInCurrentChannel, useProfilesInTeam} from 'src/hooks';
-import {setAssignee} from 'src/client';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
 
 interface AssignedToProps {
-    playbookRunId: string;
-    checklistNum: number;
-    itemNum: number;
     assignee_id: string;
     editable: boolean;
     withoutName?: boolean;
     inHoverMenu?: boolean;
+
+    onSelectedChange: (userType?: string, user?: UserProfile) => void;
 }
 
 const AssignTo = (props: AssignedToProps) => {
@@ -25,18 +23,8 @@ const AssignTo = (props: AssignedToProps) => {
     const profilesInTeam = useProfilesInTeam();
     const [profileSelectorToggle, setProfileSelectorToggle] = useState(false);
 
-    const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
-        if (!props.playbookRunId) {
-            return;
-        }
-        const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, user?.id);
-        if (response.error) {
-            console.log(response.error); // eslint-disable-line no-console
-        }
-    };
-
     const resetAssignee = () => {
-        onAssigneeChange();
+        props.onSelectedChange();
         setProfileSelectorToggle(!profileSelectorToggle);
     };
 
@@ -58,7 +46,7 @@ const AssignTo = (props: AssignedToProps) => {
                 getUsersInTeam={async () => {
                     return profilesInTeam;
                 }}
-                onSelectedChange={onAssigneeChange}
+                onSelectedChange={props.onSelectedChange}
                 selfIsFirstOption={true}
                 customControl={ControlComponent}
                 customControlProps={{
@@ -96,7 +84,7 @@ const AssignTo = (props: AssignedToProps) => {
                 getUsersInTeam={async () => {
                     return profilesInTeam;
                 }}
-                onSelectedChange={onAssigneeChange}
+                onSelectedChange={props.onSelectedChange}
                 selfIsFirstOption={true}
                 customControl={ControlComponent}
                 customControlProps={{

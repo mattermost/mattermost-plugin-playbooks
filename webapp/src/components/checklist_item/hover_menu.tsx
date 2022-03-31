@@ -1,11 +1,14 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useIntl} from 'react-intl';
+import {UserProfile} from 'mattermost-redux/types/users';
 
 import {DotMenuIcon, StyledDotMenuButton, StyledDropdownMenu, StyledDropdownMenuItem, DropdownIcon} from 'src/components/collapsible_checklist_hover_menu';
 import DotMenu from 'src/components/dot_menu';
 import {HoverMenuButton} from 'src/components/rhs/rhs_shared';
 import {ChecklistItemState} from 'src/types/playbook';
+import {DateTimeOption} from 'src/components/datetime_selector';
+import {Mode} from 'src/components/datetime_input';
 
 import {
     clientSkipChecklistItem,
@@ -14,9 +17,7 @@ import {
 } from 'src/client';
 
 import AssignTo from './assign_to';
-import {DateTimeOption} from './../datetime_selector';
-import {Mode} from './../datetime_input';
-import DueDate from './../checklist_item/duedate';
+import DueDate from './duedate';
 
 export interface Props {
     playbookRunId: string;
@@ -30,6 +31,7 @@ export interface Props {
     showDescription: boolean;
     toggleDescription: () => void;
     assignee_id: string;
+    onAssigneeChange: (userType?: string, user?: UserProfile) => void;
     due_date: number;
     onDueDateChange: (value?: DateTimeOption | undefined | null) => void;
 }
@@ -51,11 +53,9 @@ const ChecklistItemHoverMenu = (props: Props) => {
             }
             <AssignTo
                 assignee_id={props.assignee_id}
-                checklistNum={props.checklistNum}
-                itemNum={props.itemNum}
-                playbookRunId={props.playbookRunId}
                 editable={props.isEditing}
                 inHoverMenu={true}
+                onSelectedChange={props.onAssigneeChange}
             />
             <DueDate
                 date={props.due_date}

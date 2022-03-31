@@ -11,23 +11,25 @@ import {Team} from 'mattermost-redux/types/teams';
 import {useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {DraggableProvided} from 'react-beautiful-dnd';
+import {UserProfile} from 'mattermost-redux/types/users';
 
 import {handleFormattedTextClick} from 'src/browser_routing';
 import {
     clientEditChecklistItem,
     setDueDate,
+    setAssignee,
 } from 'src/client';
 import {formatText, messageHtmlToComponent} from 'src/webapp_globals';
 import {ChannelNamesMap} from 'src/types/backstage';
 import {ChecklistItem as ChecklistItemType, ChecklistItemState} from 'src/types/playbook';
 import {usePortal} from 'src/hooks';
+import {DateTimeOption} from 'src/components/datetime_selector';
 
 import ChecklistItemHoverMenu from './hover_menu';
 import ChecklistItemDescription from './description';
 import AssignTo from './assign_to';
 import Command from './command';
 import {CheckBoxButton, CancelSaveButtons} from './inputs';
-import {DateTimeOption} from './../datetime_selector';
 
 interface ChecklistItemProps {
     checklistItem: ChecklistItemType;
@@ -68,6 +70,17 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
 
     const toggleDescription = () => setShowDescription(!showDescription);
 
+    const onAssigneeChange = async (userType?: string, user?: UserProfile) => {
+        setShowMenu(false);
+        if (!props.playbookRunId) {
+            return;
+        }
+        const response = await setAssignee(props.playbookRunId, props.checklistNum, props.itemNum, user?.id);
+        if (response.error) {
+            console.log(response.error); // eslint-disable-line no-console
+        }
+    };
+
     const onDueDateChange = async (value?: DateTimeOption | undefined | null) => {
         setShowMenu(false);
         if (!props.playbookRunId) {
@@ -88,11 +101,9 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
             {(props.checklistItem.assignee_id !== '' || isEditing) &&
                 <AssignTo
                     assignee_id={props.checklistItem.assignee_id || ''}
-                    checklistNum={props.checklistNum}
-                    itemNum={props.itemNum}
-                    playbookRunId={props.playbookRunId}
                     editable={isEditing}
                     withoutName={props.checklistItem.command !== '' && !isEditing}
+                    onSelectedChange={onAssigneeChange}
                 />
             }
             {(props.checklistItem.command !== '' || isEditing) &&
@@ -164,6 +175,7 @@ export const ChecklistItem = (props: ChecklistItemProps): React.ReactElement => 
                         showDescription={showDescription}
                         toggleDescription={toggleDescription}
                         assignee_id={props.checklistItem.assignee_id || ''}
+                        onAssigneeChange={onAssigneeChange}
                         due_date={props.checklistItem.due_date}
                         onDueDateChange={onDueDateChange}
                     />
