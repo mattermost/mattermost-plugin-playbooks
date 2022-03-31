@@ -4,10 +4,6 @@
 import React, {useMemo} from 'react';
 import {useIntl} from 'react-intl';
 
-import {Duration} from 'luxon';
-
-import {formatDuration} from '../formatted_duration';
-
 import {
     BackstageSubheader,
     BackstageSubheaderDescription,

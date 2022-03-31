@@ -83,8 +83,6 @@ export const UpdateRequestPost = (props: Props) => {
         return (
             <components.SelectContainer
                 {...ownProps}
-
-                // @ts-ignore
                 innerProps={{...ownProps.innerProps, role: 'button'}}
             >
                 {children}
@@ -118,7 +116,7 @@ export const UpdateRequestPost = (props: Props) => {
                         IndicatorSeparator: () => null,
                         SelectContainer,
                     }}
-                    placeholder={formatMessage({defaultMessage: 'Snooze for'})}
+                    placeholder={formatMessage({defaultMessage: 'Snooze for…'})}
                     options={options}
                     onChange={snoozeFor}
                     menuPortalTarget={document.body}
