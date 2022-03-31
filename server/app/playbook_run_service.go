@@ -2689,7 +2689,7 @@ func buildAssignedTaskMessageSummery(runs []AssignedRun, locale string, timezone
 			// due after today
 			if !onlyDueUntilToday {
 				days := getDaysDiff(currentTime, dueTime)
-				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s %s\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days)))
+				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s `%s`\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days)))
 			}
 			tasksDoAfterToday++
 		}

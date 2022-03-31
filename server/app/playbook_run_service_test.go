@@ -1539,14 +1539,14 @@ func TestEphemeralPostTodoDigestToUser(t *testing.T) {
 			"[name2](/team2/channels/channel2?telem_action=todo_assignedtask_clicked&telem_run_id=2&forceRHSOpen)\n" +
 			"  - [ ] list2: task1\n" +
 			"  - [ ] list2: task2 **`Due today`**\n" +
-			"  - [ ] list2: task3 Due in 1 day\n" +
+			"  - [ ] list2: task3 `Due in 1 day`\n" +
 			"[name3](/team3/channels/channel3?telem_action=todo_assignedtask_clicked&telem_run_id=3&forceRHSOpen)\n" +
 			"  - [ ] list3: task1 **`Due yesterday`**\n" +
 			"  - [ ] list3: task2 **`Due 2 days ago`**\n" +
 			"  - [ ] list3: task3 **`Due 5 days ago`**\n" +
 			"[name4](/team4/channels/channel4?telem_action=todo_assignedtask_clicked&telem_run_id=4&forceRHSOpen)\n" +
-			"  - [ ] list4: task1 Due in 3 days\n" +
-			"  - [ ] list4: task2 Due in 1 day\n" +
+			"  - [ ] list4: task1 `Due in 3 days`\n" +
+			"  - [ ] list4: task2 `Due in 1 day`\n" +
 			"  - [ ] list4: task3\n"
 
 		now := model.GetMillis()
