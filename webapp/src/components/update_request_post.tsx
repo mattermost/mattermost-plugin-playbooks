@@ -6,6 +6,7 @@ import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {components, ContainerProps} from 'react-select';
+import {Duration} from 'luxon';
 
 import {Post} from 'mattermost-redux/types/posts';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -56,9 +57,9 @@ export const UpdateRequestPost = (props: Props) => {
     }
 
     const options = [
-        makeOption({minutes: 60}, formatMessage({defaultMessage: 'in 60 minutes'})),
-        makeOption({hours: 24}, formatMessage({defaultMessage: 'in 24 hours'})),
-        makeOption({days: 7}, formatMessage({defaultMessage: 'in 7 days'})),
+        makeOption({minutes: 60}),
+        makeOption({hours: 24}),
+        makeOption({days: 7}),
     ];
     const pushIfNotIn = (option: Option) => {
         if (!options.find((o) => ms(option.value) === ms(o.value))) {
@@ -117,7 +118,7 @@ export const UpdateRequestPost = (props: Props) => {
                         IndicatorSeparator: () => null,
                         SelectContainer,
                     }}
-                    placeholder={formatMessage({defaultMessage: 'Snooze'})}
+                    placeholder={formatMessage({defaultMessage: 'Snooze for'})}
                     options={options}
                     onChange={snoozeFor}
                     menuPortalTarget={document.body}
