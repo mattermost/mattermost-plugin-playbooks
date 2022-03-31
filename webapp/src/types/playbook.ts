@@ -213,6 +213,7 @@ export interface ChecklistItemsFilter extends Record<string, boolean> {
     me: boolean;
     unassigned: boolean;
     others: boolean;
+    overdueOnly: boolean;
 }
 
 export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
@@ -221,6 +222,7 @@ export const ChecklistItemsFilterDefault: ChecklistItemsFilter = {
     me: true,
     unassigned: true,
     others: true,
+    overdueOnly: false,
 };
 
 // eslint-disable-next-line
