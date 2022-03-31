@@ -13,6 +13,9 @@ import {Mode} from '../datetime_input';
 import {HoverMenuButton} from '../rhs/rhs_shared';
 import {Timestamp} from 'src/webapp_globals';
 import {FutureTimeSpec, PastTimeSpec} from '../rhs/rhs_post_update';
+import {useAllowSetTaskDueDate} from 'src/hooks';
+import UpgradeModal from 'src/components/backstage/upgrade_modal';
+import {AdminNotificationType} from 'src/constants';
 
 interface Props {
     date?: number;
@@ -40,40 +43,60 @@ const DueDate = ({
     ...props
 }: Props) => {
     const {formatMessage} = useIntl();
+    const dueDateEditAvailable = useAllowSetTaskDueDate();
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const suggestedOptions = makeDefaultDateTimeOptions();
     if (date) {
         suggestedOptions.push(selectedValueOption(date, mode));
     }
 
+    const licenseControl = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+        if (!dueDateEditAvailable) {
+            e.stopPropagation();
+            setShowUpgradeModal(true);
+        }
+    };
     const [dateTimeSelectorToggle, setDateTimeSelectorToggle] = useState(false);
     const resetDueDate = () => {
         props.onSelectedChange();
         setDateTimeSelectorToggle(!dateTimeSelectorToggle);
     };
 
+    const upgradeModal = (
+        <UpgradeModal
+            messageType={AdminNotificationType.CHECKLIST_ITEM_DUE_DATE}
+            show={showUpgradeModal}
+            onHide={() => setShowUpgradeModal(false)}
+        />
+    );
+
     if (props.inHoverMenu) {
         return (
-            <DateTimeSelector
-                date={date}
-                mode={mode}
-                onlyPlaceholder={true}
-                placeholder={
-                    <HoverMenuButton
-                        title={formatMessage({defaultMessage: 'Add due date'})}
-                        className={'icon-calendar-outline icon-16 btn-icon'}
-                    />
-                }
-                suggestedOptions={suggestedOptions}
-                onSelectedChange={props.onSelectedChange}
-                customControl={ControlComponentDueDate}
-                customControlProps={{
-                    showCustomReset: Boolean(date),
-                    onCustomReset: resetDueDate,
-                }}
-                controlledOpenToggle={dateTimeSelectorToggle}
-                showOnRight={true}
-            />
+            <>
+                <DateTimeSelector
+                    date={date}
+                    mode={mode}
+                    onlyPlaceholder={true}
+                    placeholder={
+                        <HoverMenuButton
+                            title={formatMessage({defaultMessage: 'Add due date'})}
+                            className={'icon-calendar-outline icon-16 btn-icon'}
+                            onClick={licenseControl}
+                        />
+                    }
+                    suggestedOptions={suggestedOptions}
+                    onSelectedChange={props.onSelectedChange}
+                    customControl={ControlComponentDueDate}
+                    customControlProps={{
+                        showCustomReset: Boolean(date),
+                        onCustomReset: resetDueDate,
+                    }}
+                    controlledOpenToggle={dateTimeSelectorToggle}
+                    showOnRight={true}
+                />
+                {upgradeModal}
+            </>
         );
     }
 
@@ -96,11 +119,18 @@ const DueDate = ({
         className = dueUntilToday(date) ? 'NowDue' : 'FutureDue';
     }
 
+    const handleEditable = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+        if (!props.editable) {
+            e.stopPropagation();
+            return;
+        }
+        licenseControl(e);
+    };
     return (
         <DueDateContainer className={className}>
             <DateTimeSelector
                 placeholder={
-                    <PlaceholderDiv>
+                    <PlaceholderDiv onClick={handleEditable}>
                         <DueDateIcon
                             className={'icon-calendar-outline icon-14 btn-icon'}
                         />
@@ -124,6 +154,7 @@ const DueDate = ({
                 controlledOpenToggle={dateTimeSelectorToggle}
                 showOnRight={true}
             />
+            {upgradeModal}
         </DueDateContainer>
     );
 };

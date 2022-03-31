@@ -1147,6 +1147,11 @@ func (h *PlaybookRunHandler) itemSetAssignee(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *PlaybookRunHandler) itemSetDueDate(w http.ResponseWriter, r *http.Request) {
+	if !h.licenseChecker.ChecklistItemDueDateAllowed() {
+		h.HandleErrorWithCode(w, http.StatusForbidden, "checklist item due date feature is not covered by current server license", nil)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 	checklistNum, err := strconv.Atoi(vars["checklist"])

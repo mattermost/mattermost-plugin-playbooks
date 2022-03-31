@@ -50,3 +50,8 @@ func (e *LicenseChecker) TimelineAllowed() bool {
 func (e *LicenseChecker) StatsAllowed() bool {
 	return e.isAtLeastE20Licensed()
 }
+
+// ChecklistItemDueDateAllowed returns true if setting/editing checklist item due date is allowed.
+func (e *LicenseChecker) ChecklistItemDueDateAllowed() bool {
+	return e.isAtLeastE10Licensed()
+}

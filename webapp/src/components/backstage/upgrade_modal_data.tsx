@@ -168,6 +168,9 @@ export const getUpgradeModalCopy = (
             titleText = <FormattedMessage defaultMessage='Track key metrics and measure value'/>;
             helpText = <FormattedMessage defaultMessage='Use metrics to understand patterns and progress across runs, and track performance.'/>;
             break;
+        case AdminNotificationType.CHECKLIST_ITEM_DUE_DATE:
+            titleText = <FormattedMessage defaultMessage='TODO: title text'/>;
+            helpText = <FormattedMessage defaultMessage='TODO: description text.'/>;
         }
 
         if (!isAdmin) {
