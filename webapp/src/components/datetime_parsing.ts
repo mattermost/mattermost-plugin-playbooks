@@ -8,7 +8,6 @@ import {DateTime, Duration, DurationLikeObject, DateObjectUnits} from 'luxon';
 
 /**
  * Get language from locale
- * @param locale language with optional country code
  * @example lang('en-GB') // -> 'en'
  */
 const lang = (locale: string) => locale.split('-')[0];
@@ -108,13 +107,13 @@ const getUnits = (unit: string, value: number, locale: string) => {
 };
 
 type Ratios = {[unit: string]: number};
-export const DurationRatios: {[locale: string]: Ratios} = {en: parseDuration}; // pre-init en and any other locales that need manual i18n
+export const DurationRatios: {[locale: string]: Ratios} = {en: parseDuration}; // pre-init en and any other locales that need manual i18n tuning
 
 const durationRE = /(-?(?:\d+\.?\d*|\d*\.?\d+)(?:e[-+]?\d+)?)\s*([\p{L}]*)/uig;
 const unitRatio = (locale: string, unit: string) => DurationRatios[locale][unit.toLowerCase()] ?? DurationRatios[locale][unit.toLowerCase().replace(/s$/, '')];
 
 /**
- * Internalized to support i18n-isolated ratio contexts to avoid cross-lang unit conflicts. This ensures the whole is parsed as-a-whole.
+ * Internalized to support i18n-isolated ratio contexts to avoid cross-lang unit conflicts. This ensures the query is parsed as-a-whole.
  * @source original https://www.npmjs.com/package/parse-duration
  */
 const parseDurationLocalized = (locale: string, query = '', format = 'ms'): number | null => {
