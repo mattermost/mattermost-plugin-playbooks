@@ -305,7 +305,7 @@ export const CheckboxContainer = styled.div`
         width: 16px;
         min-width: 16px;
         height: 16px;
-        border: 1px solid rgba(var(--center-channel-color-rgb),0.24);
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
         box-sizing: border-box;
         border-radius: 2px;
     }

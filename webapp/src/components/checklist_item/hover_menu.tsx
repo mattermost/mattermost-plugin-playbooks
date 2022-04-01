@@ -113,8 +113,8 @@ const HoverMenu = styled.div`
     padding: 2px;
     position: absolute;
     height: 32px;
-    right: 0;
-    top: -8px;
+    right: 1px;
+    top: -4px;
     border: 1px solid var(--center-channel-color-08);
     box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.08);
     border-radius: 4px;

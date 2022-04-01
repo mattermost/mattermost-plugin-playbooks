@@ -1,6 +1,7 @@
 
 import React, {useRef} from 'react';
 import styled from 'styled-components';
+import {useIntl} from 'react-intl';
 
 import {ChecklistItem, ChecklistItemState} from 'src/types/playbook';
 import {PrimaryButton, SecondaryButton} from 'src/components/assets/buttons';
@@ -79,16 +80,18 @@ const ChecklistItemDescription = styled.div<{height: string}>`
 `;
 
 export const CancelSaveButtons = (props: {onCancel: () => void, onSave: () => void}) => {
+    const {formatMessage} = useIntl();
+
     return (<CancelSaveContainer>
         <CancelButton
             onClick={props.onCancel}
         >
-            {'Cancel'}
+            {formatMessage({defaultMessage: 'Cancel'})}
         </CancelButton>
         <SaveButton
             onClick={props.onSave}
         >
-            {'Save'}
+            {formatMessage({defaultMessage: 'Save'})}
         </SaveButton>
     </CancelSaveContainer>
     );
