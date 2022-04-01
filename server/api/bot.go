@@ -216,7 +216,7 @@ func (h *BotHandler) connect(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err = h.playbookRunService.DMTodoDigestToUser(userID, false, timezone); err != nil {
+		if err = h.playbookRunService.DMTodoDigestToUser(userID, false); err != nil {
 			h.HandleError(w, errors.Wrapf(err, "failed to DMTodoDigest to userID '%s'", userID))
 			return
 		}

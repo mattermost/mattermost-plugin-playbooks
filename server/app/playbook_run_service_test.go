@@ -1335,7 +1335,6 @@ func TestDMTodoDigestToUser(t *testing.T) {
 	err := i18n.TranslationsPreInit(filepath.Join(root, "/assets/i18n"))
 	require.NoError(t, err)
 
-	timezone, _ := time.LoadLocation("Asia/Tbilisi")
 	day := time.Hour.Milliseconds() * 24
 
 	t.Run("digest message with tasks due today, after/before today and no due date", func(t *testing.T) {
@@ -1401,7 +1400,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
-		err = s.DMTodoDigestToUser(user.Id, false, timezone)
+		err = s.DMTodoDigestToUser(user.Id, false)
 		require.NoError(t, err)
 		require.Equal(t, expected, digestPost.Message)
 	})
@@ -1421,7 +1420,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
-		err = s.DMTodoDigestToUser(user.Id, false, timezone)
+		err = s.DMTodoDigestToUser(user.Id, false)
 		require.NoError(t, err)
 		require.Equal(t, false, dmCalled)
 	})
@@ -1467,7 +1466,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
-		err = s.DMTodoDigestToUser(user.Id, false, timezone)
+		err = s.DMTodoDigestToUser(user.Id, false)
 		require.NoError(t, err)
 		require.Equal(t, expected, digestPost.Message)
 	})
@@ -1505,7 +1504,7 @@ func TestDMTodoDigestToUser(t *testing.T) {
 
 		s := app.NewPlaybookRunService(client, store, poster, logger, configService, scheduler, telemetryService, pluginAPI, playbookService, channelActionService, licenseChecker, metrics.NewMetrics(metrics.InstanceInfo{}))
 
-		err = s.DMTodoDigestToUser(user.Id, false, timezone)
+		err = s.DMTodoDigestToUser(user.Id, false)
 		require.NoError(t, err)
 		require.Equal(t, expected, digestPost.Message)
 	})

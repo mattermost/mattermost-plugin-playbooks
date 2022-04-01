@@ -1740,7 +1740,7 @@ func (s *PlaybookRunServiceImpl) GetChecklistItemAutocomplete(playbookRunID stri
 
 // buildTodoDigestMessage
 // gathers the list of assigned tasks, participating runs, and overdue updates and builds a combined message with them
-func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force bool, timezone *time.Location) (*model.Post, error) {
+func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force bool) (*model.Post, error) {
 	runsOverdue, err := s.GetOverdueUpdateRuns(userID)
 	if err != nil {
 		return nil, err
@@ -1756,13 +1756,13 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 	if err != nil {
 		return nil, err
 	}
-	// if timezone is missing get it from user object
-	if timezone == nil {
-		timezone, err = s.getUserTimezone(user)
-		if err != nil {
-			return nil, err
-		}
+
+	// get user timezone
+	timezone, err := s.getUserTimezone(user)
+	if err != nil {
+		return nil, err
 	}
+
 	part2 := buildAssignedTaskMessageSummery(runsAssigned, user.Locale, timezone, !force)
 
 	if force {
@@ -1793,7 +1793,7 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 // EphemeralPostTodoDigestToUser
 // builds todo digest message and sends an ephemeral post to userID, channelID. Use force = true to send post even if there are no items.
 func (s *PlaybookRunServiceImpl) EphemeralPostTodoDigestToUser(userID string, channelID string, force bool) error {
-	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force, nil)
+	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force)
 	if err != nil {
 		return err
 	}
@@ -1808,8 +1808,8 @@ func (s *PlaybookRunServiceImpl) EphemeralPostTodoDigestToUser(userID string, ch
 
 // DMTodoDigestToUser
 // DMs the message to userID. Use force = true to DM even if there are no items.
-func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool, timezone *time.Location) error {
-	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force, timezone)
+func (s *PlaybookRunServiceImpl) DMTodoDigestToUser(userID string, force bool) error {
+	todoDigestMessage, err := s.buildTodoDigestMessage(userID, force)
 	if err != nil {
 		return err
 	}
