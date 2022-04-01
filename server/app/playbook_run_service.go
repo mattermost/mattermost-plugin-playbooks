@@ -17,6 +17,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-playbooks/server/config"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/httptools"
 	"github.com/mattermost/mattermost-plugin-playbooks/server/metrics"
+	"github.com/mattermost/mattermost-plugin-playbooks/server/timeutils"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/shared/i18n"
@@ -1758,12 +1759,12 @@ func (s *PlaybookRunServiceImpl) buildTodoDigestMessage(userID string, force boo
 	}
 
 	// get user timezone
-	timezone, err := s.getUserTimezone(user)
+	timezone, err := timeutils.GetUserTimezone(user)
 	if err != nil {
 		return nil, err
 	}
 
-	part2 := buildAssignedTaskMessageSummery(runsAssigned, user.Locale, timezone, !force)
+	part2 := buildAssignedTaskMessageSummary(runsAssigned, user.Locale, timezone, !force)
 
 	if force {
 		runsInProgress, err := s.GetParticipatingRuns(userID)
@@ -2632,7 +2633,7 @@ func triggerWebhooks(s *PlaybookRunServiceImpl, webhooks []string, body []byte) 
 
 }
 
-func buildAssignedTaskMessageSummery(runs []AssignedRun, locale string, timezone *time.Location, onlyDueUntilToday bool) string {
+func buildAssignedTaskMessageSummary(runs []AssignedRun, locale string, timezone *time.Location, onlyDueUntilToday bool) string {
 	var msg strings.Builder
 
 	T := i18n.GetUserTranslations(locale)
@@ -2652,8 +2653,7 @@ func buildAssignedTaskMessageSummery(runs []AssignedRun, locale string, timezone
 	}
 
 	var tasksNoDueDate, tasksDoAfterToday int
-	now := model.GetMillis()
-	currentTime := time.Unix(now/1000, 0).In(timezone)
+	currentTime := timeutils.GetTimeForMillis(model.GetMillis()).In(timezone)
 	yesterday := currentTime.Add(-24 * time.Hour)
 
 	var runsInfo strings.Builder
@@ -2669,24 +2669,24 @@ func buildAssignedTaskMessageSummery(runs []AssignedRun, locale string, timezone
 			}
 			dueTime := time.Unix(task.ChecklistItem.DueDate/1000, 0).In(timezone)
 			// due today
-			if isSameDay(dueTime, currentTime) {
+			if timeutils.IsSameDay(dueTime, currentTime) {
 				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_today")))
 				continue
 			}
 			// due yesterday
-			if isSameDay(dueTime, yesterday) {
+			if timeutils.IsSameDay(dueTime, yesterday) {
 				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_yesterday")))
 				continue
 			}
 			// due before yesterday
 			if dueTime.Before(currentTime) {
-				days := getDaysDiff(dueTime, currentTime)
+				days := timeutils.GetDaysDiff(dueTime, currentTime)
 				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s **`%s`**\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_x_days_ago", days)))
 				continue
 			}
 			// due after today
 			if !onlyDueUntilToday {
-				days := getDaysDiff(currentTime, dueTime)
+				days := timeutils.GetDaysDiff(currentTime, dueTime)
 				tasksInfo.WriteString(fmt.Sprintf("  - [ ] %s: %s `%s`\n", task.ChecklistTitle, task.Title, T("app.user.digest.tasks.due_in_x_days", days)))
 			}
 			tasksDoAfterToday++
@@ -2711,7 +2711,7 @@ func buildAssignedTaskMessageSummery(runs []AssignedRun, locale string, timezone
 		msg.WriteString(runsInfo.String())
 	}
 
-	// add summery info for tasks without a due date or due date after today
+	// add summary info for tasks without a due date or due date after today
 	if tasksDoAfterToday > 0 && onlyDueUntilToday {
 		msg.WriteString(":information_source: ")
 		msg.WriteString(T("app.user.digest.tasks.due_after_today", tasksDoAfterToday))
@@ -2840,26 +2840,4 @@ func (s *PlaybookRunServiceImpl) dmPostToUsersWithPermission(users []string, pos
 				"user", user, "error", err.Error())
 		}
 	}
-}
-
-func (s *PlaybookRunServiceImpl) getUserTimezone(user *model.User) (*time.Location, error) {
-	key := "automaticTimezone"
-	if user.Timezone["useAutomaticTimezone"] == "false" {
-		key = "manualTimezone"
-	}
-	return time.LoadLocation(user.Timezone[key])
-}
-
-func isSameDay(time1, time2 time.Time) bool {
-	return time1.YearDay() == time2.YearDay() && time1.Year() == time2.Year()
-}
-
-// getDaysDiff returns days difference between two date.
-func getDaysDiff(start, end time.Time) int {
-	days := int(end.Sub(start).Hours() / 24)
-
-	if start.AddDate(0, 0, days).YearDay() != end.YearDay() {
-		days++
-	}
-	return days
 }
