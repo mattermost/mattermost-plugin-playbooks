@@ -1,0 +1,7 @@
+stages:
+  - test
+
+empty:
+  stage: test
+  script:
+    - echo "empty"
