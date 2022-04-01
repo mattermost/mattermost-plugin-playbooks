@@ -1,16 +1,11 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useRef} from 'react';
+import React, {useRef, ComponentProps} from 'react';
 import ReactDOM from 'react-dom';
 import {FormattedMessage} from 'react-intl';
 import Tippy from '@tippyjs/react';
-import {Placement} from 'tippy.js';
 
-import 'tippy.js/dist/tippy.css';
-import 'tippy.js/themes/light-border.css';
-import 'tippy.js/animations/scale-subtle.css';
-import 'tippy.js/animations/perspective-subtle.css';
 import useTutorialTourTipManager from './manager';
 
 import PulsatingDot from './dot';
@@ -38,6 +33,8 @@ const TourTipOverlay = ({children, show, onClick}: OverlayProps) => {
         </div>
     ), rootPortal!);
 };
+
+type Placement = ComponentProps<typeof Tippy>['placement'];
 
 type Props = {
     screen: React.ReactNode;
