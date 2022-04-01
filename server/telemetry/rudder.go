@@ -128,31 +128,44 @@ func (t *RudderTelemetry) track(event string, properties map[string]interface{})
 	})
 }
 
+func tasksWithDueDate(list app.Checklist) int {
+	count := 0
+	for _, item := range list.Items {
+		if item.DueDate > 0 {
+			count++
+		}
+	}
+	return count
+}
+
 func playbookRunProperties(playbookRun *app.PlaybookRun, userID string) map[string]interface{} {
 	totalChecklistItems := 0
+	itemsWithDueDate := 0
 	for _, checklist := range playbookRun.Checklists {
 		totalChecklistItems += len(checklist.Items)
+		itemsWithDueDate += tasksWithDueDate(checklist)
 	}
 
 	return map[string]interface{}{
-		"UserActualID":            userID,
-		telemetryKeyPlaybookRunID: playbookRun.ID,
-		"HasDescription":          playbookRun.Summary != "",
-		"CommanderUserID":         playbookRun.OwnerUserID,
-		"ReporterUserID":          playbookRun.ReporterUserID,
-		"TeamID":                  playbookRun.TeamID,
-		"ChannelID":               playbookRun.ChannelID,
-		"CreateAt":                playbookRun.CreateAt,
-		"EndAt":                   playbookRun.EndAt,
-		"DeleteAt":                playbookRun.DeleteAt, //nolint
-		"PostID":                  playbookRun.PostID,
-		"PlaybookID":              playbookRun.PlaybookID,
-		"NumChecklists":           len(playbookRun.Checklists),
-		"TotalChecklistItems":     totalChecklistItems,
-		"NumStatusPosts":          len(playbookRun.StatusPosts),
-		"CurrentStatus":           playbookRun.CurrentStatus,
-		"PreviousReminder":        playbookRun.PreviousReminder,
-		"NumTimelineEvents":       len(playbookRun.TimelineEvents),
+		"UserActualID":              userID,
+		telemetryKeyPlaybookRunID:   playbookRun.ID,
+		"HasDescription":            playbookRun.Summary != "",
+		"CommanderUserID":           playbookRun.OwnerUserID,
+		"ReporterUserID":            playbookRun.ReporterUserID,
+		"TeamID":                    playbookRun.TeamID,
+		"ChannelID":                 playbookRun.ChannelID,
+		"CreateAt":                  playbookRun.CreateAt,
+		"EndAt":                     playbookRun.EndAt,
+		"DeleteAt":                  playbookRun.DeleteAt, //nolint
+		"PostID":                    playbookRun.PostID,
+		"PlaybookID":                playbookRun.PlaybookID,
+		"NumChecklists":             len(playbookRun.Checklists),
+		"TotalChecklistItems":       totalChecklistItems,
+		"ChecklistItemsWithDueDate": itemsWithDueDate,
+		"NumStatusPosts":            len(playbookRun.StatusPosts),
+		"CurrentStatus":             playbookRun.CurrentStatus,
+		"PreviousReminder":          playbookRun.PreviousReminder,
+		"NumTimelineEvents":         len(playbookRun.TimelineEvents),
 	}
 }
 
@@ -243,6 +256,7 @@ func taskProperties(playbookRunID, userID string, task app.ChecklistItem) map[st
 		"HasCommand":              task.Command != "",
 		"CommandLastRun":          task.CommandLastRun,
 		"HasDescription":          task.Description != "",
+		"HasDueDate":              task.DueDate > 0,
 	}
 }
 
@@ -375,11 +389,7 @@ func playbookProperties(playbook app.Playbook, userID string) map[string]interfa
 	totalChecklistItemsWithCommands := 0
 	for _, checklist := range playbook.Checklists {
 		totalChecklistItems += len(checklist.Items)
-		for _, item := range checklist.Items {
-			if item.Command != "" {
-				totalChecklistItemsWithCommands++
-			}
-		}
+
 	}
 
 	return map[string]interface{}{
