@@ -15,7 +15,6 @@ import {displayPlaybookCreateModal} from 'src/actions';
 import {PrimaryButton, TertiaryButton} from 'src/components/assets/buttons';
 import LeftDots from 'src/components/assets/left_dots';
 import LeftFade from 'src/components/assets/left_fade';
-import NoContentPlaybookSvg from 'src/components/assets/no_content_playbooks_svg';
 import RightDots from 'src/components/assets/right_dots';
 import RightFade from 'src/components/assets/right_fade';
 import BackstageListHeader from 'src/components/backstage/backstage_list_header';
@@ -39,8 +38,6 @@ import PresetTemplates from 'src/components/templates/template_data';
 import {RegularHeading} from 'src/styles/headings';
 
 import {importFile, fetchPlaybookRuns} from 'src/client';
-
-import Spinner from '../assets/icons/spinner';
 
 import TeamSelector from '../team/team_selector';
 
@@ -119,7 +116,6 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
     const content = useRef<JSX.Element | null>(null);
     const dispatch = useDispatch();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [importUploading, setImportUploading] = useState(false);
     const [importTargetTeam, setImportTargetTeam] = useState('');
     const selectorRef = useRef<HTMLDivElement>(null);
 
@@ -174,7 +170,6 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                         canCreatePlaybooks={canCreatePlaybooks}
                         scrollToNext={scrollToTemplates}
                     />
-                    <NoContentPlaybookSvg/>
                 </>
             );
         }
@@ -188,11 +183,9 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                     teamId = importTargetTeam;
                 }
 
-                setImportUploading(true);
                 const reader = new FileReader();
                 reader.onload = async (ev) => {
                     const {id} = await importFile(ev?.target?.result, teamId);
-                    setImportUploading(false);
                     navigateToPluginUrl(`/playbooks/${id}`);
                 };
                 reader.readAsArrayBuffer(file);
@@ -235,9 +228,7 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                         { teams.length > 1 &&
                         <TeamSelector
                             placeholder={
-                                <ImportButton
-                                    spin={importUploading}
-                                />
+                                <ImportButton/>
                             }
                             onlyPlaceholder={true}
                             enableEdit={true}
@@ -257,7 +248,6 @@ const PlaybookList = (props: {firstTimeUserExperience?: boolean}) => {
                                     fileInputRef.current.click();
                                 }
                             }}
-                            spin={importUploading}
                         />
                         }
                         {canCreatePlaybooks &&
@@ -364,13 +354,12 @@ function swapEnds(arr: Array<any>) {
     return [arr[arr.length - 1], ...arr.slice(1, -1), arr[0]];
 }
 
-const ImportButton = (props: {onClick?: () => void, spin: boolean}) => {
+const ImportButton = (props: {onClick?: () => void}) => {
     return (
         <TertiaryButton
             onClick={props.onClick}
         >
             <FormattedMessage defaultMessage='Import'/>
-            {props.spin && <Spinner/>}
         </TertiaryButton>
     );
 };
