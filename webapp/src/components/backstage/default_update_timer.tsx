@@ -37,7 +37,7 @@ const DefaultUpdateTimer = (props: Props) => {
 
         let value: Option | undefined;
         if (props.seconds) {
-            value = makeOption({seconds: (props.seconds)});
+            value = makeOption({seconds: props.seconds});
 
             const matched = options.find((o) => value && ms(o.value) === ms(value.value));
             if (matched) {

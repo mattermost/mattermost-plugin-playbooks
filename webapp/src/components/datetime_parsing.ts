@@ -64,14 +64,14 @@ const dateTimeFromQuery = (locale: string, query: string | DateObjectUnits, acce
     return (date && DateTime.fromJSDate(date)) || null;
 };
 
-export function infer(locale: string, query: string, mode?: Mode.DateTimeValue): DateTime | null;
-export function infer(locale: string, query: DateObjectUnits, mode?: Mode.DateTimeValue): DateTime;
+export function parse(locale: string, query: string, mode?: Mode.DateTimeValue): DateTime | null;
+export function parse(locale: string, query: DateObjectUnits, mode?: Mode.DateTimeValue): DateTime;
 
-export function infer(locale: string, query: string, mode?: Mode.DurationValue): Duration | null;
-export function infer(locale: string, query: DurationLikeObject, mode?: Mode.DurationValue): Duration;
+export function parse(locale: string, query: string, mode?: Mode.DurationValue): Duration | null;
+export function parse(locale: string, query: DurationLikeObject, mode?: Mode.DurationValue): Duration;
 
-export function infer(locale: string, query: string | DateObjectUnits | DurationLikeObject, mode?: Mode): DateTime | Duration | null;
-export function infer(locale: string, query: string | DateObjectUnits | DurationLikeObject, mode = Mode.AutoValue): DateTime | Duration | null {
+export function parse(locale: string, query: string | DateObjectUnits | DurationLikeObject, mode?: Mode): DateTime | Duration | null;
+export function parse(locale: string, query: string | DateObjectUnits | DurationLikeObject, mode = Mode.AutoValue): DateTime | Duration | null {
     switch (mode) {
     case Mode.DateTimeValue:
         return dateTimeFromQuery(locale, query, true);
@@ -85,7 +85,7 @@ export function infer(locale: string, query: string | DateObjectUnits | Duration
 
 const localizeDurationRatios = (locale: string): void => {
     DurationRatios[locale] ??= Object.entries(baseUnits).reduce<Ratios>((ratios, [unit, ratio]) => {
-        [0, 1, 1.5, 2, 3, 20, 100] // magic numbers, replace with CLDR plural category minimal pair lookup
+        [0, 1, 2, 3, 20, 100] // magic numbers, replace with CLDR plural category minimal pair lookup
             .forEach((value) => getUnits(unit, value, locale).forEach((unitLabel) => {
                 if (unitLabel) {
                     ratios[unitLabel.toLowerCase()] = ratio;
@@ -123,7 +123,7 @@ const parseDurationLocalized = (locale: string, query = '', format = 'ms'): numb
     String(query)
         .replace(/(\d)[,_](\d)/g, '$1$2') // ignore commas/placeholders
         .replace(durationRE, (_match: string, n: string, unit: string) => {
-            const ratio = (unit && unitRatio(locale, unit)) || baseUnits.minute;
+            const ratio = (unit && unitRatio(locale, unit));
             if (ratio) {
                 result = (result || 0) + (parseFloat(n) * ratio);
             }

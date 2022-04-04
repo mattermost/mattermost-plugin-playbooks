@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import React, {useState, ComponentProps, useMemo, useEffect, ReactNode} from 'react';
+import React, {useState, ComponentProps, useMemo, useEffect, ReactNode, useCallback} from 'react';
 
 import {debounce} from 'debounce';
 import Select from 'react-select';
@@ -15,30 +15,18 @@ import {StyledSelect} from 'src/components/backstage/styles';
 import {Timestamp} from 'src/webapp_globals';
 import {formatDuration} from 'src/components/formatted_duration';
 
-import {infer, parseDateTimes, Mode} from './datetime_parsing';
+import {parse, parseDateTimes, Mode} from './datetime_parsing';
 
 export const ms = (value: Option['value']): number => value?.valueOf() ?? 0;
 
-export const useMakeOption = (mode: Mode, parseLocale?: string) => {
+export const useMakeOption = (mode: Mode) => {
     const {locale} = useIntl();
-    return (input: string | DateObjectUnits | DurationLikeObject, customLabel?: ReactNode): Option => {
-        let label = customLabel;
-        const value = infer(parseLocale ?? locale, input, mode);
-
-        if (label == null) {
-            if (DateTime.isDateTime(value)) {
-                label = (
-                    <Timestamp
-                        value={value}
-                        {...TIME_SPEC}
-                    />
-                );
-            } else if (Duration.isDuration(value)) {
-                label = formatDuration(value, 'long');
-            }
-        }
-
-        return {label, value};
+    return (input: string | DateObjectUnits | DurationLikeObject, label?: string): Option => {
+        const value = parse(locale, input, mode);
+        return {
+            label: label ?? (value && labelFrom(value, mode)),
+            value,
+        };
     };
 };
 
@@ -100,7 +88,7 @@ const DateTimeInput = ({
 
     const updateOptions = useMemo(() => debounce((query: string) => {
         const datetimes = parseDateTimes(locale, query)?.map(({start}) => DateTime.fromJSDate(start.date()));
-        const duration = infer(locale, query, Mode.DurationValue);
+        const duration = parse(locale, query, Mode.DurationValue);
         setOptions(makeOptions(query, datetimes, duration ? [duration] : [], mode) || null);
     }, 150), [locale, setOptions, makeOptions]);
 
@@ -135,7 +123,6 @@ const customStyles: ComponentProps<typeof Select>['styles'] = {
 };
 
 const TIME_SPEC = {
-    locale: 'en',
     useDate: (_: string, {weekday, day, month, year}: any) => ({weekday, day, month, year}),
 };
 
@@ -148,6 +135,10 @@ const OptionLabel = ({label, value, mode}: Option) => {
         return null;
     }
 
+    return labelFrom(value, mode);
+};
+
+const labelFrom = (value: DateTime | Duration, mode?: Mode) => {
     if (mode === Mode.DateTimeValue || (!mode && DateTime.isDateTime(value))) {
         return (
             <Timestamp

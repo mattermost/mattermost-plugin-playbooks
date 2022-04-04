@@ -33,7 +33,7 @@ const label = (num: number, style: FormatStyle, narrow: string, singular: string
 const UNITS: DurationUnit[] = ['years', 'days', 'hours', 'minutes'];
 
 export const formatDuration = (value: Duration, style: FormatStyle = 'narrow', truncate: TruncateBehavior = 'none') => {
-    if (value.as('seconds') < 60 && value.toHuman) {
+    if (value.as('seconds') < 60) {
         return value
             .shiftTo('seconds')
             .mapUnits(Math.floor)
@@ -43,32 +43,10 @@ export const formatDuration = (value: Duration, style: FormatStyle = 'narrow', t
     const duration = value.shiftTo(...UNITS).normalize();
     const formatUnits = truncate === 'truncate' ? [UNITS.find((unit) => duration.get(unit) > 0)!] : UNITS.filter((unit) => duration.get(unit) > 0);
 
-    // @ts-ignore luxon 2.3 path
-    if (duration.toHuman) {
-        return duration
-            .shiftTo(...formatUnits)
-            .mapUnits(Math.floor)
-            .toHuman({unitDisplay: style});
-    }
-
-    //! start:backwards-compat luxon < 2.3
-    const formatParts = [];
-    if (duration.years >= 1) {
-        formatParts.push(`y'${label(duration.years, style, 'y', ' year', ' years')}'`);
-    }
-    if (duration.days >= 1) {
-        formatParts.push(`d'${label(duration.days, style, 'd', ' day', ' days')}'`);
-    }
-    if (duration.hours >= 1) {
-        formatParts.push(`h'${label(duration.hours, style, 'h', ' hour', ' hours')}'`);
-    }
-    if (duration.minutes >= 1) {
-        formatParts.push(`m'${label(duration.minutes, style, 'm', ' minute', ' minutes')}'`);
-    }
-
-    return duration.toFormat(truncate === 'truncate' ? formatParts[0] : formatParts.join(' '));
-
-    //! end:backwards-compat
+    return duration
+        .shiftTo(...formatUnits)
+        .mapUnits(Math.floor)
+        .toHuman({unitDisplay: style});
 };
 
 const FormattedDuration = ({from, to = 0, style, truncate}: DurationProps) => {

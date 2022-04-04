@@ -6,7 +6,6 @@ import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {components, ContainerProps} from 'react-select';
-import {Duration} from 'luxon';
 
 import {Post} from 'mattermost-redux/types/posts';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -84,7 +83,7 @@ export const UpdateRequestPost = (props: Props) => {
             <components.SelectContainer
                 {...ownProps}
 
-                //@ts-ignore
+                // @ts-ignore
                 innerProps={{...ownProps.innerProps, role: 'button'}}
             >
                 {children}

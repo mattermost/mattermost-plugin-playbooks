@@ -15,7 +15,7 @@ import Dropdown from 'src/components/dropdown';
 import {Timestamp} from 'src/webapp_globals';
 
 import {defaultMakeOptions, Option} from './datetime_input';
-import {infer, parseDateTimes, Mode} from './datetime_parsing';
+import {parse, parseDateTimes, Mode} from './datetime_parsing';
 
 import {formatDuration} from './formatted_duration';
 
@@ -132,7 +132,7 @@ export const DateTimeSelector = ({
 
     const updateOptions = useMemo(() => debounce((query: string) => {
         const datetimes = parseDateTimes(locale, query)?.map(({start}) => DateTime.fromJSDate(start.date()));
-        const duration = infer(locale, query, Mode.DurationValue);
+        const duration = parse(locale, query, Mode.DurationValue);
 
         setOptionsDateTime(makeOptions?.(query, datetimes, duration ? [duration] : [], mode) ?? suggestedOptions);
     }, 150), [makeOptions, suggestedOptions, mode]);
