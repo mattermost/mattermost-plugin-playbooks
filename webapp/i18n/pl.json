@@ -326,7 +326,7 @@
     "6CGo3o": "Status / Ostatnia aktualizacja",
     "5wqhGy": "Przełącz szczegóły uruchomienia",
     "5qBEKB": "Czym są przebiegi playbooków?",
-    "5j6GD/": "{numParticipants, plural, =0 {no participants} =1 {# participant} inny {# participants}}",
+    "5j6GD/": "{numParticipants, plural, =0 {brak uczestników} =1 {# uczestnik} other {# uczestników}}",
     "42qmJ5": "Nie masz uprawnień do publikowania aktualizacji.",
     "5CI3KH": "Skontaktuj się z pomocą techniczną",
     "4ltHYh": "Idź do playbooka",
