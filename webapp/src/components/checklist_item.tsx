@@ -43,7 +43,7 @@ import GenericModal from './widgets/generic_modal';
 import {BaseInput} from './assets/inputs';
 import {DateTimeOption} from './datetime_selector';
 import {Mode} from './datetime_input';
-import DueDate from './checklist_item/duedate';
+import {DueDateButton, DueDateHoverMenuButton} from './checklist_item/duedate';
 interface ChecklistItemDetailsProps {
     checklistItem: ChecklistItem;
     checklistNum: number;
@@ -497,11 +497,10 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                                     controlledOpenToggle={profileSelectorToggle}
                                     showOnRight={true}
                                 />
-                                <DueDate
+                                <DueDateHoverMenuButton
                                     date={props.checklistItem.due_date}
                                     mode={Mode.DateTimeValue}
                                     onSelectedChange={onDueDateChange}
-                                    inHoverMenu={true}
                                 />
                                 <HoverMenuButton
                                     title={formatMessage({defaultMessage: 'Edit'})}
@@ -591,7 +590,7 @@ export const ChecklistItemDetails = (props: ChecklistItemDetailsProps): React.Re
                     }
                     {
                         props.checklistItem.due_date > 0 &&
-                        <DueDate
+                        <DueDateButton
                             date={props.checklistItem.due_date}
                             mode={Mode.DateTimeValue}
                             onSelectedChange={onDueDateChange}
