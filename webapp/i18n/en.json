@@ -373,6 +373,7 @@
   "mVpO8u": "Seen this before?",
   "mbo96h": "Configure custom metrics to fill out with the retrospective report",
   "mvZUm3": "This is where you can explore your playbook components in detail. Select Edit to customize your playbook to fit your processes and models.",
+  "mw9jVA": "Add a title",
   "nSFBC2": "+ Add task",
   "nkCCM2": "You will not be reminded again.",
   "nqVby7": "<b>{numTasksChecked, number}</b> of <b>{numTasks, number}</b> {numTasks, plural, =1 {task} other {tasks}} checked",
