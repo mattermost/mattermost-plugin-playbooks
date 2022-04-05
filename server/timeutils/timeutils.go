@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"time"
+
+	"github.com/mattermost/mattermost-server/v6/model"
 )
 
 func GetTimeForMillis(unixMillis int64) time.Time {
@@ -44,4 +46,26 @@ func DurationString(start, end time.Time) string {
 		return fmt.Sprintf("%.fd %.fm", days, minutes)
 	}
 	return fmt.Sprintf("%.fd %.fh %.fm", days, hours, minutes)
+}
+
+func GetUserTimezone(user *model.User) (*time.Location, error) {
+	key := "automaticTimezone"
+	if user.Timezone["useAutomaticTimezone"] == "false" {
+		key = "manualTimezone"
+	}
+	return time.LoadLocation(user.Timezone[key])
+}
+
+func IsSameDay(time1, time2 time.Time) bool {
+	return time1.YearDay() == time2.YearDay() && time1.Year() == time2.Year()
+}
+
+// getDaysDiff returns days difference between two date.
+func GetDaysDiff(start, end time.Time) int {
+	days := int(end.Sub(start).Hours() / 24)
+
+	if start.AddDate(0, 0, days).YearDay() != end.YearDay() {
+		days++
+	}
+	return days
 }

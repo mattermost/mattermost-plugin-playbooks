@@ -119,7 +119,10 @@ func (h *SignalHandler) ignoreKeywords(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ReturnJSON(w, &model.PostActionIntegrationResponse{}, http.StatusOK)
-	h.api.Post.DeleteEphemeralPost(req.UserId, req.PostId)
+	if err := h.api.Post.DeletePost(req.PostId); err != nil {
+		h.returnError("unable to delete original post", err, w)
+		return
+	}
 }
 
 func (h *SignalHandler) returnError(returnMessage string, err error, w http.ResponseWriter) {

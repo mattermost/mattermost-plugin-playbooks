@@ -6,6 +6,7 @@ import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled, {css} from 'styled-components';
 import {components, ContainerProps} from 'react-select';
+import {Duration} from 'luxon';
 
 import {Post} from 'mattermost-redux/types/posts';
 import {GlobalState} from 'mattermost-redux/types/store';
@@ -22,14 +23,23 @@ import {resetReminder} from 'src/client';
 import {CustomPostContainer} from 'src/components/custom_post_styles';
 import {makeOption, Mode, ms, Option} from 'src/components/datetime_input';
 import {nearest} from 'src/utils';
-import {optionFromSeconds} from 'src/components/modals/update_run_status_modal';
 import {StyledSelect} from 'src/components/backstage/styles';
 import {useClientRect} from 'src/hooks';
 import {PlaybookRun} from 'src/types/playbook_run';
+import {formatDuration} from 'src/components/formatted_duration';
 
 interface Props {
     post: Post;
 }
+
+const optionFromSeconds = (seconds: number): Option => {
+    const duration = Duration.fromObject({seconds});
+
+    return {
+        label: `for ${formatDuration(duration, 'long')}`,
+        value: duration,
+    };
+};
 
 export const UpdateRequestPost = (props: Props) => {
     const dispatch = useDispatch();
@@ -55,9 +65,9 @@ export const UpdateRequestPost = (props: Props) => {
     }
 
     const options = [
-        makeOption('in 60 minutes', Mode.DurationValue),
-        makeOption('in 24 hours', Mode.DurationValue),
-        makeOption('in 7 days', Mode.DurationValue),
+        makeOption('for 60 minutes', Mode.DurationValue),
+        makeOption('for 24 hours', Mode.DurationValue),
+        makeOption('for 7 days', Mode.DurationValue),
     ];
     const pushIfNotIn = (option: Option) => {
         if (!options.find((o) => ms(option.value) === ms(o.value))) {
